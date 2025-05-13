@@ -1,0 +1,304 @@
+.financeAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.financeAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricCard h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.revenueTrends {
+  margin-bottom: 2rem;
+}
+
+.revenueTrends h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.trendsChart {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.trendBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.barFill {
+  width: 100%;
+  background: #4caf50;
+  border-radius: 4px;
+  transition: height 0.3s ease;
+}
+
+.trendDate {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.expenseCategories {
+  margin-bottom: 2rem;
+}
+
+.expenseCategories h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.categoriesGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.categoryCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.categoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.categoryLabel {
+  font-weight: 600;
+  color: #333;
+}
+
+.categoryPercentage {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.categoryAmount {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.categoryBar {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.revenueSources {
+  margin-bottom: 2rem;
+}
+
+.revenueSources h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.sourcesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.sourceCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.sourceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.sourceLabel {
+  font-weight: 600;
+  color: #333;
+}
+
+.sourcePercentage {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.sourceAmount {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.financialHealth {
+  margin-bottom: 2rem;
+}
+
+.financialHealth h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.healthGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.healthCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.healthHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.healthMetric {
+  font-weight: 600;
+  color: #333;
+}
+
+.healthStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.healthValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.recentTransactions h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.transactionsList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.transactionItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.transactionDate {
+  width: 100px;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.transactionDetails {
+  flex: 1;
+  margin: 0 1rem;
+}
+
+.transactionDescription {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.transactionCategory {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.transactionAmount {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .sourcesGrid,
+  .healthGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trendsChart {
+    overflow-x: auto;
+    padding-bottom: 2rem;
+  }
+
+  .trendBar {
+    min-width: 40px;
+  }
+
+  .transactionItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .transactionDate {
+    margin-bottom: 0.5rem;
+  }
+
+  .transactionDetails {
+    margin: 0.5rem 0;
+  }
+} 

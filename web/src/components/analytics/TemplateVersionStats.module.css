@@ -1,0 +1,158 @@
+.container {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.section h3 {
+  margin: 0 0 16px;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+}
+
+.statValue {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2196F3;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.timeDistribution {
+  margin-top: 16px;
+}
+
+.timeBar {
+  display: flex;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.timeSegment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.timeLegend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+
+.timeLegend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeLegend span::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.topChanges,
+.topTags {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.changeItem,
+.tagItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.changeItem:hover,
+.tagItem:hover {
+  background-color: #e9ecef;
+}
+
+.field,
+.tag {
+  font-weight: 500;
+  color: #333;
+}
+
+.count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeLegend {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .timeLegend span {
+    font-size: 0.8rem;
+  }
+
+  .changeItem,
+  .tagItem {
+    padding: 10px;
+  }
+
+  .field,
+  .tag {
+    font-size: 0.9rem;
+  }
+
+  .count {
+    font-size: 0.8rem;
+  }
+} 

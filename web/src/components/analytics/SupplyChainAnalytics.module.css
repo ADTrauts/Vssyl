@@ -1,0 +1,320 @@
+.supplyChainAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.supplyChainAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricCard h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.change {
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.change.improving {
+  color: #4caf50;
+}
+
+.change.declining {
+  color: #f44336;
+}
+
+.change.stable {
+  color: #666;
+}
+
+.inventoryStatus {
+  margin-bottom: 2rem;
+}
+
+.inventoryStatus h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.inventoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.inventoryCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.inventoryCard.optimal {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.inventoryCard.low {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.inventoryCard.overstocked {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.inventoryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.itemName {
+  font-weight: 600;
+  color: #333;
+}
+
+.inventoryStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.inventoryStatus.optimal {
+  background: #4caf50;
+}
+
+.inventoryStatus.low {
+  background: #ff9800;
+}
+
+.inventoryStatus.overstocked {
+  background: #f44336;
+}
+
+.inventoryDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.quantity,
+.reorderPoint,
+.leadTime {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metricItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.logisticsPerformance {
+  margin-bottom: 2rem;
+}
+
+.logisticsPerformance h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.logisticsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.logisticsCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.logisticsCard.on-time {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.logisticsCard.delayed {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.logisticsCard.at-risk {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.logisticsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.routeName {
+  font-weight: 600;
+  color: #333;
+}
+
+.deliveryStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.deliveryStatus.on-time {
+  background: #4caf50;
+}
+
+.deliveryStatus.delayed {
+  background: #ff9800;
+}
+
+.deliveryStatus.at-risk {
+  background: #f44336;
+}
+
+.logisticsDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deliveryTime,
+.cost,
+.reliability {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.supplierPerformance {
+  margin-bottom: 2rem;
+}
+
+.supplierPerformance h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.suppliersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.supplierCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.supplierCard.excellent {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.supplierCard.good {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.supplierCard.needs-improvement {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.supplierHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.supplierName {
+  font-weight: 600;
+  color: #333;
+}
+
+.performanceStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.performanceStatus.excellent {
+  background: #4caf50;
+}
+
+.performanceStatus.good {
+  background: #2196f3;
+}
+
+.performanceStatus.needs-improvement {
+  background: #ff9800;
+}
+
+.supplierDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.score {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .inventoryGrid,
+  .logisticsGrid,
+  .suppliersGrid {
+    grid-template-columns: 1fr;
+  }
+} 

@@ -1,0 +1,134 @@
+.visualizationCard {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.visualization {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+}
+
+/* Chart styles */
+.lineChart,
+.barChart,
+.pieChart,
+.gaugeChart,
+.trendLine {
+  width: 100%;
+  height: 100%;
+}
+
+/* Tooltip styles */
+.tooltipTrigger {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tooltipTrigger:hover {
+  opacity: 0.8;
+}
+
+/* Label styles */
+.label {
+  font-size: 0.75rem;
+  fill: #666;
+}
+
+/* Legend styles */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legendLabel {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Gauge styles */
+.gaugeValue {
+  font-size: 1.5rem;
+  font-weight: 500;
+  fill: #333;
+}
+
+/* Trend styles */
+.trendChart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trendValue {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trendIndicator {
+  font-size: 0.875rem;
+  font-weight: normal;
+}
+
+.trendIndicator.positive {
+  color: #4caf50;
+}
+
+.trendIndicator.negative {
+  color: #f44336;
+}
+
+.trendLabel {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .visualizationCard {
+    padding: 1rem;
+  }
+
+  .title {
+    font-size: 1rem;
+  }
+
+  .legend {
+    gap: 0.5rem;
+  }
+
+  .trendValue {
+    font-size: 1.25rem;
+  }
+} 

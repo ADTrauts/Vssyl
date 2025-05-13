@@ -1,0 +1,325 @@
+.securityAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.securityAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.metricCard h3 {
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.statusIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.statusIndicator.secure {
+  background: #4caf50;
+}
+
+.statusIndicator.warning {
+  background: #ff9800;
+}
+
+.statusIndicator.critical {
+  background: #f44336;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.change {
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.change.improving {
+  color: #4caf50;
+}
+
+.change.declining {
+  color: #f44336;
+}
+
+.change.stable {
+  color: #666;
+}
+
+.threatActivity {
+  margin-bottom: 2rem;
+}
+
+.threatActivity h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.activityList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.activityItem {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.activityItem.low {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.activityItem.medium {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.activityItem.high {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.activityItem.critical {
+  background: #fce4ec;
+  border-color: #e91e63;
+}
+
+.activityHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.activityTimestamp {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.activityType {
+  font-weight: 600;
+  color: #333;
+}
+
+.activityDetails {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.securityScores {
+  margin-bottom: 2rem;
+}
+
+.securityScores h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.scoresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.scoreCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.scoreHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.scoreCategory {
+  font-weight: 600;
+  color: #333;
+}
+
+.scoreStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scoreStatus.excellent {
+  background: #4caf50;
+}
+
+.scoreStatus.good {
+  background: #8bc34a;
+}
+
+.scoreStatus.fair {
+  background: #ff9800;
+}
+
+.scoreStatus.poor {
+  background: #f44336;
+}
+
+.scoreValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.scoreProgress {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressBar {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+}
+
+.scoreDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailItem {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.protectionStatus {
+  margin-bottom: 2rem;
+}
+
+.protectionStatus h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.protectionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.protectionCard {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.protectionCard.protected {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.protectionCard.vulnerable {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.protectionCard.compromised {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.protectionHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.systemName {
+  font-weight: 600;
+  color: #333;
+}
+
+.lastScan {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.protectionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.threatCount {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.actionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.actionItem {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .scoresGrid,
+  .protectionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .activityDetails {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+} 

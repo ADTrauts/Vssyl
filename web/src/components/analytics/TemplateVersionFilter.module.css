@@ -1,0 +1,164 @@
+.container {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.searchContainer {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.clearButton {
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.clearButton:hover {
+  background-color: #d32f2f;
+}
+
+.sortContainer {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sortLabel {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sortButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sortButton {
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  color: #666;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sortButton:hover {
+  border-color: #2196F3;
+  color: #2196F3;
+}
+
+.sortButton.active {
+  background-color: #2196F3;
+  border-color: #2196F3;
+  color: white;
+}
+
+.tagsContainer {
+  margin-bottom: 15px;
+}
+
+.tagsContainer h4 {
+  margin: 0 0 10px;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagButton {
+  padding: 6px 12px;
+  border: 1px solid;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tagButton:hover {
+  opacity: 0.9;
+}
+
+.tagButton.selected {
+  font-weight: 600;
+}
+
+.filterStats {
+  color: #666;
+  font-size: 12px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .searchContainer {
+    flex-direction: column;
+  }
+
+  .clearButton {
+    width: 100%;
+  }
+
+  .sortContainer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sortButtons {
+    width: 100%;
+  }
+
+  .sortButton {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .tagsList {
+    gap: 6px;
+  }
+
+  .tagButton {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+} 

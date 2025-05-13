@@ -1,0 +1,335 @@
+.healthAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.healthAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricCard h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.workoutTrends {
+  margin-bottom: 2rem;
+}
+
+.workoutTrends h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.trendsChart {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.trendBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.barFill {
+  width: 100%;
+  background: #2196f3;
+  border-radius: 4px;
+  transition: height 0.3s ease;
+}
+
+.trendDate {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.trendCalories {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.sleepPatterns {
+  margin-bottom: 2rem;
+}
+
+.sleepPatterns h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.patternsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.patternCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.patternHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.patternDate {
+  font-weight: 600;
+  color: #333;
+}
+
+.patternQuality {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.patternBar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.patternFill {
+  height: 100%;
+  background: #9c27b0;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.patternDuration {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.activityTypes {
+  margin-bottom: 2rem;
+}
+
+.activityTypes h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.typesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.typeCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.typeHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.typeName {
+  font-weight: 600;
+  color: #333;
+}
+
+.typeCount {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.typeMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.wellnessMetrics {
+  margin-bottom: 2rem;
+}
+
+.wellnessMetrics h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.metricHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.metricName {
+  font-weight: 600;
+  color: #333;
+}
+
+.metricTarget {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.progressBar {
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #4caf50;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.recentActivities h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.activitiesList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.activityType {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 1rem;
+}
+
+.activityDetails {
+  flex: 1;
+}
+
+.activityHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.activityId {
+  font-weight: 600;
+  color: #333;
+}
+
+.activityDate {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.activityInfo {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.type {
+  font-weight: 600;
+}
+
+.duration {
+  color: #666;
+}
+
+.calories {
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .patternsGrid,
+  .typesGrid,
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trendsChart {
+    overflow-x: auto;
+    padding-bottom: 2rem;
+  }
+
+  .trendBar {
+    min-width: 40px;
+  }
+
+  .activityItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .activityType {
+    margin-bottom: 0.5rem;
+  }
+
+  .activityDetails {
+    margin-bottom: 0.5rem;
+  }
+} 

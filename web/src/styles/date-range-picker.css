@@ -1,0 +1,70 @@
+.date-range-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.main-range,
+.compare-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.range-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.range-content {
+  padding: 1rem;
+  min-width: 300px;
+}
+
+.quick-ranges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.quick-ranges button {
+  justify-content: flex-start;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.calendar-container {
+  display: flex;
+  justify-content: center;
+}
+
+.compare-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.compare-toggle input[type="checkbox"] {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .date-range-picker {
+    width: 100%;
+  }
+
+  .range-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .calendar-container {
+    flex-direction: column;
+  }
+} 

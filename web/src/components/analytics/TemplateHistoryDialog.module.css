@@ -1,0 +1,308 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.templateInfo {
+  margin-bottom: 20px;
+}
+
+.templateInfo p {
+  margin: 0 0 10px;
+  color: #666;
+}
+
+.meta {
+  display: flex;
+  gap: 20px;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.compareButton {
+  background-color: #9C27B0;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.compareButton:hover {
+  background-color: #7B1FA2;
+}
+
+.exportButton {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.exportButton:hover {
+  background-color: #1976D2;
+}
+
+.importButton {
+  background-color: #00BCD4;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.importButton:hover {
+  background-color: #0097A7;
+}
+
+.statsButton {
+  background-color: #FF9800;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.statsButton:hover {
+  background-color: #F57C00;
+}
+
+.viewToggleButton {
+  background-color: #607D8B;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.viewToggleButton:hover {
+  background-color: #455A64;
+}
+
+.viewToggleButton.active {
+  background-color: #455A64;
+  font-weight: 600;
+}
+
+.versionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.versionItem {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 15px;
+}
+
+.versionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.versionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.versionInfo h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.timestamp {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.author {
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.restoreButton {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.restoreButton:hover {
+  background-color: #45a049;
+}
+
+.changes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.change {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.statsOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.statsDialog {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.statsHeader {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.statsHeader h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.statsContent {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .dialog,
+  .statsDialog {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .header,
+  .statsHeader {
+    padding: 15px;
+  }
+
+  .content,
+  .statsContent {
+    padding: 15px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .compareButton,
+  .exportButton,
+  .importButton,
+  .statsButton,
+  .viewToggleButton {
+    width: 100%;
+  }
+
+  .versionHeader {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .restoreButton {
+    width: 100%;
+  }
+} 

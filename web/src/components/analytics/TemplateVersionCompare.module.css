@@ -1,0 +1,197 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.content {
+  padding: 24px;
+}
+
+.versionSelectors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.versionSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.versionSelector label {
+  font-weight: 500;
+  color: #333;
+}
+
+.versionSelector select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.versionSelector select:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+.changesList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.noChanges {
+  text-align: center;
+  padding: 24px;
+  color: #666;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.changeItem {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.changeField {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.changeValues {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.oldValue,
+.newValue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.value {
+  padding: 8px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.oldValue .value {
+  color: #d32f2f;
+  background-color: #ffebee;
+}
+
+.newValue .value {
+  color: #2e7d32;
+  background-color: #e8f5e9;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.actions .closeButton {
+  padding: 8px 16px;
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.actions .closeButton:hover {
+  background-color: #d5d5d5;
+}
+
+@media (max-width: 768px) {
+  .dialog {
+    width: 95%;
+    margin: 16px;
+  }
+
+  .versionSelectors {
+    grid-template-columns: 1fr;
+  }
+
+  .changeValues {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .closeButton {
+    width: 100%;
+  }
+} 

@@ -1,0 +1,327 @@
+.complianceAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.complianceAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricCard h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.change {
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.change.improving {
+  color: #4caf50;
+}
+
+.change.declining {
+  color: #f44336;
+}
+
+.change.stable {
+  color: #666;
+}
+
+.policyCompliance {
+  margin-bottom: 2rem;
+}
+
+.policyCompliance h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.policiesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.policyCard {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.policyCard.compliant {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.policyCard.non-compliant {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.policyCard.at-risk {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.policyHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.policyName {
+  font-weight: 600;
+  color: #333;
+}
+
+.policyStatus {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.policyDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lastChecked,
+.violations {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.policyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailItem {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.auditResults {
+  margin-bottom: 2rem;
+}
+
+.auditResults h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.auditsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.auditCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.auditCard.passed {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.auditCard.warning {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.auditCard.failed {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.auditHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.auditCategory {
+  font-weight: 600;
+  color: #333;
+}
+
+.auditStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.auditStatus.passed {
+  background: #4caf50;
+}
+
+.auditStatus.warning {
+  background: #ff9800;
+}
+
+.auditStatus.failed {
+  background: #f44336;
+}
+
+.auditScore {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.auditProgress {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressBar {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+}
+
+.auditFindings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.findingItem {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.regulatoryRequirements {
+  margin-bottom: 2rem;
+}
+
+.regulatoryRequirements h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.regulationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.regulationCard {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.regulationCard.compliant {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.regulationCard.partial {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.regulationCard.non-compliant {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.regulationHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.regulationName {
+  font-weight: 600;
+  color: #333;
+}
+
+.regulationStatus {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.regulationDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deadline {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.regulationProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.progressText {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.requirementItem {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .policiesGrid,
+  .auditsGrid,
+  .regulationsGrid {
+    grid-template-columns: 1fr;
+  }
+} 

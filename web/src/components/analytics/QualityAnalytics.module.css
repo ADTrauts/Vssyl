@@ -1,0 +1,290 @@
+.qualityAnalytics {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.qualityAnalytics h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.metricCard h3 {
+  margin: 0 0 0.5rem 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.metricValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.change {
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.change.improving {
+  color: #4caf50;
+}
+
+.change.declining {
+  color: #f44336;
+}
+
+.change.stable {
+  color: #666;
+}
+
+.defectTrends {
+  margin-bottom: 2rem;
+}
+
+.defectTrends h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.trendChart {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.trendBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.criticalFill {
+  width: 100%;
+  background: #f44336;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+}
+
+.majorFill {
+  width: 100%;
+  background: #ff9800;
+  transition: height 0.3s ease;
+}
+
+.minorFill {
+  width: 100%;
+  background: #2196f3;
+  border-radius: 0 0 4px 4px;
+  transition: height 0.3s ease;
+}
+
+.trendDate {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.trendTotal {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.qualityScores {
+  margin-bottom: 2rem;
+}
+
+.qualityScores h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.scoresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.scoreCard {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.scoreHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.scoreCategory {
+  font-weight: 600;
+  color: #333;
+}
+
+.scoreStatus {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scoreStatus.excellent {
+  background: #4caf50;
+}
+
+.scoreStatus.good {
+  background: #8bc34a;
+}
+
+.scoreStatus.fair {
+  background: #ff9800;
+}
+
+.scoreStatus.poor {
+  background: #f44336;
+}
+
+.scoreValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.scoreProgress {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressBar {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+}
+
+.scoreDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailItem {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.testCoverage {
+  margin-bottom: 2rem;
+}
+
+.testCoverage h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.coverageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.coverageCard {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.coverageCard.complete {
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.coverageCard.partial {
+  background: #fff3e0;
+  border-color: #ff9800;
+}
+
+.coverageCard.incomplete {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.coverageHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.coverageType {
+  font-weight: 600;
+  color: #333;
+}
+
+.coverageStatus {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.coverageValue {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.coverageProgress {
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .summaryMetrics,
+  .scoresGrid,
+  .coverageGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .trendChart {
+    overflow-x: auto;
+    padding-bottom: 2rem;
+  }
+
+  .trendBar {
+    min-width: 40px;
+  }
+} 
