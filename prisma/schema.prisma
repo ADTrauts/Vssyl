@@ -1,0 +1,798 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id             String          @id @default(cuid())
+  name           String
+  mimeType       String
+  size           Int
+  url            String
+  folderId       String?
+  ownerId        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  isStarred      Boolean         @default(false)
+  lastAccessed   DateTime        @default(now())
+  tags           String[]
+  thumbnailUrl   String?
+  accessControls AccessControl[]
+  activityLogs   ActivityLog[]
+  folder         Folder?         @relation(fields: [folderId], references: [id])
+  owner          User            @relation(fields: [ownerId], references: [id])
+  versions       FileVersion[]
+  shareLinks     ShareLink[]
+  fileReferences FileReference[]
+}
+
+model Folder {
+  id             String          @id @default(cuid())
+  name           String
+  parentId       String?
+  ownerId        String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  metadata       Json?
+  isPublic       Boolean         @default(false)
+  isStarred      Boolean         @default(false)
+  lastAccessed   DateTime        @default(now())
+  tags           String[]
+  accessControls AccessControl[]
+  activityLogs   ActivityLog[]
+  files          File[]
+  owner          User            @relation(fields: [ownerId], references: [id])
+  parent         Folder?         @relation("FolderChildren", fields: [parentId], references: [id])
+  children       Folder[]        @relation("FolderChildren")
+  shareLinks     ShareLink[]
+}
+
+model AccessControl {
+  id       String      @id @default(uuid())
+  userId   String
+  folderId String?
+  fileId   String?
+  access   AccessLevel
+  file     File?       @relation(fields: [fileId], references: [id])
+  folder   Folder?     @relation(fields: [folderId], references: [id])
+  user     User        @relation(fields: [userId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  folderId  String?
+  fileId    String?
+  action    String
+  message   String
+  createdAt DateTime @default(now())
+  file      File?    @relation(fields: [fileId], references: [id])
+  folder    Folder?  @relation(fields: [folderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model FileVersion {
+  id        String   @id @default(cuid())
+  fileId    String
+  version   Int
+  name      String
+  filePath  String
+  fileUrl   String?
+  size      Int
+  createdAt DateTime @default(now())
+  file      File     @relation(fields: [fileId], references: [id])
+}
+
+model ShareLink {
+  id        String   @id @default(nanoid(10))
+  fileId    String?
+  folderId  String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  file      File?    @relation(fields: [fileId], references: [id])
+  folder    Folder?  @relation(fields: [folderId], references: [id])
+  owner     User     @relation("UserShareLinks", fields: [ownerId], references: [id])
+
+  @@unique([fileId, ownerId])
+  @@unique([folderId, ownerId])
+}
+
+model User {
+  id                    String          @id @default(cuid())
+  name                  String
+  email                 String          @unique
+  password             String
+  avatarUrl            String?
+  isAdmin              Boolean         @default(false)
+  role                 Role            @default(USER)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  accessControls       AccessControl[]
+  activityLogs         ActivityLog[]
+  files                File[]
+  folders              Folder[]
+  conversations        Conversation[]  @relation("ConversationParticipants")
+  sentMessages         Message[]       @relation("MessageSender")
+  readMessages         Message[]       @relation("MessageReadBy")
+  lastReadConversations Conversation[] @relation("ConversationLastReadBy")
+  createdThreads       Thread[]        @relation("UserToThread")
+  shareLinks           ShareLink[]     @relation("UserShareLinks")
+  threadActivities     ThreadActivity[]
+  threadParticipants   ThreadParticipant[]
+  threadReactions      ThreadReaction[]
+  threadCollaborators  ThreadCollaborator[]
+  threadComments       ThreadComment[]
+  threadInsights       ThreadInsight[]
+  threadPresence       ThreadPresence[]
+  threadStars          ThreadStar[]
+  threadVersions       ThreadVersion[]
+  userPresence         UserPresence?
+  searchHistory        SearchHistory[]
+  savedSearches        SavedSearch[]
+  searchAnalytics      SearchAnalytics[]
+  userAnalytics        UserAnalytics?
+  threadMessages       ThreadMessage[]
+  threadMessageReactions ThreadMessageReaction[]
+  developedModules     Module[]        @relation("ModuleDeveloper")
+  reviewedModules      Module[]        @relation("ModuleReviewer")
+  oauthTokens          OAuthToken[]
+  notifications        Notification[]
+  threadNotifications  ThreadNotification[] @relation("NotificationUser")
+  createdNotifications ThreadNotification[] @relation("NotificationCreator")
+  threadActivityNotifications ThreadActivityNotification[]
+  integrations         Integration[]
+  webhooks             Webhook[]
+  settings             UserSettings?
+  activities           Activity[]      @relation("UserActivities")
+  targetActivities     Activity[]      @relation("TargetUserActivities")
+  auditLogs            AuditLog[]      @relation("UserAuditLogs")
+  createdTags          Tag[]           @relation("TagCreator")
+  ownedCategories      Category[]      @relation("CategoryOwner")
+  categoryMemberships  CategoryMember[]
+}
+
+model Conversation {
+  id             String          @id @default(cuid())
+  name           String?
+  type           String // "direct" | "group"
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  participants   User[]          @relation("ConversationParticipants")
+  messages       Message[]
+  lastMessageId  String?         @unique
+  lastMessage    Message?        @relation("LastMessage", fields: [lastMessageId], references: [id])
+  workspace      Workspace       @relation("WorkspaceConversations", fields: [workspaceId], references: [id])
+  workspaceId    String
+  lastReadBy     User[]          @relation("ConversationLastReadBy")
+  fileReferences FileReference[]
+
+  @@index([workspaceId])
+}
+
+model Message {
+  id             String          @id @default(cuid())
+  content        String
+  type           String // "text" | "file" | "link"
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  conversation   Conversation    @relation(fields: [conversationId], references: [id])
+  conversationId String
+  sender         User            @relation("MessageSender", fields: [senderId], references: [id])
+  senderId       String
+  readBy         User[]          @relation("MessageReadBy")
+  isLastMessage  Conversation?   @relation("LastMessage")
+  thread         Thread?         @relation("MessageThread")
+  edited         Boolean         @default(false)
+  fileReferences FileReference[]
+
+  @@index([conversationId])
+  @@index([senderId])
+}
+
+model Thread {
+  id              String          @id @default(cuid())
+  title           String
+  content         String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  creatorId       String
+  parentMessageId String?         @unique
+  isArchived      Boolean         @default(false)
+  isPinned        Boolean         @default(false)
+  lastActivityAt  DateTime        @default(now())
+  categoryId      String?
+  tags            Tag[]           @relation("ThreadTags")
+
+  // Relations
+  creator         User            @relation("UserToThread", fields: [creatorId], references: [id], onDelete: Cascade)
+  parentMessage   Message?        @relation("MessageThread", fields: [parentMessageId], references: [id])
+  fileReferences  FileReference[]
+  analytics       ThreadAnalytics?
+  activities      ThreadActivity[]
+  participants    ThreadParticipant[]
+  reactions       ThreadReaction[]
+  collaborators   ThreadCollaborator[]
+  comments        ThreadComment[]
+  insights        ThreadInsight[]
+  presence        ThreadPresence[]
+  starredBy       ThreadStar[]
+  versions        ThreadVersion[]
+  messages        ThreadMessage[]
+  category        Category?       @relation(fields: [categoryId], references: [id])
+  notifications   ThreadNotification[]
+  activityNotifications ThreadActivityNotification[]
+
+  @@index([creatorId])
+  @@index([parentMessageId])
+  @@index([lastActivityAt])
+  @@index([categoryId])
+}
+
+model FileReference {
+  id             String        @id @default(cuid())
+  fileId         String
+  messageId      String?
+  threadId       String?
+  conversationId String?
+  type           String        @default("chat")
+  metadata       Json          @default("{}")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  file           File          @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  thread         Thread?       @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([messageId])
+  @@index([threadId])
+  @@index([conversationId])
+  @@index([type])
+}
+
+model Workspace {
+  id            String         @id @default(cuid())
+  name          String
+  conversations Conversation[] @relation("WorkspaceConversations")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AccessLevel {
+  VIEW
+  EDIT
+  OWNER
+}
+
+model ThreadAnalytics {
+  id              String    @id @default(cuid())
+  threadId        String    @unique
+  engagementScore Float
+  messageCount    Int
+  participantCount Int
+  reactionCount   Int
+  viewCount       Int
+  lastActivity    DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  thread          Thread    @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([lastActivity])
+}
+
+model ThreadActivity {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  type      String   // "view" | "edit" | "comment" | "reaction"
+  metadata  Json?
+  createdAt DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ThreadParticipant {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  role      String   // "owner" | "editor" | "viewer"
+  joinedAt  DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadReaction {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  type      String   // "like" | "heart" | "star" | etc.
+  createdAt DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId, type])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadCollaborator {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  role      String   // "editor" | "reviewer" | "commenter"
+  joinedAt  DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadComment {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadInsight {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  type      String   // "observation" | "suggestion" | "question"
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadPresence {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  status    String   // "online" | "away" | "offline"
+  lastSeen  DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadStar {
+  id        String   @id @default(cuid())
+  threadId  String
+  userId    String
+  createdAt DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+}
+
+model ThreadVersion {
+  id        String   @id @default(cuid())
+  threadId  String
+  version   Int
+  content   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  createdBy String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [createdBy], references: [id])
+
+  @@index([threadId])
+  @@index([createdBy])
+}
+
+model UserPresence {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  status    String   @default("offline") // "online" | "away" | "offline"
+  lastSeen  DateTime @default(now())
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SearchHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  query       String
+  filters     Json?
+  resultCount Int
+  timestamp   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([query])
+  @@index([timestamp])
+}
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  query       String
+  filters     Json?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([name])
+}
+
+model SearchAnalytics {
+  id          String   @id @default(cuid())
+  userId      String
+  query       String
+  filters     Json?
+  resultCount Int
+  timestamp   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([query])
+  @@index([timestamp])
+}
+
+model UserAnalytics {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  searchCount       Int      @default(0)
+  averageResultCount Float   @default(0)
+  popularSearches   Json?
+  lastSearchAt      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ThreadMessage {
+  id          String   @id @default(cuid())
+  threadId    String
+  userId      String
+  content     String
+  type        String   @default("text") // "text" | "file" | "link"
+  metadata    Json?
+  edited      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  thread      Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
+  reactions   ThreadMessageReaction[]
+  attachments ThreadMessageAttachment[]
+
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ThreadMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  message   ThreadMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+}
+
+model ThreadMessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  name      String
+  url       String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+  message   ThreadMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  moduleId    String   @unique
+  name        String
+  version     String
+  description String
+  status      String   // "pending" | "approved" | "rejected"
+  manifest    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  developerId String
+  reviewerId  String?
+  developer   User     @relation("ModuleDeveloper", fields: [developerId], references: [id])
+  reviewer    User?    @relation("ModuleReviewer", fields: [reviewerId], references: [id])
+  settings    ModuleSettings[]
+  data        ModuleData[]
+
+  @@index([developerId])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+model ModuleSettings {
+  id        String   @id @default(cuid())
+  moduleId  String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, key])
+  @@index([moduleId])
+}
+
+model ModuleData {
+  id        String   @id @default(cuid())
+  moduleId  String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, key])
+  @@index([moduleId])
+}
+
+model OAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  clientSecret String
+  name         String
+  redirectUris String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  tokens       OAuthToken[]
+}
+
+model OAuthToken {
+  id          String   @id @default(cuid())
+  clientId    String
+  userId      String
+  accessToken String   @unique
+  refreshToken String? @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  client      OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "system" | "thread" | "message" | "mention" | "activity"
+  title       String
+  message     String
+  data        Json     @default("{}")
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model ThreadNotification {
+  id          String   @id @default(cuid())
+  threadId    String
+  userId      String
+  createdById String
+  type        String   // "mention" | "reply" | "edit" | "activity"
+  metadata    Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  thread      Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user        User     @relation("NotificationUser", fields: [userId], references: [id])
+  createdBy   User     @relation("NotificationCreator", fields: [createdById], references: [id])
+
+  @@index([threadId])
+  @@index([userId])
+  @@index([createdById])
+  @@index([type])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model ThreadActivityNotification {
+  id                String   @id @default(cuid())
+  userId            String
+  threadId          String
+  notificationTypes String[] // Array of activity types to notify about
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread            Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, threadId])
+  @@index([userId])
+  @@index([threadId])
+  @@index([isActive])
+}
+
+model Integration {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "git" | "database" | "cloud" | "api"
+  status      String   // "connected" | "disconnected" | "error"
+  settings    Json
+  lastSync    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model Webhook {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  secret      String
+  events      String[] // Array of event types to trigger webhook
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+model UserSettings {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  theme             String   @default("system") // "light" | "dark" | "system"
+  language          String   @default("en")
+  timezone          String   @default("UTC")
+  dateFormat        String   @default("MM/DD/YYYY")
+  numberFormat      String   @default("en-US")
+  notifications     Json     @default("{\"email\":true,\"push\":true,\"desktop\":true}")
+  collaboration     Json     @default("{\"allowComments\":true,\"allowMentions\":true,\"allowReplies\":true,\"notifyOnMention\":true,\"notifyOnComment\":true,\"notifyOnReply\":true,\"defaultRole\":\"editor\",\"requireApproval\":false}")
+  search            Json     @default("{\"autoSave\":true,\"maxEntries\":100,\"showMetadata\":true,\"showDuration\":true,\"showUser\":true,\"defaultSort\":\"relevance\",\"defaultFilter\":\"all\",\"exportFormat\":\"csv\"}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  type        String   // "block" | "unblock" | "login" | "logout"
+  userId      String
+  targetUserId String?
+  details     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+  targetUser  User?    @relation("TargetUserActivities", fields: [targetUserId], references: [id])
+
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  resourceType String  // "file" | "folder" | "thread" | "message" | "user" | "module"
+  resourceId  String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  user        User     @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("TagCreator", fields: [createdById], references: [id])
+  threads     Thread[] @relation("ThreadTags")
+
+  @@index([createdById])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "PERSONAL" | "ENTERPRISE"
+  description String?
+  icon        String?
+  color       String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation("CategoryOwner", fields: [ownerId], references: [id])
+  members     CategoryMember[]
+  threads     Thread[]
+  settings    Json?
+
+  @@index([ownerId])
+  @@index([type])
+}
+
+model CategoryMember {
+  id         String   @id @default(cuid())
+  categoryId String
+  userId     String
+  role       String   // "OWNER" | "ADMIN" | "MEMBER"
+  joinedAt   DateTime @default(now())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([categoryId, userId])
+  @@index([categoryId])
+  @@index([userId])
+}
