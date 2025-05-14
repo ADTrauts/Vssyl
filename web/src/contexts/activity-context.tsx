@@ -1,14 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import {
+import type {
   ThreadActivity,
   ActivityUser,
   ThreadPresence,
   ActivityFilter,
   ActivityStats,
   ActivityType,
-  ActivityStatus,
   RealtimeActivity
 } from '@/types/activity';
 
@@ -137,11 +136,11 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
       totalActivities: activities.length,
       activeUsers: new Set(activities.map(a => a.userId)).size,
       activityByType: activities.reduce((acc, activity) => {
-        acc[activity.type] = (acc[activity.type] || 0) + 1;
+        acc[activity.type] = (acc[activity.type] ?? 0) + 1;
         return acc;
       }, {} as Record<ActivityType, number>),
       activityByThread: activities.reduce((acc, activity) => {
-        acc[activity.threadId] = (acc[activity.threadId] || 0) + 1;
+        acc[activity.threadId] = (acc[activity.threadId] ?? 0) + 1;
         return acc;
       }, {} as Record<string, number>),
       userEngagement: Object.entries(
@@ -149,9 +148,9 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({ children }) 
           if (!acc[activity.userId]) {
             acc[activity.userId] = { count: 0, lastActive: activity.timestamp };
           }
-          acc[activity.userId].count++;
-          acc[activity.userId].lastActive = new Date(
-            Math.max(new Date(acc[activity.userId].lastActive).getTime(), new Date(activity.timestamp).getTime())
+          acc[activity.userId]!.count++;
+          acc[activity.userId]!.lastActive = new Date(
+            Math.max(new Date(acc[activity.userId]!.lastActive).getTime(), new Date(activity.timestamp).getTime())
           );
           return acc;
         }, {} as Record<string, { count: number; lastActive: Date }>)

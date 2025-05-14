@@ -1,0 +1,29 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies (web)
+        run: cd web && npm ci
+
+      - name: Lint frontend (web)
+        run: cd web && npx eslint . --ext .ts,.tsx,.js,.jsx --max-warnings=0
+
+      - name: Install dependencies (server)
+        run: cd server && npm ci
+
+      - name: Lint backend (server)
+        run: cd server && npx eslint . --ext .ts,.js --max-warnings=0 

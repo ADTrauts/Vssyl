@@ -404,4 +404,35 @@ For each module (Chat, Drive, Analytics, Tasks, Calendar, etc.):
 - [ ] Ensure a smooth upgrade path from lifestyle to enterprise features.
 - [ ] Integrate with billing for enterprise subscriptions and individual purchases.
 - [ ] Track entitlements at the user and org level.
-- [ ] Document the differences and onboarding flows for enterprise vs. lifestyle users. 
+- [ ] Document the differences and onboarding flows for enterprise vs. lifestyle users.
+
+## [2024-06-13] ESLint Config Types Noted
+
+- The project uses two different ESLint configuration styles:
+  - `web/` (frontend): Uses classic `.eslintrc.json` (JSON format), suitable for Next.js/React/TypeScript projects.
+  - `server/` (backend): Uses the new flat config `eslint.config.js` (JavaScript format), suitable for modern Node/TypeScript setups.
+- Both are valid and intentional. Do not mix config types in the same directory. Each subproject should maintain its own ESLint config style.
+- Contributors should refer to this note when updating or troubleshooting linting setups.
+
+## [2024-06-13] Remediated linter errors in server/services/analyticsBatchService.ts
+
+- Remediated linter errors in server/services/analyticsBatchService.ts:
+  - Removed unused 'ThreadActivity' import.
+  - Fixed upsert properties to match Prisma ThreadAnalytics model (added engagementScore, messageCount; removed replyCount).
+  - Removed invalid property access (isFollowing) on ThreadParticipant.
+  - Replaced 'any' with 'unknown' for dynamic return type.
+- Pattern: Always cross-check Prisma model fields and types when fixing linter/type errors in service logic.
+
+## [2024-06-13] Remediated linter error in server/services/analyticsCacheService.ts
+
+- Remediated linter error in server/services/analyticsCacheService.ts:
+  - Replaced 'any' with 'unknown' for the cache set method value parameter.
+- Pattern: Use 'unknown' for generic cache/value types in service interfaces for type safety.
+
+## [2024-06-13] Remediated linter errors in server/services/analyticsCoordinator.ts
+
+- Remediated linter errors in server/services/analyticsCoordinator.ts:
+  - Replaced all 'any' return types in public async methods with 'unknown'.
+  - Removed 'ThreadView' from Prisma imports and replaced its usage with an inline type for event payloads.
+  - Fixed instantiation of AnalyticsWebSocketService to use getInstance().
+- Pattern: Use inline types for event payloads when no model exists, and prefer 'unknown' over 'any' for dynamic analytics objects. 

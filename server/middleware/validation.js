@@ -1,3 +1,4 @@
+/* global module */
 const { validateModuleData } = (req, res, next) => {
   const { moduleId, name, version, dependencies } = req.body;
 

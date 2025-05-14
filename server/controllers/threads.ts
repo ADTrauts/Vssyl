@@ -141,7 +141,7 @@ export const addMessageToThread = async (req: Request, res: Response) => {
 
 export const searchThreads = async (req: Request, res: Response) => {
   try {
-    const { query, workspaceId } = req.query;
+    const { query } = req.query;
     const userId = req.user.id;
 
     const threads = await prisma.thread.findMany({

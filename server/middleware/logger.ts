@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import morgan from 'morgan';
 import { logger } from '../utils/logger';
 
+// Extend Request type locally for custom properties
+interface RequestWithExtras extends Request {
+  id?: string;
+  _startAt?: [number, number];
+}
+
 // Custom token for request body
 morgan.token('body', (req: Request) => {
   if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
@@ -19,9 +25,9 @@ morgan.token('response-body', (req: Request, res: Response) => {
 });
 
 // Custom token for request duration in milliseconds
-morgan.token('response-time-ms', (req: Request, res: Response) => {
-  if (!res._header || !req._startAt) return '';
-  const diff = process.hrtime(req._startAt);
+morgan.token('response-time-ms', (req: Request) => {
+  if (!(req as RequestWithExtras)._startAt) return '';
+  const diff = process.hrtime((req as RequestWithExtras)._startAt!);
   const ms = diff[0] * 1e3 + diff[1] * 1e-6;
   return ms.toFixed(2);
 });
@@ -33,7 +39,7 @@ morgan.token('user-agent', (req: Request) => {
 
 // Custom token for request ID
 morgan.token('request-id', (req: Request) => {
-  return req.id || '';
+  return (req as RequestWithExtras).id || '';
 });
 
 // Custom format for development environment
@@ -61,7 +67,7 @@ export const requestLogger = morgan(
 // Response body logger middleware
 export const responseLogger = (req: Request, res: Response, next: NextFunction) => {
   const originalSend = res.send;
-  res.send = function (body: any) {
+  res.send = function (body: unknown) {
     res.locals.responseBody = body;
     return originalSend.call(this, body);
   };
@@ -85,7 +91,7 @@ export const errorLogger = (
     params: req.params,
     userAgent: req.get('user-agent'),
     ip: req.ip,
-    requestId: req.id,
+    requestId: (req as RequestWithExtras).id,
   });
   next(err);
 };
@@ -105,7 +111,7 @@ export const performanceLogger = (req: Request, res: Response, next: NextFunctio
         duration: time.toFixed(2) + 'ms',
         userAgent: req.get('user-agent'),
         ip: req.ip,
-        requestId: req.id,
+        requestId: (req as RequestWithExtras).id,
       });
     }
   });

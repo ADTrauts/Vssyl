@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Thread, ThreadActivity } from '@/types/thread';
+import type { Thread, ThreadActivity } from '@/types/thread';
 import { useChatRealtime } from '@/hooks/useChatRealtime';
 
 interface ThreadContextType {
@@ -39,7 +39,7 @@ export const ThreadProvider: React.FC<ThreadProviderProps> = ({
   const [threadActivities, setThreadActivities] = useState<Record<string, ThreadActivity[]>>({});
 
   const { emitEvent } = useChatRealtime({
-    conversationId: activeThread?.id || '',
+    threadId: activeThread?.id || '',
     onThreadUpdate: (updatedThread) => {
       setThreads((prev) =>
         prev.map((thread) =>
@@ -64,7 +64,8 @@ export const ThreadProvider: React.FC<ThreadProviderProps> = ({
     };
 
     setThreads((prev) => [...prev, newThread]);
-    await emitEvent('thread:create', newThread);
+    // TODO: Implement thread creation event or API call as needed
+    // await emitEvent('thread:create', newThread);
   }, [emitEvent]);
 
   const updateThread = useCallback(async (threadId: string, updates: Partial<Thread>) => {
@@ -80,7 +81,8 @@ export const ThreadProvider: React.FC<ThreadProviderProps> = ({
 
   const deleteThread = useCallback(async (threadId: string) => {
     setThreads((prev) => prev.filter((thread) => thread.id !== threadId));
-    await emitEvent('thread:delete', { threadId });
+    // TODO: Implement thread deletion event or API call as needed
+    // await emitEvent('thread:delete', { threadId });
   }, [emitEvent]);
 
   const addActivity = useCallback(async (
@@ -97,7 +99,8 @@ export const ThreadProvider: React.FC<ThreadProviderProps> = ({
       ...prev,
       [threadId]: [...(prev[threadId] || []), newActivity],
     }));
-    await emitEvent('thread:activity', newActivity);
+    // TODO: Implement thread activity event or API call as needed
+    // await emitEvent('thread:activity', newActivity);
   }, [emitEvent]);
 
   return (

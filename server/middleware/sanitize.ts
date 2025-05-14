@@ -17,7 +17,7 @@ const escapeHtml = (str: string): string => {
 };
 
 // Sanitize an object recursively
-const sanitizeObject = (obj: any): any => {
+const sanitizeObject = (obj: unknown): unknown => {
   if (obj === null || obj === undefined) {
     return obj;
   }
@@ -31,8 +31,8 @@ const sanitizeObject = (obj: any): any => {
   }
 
   if (typeof obj === 'object') {
-    const sanitized: Record<string, any> = {};
-    for (const [key, value] of Object.entries(obj)) {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
       sanitized[key] = sanitizeObject(value);
     }
     return sanitized;
@@ -51,12 +51,12 @@ export const sanitize = (req: Request, res: Response, next: NextFunction) => {
 
     // Sanitize query parameters
     if (req.query) {
-      req.query = sanitizeObject(req.query);
+      req.query = sanitizeObject(req.query) as unknown as typeof req.query;
     }
 
     // Sanitize URL parameters
     if (req.params) {
-      req.params = sanitizeObject(req.params);
+      req.params = sanitizeObject(req.params) as unknown as typeof req.params;
     }
 
     next();

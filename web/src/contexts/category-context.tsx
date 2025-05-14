@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import {
+import type {
   Category,
   Workspace,
   CategoryContextValue,

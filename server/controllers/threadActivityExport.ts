@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ThreadActivityExportService } from '../services/threadActivityExportService';
 import { logger } from '../utils/logger';
 import { AuthenticatedRequest } from '../types/express';
 
 const exportService = new ThreadActivityExportService();
 
-function handleError(res: Response, error: any) {
+function handleError(res: Response, error: unknown) {
   logger.error('Error in thread activity export:', error);
   res.status(500).json({ error: 'Internal server error' });
 }
@@ -20,7 +20,7 @@ export const exportThreadActivities = async (req: AuthenticatedRequest, res: Res
     res.setHeader('Content-Type', getContentType(format));
     res.setHeader('Content-Disposition', `attachment; filename=thread-${threadId}-activity.${format}`);
     res.send(exportData);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -35,7 +35,7 @@ export const exportUserActivities = async (req: AuthenticatedRequest, res: Respo
     res.setHeader('Content-Type', getContentType(format));
     res.setHeader('Content-Disposition', `attachment; filename=user-${userId}-activity.${format}`);
     res.send(exportData);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -53,7 +53,7 @@ export const createScheduledExport = async (req: AuthenticatedRequest, res: Resp
     });
     
     res.status(201).json(schedule);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -66,7 +66,7 @@ export const updateScheduledExport = async (req: AuthenticatedRequest, res: Resp
     
     const schedule = await exportService.updateScheduledExport(userId, id, updates);
     res.json(schedule);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -78,7 +78,7 @@ export const deleteScheduledExport = async (req: AuthenticatedRequest, res: Resp
     
     await exportService.deleteScheduledExport(userId, id);
     res.status(204).send();
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -88,7 +88,7 @@ export const getUserScheduledExports = async (req: AuthenticatedRequest, res: Re
     const userId = req.user.id;
     const schedules = await exportService.getUserScheduledExports(userId);
     res.json(schedules);
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(res, error);
   }
 };
@@ -109,7 +109,7 @@ export async function exportActivityData(req: AuthenticatedRequest, res: Respons
     res.setHeader('Content-Type', getContentType(format));
     res.setHeader('Content-Disposition', `attachment; filename=activity-export.${format}`);
     res.send(exportData);
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Error exporting activity data:', error);
     handleError(res, error);
   }

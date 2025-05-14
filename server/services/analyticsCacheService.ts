@@ -47,7 +47,7 @@ export class AnalyticsCacheService {
     }
   }
 
-  public async set(key: string, value: any, ttl?: number): Promise<void> {
+  public async set(key: string, value: unknown, ttl?: number): Promise<void> {
     try {
       const serializedValue = JSON.stringify(value);
       await this.redis.setex(

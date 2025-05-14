@@ -12,7 +12,7 @@ interface ReportMetric {
 interface ReportFilter {
   field: string;
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'between';
-  value: any;
+  value: unknown; // TODO: Refine type if possible
 }
 
 interface CustomReport {
@@ -37,94 +37,36 @@ export class CustomReportService {
     this.prisma = new PrismaClient();
   }
 
-  async createReport(report: Omit<CustomReport, 'id' | 'createdAt' | 'updatedAt'>): Promise<CustomReport> {
-    try {
-      const createdReport = await this.prisma.customReport.create({
-        data: {
-          name: report.name,
-          description: report.description,
-          metrics: report.metrics,
-          filters: report.filters,
-          timeRange: report.timeRange,
-          createdBy: report.createdBy
-        }
-      });
-
-      return createdReport;
-    } catch (error) {
-      logger.error('Error creating custom report:', error);
-      throw error;
-    }
+  async createReport(): Promise<CustomReport> {
+    throw new Error("CustomReport model is not implemented in Prisma schema. See TODO in customReportService.ts");
   }
 
-  async getReport(reportId: string): Promise<CustomReport | null> {
-    try {
-      const report = await this.prisma.customReport.findUnique({
-        where: { id: reportId }
-      });
-
-      return report;
-    } catch (error) {
-      logger.error('Error getting custom report:', error);
-      throw error;
-    }
+  async getReport(): Promise<CustomReport | null> {
+    throw new Error("CustomReport model is not implemented in Prisma schema. See TODO in customReportService.ts");
   }
 
-  async getUserReports(userId: string): Promise<CustomReport[]> {
-    try {
-      const reports = await this.prisma.customReport.findMany({
-        where: { createdBy: userId },
-        orderBy: { updatedAt: 'desc' }
-      });
-
-      return reports;
-    } catch (error) {
-      logger.error('Error getting user reports:', error);
-      throw error;
-    }
+  async getUserReports(): Promise<CustomReport[]> {
+    throw new Error("CustomReport model is not implemented in Prisma schema. See TODO in customReportService.ts");
   }
 
-  async updateReport(reportId: string, updates: Partial<CustomReport>): Promise<CustomReport> {
-    try {
-      const updatedReport = await this.prisma.customReport.update({
-        where: { id: reportId },
-        data: {
-          name: updates.name,
-          description: updates.description,
-          metrics: updates.metrics,
-          filters: updates.filters,
-          timeRange: updates.timeRange
-        }
-      });
-
-      return updatedReport;
-    } catch (error) {
-      logger.error('Error updating custom report:', error);
-      throw error;
-    }
+  async updateReport(): Promise<CustomReport> {
+    throw new Error("CustomReport model is not implemented in Prisma schema. See TODO in customReportService.ts");
   }
 
-  async deleteReport(reportId: string): Promise<void> {
-    try {
-      await this.prisma.customReport.delete({
-        where: { id: reportId }
-      });
-    } catch (error) {
-      logger.error('Error deleting custom report:', error);
-      throw error;
-    }
+  async deleteReport(): Promise<void> {
+    throw new Error("CustomReport model is not implemented in Prisma schema. See TODO in customReportService.ts");
   }
 
-  async executeReport(reportId: string): Promise<any> {
+  async executeReport(): Promise<unknown> {
     try {
-      const report = await this.getReport(reportId);
+      const report = await this.getReport();
       if (!report) {
         throw new Error('Report not found');
       }
 
       // Execute each metric in the report
       const results = await Promise.all(
-        report.metrics.map(metric => this.executeMetric(metric, report.filters, report.timeRange))
+        report.metrics.map(metric => this.executeMetric(metric))
       );
 
       return {
@@ -140,10 +82,10 @@ export class CustomReportService {
   }
 
   private async executeMetric(
-    metric: ReportMetric,
-    filters: ReportFilter[],
-    timeRange: { start: Date; end: Date }
-  ): Promise<any> {
+    metric: ReportMetric
+    // filters: ReportFilter[],
+    // timeRange: { start: Date; end: Date }
+  ): Promise<unknown> {
     // Implementation will depend on the specific metric type and data source
     // This is a placeholder for the actual implementation
     return {

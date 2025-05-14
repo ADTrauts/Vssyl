@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 interface FilterCondition {
   field: string;
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'between' | 'in' | 'notIn';
-  value: any;
+  value: unknown;
 }
 
 interface FilterGroup {
@@ -29,83 +29,29 @@ export class AdvancedFilterService {
     this.prisma = new PrismaClient();
   }
 
-  async createFilter(filter: Omit<AdvancedFilter, 'id' | 'createdAt' | 'updatedAt'>): Promise<AdvancedFilter> {
-    try {
-      const createdFilter = await this.prisma.advancedFilter.create({
-        data: {
-          name: filter.name,
-          description: filter.description,
-          filterGroups: filter.filterGroups,
-          createdBy: filter.createdBy
-        }
-      });
-
-      return createdFilter;
-    } catch (error) {
-      logger.error('Error creating advanced filter:', error);
-      throw error;
-    }
+  async createFilter(): Promise<AdvancedFilter> {
+    throw new Error("advancedFilter model is not implemented in Prisma schema. See TODO in advancedFilterService.ts");
   }
 
-  async getFilter(filterId: string): Promise<AdvancedFilter | null> {
-    try {
-      const filter = await this.prisma.advancedFilter.findUnique({
-        where: { id: filterId }
-      });
-
-      return filter;
-    } catch (error) {
-      logger.error('Error getting advanced filter:', error);
-      throw error;
-    }
+  async getFilter(): Promise<AdvancedFilter | null> {
+    throw new Error("advancedFilter model is not implemented in Prisma schema. See TODO in advancedFilterService.ts");
   }
 
-  async getUserFilters(userId: string): Promise<AdvancedFilter[]> {
-    try {
-      const filters = await this.prisma.advancedFilter.findMany({
-        where: { createdBy: userId },
-        orderBy: { updatedAt: 'desc' }
-      });
-
-      return filters;
-    } catch (error) {
-      logger.error('Error getting user filters:', error);
-      throw error;
-    }
+  async getUserFilters(): Promise<AdvancedFilter[]> {
+    throw new Error("advancedFilter model is not implemented in Prisma schema. See TODO in advancedFilterService.ts");
   }
 
-  async updateFilter(filterId: string, updates: Partial<AdvancedFilter>): Promise<AdvancedFilter> {
-    try {
-      const updatedFilter = await this.prisma.advancedFilter.update({
-        where: { id: filterId },
-        data: {
-          name: updates.name,
-          description: updates.description,
-          filterGroups: updates.filterGroups
-        }
-      });
-
-      return updatedFilter;
-    } catch (error) {
-      logger.error('Error updating advanced filter:', error);
-      throw error;
-    }
+  async updateFilter(): Promise<AdvancedFilter> {
+    throw new Error("advancedFilter model is not implemented in Prisma schema. See TODO in advancedFilterService.ts");
   }
 
-  async deleteFilter(filterId: string): Promise<void> {
-    try {
-      await this.prisma.advancedFilter.delete({
-        where: { id: filterId }
-      });
-    } catch (error) {
-      logger.error('Error deleting advanced filter:', error);
-      throw error;
-    }
+  async deleteFilter(): Promise<void> {
+    throw new Error("advancedFilter model is not implemented in Prisma schema. See TODO in advancedFilterService.ts");
   }
 
-  async applyFilter(filterId: string, data: any[]): Promise<any[]> {
+  async applyFilter(filterId: string, data: unknown[]): Promise<unknown[]> {
     try {
-      const filter = await this.getFilter(filterId);
+      const filter = await this.getFilter();
       if (!filter) {
         throw new Error('Filter not found');
       }
@@ -117,11 +63,11 @@ export class AdvancedFilterService {
     }
   }
 
-  private filterData(data: any[], filterGroups: FilterGroup[]): any[] {
+  private filterData(data: unknown[], filterGroups: FilterGroup[]): unknown[] {
     return data.filter(item => {
       return filterGroups.every(group => {
         const groupResults = group.conditions.map(condition => {
-          return this.evaluateCondition(item, condition);
+          return this.evaluateCondition(item as Record<string, unknown>, condition);
         });
 
         return group.operator === 'AND'
@@ -131,20 +77,28 @@ export class AdvancedFilterService {
     });
   }
 
-  private evaluateCondition(item: any, condition: FilterCondition): boolean {
+  private evaluateCondition(item: Record<string, unknown>, condition: FilterCondition): boolean {
     const value = item[condition.field];
     
     switch (condition.operator) {
       case 'equals':
         return value === condition.value;
       case 'contains':
-        return value?.toString().toLowerCase().includes(condition.value?.toString().toLowerCase());
+        return (
+          typeof value === 'string' &&
+          typeof condition.value === 'string' &&
+          value.toLowerCase().includes(condition.value.toLowerCase())
+        );
       case 'greaterThan':
-        return value > condition.value;
+        return (value as number) > (condition.value as number);
       case 'lessThan':
-        return value < condition.value;
+        return (value as number) < (condition.value as number);
       case 'between':
-        return value >= condition.value[0] && value <= condition.value[1];
+        return (
+          Array.isArray(condition.value) &&
+          (value as number) >= (condition.value[0] as number) &&
+          (value as number) <= (condition.value[1] as number)
+        );
       case 'in':
         return Array.isArray(condition.value) && condition.value.includes(value);
       case 'notIn':

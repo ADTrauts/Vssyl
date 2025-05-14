@@ -1,6 +1,5 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { logger } from '../utils/logger';
-import { Thread, ThreadMessage, User, ThreadReaction } from '@prisma/client';
 
 interface AnalyticsWebSocketClient {
   ws: WebSocket;
@@ -23,7 +22,7 @@ interface AnalyticsWebSocketMessage {
 
 interface AnalyticsWebSocketResponse {
   type: 'thread_analytics' | 'user_analytics' | 'tag_analytics' | 'error' | 'auth_required' | 'auth_success';
-  data: any;
+  data: unknown;
 }
 
 export class AnalyticsWebSocketService {
@@ -41,9 +40,10 @@ export class AnalyticsWebSocketService {
     return AnalyticsWebSocketService.instance;
   }
 
-  public async initialize(server: any): Promise<void> {
+  public async initialize(server: unknown): Promise<void> {
     try {
-      this.wss = new WebSocketServer({ server });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.wss = new WebSocketServer({ server: server as any });
       this.setupEventListeners();
       this.startPingInterval();
       logger.info('WebSocket server initialized successfully');
@@ -167,7 +167,7 @@ export class AnalyticsWebSocketService {
     }, 30000); // Ping every 30 seconds
   }
 
-  public broadcastThreadAnalytics(threadId: string, analytics: any): void {
+  public broadcastThreadAnalytics(threadId: string, analytics: unknown): void {
     this.clients.forEach((client) => {
       if (client.subscriptions.threads.has(threadId)) {
         this.sendMessage(client.ws, {
@@ -178,7 +178,7 @@ export class AnalyticsWebSocketService {
     });
   }
 
-  public broadcastUserAnalytics(userId: string, analytics: any): void {
+  public broadcastUserAnalytics(userId: string, analytics: unknown): void {
     this.clients.forEach((client) => {
       if (client.subscriptions.users.has(userId)) {
         this.sendMessage(client.ws, {
@@ -189,7 +189,7 @@ export class AnalyticsWebSocketService {
     });
   }
 
-  public broadcastTagAnalytics(tagId: string, analytics: any): void {
+  public broadcastTagAnalytics(tagId: string, analytics: unknown): void {
     this.clients.forEach((client) => {
       if (client.subscriptions.tags.has(tagId)) {
         this.sendMessage(client.ws, {

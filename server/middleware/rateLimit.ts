@@ -143,7 +143,7 @@ redis.on('error', (error) => {
 
 // Error handler for rate limit exceeded
 export const rateLimitErrorHandler = (
-  err: any,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction

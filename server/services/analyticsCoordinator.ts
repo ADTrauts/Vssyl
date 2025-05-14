@@ -1,4 +1,4 @@
-import { PrismaClient, Thread, ThreadMessage, User, ThreadReaction, ThreadView } from '@prisma/client';
+import { PrismaClient, Thread, ThreadMessage, User, ThreadReaction } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { AnalyticsService } from './analyticsService';
 import { AnalyticsAggregationService } from './analyticsAggregationService';
@@ -39,7 +39,7 @@ export class AnalyticsCoordinator {
       ttl: config.cacheTTL,
       prefix: 'coordinator:'
     });
-    this.webSocketService = new AnalyticsWebSocketService();
+    this.webSocketService = AnalyticsWebSocketService.getInstance();
     this.advancedAnalyticsService = AdvancedAnalyticsService.getInstance();
   }
 
@@ -63,7 +63,7 @@ export class AnalyticsCoordinator {
       // Start background jobs
       await this.startAggregationJob();
       await this.startBatchProcessingJob();
-      await this.webSocketService.initialize();
+      await this.webSocketService.initialize(undefined); // TODO: Pass actual server instance in production
 
       this.isInitialized = true;
       logger.info('AnalyticsCoordinator initialized successfully');
@@ -107,7 +107,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getThreadAnalytics(threadId: string): Promise<any> {
+  public async getThreadAnalytics(threadId: string): Promise<unknown> {
     const cacheKey = `thread:${threadId}`;
     const cachedData = await this.cache.get(cacheKey);
     
@@ -129,7 +129,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getUserAnalytics(userId: string): Promise<any> {
+  public async getUserAnalytics(userId: string): Promise<unknown> {
     const cacheKey = `user:${userId}`;
     const cachedData = await this.cache.get(cacheKey);
     
@@ -151,7 +151,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getAggregatedMetrics(): Promise<any> {
+  public async getAggregatedMetrics(): Promise<unknown> {
     const cacheKey = 'aggregated_metrics';
     const cachedData = await this.cache.get(cacheKey);
     
@@ -322,7 +322,7 @@ export class AnalyticsCoordinator {
   }
 
   // View event handlers
-  public async handleViewCreated(view: ThreadView): Promise<void> {
+  public async handleViewCreated(view: { threadId: string; id: string }): Promise<void> {
     try {
       const threadAnalytics = await this.analyticsService.getThreadAnalytics(view.threadId);
       await this.cache.set(`thread:${view.threadId}`, threadAnalytics);
@@ -332,7 +332,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getAdvancedUserAnalytics(userId: string): Promise<any> {
+  public async getAdvancedUserAnalytics(userId: string): Promise<unknown> {
     const cacheKey = `advanced_user:${userId}`;
     const cachedData = await this.cache.get(cacheKey);
     
@@ -350,7 +350,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getAdvancedThreadAnalytics(threadId: string): Promise<any> {
+  public async getAdvancedThreadAnalytics(threadId: string): Promise<unknown> {
     const cacheKey = `advanced_thread:${threadId}`;
     const cachedData = await this.cache.get(cacheKey);
     
@@ -368,7 +368,7 @@ export class AnalyticsCoordinator {
     }
   }
 
-  public async getAdvancedTagAnalytics(tagId: string): Promise<any> {
+  public async getAdvancedTagAnalytics(tagId: string): Promise<unknown> {
     const cacheKey = `advanced_tag:${tagId}`;
     const cachedData = await this.cache.get(cacheKey);
     

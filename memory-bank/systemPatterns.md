@@ -356,3 +356,22 @@ Personal      Team View Quick     Quick Access
   - Uses BreadcrumbFolder type
   - Type-safe path prop
   - Validates breadcrumb items
+
+## [2024-06-13] File Access Control Pattern (Prisma)
+
+- **Ownership:**
+  - To check if a user owns a file: `file.ownerId === req.user.id`
+- **Shared Access:**
+  - To check if a user has shared access, query the `AccessControl` model:
+    ```ts
+    const access = await prisma.accessControl.findFirst({
+      where: {
+        fileId,
+        userId: req.user.id,
+        access: { in: ['READ', 'WRITE'] },
+      },
+    });
+    if (!access) return res.status(403).json({ error: 'Access denied' });
+    ```
+- **Do NOT use `file.access` or `FileAccess`**; these are not valid in the Prisma schema.
+- Add a TODO in code where shared access logic is needed but not yet implemented.

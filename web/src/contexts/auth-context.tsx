@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -40,7 +41,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (status === 'loading') {
       setLoading(true);
     } else if (status === 'authenticated' && session?.user) {
-      setUser(session.user as User);
+      // If session.user is missing createdAt/updatedAt, provide fallback values
+      const sUser = session.user as Partial<User>;
+      if (sUser.id && sUser.name && sUser.email) {
+        setUser({
+          id: sUser.id,
+          name: sUser.name,
+          email: sUser.email,
+          avatar: sUser.avatar ?? '',
+          createdAt: sUser.createdAt || '',
+          updatedAt: sUser.updatedAt || '',
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     } else {
       setUser(null);

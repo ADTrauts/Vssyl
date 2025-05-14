@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Thread, ThreadFilter, ThreadTemplate, ThreadStats, ThreadSearchResult } from '@/types/thread';
+import type { Thread, ThreadFilter, ThreadTemplate, ThreadStats, ThreadSearchResult } from '@/types/thread';
 
 interface ThreadOrganizationContextType {
   // Thread filtering and search
@@ -65,7 +65,7 @@ export const ThreadOrganizationProvider: React.FC<ThreadOrganizationProviderProp
   }, []);
 
   const clearSearch = useCallback(() => {
-    setActiveFilter(prev => ({ ...prev, search: undefined }));
+    setActiveFilter(prev => ({ ...prev, search: '' }));
   }, []);
 
   const createTemplate = useCallback(async (template: Omit<ThreadTemplate, 'id' | 'createdAt' | 'updatedAt'>) => {

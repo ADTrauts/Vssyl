@@ -1,4 +1,4 @@
-import { PrismaClient, Thread, ThreadAnalytics, ThreadActivity, ThreadMessage, ThreadParticipant } from '@prisma/client';
+import { PrismaClient, Thread, ThreadAnalytics, ThreadMessage, ThreadParticipant } from '@prisma/client';
 import { logger } from '../utils/logger';
 import { AnalyticsCacheService } from './analyticsCacheService';
 
@@ -13,6 +13,15 @@ interface ThreadWithRelations extends Thread {
   messages: ThreadMessage[];
   participants: ThreadParticipant[];
 }
+
+export type ThreadAnalyticsSummary = {
+  engagementScore: number;
+  viewCount: number;
+  replyCount: number;
+  reactionCount: number;
+  lastActivity: Date;
+  participantCount: number;
+};
 
 export class AnalyticsBatchService {
   private prisma: PrismaClient;
@@ -101,15 +110,17 @@ export class AnalyticsBatchService {
         where: { threadId: thread.id },
         create: {
           threadId: thread.id,
+          engagementScore: engagementScore,
+          messageCount: thread.messages.length,
           viewCount: activityMetrics.viewCount,
-          replyCount: activityMetrics.replyCount,
           reactionCount: activityMetrics.reactionCount,
           participantCount: participantMetrics.participantCount,
           lastActivity: activityMetrics.lastActivity
         },
         update: {
+          engagementScore: engagementScore,
+          messageCount: thread.messages.length,
           viewCount: activityMetrics.viewCount,
-          replyCount: activityMetrics.replyCount,
           reactionCount: activityMetrics.reactionCount,
           participantCount: participantMetrics.participantCount,
           lastActivity: activityMetrics.lastActivity
@@ -162,15 +173,12 @@ export class AnalyticsBatchService {
   private calculateParticipantMetrics(thread: ThreadWithRelations) {
     return {
       participantCount: thread.participants.length,
-      activeParticipantCount: thread.participants.filter(p => 
-        p.isFollowing
-      ).length
     };
   }
 
-  public async getThreadAnalytics(threadId: string): Promise<any> {
+  public async getThreadAnalytics(threadId: string): Promise<ThreadAnalyticsSummary> {
     const cacheKey = `thread:${threadId}`;
-    const cachedData = await this.cache.get(cacheKey);
+    const cachedData = await this.cache.get<ThreadAnalyticsSummary>(cacheKey);
     
     if (cachedData) {
       return cachedData;

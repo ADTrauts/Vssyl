@@ -1,3 +1,5 @@
+[![Lint](https://github.com/andrewtrautman/block-on-block/actions/workflows/lint.yml/badge.svg)](https://github.com/andrewtrautman/block-on-block/actions/workflows/lint.yml)
+
 # Block on Block - Modern File Storage & Sharing
 
 A robust Google Drive-like application with real-time collaboration features, file versioning, user permissions, and public sharing.

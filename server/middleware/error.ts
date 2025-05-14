@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger';
@@ -17,8 +17,7 @@ export class AppError extends Error {
 export const errorHandler = (
   err: Error,
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   logger.error('Error:', {
     error: err,
@@ -85,7 +84,7 @@ export const errorHandler = (
   }
 
   // Default error
-  const statusCode = (err as any).statusCode || 500;
+  const statusCode = (err as unknown as { statusCode?: number })?.statusCode || 500;
   const message = err.message || 'Internal server error';
 
   res.status(statusCode).json({

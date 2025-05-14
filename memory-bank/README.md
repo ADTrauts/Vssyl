@@ -72,3 +72,23 @@ The memory bank is the single source of truth for project context, requirements,
 - systemPatterns.md
 - techContext.md
 - testingStrategy.md
+
+## Memory Bank File Index (Required Reading)
+- activeContext.md
+- apiDocumentation.md
+- compliance.md
+- contributorGuide.md
+- databaseContext.md
+- deployment.md
+- designPatterns.md
+- futureIdeas.md
+- lintingAndCodeQuality.md
+- moduleSpecs.md
+- permissionsModel.md
+- productContext.md
+- progress.md
+- projectbrief.md
+- README.md
+- systemPatterns.md
+- techContext.md
+- testingStrategy.md

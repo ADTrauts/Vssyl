@@ -1,18 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useRef, useCallback } from 'react';
-import { Message, Thread, ExtendedChatState, ChatEvent, Conversation, MessageStatusType, ChatFile, ChatContextType, ChatAction } from '@/types/chat';
-import { OnlineStatusType } from '@/components/chat/OnlineStatus';
+import type { Message, Thread, ExtendedChatState, ChatContextType, ChatAction } from '@/types/chat';
+import type { OnlineStatusType } from '@/components/chat/OnlineStatus';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
 import { useSocket } from '@/hooks/useSocket';
 import { useFileManager } from '@/lib/file-manager';
-
-interface ReadReceipt {
-  name: string;
-  avatar: string;
-  timestamp: string;
-}
 
 const initialState: ExtendedChatState = {
   messages: [],
@@ -135,7 +129,12 @@ export const useChatContext = () => {
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeWorkspace: workspace } = useWorkspace();
   const { toast } = useToast();
-  const socket = useSocket();
+  // TODO: Replace with actual WebSocket server URL and auth token from environment/session
+  const socket = useSocket({
+    url: process.env.NEXT_PUBLIC_SOCKET_URL || 'ws://localhost:3001',
+    auth: { token: 'TODO_REPLACE_WITH_AUTH_TOKEN' },
+    options: {},
+  });
   const fileManager = useFileManager();
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
@@ -153,8 +152,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           conversationId: data.conversationId,
           sender: data.sender,
           createdAt: new Date().toISOString(),
-          status: 'received'
-        }
+          status: 'received',
+          type: 'text', // or appropriate default type for Message
+        } as Message
       });
     };
 
@@ -179,21 +179,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     };
 
-    socket.on('chat:message', handleMessage);
-    socket.on('chat:typing', handleTyping);
-    socket.on('chat:presence', handlePresence);
-    socket.on('chat:error', handleError);
+    const realSocket = (socket as any)?.socket ?? socket;
+    realSocket.on('chat:message', handleMessage);
+    realSocket.on('chat:typing', handleTyping);
+    realSocket.on('chat:presence', handlePresence);
+    realSocket.on('chat:error', handleError);
 
     return () => {
-      socket.off('chat:message', handleMessage);
-      socket.off('chat:typing', handleTyping);
-      socket.off('chat:presence', handlePresence);
-      socket.off('chat:error', handleError);
+      realSocket.off('chat:message', handleMessage);
+      realSocket.off('chat:typing', handleTyping);
+      realSocket.off('chat:presence', handlePresence);
+      realSocket.off('chat:error', handleError);
     };
   }, [socket, toast]);
 
   const sendMessage = useCallback(async (content: string, files?: File[]) => {
     if (!socket || !state.activeConversation?.id) return;
+    const realSocket = (socket as any)?.socket ?? socket;
 
     const messageId = Date.now().toString();
     const message: Message = {
@@ -202,6 +204,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       conversationId: state.activeConversation.id,
       createdAt: new Date().toISOString(),
       status: 'sending',
+      type: 'text', // or appropriate default type for Message
       sender: {
         id: 'current-user', // Will be replaced by server
         name: 'Current User', // Will be replaced by server
@@ -213,7 +216,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // Send to server
-      socket.emit('chat:message', {
+      realSocket.emit('chat:message', {
         conversationId: state.activeConversation.id,
         content
       });
@@ -239,6 +242,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setTyping = useCallback((isTyping: boolean) => {
     if (!socket || !state.activeConversation?.id) return;
+    const realSocket = (socket as any)?.socket ?? socket;
 
     const conversationId = state.activeConversation.id;
     const timeoutKey = `typing:${conversationId}`;
@@ -247,7 +251,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearTimeout(typingTimeoutRef.current[timeoutKey]);
     }
 
-    socket.emit('chat:typing', {
+    realSocket.emit('chat:typing', {
       conversationId,
       isTyping
     });
@@ -318,12 +322,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!workspace || !state.hasMoreMessages || !state.activeConversation?.id) return;
 
     try {
+      const params = new URLSearchParams({
+        cursor: state.messages[0]?.id || '',
+        limit: state.pageSize.toString(),
+      });
       const response = await fetch(
-        `/api/workspaces/${workspace.id}/conversations/${state.activeConversation.id}/messages?` +
-          new URLSearchParams({
-            cursor: state.messages[0]?.id,
-            limit: state.pageSize.toString(),
-          })
+        `/api/workspaces/${workspace.id}/conversations/${state.activeConversation?.id}/messages?${params}`
       );
 
       if (!response.ok) {
