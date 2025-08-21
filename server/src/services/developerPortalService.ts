@@ -1,0 +1,305 @@
+import { PrismaClient } from '@prisma/client';
+import Stripe from 'stripe';
+
+const prisma = new PrismaClient();
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2025-07-30.basil',
+}) : null;
+
+export interface DeveloperStats {
+  totalRevenue: number;
+  totalPayouts: number;
+  pendingPayouts: number;
+  activeSubscriptions: number;
+  totalDownloads: number;
+  averageRating: number;
+}
+
+export interface ModuleRevenue {
+  moduleId: string;
+  moduleName: string;
+  totalRevenue: number;
+  activeSubscriptions: number;
+  monthlyRecurringRevenue: number;
+  lifetimeValue: number;
+}
+
+export interface PayoutRequest {
+  developerId: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+export class DeveloperPortalService {
+  /**
+   * Get developer statistics
+   */
+  static async getDeveloperStats(developerId: string, businessId?: string): Promise<DeveloperStats> {
+    const modules = await prisma.module.findMany({
+      where: { 
+        developerId,
+        ...(businessId ? { businessId } : {}),
+      },
+      include: {
+        subscriptions: {
+          where: { status: 'active' },
+        },
+        developerRevenue: true,
+      },
+    });
+
+    const totalRevenue = modules.reduce((sum, module) => {
+      return sum + module.developerRevenue.reduce((moduleSum, revenue) => {
+        return moduleSum + revenue.developerRevenue;
+      }, 0);
+    }, 0);
+
+    const totalPayouts = modules.reduce((sum, module) => {
+      return sum + module.developerRevenue
+        .filter(revenue => revenue.payoutStatus === 'paid')
+        .reduce((moduleSum, revenue) => {
+          return moduleSum + revenue.developerRevenue;
+        }, 0);
+    }, 0);
+
+    const pendingPayouts = modules.reduce((sum, module) => {
+      return sum + module.developerRevenue
+        .filter(revenue => revenue.payoutStatus === 'pending')
+        .reduce((moduleSum, revenue) => {
+          return moduleSum + revenue.developerRevenue;
+        }, 0);
+    }, 0);
+
+    const activeSubscriptions = modules.reduce((sum, module) => {
+      return sum + module.subscriptions.length;
+    }, 0);
+
+    const totalDownloads = modules.reduce((sum, module) => {
+      return sum + module.downloads;
+    }, 0);
+
+    const averageRating = modules.length > 0 
+      ? modules.reduce((sum, module) => sum + module.rating, 0) / modules.length
+      : 0;
+
+    return {
+      totalRevenue,
+      totalPayouts,
+      pendingPayouts,
+      activeSubscriptions,
+      totalDownloads,
+      averageRating,
+    };
+  }
+
+  /**
+   * Get module revenue breakdown
+   */
+  static async getModuleRevenue(developerId: string, businessId?: string): Promise<ModuleRevenue[]> {
+    const modules = await prisma.module.findMany({
+      where: { 
+        developerId,
+        ...(businessId ? { businessId } : {}),
+      },
+      include: {
+        subscriptions: {
+          where: { status: 'active' },
+        },
+        developerRevenue: true,
+      },
+    });
+
+    return modules.map(module => {
+      const totalRevenue = module.developerRevenue.reduce((sum, revenue) => {
+        return sum + revenue.developerRevenue;
+      }, 0);
+
+      const monthlyRecurringRevenue = module.subscriptions.reduce((sum, subscription) => {
+        return sum + (subscription.amount * module.revenueSplit);
+      }, 0);
+
+      const lifetimeValue = totalRevenue + monthlyRecurringRevenue;
+
+      return {
+        moduleId: module.id,
+        moduleName: module.name,
+        totalRevenue,
+        activeSubscriptions: module.subscriptions.length,
+        monthlyRecurringRevenue,
+        lifetimeValue,
+      };
+    });
+  }
+
+  /**
+   * Request payout for developer
+   */
+  static async requestPayout(developerId: string, amount: number): Promise<PayoutRequest> {
+    // Check if developer has sufficient pending revenue
+    const pendingRevenue = await this.getDeveloperStats(developerId);
+    
+    if (pendingRevenue.pendingPayouts < amount) {
+      throw new Error('Insufficient pending revenue for payout');
+    }
+
+    // Create payout record
+    const payout = await prisma.developerRevenue.create({
+      data: {
+        developerId,
+        moduleId: 'payout', // Special identifier for payouts
+        periodStart: new Date(),
+        periodEnd: new Date(),
+        totalRevenue: 0,
+        platformRevenue: 0,
+        developerRevenue: amount,
+        payoutStatus: 'pending',
+      },
+    });
+
+    // If Stripe is configured, create transfer
+    if (stripe) {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: developerId },
+        });
+
+        // For now, just mark as pending since we don't have stripeCustomerId
+        // In a real implementation, you would need to set up Stripe Connect
+        // or use a different payout method
+        console.log(`Payout requested for developer ${developerId}: $${amount}`);
+        
+        // Update payout status to processing
+        await prisma.developerRevenue.update({
+          where: { id: payout.id },
+          data: {
+            payoutStatus: 'pending', // Keep as pending for manual processing
+          },
+        });
+      } catch (error) {
+        console.error('Payout processing failed:', error);
+        // Keep payout as pending for manual processing
+      }
+    }
+
+    return {
+      developerId,
+      amount,
+      currency: 'USD',
+      status: 'pending',
+    };
+  }
+
+  /**
+   * Get payout history
+   */
+  static async getPayoutHistory(developerId: string): Promise<any[]> {
+    const payouts = await prisma.developerRevenue.findMany({
+      where: {
+        developerId,
+        moduleId: 'payout',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return payouts.map(payout => ({
+      id: payout.id,
+      amount: payout.developerRevenue,
+      status: payout.payoutStatus,
+      date: payout.payoutDate || payout.createdAt,
+    }));
+  }
+
+  /**
+   * Get module analytics
+   */
+  static async getModuleAnalytics(moduleId: string): Promise<any> {
+    const module = await prisma.module.findUnique({
+      where: { id: moduleId },
+      include: {
+        subscriptions: {
+          include: { user: true },
+        },
+        installations: {
+          include: { user: true },
+        },
+        moduleReviews: {
+          include: { reviewer: true },
+        },
+        developerRevenue: true,
+      },
+    });
+
+    if (!module) {
+      throw new Error('Module not found');
+    }
+
+    const monthlyRevenue = module.developerRevenue.reduce((sum: number, revenue: any) => {
+      return sum + revenue.developerRevenue;
+    }, 0);
+
+    const activeSubscriptions = module.subscriptions.filter((sub: any) => sub.status === 'active');
+    const totalInstallations = module.installations.length;
+    const averageRating = module.moduleReviews.length > 0 
+      ? module.moduleReviews.reduce((sum: number, review: any) => sum + review.rating, 0) / module.moduleReviews.length
+      : 0;
+
+    return {
+      moduleId: module.id,
+      moduleName: module.name,
+      monthlyRevenue,
+      activeSubscriptions: activeSubscriptions.length,
+      totalInstallations,
+      averageRating,
+      totalReviews: module.moduleReviews.length,
+      revenueHistory: module.developerRevenue.map((revenue: any) => ({
+        period: revenue.periodStart,
+        amount: revenue.developerRevenue,
+        status: revenue.payoutStatus,
+      })),
+      subscriptionHistory: module.subscriptions.map((sub: any) => ({
+        userId: sub.userId,
+        userName: sub.user.name,
+        status: sub.status,
+        createdAt: sub.createdAt,
+      })),
+    };
+  }
+
+  /**
+   * Update module pricing
+   */
+  static async updateModulePricing(
+    moduleId: string, 
+    basePrice: number, 
+    enterprisePrice?: number
+  ): Promise<any> {
+    const module = await prisma.module.update({
+      where: { id: moduleId },
+      data: {
+        basePrice,
+        enterprisePrice,
+        pricingTier: basePrice > 0 ? 'premium' : 'free',
+      },
+    });
+
+    return module;
+  }
+
+  /**
+   * Get developer dashboard data
+   */
+  static async getDeveloperDashboard(developerId: string, businessId?: string): Promise<any> {
+    const [stats, moduleRevenue, payoutHistory] = await Promise.all([
+      this.getDeveloperStats(developerId, businessId),
+      this.getModuleRevenue(developerId, businessId),
+      this.getPayoutHistory(developerId),
+    ]);
+
+    return {
+      stats,
+      moduleRevenue,
+      payoutHistory,
+    };
+  }
+} 

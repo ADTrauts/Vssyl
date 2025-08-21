@@ -1,0 +1,666 @@
+import { PrismaClient } from '@prisma/client';
+import { EmployeePosition, Position, User, Business } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export interface AssignEmployeeData {
+  userId: string;
+  positionId: string;
+  businessId: string;
+  assignedById: string;
+  startDate: Date;
+  endDate?: Date;
+  customPermissions?: any[];
+}
+
+export interface EmployeePositionData {
+  id: string;
+  userId: string;
+  positionId: string;
+  businessId: string;
+  assignedAt: Date;
+  assignedBy: string;
+  startDate: Date;
+  endDate?: Date;
+  active: boolean;
+  customPermissions?: any[];
+  position: Position;
+  user: User;
+}
+
+export interface BusinessEmployeeSummary {
+  totalEmployees: number;
+  activeEmployees: number;
+  positionsWithEmployees: number;
+  totalPositions: number;
+  departmentDistribution: Record<string, number>;
+  tierDistribution: Record<string, number>;
+}
+
+export class EmployeeManagementService {
+  /**
+   * Assign an employee to a position
+   */
+  async assignEmployeeToPosition(data: AssignEmployeeData): Promise<EmployeePosition> {
+    // Check if position exists and has capacity
+    const position = await prisma.position.findUnique({
+      where: { id: data.positionId },
+      include: {
+        employeePositions: {
+          where: { active: true },
+        },
+      },
+    });
+
+    if (!position) {
+      throw new Error('Position not found');
+    }
+
+    if (position.employeePositions.length >= position.maxOccupants) {
+      throw new Error(`Position ${position.title} is at maximum capacity`);
+    }
+
+    // Check if user is already assigned to this position
+    const existingAssignment = await prisma.employeePosition.findFirst({
+      where: {
+        userId: data.userId,
+        positionId: data.positionId,
+        businessId: data.businessId,
+        active: true,
+      },
+    });
+
+    if (existingAssignment) {
+      throw new Error('User is already assigned to this position');
+    }
+
+    // Create the assignment
+    return await prisma.employeePosition.create({
+      data: {
+        userId: data.userId,
+        positionId: data.positionId,
+        businessId: data.businessId,
+        assignedById: data.assignedById,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        customPermissions: data.customPermissions,
+        active: true,
+      },
+      include: {
+        position: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Remove an employee from a position
+   */
+  async removeEmployeeFromPosition(
+    userId: string,
+    positionId: string,
+    businessId: string
+  ): Promise<void> {
+    await prisma.employeePosition.updateMany({
+      where: {
+        userId,
+        positionId,
+        businessId,
+        active: true,
+      },
+      data: {
+        active: false,
+        endDate: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Transfer an employee to a different position
+   */
+  async transferEmployee(
+    userId: string,
+    fromPositionId: string,
+    toPositionId: string,
+    businessId: string,
+    transferredById: string,
+    effectiveDate: Date = new Date()
+  ): Promise<EmployeePosition> {
+    // Remove from current position
+    await this.removeEmployeeFromPosition(userId, fromPositionId, businessId);
+
+    // Assign to new position
+    return await this.assignEmployeeToPosition({
+      userId,
+      positionId: toPositionId,
+      businessId,
+      assignedById: transferredById,
+      startDate: effectiveDate,
+    });
+  }
+
+  /**
+   * Get all employees for a business
+   */
+  async getBusinessEmployees(businessId: string): Promise<EmployeePositionData[]> {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: { businessId, active: true },
+      include: {
+        position: {
+          include: {
+            tier: true,
+            department: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: [
+        { position: { tier: { level: 'asc' } } },
+        { position: { title: 'asc' } },
+        { user: { name: 'asc' } },
+      ],
+    });
+
+    return employeePositions.map(ep => ({
+      id: ep.id,
+      userId: ep.userId,
+      positionId: ep.positionId,
+      businessId: ep.businessId,
+      assignedAt: ep.assignedAt,
+      assignedBy: ep.assignedById,
+      startDate: ep.startDate,
+      endDate: ep.endDate || undefined,
+      active: ep.active,
+      customPermissions: ep.customPermissions as any,
+      position: ep.position,
+      user: ep.user,
+    })) as any;
+  }
+
+  /**
+   * Get employees by department
+   */
+  async getEmployeesByDepartment(businessId: string, departmentId: string): Promise<EmployeePositionData[]> {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: {
+        businessId,
+        active: true,
+        position: {
+          departmentId,
+        },
+      },
+      include: {
+        position: {
+          include: {
+            tier: true,
+            department: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: [
+        { position: { tier: { level: 'asc' } } },
+        { position: { title: 'asc' } },
+        { user: { name: 'asc' } },
+      ],
+    });
+
+    return employeePositions.map(ep => ({
+      id: ep.id,
+      userId: ep.userId,
+      positionId: ep.positionId,
+      businessId: ep.businessId,
+      assignedAt: ep.assignedAt,
+      assignedBy: ep.assignedById,
+      startDate: ep.startDate,
+      endDate: ep.endDate || undefined,
+      active: ep.active,
+      customPermissions: ep.customPermissions as any,
+      position: ep.position,
+      user: ep.user,
+    })) as any;
+  }
+
+  /**
+   * Get employees by organizational tier
+   */
+  async getEmployeesByTier(businessId: string, tierId: string): Promise<EmployeePositionData[]> {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: {
+        businessId,
+        active: true,
+        position: {
+          tierId,
+        },
+      },
+      include: {
+        position: {
+          include: {
+            tier: true,
+            department: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: [
+        { position: { title: 'asc' } },
+        { user: { name: 'asc' } },
+      ],
+    });
+
+    return employeePositions.map(ep => ({
+      id: ep.id,
+      userId: ep.userId,
+      positionId: ep.positionId,
+      businessId: ep.businessId,
+      assignedAt: ep.assignedAt,
+      assignedBy: ep.assignedById,
+      startDate: ep.startDate,
+      endDate: ep.endDate || undefined,
+      active: ep.active,
+      customPermissions: ep.customPermissions as any,
+      position: ep.position,
+      user: ep.user,
+    })) as any;
+  }
+
+  /**
+   * Get employee's current positions
+   */
+  async getEmployeePositions(userId: string, businessId: string): Promise<EmployeePositionData[]> {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: {
+        userId,
+        businessId,
+        active: true,
+      },
+      include: {
+        position: {
+          include: {
+            tier: true,
+            department: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: [
+        { position: { tier: { level: 'asc' } } },
+        { position: { title: 'asc' } },
+      ],
+    });
+
+    return employeePositions.map(ep => ({
+      id: ep.id,
+      userId: ep.userId,
+      positionId: ep.positionId,
+      businessId: ep.businessId,
+      assignedAt: ep.assignedAt,
+      assignedBy: ep.assignedById,
+      startDate: ep.startDate,
+      endDate: ep.endDate || undefined,
+      active: ep.active,
+      customPermissions: ep.customPermissions as any,
+      position: ep.position,
+      user: ep.user,
+    })) as any;
+  }
+
+  /**
+   * Get employee assignment history
+   */
+  async getEmployeeAssignmentHistory(
+    userId: string,
+    businessId: string
+  ): Promise<EmployeePositionData[]> {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: {
+        userId,
+        businessId,
+      },
+      include: {
+        position: {
+          include: {
+            tier: true,
+            department: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: [
+        { startDate: 'desc' },
+        { assignedAt: 'desc' },
+      ],
+    });
+
+    return employeePositions.map(ep => ({
+      id: ep.id,
+      userId: ep.userId,
+      positionId: ep.positionId,
+      businessId: ep.businessId,
+      assignedAt: ep.assignedAt,
+      assignedBy: ep.assignedById,
+      startDate: ep.startDate,
+      endDate: ep.endDate || undefined,
+      active: ep.active,
+      customPermissions: ep.customPermissions as any,
+      position: ep.position,
+      user: ep.user,
+    })) as any;
+  }
+
+  /**
+   * Update employee assignment
+   */
+  async updateEmployeeAssignment(
+    id: string,
+    data: Partial<{
+      startDate: Date;
+      endDate: Date;
+      customPermissions: any[];
+    }>
+  ): Promise<EmployeePosition> {
+    return await prisma.employeePosition.update({
+      where: { id },
+      data,
+      include: {
+        position: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Get business employee summary
+   */
+  async getBusinessEmployeeSummary(businessId: string): Promise<BusinessEmployeeSummary> {
+    const [
+      totalEmployees,
+      activeEmployees,
+      positionsWithEmployees,
+      totalPositions,
+      departmentDistribution,
+      tierDistribution,
+    ] = await Promise.all([
+      prisma.employeePosition.count({ where: { businessId } }),
+      prisma.employeePosition.count({ where: { businessId, active: true } }),
+      prisma.position.count({
+        where: {
+          businessId,
+          employeePositions: {
+            some: { active: true },
+          },
+        },
+      }),
+      prisma.position.count({ where: { businessId } }),
+      this.getDepartmentEmployeeDistribution(businessId),
+      this.getTierEmployeeDistribution(businessId),
+    ]);
+
+    return {
+      totalEmployees,
+      activeEmployees,
+      positionsWithEmployees,
+      totalPositions,
+      departmentDistribution,
+      tierDistribution,
+    };
+  }
+
+  /**
+   * Get department employee distribution
+   */
+  private async getDepartmentEmployeeDistribution(businessId: string): Promise<Record<string, number>> {
+    const distribution = await prisma.employeePosition.groupBy({
+      by: ['positionId'],
+      where: {
+        businessId,
+        active: true,
+        position: {
+          departmentId: { not: null },
+        },
+      },
+      _count: { id: true },
+    });
+
+    const result: Record<string, number> = {};
+    for (const item of distribution) {
+      // Get position details to find department
+      const position = await prisma.position.findUnique({
+        where: { id: item.positionId },
+        include: { department: true },
+      });
+      
+      if (position?.department) {
+        const count = item._count ? (typeof item._count === 'object' ? item._count.id || 0 : item._count) : 0;
+        result[position.department.name] = (result[position.department.name] || 0) + count;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Get tier employee distribution
+   */
+  private async getTierEmployeeDistribution(businessId: string): Promise<Record<string, number>> {
+    const distribution = await prisma.employeePosition.groupBy({
+      by: ['positionId'],
+      where: {
+        businessId,
+        active: true,
+      },
+      _count: { id: true },
+    });
+
+    const result: Record<string, number> = {};
+    for (const item of distribution) {
+      // Get position details to find tier
+      const position = await prisma.position.findUnique({
+        where: { id: item.positionId },
+        include: { tier: true },
+      });
+      
+      if (position?.tier) {
+        const count = item._count ? (typeof item._count === 'object' ? item._count.id || 0 : item._count) : 0;
+        result[position.tier.name] = (result[position.tier.name] || 0) + count;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Bulk assign employees to positions
+   */
+  async bulkAssignEmployees(
+    assignments: Array<{
+      userId: string;
+      positionId: string;
+      businessId: string;
+      assignedById: string;
+      startDate: Date;
+      customPermissions?: any[];
+    }>
+  ): Promise<EmployeePosition[]> {
+    const results: EmployeePosition[] = [];
+
+    for (const assignment of assignments) {
+      try {
+        const result = await this.assignEmployeeToPosition(assignment);
+        results.push(result);
+      } catch (error) {
+        console.error(`Failed to assign employee ${assignment.userId} to position ${assignment.positionId}:`, error);
+        throw error;
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Get vacant positions
+   */
+  async getVacantPositions(businessId: string): Promise<Position[]> {
+    const positions = await prisma.position.findMany({
+      where: {
+        businessId,
+        employeePositions: {
+          none: { active: true },
+        },
+      },
+      include: {
+        tier: true,
+        department: true,
+      },
+      orderBy: [
+        { tier: { level: 'asc' } },
+        { title: 'asc' },
+      ],
+    });
+
+    return positions;
+  }
+
+  /**
+   * Get positions with available capacity
+   */
+  async getPositionsWithCapacity(businessId: string): Promise<Array<Position & { availableSlots: number }>> {
+    const positions = await prisma.position.findMany({
+      where: { businessId },
+      include: {
+        tier: true,
+        department: true,
+        employeePositions: {
+          where: { active: true },
+        },
+      },
+      orderBy: [
+        { tier: { level: 'asc' } },
+        { title: 'asc' },
+      ],
+    });
+
+    return positions.map(position => ({
+      ...position,
+      availableSlots: position.maxOccupants - position.employeePositions.length,
+    }));
+  }
+
+  /**
+   * Validate employee assignment
+   */
+  async validateEmployeeAssignment(
+    userId: string,
+    positionId: string,
+    businessId: string
+  ): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Check if position exists
+    const position = await prisma.position.findUnique({
+      where: { id: positionId },
+      include: {
+        employeePositions: {
+          where: { active: true },
+        },
+      },
+    });
+
+    if (!position) {
+      errors.push('Position not found');
+      return { isValid: false, errors, warnings };
+    }
+
+    // Check if position is in the same business
+    if (position.businessId !== businessId) {
+      errors.push('Position does not belong to the specified business');
+    }
+
+    // Check capacity
+    if (position.employeePositions.length >= position.maxOccupants) {
+      errors.push(`Position ${position.title} is at maximum capacity`);
+    }
+
+    // Check if user is already assigned
+    const existingAssignment = await prisma.employeePosition.findFirst({
+      where: {
+        userId,
+        positionId,
+        businessId,
+        active: true,
+      },
+    });
+
+    if (existingAssignment) {
+      errors.push('User is already assigned to this position');
+    }
+
+    // Check for potential conflicts (e.g., overlapping time periods)
+    const userAssignments = await prisma.employeePosition.findMany({
+      where: {
+        userId,
+        businessId,
+        active: true,
+      },
+    });
+
+    if (userAssignments.length > 0) {
+      warnings.push('User has other active positions in this business');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+    };
+  }
+}
+
+export default new EmployeeManagementService();

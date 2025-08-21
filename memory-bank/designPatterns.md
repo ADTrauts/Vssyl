@@ -40,6 +40,46 @@ Update Rules for designPatterns.md
    - Design components and patterns to be easily extended for new modules, features, or contexts.
    - Document extension points and best practices for customization.
 
+## Core UI Library
+
+The following components form the foundation of our UI/UX across all modules:
+
+- **Button:** Standardized button with variants (primary, secondary, danger, etc.), loading state, and accessibility support.
+- **Toast Notification:** For transient feedback and alerts.
+- **Modal/Dialog:** For focused user interactions and confirmations.
+- **Table/DataGrid:** For displaying tabular data with sorting, filtering, and pagination.
+- **Chart:** For data visualization (bar, line, pie, etc.).
+- **Form Inputs:** Standardized text, select, checkbox, radio, date, and file inputs.
+- **Avatar:** User profile image with fallback and status indicator.
+- **Tabs/Accordion:** For organizing content in panels.
+- **Tooltip/Popover:** For contextual help and actions.
+
+> See the "Examples" section for screenshots and usage patterns.
+
+## Design Tokens & Theming
+
+**Color Palette:**
+
+| Role              | Name           | Hex      | Usage                                 |
+|-------------------|----------------|----------|---------------------------------------|
+| Accent Red        | Coral Red      | #F24E1E  | Warnings, buttons, module highlights  |
+| Primary Green     | Forest Green   | #228B22  | Main brand/nav, active elements       |
+| Highlight Yellow  | Sunflower      | #FFCD1E  | Notifications, callouts, badges       |
+| Secondary Purple  | Orchid Purple  | #A259FF  | Secondary buttons, module accents     |
+| Info Blue         | Azure Blue     | #278BEE  | Info states, links, alternate modules |
+| Neutral Dark      | Graphite       | #333333  | Headlines, body text                  |
+| Neutral Mid       | Slate Gray     | #2E2E2E* | Panel backgrounds, less prominent text|
+| Neutral Light     | Cloud White    | #F4F4F4  | Backgrounds, surfaces                 |
+
+**Theming & Style Rules:**
+- Use these tokens for all UI elements.
+- Favor minimalist layouts, generous whitespace, and clear separation.
+- Rounded corners and subtle shadows for cards/panels.
+- Large, bold headlines; clear, readable body text.
+- Buttons and highlights use accent colors as described above.
+- Ensure accessibility and contrast in all color combinations.
+- Apply the palette and style rules to all new UI, inspired by the provided template screenshots.
+
 ## Reusable Patterns
 
 ### Navigation
@@ -89,6 +129,8 @@ Update Rules for designPatterns.md
 - Charts and data visualizations
 
 ## Examples
+
+> **Note:** The `docs/screenshots/` directory does not yet exist. Screenshots and images will be added as the UI is developed. For now, the following are placeholders for future visual documentation.
 
 > **Note:** Add screenshots, diagrams, or code snippets here to illustrate each pattern. To add a screenshot, use the following markdown:
 > `![Pattern Name](../path/to/screenshot.png)`
@@ -160,4 +202,74 @@ Update Rules for designPatterns.md
 
 - **Block Templates:**
   - Each module provides a block with key information (e.g., Finances = balances, Drive = recent files).
-  - Users can drag and drop blocks on an invisible grid, similar to Squarespace's builder. 
+  - Users can drag and drop blocks on an invisible grid, similar to Squarespace's builder.
+
+# Design System Details
+
+## Typography
+- Use a single, modern sans-serif font family (e.g., Inter, Roboto, or system-ui) for all UI text.
+- Font weights: 400 (regular), 600 (semibold), 700 (bold).
+- Headings: Large, bold, and clear. Use consistent sizing scale (e.g., 32/24/20/16/14px).
+- Body text: 16px default, 1.5 line height for readability.
+- All text should have sufficient color contrast (see color palette above).
+- Avoid excessive font styles; keep to regular, semibold, and bold.
+
+## Spacing & Layout
+- Use an 8px spacing grid for all margins, paddings, and gaps.
+- Standard spacing increments: 4, 8, 16, 24, 32, 40, 48, 64px.
+- Generous whitespace between sections and around cards/panels.
+- Consistent gutters and padding in all layouts.
+- Responsive breakpoints: mobile (<600px), tablet (600–1024px), desktop (>1024px).
+
+## Iconography
+- Use a single, consistent icon set (e.g., Tabler, Lucide, or Material Icons).
+- All icons should be SVG, scalable, and accessible (aria-labels, titles).
+- Icon size: 20–24px standard, with clear minimum touch target (44x44px for mobile).
+- Use icons for actions, navigation, and status—not for decoration.
+
+## Animation & Motion
+- Use subtle, purposeful animations (e.g., fade, slide, scale) for feedback and transitions.
+- Animation duration: 150–300ms, with ease-in-out curves.
+- Avoid distracting or excessive motion.
+- Respect user preferences for reduced motion (prefers-reduced-motion media query).
+
+## Internationalization (i18n)
+- All UI text must be translatable; no hardcoded strings in components.
+- Use a standard i18n library (e.g., react-i18next) for string management.
+- Support left-to-right and right-to-left layouts.
+- Date, time, and number formats must be locale-aware.
+
+## Mobile Responsiveness
+- All components and layouts must be fully responsive.
+- Touch targets: minimum 44x44px.
+- Use mobile-first design principles; test on real devices.
+- Avoid hover-only interactions; provide tap alternatives.
+
+## Storybook & Documentation
+- All UI components must be documented in Storybook with usage examples and props tables.
+- Include accessibility notes and visual guidelines in stories.
+- Use Storybook as the single source of truth for UI implementation.
+
+## Accessibility (a11y)
+- All interactive elements must be keyboard accessible (tab, enter, space, etc.).
+- Use semantic HTML and ARIA roles where appropriate.
+- Ensure color contrast meets WCAG AA standards.
+- Provide visible focus indicators for all focusable elements.
+- Test with screen readers and accessibility tools.
+
+## Contribution Guidelines
+- All new UI components must follow the design tokens, patterns, and accessibility rules above.
+- PRs must include Storybook stories and pass accessibility checks.
+- Use the provided color palette, spacing, and typography tokens.
+- Document any new patterns or tokens in this file.
+
+## Visual Style Guide
+- The overall look is sleek, simple, and modern, inspired by the provided template screenshots.
+- Use the color palette and theming rules above for all UI elements.
+- Favor minimalist layouts, clear separation, and generous whitespace.
+- Rounded corners and subtle shadows for cards and panels.
+- Large, bold headlines; clear, readable body text.
+- Buttons and highlights use accent colors as described above.
+- All UI should feel cohesive, intuitive, and delightful to use.
+
+> For visual references, see the 'Examples' section above and add new screenshots as the UI evolves. 

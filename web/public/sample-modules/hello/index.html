@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hello Module</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 16px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+      .title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+      .muted { color: #6b7280; }
+      button { background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+      button:hover { background: #1d4ed8; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="title">Hello World Module</div>
+      <div class="muted">This is a sample third‑party module running in an iframe runtime.</div>
+      <div id="context" class="muted" style="margin-top:8px;"></div>
+      <div style="margin-top:12px;">
+        <button id="resize">Resize to content</button>
+      </div>
+    </div>
+
+    <script>
+      const hostOrigin = window.origin; // placeholder; actual checks happen on host side
+
+      function post(message) {
+        // Post to parent; parent enforces origin checks
+        window.parent.postMessage(message, '*');
+      }
+
+      function resizeToContent() {
+        const height = document.documentElement.scrollHeight;
+        post({ type: 'module:request:resize', payload: { height } });
+      }
+
+      window.addEventListener('message', (event) => {
+        const data = event.data || {};
+        if (data.type === 'host:init') {
+          post({ type: 'module:ready' });
+          post({ type: 'module:request:settings' });
+        }
+        if (data.type === 'host:settings') {
+          const settings = data.payload?.settings || {};
+          const el = document.getElementById('context');
+          el.textContent = 'Settings from host: ' + JSON.stringify(settings);
+          setTimeout(resizeToContent, 50);
+        }
+      });
+
+      document.getElementById('resize').addEventListener('click', resizeToContent);
+
+      // Initial resize after load
+      window.addEventListener('load', () => setTimeout(resizeToContent, 30));
+    </script>
+  </body>
+  </html>
+

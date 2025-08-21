@@ -1,0 +1,13 @@
+packages:
+  - web
+  - server
+  - shared
+  - prisma
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@tailwindcss/oxide'
+  - bcrypt
+  - prisma
+  - sharp
+  - unrs-resolver

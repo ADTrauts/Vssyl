@@ -1,0 +1,1 @@
+import { User } from '@prisma/client'; const user: User = { id: '', email: '', password: '', role: 'USER', name: null, emailVerified: null, image: null, stripeCustomerId: null, createdAt: new Date(), updatedAt: new Date() }; console.log(user.id);

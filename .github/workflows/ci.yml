@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: pnpm install
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web format:check
+      - run: pnpm --filter web type-check
+      - run: pnpm --filter server lint
+      - run: pnpm --filter server format:check
+      - run: pnpm --filter server type-check
+      - run: pnpm --filter shared lint
+      - run: pnpm --filter shared format:check
+      - run: pnpm --filter shared type-check
+      - run: pnpm --filter prisma lint
+      - run: pnpm --filter prisma format:check
+      - run: pnpm --filter prisma type-check 

@@ -1,54 +1,78 @@
-interface FetchOptions extends RequestInit {
-  handleError?: boolean;
+import { getSession, signOut } from 'next-auth/react';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+
+export interface ApiError extends Error {
+  status?: number;
+  isAuthError?: boolean;
 }
 
-export async function fetchWithHandling<T>(url: string, options: FetchOptions = {}): Promise<T> {
-  const { handleError = true, ...fetchOptions } = options;
+// Helper function to make authenticated API calls with proper error handling
+export async function authenticatedApiCall<T>(
+  endpoint: string, 
+  options: RequestInit = {}, 
+  token?: string
+): Promise<T> {
+  const session = token ? null : await getSession();
+  const accessToken = token || session?.accessToken;
   
-  try {
-    const response = await fetch(url, {
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-    });
+  if (!accessToken) {
+    const error = new Error('No authentication token available') as ApiError;
+    error.isAuthError = true;
+    throw error;
+  }
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || `HTTP error! status: ${response.status}`);
-    }
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
 
-    return await response.json();
-  } catch (error) {
-    if (handleError) {
-      console.error('API request failed:', error);
+  headers.Authorization = `Bearer ${accessToken}`;
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    
+    // Handle authentication errors (401, 403)
+    if (response.status === 401 || response.status === 403) {
+      console.log('Authentication error detected:', response.status, errorData);
+      
+      // Only handle client-side redirects here
+      // Server-side redirects should be handled by the calling component
+      if (typeof window !== 'undefined') {
+        // Small delay to allow the error to be logged
+        setTimeout(() => {
+          signOut({ callbackUrl: '/auth/login' });
+        }, 100);
+      }
+      
+      const error = new Error('Session expired. Please log in again.') as ApiError;
+      error.status = response.status;
+      error.isAuthError = true;
       throw error;
     }
-    return null as T;
+    
+    // Handle other errors
+    const error = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`) as ApiError;
+    error.status = response.status;
+    throw error;
   }
+
+  const data = await response.json();
+  return data;
 }
 
-export async function get(url: string, options: FetchOptions = {}) {
-  return fetchWithHandling(url, { ...options, method: 'GET' });
-}
-
-export async function post(url: string, data: any, options: FetchOptions = {}) {
-  return fetchWithHandling(url, {
-    ...options,
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-export async function put(url: string, data: any, options: FetchOptions = {}) {
-  return fetchWithHandling(url, {
-    ...options,
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
-}
-
-export async function del(url: string, options: FetchOptions = {}) {
-  return fetchWithHandling(url, { ...options, method: 'DELETE' });
+// Helper function for business API calls specifically
+export async function businessApiCall<T>(
+  endpoint: string, 
+  options: RequestInit = {}, 
+  token?: string
+): Promise<T> {
+  return authenticatedApiCall<T>(`/api/business${endpoint}`, options, token);
 } 
