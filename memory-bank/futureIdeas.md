@@ -12,19 +12,27 @@ Update Rules for futureIdeas.md
 
 ## Checklist of Potential Features
 
-- [ ] Ratings and reviews for modules in the marketplace
-- [ ] Ability for users to favorite/bookmark modules
-- [ ] Trial/demo mode for modules (at module creator's discretion)
-- [ ] Advanced block customization (resize, content selection)
-- [ ] Multiple/savable dashboard layouts per context
-- [ ] Unified notification center
-- [ ] Per-module notification controls
-- [ ] Enhanced onboarding with progressive disclosure
-- [ ] "Getting started" dashboard or checklist
-- [ ] Accessibility deep dive and audit tools
-- [ ] More onboarding templates for different user/org types
-- [ ] Marketplace revenue sharing and analytics for module creators
-- [ ] Cross-context data visualization widgets
-- [ ] AI-powered recommendations for modules and dashboard layouts
+| Feature | Status | Date Proposed | Related Docs |
+|---------|--------|--------------|--------------|
+| Ratings and reviews for modules in the marketplace | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
+| Ability for users to favorite/bookmark modules | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
+| Trial/demo mode for modules (at module creator's discretion) | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
+| Advanced block customization (resize, content selection) | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
+| Multiple/savable dashboard layouts per context | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
+| Unified notification center | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
+| Per-module notification controls | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
+| Enhanced onboarding with progressive disclosure | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
+| "Getting started" dashboard or checklist | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
+| Accessibility deep dive and audit tools | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
+| More onboarding templates for different user/org types | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
+| Marketplace revenue sharing and analytics for module creators | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
+| Cross-context data visualization widgets | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
+| AI-powered recommendations for modules and dashboard layouts | Proposed | 2024-06 | [roadmap.md](./roadmap.md) |
 
 > Add new ideas as they arise. Reference related design patterns, specs, or active context as needed. 
+
+---
+
+## Archived Ideas
+
+> Move implemented or deprecated ideas here, with notes and dates for historical context. 

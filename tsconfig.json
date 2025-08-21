@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "shared/*": ["shared/src/*"]
+    }
+  },
+  "references": [
+    { "path": "shared" },
+    { "path": "web" },
+    { "path": "server" }
+  ]
+} 

@@ -9,6 +9,18 @@ Update Rules for databaseContext.md
 - Summarize changes at the top if the update is significant.
 -->
 
+## Summary of Major Changes / Update History
+- [Add major schema changes, new models, or best practices here with date.]
+
+## Cross-References & Modular Context Pattern
+- See [techContext.md](./techContext.md) for tech stack and database technology.
+- See [systemPatterns.md](./systemPatterns.md) for architecture and data patterns.
+- See [moduleSpecs.md](./moduleSpecs.md) for module-specific data requirements.
+- See [chatProductContext.md](./chatProductContext.md), [driveProductContext.md](./driveProductContext.md), [dashboardProductContext.md](./dashboardProductContext.md), and [marketplaceProductContext.md](./marketplaceProductContext.md) for module-specific database context if needed.
+- Each major proprietary module should have its own database context section/file as needed (see README for details on the modular context pattern).
+
+---
+
 # Database Context
 
 ## Schema File Location
@@ -39,3 +51,8 @@ Update Rules for databaseContext.md
 3. Test migrations before applying to production
 4. Maintain backward compatibility when possible
 5. Document any breaking changes in the schema 
+
+---
+
+## Archive (Deprecated Models / Schema Patterns)
+- [Add deprecated or superseded models/schema patterns here, with date and summary.] 

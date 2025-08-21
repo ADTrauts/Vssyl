@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF.js Fallback</title>
+</head>
+<body>
+    <!-- PDF.js CDN fallback -->
+    <script src="//unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>
+        // Make PDF.js available globally as fallback
+        if (typeof window !== 'undefined') {
+            window.pdfjsLib = window.pdfjsLib || {};
+        }
+    </script>
+</body>
+</html>

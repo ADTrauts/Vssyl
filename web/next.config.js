@@ -1,31 +1,148 @@
-/** @type {import('next').NextConfig} */
+/** @type {import('next').Config} */
 const nextConfig = {
-  reactStrictMode: true,
-  images: {
-    domains: ['localhost', 'res.cloudinary.com'] // adjust as needed
-  },
-  async redirects() {
-    return [
-      {
-        source: '/recycle-bin',
-        destination: '/trash',
-        permanent: true
-      }
-    ]
-  },
-  typescript: {
-    // ✅ Allows using .js files in a TypeScript project without throwing
-    ignoreBuildErrors: true
-  },
+  // Handle external packages
   experimental: {
-    serverActions: {
-      bodySizeLimit: '10mb',
+    serverComponentsExternalPackages: ['@prisma/client'],
+    // Improve build stability
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    // Reduce hot reload conflicts
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
     },
   },
-  // Enable Turbopack
-  turbopack: {
-    // Add any specific Turbopack rules here
-  }
-}
+  // Improve build performance and stability
+  swcMinify: true,
+  // Add security headers
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
+  },
+  // Configure webpack to handle SSR issues and search buildout conflicts
+  webpack: (config, { isServer, dev }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
 
-export default nextConfig 
+    // PDF.js has been removed to prevent build issues
+    // PDF files will show a download link instead of preview
+
+    // Improve build stability in development
+    if (dev) {
+      config.watchOptions = {
+        poll: process.env.NODE_ENV === 'development' ? 3000 : 2000, // Increased for dev
+        aggregateTimeout: process.env.NODE_ENV === 'development' ? 1000 : 500, // Increased for dev
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/.next/**',
+          '**/dist/**',
+          '**/build/**',
+          '**/*.log',
+          '**/coverage/**',
+        ],
+      };
+      
+      // Reduce hot reload conflicts
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            // Create a vendor chunk for better stability
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: /node_modules/,
+              priority: 20,
+            },
+            // Common chunk for shared code
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        },
+      };
+
+      // Add development-specific optimizations
+      if (process.env.NODE_ENV === 'development') {
+        config.optimization.minimize = false;
+        config.optimization.minimizer = [];
+      }
+    }
+    
+    return config;
+  },
+  // NextAuth.js specific configuration
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  },
+  // Ensure proper error page handling
+  async redirects() {
+    return [];
+  },
+  async rewrites() {
+    return [];
+  },
+  // Improve build output
+  output: 'standalone',
+  // Development-specific optimizations
+  ...(process.env.NODE_ENV === 'development' && {
+    // Reduce hot reload frequency
+    onDemandEntries: {
+      maxInactiveAge: 120 * 1000, // 2 minutes (increased)
+      pagesBufferLength: 3, // Reduced from 5
+    },
+    // Improve development server stability
+    devIndicators: {
+      buildActivity: false,
+      buildActivityPosition: 'bottom-right',
+    },
+    // Add development-specific headers
+    async headers() {
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-cache, no-store, must-revalidate',
+            },
+          ],
+        },
+      ];
+    },
+  }),
+};
+
+module.exports = nextConfig; 

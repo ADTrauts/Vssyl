@@ -1,266 +1,369 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, Download, Code, Shield, Package, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { 
+  getModuleDetails, 
+  installModule, 
+  uninstallModule,
+  createModuleSubscription,
+  type ModuleDetails 
+} from '../../../api/modules';
+import PaymentModal from '../../../components/PaymentModal';
+import { 
+  ArrowLeft, 
+  Download, 
+  Upload, 
+  Star, 
+  Users, 
+  Calendar,
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  CreditCard,
+  Crown
+} from 'lucide-react';
 
-interface Module {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  rating: number;
-  downloads: number;
-  isFree: boolean;
-  price?: number;
-  developer: {
-    name: string;
-    id: string;
-  };
-  lastUpdated: string;
-  manifest: {
-    permissions: string[];
-    dependencies: Record<string, string>;
-  };
-  securityReport: {
-    score: number;
-    issues: Array<{
-      severity: 'high' | 'medium' | 'low';
-      description: string;
-      location: string;
-    }>;
-  };
-  reviews: Array<{
-    id: string;
-    user: {
-      name: string;
-      id: string;
-    };
-    rating: number;
-    comment: string;
-    createdAt: string;
-  }>;
-}
-
-export default function ModuleDetailsPage({ params }: { params: { id: string } }) {
-  const [module, setModule] = useState<Module | null>(null);
+export default function ModuleDetailsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const moduleId = params.id as string;
+  
+  const [module, setModule] = useState<ModuleDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
-    const fetchModule = async () => {
+    const loadModuleDetails = async () => {
       try {
-        const response = await fetch(`/api/marketplace/modules/${params.id}`);
-        const data = await response.json();
-        setModule(data);
-      } catch (error) {
-        console.error('Error fetching module:', error);
+        setLoading(true);
+        const details = await getModuleDetails(moduleId);
+        setModule(details);
+      } catch (err) {
+        console.error('Error loading module details:', err);
+        setError('Failed to load module details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchModule();
-  }, [params.id]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">Loading module details...</div>
-      </div>
-    );
-  }
-
-  if (!module) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">Module not found</div>
-      </div>
-    );
-  }
+    if (moduleId) {
+      loadModuleDetails();
+    }
+  }, [moduleId]);
 
   const handleInstall = async () => {
+    if (!module) return;
+    
+    if (module.pricingTier && module.pricingTier !== 'free') {
+      // Show payment modal for paid modules
+      setShowPaymentModal(true);
+      return;
+    }
+    
+    // Handle free module installation
+    setActionLoading(true);
     try {
-      const response = await fetch(`/api/marketplace/modules/${module.id}/install`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        // TODO: Show success message and update UI
-      }
-    } catch (error) {
-      console.error('Error installing module:', error);
+      await installModule(moduleId);
+      router.push('/modules?tab=installed');
+    } catch (err) {
+      console.error('Error installing module:', err);
+      setError('Failed to install module');
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-start mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">{module.name}</h1>
-          <p className="text-gray-600 mt-2">{module.description}</p>
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span>{module.rating.toFixed(1)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Download className="w-4 h-4" />
-              <span>{module.downloads.toLocaleString()} downloads</span>
-            </div>
-            <Badge variant="outline">v{module.version}</Badge>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Button 
-            size="lg"
-            onClick={handleInstall}
-          >
-            {module.isFree ? 'Install' : `Buy for $${module.price}`}
-          </Button>
-          <Button variant="outline" size="lg">
-            Add to Wishlist
-          </Button>
-        </div>
+  const handlePaymentSuccess = async () => {
+    // Install the module after successful payment
+    setActionLoading(true);
+    try {
+      await installModule(moduleId);
+      router.push('/modules?tab=installed');
+    } catch (err) {
+      console.error('Error installing module after payment:', err);
+      setError('Payment successful but failed to install module');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUninstall = async () => {
+    setActionLoading(true);
+    try {
+      await uninstallModule(moduleId);
+      router.push('/modules?tab=installed');
+    } catch (err) {
+      console.error('Error uninstalling module:', err);
+      setError('Failed to uninstall module');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const getPricingBadge = (tier: string) => {
+    const colors = {
+      free: 'bg-green-100 text-green-800',
+      premium: 'bg-blue-100 text-blue-800',
+      enterprise: 'bg-purple-100 text-purple-800'
+    };
+    return colors[tier as keyof typeof colors] || colors.free;
+  };
+
+  const getPricingIcon = (tier: string) => {
+    switch (tier) {
+      case 'free': return null;
+      case 'premium': return <CreditCard className="w-4 h-4" />;
+      case 'enterprise': return <Crown className="w-4 h-4" />;
+      default: return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size={32} />
+        <span className="ml-2">Loading module details...</span>
       </div>
+    );
+  }
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
-        </TabsList>
+  if (error || !module) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Alert type="error" title="Error">
+          {error || 'Module not found'}
+        </Alert>
+      </div>
+    );
+  }
 
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  <span>Module Details</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold">Developer</h3>
-                    <p className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      {module.developer.name}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Last Updated</h3>
-                    <p>{new Date(module.lastUpdated).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">Required Permissions</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {module.manifest.permissions.map((permission, index) => (
-                        <Badge key={index} variant="outline">
-                          {permission}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Code className="w-5 h-5" />
-                  <span>Dependencies</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(module.manifest.dependencies).map(([name, version]) => (
-                    <div key={name} className="flex justify-between items-center p-2 border rounded">
-                      <span>{name}</span>
-                      <span className="text-gray-500">{version}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+  return (
+    <>
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <Button variant="secondary" onClick={() => router.back()}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
+              <p className="text-gray-600">by {module.developer}</p>
+            </div>
           </div>
-        </TabsContent>
+          <div className="flex items-center space-x-2">
+            {module.pricingTier && (
+              <Badge className={getPricingBadge(module.pricingTier)}>
+                {getPricingIcon(module.pricingTier)}
+                <span className="ml-1">
+                  {module.pricingTier === 'free' ? 'Free' :
+                   module.pricingTier === 'premium' ? 'Premium' : 'Enterprise'}
+                </span>
+              </Badge>
+            )}
+            <Badge className={module.isInstalled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+              {module.isInstalled ? 'Installed' : 'Available'}
+            </Badge>
+          </div>
+        </div>
 
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                <span>Security Report</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold">Security Score</h3>
-                  <div className="flex items-center gap-2">
-                    <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center text-xl font-bold">
-                      {module.securityReport.score}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description */}
+            <Card>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Description</h2>
+                <p className="text-gray-700">{module.description}</p>
+              </div>
+            </Card>
+
+            {/* Pricing Information */}
+            {module.pricingTier && module.pricingTier !== 'free' && (
+              <Card>
+                <div className="p-6">
+                  <h2 className="text-lg font-semibold mb-4">Pricing</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium">Premium Plan</h3>
+                        <p className="text-sm text-gray-600">Full access to all features</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">${module.basePrice || 0}/month</div>
+                        <div className="text-sm text-gray-500">or ${((module.basePrice || 0) * 12 * 0.8).toFixed(0)}/year</div>
+                      </div>
                     </div>
-                    <span>/100</span>
+                    
+                    {module.enterprisePrice && module.enterprisePrice !== module.basePrice && (
+                      <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                        <div>
+                          <h3 className="font-medium">Enterprise Plan</h3>
+                          <p className="text-sm text-gray-600">Custom pricing for large organizations</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">${module.enterprisePrice}/month</div>
+                          <div className="text-sm text-gray-500">Contact sales for details</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">Issues</h3>
-                  <div className="space-y-2">
-                    {module.securityReport.issues.map((issue, index) => (
-                      <div key={index} className="p-3 border rounded">
-                        <Badge variant={
-                          issue.severity === 'high' ? 'destructive' :
-                          issue.severity === 'medium' ? 'warning' :
-                          'secondary'
-                        }>
-                          {issue.severity}
-                        </Badge>
-                        <p className="mt-1">{issue.description}</p>
-                        <p className="text-sm text-gray-500">{issue.location}</p>
+              </Card>
+            )}
+
+            {/* Reviews */}
+            {module.reviews && module.reviews.length > 0 && (
+              <Card>
+                <div className="p-6">
+                  <h2 className="text-lg font-semibold mb-4">Reviews</h2>
+                  <div className="space-y-4">
+                    {module.reviews.map((review) => (
+                      <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i}
+                                  className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-600">{review.reviewer.name}</span>
+                          </div>
+                          <span className="text-sm text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-gray-700">{review.comment}</p>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </Card>
+            )}
+          </div>
 
-        <TabsContent value="reviews">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reviews</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {module.reviews.map((review) => (
-                  <div key={review.id} className="border-b pb-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold">{review.user.name}</p>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-500" />
-                          <span>{review.rating}</span>
-                        </div>
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="mt-2">{review.comment}</p>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Module Info */}
+            <Card>
+              <div className="p-6">
+                <h3 className="font-semibold mb-4">Module Information</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Version:</span>
+                    <span>{module.version}</span>
                   </div>
-                ))}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Category:</span>
+                    <span>{module.category}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Downloads:</span>
+                    <span>{module.downloads}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rating:</span>
+                    <span>{module.rating.toFixed(1)} ({module.reviewCount} reviews)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Updated:</span>
+                    <span>{module.updatedAt ? new Date(module.updatedAt).toLocaleDateString() : 'Unknown'}</span>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+            </Card>
+
+            {/* Installation */}
+            <Card>
+              <div className="p-6">
+                <h3 className="font-semibold mb-4">Installation</h3>
+                {module.isInstalled ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center text-green-600">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      <span>Module is installed</span>
+                    </div>
+                    <Button 
+                      variant="secondary" 
+                      onClick={handleUninstall}
+                      disabled={actionLoading}
+                      className="w-full"
+                    >
+                      {actionLoading ? <Spinner size={16} /> : 'Uninstall Module'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {module.pricingTier === 'free' ? (
+                      <Button 
+                        onClick={handleInstall}
+                        disabled={actionLoading}
+                        className="w-full"
+                      >
+                        {actionLoading ? <Spinner size={16} /> : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Install Module
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <Button 
+                          onClick={handleInstall}
+                          disabled={actionLoading}
+                          className="w-full"
+                        >
+                          {actionLoading ? <Spinner size={16} /> : (
+                            <>
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              Subscribe & Install
+                            </>
+                          )}
+                        </Button>
+                        <p className="text-xs text-gray-500 text-center">
+                          {module.pricingTier === 'premium' 
+                            ? `$${module.basePrice}/month subscription required`
+                            : 'Enterprise pricing - contact sales'
+                          }
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Payment Modal */}
+      {module && module.pricingTier && (
+        <PaymentModal
+          open={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          module={{
+            id: module.id,
+            name: module.name,
+            description: module.description,
+            pricingTier: module.pricingTier,
+            basePrice: module.basePrice || 0,
+            enterprisePrice: module.enterprisePrice,
+          }}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
+    </>
   );
 } 

@@ -1,132 +1,154 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, User as NextAuthUser } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaClient, Role } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { jwtDecode } from 'jwt-decode';
 
-const prisma = new PrismaClient();
+// User type is now defined in types/next-auth.d.ts
+
+interface DecodedToken {
+  sub: string;
+  email: string;
+  role: string;
+  userNumber: string;
+  exp: number;
+}
+
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: token.refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to refresh token');
+    }
+
+    const data = await response.json();
+    const decoded = jwtDecode<DecodedToken>(data.token);
+
+    return {
+      ...token,
+      accessToken: data.token,
+      refreshToken: data.refreshToken,
+      exp: decoded.exp,
+      error: undefined,
+    };
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return {
+      ...token,
+      error: 'RefreshAccessTokenError',
+    };
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: 'Email', type: 'email', placeholder: 'email@example.com' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Missing credentials');
+          throw new Error('Invalid credentials');
         }
 
         try {
-          // Call server login endpoint
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials),
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
           });
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Authentication failed');
+            throw new Error(error.message || 'Invalid credentials');
           }
 
           const data = await response.json();
-          
-          // Return user data with server token
-          return {
-            id: data.user.id,
-            email: data.user.email,
-            name: data.user.name,
-            avatarUrl: data.user.avatarUrl,
-            role: data.user.role,
-            isAdmin: data.user.isAdmin,
-            serverToken: data.token, // Store server token
-          };
-        } catch (error) {
+          if (data && data.token) {
+            return {
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+              userNumber: data.user.userNumber,
+              accessToken: data.token,
+              refreshToken: data.refreshToken,
+              emailVerified: !!data.user.emailVerified,
+            } as any;
+          }
+          return null;
+        } catch (error: any) {
           console.error('Auth error:', error);
-          throw error;
+          throw new Error(error.message || 'Invalid credentials');
         }
-      },
-    }),
+      }
+    })
   ],
-  pages: {
-    signIn: '/login',
-    error: '/auth/error',
-    signOut: '/login',
-  },
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET,
-  },
   callbacks: {
     async jwt({ token, user }) {
+      console.log('NextAuth JWT callback:', { hasUser: !!user, hasToken: !!token, tokenExp: token.exp });
+      
       if (user) {
-        // Initial sign in
-        token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.avatarUrl = user.avatarUrl;
-        token.role = user.role;
-        token.isAdmin = user.isAdmin;
-        token.serverToken = user.serverToken; // Store server token in JWT
+        const u = user as any;
+        // Use the backend's JWT token directly without decoding
+        console.log('NextAuth JWT - User login:', { userId: u.id, email: u.email, hasAccessToken: !!u.accessToken });
+        return {
+          ...token,
+          id: u.id,
+          role: u.role,
+          userNumber: u.userNumber,
+          accessToken: u.accessToken,
+          refreshToken: u.refreshToken,
+          exp: token.exp,
+        };
       }
+
+      // If the token expiration is unknown or it has expired, refresh it.
+      if (typeof token.exp !== 'number' || Date.now() >= token.exp * 1000) {
+        console.log('NextAuth JWT - Token expired, refreshing...');
+        return refreshAccessToken(token);
+      }
+      
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          id: token.id,
-          email: token.email,
-          name: token.name,
-          avatarUrl: token.avatarUrl,
-          role: token.role as Role,
-          isAdmin: token.isAdmin,
-        };
-        // Add server token to session
-        session.serverToken = token.serverToken;
-      }
+      console.log('NextAuth Session callback:', { hasSession: !!session, hasToken: !!token, tokenId: token.id });
+      
+      session.user.id = token.id as string;
+      session.user.role = token.role as any;
+      session.user.userNumber = token.userNumber as string;
+      session.accessToken = token.accessToken as string;
+      session.error = token.error as string | undefined;
+      
+      console.log('NextAuth Session - Final session:', { 
+        userId: session.user.id, 
+        hasToken: !!session.accessToken,
+        tokenLength: session.accessToken?.length,
+        userRole: session.user.role
+      });
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      return '/dashboard';
+    }
   },
+  pages: {
+    signIn: '/auth/login',
+    error: '/auth/login',
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  secret: process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
-};
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      role: Role;
-      avatarUrl: string | null;
-      isAdmin: boolean;
-    };
-    serverToken?: string; // Add server token to session type
-  }
-
-  interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: Role;
-    avatarUrl: string | null;
-    isAdmin: boolean;
-    serverToken?: string; // Add server token to user type
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id: string;
-    email: string;
-    name: string;
-    avatarUrl: string | null;
-    role: Role;
-    isAdmin: boolean;
-    serverToken?: string; // Add server token to JWT type
-  }
-} 
+}; 
