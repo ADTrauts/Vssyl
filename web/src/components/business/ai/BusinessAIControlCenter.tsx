@@ -1,16 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, Button, Badge, Input, Textarea, Switch, Tabs } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { Brain, Shield, Users, Settings, BarChart, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
@@ -57,7 +48,6 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
         const data = await response.json();
         setBusinessAI(data.data);
       } else if (response.status === 404) {
-        // Business AI not initialized yet
         setBusinessAI(null);
       }
     } catch (error) {
@@ -172,14 +162,12 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Card>
-          <CardHeader className="text-center">
+          <div className="text-center p-6">
             <Brain className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-            <CardTitle>Initialize Business AI Digital Twin</CardTitle>
-            <CardDescription>
+            <h2 className="text-xl font-semibold mb-2">Initialize Business AI Digital Twin</h2>
+            <p className="text-gray-600 mb-4">
               Create an AI digital twin for your business to provide intelligent assistance to your employees
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
+            </p>
             <Button 
               onClick={initializeBusinessAI} 
               disabled={saving}
@@ -187,11 +175,19 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
             >
               {saving ? 'Initializing...' : 'Initialize Business AI'}
             </Button>
-          </CardContent>
+          </div>
         </Card>
       </div>
     );
   }
+
+  const tabs = [
+    { label: 'Overview', key: 'overview' },
+    { label: 'Configuration', key: 'configuration' },
+    { label: 'Capabilities', key: 'capabilities' },
+    { label: 'Security', key: 'security' },
+    { label: 'Learning', key: 'learning' }
+  ];
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -205,442 +201,401 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
           <p className="text-gray-600 mt-1">Manage your business AI assistant and employee access</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={businessAI.status === 'active' ? 'default' : 'secondary'}>
+          <Badge className={businessAI.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
             {businessAI.status}
           </Badge>
-          <Badge variant="outline">{businessAI.securityLevel}</Badge>
+          <Badge className="bg-blue-100 text-blue-800">{businessAI.securityLevel}</Badge>
         </div>
       </div>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="configuration" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Configuration
-          </TabsTrigger>
-          <TabsTrigger value="capabilities" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            Capabilities
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Security
-          </TabsTrigger>
-          <TabsTrigger value="learning" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Learning
-          </TabsTrigger>
-        </TabsList>
-
+      <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab}>
         {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* AI Status Card */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">AI Status</CardTitle>
-                <Brain className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{businessAI.status}</div>
-                <p className="text-xs text-muted-foreground">
-                  Last interaction: {businessAI.lastInteractionAt ? new Date(businessAI.lastInteractionAt).toLocaleDateString() : 'Never'}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Total Interactions */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Interactions</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{businessAI.totalInteractions}</div>
-                <p className="text-xs text-muted-foreground">
-                  Employee AI conversations
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Security Level */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Security Level</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{businessAI.securityLevel}</div>
-                <p className="text-xs text-muted-foreground">
-                  {businessAI.complianceMode ? 'Compliance mode enabled' : 'Standard mode'}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Pending Reviews */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Reviews</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{learningEvents.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Learning events awaiting approval
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Analytics Summary */}
-          {analytics && (
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Usage Analytics</CardTitle>
-                <CardDescription>AI performance and usage metrics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Average Confidence</p>
-                    <p className="text-2xl font-bold">{(analytics.summary.averageConfidence * 100).toFixed(1)}%</p>
+        {activeTab === 'overview' && (
+          <div className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* AI Status Card */}
+              <Card>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">AI Status</h3>
+                    <Brain className="h-4 w-4 text-gray-500" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Helpfulness Rating</p>
-                    <p className="text-2xl font-bold">{analytics.summary.helpfulnessRating.toFixed(1)}%</p>
+                  <div className="text-2xl font-bold">{businessAI.status}</div>
+                  <p className="text-xs text-gray-500">
+                    Last interaction: {businessAI.lastInteractionAt ? new Date(businessAI.lastInteractionAt).toLocaleDateString() : 'Never'}
+                  </p>
+                </div>
+              </Card>
+
+              {/* Total Interactions */}
+              <Card>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Total Interactions</h3>
+                    <Users className="h-4 w-4 text-gray-500" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Learning Events Applied</p>
-                    <p className="text-2xl font-bold">{analytics.summary.approvedLearningEvents}</p>
+                  <div className="text-2xl font-bold">{businessAI.totalInteractions}</div>
+                  <p className="text-xs text-gray-500">
+                    Employee AI conversations
+                  </p>
+                </div>
+              </Card>
+
+              {/* Security Level */}
+              <Card>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Security Level</h3>
+                    <Shield className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <div className="text-2xl font-bold capitalize">{businessAI.securityLevel}</div>
+                  <p className="text-xs text-gray-500">
+                    {businessAI.complianceMode ? 'Compliance mode enabled' : 'Standard mode'}
+                  </p>
+                </div>
+              </Card>
+
+              {/* Pending Reviews */}
+              <Card>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Pending Reviews</h3>
+                    <AlertTriangle className="h-4 w-4 text-gray-500" />
+                  </div>
+                  <div className="text-2xl font-bold">{learningEvents.length}</div>
+                  <p className="text-xs text-gray-500">
+                    Learning events awaiting approval
+                  </p>
+                </div>
+              </Card>
+            </div>
+
+            {/* Analytics Summary */}
+            {analytics && (
+              <Card className="mt-6">
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">Usage Analytics</h3>
+                  <p className="text-gray-600 mb-4">AI performance and usage metrics</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Average Confidence</p>
+                      <p className="text-2xl font-bold">{(analytics.summary.averageConfidence * 100).toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Helpfulness Rating</p>
+                      <p className="text-2xl font-bold">{analytics.summary.helpfulnessRating.toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Learning Events Applied</p>
+                      <p className="text-2xl font-bold">{analytics.summary.approvedLearningEvents}</p>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Configuration Tab */}
-        <TabsContent value="configuration" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Configuration */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Configuration</CardTitle>
-                <CardDescription>Configure your AI's basic settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="ai-name">AI Assistant Name</Label>
-                  <Input
-                    id="ai-name"
-                    value={businessAI.name}
-                    onChange={(e) => setBusinessAI(prev => prev ? { ...prev, name: e.target.value } : null)}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="ai-description">Description</Label>
-                  <Textarea
-                    id="ai-description"
-                    value={businessAI.description}
-                    onChange={(e) => setBusinessAI(prev => prev ? { ...prev, description: e.target.value } : null)}
-                    rows={3}
-                  />
-                </div>
+        {activeTab === 'configuration' && (
+          <div className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Basic Configuration */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">Basic Configuration</h3>
+                  <p className="text-gray-600 mb-4">Configure your AI's basic settings</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">AI Assistant Name</label>
+                      <Input
+                        value={businessAI.name}
+                        onChange={(e: any) => setBusinessAI(prev => prev ? { ...prev, name: e.target.value } : null)}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Description</label>
+                      <Textarea
+                        value={businessAI.description}
+                        onChange={(e: any) => setBusinessAI(prev => prev ? { ...prev, description: e.target.value } : null)}
+                        rows={3}
+                      />
+                    </div>
 
-                <Button 
-                  onClick={() => updateBusinessAI({ 
-                    name: businessAI.name, 
-                    description: businessAI.description 
-                  })}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* AI Personality */}
-            <Card>
-              <CardHeader>
-                <CardTitle>AI Personality</CardTitle>
-                <CardDescription>Configure how your AI communicates</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Communication Tone</Label>
-                  <Select
-                    value={businessAI.aiPersonality?.tone || 'professional'}
-                    onValueChange={(value) => 
-                      setBusinessAI(prev => prev ? {
-                        ...prev,
-                        aiPersonality: { ...prev.aiPersonality, tone: value }
-                      } : null)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="friendly">Friendly</SelectItem>
-                      <SelectItem value="formal">Formal</SelectItem>
-                      <SelectItem value="casual">Casual</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Button 
+                      onClick={() => updateBusinessAI({ 
+                        name: businessAI.name, 
+                        description: businessAI.description 
+                      })}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
                 </div>
+              </Card>
 
-                <div>
-                  <Label>Communication Style</Label>
-                  <Select
-                    value={businessAI.aiPersonality?.communicationStyle || 'detailed'}
-                    onValueChange={(value) => 
-                      setBusinessAI(prev => prev ? {
-                        ...prev,
-                        aiPersonality: { ...prev.aiPersonality, communicationStyle: value }
-                      } : null)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="direct">Direct</SelectItem>
-                      <SelectItem value="detailed">Detailed</SelectItem>
-                      <SelectItem value="concise">Concise</SelectItem>
-                      <SelectItem value="collaborative">Collaborative</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* AI Personality */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">AI Personality</h3>
+                  <p className="text-gray-600 mb-4">Configure how your AI communicates</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Communication Tone</label>
+                      <select
+                        value={businessAI.aiPersonality?.tone || 'professional'}
+                        onChange={(e) => 
+                          setBusinessAI(prev => prev ? {
+                            ...prev,
+                            aiPersonality: { ...prev.aiPersonality, tone: e.target.value }
+                          } : null)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="formal">Formal</option>
+                        <option value="casual">Casual</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Communication Style</label>
+                      <select
+                        value={businessAI.aiPersonality?.communicationStyle || 'detailed'}
+                        onChange={(e) => 
+                          setBusinessAI(prev => prev ? {
+                            ...prev,
+                            aiPersonality: { ...prev.aiPersonality, communicationStyle: e.target.value }
+                          } : null)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="direct">Direct</option>
+                        <option value="detailed">Detailed</option>
+                        <option value="concise">Concise</option>
+                        <option value="collaborative">Collaborative</option>
+                      </select>
+                    </div>
+
+                    <Button 
+                      onClick={() => updateBusinessAI({ aiPersonality: businessAI.aiPersonality })}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Update Personality'}
+                    </Button>
+                  </div>
                 </div>
-
-                <Button 
-                  onClick={() => updateBusinessAI({ aiPersonality: businessAI.aiPersonality })}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Update Personality'}
-                </Button>
-              </CardContent>
-            </Card>
+              </Card>
+            </div>
           </div>
-        </TabsContent>
+        )}
 
         {/* Capabilities Tab */}
-        <TabsContent value="capabilities" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Capabilities</CardTitle>
-              <CardDescription>Enable or disable specific AI features for your employees</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.entries(businessAI.capabilities || {}).map(([capability, enabled]) => (
-                  <div key={capability} className="flex items-center justify-between">
-                    <div>
-                      <Label className="capitalize">{capability.replace(/([A-Z])/g, ' $1').trim()}</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {getCapabilityDescription(capability)}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={Boolean(enabled)}
-                      onCheckedChange={(checked) => 
-                        setBusinessAI(prev => prev ? {
-                          ...prev,
-                          capabilities: { ...prev.capabilities, [capability]: checked }
-                        } : null)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6">
-                <Button 
-                  onClick={() => updateBusinessAI({ capabilities: businessAI.capabilities })}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Update Capabilities'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Security Tab */}
-        <TabsContent value="security" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Security Level */}
+        {activeTab === 'capabilities' && (
+          <div className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Security Configuration</CardTitle>
-                <CardDescription>Configure security and compliance settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Security Level</Label>
-                  <Select
-                    value={businessAI.securityLevel}
-                    onValueChange={(value: 'standard' | 'high' | 'maximum') => 
-                      setBusinessAI(prev => prev ? { ...prev, securityLevel: value } : null)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="maximum">Maximum</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    checked={businessAI.complianceMode}
-                    onCheckedChange={(checked) => 
-                      setBusinessAI(prev => prev ? { ...prev, complianceMode: checked } : null)
-                    }
-                  />
-                  <Label>Compliance Mode</Label>
-                </div>
-
-                <Button 
-                  onClick={() => updateBusinessAI({ 
-                    securityLevel: businessAI.securityLevel,
-                    complianceMode: businessAI.complianceMode
-                  })}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Update Security'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Data Restrictions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Data Access Restrictions</CardTitle>
-                <CardDescription>Control what data the AI can access</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Employee Data Access</Label>
-                  <Select
-                    value={businessAI.restrictions?.employeeDataAccess || 'limited'}
-                    onValueChange={(value) => 
-                      setBusinessAI(prev => prev ? {
-                        ...prev,
-                        restrictions: { ...prev.restrictions, employeeDataAccess: value }
-                      } : null)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="limited">Limited</SelectItem>
-                      <SelectItem value="full">Full</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Client Data Access</Label>
-                  <Select
-                    value={businessAI.restrictions?.clientDataAccess || 'none'}
-                    onValueChange={(value) => 
-                      setBusinessAI(prev => prev ? {
-                        ...prev,
-                        restrictions: { ...prev.restrictions, clientDataAccess: value }
-                      } : null)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="limited">Limited</SelectItem>
-                      <SelectItem value="full">Full</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button 
-                  onClick={() => updateBusinessAI({ restrictions: businessAI.restrictions })}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Update Restrictions'}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Learning Tab */}
-        <TabsContent value="learning" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Learning Events Approval</CardTitle>
-              <CardDescription>Review and approve AI learning events</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {learningEvents.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No pending learning events to review
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {learningEvents.map((event) => (
-                    <div key={event.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">{event.eventType}</Badge>
-                            <Badge variant="secondary">{event.impact}</Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Confidence: {(event.confidence * 100).toFixed(1)}%
-                          </p>
-                          <p className="text-sm">
-                            {JSON.stringify(event.learningData, null, 2).substring(0, 200)}...
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => reviewLearningEvent(event.id, true)}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => reviewLearningEvent(event.id, false, 'Rejected by admin')}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-2">AI Capabilities</h3>
+                <p className="text-gray-600 mb-4">Enable or disable specific AI features for your employees</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(businessAI.capabilities || {}).map(([capability, enabled]) => (
+                    <div key={capability} className="flex items-center justify-between">
+                      <div>
+                        <label className="capitalize font-medium">{capability.replace(/([A-Z])/g, ' $1').trim()}</label>
+                        <p className="text-sm text-gray-500">
+                          {getCapabilityDescription(capability)}
+                        </p>
                       </div>
+                      <Switch
+                        checked={Boolean(enabled)}
+                        onChange={(checked: any) => 
+                          setBusinessAI(prev => prev ? {
+                            ...prev,
+                            capabilities: { ...prev.capabilities, [capability]: checked }
+                          } : null)
+                        }
+                      />
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                
+                <div className="mt-6">
+                  <Button 
+                    onClick={() => updateBusinessAI({ capabilities: businessAI.capabilities })}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Update Capabilities'}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Security Tab */}
+        {activeTab === 'security' && (
+          <div className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Security Level */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">Security Configuration</h3>
+                  <p className="text-gray-600 mb-4">Configure security and compliance settings</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Security Level</label>
+                      <select
+                        value={businessAI.securityLevel}
+                        onChange={(e: any) => 
+                          setBusinessAI(prev => prev ? { ...prev, securityLevel: e.target.value as 'standard' | 'high' | 'maximum' } : null)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="standard">Standard</option>
+                        <option value="high">High</option>
+                        <option value="maximum">Maximum</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={businessAI.complianceMode}
+                        onChange={(checked: any) => 
+                          setBusinessAI(prev => prev ? { ...prev, complianceMode: checked } : null)
+                        }
+                      />
+                      <label className="text-sm font-medium">Compliance Mode</label>
+                    </div>
+
+                    <Button 
+                      onClick={() => updateBusinessAI({ 
+                        securityLevel: businessAI.securityLevel,
+                        complianceMode: businessAI.complianceMode
+                      })}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Update Security'}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Data Restrictions */}
+              <Card>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">Data Access Restrictions</h3>
+                  <p className="text-gray-600 mb-4">Control what data the AI can access</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Employee Data Access</label>
+                      <select
+                        value={businessAI.restrictions?.employeeDataAccess || 'limited'}
+                        onChange={(e: any) => 
+                          setBusinessAI(prev => prev ? {
+                            ...prev,
+                            restrictions: { ...prev.restrictions, employeeDataAccess: e.target.value }
+                          } : null)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="none">None</option>
+                        <option value="limited">Limited</option>
+                        <option value="full">Full</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Client Data Access</label>
+                      <select
+                        value={businessAI.restrictions?.clientDataAccess || 'none'}
+                        onChange={(e: any) => 
+                          setBusinessAI(prev => prev ? {
+                            ...prev,
+                            restrictions: { ...prev.restrictions, clientDataAccess: e.target.value }
+                          } : null)
+                        }
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="none">None</option>
+                        <option value="limited">Limited</option>
+                        <option value="full">Full</option>
+                      </select>
+                    </div>
+
+                    <Button 
+                      onClick={() => updateBusinessAI({ restrictions: businessAI.restrictions })}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Update Restrictions'}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Learning Tab */}
+        {activeTab === 'learning' && (
+          <div className="mt-6">
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-2">Learning Events Approval</h3>
+                <p className="text-gray-600 mb-4">Review and approve AI learning events</p>
+                {learningEvents.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">
+                    No pending learning events to review
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {learningEvents.map((event) => (
+                      <div key={event.id} className="border rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge className="bg-gray-100 text-gray-800">{event.eventType}</Badge>
+                              <Badge className="bg-blue-100 text-blue-800">{event.impact}</Badge>
+                            </div>
+                            <p className="text-sm text-gray-500 mb-2">
+                              Confidence: {(event.confidence * 100).toFixed(1)}%
+                            </p>
+                            <p className="text-sm">
+                              {JSON.stringify(event.learningData, null, 2).substring(0, 200)}...
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => reviewLearningEvent(event.id, true)}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => reviewLearningEvent(event.id, false, 'Rejected by admin')}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
       </Tabs>
     </div>
   );

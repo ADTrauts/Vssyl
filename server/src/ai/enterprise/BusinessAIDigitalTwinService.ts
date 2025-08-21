@@ -135,14 +135,14 @@ export class BusinessAIDigitalTwinService {
           businessId,
           name: finalConfig.name || `${business.name} AI Assistant`,
           description: finalConfig.description,
-          aiPersonality: finalConfig.aiPersonality,
-          capabilities: finalConfig.capabilities,
-          restrictions: finalConfig.restrictions,
+          aiPersonality: finalConfig.aiPersonality as any,
+          capabilities: finalConfig.capabilities as any,
+          restrictions: finalConfig.restrictions as any,
           securityLevel: finalConfig.securityLevel || 'standard',
           complianceMode: finalConfig.complianceMode || false,
           adminUsers: [adminUserId],
-          learningSettings: this.getDefaultLearningSettings(),
-          auditSettings: this.getDefaultAuditSettings(),
+          learningSettings: this.getDefaultLearningSettings() as any,
+          auditSettings: this.getDefaultAuditSettings() as any,
           status: 'active'
         }
       });
@@ -237,9 +237,9 @@ export class BusinessAIDigitalTwinService {
         data: {
           name: settings.name || businessAI.name,
           description: settings.description,
-          aiPersonality: settings.aiPersonality || businessAI.aiPersonality,
-          capabilities: settings.capabilities || businessAI.capabilities,
-          restrictions: settings.restrictions || businessAI.restrictions,
+          aiPersonality: settings.aiPersonality ? (settings.aiPersonality as any) : businessAI.aiPersonality,
+          capabilities: settings.capabilities ? (settings.capabilities as any) : businessAI.capabilities,
+          restrictions: settings.restrictions ? (settings.restrictions as any) : businessAI.restrictions,
           securityLevel: settings.securityLevel || businessAI.securityLevel,
           complianceMode: settings.complianceMode ?? businessAI.complianceMode,
           updatedAt: new Date()
@@ -447,7 +447,7 @@ export class BusinessAIDigitalTwinService {
         aiResponse: response.message,
         confidence: response.confidence,
         processingTime: response.processingTime,
-        contextData: context,
+        contextData: context as any,
         moduleContext: context.currentModule,
         userRole: context.userRole,
         securityLevel: 'standard',
@@ -509,9 +509,11 @@ export class BusinessAIDigitalTwinService {
           learningData: {
             query,
             response: response.message,
-            context,
+            context: context as any,
             patterns: ['user_query_pattern', 'module_usage_pattern']
           },
+          previousBehavior: 'Standard response pattern',
+          newBehavior: 'Enhanced response with context awareness',
           confidence: 0.7,
           impact: 'low',
           privacyLevel: 'internal',
