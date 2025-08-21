@@ -20,8 +20,27 @@ function authenticateJWT(req: express.Request, res: express.Response, next: expr
         console.log('BusinessAI - JWT verification failed:', err.message);
         return res.sendStatus(403);
       }
+      
+      console.log('BusinessAI - JWT decoded successfully:', JSON.stringify(decoded, null, 2));
+      
+      // Store the decoded token
       (req as any).user = decoded;
-      console.log('BusinessAI - JWT verified for user:', decoded.userId);
+      
+      // Try different possible user ID fields
+      const userId = decoded.userId || decoded.sub || decoded.id || decoded.user?.id;
+      console.log('BusinessAI - Extracted userId:', userId);
+      
+      if (!userId) {
+        console.log('BusinessAI - No userId found in token, available fields:', Object.keys(decoded));
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid token: no user ID found'
+        });
+      }
+      
+      // Store the userId directly for easier access
+      (req as any).userId = userId;
+      
       next();
     });
   } else {
@@ -41,7 +60,7 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
   console.log('BusinessAI - Initialize route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
     const config = req.body;
 
     console.log('BusinessAI - Initializing with:', { businessId, userId, config });
@@ -70,7 +89,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
   console.log('BusinessAI - Config route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
 
     const businessAI = await prisma.businessAIDigitalTwin.findUnique({
       where: { businessId },
@@ -143,7 +162,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
 router.put('/:businessId/config', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
     const settings = req.body;
 
     await businessAIService.updateBusinessAIControls(businessId, userId, settings);
@@ -168,7 +187,7 @@ router.put('/:businessId/config', async (req: express.Request, res: express.Resp
 router.post('/:businessId/interact', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
     const { query, context } = req.body;
 
     if (!query || !context) {
@@ -205,7 +224,7 @@ router.post('/:businessId/interact', async (req: express.Request, res: express.R
 router.get('/:businessId/employee-access', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
 
     // Check if user is business member
     const member = await prisma.businessMember.findFirst({
@@ -276,7 +295,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
 router.get('/:businessId/analytics', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
     const { period = 'daily' } = req.query;
 
     // Validate admin access
