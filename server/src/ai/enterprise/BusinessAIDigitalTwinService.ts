@@ -103,6 +103,11 @@ export class BusinessAIDigitalTwinService {
     config?: Partial<BusinessAIConfig>
   ): Promise<any> {
     try {
+      // Validate required parameters
+      if (!adminUserId) {
+        throw new Error('Admin user ID is required');
+      }
+
       // Check if business already has AI twin
       const existing = await this.prisma.businessAIDigitalTwin.findUnique({
         where: { businessId }
@@ -140,7 +145,7 @@ export class BusinessAIDigitalTwinService {
           restrictions: finalConfig.restrictions as any,
           securityLevel: finalConfig.securityLevel || 'standard',
           complianceMode: finalConfig.complianceMode || false,
-          adminUsers: [adminUserId],
+          adminUsers: [adminUserId].filter(Boolean), // Filter out any undefined values
           learningSettings: this.getDefaultLearningSettings() as any,
           auditSettings: this.getDefaultAuditSettings() as any,
           status: 'active'
