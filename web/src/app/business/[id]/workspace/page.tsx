@@ -19,7 +19,8 @@ import {
   Activity,
   Building2,
   Package,
-  Settings
+  Settings,
+  Brain
 } from 'lucide-react';
 // toast import removed - not needed for overview page
 
@@ -69,6 +70,7 @@ interface BusinessStats {
       email: string;
     };
   }>;
+  aiInteractions: number; // Added for AI interactions
 }
 
 interface BusinessModuleSummary {
@@ -151,7 +153,8 @@ export default function BusinessWorkspacePage() {
           fileCount: analyticsResponse.data.fileCount || 0,
           conversationCount: analyticsResponse.data.conversationCount || 0,
           storageUsed: analyticsResponse.data.storageUsed || 0,
-          recentActivity: analyticsResponse.data.recentActivity || []
+          recentActivity: analyticsResponse.data.recentActivity || [],
+          aiInteractions: analyticsResponse.data.aiInteractions || 0 // Added for AI interactions
         });
       }
 
@@ -223,7 +226,7 @@ export default function BusinessWorkspacePage() {
         
         <div className="space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -260,10 +263,19 @@ export default function BusinessWorkspacePage() {
             <BarChart3 className="w-6 h-6 text-gray-400" />
           </div>
         </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">AI Interactions</p>
+              <p className="text-2xl font-bold text-gray-900">{stats?.aiInteractions || 0}</p>
+            </div>
+            <Brain className="w-6 h-6 text-gray-400" />
+          </div>
+        </Card>
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <Button 
                 variant="secondary" 
                 className="p-4 h-auto flex flex-col items-center space-y-2"
@@ -279,6 +291,14 @@ export default function BusinessWorkspacePage() {
               >
                 <Users className="w-6 h-6" />
                 <span>Manage Team</span>
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="p-4 h-auto flex flex-col items-center space-y-2"
+                onClick={() => window.location.href = `/business/${businessId}/workspace/ai`}
+              >
+                <Brain className="w-6 h-6" />
+                <span>AI Assistant</span>
               </Button>
               <Button 
                 variant="secondary" 
