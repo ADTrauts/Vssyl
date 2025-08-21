@@ -428,6 +428,10 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
               <Send className="h-4 w-4" />
             </Button>
           </div>
+          {/* Character counter */}
+          <div className="text-xs text-gray-500 mt-1 text-right">
+            {currentQuery.length} characters
+          </div>
         </CardContent>
       </Card>
     </div>
