@@ -7,19 +7,25 @@ const router: express.Router = express.Router();
 const prisma = new PrismaClient();
 const businessAIService = new BusinessAIDigitalTwinService(prisma);
 
+console.log('BusinessAI routes loaded');
+
 // JWT Authentication middleware
 function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction) {
+  console.log('BusinessAI - Authenticating request:', req.method, req.path);
   const authHeader = req.headers.authorization;
   if (authHeader) {
     const token = authHeader.split(' ')[1];
     jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
       if (err) {
+        console.log('BusinessAI - JWT verification failed:', err.message);
         return res.sendStatus(403);
       }
       (req as any).user = decoded;
+      console.log('BusinessAI - JWT verified for user:', decoded.userId);
       next();
     });
   } else {
+    console.log('BusinessAI - No authorization header');
     res.sendStatus(401);
   }
 }
@@ -32,10 +38,13 @@ router.use(authenticateJWT);
  * POST /api/business-ai/:businessId/initialize
  */
 router.post('/:businessId/initialize', async (req: express.Request, res: express.Response) => {
+  console.log('BusinessAI - Initialize route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
     const userId = (req as any).user.userId;
     const config = req.body;
+
+    console.log('BusinessAI - Initializing with:', { businessId, userId, config });
 
     const businessAI = await businessAIService.initializeBusinessAI(businessId, userId, config);
 
@@ -58,6 +67,7 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
  * GET /api/business-ai/:businessId/config
  */
 router.get('/:businessId/config', async (req: express.Request, res: express.Response) => {
+  console.log('BusinessAI - Config route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
     const userId = (req as any).user.userId;
