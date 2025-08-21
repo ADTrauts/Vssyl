@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, Button, Input, Badge, Avatar } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { 
   Brain, 
@@ -213,11 +208,11 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
   if (error) {
     return (
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
+        <div className="text-center p-4">
           <Bot className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-          <CardTitle className="text-gray-600">AI Assistant Unavailable</CardTitle>
-          <CardDescription>{error}</CardDescription>
-        </CardHeader>
+          <h3 className="text-gray-600 font-semibold">AI Assistant Unavailable</h3>
+          <p className="text-gray-500">{error}</p>
+        </div>
       </Card>
     );
   }
@@ -225,10 +220,10 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
   if (!businessAI) {
     return (
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
+        <div className="text-center p-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-          <CardTitle>Loading AI Assistant...</CardTitle>
-        </CardHeader>
+          <h3 className="font-semibold">Loading AI Assistant...</h3>
+        </div>
       </Card>
     );
   }
@@ -237,42 +232,36 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
     <div className="w-full max-w-4xl space-y-4">
       {/* AI Assistant Header */}
       <Card>
-        <CardHeader className="pb-3">
+        <div className="pb-3 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600">
-                <AvatarFallback className="text-white">
-                  <Brain className="h-6 w-6" />
-                </AvatarFallback>
-              </Avatar>
+              <Avatar className="h-10 w-10" nameOrEmail="AI Assistant" />
               <div>
-                <CardTitle className="text-lg">{businessAI.name}</CardTitle>
-                <CardDescription>{businessAI.description}</CardDescription>
+                <h3 className="text-lg font-semibold">{businessAI.name}</h3>
+                <p className="text-gray-600">{businessAI.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={businessAI.status === 'active' ? 'default' : 'secondary'}>
+              <Badge className={businessAI.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                 {businessAI.status}
               </Badge>
-              <Badge variant="outline">{businessAI.securityLevel}</Badge>
+              <Badge className="bg-blue-100 text-blue-800">{businessAI.securityLevel}</Badge>
             </div>
           </div>
-        </CardHeader>
+        </div>
       </Card>
 
       {/* Quick Actions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="p-4">
+          <h3 className="text-sm font-medium mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {capabilities.map((capability) => {
               const IconComponent = capability.icon;
               return (
                 <Button
                   key={capability.id}
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => handleQuickAction(capability.name, capability.description)}
                   className="h-auto flex-col gap-1 p-3"
@@ -283,18 +272,18 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
               );
             })}
           </div>
-        </CardContent>
+        </div>
       </Card>
 
       {/* Chat Interface */}
       <Card className="flex flex-col h-96">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">AI Chat</CardTitle>
-        </CardHeader>
+        <div className="pb-3 p-4">
+          <h3 className="text-sm font-medium">AI Chat</h3>
+        </div>
         
         {/* Chat Messages */}
-        <CardContent className="flex-1 p-0">
-          <ScrollArea ref={chatScrollRef} className="h-64 px-4">
+        <div className="flex-1 p-0">
+          <div ref={chatScrollRef} className="h-64 px-4 overflow-y-auto">
             <div className="space-y-4">
               {chatHistory.length === 0 && (
                 <div className="text-center text-gray-500 py-8">
@@ -310,11 +299,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
                   className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {message.type === 'ai' && (
-                    <Avatar className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600">
-                      <AvatarFallback className="text-white">
-                        <Bot className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <Avatar className="h-8 w-8" nameOrEmail="AI" />
                   )}
                   
                   <div className={`max-w-xs lg:max-w-md ${message.type === 'user' ? 'order-1' : ''}`}>
@@ -375,11 +360,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
                   </div>
                   
                   {message.type === 'user' && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <Avatar className="h-8 w-8" nameOrEmail="User" />
                   )}
                 </div>
               ))}
@@ -387,11 +368,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
               {/* Typing indicator */}
               {isTyping && (
                 <div className="flex gap-3 justify-start">
-                  <Avatar className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600">
-                    <AvatarFallback className="text-white">
-                      <Bot className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                  <Avatar className="h-8 w-8" nameOrEmail="AI" />
                   <div className="bg-gray-100 rounded-lg px-3 py-2">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
@@ -402,17 +379,17 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
                 </div>
               )}
             </div>
-          </ScrollArea>
-        </CardContent>
+          </div>
+        </div>
         
         {/* Chat Input */}
-        <CardContent className="pt-3">
+        <div className="pt-3 p-4">
           <div className="flex gap-2">
             <Input
               value={currentQuery}
-              onChange={(e) => setCurrentQuery(e.target.value)}
+              onChange={(e: any) => setCurrentQuery(e.target.value)}
               placeholder="Ask your AI assistant anything..."
-              onKeyPress={(e) => {
+              onKeyPress={(e: any) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleAIQuery(currentQuery);
@@ -432,7 +409,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
           <div className="text-xs text-gray-500 mt-1 text-right">
             {currentQuery.length} characters
           </div>
-        </CardContent>
+        </div>
       </Card>
     </div>
   );
