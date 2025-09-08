@@ -153,7 +153,7 @@ export default function BusinessIntelligencePage() {
     
     try {
       const response = await adminApiService.getBusinessIntelligence(filters);
-      setData(response.data || null);
+      setData(response.data?.data || null);
     } catch (err) {
       console.error('Error loading business intelligence data:', err);
       setError('Failed to load business intelligence data. Please try again.');

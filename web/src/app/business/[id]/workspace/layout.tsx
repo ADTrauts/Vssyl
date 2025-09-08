@@ -1,6 +1,8 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
-import BusinessWorkspaceWrapper from '../../../../components/BusinessWorkspaceWrapper';
+import { BusinessConfigurationProvider } from '../../../../contexts/BusinessConfigurationContext';
+import { PositionAwareModuleProvider } from '../../../../components/PositionAwareModuleProvider';
+import DashboardLayoutWrapper from '../../../../components/business/DashboardLayoutWrapper';
 import { serverBusinessApiCall } from '../../../../lib/serverApiUtils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../../lib/auth';
@@ -51,8 +53,12 @@ export default async function Layout({ children, params }: { children: React.Rea
   }
 
   return (
-    <BusinessWorkspaceWrapper business={business}>
-      {children}
-    </BusinessWorkspaceWrapper>
+    <BusinessConfigurationProvider businessId={business.id}>
+      <PositionAwareModuleProvider>
+        <DashboardLayoutWrapper business={business}>
+          {children}
+        </DashboardLayoutWrapper>
+      </PositionAwareModuleProvider>
+    </BusinessConfigurationProvider>
   );
 } 

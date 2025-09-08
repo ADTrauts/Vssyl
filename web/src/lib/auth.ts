@@ -86,9 +86,10 @@ export const authOptions: NextAuthOptions = {
             } as any;
           }
           return null;
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Auth error:', error);
-          throw new Error(error.message || 'Invalid credentials');
+          const errorMessage = error instanceof Error ? error.message : 'Invalid credentials';
+          throw new Error(errorMessage);
         }
       }
     })

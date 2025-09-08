@@ -43,6 +43,14 @@ export interface ModuleAnalytics {
   }>;
 }
 
+export interface AnalyticsExportData {
+  personalAnalytics: PersonalAnalytics;
+  moduleAnalytics: ModuleAnalytics[];
+  exportDate: string;
+  timeRange: string;
+  format: 'csv' | 'json';
+}
+
 // Get personal analytics for the current user
 export const getPersonalAnalytics = async (timeRange: '7d' | '30d' | '90d' = '30d'): Promise<PersonalAnalytics> => {
   const response = await authenticatedApiCall<{ success: boolean; data: PersonalAnalytics }>(`/api/analytics/personal?timeRange=${timeRange}`, {
@@ -60,8 +68,8 @@ export const getModuleAnalytics = async (moduleId: string, timeRange: '7d' | '30
 };
 
 // Export analytics data
-export const exportAnalytics = async (format: 'csv' | 'json' = 'json', timeRange: '7d' | '30d' | '90d' = '30d'): Promise<any> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: any }>(`/api/analytics/export?format=${format}&timeRange=${timeRange}`, {
+export const exportAnalytics = async (format: 'csv' | 'json' = 'json', timeRange: '7d' | '30d' | '90d' = '30d'): Promise<AnalyticsExportData> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: AnalyticsExportData }>(`/api/analytics/export?format=${format}&timeRange=${timeRange}`, {
     method: 'GET',
   });
   return response.data;

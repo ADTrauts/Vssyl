@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Request } from 'express';
 
 export interface LocationData {
   country: string;
@@ -71,11 +72,19 @@ class GeolocationService {
   }
 
   // Helper method to get client IP from Express request
-  getClientIP(req: any): string | undefined {
-    return req.headers['x-forwarded-for'] || 
-           req.connection.remoteAddress || 
-           req.socket.remoteAddress ||
-           req.connection.socket?.remoteAddress;
+  getClientIP(req: Request): string | undefined {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (typeof forwardedFor === 'string') {
+      return forwardedFor.split(',')[0].trim();
+    }
+    
+    // Fallback to connection properties with proper typing
+    const connection = req.connection as { remoteAddress?: string; socket?: { remoteAddress?: string } };
+    const socket = req.socket as { remoteAddress?: string };
+    
+    return connection?.remoteAddress || 
+           socket?.remoteAddress ||
+           connection?.socket?.remoteAddress;
   }
 }
 

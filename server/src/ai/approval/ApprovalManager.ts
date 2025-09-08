@@ -1,14 +1,14 @@
 import { PrismaClient } from '@prisma/client';
-import { AutonomyDecision } from '../autonomy/AutonomyManager';
+import { AutonomyDecision, RiskAssessment } from '../autonomy/AutonomyManager';
 
 export interface ApprovalRequest {
   id: string;
   userId: string;
   actionType: string;
-  actionData: any;
+  actionData: Record<string, unknown>;
   affectedUsers: string[];
   reasoning: string;
-  riskAssessment: any;
+  riskAssessment: RiskAssessment;
   autonomyDecision: AutonomyDecision;
   expiresAt: Date;
   status: 'pending' | 'approved' | 'rejected' | 'expired' | 'executed';
@@ -21,7 +21,7 @@ export interface ApprovalResponse {
   userName: string;
   response: 'approve' | 'reject' | 'modify';
   reasoning?: string;
-  modifications?: any;
+  modifications?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -47,7 +47,7 @@ export class ApprovalManager {
   async createApprovalRequest(
     userId: string,
     actionType: string,
-    actionData: any,
+    actionData: Record<string, unknown>,
     affectedUsers: string[],
     reasoning: string,
     autonomyDecision: AutonomyDecision
@@ -114,7 +114,7 @@ export class ApprovalManager {
     responderId: string,
     response: 'approve' | 'reject' | 'modify',
     reasoning?: string,
-    modifications?: any
+    modifications?: Record<string, unknown>
   ): Promise<ApprovalRequest> {
     const request = await this.prisma.aIApprovalRequest.findUnique({
       where: { id: requestId }
@@ -133,7 +133,7 @@ export class ApprovalManager {
     }
 
     // Add response to the request
-    const responses = request.responses as any[] || [];
+    const responses = (request.responses as unknown as ApprovalResponse[]) || [];
     const responder = await this.prisma.user.findUnique({
       where: { id: responderId },
       select: { name: true }
@@ -235,7 +235,15 @@ export class ApprovalManager {
   /**
    * Get approval statistics for a user
    */
-  async getApprovalStats(userId: string): Promise<any> {
+  async getApprovalStats(userId: string): Promise<{
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    expired: number;
+    executed: number;
+    averageResponseTime: number;
+  }> {
     const requests = await this.prisma.aIApprovalRequest.findMany({
       where: { userId }
     });
@@ -370,27 +378,27 @@ export class ApprovalManager {
   /**
    * Format approval request for API response
    */
-  private formatApprovalRequest(request: any, autonomyDecision?: AutonomyDecision): ApprovalRequest {
+  private formatApprovalRequest(request: Record<string, unknown>, autonomyDecision?: AutonomyDecision): ApprovalRequest {
     return {
-      id: request.id,
-      userId: request.userId,
-      actionType: request.requestType,
-      actionData: request.actionData,
-      affectedUsers: request.affectedUsers,
-      reasoning: request.reasoning,
+      id: request.id as string,
+      userId: request.userId as string,
+      actionType: request.requestType as string,
+      actionData: request.actionData as Record<string, unknown>,
+      affectedUsers: request.affectedUsers as string[],
+      reasoning: request.reasoning as string,
       riskAssessment: autonomyDecision?.riskAssessment || { level: 'low', factors: [], impact: 'minimal' },
       autonomyDecision: autonomyDecision || {
-        actionId: request.id,
+        actionId: request.id as string,
         canExecute: false,
         requiresApproval: true,
         autonomyLevel: 0,
         confidence: 0,
         riskAssessment: { level: 'low', factors: [], impact: 'minimal' }
       },
-      expiresAt: request.expiresAt,
-      status: request.status.toLowerCase() as any,
-      responses: request.responses || [],
-      createdAt: request.createdAt
+      expiresAt: request.expiresAt as Date,
+      status: (request.status as string).toLowerCase() as 'pending' | 'approved' | 'rejected' | 'expired' | 'executed',
+      responses: (request.responses as ApprovalResponse[]) || [],
+      createdAt: request.createdAt as Date
     };
   }
 }

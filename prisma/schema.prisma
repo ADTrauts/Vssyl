@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// ENUMS
+// ============================================================================
+
 enum Role {
   USER
   ADMIN
@@ -25,6 +29,139 @@ enum HouseholdRole {
   CHILD
   TEMPORARY_GUEST
 }
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  CHANNEL
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+  REACTION
+}
+
+enum ThreadType {
+  MESSAGE
+  TOPIC
+  PROJECT
+  DECISION
+  DOCUMENTATION
+}
+
+enum ParticipantRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+  GUEST
+}
+
+enum BusinessRole {
+  EMPLOYEE
+  ADMIN
+  MANAGER
+}
+
+enum InstitutionType {
+  UNIVERSITY
+  COLLEGE
+  HIGH_SCHOOL
+  ELEMENTARY_SCHOOL
+}
+
+enum InstitutionRole {
+  STUDENT
+  FACULTY
+  STAFF
+}
+
+enum RelationshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+enum RelationshipType {
+  REGULAR
+  COLLEAGUE
+}
+
+enum ModuleStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ModuleCategory {
+  PRODUCTIVITY
+  COMMUNICATION
+  ANALYTICS
+  DEVELOPMENT
+  ENTERTAINMENT
+  EDUCATION
+  FINANCE
+  HEALTH
+  OTHER
+}
+
+enum AIRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  EXECUTED
+}
+
+enum AIInteractionType {
+  QUERY
+  ACTION_REQUEST
+  LEARNING
+  FEEDBACK
+  CORRECTION
+}
+
+enum CalendarType {
+  LOCAL
+  EXTERNAL
+  RESOURCE
+  SUBSCRIPTION
+}
+
+enum CalendarContextType {
+  PERSONAL
+  BUSINESS
+  HOUSEHOLD
+}
+
+enum EventStatus {
+  CONFIRMED
+  TENTATIVE
+  CANCELED
+}
+
+enum ReminderMethod {
+  APP
+  EMAIL
+}
+
+// ============================================================================
+// MODULE SCHEMAS
+// ============================================================================
+
+
+// ============================================================================
+// AUTH MODULE
+// ============================================================================
+
+// ============================================================================
+// USER & AUTHENTICATION MODELS
+// ============================================================================
 
 model User {
   id              String   @id @default(uuid())
@@ -109,6 +246,15 @@ model User {
   impersonatedUsers AdminImpersonation[] @relation("ImpersonatedUser")
   impersonatedBy AdminImpersonation[] @relation("AdminImpersonator")
 
+  // Support system relations
+  supportTickets SupportTicket[] // Tickets created by this user
+  assignedTickets SupportTicket[] @relation("AssignedTickets") // Tickets assigned to this user (if admin/agent)
+  supportMessages SupportMessage[] // Messages sent by this user
+  knowledgeBaseArticles KnowledgeBaseArticle[] // Articles created by this user
+  liveChatSessions LiveChatSession[] // Chat sessions for this user
+  liveChatSessionsAsAgent LiveChatSession[] @relation("LiveChatSessions") // Chat sessions where user is agent
+  liveChatMessages LiveChatMessage[] // Chat messages sent by this user
+
   // Org Chart & Permission System relations
   employeePositions EmployeePosition[]
   assignedEmployeePositions EmployeePosition[] @relation("EmployeePositionAssignedBy")
@@ -169,80 +315,40 @@ model UserPreference {
   @@unique([userId, key])
 }
 
-model Dashboard {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
-  name        String
-  layout      Json?    // Stores widget positions, layout state
-  preferences Json?    // User-specific dashboard preferences
-  retentionPolicy RetentionPolicy?
-  complianceSettings ComplianceSettings?
-  widgets     Widget[]
-  conversations Conversation[]
-  files       File[]
-  folders     Folder[]
-  trashedAt   DateTime?
-  // Business, Educational, and Household contexts
-  business    Business? @relation(fields: [businessId], references: [id])
-  businessId  String?
-  institution EducationalInstitution? @relation(fields: [institutionId], references: [id])
-  institutionId String?
-  household   Household? @relation(fields: [householdId], references: [id])
-  householdId String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([businessId])
-  @@index([institutionId])
-  @@index([householdId])
-}
-
-model RetentionPolicy {
-  id                    String    @id @default(uuid())
-  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
-  dashboardId           String    @unique
-  messageRetentionDays  Int       @default(365)
-  autoDeleteEnabled     Boolean   @default(false)
-  fileRetentionDays     Int       @default(730)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-}
-
-model ComplianceSettings {
-  id                    String    @id @default(uuid())
-  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
-  dashboardId           String    @unique
-  complianceMode        String    @default("standard") // standard, strict, custom
-  encryptionEnabled     Boolean   @default(false)
-  auditLoggingEnabled   Boolean   @default(true)
-  dataResidency        String?   // e.g., "US", "EU", "APAC"
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-}
-
-model AuditLog {
-  id          String   @id @default(uuid())
-  action      String   // e.g., "MESSAGE_CREATED", "MESSAGE_DELETED", "USER_JOINED"
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  conversationId String?
-  resourceType String? // e.g., "FILE", "CONVERSATION", "DASHBOARD", "MODULE"
-  resourceId   String? // ID of the accessed resource
-  details     String   // JSON string with additional details
-  timestamp   DateTime @default(now())
-  ipAddress   String?
-  userAgent   String?
-  adminImpersonationId String?
-  adminImpersonation AdminImpersonation? @relation(fields: [adminImpersonationId], references: [id])
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId])
-  @@index([action])
-  @@index([timestamp])
-  @@index([conversationId])
-  @@index([resourceType])
-  @@index([resourceId])
-  @@index([adminImpersonationId])
+  @@index([token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 
 // User consent and privacy management
@@ -304,260 +410,68 @@ model UserPrivacySettings {
   @@map("user_privacy_settings")
 }
 
-// Data Classification System
-model DataClassification {
-  id          String   @id @default(uuid())
-  resourceType String  // 'file', 'message', 'conversation', 'dashboard', 'module', etc.
-  resourceId  String   // ID of the classified resource
-  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
-  classifiedBy String  // User ID who classified
-  classifiedAt DateTime @default(now())
-  expiresAt   DateTime? // When classification expires
-  notes       String?   // Optional notes about classification
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([resourceType, resourceId])
-  @@index([sensitivity])
-  @@index([classifiedBy])
-  @@index([expiresAt])
-  @@map("data_classifications")
-}
-
-// Classification Rules for Automated Classification
-model ClassificationRule {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  pattern     String   // Regex pattern for matching content
-  resourceType String  // What type of resource this rule applies to
-  sensitivity String   // Target sensitivity level
-  priority    Int      @default(0) // Higher priority rules are applied first
-  isActive    Boolean  @default(true)
-  createdBy   String   // User ID who created the rule
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([resourceType])
-  @@index([isActive])
-  @@index([priority])
-  @@map("classification_rules")
-}
-
-// Classification Templates for Quick Classification
-model ClassificationTemplate {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
-  expiresIn   Int?     // Days until expiration (null = no expiration)
-  notes       String?  // Default notes for this template
-  createdBy   String   // User ID who created the template
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([sensitivity])
-  @@map("classification_templates")
-}
-
-// Enhanced Retention Policies (system-wide)
-model SystemRetentionPolicy {
-  id              String   @id @default(uuid())
-  name            String   @unique
-  description     String?
-  resourceType    String   // What type of data this applies to
-  retentionPeriod Int      // Days to retain
-  archiveAfter    Int?     // Days before archiving
-  deleteAfter     Int?     // Days before deletion
-  isActive        Boolean  @default(true)
-  createdBy       String   // User ID who created the policy
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([resourceType])
-  @@index([isActive])
-  @@map("system_retention_policies")
-}
-
-// Backup Records
-model BackupRecord {
-  id          String   @id @default(uuid())
-  backupType  String   // 'database', 'files', 'full', 'incremental'
-  backupPath  String   // Path to backup file
-  backupSize  Int      // Size in bytes
-  checksum    String   // Backup integrity checksum
-  status      String   // 'completed', 'failed', 'verifying', 'restoring'
-  notes       String?  // Optional notes about the backup
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime // When backup should be deleted
-  createdBy   String   // User ID who initiated the backup
-
-  @@index([backupType])
-  @@index([status])
-  @@index([expiresAt])
-  @@map("backup_records")
-}
-
-// Data Governance Policies
-model GovernancePolicy {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
-  policyType  String   // 'retention', 'classification', 'access', 'encryption'
-  rules       Json     // JSON object with policy rules
-  isActive    Boolean  @default(true)
-  createdBy   String   // User ID who created the policy
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  violations  PolicyViolation[]
-
-  @@index([policyType])
-  @@index([isActive])
-  @@map("governance_policies")
-}
-
-// Policy Violations
-model PolicyViolation {
-  id              String   @id @default(uuid())
-  policy          GovernancePolicy @relation(fields: [policyId], references: [id])
-  policyId        String
-  resourceType    String   // Type of resource that violated the policy
-  resourceId      String   // ID of the resource that violated the policy
-  violationType   String   // Type of violation (e.g., 'classification', 'retention', 'access')
-  severity        String   // 'low', 'medium', 'high', 'critical'
-  message         String   // Description of the violation
-  detectedAt      DateTime @default(now())
-  resolvedAt      DateTime?
-  resolvedBy      String?  // User ID who resolved the violation
-  resolutionNotes String?  // Notes about how the violation was resolved
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([policyId])
-  @@index([resourceType])
-  @@index([severity])
-  @@index([detectedAt])
-  @@index([resolvedAt])
-  @@map("policy_violations")
-}
-
-model Widget {
-  id          String   @id @default(uuid())
-  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
-  dashboardId String
-  type        String   // e.g., 'chat', 'drive', 'analytics', etc.
-  config      Json?    // Widget-specific config (e.g., filters, settings)
-  position    Json?    // Position/size in dashboard layout
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model File {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      String
-  name        String
-  path        String?
-  type        String
-  size        Int
-  url         String
-  folder      Folder?  @relation(fields: [folderId], references: [id])
-  folderId    String?
-  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
-  dashboardId String?
-  order       Int      @default(0) // Order within folder for drag-and-drop
-  starred     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  permissions FilePermission[]
-  trashedAt   DateTime?
-  activities  Activity[]
-  fileReferences FileReference[]
-}
-
-model Folder {
+// Location Models for User Numbering System
+model Country {
   id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
   name      String
-  parent    Folder?  @relation("FolderParent", fields: [parentId], references: [id])
-  parentId  String?
-  dashboard Dashboard? @relation(fields: [dashboardId], references: [id])
-  dashboardId String?
-  order     Int      @default(0) // Order within parent folder for drag-and-drop
-  starred   Boolean  @default(false)
-  children  Folder[] @relation("FolderParent")
-  files     File[]
+  phoneCode String   @unique // e.g., "1", "44", "33"
+  regions   Region[]
+  users     User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  trashedAt DateTime?
+
+  @@map("countries")
 }
 
-model FilePermission {
+model Region {
   id        String   @id @default(uuid())
-  file      File     @relation(fields: [fileId], references: [id])
-  fileId    String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  canRead   Boolean  @default(true)
-  canWrite  Boolean  @default(false)
+  name      String
+  code      String   // 3-digit code, e.g., "001", "002"
+  country   Country  @relation(fields: [countryId], references: [id])
+  countryId String
+  towns     Town[]
+  users     User[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([fileId, userId])
+  @@unique([countryId, code])
+  @@map("regions")
 }
 
-model Activity {
+model Town {
   id        String   @id @default(uuid())
-  type      String   // 'create', 'edit', 'delete', 'share', 'download'
-  timestamp DateTime @default(now())
-  details   Json?    // Additional activity details
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  file      File     @relation(fields: [fileId], references: [id])
-  fileId    String
-
-  @@index([userId])
-  @@index([fileId])
-  @@index([timestamp])
-}
-
-model RefreshToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
+  name      String
+  code      String   // 3-digit code, e.g., "001", "002"
+  region    Region   @relation(fields: [regionId], references: [id])
+  regionId  String
+  users     User[]
+  userSerials UserSerial[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([token])
+  @@unique([regionId, code])
+  @@map("towns")
 }
 
-model PasswordResetToken {
+model UserSerial {
   id        String   @id @default(uuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  town      Town     @relation(fields: [townId], references: [id])
+  townId    String
+  lastSerial Int     @default(0)
+  updatedAt DateTime @updatedAt
 
-  @@index([userId])
-  @@index([token])
+  @@unique([townId])
+  @@map("user_serials")
 }
 
-model EmailVerificationToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
 
-  @@index([userId])
-  @@index([token])
-}
+// ============================================================================
+// CHAT MODULE
+// ============================================================================
 
-// Chat Models
+// ============================================================================
+// CHAT & COMMUNICATION MODELS
+// ============================================================================
 
 model Conversation {
   id          String   @id @default(uuid())
@@ -705,36 +619,14 @@ model ThreadParticipant {
   @@map("thread_participants")
 }
 
-// Enums for Chat Models
 
-enum ConversationType {
-  DIRECT
-  GROUP
-  CHANNEL
-}
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
 
-enum MessageType {
-  TEXT
-  FILE
-  SYSTEM
-  REACTION
-}
-
-enum ThreadType {
-  MESSAGE
-  TOPIC
-  PROJECT
-  DECISION
-  DOCUMENTATION
-}
-
-enum ParticipantRole {
-  OWNER
-  ADMIN
-  MODERATOR
-  MEMBER
-  GUEST
-}
+// ============================================================================
+// BUSINESS & ENTERPRISE MODELS
+// ============================================================================
 
 model Business {
   id          String   @id @default(uuid())
@@ -960,41 +852,7 @@ model InstitutionInvitation {
   @@map("institution_invitations")
 }
 
-// Enums for Business and Educational Institutions
-
-enum BusinessRole {
-  EMPLOYEE
-  ADMIN
-  MANAGER
-}
-
-enum InstitutionType {
-  UNIVERSITY
-  COLLEGE
-  HIGH_SCHOOL
-  ELEMENTARY_SCHOOL
-}
-
-enum InstitutionRole {
-  STUDENT
-  FACULTY
-  STAFF
-}
-
 // Personal relationship models and enums
-
-enum RelationshipStatus {
-  PENDING
-  ACCEPTED
-  DECLINED
-  BLOCKED
-}
-
-enum RelationshipType {
-  REGULAR
-  COLLEAGUE
-}
-
 model Relationship {
   id          String   @id @default(uuid())
   sender      User     @relation("RelationshipSender", fields: [senderId], references: [id], onDelete: Cascade)
@@ -1030,27 +888,131 @@ model BusinessFollow {
   @@map("business_follows")
 }
 
-// Module and Marketplace models
 
-enum ModuleStatus {
-  DRAFT
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
+
+// ============================================================================
+// DASHBOARD & WIDGET MODELS
+// ============================================================================
+
+model Dashboard {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  layout      Json?    // Stores widget positions, layout state
+  preferences Json?    // User-specific dashboard preferences
+  retentionPolicy RetentionPolicy?
+  complianceSettings ComplianceSettings?
+  widgets     Widget[]
+  conversations Conversation[]
+  files       File[]
+  folders     Folder[]
+  trashedAt   DateTime?
+  // Business, Educational, and Household contexts
+  business    Business? @relation(fields: [businessId], references: [id])
+  businessId  String?
+  institution EducationalInstitution? @relation(fields: [institutionId], references: [id])
+  institutionId String?
+  household   Household? @relation(fields: [householdId], references: [id])
+  householdId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([institutionId])
+  @@index([householdId])
+  @@map("dashboards")
 }
 
-enum ModuleCategory {
-  PRODUCTIVITY
-  COMMUNICATION
-  ANALYTICS
-  DEVELOPMENT
-  ENTERTAINMENT
-  EDUCATION
-  FINANCE
-  HEALTH
-  OTHER
+model RetentionPolicy {
+  id                    String    @id @default(uuid())
+  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId           String    @unique
+  messageRetentionDays  Int       @default(365)
+  autoDeleteEnabled     Boolean   @default(false)
+  fileRetentionDays     Int       @default(730)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
+
+model ComplianceSettings {
+  id                    String    @id @default(uuid())
+  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId           String    @unique
+  complianceMode        String    @default("standard") // standard, strict, custom
+  encryptionEnabled     Boolean   @default(false)
+  auditLoggingEnabled   Boolean   @default(true)
+  dataResidency        String?   // e.g., "US", "EU", "APAC"
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Widget {
+  id          String   @id @default(uuid())
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId String
+  type        String   // e.g., 'chat', 'drive', 'analytics', etc.
+  config      Json?    // Widget-specific config (e.g., filters, settings)
+  position    Json?    // Position/size in dashboard layout
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
+
+// ============================================================================
+// HOUSEHOLD MANAGEMENT MODELS
+// ============================================================================
+
+model Household {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  type         HouseholdType
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relationships
+  members      HouseholdMember[]
+  dashboards   Dashboard[]
+  
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String        @id @default(uuid())
+  userId      String
+  householdId String
+  role        HouseholdRole
+  joinedAt    DateTime      @default(now())
+  expiresAt   DateTime?     // For temporary guests
+  isActive    Boolean       @default(true)
+  
+  // Relationships
+  user        User          @relation(fields: [userId], references: [id])
+  household   Household     @relation(fields: [householdId], references: [id])
+  
+  @@unique([userId, householdId])
+  @@index([userId])
+  @@index([householdId])
+  @@map("household_members")
+}
+
+
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
+
+// ============================================================================
+// MODULE & MARKETPLACE MODELS
+// ============================================================================
 
 model Module {
   id          String   @id @default(uuid())
@@ -1189,43 +1151,181 @@ model ModuleReview {
   @@map("module_reviews")
 }
 
-// Household Management Models
-model Household {
-  id           String   @id @default(uuid())
-  name         String
-  description  String?
-  type         HouseholdType
-  isPrimary    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  // Relationships
-  members      HouseholdMember[]
-  dashboards   Dashboard[]
-  
-  @@map("households")
+
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
+
+// ============================================================================
+// ORG CHART & PERMISSION SYSTEM MODELS
+// ============================================================================
+
+model OrganizationalTier {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  name        String   // "C-Suite", "VP Level", "Director", "Manager", "Employee"
+  level       Int      // 1 = highest, 5 = lowest
+  description String?
+  defaultPermissions Json? // Default permission set for this tier
+  defaultModules     Json? // Default modules for this tier
+  positions   Position[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([level])
+  @@map("organizational_tiers")
 }
 
-model HouseholdMember {
-  id          String        @id @default(uuid())
+model Position {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  title       String
+  tier        OrganizationalTier @relation(fields: [tierId], references: [id])
+  tierId      String
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId String?
+  reportsTo   Position? @relation("PositionHierarchy", fields: [reportsToId], references: [id])
+  reportsToId String?
+  directReports Position[] @relation("PositionHierarchy")
+  headOfDepartment Department[] @relation("DepartmentHead")
+  permissions Json? // Permission set for this position
+  assignedModules Json? // Modules assigned to this position
+  maxOccupants Int @default(1) // How many people can have this position
+  customPermissions Json? // Override default permissions
+  employeePositions EmployeePosition[]
+  permissionSets PermissionSet[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, title])
+  @@index([businessId])
+  @@index([tierId])
+  @@index([departmentId])
+  @@index([reportsToId])
+  @@map("positions")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  moduleId    String   // Module identifier
+  featureId   String   // Feature identifier
+  action      String   // 'view', 'create', 'edit', 'delete', 'manage', 'admin'
+  description String
+  category    String   // 'basic', 'advanced', 'admin'
+  dependencies Json?   // Other permissions required
+  conflicts   Json?    // Conflicting permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([moduleId, featureId, action])
+  @@index([moduleId])
+  @@index([featureId])
+  @@index([action])
+  @@index([category])
+  @@map("permissions")
+}
+
+model PermissionSet {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  name        String   // "Full Access", "Executive Access", etc.
+  description String?
+  permissions Json     // Array of permission objects
+  category    String   // 'basic', 'advanced', 'admin'
+  template    Boolean  @default(false) // Whether this is a reusable template
+  positions   Position[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([category])
+  @@index([template])
+  @@map("permission_sets")
+}
+
+model EmployeePosition {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  householdId String
-  role        HouseholdRole
-  joinedAt    DateTime      @default(now())
-  expiresAt   DateTime?     // For temporary guests
-  isActive    Boolean       @default(true)
-  
-  // Relationships
-  user        User          @relation(fields: [userId], references: [id])
-  household   Household     @relation(fields: [householdId], references: [id])
-  
-  @@unique([userId, householdId])
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  positionId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  assignedAt  DateTime @default(now())
+  assignedBy  User     @relation("EmployeePositionAssignedBy", fields: [assignedById], references: [id])
+  assignedById String
+  startDate   DateTime
+  endDate     DateTime?
+  active      Boolean  @default(true)
+  customPermissions Json? // Individual overrides
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, positionId, businessId])
   @@index([userId])
-  @@index([householdId])
-  @@map("household_members")
+  @@index([positionId])
+  @@index([businessId])
+  @@index([assignedById])
+  @@index([active])
+  @@map("employee_positions")
 }
 
-// AI and Digital Life Twin Models
+model PermissionManagementRights {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  grantedBy   User     @relation("PermissionManagementRightsGrantedBy", fields: [grantedById], references: [id])
+  grantedById String
+  grantedAt   DateTime @default(now())
+  scope       Json     // Which roles, modules, and levels they can manage
+  canGrantToOthers Boolean @default(false) // Can they give permission management to others?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@index([grantedById])
+  @@map("permission_management_rights")
+}
+
+model PermissionChange {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  changedById String
+  changedAt   DateTime @default(now())
+  changeType  String   // 'permission_granted', 'permission_revoked', 'role_created', 'role_modified'
+  targetRole  String?  // Role or position affected
+  permissionsChanged Json? // What permissions were changed
+  reason      String?  // Reason for the change
+  createdAt   DateTime @default(now())
+
+  @@index([businessId])
+  @@index([changedById])
+  @@index([changedAt])
+  @@index([changeType])
+  @@map("permission_changes")
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// ============================================================================
+// AI & MACHINE LEARNING MODELS
+// ============================================================================
 
 model AIPersonalityProfile {
   id              String   @id @default(uuid())
@@ -1272,14 +1372,6 @@ model AIAutonomySettings {
   @@map("ai_autonomy_settings")
 }
 
-enum AIRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  EXPIRED
-  EXECUTED
-}
-
 model AIApprovalRequest {
   id              String           @id @default(uuid())
   userId          String
@@ -1308,14 +1400,6 @@ model AIApprovalRequest {
   @@index([status])
   @@index([expiresAt])
   @@map("ai_approval_requests")
-}
-
-enum AIInteractionType {
-  QUERY
-  ACTION_REQUEST
-  LEARNING
-  FEEDBACK
-  CORRECTION
 }
 
 model AIConversationHistory {
@@ -1591,8 +1675,6 @@ model ABTestResult {
   @@map("ab_test_results")
 }
 
-
-
 // Workflow automation and decision support
 model WorkflowDefinition {
   id              String   @id @default(uuid())
@@ -1779,6 +1861,15 @@ model AutoMLTrial {
   @@index([status])
   @@map("automl_trials")
 }
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// ============================================================================
+// ANALYTICS & INTELLIGENCE PLATFORM MODELS
+// ============================================================================
 
 // Real-time Analytics
 model DataStream {
@@ -2061,689 +2152,10 @@ model Recommendation {
   @@map("recommendations")
 }
 
-// SSO Integration
-model SSOProvider {
-  id              String   @id @default(uuid())
-  name            String
-  type            String   // oauth2, saml, ldap, oidc
-  config          Json     // Provider configuration
-  status          String   // active, inactive, error
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  sessions        SSOSession[]
-  
-  @@index([type])
-  @@index([status])
-  @@map("sso_providers")
-}
-
-model SSOSession {
-  id              String   @id @default(uuid())
-  providerId      String
-  provider        SSOProvider @relation(fields: [providerId], references: [id])
-  userId          String
-  sessionToken    String   @unique
-  expiresAt       DateTime
-  metadata        Json?    // Session metadata
-  createdAt       DateTime @default(now())
-  
-  @@index([providerId])
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("sso_sessions")
-}
-
-// Enterprise Security
-model ComplianceFramework {
-  id              String   @id @default(uuid())
-  name            String   // SOC 2, ISO 27001, GDPR, etc.
-  version         String
-  description     String?
-  status          String   // active, inactive, deprecated
-  controls        Json     // Framework controls
-  config          Json?    // Framework configuration
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  @@index([name])
-  @@index([status])
-  @@map("compliance_frameworks")
-}
-
-model SecurityIncident {
-  id              String   @id @default(uuid())
-  title           String
-  description     String
-  severity        String   // low, medium, high, critical
-  status          String   // open, investigating, resolved, closed
-  category        String   // data_breach, unauthorized_access, etc.
-  affectedUsers   Int?
-  data           Json     // Incident details and evidence
-  reportedAt      DateTime @default(now())
-  resolvedAt      DateTime?
-  reportedBy      String?
-  
-  @@index([severity])
-  @@index([status])
-  @@index([category])
-  @@index([reportedAt])
-  @@map("security_incidents")
-}
-
-model SecurityAudit {
-  id              String   @id @default(uuid())
-  type            String   // access, data, compliance, system
-  scope           String   // user, module, system, data
-  findings        Json     // Audit findings
-  recommendations String[]
-  status          String   // pending, in_progress, completed
-  startedAt       DateTime @default(now())
-  completedAt     DateTime?
-  auditor         String?
-  
-  @@index([type])
-  @@index([scope])
-  @@index([status])
-  @@map("security_audits")
-}
-
-// ===== BILLING & SUBSCRIPTION MODELS =====
-
-// Core tier subscriptions (Free, Standard, Enterprise)
-model Subscription {
-  id              String   @id @default(uuid())
-  userId          String
-  businessId      String?
-  tier            String   // 'free', 'standard', 'enterprise'
-  status          String   // 'active', 'cancelled', 'past_due', 'unpaid'
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd Boolean @default(false)
-  stripeSubscriptionId String?
-  stripeCustomerId    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relationships
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  moduleSubscriptions ModuleSubscription[]
-  usageRecords    UsageRecord[]
-  invoices        Invoice[]
-
-  @@index([userId])
-  @@index([businessId])
-  @@index([tier])
-  @@index([status])
-  @@map("subscriptions")
-}
-
-// Module-specific subscriptions (App Store model)
-model ModuleSubscription {
-  id              String   @id @default(uuid())
-  userId          String
-  businessId      String?
-  moduleId        String
-  coreSubscriptionId String?
-  tier            String   // 'premium', 'enterprise'
-  status          String   // 'active', 'cancelled', 'past_due'
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd Boolean @default(false)
-  stripeSubscriptionId String?
-  stripeCustomerId    String?
-  amount          Float
-  platformRevenue Float    @default(0) // For third-party modules
-  developerRevenue Float   @default(0) // For third-party modules
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // Relationships
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  coreSubscription Subscription? @relation(fields: [coreSubscriptionId], references: [id], onDelete: SetNull)
-  usageRecords    UsageRecord[]
-  invoices        Invoice[]
-  
-  @@index([userId])
-  @@index([businessId])
-  @@index([moduleId])
-  @@index([status])
-  @@map("module_subscriptions")
-}
-
-// Usage tracking for both core tiers and modules
-model UsageRecord {
-  id              String   @id @default(uuid())
-  subscriptionId  String?
-  moduleSubscriptionId String?
-  userId          String
-  businessId      String?
-  metric          String   // 'api_calls', 'storage_gb', 'ai_requests', 'messages', 'files'
-  quantity        Int
-  cost            Float
-  periodStart     DateTime
-  periodEnd       DateTime
-  createdAt       DateTime @default(now())
-  
-  // Relationships
-  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  
-  @@index([subscriptionId])
-  @@index([moduleSubscriptionId])
-  @@index([userId])
-  @@index([metric])
-  @@index([periodStart])
-  @@map("usage_records")
-}
-
-// Invoice management
-model Invoice {
-  id              String   @id @default(uuid())
-  subscriptionId  String?
-  moduleSubscriptionId String?
-  businessId      String?
-  amount          Float
-  currency        String   @default("USD")
-  status          String   // 'draft', 'open', 'paid', 'void', 'uncollectible'
-  stripeInvoiceId String?
-  dueDate         DateTime?
-  paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  
-  // Relationships
-  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
-  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String?
-
-  @@index([subscriptionId])
-  @@index([moduleSubscriptionId])
-  @@index([businessId])
-  @@index([status])
-  @@map("invoices")
-}
-
-// Developer revenue tracking for third-party modules
-model DeveloperRevenue {
-  id              String   @id @default(uuid())
-  developerId     String
-  moduleId        String
-  periodStart     DateTime
-  periodEnd       DateTime
-  totalRevenue    Float
-  platformRevenue Float
-  developerRevenue Float
-  payoutStatus    String   @default("pending") // 'pending', 'paid', 'failed'
-  payoutDate      DateTime?
-  createdAt       DateTime @default(now())
-  
-  // Relationships
-  developer       User     @relation(fields: [developerId], references: [id], onDelete: Cascade)
-  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  
-  @@index([developerId])
-  @@index([moduleId])
-  @@index([periodStart])
-  @@map("developer_revenue")
-} 
-
-// Location Models for User Numbering System
-model Country {
-  id        String   @id @default(uuid())
-  name      String
-  phoneCode String   @unique // e.g., "1", "44", "33"
-  regions   Region[]
-  users     User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("countries")
-}
-
-model Region {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   // 3-digit code, e.g., "001", "002"
-  country   Country  @relation(fields: [countryId], references: [id])
-  countryId String
-  towns     Town[]
-  users     User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([countryId, code])
-  @@map("regions")
-}
-
-model Town {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   // 3-digit code, e.g., "001", "002"
-  region    Region   @relation(fields: [regionId], references: [id])
-  regionId  String
-  users     User[]
-  userSerials UserSerial[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([regionId, code])
-  @@map("towns")
-}
-
-model UserSerial {
-  id        String   @id @default(uuid())
-  town      Town     @relation(fields: [townId], references: [id])
-  townId    String
-  lastSerial Int     @default(0)
-  updatedAt DateTime @updatedAt
-
-  @@unique([townId])
-  @@map("user_serials")
-} 
-
-// Admin Portal Models
-
-// Content moderation
-model ContentReport {
-  id          String   @id @default(uuid())
-  reporterId  String
-  reporter    User     @relation("ContentReporter", fields: [reporterId], references: [id])
-  contentId   String
-  contentType String
-  reason      String
-  status      String   @default("pending")
-  createdAt   DateTime @default(now())
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  action      String?
-  details     String?
-}
-
-// System monitoring and analytics
-model SystemMetrics {
-  id          String   @id @default(uuid())
-  metricType  String
-  metricName  String
-  metricValue Float
-  timestamp   DateTime @default(now())
-  metadata    Json?
-}
-
-// System configuration
-model SystemConfig {
-  id          String   @id @default(uuid())
-  configKey   String   @unique
-  configValue Json
-  description String?
-  updatedBy   String
-  updatedAt   DateTime @default(now())
-}
-
-// Security events
-model SecurityEvent {
-  id          String   @id @default(uuid())
-  eventType   String
-  userId      String?
-  userEmail   String?
-  adminId     String?
-  adminEmail  String?
-  ipAddress   String?
-  userAgent   String?
-  details     Json?
-  severity    String
-  timestamp   DateTime @default(now())
-  resolved    Boolean  @default(false)
-} 
-
-// Admin impersonation sessions
-model AdminImpersonation {
-  id          String   @id @default(uuid())
-  adminId     String
-  admin       User     @relation("AdminImpersonator", fields: [adminId], references: [id])
-  targetUserId String
-  targetUser  User     @relation("ImpersonatedUser", fields: [targetUserId], references: [id])
-  startedAt   DateTime @default(now())
-  endedAt     DateTime?
-  reason      String?
-  auditLogs   AuditLog[]
-
-  @@index([adminId])
-  @@index([targetUserId])
-  @@index([startedAt])
-  @@map("admin_impersonations")
-} 
-
-// Calendar module enums
-enum CalendarType {
-  LOCAL
-  EXTERNAL
-  RESOURCE
-  SUBSCRIPTION
-}
-
-enum CalendarContextType {
-  PERSONAL
-  BUSINESS
-  HOUSEHOLD
-}
-
-enum EventStatus {
-  CONFIRMED
-  TENTATIVE
-  CANCELED
-}
-
-enum ReminderMethod {
-  APP
-  EMAIL
-}
-
-// Calendar module models
-model Calendar {
-  id                     String              @id @default(uuid())
-  name                   String
-  color                  String?
-  type                   CalendarType        @default(LOCAL)
-  contextType            CalendarContextType
-  contextId              String
-  isPrimary              Boolean             @default(false)
-  isSystem               Boolean             @default(false)
-  isDeletable            Boolean             @default(true)
-  defaultReminderMinutes Int                 @default(10)
-  visibility             String?             // future: private/public/link
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-
-  // Relationships
-  events                 Event[]
-  members                CalendarMember[]
-
-  @@index([contextType, contextId])
-  @@map("calendars")
-}
-
-model CalendarMember {
-  id         String   @id @default(uuid())
-  calendar   Calendar @relation(fields: [calendarId], references: [id])
-  calendarId String
-  user       User     @relation(fields: [userId], references: [id])
-  userId     String
-  role       String   // OWNER | ADMIN | EDITOR | READER | FREE_BUSY
-  createdAt  DateTime @default(now())
-
-  @@unique([calendarId, userId])
-  @@index([userId])
-  @@map("calendar_members")
-}
-
-model Event {
-  id               String       @id @default(uuid())
-  calendar         Calendar     @relation(fields: [calendarId], references: [id])
-  calendarId       String
-  title            String
-  description      String?
-  location         String?
-  onlineMeetingLink String?
-  startAt          DateTime
-  endAt            DateTime
-  allDay           Boolean      @default(false)
-  timezone         String       @default("UTC")
-  status           EventStatus  @default(CONFIRMED)
-  // Recurrence (RRULE) support
-  recurrenceRule   String?
-  recurrenceEndAt  DateTime?
-  parentEventId    String?
-  parentEvent      Event?       @relation("EventRecurrence", fields: [parentEventId], references: [id])
-  exceptions       Event[]      @relation("EventRecurrence")
-  createdById      String?
-  updatedById      String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-
-  attendees        EventAttendee[]
-  reminders        Reminder[]
-  attachments      EventAttachment[]
-  comments         EventComment[]
-  rsvpTokens       RsvpToken[]
-
-  @@index([calendarId])
-  @@index([startAt, endAt])
-  @@map("events")
-}
-
-model EventAttendee {
-  id        String  @id @default(uuid())
-  event     Event   @relation(fields: [eventId], references: [id])
-  eventId   String
-  userId    String?
-  email     String?
-  response  String? // NEEDS_ACTION | ACCEPTED | DECLINED | TENTATIVE
-
-  @@index([eventId])
-  @@map("event_attendees")
-}
-
-model Reminder {
-  id            String         @id @default(uuid())
-  event         Event          @relation(fields: [eventId], references: [id])
-  eventId       String
-  method        ReminderMethod @default(APP)
-  minutesBefore Int            @default(10)
-  dispatchedAt  DateTime?
-
-  @@index([eventId])
-  @@map("reminders")
-}
-
-model EventAttachment {
-  id        String  @id @default(uuid())
-  event     Event   @relation(fields: [eventId], references: [id])
-  eventId   String
-  driveFileId String?
-  externalUrl String?
-
-  @@index([eventId])
-  @@map("event_attachments")
-}
-
-model EventComment {
-  id        String   @id @default(uuid())
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId   String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  content   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([eventId])
-  @@index([userId])
-  @@map("event_comments")
-}
-
-model RsvpToken {
-  id             String   @id @default(uuid())
-  token          String   @unique
-  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId        String
-  attendeeEmail  String
-  response       String   // The response this token represents
-  expiresAt      DateTime
-  createdAt      DateTime @default(now())
-
-  @@index([token])
-  @@index([eventId])
-  @@map("rsvp_tokens")
-}
 
 // ============================================================================
-// ORG CHART & PERMISSION SYSTEM MODELS
+// AI MODULE
 // ============================================================================
-
-model OrganizationalTier {
-  id          String   @id @default(uuid())
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  name        String   // "C-Suite", "VP Level", "Director", "Manager", "Employee"
-  level       Int      // 1 = highest, 5 = lowest
-  description String?
-  defaultPermissions Json? // Default permission set for this tier
-  defaultModules     Json? // Default modules for this tier
-  positions   Position[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([businessId, name])
-  @@index([businessId])
-  @@index([level])
-  @@map("organizational_tiers")
-}
-
-model Position {
-  id          String   @id @default(uuid())
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  title       String
-  tier        OrganizationalTier @relation(fields: [tierId], references: [id])
-  tierId      String
-  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  departmentId String?
-  reportsTo   Position? @relation("PositionHierarchy", fields: [reportsToId], references: [id])
-  reportsToId String?
-  directReports Position[] @relation("PositionHierarchy")
-  headOfDepartment Department[] @relation("DepartmentHead")
-  permissions Json? // Permission set for this position
-  assignedModules Json? // Modules assigned to this position
-  maxOccupants Int @default(1) // How many people can have this position
-  customPermissions Json? // Override default permissions
-  employeePositions EmployeePosition[]
-  permissionSets PermissionSet[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([businessId, title])
-  @@index([businessId])
-  @@index([tierId])
-  @@index([departmentId])
-  @@index([reportsToId])
-  @@map("positions")
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  moduleId    String   // Module identifier
-  featureId   String   // Feature identifier
-  action      String   // 'view', 'create', 'edit', 'delete', 'manage', 'admin'
-  description String
-  category    String   // 'basic', 'advanced', 'admin'
-  dependencies Json?   // Other permissions required
-  conflicts   Json?    // Conflicting permissions
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([moduleId, featureId, action])
-  @@index([moduleId])
-  @@index([featureId])
-  @@index([action])
-  @@index([category])
-  @@map("permissions")
-}
-
-model PermissionSet {
-  id          String   @id @default(uuid())
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  name        String   // "Full Access", "Executive Access", etc.
-  description String?
-  permissions Json     // Array of permission objects
-  category    String   // 'basic', 'advanced', 'admin'
-  template    Boolean  @default(false) // Whether this is a reusable template
-  positions   Position[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([businessId, name])
-  @@index([businessId])
-  @@index([category])
-  @@index([template])
-  @@map("permission_sets")
-}
-
-model EmployeePosition {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  positionId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  assignedAt  DateTime @default(now())
-  assignedBy  User     @relation("EmployeePositionAssignedBy", fields: [assignedById], references: [id])
-  assignedById String
-  startDate   DateTime
-  endDate     DateTime?
-  active      Boolean  @default(true)
-  customPermissions Json? // Individual overrides
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, positionId, businessId])
-  @@index([userId])
-  @@index([positionId])
-  @@index([businessId])
-  @@index([assignedById])
-  @@index([active])
-  @@map("employee_positions")
-}
-
-model PermissionManagementRights {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  grantedBy   User     @relation("PermissionManagementRightsGrantedBy", fields: [grantedById], references: [id])
-  grantedById String
-  grantedAt   DateTime @default(now())
-  scope       Json     // Which roles, modules, and levels they can manage
-  canGrantToOthers Boolean @default(false) // Can they give permission management to others?
-  expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([userId, businessId])
-  @@index([userId])
-  @@index([businessId])
-  @@index([grantedById])
-  @@map("permission_management_rights")
-}
-
-model PermissionChange {
-  id          String   @id @default(uuid())
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  businessId  String
-  changedBy   User     @relation(fields: [changedById], references: [id])
-  changedById String
-  changedAt   DateTime @default(now())
-  changeType  String   // 'permission_granted', 'permission_revoked', 'role_created', 'role_modified'
-  targetRole  String?  // Role or position affected
-  permissionsChanged Json? // What permissions were changed
-  reason      String?  // Reason for the change
-  createdAt   DateTime @default(now())
-
-  @@index([businessId])
-  @@index([changedById])
-  @@index([changedAt])
-  @@index([changeType])
-  @@map("permission_changes")
-}
 
 // ============================================================================
 // ENTERPRISE AI DIGITAL TWIN MODELS
@@ -2783,6 +2195,7 @@ model BusinessAIDigitalTwin {
   status          String   @default("active") // active, paused, maintenance
   lastTrainingAt  DateTime?
   lastInteractionAt DateTime?
+  lastCentralizedLearningAt DateTime? // Track when last fed to centralized system
   totalInteractions Int    @default(0)
   
   createdAt       DateTime @default(now())
@@ -2934,5 +2347,985 @@ model BusinessAIUsageMetric {
   @@map("business_ai_usage_metrics")
 }
 
-// Add AI Digital Twin relationship to existing Business model
-// Note: This will be added to the existing Business model
+
+// ============================================================================
+// BILLING MODULE
+// ============================================================================
+
+// ============================================================================
+// BILLING & SUBSCRIPTION MODELS
+// ============================================================================
+
+// Core tier subscriptions (Free, Standard, Enterprise)
+model Subscription {
+  id              String   @id @default(uuid())
+  userId          String
+  businessId      String?
+  tier            String   // 'free', 'standard', 'enterprise'
+  status          String   // 'active', 'cancelled', 'past_due', 'unpaid'
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd Boolean @default(false)
+  stripeSubscriptionId String?
+  stripeCustomerId    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  moduleSubscriptions ModuleSubscription[]
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([tier])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// Module-specific subscriptions (App Store model)
+model ModuleSubscription {
+  id              String   @id @default(uuid())
+  userId          String
+  businessId      String?
+  moduleId        String
+  coreSubscriptionId String?
+  tier            String   // 'premium', 'enterprise'
+  status          String   // 'active', 'cancelled', 'past_due'
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd Boolean @default(false)
+  stripeSubscriptionId String?
+  stripeCustomerId    String?
+  amount          Float
+  platformRevenue Float    @default(0) // For third-party modules
+  developerRevenue Float   @default(0) // For third-party modules
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  coreSubscription Subscription? @relation(fields: [coreSubscriptionId], references: [id], onDelete: SetNull)
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+  
+  @@index([userId])
+  @@index([businessId])
+  @@index([moduleId])
+  @@index([status])
+  @@map("module_subscriptions")
+}
+
+// Usage tracking for both core tiers and modules
+model UsageRecord {
+  id              String   @id @default(uuid())
+  subscriptionId  String?
+  moduleSubscriptionId String?
+  userId          String
+  businessId      String?
+  metric          String   // 'api_calls', 'storage_gb', 'ai_requests', 'messages', 'files'
+  quantity        Int
+  cost            Float
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@index([subscriptionId])
+  @@index([moduleSubscriptionId])
+  @@index([userId])
+  @@index([metric])
+  @@index([periodStart])
+  @@map("usage_records")
+}
+
+// Invoice management
+model Invoice {
+  id              String   @id @default(uuid())
+  subscriptionId  String?
+  moduleSubscriptionId String?
+  businessId      String?
+  amount          Float
+  currency        String   @default("USD")
+  status          String   // 'draft', 'open', 'paid', 'void', 'uncollectible'
+  stripeInvoiceId String?
+  dueDate         DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
+
+  @@index([subscriptionId])
+  @@index([moduleSubscriptionId])
+  @@index([businessId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// Developer revenue tracking for third-party modules
+model DeveloperRevenue {
+  id              String   @id @default(uuid())
+  developerId     String
+  moduleId        String
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalRevenue    Float
+  platformRevenue Float
+  developerRevenue Float
+  payoutStatus    String   @default("pending") // 'pending', 'paid', 'failed'
+  payoutDate      DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  developer       User     @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  @@index([developerId])
+  @@index([moduleId])
+  @@index([periodStart])
+  @@map("developer_revenue")
+}
+
+
+// ============================================================================
+// CALENDAR MODULE
+// ============================================================================
+
+// ============================================================================
+// CALENDAR & EVENT MODELS
+// ============================================================================
+
+model Calendar {
+  id                     String              @id @default(uuid())
+  name                   String
+  color                  String?
+  type                   CalendarType        @default(LOCAL)
+  contextType            CalendarContextType
+  contextId              String
+  isPrimary              Boolean             @default(false)
+  isSystem               Boolean             @default(false)
+  isDeletable            Boolean             @default(true)
+  defaultReminderMinutes Int                 @default(10)
+  visibility             String?             // future: private/public/link
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  // Relationships
+  events                 Event[]
+  members                CalendarMember[]
+
+  @@index([contextType, contextId])
+  @@map("calendars")
+}
+
+model CalendarMember {
+  id         String   @id @default(uuid())
+  calendar   Calendar @relation(fields: [calendarId], references: [id])
+  calendarId String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  role       String   // OWNER | ADMIN | EDITOR | READER | FREE_BUSY
+  createdAt  DateTime @default(now())
+
+  @@unique([calendarId, userId])
+  @@index([userId])
+  @@map("calendar_members")
+}
+
+model Event {
+  id               String       @id @default(uuid())
+  calendar         Calendar     @relation(fields: [calendarId], references: [id])
+  calendarId       String
+  title            String
+  description      String?
+  location         String?
+  onlineMeetingLink String?
+  startAt          DateTime
+  endAt            DateTime
+  allDay           Boolean      @default(false)
+  timezone         String       @default("UTC")
+  status           EventStatus  @default(CONFIRMED)
+  // Recurrence (RRULE) support
+  recurrenceRule   String?
+  recurrenceEndAt  DateTime?
+  parentEventId    String?
+  parentEvent      Event?       @relation("EventRecurrence", fields: [parentEventId], references: [id])
+  exceptions       Event[]      @relation("EventRecurrence")
+  createdById      String?
+  updatedById      String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  attendees        EventAttendee[]
+  reminders        Reminder[]
+  attachments      EventAttachment[]
+  comments         EventComment[]
+  rsvpTokens       RsvpToken[]
+
+  @@index([calendarId])
+  @@index([startAt, endAt])
+  @@map("events")
+}
+
+model EventAttendee {
+  id        String  @id @default(uuid())
+  event     Event   @relation(fields: [eventId], references: [id])
+  eventId   String
+  userId    String?
+  email     String?
+  response  String? // NEEDS_ACTION | ACCEPTED | DECLINED | TENTATIVE
+
+  @@index([eventId])
+  @@map("event_attendees")
+}
+
+model Reminder {
+  id            String         @id @default(uuid())
+  event         Event          @relation(fields: [eventId], references: [id])
+  eventId       String
+  method        ReminderMethod @default(APP)
+  minutesBefore Int            @default(10)
+  dispatchedAt  DateTime?
+
+  @@index([eventId])
+  @@map("reminders")
+}
+
+model EventAttachment {
+  id        String  @id @default(uuid())
+  event     Event   @relation(fields: [eventId], references: [id])
+  eventId   String
+  driveFileId String?
+  externalUrl String?
+
+  @@index([eventId])
+  @@map("event_attachments")
+}
+
+model EventComment {
+  id        String   @id @default(uuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_comments")
+}
+
+model RsvpToken {
+  id             String   @id @default(uuid())
+  token          String   @unique
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        String
+  attendeeEmail  String
+  response       String   // The response this token represents
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([token])
+  @@index([eventId])
+  @@map("rsvp_tokens")
+}
+
+
+// ============================================================================
+// DRIVE MODULE
+// ============================================================================
+
+// ============================================================================
+// DRIVE & FILE MANAGEMENT MODELS
+// ============================================================================
+
+model File {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  path        String?
+  type        String
+  size        Int
+  url         String
+  folder      Folder?  @relation(fields: [folderId], references: [id])
+  folderId    String?
+  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId String?
+  order       Int      @default(0) // Order within folder for drag-and-drop
+  starred     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  permissions FilePermission[]
+  trashedAt   DateTime?
+  activities  Activity[]
+  fileReferences FileReference[]
+
+  @@index([userId])
+  @@index([folderId])
+  @@index([dashboardId])
+  @@map("files")
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  name      String
+  parent    Folder?  @relation("FolderParent", fields: [parentId], references: [id])
+  parentId  String?
+  dashboard Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId String?
+  order     Int      @default(0) // Order within parent folder for drag-and-drop
+  starred   Boolean  @default(false)
+  children  Folder[] @relation("FolderParent")
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trashedAt DateTime?
+
+  @@index([userId])
+  @@index([parentId])
+  @@index([dashboardId])
+  @@map("folders")
+}
+
+model FilePermission {
+  id        String   @id @default(uuid())
+  file      File     @relation(fields: [fileId], references: [id])
+  fileId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  canRead   Boolean  @default(true)
+  canWrite  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, userId])
+  @@index([fileId])
+  @@index([userId])
+  @@map("file_permissions")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  type      String   // 'create', 'edit', 'delete', 'share', 'download'
+  timestamp DateTime @default(now())
+  details   Json?    // Additional activity details
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  file      File     @relation(fields: [fileId], references: [id])
+  fileId    String
+
+  @@index([userId])
+  @@index([fileId])
+  @@index([timestamp])
+  @@map("activities")
+}
+
+
+// ============================================================================
+// ADMIN MODULE
+// ============================================================================
+
+// ============================================================================
+// ADMIN PORTAL & SYSTEM MONITORING MODELS
+// ============================================================================
+
+// Content moderation
+model ContentReport {
+  id          String   @id @default(uuid())
+  reporterId  String
+  reporter    User     @relation("ContentReporter", fields: [reporterId], references: [id])
+  contentId   String
+  contentType String
+  reason      String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  action      String?
+  details     String?
+
+  @@index([reporterId])
+  @@index([contentType])
+  @@index([status])
+  @@map("content_reports")
+}
+
+// System monitoring and analytics
+model SystemMetrics {
+  id          String   @id @default(uuid())
+  metricType  String
+  metricName  String
+  metricValue Float
+  timestamp   DateTime @default(now())
+  metadata    Json?
+
+  @@index([metricType])
+  @@index([metricName])
+  @@index([timestamp])
+  @@map("system_metrics")
+}
+
+// System configuration
+model SystemConfig {
+  id          String   @id @default(uuid())
+  configKey   String   @unique
+  configValue Json
+  description String?
+  updatedBy   String
+  updatedAt   DateTime @default(now())
+
+  @@index([configKey])
+  @@map("system_configs")
+}
+
+// Security events
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  eventType   String
+  userId      String?
+  userEmail   String?
+  adminId     String?
+  adminEmail  String?
+  ipAddress   String?
+  userAgent   String?
+  details     Json?
+  severity    String
+  timestamp   DateTime @default(now())
+  resolved    Boolean  @default(false)
+
+  @@index([eventType])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([resolved])
+  @@map("security_events")
+}
+
+// Admin impersonation sessions
+model AdminImpersonation {
+  id          String   @id @default(uuid())
+  adminId     String
+  admin       User     @relation("AdminImpersonator", fields: [adminId], references: [id])
+  targetUserId String
+  targetUser  User     @relation("ImpersonatedUser", fields: [targetUserId], references: [id])
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  reason      String?
+  auditLogs   AuditLog[]
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([startedAt])
+  @@map("admin_impersonations")
+}
+
+// Audit logging
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "MESSAGE_CREATED", "MESSAGE_DELETED", "USER_JOINED"
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  conversationId String?
+  resourceType String? // e.g., "FILE", "CONVERSATION", "DASHBOARD", "MODULE"
+  resourceId   String? // ID of the accessed resource
+  details     String   // JSON string with additional details
+  timestamp   DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
+  adminImpersonationId String?
+  adminImpersonation AdminImpersonation? @relation(fields: [adminImpersonationId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([conversationId])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([adminImpersonationId])
+  @@map("audit_logs")
+}
+
+// Data Classification System
+model DataClassification {
+  id          String   @id @default(uuid())
+  resourceType String  // 'file', 'message', 'conversation', 'dashboard', 'module', etc.
+  resourceId  String   // ID of the classified resource
+  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
+  classifiedBy String  // User ID who classified
+  classifiedAt DateTime @default(now())
+  expiresAt   DateTime? // When classification expires
+  notes       String?   // Optional notes about classification
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([resourceType, resourceId])
+  @@index([sensitivity])
+  @@index([classifiedBy])
+  @@index([expiresAt])
+  @@map("data_classifications")
+}
+
+// Classification Rules for Automated Classification
+model ClassificationRule {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  pattern     String   // Regex pattern for matching content
+  resourceType String  // What type of resource this rule applies to
+  sensitivity String   // Target sensitivity level
+  priority    Int      @default(0) // Higher priority rules are applied first
+  isActive    Boolean  @default(true)
+  createdBy   String   // User ID who created the rule
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([resourceType])
+  @@index([isActive])
+  @@index([priority])
+  @@map("classification_rules")
+}
+
+// Classification Templates for Quick Classification
+model ClassificationTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
+  expiresIn   Int?     // Days until expiration (null = no expiration)
+  notes       String?  // Default notes for this template
+  createdBy   String   // User ID who created the template
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sensitivity])
+  @@map("classification_templates")
+}
+
+// Enhanced Retention Policies (system-wide)
+model SystemRetentionPolicy {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  description     String?
+  resourceType    String   // What type of data this applies to
+  retentionPeriod Int      // Days to retain
+  archiveAfter    Int?     // Days before archiving
+  deleteAfter     Int?     // Days before deletion
+  isActive        Boolean  @default(true)
+  createdBy       String   // User ID who created the policy
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([resourceType])
+  @@index([isActive])
+  @@map("system_retention_policies")
+}
+
+// Backup Records
+model BackupRecord {
+  id          String   @id @default(uuid())
+  backupType  String   // 'database', 'files', 'full', 'incremental'
+  backupPath  String   // Path to backup file
+  backupSize  Int      // Size in bytes
+  checksum    String   // Backup integrity checksum
+  status      String   // 'completed', 'failed', 'verifying', 'restoring'
+  notes       String?  // Optional notes about the backup
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // When backup should be deleted
+  createdBy   String   // User ID who initiated the backup
+
+  @@index([backupType])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("backup_records")
+}
+
+// Data Governance Policies
+model GovernancePolicy {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  policyType  String   // 'retention', 'classification', 'access', 'encryption'
+  rules       Json     // JSON object with policy rules
+  isActive    Boolean  @default(true)
+  createdBy   String   // User ID who created the policy
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  violations  PolicyViolation[]
+
+  @@index([policyType])
+  @@index([isActive])
+  @@map("governance_policies")
+}
+
+// Policy Violations
+model PolicyViolation {
+  id              String   @id @default(uuid())
+  policy          GovernancePolicy @relation(fields: [policyId], references: [id])
+  policyId        String
+  resourceType    String   // Type of resource that violated the policy
+  resourceId      String   // ID of the resource that violated the policy
+  violationType   String   // Type of violation (e.g., 'classification', 'retention', 'access')
+  severity        String   // 'low', 'medium', 'high', 'critical'
+  message         String   // Description of the violation
+  detectedAt      DateTime @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?  // User ID who resolved the violation
+  resolutionNotes String?  // Notes about how the violation was resolved
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([policyId])
+  @@index([resourceType])
+  @@index([severity])
+  @@index([detectedAt])
+  @@index([resolvedAt])
+  @@map("policy_violations")
+}
+
+
+// ============================================================================
+// ADMIN MODULE
+// ============================================================================
+
+// ============================================================================
+// SECURITY & COMPLIANCE MODELS
+// ============================================================================
+
+// SSO Integration
+model SSOProvider {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // oauth2, saml, ldap, oidc
+  config          Json     // Provider configuration
+  status          String   // active, inactive, error
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  sessions        SSOSession[]
+  
+  @@index([type])
+  @@index([status])
+  @@map("sso_providers")
+}
+
+model SSOSession {
+  id              String   @id @default(uuid())
+  providerId      String
+  provider        SSOProvider @relation(fields: [providerId], references: [id])
+  userId          String
+  sessionToken    String   @unique
+  expiresAt       DateTime
+  metadata        Json?    // Session metadata
+  createdAt       DateTime @default(now())
+  
+  @@index([providerId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sso_sessions")
+}
+
+// Enterprise Security
+model ComplianceFramework {
+  id              String   @id @default(uuid())
+  name            String   // SOC 2, ISO 27001, GDPR, etc.
+  version         String
+  description     String?
+  status          String   // active, inactive, deprecated
+  controls        Json     // Framework controls
+  config          Json?    // Framework configuration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([name])
+  @@index([status])
+  @@map("compliance_frameworks")
+}
+
+model SecurityIncident {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  severity        String   // low, medium, high, critical
+  status          String   // open, investigating, resolved, closed
+  category        String   // data_breach, unauthorized_access, etc.
+  affectedUsers   Int?
+  data           Json     // Incident details and evidence
+  reportedAt      DateTime @default(now())
+  resolvedAt      DateTime?
+  reportedBy      String?
+  
+  @@index([severity])
+  @@index([status])
+  @@index([category])
+  @@index([reportedAt])
+  @@map("security_incidents")
+}
+
+model SecurityAudit {
+  id              String   @id @default(uuid())
+  type            String   // access, data, compliance, system
+  scope           String   // user, module, system, data
+  findings        Json     // Audit findings
+  recommendations String[]
+  status          String   // pending, in_progress, completed
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  auditor         String?
+  
+  @@index([type])
+  @@index([scope])
+  @@index([status])
+  @@map("security_audits")
+}
+
+
+// ============================================================================
+// ADMIN MODULE
+// ============================================================================
+
+// Support System Models
+// This module handles customer support tickets, knowledge base, and live chat
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  status      SupportTicketStatus @default(OPEN)
+  priority    SupportTicketPriority @default(MEDIUM)
+  category    String
+  tags        String[] // Array of tags
+  
+  // Customer information
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Assignment
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  
+  // Response tracking
+  responseTime     Float?   // in hours
+  resolutionTime   Float?   // in hours
+  satisfaction     Int?     // 1-5 rating
+  
+  // Attachments
+  attachments      SupportAttachment[]
+  
+  // Messages/Responses
+  messages         SupportMessage[]
+  
+  // Analytics
+  views            Int      @default(0)
+  lastViewedAt     DateTime?
+  
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  // Message details
+  content     String   @db.Text
+  isInternal  Boolean  @default(false) // Internal notes vs customer-visible
+  isFromCustomer Boolean @default(true)
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Attachments
+  attachments SupportAttachment[]
+  
+  @@map("support_messages")
+}
+
+model SupportAttachment {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int      // in bytes
+  path        String   // file path
+  
+  // Relations
+  ticketId    String?
+  ticket      SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  messageId   String?
+  message     SupportMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("support_attachments")
+}
+
+model KnowledgeBaseArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  excerpt     String?  @db.Text
+  category    String
+  tags        String[]
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Status
+  status      KnowledgeBaseStatus @default(DRAFT)
+  
+  // Analytics
+  views       Int      @default(0)
+  helpful     Int      @default(0)
+  notHelpful  Int      @default(0)
+  
+  // SEO
+  slug        String   @unique
+  metaTitle   String?
+  metaDescription String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+  
+  @@map("knowledge_base_articles")
+}
+
+model LiveChatSession {
+  id          String   @id @default(cuid())
+  
+  // Customer
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Agent assignment
+  agentId     String?
+  agent       User?    @relation("LiveChatSessions", fields: [agentId], references: [id])
+  
+  // Session details
+  status      LiveChatStatus @default(WAITING)
+  subject     String?
+  notes       String?  @db.Text
+  
+  // Timestamps
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  lastMessageAt DateTime @default(now())
+  
+  // Analytics
+  messageCount Int     @default(0)
+  duration     Int?    // in minutes
+  satisfaction Int?    // 1-5 rating
+  
+  // Messages
+  messages    LiveChatMessage[]
+  
+  @@map("live_chat_sessions")
+}
+
+model LiveChatMessage {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     LiveChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Message details
+  content     String   @db.Text
+  isFromCustomer Boolean @default(true)
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("live_chat_messages")
+}
+
+model SupportAnalytics {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  
+  // Ticket metrics
+  ticketsCreated    Int @default(0)
+  ticketsResolved   Int @default(0)
+  ticketsClosed     Int @default(0)
+  
+  // Response metrics
+  avgResponseTime   Float? // in hours
+  avgResolutionTime Float? // in hours
+  
+  // Satisfaction
+  avgSatisfaction   Float? // 1-5 rating
+  satisfactionCount Int @default(0)
+  
+  // Chat metrics
+  chatSessions      Int @default(0)
+  avgChatDuration   Float? // in minutes
+  
+  // Knowledge base
+  articleViews      Int @default(0)
+  articleHelpful    Int @default(0)
+  
+  @@unique([date])
+  @@map("support_analytics")
+}
+
+// Enums
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum KnowledgeBaseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LiveChatStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+

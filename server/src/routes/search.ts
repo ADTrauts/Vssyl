@@ -1,7 +1,7 @@
 import express from 'express';
 import { globalSearch, getSuggestions } from '../controllers/searchController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Global search endpoint
 router.post('/', globalSearch);

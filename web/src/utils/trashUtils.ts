@@ -1,24 +1,39 @@
 import { useGlobalTrash } from '../contexts/GlobalTrashContext';
 
+// Trash item interfaces
+export interface TrashItemMetadata {
+  size?: number;
+  owner?: string;
+  conversationId?: string;
+  senderId?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export interface DraggableToTrashItem {
   id: string;
   name: string;
   type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message';
   moduleId: string;
   moduleName: string;
-  metadata?: any;
+  metadata?: TrashItemMetadata;
+}
+
+export interface TrashDropResult {
+  success: boolean;
+  error?: string | Error;
 }
 
 export function useTrashDrop() {
   const { trashItem } = useGlobalTrash();
 
-  const handleTrashDrop = async (item: DraggableToTrashItem) => {
+  const handleTrashDrop = async (item: DraggableToTrashItem): Promise<TrashDropResult> => {
     try {
       await trashItem(item);
       return { success: true };
     } catch (error) {
       console.error('Failed to trash item:', error);
-      return { success: false, error };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -28,7 +43,7 @@ export function useTrashDrop() {
 export function makeDraggableToTrash(
   element: HTMLElement,
   item: DraggableToTrashItem,
-  onTrashDrop: (item: DraggableToTrashItem) => Promise<{ success: boolean; error?: any }>
+  onTrashDrop: (item: DraggableToTrashItem) => Promise<TrashDropResult>
 ) {
   element.setAttribute('draggable', 'true');
   element.setAttribute('data-trash-item', JSON.stringify(item));
@@ -61,7 +76,7 @@ export function makeDraggableToTrash(
     const trashItemData = e.dataTransfer?.getData('application/json');
     if (trashItemData) {
       try {
-        const itemData = JSON.parse(trashItemData);
+        const itemData = JSON.parse(trashItemData) as DraggableToTrashItem;
         const result = await onTrashDrop(itemData);
         if (result.success) {
           // Item was successfully trashed, you might want to remove it from the UI

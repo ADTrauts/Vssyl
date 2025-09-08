@@ -1,4 +1,4 @@
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { prisma } from '../lib/prisma';
 import { verifyToken } from '../utils/tokenUtils';
@@ -30,12 +30,22 @@ interface PresenceEvent {
   lastSeen?: string;
 }
 
+interface AuthenticatedSocketData {
+  user: AuthenticatedSocket;
+}
+
+interface SocketWithData extends Socket {
+  data: AuthenticatedSocketData;
+}
+
+type AuthenticatedSocketType = SocketWithData;
+
 interface NotificationEvent {
   id: string;
   type: string;
   title: string;
   body?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   createdAt: string;
   read: boolean;
 }
@@ -48,8 +58,8 @@ export class ChatSocketService {
 
   constructor(server: HTTPServer) {
     this.io = new SocketIOServer(server, {
-      cors: {
-        origin: (origin, callback) => {
+              cors: {
+          origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
           const allowed = [
             process.env.FRONTEND_URL || 'http://localhost:3000',
             'http://localhost:3000',
@@ -174,7 +184,7 @@ export class ChatSocketService {
     });
   }
 
-  private async joinUserToConversations(socket: any, userId: string) {
+  private async joinUserToConversations(socket: SocketWithData, userId: string) {
     try {
       // Get all conversations where user is a participant
       const conversations = await prisma.conversation.findMany({
@@ -203,17 +213,17 @@ export class ChatSocketService {
     }
   }
 
-  private joinConversation(socket: any, conversationId: string) {
+  private joinConversation(socket: SocketWithData, conversationId: string) {
     socket.join(`conversation_${conversationId}`);
     console.log(`User joined conversation: ${conversationId}`);
   }
 
-  private leaveConversation(socket: any, conversationId: string) {
+  private leaveConversation(socket: SocketWithData, conversationId: string) {
     socket.leave(`conversation_${conversationId}`);
     console.log(`User left conversation: ${conversationId}`);
   }
 
-  private handleTypingStart(socket: any, data: TypingEvent) {
+  private handleTypingStart(socket: SocketWithData, data: TypingEvent) {
     const user = socket.data.user as AuthenticatedSocket;
     
     if (!this.typingUsers.has(data.conversationId)) {
@@ -230,7 +240,7 @@ export class ChatSocketService {
     });
   }
 
-  private handleTypingStop(socket: any, data: TypingEvent) {
+  private handleTypingStop(socket: SocketWithData, data: TypingEvent) {
     const user = socket.data.user as AuthenticatedSocket;
     
     const typingSet = this.typingUsers.get(data.conversationId);
@@ -249,7 +259,7 @@ export class ChatSocketService {
     });
   }
 
-  private async handleNewMessage(socket: any, message: ChatMessage) {
+  private async handleNewMessage(socket: SocketWithData, message: ChatMessage) {
     const user = socket.data.user as AuthenticatedSocket;
     
     try {
@@ -290,7 +300,7 @@ export class ChatSocketService {
     }
   }
 
-  private async handleMessageReaction(socket: any, data: { messageId: string; emoji: string }) {
+  private async handleMessageReaction(socket: SocketWithData, data: { messageId: string; emoji: string }) {
     const user = socket.data.user as AuthenticatedSocket;
     
     try {
@@ -344,7 +354,7 @@ export class ChatSocketService {
     }
   }
 
-  private async handleMarkAsRead(socket: any, messageId: string) {
+  private async handleMarkAsRead(socket: SocketWithData, messageId: string) {
     const user = socket.data.user as AuthenticatedSocket;
     
     try {
@@ -396,7 +406,7 @@ export class ChatSocketService {
     }
   }
 
-  private handlePresenceUpdate(socket: any, data: PresenceEvent) {
+  private handlePresenceUpdate(socket: SocketWithData, data: PresenceEvent) {
     const user = socket.data.user as AuthenticatedSocket;
     
     // Broadcast presence update to all connected users
@@ -408,7 +418,7 @@ export class ChatSocketService {
     });
   }
 
-  private handleDisconnect(socket: any) {
+  private handleDisconnect(socket: SocketWithData) {
     const user = this.socketUsers.get(socket.id);
     if (user) {
       this.userSockets.delete(user.userId);
@@ -431,11 +441,11 @@ export class ChatSocketService {
   }
 
   // Public methods for external use
-  public broadcastMessage(conversationId: string, message: any) {
+  public broadcastMessage(conversationId: string, message: Record<string, unknown>) {
     this.io.to(`conversation_${conversationId}`).emit('message_received', message);
   }
 
-  public broadcastToUser(userId: string, event: string, data: any) {
+  public broadcastToUser(userId: string, event: string, data: Record<string, unknown>) {
     const socketId = this.userSockets.get(userId);
     if (socketId) {
       this.io.to(socketId).emit(event, data);
@@ -455,7 +465,7 @@ export class ChatSocketService {
     });
   }
 
-  public broadcastNotificationUpdate(userId: string, notificationId: string, updates: any) {
+  public broadcastNotificationUpdate(userId: string, notificationId: string, updates: Record<string, unknown>) {
     const socketId = this.userSockets.get(userId);
     if (socketId) {
       this.io.to(socketId).emit('notification_updated', {

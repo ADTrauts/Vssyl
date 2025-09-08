@@ -11,6 +11,17 @@ interface FeatureGateProps {
   children: React.ReactNode;
 }
 
+interface AccessInfo {
+  hasAccess: boolean;
+  reason?: string;
+  usageInfo?: {
+    metric: string;
+    limit: number;
+    currentUsage: number;
+    remaining: number;
+  };
+}
+
 /**
  * FeatureGate component that conditionally renders children based on feature access
  * Shows upgrade prompts for locked enterprise features
@@ -72,7 +83,7 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
  */
 const StandardUpgradePrompt: React.FC<{
   feature: string;
-  accessInfo: any;
+  accessInfo: AccessInfo;
 }> = ({ feature, accessInfo }) => {
   return (
     <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">

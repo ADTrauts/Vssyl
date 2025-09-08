@@ -183,7 +183,7 @@ export class ModuleSubscriptionService {
       throw new Error('Module subscription not found');
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (tier) updateData.tier = tier;
     if (status) updateData.status = status;
 

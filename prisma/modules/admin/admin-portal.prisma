@@ -1,0 +1,255 @@
+// ============================================================================
+// ADMIN PORTAL & SYSTEM MONITORING MODELS
+// ============================================================================
+
+// Content moderation
+model ContentReport {
+  id          String   @id @default(uuid())
+  reporterId  String
+  reporter    User     @relation("ContentReporter", fields: [reporterId], references: [id])
+  contentId   String
+  contentType String
+  reason      String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  action      String?
+  details     String?
+
+  @@index([reporterId])
+  @@index([contentType])
+  @@index([status])
+  @@map("content_reports")
+}
+
+// System monitoring and analytics
+model SystemMetrics {
+  id          String   @id @default(uuid())
+  metricType  String
+  metricName  String
+  metricValue Float
+  timestamp   DateTime @default(now())
+  metadata    Json?
+
+  @@index([metricType])
+  @@index([metricName])
+  @@index([timestamp])
+  @@map("system_metrics")
+}
+
+// System configuration
+model SystemConfig {
+  id          String   @id @default(uuid())
+  configKey   String   @unique
+  configValue Json
+  description String?
+  updatedBy   String
+  updatedAt   DateTime @default(now())
+
+  @@index([configKey])
+  @@map("system_configs")
+}
+
+// Security events
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  eventType   String
+  userId      String?
+  userEmail   String?
+  adminId     String?
+  adminEmail  String?
+  ipAddress   String?
+  userAgent   String?
+  details     Json?
+  severity    String
+  timestamp   DateTime @default(now())
+  resolved    Boolean  @default(false)
+
+  @@index([eventType])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([resolved])
+  @@map("security_events")
+}
+
+// Admin impersonation sessions
+model AdminImpersonation {
+  id          String   @id @default(uuid())
+  adminId     String
+  admin       User     @relation("AdminImpersonator", fields: [adminId], references: [id])
+  targetUserId String
+  targetUser  User     @relation("ImpersonatedUser", fields: [targetUserId], references: [id])
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  reason      String?
+  auditLogs   AuditLog[]
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([startedAt])
+  @@map("admin_impersonations")
+}
+
+// Audit logging
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "MESSAGE_CREATED", "MESSAGE_DELETED", "USER_JOINED"
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  conversationId String?
+  resourceType String? // e.g., "FILE", "CONVERSATION", "DASHBOARD", "MODULE"
+  resourceId   String? // ID of the accessed resource
+  details     String   // JSON string with additional details
+  timestamp   DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
+  adminImpersonationId String?
+  adminImpersonation AdminImpersonation? @relation(fields: [adminImpersonationId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
+  @@index([conversationId])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([adminImpersonationId])
+  @@map("audit_logs")
+}
+
+// Data Classification System
+model DataClassification {
+  id          String   @id @default(uuid())
+  resourceType String  // 'file', 'message', 'conversation', 'dashboard', 'module', etc.
+  resourceId  String   // ID of the classified resource
+  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
+  classifiedBy String  // User ID who classified
+  classifiedAt DateTime @default(now())
+  expiresAt   DateTime? // When classification expires
+  notes       String?   // Optional notes about classification
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([resourceType, resourceId])
+  @@index([sensitivity])
+  @@index([classifiedBy])
+  @@index([expiresAt])
+  @@map("data_classifications")
+}
+
+// Classification Rules for Automated Classification
+model ClassificationRule {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  pattern     String   // Regex pattern for matching content
+  resourceType String  // What type of resource this rule applies to
+  sensitivity String   // Target sensitivity level
+  priority    Int      @default(0) // Higher priority rules are applied first
+  isActive    Boolean  @default(true)
+  createdBy   String   // User ID who created the rule
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([resourceType])
+  @@index([isActive])
+  @@index([priority])
+  @@map("classification_rules")
+}
+
+// Classification Templates for Quick Classification
+model ClassificationTemplate {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  sensitivity String   // 'PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED'
+  expiresIn   Int?     // Days until expiration (null = no expiration)
+  notes       String?  // Default notes for this template
+  createdBy   String   // User ID who created the template
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sensitivity])
+  @@map("classification_templates")
+}
+
+// Enhanced Retention Policies (system-wide)
+model SystemRetentionPolicy {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  description     String?
+  resourceType    String   // What type of data this applies to
+  retentionPeriod Int      // Days to retain
+  archiveAfter    Int?     // Days before archiving
+  deleteAfter     Int?     // Days before deletion
+  isActive        Boolean  @default(true)
+  createdBy       String   // User ID who created the policy
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([resourceType])
+  @@index([isActive])
+  @@map("system_retention_policies")
+}
+
+// Backup Records
+model BackupRecord {
+  id          String   @id @default(uuid())
+  backupType  String   // 'database', 'files', 'full', 'incremental'
+  backupPath  String   // Path to backup file
+  backupSize  Int      // Size in bytes
+  checksum    String   // Backup integrity checksum
+  status      String   // 'completed', 'failed', 'verifying', 'restoring'
+  notes       String?  // Optional notes about the backup
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // When backup should be deleted
+  createdBy   String   // User ID who initiated the backup
+
+  @@index([backupType])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("backup_records")
+}
+
+// Data Governance Policies
+model GovernancePolicy {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  policyType  String   // 'retention', 'classification', 'access', 'encryption'
+  rules       Json     // JSON object with policy rules
+  isActive    Boolean  @default(true)
+  createdBy   String   // User ID who created the policy
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  violations  PolicyViolation[]
+
+  @@index([policyType])
+  @@index([isActive])
+  @@map("governance_policies")
+}
+
+// Policy Violations
+model PolicyViolation {
+  id              String   @id @default(uuid())
+  policy          GovernancePolicy @relation(fields: [policyId], references: [id])
+  policyId        String
+  resourceType    String   // Type of resource that violated the policy
+  resourceId      String   // ID of the resource that violated the policy
+  violationType   String   // Type of violation (e.g., 'classification', 'retention', 'access')
+  severity        String   // 'low', 'medium', 'high', 'critical'
+  message         String   // Description of the violation
+  detectedAt      DateTime @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?  // User ID who resolved the violation
+  resolutionNotes String?  // Notes about how the violation was resolved
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([policyId])
+  @@index([resourceType])
+  @@index([severity])
+  @@index([detectedAt])
+  @@index([resolvedAt])
+  @@map("policy_violations")
+}

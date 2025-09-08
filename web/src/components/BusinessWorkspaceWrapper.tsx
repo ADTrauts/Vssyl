@@ -2,11 +2,23 @@
 
 import React from 'react';
 import { SessionErrorBoundary } from './SessionErrorBoundary';
-import BusinessWorkspaceLayout from './business/BusinessWorkspaceLayout';
 import { BusinessConfigurationProvider } from '../contexts/BusinessConfigurationContext';
 
+interface Business {
+  id: string;
+  name: string;
+  logo?: string;
+  branding?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
+    fontFamily?: string;
+    customCSS?: string;
+  };
+}
+
 interface BusinessWorkspaceWrapperProps {
-  business: any;
+  business: Business;
   children: React.ReactNode;
 }
 
@@ -14,9 +26,7 @@ export default function BusinessWorkspaceWrapper({ business, children }: Busines
   return (
     <SessionErrorBoundary>
       <BusinessConfigurationProvider businessId={business.id}>
-        <BusinessWorkspaceLayout business={business}>
-          {children}
-        </BusinessWorkspaceLayout>
+        {children}
       </BusinessConfigurationProvider>
     </SessionErrorBoundary>
   );

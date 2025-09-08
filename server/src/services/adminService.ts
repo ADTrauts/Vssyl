@@ -1,22 +1,332 @@
 import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcrypt';
+import { SupportTicketEmailService } from './supportTicketEmailService';
+import { SecurityService } from './securityService';
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+interface UserFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  role?: string;
+}
+
+interface ContentReport {
+  id: string;
+  contentType: 'post' | 'comment' | 'file' | 'message';
+  reason: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  createdAt: string;
+  reporter: {
+    email: string;
+    name: string;
+  };
+  content: {
+    id: string;
+    title: string;
+    description: string;
+    url: string;
+  };
+  severity: 'low' | 'medium' | 'high';
+  autoModerated: boolean;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  action?: string;
+}
+
+interface ContentReportFilters {
+  status?: string;
+  severity?: string;
+  contentType?: string;
+}
+
+interface AnalyticsFilters {
+  dateRange?: string;
+  userType?: string;
+  metric?: string;
+  businessId?: string;
+  moduleId?: string;
+}
+
+interface SecurityEventData {
+  eventType: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  userId?: string;
+  userEmail?: string;
+  adminId: string;
+  adminEmail?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  details?: Record<string, unknown>;
+}
+
+interface SystemConfig {
+  configKey: string;
+  configValue: string | number | boolean | Record<string, unknown>;
+  description: string;
+}
+
+interface ABTestData {
+  name: string;
+  description: string;
+  variantA: Record<string, unknown>;
+  variantB: Record<string, unknown>;
+  trafficSplit: number;
+  metrics: string[];
+}
+
+interface UserSegmentData {
+  name: string;
+  description: string;
+  criteria: Record<string, unknown>;
+  filters: Record<string, unknown>;
+}
+
+interface ReportConfig {
+  name: string;
+  type: string;
+  parameters: Record<string, unknown>;
+  format: string;
+  filters: Record<string, unknown>;
+}
+
+interface SupportTicketData {
+  title: string;
+  description: string;
+  priority: string;
+  category: string;
+  userId?: string;
+  customerId?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+interface SupportTicket {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    plan: string;
+  };
+  assignedTo?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  responseTime: number;
+  satisfaction?: number;
+  tags: string[];
+  attachments: string[];
+}
+
+interface SupportTicketFilters {
+  status?: string;
+  priority?: string;
+  category?: string;
+  dateRange?: string;
+}
+
+interface KnowledgeArticleData {
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  authorId: string;
+  status: 'draft' | 'published' | 'archived';
+  metadata?: Record<string, unknown>;
+}
+
+interface PerformanceAlertConfig {
+  metric: string;
+  threshold: number;
+  condition: 'above' | 'below';
+  severity: string;
+  notificationChannels: string[];
+}
+
+interface SecurityReportFilters {
+  severity?: string;
+  status?: string;
+  timeRange?: string;
+}
+
+interface ModuleSubmission {
+  id: string;
+  status: string;
+  submittedAt: Date;
+  reviewedAt?: Date | null;
+  reviewNotes?: string | null;
+  module: {
+    id: string;
+    name: string;
+    category: string;
+    downloads?: number | null;
+    rating?: number | null;
+    pricingTier?: string | null;
+    developer: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  };
+  submitter: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  reviewer?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+}
+
+interface AnalyticsData {
+  userGrowth: {
+    total: number;
+    newThisMonth: number;
+    growthRate: number;
+    monthlyTrend: unknown[];
+  };
+  revenue: {
+    total: number;
+    thisMonth: number;
+    growthRate: number;
+    monthlyTrend: unknown[];
+  };
+  engagement: {
+    activeUsers: number;
+    avgSessionDuration: number;
+    retentionRate: number;
+    dailyActiveUsers: unknown[];
+  };
+  system: {
+    uptime: number;
+    avgResponseTime: number;
+    errorRate: number;
+    performanceTrend: unknown[];
+  };
+}
+
+interface SystemMetricData {
+  metricType: string;
+  metricName: string;
+  metricValue: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface ModuleDataFilters {
+  status?: string;
+  category?: string;
+  dateRange?: string;
+  developerId?: string;
+}
+
+interface BusinessIntelligenceFilters {
+  dateRange?: string;
+  businessId?: string;
+  moduleId?: string;
+  userType?: string;
+  metric?: string;
+}
+
+interface BusinessIntelligenceData {
+  userGrowth: unknown; // Will be defined by getUserGrowthMetrics return type
+  revenueMetrics: unknown; // Will be defined by getRevenueMetrics return type
+  engagementMetrics: unknown; // Will be defined by getEngagementMetrics return type
+  predictiveInsights: unknown; // Will be defined by getPredictiveInsights return type
+  abTests: unknown; // Will be defined by getABTests return type
+  userSegments: unknown; // Will be defined by getUserSegments return type
+  competitiveAnalysis: unknown; // Will be defined by getCompetitiveAnalysis return type
+}
+
+interface KnowledgeArticle {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  author: {
+    id: string;
+    name: string;
+  };
+  status: string;
+  views: number;
+  helpful: number;
+  notHelpful: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PerformanceAlertFilters {
+  severity?: string;
+  status?: string;
+  type?: string;
+}
+
+interface PerformanceAlert {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  severity: string;
+  acknowledged: boolean;
+  resolved: boolean;
+}
+
+interface LiveChat {
+  id: string;
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  agent?: {
+    id: string;
+    name: string;
+  };
+  status: string;
+  startedAt: string;
+  lastMessageAt: string;
+  messageCount: number;
+  duration: number;
+}
+
+interface OptimizationRecommendation {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  impact: string;
+  effort: string;
+  estimatedSavings: number;
+  priority: number;
+  status: string;
+}
 
 export class AdminService {
   // ============================================================================
   // USER MANAGEMENT
   // ============================================================================
 
-  static async getUsers(params: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    role?: string;
-  }) {
+  static async getUsers(params: UserFilters) {
     const { page = 1, limit = 20, search, status, role } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
@@ -114,7 +424,7 @@ export class AdminService {
   // CONTENT MODERATION
   // ============================================================================
 
-  static async getReportedContent(filters: any) {
+  static async getReportedContent(filters: ContentReportFilters) {
     try {
       // Mock reported content - in a real implementation, this would query the database
       const mockReports = [
@@ -282,7 +592,7 @@ export class AdminService {
   // ANALYTICS METHODS
   // ============================================================================
 
-  static async getAnalytics(filters: any) {
+  static async getAnalytics(filters: AnalyticsFilters) {
     try {
       const dateRange = filters.dateRange || '30d';
       const userType = filters.userType || 'all';
@@ -372,7 +682,7 @@ export class AdminService {
     }
   }
 
-  static async exportAnalytics(filters: any, format: string) {
+  static async exportAnalytics(filters: AnalyticsFilters, format: string) {
     try {
       const analyticsData = await this.getAnalytics(filters);
       
@@ -438,7 +748,7 @@ export class AdminService {
 
 
 
-  private static convertToCSV(data: any): string {
+  private static convertToCSV(data: AnalyticsData): string {
     // Simple CSV conversion - in a real implementation, this would be more sophisticated
     const csvRows = [];
     
@@ -470,7 +780,7 @@ export class AdminService {
     const { page = 1, limit = 20, status } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status;
 
     const [subscriptions, total] = await Promise.all([
@@ -519,30 +829,10 @@ export class AdminService {
     limit?: number;
     severity?: string;
     type?: string;
+    resolved?: boolean;
+    timeRange?: string;
   }) {
-    const { page = 1, limit = 20, severity, type } = params;
-    const skip = (page - 1) * limit;
-
-    const where: any = {};
-    if (severity) where.severity = severity;
-    if (type) where.eventType = type;
-
-    const [events, total] = await Promise.all([
-      prisma.securityEvent.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { timestamp: 'desc' }
-      }),
-      prisma.securityEvent.count({ where })
-    ]);
-
-    return {
-      events,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
-    };
+    return SecurityService.getSecurityEvents(params);
   }
 
   static async getAuditLogs(params: {
@@ -554,7 +844,7 @@ export class AdminService {
     const { page = 1, limit = 20, adminId, action } = params;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (adminId) where.adminId = adminId;
     if (action) where.action = action;
 
@@ -581,101 +871,18 @@ export class AdminService {
   // ============================================================================
 
   static async getSecurityMetrics() {
-    try {
-      // Get total security events
-      const totalEvents = await prisma.securityEvent.count();
-      
-      // Get critical events
-      const criticalEvents = await prisma.securityEvent.count({
-        where: {
-          severity: 'critical'
-        }
-      });
-
-      // Get resolved events
-      const resolvedEvents = await prisma.securityEvent.count({
-        where: {
-          resolved: true
-        }
-      });
-
-      // Get active threats (unresolved events)
-      const activeThreats = await prisma.securityEvent.count({
-        where: {
-          resolved: false
-        }
-      });
-
-      // Calculate security score (mock calculation)
-      const securityScore = Math.max(0, 100 - (activeThreats * 10) - (criticalEvents * 5));
-
-      // Get last incident
-      const lastIncident = await prisma.securityEvent.findFirst({
-        orderBy: {
-          timestamp: 'desc'
-        }
-      });
-
-      return {
-        totalEvents,
-        criticalEvents,
-        resolvedEvents,
-        activeThreats,
-        securityScore,
-        lastIncident: lastIncident?.timestamp || new Date().toISOString(),
-        uptime: 99.9 // Mock uptime
-      };
-    } catch (error) {
-      console.error('Error getting security metrics:', error);
-      throw error;
-    }
+    return SecurityService.getSecurityMetrics();
   }
 
   static async getComplianceStatus() {
-    try {
-      // Mock compliance status - in a real implementation, this would check actual compliance
-      return {
-        gdpr: true,
-        hipaa: false,
-        soc2: true,
-        pci: true,
-        lastAudit: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
-        nextAudit: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
-      };
-    } catch (error) {
-      console.error('Error getting compliance status:', error);
-      throw error;
-    }
+    return SecurityService.getComplianceStatus();
   }
 
   static async resolveSecurityEvent(eventId: string, adminId: string) {
-    try {
-      const event = await prisma.securityEvent.update({
-        where: { id: eventId },
-        data: {
-          resolved: true
-        }
-      });
-
-      // Log the resolution action
-      await this.logSecurityEvent({
-        eventType: 'security_event_resolved',
-        severity: 'low',
-        adminId: adminId,
-        details: {
-          resolvedEventId: eventId,
-          resolvedEventType: event.eventType
-        }
-      });
-
-      return { success: true, event };
-    } catch (error) {
-      console.error('Error resolving security event:', error);
-      throw error;
-    }
+    return SecurityService.resolveSecurityEvent(eventId, adminId);
   }
 
-  static async exportSecurityReport(filters: any, format: string) {
+  static async exportSecurityReport(filters: SecurityReportFilters, format: string) {
     try {
       const events = await prisma.securityEvent.findMany({
         where: {
@@ -713,7 +920,7 @@ export class AdminService {
     }
   }
 
-  private static convertSecurityEventsToCSV(events: any[]): string {
+  private static convertSecurityEventsToCSV(events: Record<string, unknown>[]): string {
     const csvRows = [];
     
     // Add headers
@@ -881,7 +1088,7 @@ export class AdminService {
     return configs;
   }
 
-  static async updateSystemConfig(configKey: string, configValue: any, description: string, adminId: string) {
+  static async updateSystemConfig(configKey: string, configValue: string | number | boolean, description: string, adminId: string) {
     const config = await prisma.systemConfig.upsert({
       where: { configKey },
       update: {
@@ -1113,17 +1320,7 @@ export class AdminService {
   // UTILITY METHODS
   // ============================================================================
 
-  static async logSecurityEvent(eventData: {
-    eventType: string;
-    severity: string;
-    userId?: string;
-    userEmail?: string;
-    adminId?: string;
-    adminEmail?: string;
-    ipAddress?: string;
-    userAgent?: string;
-    details?: any;
-  }) {
+  static async logSecurityEvent(eventData: SecurityEventData) {
     return await prisma.securityEvent.create({
       data: {
         eventType: eventData.eventType,
@@ -1134,31 +1331,30 @@ export class AdminService {
         adminEmail: eventData.adminEmail,
         ipAddress: eventData.ipAddress,
         userAgent: eventData.userAgent,
-        details: eventData.details
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        details: eventData.details as any
       }
     });
   }
 
-  static async logSystemMetric(metricData: {
-    metricType: string;
-    metricName: string;
-    metricValue: number;
-    metadata?: any;
-  }) {
+  static async logSystemMetric(metricData: SystemMetricData) {
     return await prisma.systemMetrics.create({
       data: {
         metricType: metricData.metricType,
         metricName: metricData.metricName,
         metricValue: metricData.metricValue,
-        metadata: metricData.metadata
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        metadata: metricData.metadata as any
       }
     });
   }
 
   // Module Management Methods
-  static async getModuleSubmissions(filters: any = {}): Promise<any[]> {
+  static async getModuleSubmissions(filters: ModuleDataFilters = {}): Promise<ModuleSubmission[]> {
     try {
-      const whereClause: any = {};
+      const whereClause: Record<string, unknown> = {};
       
       if (filters.status && filters.status !== 'all') {
         whereClause.status = filters.status;
@@ -1211,7 +1407,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleStats(): Promise<any> {
+  static async getModuleStats(): Promise<unknown> {
     try {
       const [
         totalSubmissions,
@@ -1589,7 +1785,7 @@ export class AdminService {
     }
   }
 
-  static async exportModuleData(filters: any = {}): Promise<string> {
+  static async exportModuleData(filters: ModuleDataFilters = {}): Promise<string> {
     try {
       const submissions = await this.getModuleSubmissions(filters);
       
@@ -1633,10 +1829,10 @@ export class AdminService {
   }
 
   // Business Intelligence Methods
-  static async getBusinessIntelligence(filters: any = {}): Promise<any> {
+  static async getBusinessIntelligence(filters: BusinessIntelligenceFilters = {}): Promise<BusinessIntelligenceData> {
     try {
       // Get date range
-      const dateRange = this.getDateRangeFromFilter(filters.dateRange);
+      const dateRange = this.getDateRangeFromFilter(filters.dateRange || '30d');
       
       // Get user growth metrics
       const userGrowth = await this.getUserGrowthMetrics(dateRange);
@@ -1674,7 +1870,7 @@ export class AdminService {
     }
   }
 
-  static async exportBusinessIntelligence(filters: any = {}): Promise<string> {
+  static async exportBusinessIntelligence(filters: BusinessIntelligenceFilters = {}): Promise<string> {
     try {
       const data = await this.getBusinessIntelligence(filters);
       
@@ -1683,15 +1879,13 @@ export class AdminService {
         'Metric',
         'Value',
         'Change',
-        'Date Range'
+        'Trend'
       ];
 
       const csvRows = [
-        ['Total Users', data.userGrowth.totalUsers, `${data.userGrowth.growthRate}%`, filters.dateRange || '30d'],
-        ['MRR', `$${data.revenueMetrics.monthlyRecurringRevenue.toLocaleString()}`, `${data.revenueMetrics.revenueGrowth}%`, filters.dateRange || '30d'],
-        ['ARPU', `$${data.revenueMetrics.averageRevenuePerUser}`, 'N/A', filters.dateRange || '30d'],
-        ['Active Users', data.userGrowth.activeUsers, 'N/A', filters.dateRange || '30d'],
-        ['Churn Rate', `${data.userGrowth.churnRate}%`, 'N/A', filters.dateRange || '30d']
+        ['User Growth', (data.userGrowth as any)?.totalUsers || 0, (data.userGrowth as any)?.growthRate || 0, (data.userGrowth as any)?.trend || 'stable'],
+        ['Revenue', (data.revenueMetrics as any)?.totalRevenue || 0, (data.revenueMetrics as any)?.growthRate || 0, (data.revenueMetrics as any)?.trend || 'stable'],
+        ['Engagement', (data.engagementMetrics as any)?.activeUsers || 0, (data.engagementMetrics as any)?.changeRate || 0, (data.engagementMetrics as any)?.trend || 'stable']
       ];
 
       const csvContent = [csvHeaders, ...csvRows]
@@ -1705,7 +1899,7 @@ export class AdminService {
     }
   }
 
-  static async createABTest(testData: any, adminId?: string): Promise<any> {
+  static async createABTest(testData: ABTestData, adminId?: string): Promise<unknown> {
     try {
       // In a real implementation, this would create an A/B test in the database
       const test = {
@@ -1724,7 +1918,8 @@ export class AdminService {
           details: JSON.stringify({
             testId: test.id,
             testName: testData.name,
-            variants: testData.variants
+            variantA: testData.variantA,
+            variantB: testData.variantB
           }),
           timestamp: new Date()
         }
@@ -1737,7 +1932,7 @@ export class AdminService {
     }
   }
 
-  static async getABTestResults(testId: string): Promise<any> {
+  static async getABTestResults(testId: string): Promise<unknown> {
     try {
       // Mock A/B test results
       return {
@@ -1764,7 +1959,7 @@ export class AdminService {
     }
   }
 
-  static async updateABTest(testId: string, updates: any, adminId?: string): Promise<any> {
+  static async updateABTest(testId: string, updates: Partial<ABTestData>, adminId?: string): Promise<unknown> {
     try {
       // In a real implementation, this would update the A/B test in the database
       const updatedTest = {
@@ -1794,7 +1989,7 @@ export class AdminService {
     }
   }
 
-  static async getUserSegments(): Promise<any[]> {
+  static async getUserSegments(): Promise<unknown[]> {
     try {
       // Get user segments based on behavior and demographics
       const segments = await prisma.user.groupBy({
@@ -1818,7 +2013,7 @@ export class AdminService {
     }
   }
 
-  static async createUserSegment(segmentData: any, adminId?: string): Promise<any> {
+  static async createUserSegment(segmentData: UserSegmentData, adminId?: string): Promise<unknown> {
     try {
       const segment = {
         id: `segment_${Date.now()}`,
@@ -1848,7 +2043,7 @@ export class AdminService {
     }
   }
 
-  static async getPredictiveInsights(): Promise<any[]> {
+  static async getPredictiveInsights(): Promise<unknown[]> {
     try {
       // In a real implementation, this would use ML models to generate insights
       const insights = [
@@ -1885,7 +2080,7 @@ export class AdminService {
     }
   }
 
-  static async getCompetitiveAnalysis(): Promise<any> {
+  static async getCompetitiveAnalysis(): Promise<unknown> {
     try {
       // In a real implementation, this would gather data from market research
       return {
@@ -1923,7 +2118,7 @@ export class AdminService {
     }
   }
 
-  static async generateCustomReport(reportConfig: any, adminId?: string): Promise<any> {
+  static async generateCustomReport(reportConfig: ReportConfig, adminId?: string): Promise<unknown> {
     try {
       const report = {
         id: `report_${Date.now()}`,
@@ -1956,7 +2151,7 @@ export class AdminService {
   }
 
   // Helper methods for business intelligence
-  private static async getUserGrowthMetrics(dateRange: { start: Date; end: Date }): Promise<any> {
+  private static async getUserGrowthMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
     const [totalUsers, newUsers, activeUsers] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
@@ -1988,7 +2183,7 @@ export class AdminService {
     };
   }
 
-  private static async getRevenueMetrics(dateRange: { start: Date; end: Date }): Promise<any> {
+  private static async getRevenueMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
     const revenue = await prisma.moduleSubscription.aggregate({
       _sum: {
         amount: true
@@ -2020,7 +2215,7 @@ export class AdminService {
     };
   }
 
-  private static async getEngagementMetrics(dateRange: { start: Date; end: Date }): Promise<any> {
+  private static async getEngagementMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
     return {
       averageSessionDuration: 24.5,
       dailyActiveUsers: 3420,
@@ -2035,7 +2230,7 @@ export class AdminService {
     };
   }
 
-  private static async getABTests(): Promise<any[]> {
+  private static async getABTests(): Promise<unknown[]> {
     return [
       {
         id: '1',
@@ -2105,95 +2300,151 @@ export class AdminService {
   }
 
   // Customer Support Methods
-  static async getSupportTickets(filters: any = {}): Promise<any[]> {
+  static async getSupportTickets(filters: SupportTicketFilters = {}): Promise<SupportTicket[]> {
     try {
-      // In a real implementation, this would query the database for support tickets
-      const tickets = [
-        {
-          id: '1',
-          title: 'Cannot access premium features',
-          description: 'I upgraded to premium but still cannot access advanced features. Please help.',
-          status: 'open',
-          priority: 'high',
-          category: 'Billing',
-          customer: {
-            id: '1',
-            name: 'John Smith',
-            email: 'john@example.com',
-            plan: 'premium'
-          },
-          assignedTo: {
-            id: '1',
-            name: 'Sarah Support',
-            email: 'sarah@company.com'
-          },
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          updatedAt: new Date(Date.now() - 1800000).toISOString(),
-          responseTime: 2.5,
-          satisfaction: 4,
-          tags: ['billing', 'premium', 'urgent'],
-          attachments: []
-        },
-        {
-          id: '2',
-          title: 'Module installation failed',
-          description: 'Trying to install the calendar module but getting an error message.',
-          status: 'in_progress',
-          priority: 'medium',
-          category: 'Technical',
-          customer: {
-            id: '2',
-            name: 'Jane Doe',
-            email: 'jane@example.com',
-            plan: 'free'
-          },
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          updatedAt: new Date(Date.now() - 3600000).toISOString(),
-          responseTime: 1.2,
-          tags: ['modules', 'installation'],
-          attachments: ['error-screenshot.png']
-        }
-      ];
-
-      // Apply filters
-      let filteredTickets = tickets;
+      const whereClause: any = {};
       
+      // Apply filters
       if (filters.status && filters.status !== 'all') {
-        filteredTickets = filteredTickets.filter(ticket => ticket.status === filters.status);
+        whereClause.status = filters.status;
       }
       
       if (filters.priority && filters.priority !== 'all') {
-        filteredTickets = filteredTickets.filter(ticket => ticket.priority === filters.priority);
+        whereClause.priority = filters.priority;
       }
       
       if (filters.category && filters.category !== 'all') {
-        filteredTickets = filteredTickets.filter(ticket => ticket.category === filters.category);
+        whereClause.category = filters.category;
       }
 
-      return filteredTickets;
+      const tickets = await prisma.supportTicket.findMany({
+        where: whereClause,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          attachments: true,
+          messages: {
+            orderBy: {
+              createdAt: 'desc'
+            },
+            take: 1
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Transform to match the expected interface
+      return tickets.map(ticket => ({
+        id: ticket.id,
+        title: ticket.title,
+        description: ticket.description,
+        status: ticket.status.toLowerCase() as any,
+        priority: ticket.priority.toLowerCase() as any,
+        category: ticket.category,
+        customer: {
+          id: ticket.customer.id,
+          name: ticket.customer.name || 'Unknown',
+          email: ticket.customer.email,
+          plan: 'premium' // TODO: Get actual plan from subscription
+        },
+        assignedTo: ticket.assignedTo ? {
+          id: ticket.assignedTo.id,
+          name: ticket.assignedTo.name || 'Unknown',
+          email: ticket.assignedTo.email
+        } : undefined,
+        createdAt: ticket.createdAt.toISOString(),
+        updatedAt: ticket.updatedAt.toISOString(),
+        responseTime: ticket.responseTime || 0,
+        satisfaction: ticket.satisfaction || undefined,
+        tags: ticket.tags,
+        attachments: ticket.attachments.map(att => att.filename)
+      }));
     } catch (error) {
       console.error('Error getting support tickets:', error);
       throw new Error('Failed to get support tickets');
     }
   }
 
-  static async getSupportStats(): Promise<any> {
+  static async getSupportStats(): Promise<unknown> {
     try {
+      // Get real ticket counts
+      const [totalTickets, openTickets, resolvedToday] = await Promise.all([
+        prisma.supportTicket.count(),
+        prisma.supportTicket.count({
+          where: { status: 'OPEN' }
+        }),
+        prisma.supportTicket.count({
+          where: {
+            status: 'RESOLVED',
+            resolvedAt: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0))
+            }
+          }
+        })
+      ]);
+
+      // Get average response time
+      const ticketsWithResponseTime = await prisma.supportTicket.findMany({
+        where: {
+          responseTime: { not: null }
+        },
+        select: { responseTime: true }
+      });
+      
+      const averageResponseTime = ticketsWithResponseTime.length > 0
+        ? ticketsWithResponseTime.reduce((sum, ticket) => sum + (ticket.responseTime || 0), 0) / ticketsWithResponseTime.length
+        : 0;
+
+      // Get average satisfaction
+      const ticketsWithSatisfaction = await prisma.supportTicket.findMany({
+        where: {
+          satisfaction: { not: null }
+        },
+        select: { satisfaction: true }
+      });
+      
+      const customerSatisfaction = ticketsWithSatisfaction.length > 0
+        ? ticketsWithSatisfaction.reduce((sum, ticket) => sum + (ticket.satisfaction || 0), 0) / ticketsWithSatisfaction.length
+        : 0;
+
+      // Get top categories
+      const categoryStats = await prisma.supportTicket.groupBy({
+        by: ['category'],
+        _count: { id: true }
+      });
+
+      const topCategories = categoryStats
+        .map(stat => ({
+          category: stat.category,
+          count: stat._count.id,
+          percentage: Math.round((stat._count.id / totalTickets) * 100)
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
       return {
-        totalTickets: 156,
-        openTickets: 23,
-        resolvedToday: 8,
-        averageResponseTime: 2.3,
-        customerSatisfaction: 4.2,
-        activeAgents: 5,
-        averageResolutionTime: 8.5,
-        topCategories: [
-          { category: 'Technical', count: 45, percentage: 29 },
-          { category: 'Billing', count: 32, percentage: 21 },
-          { category: 'Account', count: 28, percentage: 18 },
-          { category: 'Features', count: 25, percentage: 16 },
-          { category: 'Other', count: 26, percentage: 16 }
-        ]
+        totalTickets,
+        openTickets,
+        resolvedToday,
+        averageResponseTime: Math.round(averageResponseTime * 10) / 10,
+        customerSatisfaction: Math.round(customerSatisfaction * 10) / 10,
+        activeAgents: 5, // TODO: Get real agent count
+        averageResolutionTime: 8.5, // TODO: Calculate from resolved tickets
+        topCategories
       };
     } catch (error) {
       console.error('Error getting support stats:', error);
@@ -2201,16 +2452,67 @@ export class AdminService {
     }
   }
 
-  static async updateSupportTicket(ticketId: string, action: string, data?: any, adminId?: string): Promise<any> {
+  static async updateSupportTicket(ticketId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<unknown> {
     try {
-      // In a real implementation, this would update the ticket in the database
-      const ticket = {
-        id: ticketId,
-        action,
-        data,
-        updatedBy: adminId,
+      let updateData: any = {
         updatedAt: new Date()
       };
+
+      // Handle different actions
+      switch (action) {
+        case 'assign':
+          updateData.assignedToId = adminId;
+          break;
+        case 'start_progress':
+          updateData.status = 'IN_PROGRESS';
+          break;
+        case 'resolve':
+          updateData.status = 'RESOLVED';
+          updateData.resolvedAt = new Date();
+          break;
+        case 'close':
+          updateData.status = 'CLOSED';
+          updateData.closedAt = new Date();
+          break;
+        case 'update_priority':
+          updateData.priority = data?.priority;
+          break;
+        case 'update_category':
+          updateData.category = data?.category;
+          break;
+        case 'add_response_time':
+          updateData.responseTime = data?.responseTime;
+          break;
+        case 'add_satisfaction':
+          updateData.satisfaction = data?.satisfaction;
+          break;
+        default:
+          // For any other action, just update the data
+          if (data) {
+            Object.assign(updateData, data);
+          }
+      }
+
+      const ticket = await prisma.supportTicket.update({
+        where: { id: ticketId },
+        data: updateData,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
 
       // Log the action
       await prisma.auditLog.create({
@@ -2226,6 +2528,26 @@ export class AdminService {
         }
       });
 
+      // Send email notifications based on action
+      try {
+        const emailService = new SupportTicketEmailService();
+        
+        switch (action) {
+          case 'assign':
+            await emailService.sendTicketAssignedEmail(ticketId, adminId || '');
+            break;
+          case 'start_progress':
+            await emailService.sendTicketInProgressEmail(ticketId);
+            break;
+          case 'resolve':
+            await emailService.sendTicketResolvedEmail(ticketId);
+            break;
+        }
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        // Don't fail the ticket update if email fails
+      }
+
       return ticket;
     } catch (error) {
       console.error('Error updating support ticket:', error);
@@ -2233,51 +2555,46 @@ export class AdminService {
     }
   }
 
-  static async getKnowledgeBase(): Promise<any[]> {
+  static async getKnowledgeBase(): Promise<KnowledgeArticle[]> {
     try {
-      return [
-        {
-          id: '1',
-          title: 'How to upgrade to premium',
-          content: 'Step-by-step guide to upgrade your account to premium...',
-          category: 'Account',
-          tags: ['upgrade', 'premium', 'billing'],
+      const articles = await prisma.knowledgeBaseArticle.findMany({
+        include: {
           author: {
-            id: '1',
-            name: 'Support Team'
-          },
-          status: 'published',
-          views: 1250,
-          helpful: 89,
-          notHelpful: 12,
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString()
+            select: {
+              id: true,
+              name: true
+            }
+          }
         },
-        {
-          id: '2',
-          title: 'Troubleshooting module installation',
-          content: 'Common issues and solutions for module installation problems...',
-          category: 'Technical',
-          tags: ['modules', 'installation', 'troubleshooting'],
-          author: {
-            id: '2',
-            name: 'Tech Support'
-          },
-          status: 'published',
-          views: 890,
-          helpful: 67,
-          notHelpful: 8,
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 172800000).toISOString()
+        orderBy: {
+          createdAt: 'desc'
         }
-      ];
+      });
+
+      return articles.map(article => ({
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        category: article.category,
+        tags: article.tags,
+        author: {
+          id: article.author.id,
+          name: article.author.name || 'Unknown'
+        },
+        status: article.status.toLowerCase(),
+        views: article.views,
+        helpful: article.helpful,
+        notHelpful: article.notHelpful,
+        createdAt: article.createdAt.toISOString(),
+        updatedAt: article.updatedAt.toISOString()
+      }));
     } catch (error) {
       console.error('Error getting knowledge base:', error);
       throw new Error('Failed to get knowledge base');
     }
   }
 
-  static async updateKnowledgeArticle(articleId: string, action: string, data?: any, adminId?: string): Promise<any> {
+  static async updateKnowledgeArticle(articleId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<unknown> {
     try {
       const article = {
         id: articleId,
@@ -2308,47 +2625,58 @@ export class AdminService {
     }
   }
 
-  static async getLiveChats(): Promise<any[]> {
+  static async getLiveChats(): Promise<LiveChat[]> {
     try {
-      return [
-        {
-          id: '1',
+      const chats = await prisma.liveChatSession.findMany({
+        include: {
           customer: {
-            id: '3',
-            name: 'Mike Johnson',
-            email: 'mike@example.com'
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
           },
           agent: {
-            id: '2',
-            name: 'Alex Support'
+            select: {
+              id: true,
+              name: true
+            }
           },
-          status: 'active',
-          startedAt: new Date(Date.now() - 1800000).toISOString(),
-          lastMessageAt: new Date(Date.now() - 300000).toISOString(),
-          messageCount: 12,
-          duration: 30
+          messages: {
+            select: {
+              id: true
+            }
+          }
         },
-        {
-          id: '2',
-          customer: {
-            id: '4',
-            name: 'Lisa Brown',
-            email: 'lisa@example.com'
-          },
-          status: 'waiting',
-          startedAt: new Date(Date.now() - 600000).toISOString(),
-          lastMessageAt: new Date(Date.now() - 600000).toISOString(),
-          messageCount: 1,
-          duration: 10
+        orderBy: {
+          startedAt: 'desc'
         }
-      ];
+      });
+
+      return chats.map(chat => ({
+        id: chat.id,
+        customer: {
+          id: chat.customer.id,
+          name: chat.customer.name || 'Unknown',
+          email: chat.customer.email
+        },
+        agent: chat.agent ? {
+          id: chat.agent.id,
+          name: chat.agent.name || 'Unknown'
+        } : undefined,
+        status: chat.status.toLowerCase(),
+        startedAt: chat.startedAt.toISOString(),
+        lastMessageAt: chat.lastMessageAt.toISOString(),
+        messageCount: chat.messageCount,
+        duration: chat.duration || 0
+      }));
     } catch (error) {
       console.error('Error getting live chats:', error);
       throw new Error('Failed to get live chats');
     }
   }
 
-  static async joinLiveChat(chatId: string, adminId?: string): Promise<any> {
+  static async joinLiveChat(chatId: string, adminId?: string): Promise<unknown> {
     try {
       const chat = {
         id: chatId,
@@ -2376,7 +2704,7 @@ export class AdminService {
     }
   }
 
-  static async getSupportAnalytics(): Promise<any> {
+  static async getSupportAnalytics(): Promise<unknown> {
     try {
       return {
         responseTime: {
@@ -2419,14 +2747,36 @@ export class AdminService {
     }
   }
 
-  static async createSupportTicket(ticketData: any, adminId?: string): Promise<any> {
+  static async createSupportTicket(ticketData: SupportTicketData, adminId?: string): Promise<unknown> {
     try {
-      const ticket = {
-        id: `ticket_${Date.now()}`,
-        ...ticketData,
-        createdAt: new Date(),
-        createdBy: adminId
-      };
+      const ticket = await prisma.supportTicket.create({
+        data: {
+          title: ticketData.title,
+          description: ticketData.description,
+          status: 'OPEN',
+          priority: (ticketData.priority || 'MEDIUM').toUpperCase() as any,
+          category: ticketData.category || 'General',
+          tags: ticketData.tags || [],
+          customerId: ticketData.customerId || 'unknown',
+          assignedToId: adminId || null
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
 
       // Log the action
       await prisma.auditLog.create({
@@ -2442,6 +2792,17 @@ export class AdminService {
         }
       });
 
+      // Send email notification for ticket creation (if customer-facing)
+      if (!adminId) { // Customer-created ticket
+        try {
+          const emailService = new SupportTicketEmailService();
+          // We could add a "ticket created" email template here
+          console.log(`Support ticket created by customer: ${ticket.id}`);
+        } catch (emailError) {
+          console.error('Error sending ticket creation email:', emailError);
+        }
+      }
+
       return ticket;
     } catch (error) {
       console.error('Error creating support ticket:', error);
@@ -2449,17 +2810,32 @@ export class AdminService {
     }
   }
 
-  static async createKnowledgeArticle(articleData: any, adminId?: string): Promise<any> {
+  static async createKnowledgeArticle(articleData: KnowledgeArticleData, adminId?: string): Promise<unknown> {
     try {
-      const article = {
-        id: `article_${Date.now()}`,
-        ...articleData,
-        createdAt: new Date(),
-        createdBy: adminId,
-        views: 0,
-        helpful: 0,
-        notHelpful: 0
-      };
+      const article = await prisma.knowledgeBaseArticle.create({
+        data: {
+          title: articleData.title,
+          content: articleData.content,
+          excerpt: articleData.content.substring(0, 200) + '...',
+          category: articleData.category,
+          tags: articleData.tags || [],
+          status: (articleData.status || 'DRAFT').toUpperCase() as any,
+          slug: articleData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+          authorId: adminId || 'unknown',
+          views: 0,
+          helpful: 0,
+          notHelpful: 0,
+          publishedAt: articleData.status === 'published' ? new Date() : null
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      });
 
       // Log the action
       await prisma.auditLog.create({
@@ -2482,7 +2858,7 @@ export class AdminService {
     }
   }
 
-  static async exportSupportData(filters: any = {}): Promise<string> {
+  static async exportSupportData(filters: SupportTicketFilters = {}): Promise<string> {
     try {
       const tickets = await this.getSupportTickets(filters);
       const stats = await this.getSupportStats();
@@ -2524,7 +2900,7 @@ export class AdminService {
   }
 
   // Performance & Scalability Methods
-  static async getPerformanceMetrics(filters: any = {}): Promise<any> {
+  static async getPerformanceMetrics(filters: Record<string, unknown> = {}): Promise<unknown> {
     try {
       // In a real implementation, this would collect actual system metrics
       return {
@@ -2613,7 +2989,7 @@ export class AdminService {
     }
   }
 
-  static async getOptimizationRecommendations(): Promise<any[]> {
+  static async getOptimizationRecommendations(): Promise<OptimizationRecommendation[]> {
     try {
       return [
         {
@@ -2707,9 +3083,9 @@ export class AdminService {
     }
   }
 
-  static async getPerformanceAlerts(filters: any = {}): Promise<any[]> {
+  static async getPerformanceAlerts(filters: PerformanceAlertFilters = {}): Promise<PerformanceAlert[]> {
     try {
-      const alerts = [
+      const alerts: PerformanceAlert[] = [
         {
           id: '1',
           type: 'warning',
@@ -2859,7 +3235,7 @@ export class AdminService {
     }
   }
 
-  static async configurePerformanceAlert(alertConfig: any, adminId?: string): Promise<any> {
+  static async configurePerformanceAlert(alertConfig: Record<string, unknown>, adminId?: string): Promise<unknown> {
     try {
       const config = {
         id: `config_${Date.now()}`,
@@ -2889,7 +3265,7 @@ export class AdminService {
     }
   }
 
-  static async exportPerformanceData(filters: any = {}): Promise<string> {
+  static async exportPerformanceData(filters: Record<string, unknown> = {}): Promise<string> {
     try {
       const metrics = await this.getPerformanceMetrics(filters);
       const alerts = await this.getPerformanceAlerts(filters);
@@ -2903,14 +3279,14 @@ export class AdminService {
       ];
 
       const csvRows = [
-        ['CPU Usage', metrics.cpu.usage, '%', new Date().toISOString()],
-        ['Memory Usage', ((metrics.memory.used / metrics.memory.total) * 100).toFixed(2), '%', new Date().toISOString()],
-        ['Response Time', metrics.application.responseTime, 'ms', new Date().toISOString()],
-        ['Throughput', metrics.application.throughput, 'req/s', new Date().toISOString()],
-        ['Error Rate', metrics.application.errorRate, '%', new Date().toISOString()],
-        ['Active Users', metrics.application.activeUsers, 'users', new Date().toISOString()],
-        ['Database Connections', metrics.database.connections, 'connections', new Date().toISOString()],
-        ['Cache Hit Rate', metrics.database.cacheHitRate, '%', new Date().toISOString()]
+        ['CPU Usage', (metrics as any).cpu?.usage || 0, '%', new Date().toISOString()],
+        ['Memory Usage', ((metrics as any).memory?.used / (metrics as any).memory?.total * 100).toFixed(2) || 0, '%', new Date().toISOString()],
+        ['Response Time', (metrics as any).application?.responseTime || 0, 'ms', new Date().toISOString()],
+        ['Throughput', (metrics as any).application?.throughput || 0, 'req/s', new Date().toISOString()],
+        ['Error Rate', (metrics as any).application?.errorRate || 0, '%', new Date().toISOString()],
+        ['Active Users', (metrics as any).application?.activeUsers || 0, 'users', new Date().toISOString()],
+        ['Database Connections', (metrics as any).database?.connections || 0, 'connections', new Date().toISOString()],
+        ['Cache Hit Rate', (metrics as any).database?.cacheHitRate || 0, '%', new Date().toISOString()]
       ];
 
       const csvContent = [csvHeaders, ...csvRows]

@@ -9,7 +9,7 @@ interface RecommendationAnalytics {
   averageConfidence: number;
   categoryDistribution: Record<string, number>;
   priorityDistribution: Record<string, number>;
-  recentRecommendations: any[];
+  recentRecommendations: IntelligentRecommendation[];
 }
 
 interface IntelligentRecommendation {

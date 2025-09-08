@@ -9,8 +9,10 @@ import {
   assignEmployeeToPosition,
   removeEmployeeFromPosition,
   transferEmployee,
-  EmployeePosition,
-  Position
+  type EmployeePosition,
+  type Position,
+  type OrganizationalTier,
+  type Department
 } from '@/api/orgChart';
 import { 
   Plus, 
@@ -29,14 +31,22 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+interface OrgChartData {
+  tiers: OrganizationalTier[];
+  departments: Department[];
+  positions: Position[];
+}
+
 interface EmployeeManagerProps {
-  orgChartData: any;
+  orgChartData: OrgChartData;
   businessId: string;
   onUpdate: () => void;
 }
 
 type EditMode = 'none' | 'assign' | 'transfer';
 type EditAction = 'create' | 'edit';
+
+type EditingItem = EmployeePosition | null;
 
 export function EmployeeManager({ orgChartData, businessId, onUpdate }: EmployeeManagerProps) {
   const { data: session } = useSession();
@@ -45,7 +55,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('none');
   const [editAction, setEditAction] = useState<EditAction>('create');
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<EditingItem>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['employees', 'vacant-positions']));
 
   // Form states
@@ -109,10 +119,10 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     setExpandedSections(newExpanded);
   };
 
-  const startEdit = (mode: EditMode, action: EditAction, item?: any) => {
+  const startEdit = (mode: EditMode, action: EditAction, item?: EditingItem) => {
     setEditMode(mode);
     setEditAction(action);
-    setEditingItem(item);
+    setEditingItem(item || null);
     
     if (action === 'edit' && item) {
       if (mode === 'assign') {
@@ -221,14 +231,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
   const getDepartmentName = (positionId: string) => {
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position?.departmentId) return 'No Department';
-    const dept = orgChartData?.departments?.find((d: any) => d.id === position.departmentId);
+    const dept = orgChartData?.departments?.find((d: Department) => d.id === position.departmentId);
     return dept?.name || 'Unknown Department';
   };
 
   const getTierName = (positionId: string) => {
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position?.tierId) return 'No Tier';
-    const tier = orgChartData?.tiers?.find((t: any) => t.id === position.tierId);
+    const tier = orgChartData?.tiers?.find((t: OrganizationalTier) => t.id === position.tierId);
     return tier?.name || 'Unknown Tier';
   };
 

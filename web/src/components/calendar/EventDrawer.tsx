@@ -1,21 +1,54 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { calendarAPI, Calendar, EventItem, Attendee, EventComment } from '../../api/calendar';
 import { useCalendarContext } from '../../contexts/CalendarContext';
+import { useDashboard } from '../../contexts/DashboardContext';
 
-interface Props {
+interface EventPayload {
+  calendarId: string;
+  title: string;
+  description?: string;
+  location?: string;
+  onlineMeetingLink?: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  timezone: string;
+  attendees: Attendee[];
+  recurrenceRule?: string;
+  recurrenceEndAt?: string;
+  editMode?: 'THIS';
+  occurrenceStartAt?: string;
+}
+
+interface ConflictData {
+  success: boolean;
+  data: Array<{ id: string; calendarId: string; title: string; startAt: string; endAt: string; }>;
+}
+
+interface EventDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  eventToEdit?: EventItem;
   onCreated?: (event: EventItem) => void;
   onUpdated?: (event: EventItem) => void;
   contextType?: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD';
   contextId?: string;
   defaultStart?: Date;
   defaultEnd?: Date;
-  eventToEdit?: EventItem | null;
 }
 
-export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, contextType, contextId, defaultStart, defaultEnd, eventToEdit }: Props) {
+interface ICSEventData {
+  title?: string;
+  startAt?: string;
+  endAt?: string;
+  description?: string;
+  location?: string;
+  allDay?: boolean;
+  timezone?: string;
+}
+
+export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, contextType, contextId, defaultStart, defaultEnd, eventToEdit }: EventDrawerProps) {
   const [title, setTitle] = useState('');
   const [startAt, setStartAt] = useState<string>('');
   const [endAt, setEndAt] = useState<string>('');
@@ -128,12 +161,12 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
           end: new Date(endAt).toISOString(),
           calendarIds: [calendarId]
         });
-        if ((conflicts as any)?.success && (conflicts as any).data?.length > 0) {
-          const proceed = confirm(`This time conflicts with ${((conflicts as any).data as any[]).length} event(s). Continue?`);
+        if ((conflicts as ConflictData)?.success && (conflicts as ConflictData).data?.length > 0) {
+          const proceed = confirm(`This time conflicts with ${((conflicts as ConflictData).data).length} event(s). Continue?`);
           if (!proceed) { setSaving(false); return; }
         }
       } catch {}
-      const payload: any = {
+      const payload: EventPayload = {
         calendarId,
         title,
         description,
@@ -303,7 +336,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
                     const text = await file.text();
                     // Basic ICS parsing (simplified)
                     const lines = text.split('\n');
-                    let eventData: any = {};
+                    let eventData: ICSEventData = {};
                     let currentEvent = '';
                     
                     for (const line of lines) {

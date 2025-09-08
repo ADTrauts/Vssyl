@@ -8,3 +8,9 @@ dist/
 
 *storybook.log
 storybook-static
+
+# Additional cleanup patterns
+cookies.txt
+test-results/
+playwright-report/
+*.tsbuildinfo

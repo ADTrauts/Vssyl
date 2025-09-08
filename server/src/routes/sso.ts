@@ -10,7 +10,7 @@ import {
   getAvailableSSOProviders
 } from '../controllers/ssoController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // SSO configuration routes (require authentication)
 router.use(authenticateJWT);

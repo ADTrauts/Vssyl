@@ -15,7 +15,7 @@ export interface TrashedItem {
     owner?: string;
     conversationId?: string;
     senderId?: string;
-    [key: string]: any;
+    [key: string]: string | number | boolean | undefined;
   };
 }
 

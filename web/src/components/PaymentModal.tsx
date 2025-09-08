@@ -79,9 +79,10 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
 
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Payment error:', err);
-      setError(err.message || 'Payment failed. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Payment failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

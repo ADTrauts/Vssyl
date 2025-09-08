@@ -478,7 +478,7 @@ router.get('/history', authenticateJWT, async (req, res) => {
     }
     const { limit = 50, offset = 0, sessionId } = req.query;
 
-    const whereClause: any = { userId };
+    const whereClause: Record<string, unknown> = { userId };
     if (sessionId) {
       whereClause.sessionId = sessionId;
     }
@@ -621,11 +621,12 @@ router.get('/insights', authenticateJWT, async (req, res) => {
     }
 
     // Get recent activity and generate insights
-    const recentActivity = await prisma.activity.findMany({
-      where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: 100
-    });
+    // TODO: Use recentActivity for AI analysis when implemented
+    // const recentActivity = await prisma.activity.findMany({
+    //   where: { userId },
+    //   orderBy: { timestamp: 'desc' },
+    //   take: 100
+    // });
 
     // TODO: Generate insights using AI analysis
     const insights = [

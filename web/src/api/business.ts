@@ -1,6 +1,141 @@
 import { businessApiCall } from '@/lib/apiUtils';
 import { getSession } from 'next-auth/react';
 
+// Business data interfaces
+export interface BusinessAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  formattedAddress?: string;
+}
+
+export interface BusinessBranding {
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  fontFamily?: string;
+  customCSS?: string;
+  faviconUrl?: string;
+}
+
+export interface SSOConfiguration {
+  provider: 'google' | 'azure' | 'okta' | 'saml';
+  isEnabled: boolean;
+  config: Record<string, unknown>;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  ein: string;
+  industry?: string;
+  size?: string;
+  website?: string;
+  address?: BusinessAddress;
+  phone?: string;
+  email?: string;
+  description?: string;
+  branding?: BusinessBranding;
+  ssoConfig?: SSOConfiguration;
+  createdAt: string;
+  updatedAt: string;
+  ownerId: string;
+  status: 'active' | 'inactive' | 'suspended';
+  // Additional properties included in getUserBusinesses response
+  members?: BusinessMember[];
+  dashboards?: Array<{
+    id: string;
+    name: string;
+  }>;
+  _count?: {
+    members: number;
+  };
+}
+
+export interface BusinessMember {
+  id: string;
+  businessId: string;
+  userId: string;
+  role: 'EMPLOYEE' | 'ADMIN' | 'MANAGER';
+  title?: string;
+  department?: string;
+  isActive: boolean;
+  joinedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+}
+
+export interface BusinessInvitation {
+  id: string;
+  businessId: string;
+  email: string;
+  role: 'EMPLOYEE' | 'ADMIN' | 'MANAGER';
+  title?: string;
+  department?: string;
+  status: 'pending' | 'accepted' | 'expired';
+  invitedAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  invitedBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface BusinessFollower {
+  id: string;
+  businessId: string;
+  userId: string;
+  followedAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+}
+
+export interface BusinessFollowing {
+  id: string;
+  businessId: string;
+  userId: string;
+  followedAt: string;
+  business: {
+    id: string;
+    name: string;
+    industry?: string;
+    logoUrl?: string;
+  };
+}
+
+export interface BusinessStats {
+  totalMembers: number;
+  activeMembers: number;
+  pendingInvitations: number;
+  totalFollowers: number;
+  totalFollowing: number;
+  createdAt: string;
+  lastActivityAt: string;
+}
+
+export interface BusinessModuleAnalytics {
+  moduleId: string;
+  moduleName: string;
+  totalUsage: number;
+  activeUsers: number;
+  lastUsed: string;
+  usageTrend: 'increasing' | 'decreasing' | 'stable';
+  userSatisfaction: number;
+  featureUsage: Record<string, number>;
+}
+
 // Helper function to make authenticated API calls
 async function apiCall<T>(
   endpoint: string, 
@@ -18,24 +153,24 @@ export const createBusiness = async (
     industry?: string;
     size?: string;
     website?: string;
-    address?: any;
+    address?: BusinessAddress;
     phone?: string;
     email?: string;
     description?: string;
   }, 
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: Business }> => {
   return apiCall('/', {
     method: 'POST',
     body: JSON.stringify(businessData),
   }, token);
 };
 
-export const getUserBusinesses = async (token: string): Promise<{ success: boolean; data: any[] }> => {
+export const getUserBusinesses = async (token: string): Promise<{ success: boolean; data: Business[] }> => {
   return apiCall('/', { method: 'GET' }, token);
 };
 
-export const getBusiness = async (id: string, token: string): Promise<{ success: boolean; data: any }> => {
+export const getBusiness = async (id: string, token: string): Promise<{ success: boolean; data: Business }> => {
   return apiCall(`/${id}`, { method: 'GET' }, token);
 };
 
@@ -48,14 +183,14 @@ export const inviteMember = async (
     department?: string;
   },
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: BusinessInvitation }> => {
   return apiCall(`/${businessId}/invite`, {
     method: 'POST',
     body: JSON.stringify(inviteData),
   }, token);
 };
 
-export const acceptInvitation = async (token: string, invitationToken: string): Promise<{ success: boolean; data: any }> => {
+export const acceptInvitation = async (token: string, invitationToken: string): Promise<{ success: boolean; data: BusinessMember }> => {
   return apiCall(`/invite/accept/${invitationToken}`, {
     method: 'POST',
   }, token);
@@ -69,15 +204,15 @@ export const updateBusiness = async (
     industry?: string;
     size?: string;
     website?: string;
-    address?: any;
+    address?: BusinessAddress;
     phone?: string;
     email?: string;
     description?: string;
-    branding?: any;
-    ssoConfig?: any;
+    branding?: BusinessBranding;
+    ssoConfig?: SSOConfiguration;
   },
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: Business }> => {
   return apiCall(`/${id}`, {
     method: 'PUT',
     body: JSON.stringify(businessData),
@@ -88,7 +223,7 @@ export const uploadLogo = async (
   id: string,
   logoUrl: string,
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: { logoUrl: string } }> => {
   return apiCall(`/${id}/logo`, {
     method: 'POST',
     body: JSON.stringify({ logoUrl }),
@@ -98,7 +233,7 @@ export const uploadLogo = async (
 export const removeLogo = async (
   id: string,
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: { logoRemoved: boolean } }> => {
   return apiCall(`/${id}/logo`, {
     method: 'DELETE',
   }, token);
@@ -108,7 +243,7 @@ export const removeLogo = async (
 export const getBusinessMembers = async (
   id: string,
   token: string
-): Promise<{ success: boolean; data: any[] }> => {
+): Promise<{ success: boolean; data: BusinessMember[] }> => {
   return apiCall(`/${id}/members`, { method: 'GET' }, token);
 };
 
@@ -124,7 +259,7 @@ export const updateBusinessMember = async (
     canBilling?: boolean;
   },
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: BusinessMember }> => {
   return apiCall(`/${businessId}/members/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(memberData),
@@ -145,14 +280,14 @@ export const removeBusinessMember = async (
 export const getBusinessAnalytics = async (
   id: string,
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: BusinessStats }> => {
   return apiCall(`/${id}/analytics`, { method: 'GET' }, token);
 };
 
 export const getBusinessModuleAnalytics = async (
   id: string,
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: BusinessModuleAnalytics[] }> => {
   return apiCall(`/${id}/module-analytics`, { method: 'GET' }, token);
 };
 
@@ -164,11 +299,11 @@ export const unfollowBusiness = async (businessId: string, token: string): Promi
   return apiCall(`/${businessId}/follow`, { method: 'DELETE' }, token);
 };
 
-export const getBusinessFollowers = async (businessId: string, token: string): Promise<{ success: boolean; followers: any[] }> => {
+export const getBusinessFollowers = async (businessId: string, token: string): Promise<{ success: boolean; followers: BusinessFollower[] }> => {
   return apiCall(`/${businessId}/followers`, { method: 'GET' }, token);
 };
 
-export const getUserFollowing = async (token: string): Promise<{ success: boolean; following: any[] }> => {
+export const getUserFollowing = async (token: string): Promise<{ success: boolean; following: BusinessFollowing[] }> => {
   return apiCall('/user/following', { method: 'GET' }, token);
 };
 
@@ -186,7 +321,7 @@ class BusinessAPI {
     industry?: string;
     size?: string;
     website?: string;
-    address?: any;
+    address?: BusinessAddress;
     phone?: string;
     email?: string;
     description?: string;
@@ -261,12 +396,12 @@ class BusinessAPI {
     industry?: string;
     size?: string;
     website?: string;
-    address?: any;
+    address?: BusinessAddress;
     phone?: string;
     email?: string;
     description?: string;
-    branding?: any;
-    ssoConfig?: any;
+    branding?: BusinessBranding;
+    ssoConfig?: SSOConfiguration;
   }) {
     if (!this.token) {
       const session = await getSession();

@@ -1,6 +1,42 @@
 import { PrismaClient } from '@prisma/client';
 import { Permission, PermissionSet, Position, EmployeePosition } from '@prisma/client';
 
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+interface PermissionDependency {
+  moduleId: string;
+  featureId: string;
+  action: string;
+  required: boolean;
+}
+
+interface PermissionConflict {
+  moduleId: string;
+  featureId: string;
+  action: string;
+  reason: string;
+}
+
+interface PermissionData {
+  moduleId: string;
+  featureId: string;
+  action: string;
+  description?: string;
+  category?: string;
+}
+
+interface CustomPermission {
+  id: string;
+  moduleId: string;
+  featureId: string;
+  action: string;
+  grantedAt: Date;
+  grantedBy: string;
+  expiresAt?: Date;
+}
+
 const prisma = new PrismaClient();
 
 export interface CreatePermissionData {
@@ -9,15 +45,15 @@ export interface CreatePermissionData {
   action: string;
   description: string;
   category: 'basic' | 'advanced' | 'admin';
-  dependencies?: any;
-  conflicts?: any;
+  dependencies?: unknown;
+  conflicts?: unknown;
 }
 
 export interface CreatePermissionSetData {
   businessId: string;
   name: string;
   description?: string;
-  permissions: any[];
+  permissions: PermissionData[];
   category: 'basic' | 'advanced' | 'admin';
   template?: boolean;
 }
@@ -34,7 +70,7 @@ export interface UserPermissions {
   businessId: string;
   permissions: Permission[];
   positions: Position[];
-  customPermissions: any[];
+  customPermissions: CustomPermission[];
 }
 
 export class PermissionService {
@@ -49,8 +85,10 @@ export class PermissionService {
         action: data.action,
         description: data.description,
         category: data.category,
-        dependencies: data.dependencies,
-        conflicts: data.conflicts,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        dependencies: data.dependencies as any,
+        conflicts: data.conflicts as any,
       },
     });
   }
@@ -104,7 +142,9 @@ export class PermissionService {
         businessId: data.businessId,
         name: data.name,
         description: data.description,
-        permissions: data.permissions,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        permissions: data.permissions as any,
         category: data.category,
         template: data.template || false,
       },
@@ -138,11 +178,19 @@ export class PermissionService {
    */
   async updatePermissionSet(
     id: string,
-    data: Partial<CreatePermissionSetData>
+    data: Partial<Omit<CreatePermissionSetData, 'businessId'>>
   ): Promise<PermissionSet> {
+    const updateData: Record<string, unknown> = { ...data };
+    
+    // Handle JSON fields separately for Prisma compatibility
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    if (data.permissions) {
+      updateData.permissions = data.permissions as any;
+    }
+    
     return await prisma.permissionSet.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
@@ -323,7 +371,7 @@ export class PermissionService {
 
     const permissions = new Map<string, Permission>();
     const positions: Position[] = [];
-    const customPermissions: any[] = [];
+    const customPermissions: CustomPermission[] = [];
 
     for (const empPos of employeePositions) {
       const position = empPos.position;
@@ -331,6 +379,7 @@ export class PermissionService {
 
       // Collect position permissions
       if (position.permissions) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         const posPermissions = position.permissions as any[];
         for (const perm of posPermissions) {
           const key = `${perm.moduleId}:${perm.featureId}:${perm.action}`;
@@ -342,6 +391,7 @@ export class PermissionService {
 
       // Collect tier permissions
       if (position.tier?.defaultPermissions) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         const tierPermissions = position.tier.defaultPermissions as any[];
         for (const perm of tierPermissions) {
           const key = `${perm.moduleId}:${perm.featureId}:${perm.action}`;
@@ -353,6 +403,7 @@ export class PermissionService {
 
       // Collect department permissions
       if (position.department?.departmentPermissions) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         const deptPermissions = position.department.departmentPermissions as any[];
         for (const perm of deptPermissions) {
           const key = `${perm.moduleId}:${perm.featureId}:${perm.action}`;
@@ -364,6 +415,7 @@ export class PermissionService {
 
       // Collect custom permissions
       if (empPos.customPermissions) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         customPermissions.push(...(empPos.customPermissions as any[]));
       }
     }
@@ -384,7 +436,7 @@ export class PermissionService {
     userId: string,
     positionId: string,
     businessId: string,
-    permission: any
+    permission: CustomPermission
   ): Promise<void> {
     await prisma.employeePosition.updateMany({
       where: {
@@ -394,8 +446,9 @@ export class PermissionService {
         active: true,
       },
       data: {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         customPermissions: {
-          push: permission,
+          push: permission as any,
         },
       },
     });
@@ -483,7 +536,7 @@ export class PermissionService {
   /**
    * Validate permission dependencies
    */
-  async validatePermissionDependencies(permissions: any[]): Promise<{
+  async validatePermissionDependencies(permissions: PermissionData[]): Promise<{
     isValid: boolean;
     errors: string[];
   }> {
@@ -498,6 +551,7 @@ export class PermissionService {
       const perm = permissionMap.get(key);
 
       if (perm?.dependencies) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         const dependencies = perm.dependencies as any[];
         for (const dep of dependencies) {
           const depKey = `${dep.moduleId}:${dep.featureId}:${dep.action}`;
@@ -514,6 +568,7 @@ export class PermissionService {
       }
 
       if (perm?.conflicts) {
+        // TODO: Prisma JSON compatibility issue - using any temporarily
         const conflicts = perm.conflicts as any[];
         for (const conflict of conflicts) {
           const conflictKey = `${conflict.moduleId}:${conflict.featureId}:${conflict.action}`;

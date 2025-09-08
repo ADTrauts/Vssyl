@@ -18,7 +18,8 @@ import {
   Code,
   Building,
   Copy,
-  Brain
+  Brain,
+  HelpCircle
 } from 'lucide-react';
 import NotificationBadge from './NotificationBadge';
 import { Avatar, ContextMenu, ContextMenuItem } from 'shared/components';
@@ -28,6 +29,7 @@ import BillingModal from './BillingModal';
 import DeveloperPortal from './DeveloperPortal';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { useTheme } from '../hooks/useTheme';
 
 interface AvatarContextMenuProps {
   className?: string;
@@ -41,22 +43,12 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
   const [showSettings, setShowSettings] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
   const [showDeveloperPortal, setShowDeveloperPortal] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const triggerRef = useRef<HTMLDivElement>(null);
   const [hydrated, setHydrated] = useState(false);
+  const { theme, isDark } = useTheme();
 
   useEffect(() => {
     setHydrated(true);
-  }, []);
-
-  // Load theme from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system';
-      if (savedTheme) {
-        setTheme(savedTheme);
-      }
-    }
   }, []);
 
   // Don't render while loading, not mounted, or not hydrated
@@ -69,7 +61,30 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
   const userNumber = (session.user as any).userNumber || 'Not assigned';
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Apply theme immediately to root element
+    const root = document.documentElement;
+    let isDark = false;
+    
+    if (newTheme === 'system') {
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('dark', isDark);
+    } else {
+      isDark = newTheme === 'dark';
+      root.classList.toggle('dark', isDark);
+    }
+    
+    // Trigger a custom event to notify all components that need to update
+    window.dispatchEvent(new CustomEvent('themeChange', { 
+      detail: { theme: newTheme, isDark }
+    }));
+    
+    // Force CSS re-evaluation by updating a timestamp
+    root.style.setProperty('--theme-update', Date.now().toString());
+    
+    // Show feedback
+    toast.success(`Theme changed to ${newTheme}`);
   };
 
   const handleSignOut = () => {
@@ -140,6 +155,14 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
         handleClose();
       },
     },
+    {
+      icon: <HelpCircle className="w-4 h-4" />,
+      label: 'Support & Help',
+      onClick: () => {
+        router.push('/support');
+        handleClose();
+      },
+    },
     { divider: true },
     
     // Theme toggle
@@ -149,18 +172,27 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
       submenu: [
         {
           icon: <Sun className="w-4 h-4" />,
-          label: 'Light',
-          onClick: () => handleThemeChange('light'),
+          label: `Light${theme === 'light' ? ' ✓' : ''}`,
+          onClick: () => {
+            handleThemeChange('light');
+            handleClose();
+          },
         },
         {
           icon: <Moon className="w-4 h-4" />,
-          label: 'Dark',
-          onClick: () => handleThemeChange('dark'),
+          label: `Dark${theme === 'dark' ? ' ✓' : ''}`,
+          onClick: () => {
+            handleThemeChange('dark');
+            handleClose();
+          },
         },
         {
           icon: <Monitor className="w-4 h-4" />,
-          label: 'System',
-          onClick: () => handleThemeChange('system'),
+          label: `System${theme === 'system' ? ' ✓' : ''}`,
+          onClick: () => {
+            handleThemeChange('system');
+            handleClose();
+          },
         },
       ],
     },

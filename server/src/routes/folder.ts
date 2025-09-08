@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { listFolders, createFolder, updateFolder, deleteFolder, listTrashedFolders, restoreFolder, hardDeleteFolder, getRecentActivity, toggleFolderStarred, reorderFolders, moveFolder } from '../controllers/folderController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // List all folders for the authenticated user (optionally by parent)
 router.get('/', authenticateJWT, listFolders);

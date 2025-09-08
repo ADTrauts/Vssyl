@@ -7,7 +7,7 @@ export interface NotificationEvent {
   type: string;
   title: string;
   body?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   createdAt: string;
   read: boolean;
 }

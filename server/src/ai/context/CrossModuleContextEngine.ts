@@ -29,7 +29,7 @@ export interface CrossModuleInsight {
   priority: 'low' | 'medium' | 'high';
   actionable: boolean;
   suggestedActions: string[];
-  dataPoints: any[];
+  dataPoints: Record<string, unknown>[];
   timestamp: Date;
 }
 

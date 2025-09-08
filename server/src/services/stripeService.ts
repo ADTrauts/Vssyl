@@ -1,15 +1,40 @@
-import { PrismaClient } from '@prisma/client';
+import Stripe from 'stripe';
+import { prisma } from '../lib/prisma';
 import { 
   stripe, 
-  STRIPE_PRODUCTS, 
-  STRIPE_PRICES, 
-  PRICING_CONFIG, 
-  REVENUE_SPLIT,
-  isStripeConfigured,
-  type StripeWebhookEvent 
+  isStripeConfigured 
 } from '../config/stripe';
 
-const prisma = new PrismaClient();
+// Stripe webhook event interfaces
+export interface StripeWebhookEvent {
+  type: string;
+  data: {
+    object: Stripe.Event.Data.Object;
+  };
+}
+
+export interface StripeSubscription {
+  id: string;
+  status: string;
+  current_period_start: number;
+  current_period_end: number;
+  cancel_at_period_end?: boolean;
+}
+
+export interface StripeInvoice {
+  id: string;
+  subscription?: string;
+  amount_paid: number;
+}
+
+export interface StripePaymentIntent {
+  id: string;
+}
+
+export interface StripeTransfer {
+  id: string;
+  amount: number;
+}
 
 export interface CreateCustomerParams {
   email: string;
@@ -211,7 +236,7 @@ export class StripeService {
   /**
    * Handle webhook events
    */
-  static async handleWebhookEvent(event: any) {
+  static async handleWebhookEvent(event: StripeWebhookEvent) {
     if (!isStripeConfigured()) {
       console.log('Stripe not configured, skipping webhook');
       return;
@@ -221,31 +246,31 @@ export class StripeService {
 
     switch (type) {
       case 'customer.subscription.created':
-        await this.handleSubscriptionCreated(data.object);
+        await this.handleSubscriptionCreated(data.object as StripeSubscription);
         break;
       case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdated(data.object);
+        await this.handleSubscriptionUpdated(data.object as StripeSubscription);
         break;
       case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(data.object);
+        await this.handleSubscriptionDeleted(data.object as StripeSubscription);
         break;
       case 'invoice.payment_succeeded':
-        await this.handlePaymentSucceeded(data.object);
+        await this.handlePaymentSucceeded(data.object as StripeInvoice);
         break;
       case 'invoice.payment_failed':
-        await this.handlePaymentFailed(data.object);
+        await this.handlePaymentFailed(data.object as StripeInvoice);
         break;
       case 'payment_intent.succeeded':
-        await this.handlePaymentIntentSucceeded(data.object);
+        await this.handlePaymentIntentSucceeded(data.object as StripePaymentIntent);
         break;
       case 'payment_intent.payment_failed':
-        await this.handlePaymentIntentFailed(data.object);
+        await this.handlePaymentIntentFailed(data.object as StripePaymentIntent);
         break;
       case 'transfer.created':
-        await this.handleTransferCreated(data.object);
+        await this.handleTransferCreated(data.object as StripeTransfer);
         break;
       case 'transfer.failed':
-        await this.handleTransferFailed(data.object);
+        await this.handleTransferFailed(data.object as StripeTransfer);
         break;
       default:
         console.log(`Unhandled webhook event: ${type}`);
@@ -255,7 +280,7 @@ export class StripeService {
   /**
    * Handle subscription created
    */
-  private static async handleSubscriptionCreated(subscription: any) {
+  private static async handleSubscriptionCreated(subscription: StripeSubscription) {
     console.log('Subscription created:', subscription.id);
     
     // Update local subscription record
@@ -272,7 +297,7 @@ export class StripeService {
   /**
    * Handle subscription updated
    */
-  private static async handleSubscriptionUpdated(subscription: any) {
+  private static async handleSubscriptionUpdated(subscription: StripeSubscription) {
     console.log('Subscription updated:', subscription.id);
     
     // Update local subscription record
@@ -290,7 +315,7 @@ export class StripeService {
   /**
    * Handle subscription deleted
    */
-  private static async handleSubscriptionDeleted(subscription: any) {
+  private static async handleSubscriptionDeleted(subscription: StripeSubscription) {
     console.log('Subscription deleted:', subscription.id);
     
     // Update local subscription record
@@ -305,7 +330,7 @@ export class StripeService {
   /**
    * Handle payment succeeded
    */
-  private static async handlePaymentSucceeded(invoice: any) {
+  private static async handlePaymentSucceeded(invoice: StripeInvoice) {
     console.log('Payment succeeded:', invoice.id);
     
     // Update invoice record
@@ -349,7 +374,7 @@ export class StripeService {
   /**
    * Handle payment failed
    */
-  private static async handlePaymentFailed(invoice: any) {
+  private static async handlePaymentFailed(invoice: StripeInvoice) {
     console.log('Payment failed:', invoice.id);
     
     // Update invoice record
@@ -364,7 +389,7 @@ export class StripeService {
   /**
    * Handle payment intent succeeded
    */
-  private static async handlePaymentIntentSucceeded(paymentIntent: any) {
+  private static async handlePaymentIntentSucceeded(paymentIntent: StripePaymentIntent) {
     console.log('Payment intent succeeded:', paymentIntent.id);
     // Additional payment intent handling if needed
   }
@@ -372,7 +397,7 @@ export class StripeService {
   /**
    * Handle payment intent failed
    */
-  private static async handlePaymentIntentFailed(paymentIntent: any) {
+  private static async handlePaymentIntentFailed(paymentIntent: StripePaymentIntent) {
     console.log('Payment intent failed:', paymentIntent.id);
     // Additional payment intent handling if needed
   }
@@ -380,7 +405,7 @@ export class StripeService {
   /**
    * Handle transfer created
    */
-  private static async handleTransferCreated(transfer: any) {
+  private static async handleTransferCreated(transfer: StripeTransfer) {
     console.log('Transfer created:', transfer.id);
     
     // Update payout records
@@ -399,7 +424,7 @@ export class StripeService {
   /**
    * Handle transfer failed
    */
-  private static async handleTransferFailed(transfer: any) {
+  private static async handleTransferFailed(transfer: StripeTransfer) {
     console.log('Transfer failed:', transfer.id);
     
     // Update payout records

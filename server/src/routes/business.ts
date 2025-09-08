@@ -19,7 +19,7 @@ import {
   getUserFollowing
 } from '../controllers/businessController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Business management routes
 router.post('/', createBusiness);

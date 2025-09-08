@@ -2,13 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Alert, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
+interface RecentAnalysis {
+  id: string;
+  type: string;
+  confidence: number;
+  timestamp: string;
+  summary: string;
+}
+
+interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high';
+  impact: string;
+  implementation: string;
+}
+
 interface PredictiveAnalytics {
   totalAnalyses: number;
   averageConfidence: number;
   totalRecommendations: number;
   analysisTypes: string[];
   timeframes: string[];
-  recentAnalyses: any[];
+  recentAnalyses: RecentAnalysis[];
 }
 
 interface PredictiveAnalysis {
@@ -18,8 +35,8 @@ interface PredictiveAnalysis {
   probability: number;
   timeframe: string;
   description: string;
-  recommendations: any[];
-  data: any;
+  recommendations: Recommendation[];
+  data: Record<string, unknown>;
 }
 
 const PredictiveIntelligenceDashboard: React.FC = () => {
@@ -273,7 +290,7 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
                     <div className="mt-3">
                       <h5 className="text-sm font-medium text-gray-700 mb-2">Recommendations:</h5>
                       <div className="space-y-2">
-                        {analysis.recommendations.slice(0, 3).map((rec: any, index: number) => (
+                        {analysis.recommendations.slice(0, 3).map((rec: Recommendation, index: number) => (
                           <div key={index} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
                             {rec.description}
                           </div>

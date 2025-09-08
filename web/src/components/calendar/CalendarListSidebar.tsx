@@ -3,6 +3,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { calendarAPI, Calendar } from '../../api/calendar';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useCalendarContext } from '../../contexts/CalendarContext';
+import { Dashboard } from 'shared/types/dashboard';
+import { DashboardWidget } from 'shared/types/dashboard';
+
+interface ExtendedDashboard extends Dashboard {
+  business?: { id: string };
+  household?: { id: string };
+}
+
+interface ContextQuery {
+  contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD';
+  contextId: string;
+}
 
 export default function CalendarListSidebar() {
   const { currentDashboard, getDashboardType, getDashboardDisplayName } = useDashboard();
@@ -11,10 +23,11 @@ export default function CalendarListSidebar() {
   const [loading, setLoading] = useState(false);
 
   const contextQuery = useMemo(() => {
-    if (!currentDashboard) return {} as any;
-    const type = getDashboardType(currentDashboard).toUpperCase();
-    const id = (currentDashboard as any).business?.id || (currentDashboard as any).household?.id || currentDashboard.id;
-    return { contextType: type, contextId: id } as any;
+    if (!currentDashboard) return {} as ContextQuery;
+    const type = getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD';
+    const extendedDashboard = currentDashboard as ExtendedDashboard;
+    const id = extendedDashboard.business?.id || extendedDashboard.household?.id || currentDashboard.id;
+    return { contextType: type, contextId: id } as ContextQuery;
   }, [currentDashboard, getDashboardType]);
 
   useEffect(() => {
@@ -28,13 +41,13 @@ export default function CalendarListSidebar() {
         if (resp?.success) {
           if (resp.data.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard) {
             // Attempt auto-provision only if calendar module is active on this dashboard
-            const calendarActive = currentDashboard.widgets?.some((w: any) => w.type === 'calendar');
+            const calendarActive = currentDashboard.widgets?.some((w: DashboardWidget) => w.type === 'calendar');
             if (calendarActive) {
               const name = getDashboardDisplayName(currentDashboard);
               try {
                 await calendarAPI.autoProvision({
-                  contextType: (contextQuery.contextType as any) || 'PERSONAL',
-                  contextId: (contextQuery.contextId as any) || '',
+                  contextType: contextQuery.contextType || 'PERSONAL',
+                  contextId: contextQuery.contextId || '',
                   name,
                   isPrimary: true
                 });
@@ -66,7 +79,7 @@ export default function CalendarListSidebar() {
         <div className="font-medium">Calendars</div>
         <select
           value={overlayMode}
-          onChange={e => setOverlayMode(e.target.value as any)}
+          onChange={e => setOverlayMode(e.target.value as 'ALL_TABS' | 'CURRENT_TAB')}
           className="text-sm border rounded px-2 py-1"
         >
           <option value="ALL_TABS">All Tabs</option>
@@ -80,9 +93,10 @@ export default function CalendarListSidebar() {
           onClick={async () => {
             const name = prompt('Calendar name');
             if (!name) return;
-            const body: any = currentDashboard
-              ? { name, contextType: getDashboardType(currentDashboard).toUpperCase(), contextId: (currentDashboard as any).business?.id || (currentDashboard as any).household?.id || currentDashboard.id }
-              : { name, contextType: 'PERSONAL', contextId: (currentDashboard as any)?.id };
+            const extendedDashboard = currentDashboard as ExtendedDashboard;
+            const body: { name: string; contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string } = currentDashboard
+              ? { name, contextType: getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD', contextId: extendedDashboard.business?.id || extendedDashboard.household?.id || currentDashboard.id }
+              : { name, contextType: 'PERSONAL', contextId: '' };
             const resp = await calendarAPI.createCalendar(body);
             if (resp?.success) {
               setCalendars([resp.data, ...calendars]);
@@ -151,7 +165,7 @@ export default function CalendarListSidebar() {
           ))}
         </ul>
       )}
-      {!loading && calendars.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard && !currentDashboard.widgets?.some((w: any) => w.type === 'calendar') && (
+      {!loading && calendars.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard && !currentDashboard.widgets?.some((w: DashboardWidget) => w.type === 'calendar') && (
         <div className="text-xs text-gray-500 p-2 border rounded">
           Calendar module is not enabled for this tab.
           <div>

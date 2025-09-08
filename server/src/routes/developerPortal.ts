@@ -9,7 +9,7 @@ import {
   getDeveloperDashboard,
 } from '../controllers/developerPortalController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Developer dashboard
 router.get('/dashboard', getDeveloperDashboard);

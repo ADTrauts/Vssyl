@@ -24,13 +24,40 @@ export interface SSOProvider {
   }[];
 }
 
+// SSO Provider Configuration interface
+export interface SSOProviderConfig {
+  google?: {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+  };
+  azure?: {
+    clientId: string;
+    clientSecret: string;
+    tenantId: string;
+    redirectUri: string;
+  };
+  okta?: {
+    clientId: string;
+    clientSecret: string;
+    domain: string;
+    redirectUri: string;
+  };
+  saml?: {
+    entryPoint: string;
+    issuer: string;
+    cert: string;
+    callbackUrl: string;
+  };
+}
+
 // SSO Configuration interface
 export interface SSOConfiguration {
   id: string;
   businessId: string;
   provider: string;
   name: string;
-  config: any;
+  config: SSOProviderConfig;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -63,7 +90,7 @@ export const createSSOConfiguration = async (
   businessId: string,
   provider: string,
   name: string,
-  config: any,
+  config: SSOProviderConfig,
   token?: string
 ): Promise<{ success: boolean; data: SSOConfiguration }> => {
   return apiCall(`/business/${businessId}`, {
@@ -147,7 +174,7 @@ class SSOAPI {
     return getSSOConfigurations(businessId, this.token);
   }
 
-  async createSSOConfiguration(businessId: string, provider: string, name: string, config: any) {
+  async createSSOConfiguration(businessId: string, provider: string, name: string, config: SSOProviderConfig) {
     if (!this.token) {
       const session = await getSession();
       if (!session?.accessToken) {

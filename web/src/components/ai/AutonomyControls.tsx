@@ -91,11 +91,11 @@ export default function AutonomyControls() {
         setError('Invalid data received from API');
         // Keep default settings if API returns invalid data
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load autonomy settings:', error);
       
       // Handle authentication errors specifically
-      if (error.isAuthError) {
+      if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
         setIsAuthenticated(false);
         setError('Your session has expired. Please log in again.');
       } else {
@@ -143,9 +143,9 @@ export default function AutonomyControls() {
         // Only load AI data if authenticated
         loadAutonomySettings();
         loadRecommendations();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.log('Authentication check failed:', error);
-        if (error.isAuthError) {
+        if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
           setIsAuthenticated(false);
           setError('Please log in to access AI settings');
         } else {

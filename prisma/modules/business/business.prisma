@@ -1,0 +1,263 @@
+// ============================================================================
+// BUSINESS & ENTERPRISE MODELS
+// ============================================================================
+
+model Business {
+  id          String   @id @default(uuid())
+  name        String
+  ein         String   @unique // Employer Identification Number (US) or equivalent
+  einVerified Boolean  @default(false)
+  industry    String?
+  size        String?  // e.g., "1-10", "11-50", "51-200", "200+"
+  website     String?
+  address     Json?    // Structured address data
+  phone       String?
+  email       String?
+  logo        String?  // URL to logo image
+  description String?
+  branding    Json?    // Business branding configuration (colors, fonts, etc.)
+  // Billing fields
+  tier            String   @default("free") // 'free', 'standard', 'enterprise'
+  billingEmail   String?
+  billingAddress Json?
+  taxId           String?
+  stripeCustomerId String?
+  // Relationships
+  dashboards  Dashboard[]
+  members     BusinessMember[]
+  invitations BusinessInvitation[]
+  departments Department[]
+  jobs        Job[]
+  ssoConfigs  SSOConfig[]
+  modules     Module[]
+  subscriptions   Subscription[]
+  moduleSubscriptions ModuleSubscription[]
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  businessFollows BusinessFollow[]
+  businessModuleInstallations BusinessModuleInstallation[]
+  businessModuleSubscriptions BusinessModuleSubscription[]
+  // Org Chart & Permission System
+  organizationalTiers OrganizationalTier[]
+  positions        Position[]
+  permissionSets   PermissionSet[]
+  employeePositions EmployeePosition[]
+  permissionChanges PermissionChange[]
+  permissionManagementRights PermissionManagementRights[]
+  // Enterprise AI Digital Twin
+  aiDigitalTwin   BusinessAIDigitalTwin?
+  aiSettings      Json? // Business-wide AI preferences and configuration
+
+  @@index([ein])
+  @@map("businesses")
+}
+
+model Department {
+  id           String     @id @default(uuid())
+  business     Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId   String
+  name         String
+  description  String?
+  parentDepartmentId String? // For nested departments
+  parentDepartment Department? @relation("DepartmentHierarchy", fields: [parentDepartmentId], references: [id])
+  childDepartments Department[] @relation("DepartmentHierarchy")
+  headPositionId String? // VP or Director role
+  headPosition Position? @relation("DepartmentHead", fields: [headPositionId], references: [id])
+  departmentModules Json? // Modules specific to this department
+  departmentPermissions Json? // Default permissions for department
+  positions   Position[]
+  jobs        Job[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([parentDepartmentId])
+  @@index([headPositionId])
+  @@map("departments")
+}
+
+model Job {
+  id           String     @id @default(uuid())
+  business     Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId   String
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId String?
+  title        String
+  description  String?
+  permissions  Json?      // Module permissions for this job
+  members      BusinessMember[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([businessId, title])
+  @@index([businessId])
+  @@index([departmentId])
+  @@map("jobs")
+}
+
+model SSOConfig {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  provider    String   // e.g., 'google', 'azure', 'okta', 'saml'
+  name        String   // Display name for the SSO provider
+  config      Json     // Provider-specific configuration
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, provider])
+  @@index([businessId])
+  @@map("sso_configs")
+}
+
+model BusinessMember {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  role        BusinessRole @default(EMPLOYEE)
+  title       String?  // Job title
+  department  String?  // Department/team
+  job         Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobId       String?
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  isActive    Boolean  @default(true)
+  // Permissions
+  canInvite   Boolean  @default(false)
+  canManage   Boolean  @default(false)
+  canBilling  Boolean  @default(false)
+
+  @@unique([businessId, userId])
+  @@index([businessId])
+  @@index([userId])
+  @@index([jobId])
+  @@map("business_members")
+}
+
+model BusinessInvitation {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  email       String
+  role        BusinessRole @default(EMPLOYEE)
+  title       String?  // Job title
+  department  String?  // Department/team
+  invitedBy   User     @relation("BusinessInvitationInvitedBy", fields: [invitedById], references: [id])
+  invitedById String
+  token       String   @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([businessId])
+  @@index([email])
+  @@index([token])
+  @@map("business_invitations")
+}
+
+model EducationalInstitution {
+  id          String   @id @default(uuid())
+  name        String
+  type        InstitutionType @default(UNIVERSITY)
+  country     String
+  state       String?
+  city        String?
+  website     String?
+  email       String?
+  phone       String?
+  logo        String?  // URL to logo image
+  description String?
+  // Relationships
+  dashboards  Dashboard[]
+  members     InstitutionMember[]
+  invitations InstitutionInvitation[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("educational_institutions")
+}
+
+model InstitutionMember {
+  id          String   @id @default(uuid())
+  institution EducationalInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  institutionId String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  role        InstitutionRole @default(STUDENT)
+  title       String?  // Student ID, faculty position, etc.
+  department  String?  // Major, department, school
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+  isActive    Boolean  @default(true)
+  // Permissions
+  canInvite   Boolean  @default(false)
+  canManage   Boolean  @default(false)
+
+  @@unique([institutionId, userId])
+  @@index([institutionId])
+  @@index([userId])
+  @@map("institution_members")
+}
+
+model InstitutionInvitation {
+  id          String   @id @default(uuid())
+  institution EducationalInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  institutionId String
+  email       String
+  role        InstitutionRole @default(STUDENT)
+  title       String?  // Student ID, faculty position, etc.
+  department  String?  // Major, department, school
+  invitedBy   User     @relation("InstitutionInvitationInvitedBy", fields: [invitedById], references: [id])
+  invitedById String
+  token       String   @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([institutionId])
+  @@index([email])
+  @@index([token])
+  @@map("institution_invitations")
+}
+
+// Personal relationship models and enums
+model Relationship {
+  id          String   @id @default(uuid())
+  sender      User     @relation("RelationshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  receiver    User     @relation("RelationshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  String
+  status      RelationshipStatus @default(PENDING)
+  type        RelationshipType @default(REGULAR)
+  // Organization context for colleague relationships
+  organizationId String? // Optional: for colleague relationships
+  message      String?  // Optional message with connection request
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([organizationId])
+  @@map("relationships")
+}
+
+model BusinessFollow {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@index([userId])
+  @@map("business_follows")
+}

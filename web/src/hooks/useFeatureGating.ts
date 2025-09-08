@@ -47,8 +47,8 @@ export function useFeatureGating(businessId?: string) {
           method: 'GET'
         });
         
-        if (response.features) {
-          setFeatures(response.features);
+        if (response && typeof response === 'object' && 'features' in response) {
+          setFeatures(response.features as Record<string, FeatureConfig>);
         }
       } catch (err) {
         console.error('Failed to load features:', err);
@@ -78,7 +78,7 @@ export function useFeatureGating(businessId?: string) {
         method: 'GET'
       });
       
-      return response.hasAccess || false;
+      return response && typeof response === 'object' && 'hasAccess' in response ? response.hasAccess as boolean : false;
     } catch (err) {
       console.error(`Failed to check feature access for ${featureName}:`, err);
       return false;
@@ -105,9 +105,14 @@ export function useFeatureGating(businessId?: string) {
       });
       
       return {
-        hasAccess: response.hasAccess || false,
-        reason: response.reason,
-        usageInfo: response.usageInfo
+        hasAccess: response && typeof response === 'object' && 'hasAccess' in response ? response.hasAccess as boolean : false,
+        reason: response && typeof response === 'object' && 'reason' in response ? response.reason as string : 'Unknown',
+        usageInfo: response && typeof response === 'object' && 'usageInfo' in response ? response.usageInfo as {
+          metric: string;
+          limit: number;
+          currentUsage: number;
+          remaining: number;
+        } : undefined
       };
     } catch (err) {
       console.error(`Failed to check feature access for ${featureName}:`, err);
@@ -139,7 +144,7 @@ export function useFeatureGating(businessId?: string) {
         method: 'GET'
       });
       
-      const moduleAccess = response.access || { core: { available: [], locked: [] }, premium: { available: [], locked: [] }, enterprise: { available: [], locked: [] } };
+      const moduleAccess = response && typeof response === 'object' && 'access' in response ? response.access as ModuleFeatureAccess : { core: { available: [], locked: [] }, premium: { available: [], locked: [] }, enterprise: { available: [], locked: [] } };
       
       // Cache the result
       setModuleFeatures(prev => ({
@@ -234,7 +239,7 @@ export function useFeature(featureName: string, businessId?: string) {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [accessInfo, setAccessInfo] = useState<FeatureAccess | null>(null);
-  const { session } = useSession();
+  const { data: session } = useSession();
   const { checkFeatureAccess } = useFeatureGating(businessId);
 
   useEffect(() => {
@@ -276,7 +281,7 @@ export function useModuleFeatures(module: string, businessId?: string) {
     enterprise: { available: [], locked: [] }
   });
   const [loading, setLoading] = useState(true);
-  const { session } = useSession();
+  const { data: session } = useSession();
   const { getModuleFeatureAccess } = useFeatureGating(businessId);
 
   useEffect(() => {

@@ -132,7 +132,7 @@ export class SubscriptionService {
       throw new Error('Subscription not found');
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (tier) updateData.tier = tier;
     if (status) updateData.status = status;
     if (cancelAtPeriodEnd !== undefined) updateData.cancelAtPeriodEnd = cancelAtPeriodEnd;

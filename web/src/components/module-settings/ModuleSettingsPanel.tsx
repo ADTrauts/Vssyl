@@ -5,37 +5,46 @@ import { Card, Button, Tabs } from 'shared/components';
 import { Settings, Save, RotateCcw, Shield, Users, Database, Bell } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+// Module configuration interfaces
+export interface ModuleStorageConfig {
+  quota: number;
+  compression: boolean;
+  backup: boolean;
+}
+
+export interface ModuleNotificationConfig {
+  email: boolean;
+  push: boolean;
+  frequency: 'immediate' | 'daily' | 'weekly';
+}
+
+export interface ModuleSecurityConfig {
+  encryption: boolean;
+  auditLog: boolean;
+  accessControl: 'strict' | 'moderate' | 'open';
+}
+
+export interface ModuleIntegrationConfig {
+  externalServices: string[];
+  webhooks: boolean;
+  apiAccess: boolean;
+}
+
+export interface ModuleConfig {
+  permissions: string[];
+  storage?: ModuleStorageConfig;
+  notifications?: ModuleNotificationConfig;
+  security?: ModuleSecurityConfig;
+  integrations?: ModuleIntegrationConfig;
+}
+
 interface ModuleSettingsPanelProps {
   moduleId: string;
   moduleName: string;
   moduleType: 'drive' | 'chat' | 'calendar' | 'analytics' | 'members' | 'admin';
-  currentConfig: any;
-  onSave: (config: any) => Promise<void>;
+  currentConfig: ModuleConfig;
+  onSave: (config: ModuleConfig) => Promise<void>;
   onClose: () => void;
-}
-
-interface ModuleConfig {
-  permissions: string[];
-  storage?: {
-    quota: number;
-    compression: boolean;
-    backup: boolean;
-  };
-  notifications?: {
-    email: boolean;
-    push: boolean;
-    frequency: 'immediate' | 'daily' | 'weekly';
-  };
-  security?: {
-    encryption: boolean;
-    auditLog: boolean;
-    accessControl: 'strict' | 'moderate' | 'open';
-  };
-  integrations?: {
-    externalServices: string[];
-    webhooks: boolean;
-    apiAccess: boolean;
-  };
 }
 
 export default function ModuleSettingsPanel({
@@ -68,17 +77,17 @@ export default function ModuleSettingsPanel({
     toast.success('Settings reset to previous values');
   };
 
-  const updateConfig = (path: string, value: any) => {
+  const updateConfig = (path: string, value: string | number | boolean | string[]) => {
     setConfig(prev => {
       const newConfig = { ...prev };
       const keys = path.split('.');
-      let current: any = newConfig;
+      let current: Record<string, unknown> = newConfig;
       
       for (let i = 0; i < keys.length - 1; i++) {
         if (!current[keys[i]]) {
           current[keys[i]] = {};
         }
-        current = current[keys[i]];
+        current = current[keys[i]] as Record<string, unknown>;
       }
       
       current[keys[keys.length - 1]] = value;
@@ -136,18 +145,15 @@ export default function ModuleSettingsPanel({
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-          <Tabs
-            tabs={[
-              { label: 'General', key: 'general' },
-              { label: 'Permissions', key: 'permissions' },
-              { label: 'Security', key: 'security' },
-              { label: 'Integrations', key: 'integrations' }
-            ]}
-            value={activeTab}
-            onChange={setActiveTab}
-          >
-            {/* General Settings */}
-            {activeTab === 'general' && (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs.List>
+              <Tabs.Trigger value="general">General</Tabs.Trigger>
+              <Tabs.Trigger value="permissions">Permissions</Tabs.Trigger>
+              <Tabs.Trigger value="security">Security</Tabs.Trigger>
+              <Tabs.Trigger value="integrations">Integrations</Tabs.Trigger>
+            </Tabs.List>
+            
+            <Tabs.Content value="general">
               <div className="space-y-6">
                 <Card className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">General Configuration</h3>
@@ -251,10 +257,9 @@ export default function ModuleSettingsPanel({
                   )}
                 </Card>
               </div>
-            )}
+            </Tabs.Content>
 
-            {/* Permissions Settings */}
-            {activeTab === 'permissions' && (
+            <Tabs.Content value="permissions">
               <div className="space-y-6">
                 <Card className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Access Permissions</h3>
@@ -294,10 +299,9 @@ export default function ModuleSettingsPanel({
                   </div>
                 </Card>
               </div>
-            )}
+            </Tabs.Content>
 
-            {/* Security Settings */}
-            {activeTab === 'security' && (
+            <Tabs.Content value="security">
               <div className="space-y-6">
                 <Card className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Security Configuration</h3>
@@ -346,10 +350,9 @@ export default function ModuleSettingsPanel({
                   </div>
                 </Card>
               </div>
-            )}
+            </Tabs.Content>
 
-            {/* Integrations Settings */}
-            {activeTab === 'integrations' && (
+            <Tabs.Content value="integrations">
               <div className="space-y-6">
                 <Card className="p-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">External Integrations</h3>
@@ -403,7 +406,7 @@ export default function ModuleSettingsPanel({
                   </div>
                 </Card>
               </div>
-            )}
+            </Tabs.Content>
           </Tabs>
         </div>
 

@@ -1,32 +1,40 @@
 import { useState, useCallback } from 'react';
 
+// Module configuration interfaces
+export interface ModuleConfig {
+  enabled: boolean;
+  permissions?: string[];
+  settings?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 export interface ModuleSelectionConfig {
   moduleId: string;
   enabled: boolean;
-  config?: any;
+  config?: ModuleConfig;
 }
 
 export interface UseModuleSelectionResult {
   selectedModules: Set<string>;
-  moduleConfigs: Map<string, any>;
-  selectModule: (moduleId: string, config?: any) => void;
+  moduleConfigs: Map<string, ModuleConfig>;
+  selectModule: (moduleId: string, config?: ModuleConfig) => void;
   deselectModule: (moduleId: string) => void;
-  toggleModule: (moduleId: string, config?: any) => void;
+  toggleModule: (moduleId: string, config?: ModuleConfig) => void;
   clearSelection: () => void;
-  setSelectedModules: (modules: string[], configs?: Map<string, any>) => void;
+  setSelectedModules: (modules: string[], configs?: Map<string, ModuleConfig>) => void;
   isModuleSelected: (moduleId: string) => boolean;
   getSelectedModuleIds: () => string[];
-  getModuleConfig: (moduleId: string) => any;
-  setModuleConfig: (moduleId: string, config: any) => void;
+  getModuleConfig: (moduleId: string) => ModuleConfig | undefined;
+  setModuleConfig: (moduleId: string, config: ModuleConfig) => void;
 }
 
 export function useModuleSelection(initialModules?: string[]): UseModuleSelectionResult {
   const [selectedModules, setSelectedModulesState] = useState<Set<string>>(
     new Set(initialModules || [])
   );
-  const [moduleConfigs, setModuleConfigs] = useState<Map<string, any>>(new Map());
+  const [moduleConfigs, setModuleConfigs] = useState<Map<string, ModuleConfig>>(new Map());
 
-  const selectModule = useCallback((moduleId: string, config?: any) => {
+  const selectModule = useCallback((moduleId: string, config?: ModuleConfig) => {
     setSelectedModulesState(prev => new Set([...Array.from(prev), moduleId]));
     if (config) {
       setModuleConfigs(prev => new Map([...Array.from(prev), [moduleId, config]]));
@@ -46,7 +54,7 @@ export function useModuleSelection(initialModules?: string[]): UseModuleSelectio
     });
   }, []);
 
-  const toggleModule = useCallback((moduleId: string, config?: any) => {
+  const toggleModule = useCallback((moduleId: string, config?: ModuleConfig) => {
     setSelectedModulesState(prev => {
       const newSet = new Set(prev);
       if (newSet.has(moduleId)) {
@@ -71,7 +79,7 @@ export function useModuleSelection(initialModules?: string[]): UseModuleSelectio
     setModuleConfigs(new Map());
   }, []);
 
-  const setSelectedModules = useCallback((modules: string[], configs?: Map<string, any>) => {
+  const setSelectedModules = useCallback((modules: string[], configs?: Map<string, ModuleConfig>) => {
     setSelectedModulesState(new Set(modules));
     if (configs) {
       setModuleConfigs(new Map(configs));
@@ -101,7 +109,7 @@ export function useModuleSelection(initialModules?: string[]): UseModuleSelectio
     return moduleConfigs.get(moduleId);
   }, [moduleConfigs]);
 
-  const setModuleConfig = useCallback((moduleId: string, config: any) => {
+  const setModuleConfig = useCallback((moduleId: string, config: ModuleConfig) => {
     setModuleConfigs(prev => new Map([...Array.from(prev), [moduleId, config]]));
   }, []);
 

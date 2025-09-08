@@ -1,0 +1,140 @@
+// ============================================================================
+// MODULE & MARKETPLACE MODELS
+// ============================================================================
+
+model Module {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  version     String
+  category    ModuleCategory
+  tags        String[]
+  icon        String?
+  screenshots String[]
+  developer   User     @relation("ModuleDeveloper", fields: [developerId], references: [id])
+  developerId String
+  business    Business? @relation(fields: [businessId], references: [id])
+  businessId  String?
+  status      ModuleStatus @default(PENDING)
+  downloads   Int      @default(0)
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  manifest    Json     // Module manifest with configuration
+  dependencies String[] // List of required modules
+  permissions String[] // Required permissions
+  // Billing fields
+  pricingTier     String   @default("free") // 'free', 'premium', 'enterprise'
+  basePrice       Float    @default(0)
+  enterprisePrice Float    @default(0)
+  isProprietary   Boolean  @default(false)
+  revenueSplit    Float    @default(0.7) // 0.7 = 70% to developer
+  // Stripe fields
+  stripeProductId String?
+  stripePriceId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  installations ModuleInstallation[]
+  submissions   ModuleSubmission[]
+  moduleReviews ModuleReview[]
+  subscriptions   ModuleSubscription[]
+  developerRevenue DeveloperRevenue[]
+  businessInstallations BusinessModuleInstallation[]
+  businessSubscriptions BusinessModuleSubscription[]
+
+  @@index([developerId])
+  @@index([businessId])
+  @@index([status])
+  @@index([category])
+  @@map("modules")
+}
+
+model ModuleInstallation {
+  id        String   @id @default(uuid())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  String
+  user      User     @relation("ModuleUser", fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  installedAt DateTime @default(now())
+  configured Json?    // Module-specific configuration
+  enabled   Boolean  @default(true)
+  
+  @@unique([moduleId, userId])
+  @@index([moduleId])
+  @@index([userId])
+  @@map("module_installations")
+}
+
+// Business-scoped module installations (enterprise scope)
+model BusinessModuleInstallation {
+  id         String   @id @default(uuid())
+  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId   String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId String
+  installedBy String? // User who installed the module
+  installedAt DateTime @default(now())
+  configured Json?
+  enabled    Boolean  @default(true)
+
+  @@unique([moduleId, businessId])
+  @@index([moduleId])
+  @@index([businessId])
+  @@map("business_module_installations")
+}
+
+// Business module subscriptions for paid modules
+model BusinessModuleSubscription {
+  id         String   @id @default(uuid())
+  module     Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId   String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId String
+  tier       String   // 'premium', 'enterprise'
+  amount     Float
+  status     String   // 'active', 'cancelled', 'past_due', 'unpaid'
+  stripeSubscriptionId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([moduleId, businessId])
+  @@index([moduleId])
+  @@index([businessId])
+  @@map("business_module_subscriptions")
+}
+
+model ModuleSubmission {
+  id          String   @id @default(uuid())
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId    String
+  submitter   User     @relation("ModuleSubmitter", fields: [submitterId], references: [id])
+  submitterId String
+  reviewer    User?    @relation("ModuleSubmissionReviewer", fields: [reviewerId], references: [id])
+  reviewerId  String?
+  status      ModuleStatus @default(PENDING)
+  reviewNotes String?
+  submittedAt DateTime @default(now())
+  reviewedAt  DateTime?
+  
+  @@index([moduleId])
+  @@index([submitterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@map("module_submissions")
+}
+
+model ModuleReview {
+  id        String   @id @default(uuid())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  String
+  reviewer  User     @relation("ModuleReviewer", fields: [reviewerId], references: [id])
+  reviewerId String
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  
+  @@unique([moduleId, reviewerId])
+  @@index([moduleId])
+  @@index([reviewerId])
+  @@map("module_reviews")
+}

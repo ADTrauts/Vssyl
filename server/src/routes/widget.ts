@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import express from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validateRequest';
 import * as widgetController from '../controllers/widgetController';
 import { asyncHandler } from '../index';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // POST /dashboards/:dashboardId/widgets
 router.post(

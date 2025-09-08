@@ -34,7 +34,7 @@ export interface DiscoveredPattern {
   confidence: number;
   support: number;
   lift: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   visualization: string; // Chart configuration
   businessImpact: {
     financial?: number;
@@ -42,7 +42,7 @@ export interface DiscoveredPattern {
     customer?: string;
     strategic?: string;
   };
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface IntelligentInsight {
@@ -62,7 +62,7 @@ export interface IntelligentInsight {
   data: {
     variables: string[];
     timeRange: { start: Date; end: Date };
-    values: Record<string, any>;
+    values: Record<string, unknown>;
     correlations: Correlation[];
   };
   insights: string[];

@@ -19,6 +19,8 @@ interface ContextMenuProps {
   onClose: () => void;
   anchorPoint: { x: number; y: number };
   items: ContextMenuItem[];
+  onSubmenuMouseEnter?: () => void;
+  onSubmenuMouseLeave?: () => void;
 }
 
 interface Position {
@@ -26,10 +28,19 @@ interface Position {
   y: number;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({ open, onClose, anchorPoint, items }) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({ 
+  open, 
+  onClose, 
+  anchorPoint, 
+  items, 
+  onSubmenuMouseEnter, 
+  onSubmenuMouseLeave 
+}) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [submenuIdx, setSubmenuIdx] = useState<number | null>(null);
   const [submenuPos, setSubmenuPos] = useState<Position | null>(null);
+  const submenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSubmenuHovered, setIsSubmenuHovered] = useState(false);
 
   // Close on click outside or Escape
   useEffect(() => {
@@ -110,22 +121,83 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ open, onClose, anchorP
     setPos({ x, y });
   }, [anchorPoint, open]);
 
-  // Submenu positioning
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (submenuTimeoutRef.current) {
+        clearTimeout(submenuTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Submenu positioning with overflow protection
   const handleMouseEnter = (idx: number, e: React.MouseEvent<HTMLButtonElement>) => {
+    // Clear any existing timeout
+    if (submenuTimeoutRef.current) {
+      clearTimeout(submenuTimeoutRef.current);
+      submenuTimeoutRef.current = null;
+    }
+
     const item = items[idx];
     if (item.submenu) {
       const rect = e.currentTarget.getBoundingClientRect();
+      const { innerWidth, innerHeight } = window;
+      
+      // Calculate optimal submenu position with a small gap for easier mouse movement
+      let x = rect.right + 4;
+      let y = rect.top;
+      
+      // Estimate submenu width (approximate)
+      const submenuWidth = 200;
+      const submenuHeight = item.submenu.length * 40; // approximate height per item
+      
+      // Check if submenu would overflow on the right
+      if (x + submenuWidth > innerWidth) {
+        x = rect.left - submenuWidth - 4; // Position to the left with gap
+      }
+      
+      // Check if submenu would overflow on the bottom
+      if (y + submenuHeight > innerHeight) {
+        y = Math.max(8, innerHeight - submenuHeight - 8); // Adjust upward with padding
+      }
+      
       setSubmenuIdx(idx);
-      setSubmenuPos({ x: rect.right + 2, y: rect.top });
+      setSubmenuPos({ x, y });
     } else {
-      setSubmenuIdx(null);
-      setSubmenuPos(null);
+      // Only close submenu if hovering over a different item
+      if (submenuIdx !== null) {
+        setSubmenuIdx(null);
+        setSubmenuPos(null);
+      }
     }
   };
 
   const handleMouseLeave = () => {
-    setSubmenuIdx(null);
-    setSubmenuPos(null);
+    // Don't close submenu immediately - use a delay to allow mouse movement to submenu
+    if (!isSubmenuHovered) {
+      submenuTimeoutRef.current = setTimeout(() => {
+        setSubmenuIdx(null);
+        setSubmenuPos(null);
+      }, 300); // 300ms delay
+    }
+  };
+
+  const handleSubmenuMouseEnter = () => {
+    setIsSubmenuHovered(true);
+    // Clear any pending timeout
+    if (submenuTimeoutRef.current) {
+      clearTimeout(submenuTimeoutRef.current);
+      submenuTimeoutRef.current = null;
+    }
+  };
+
+  const handleSubmenuMouseLeave = () => {
+    setIsSubmenuHovered(false);
+    // Close submenu after a short delay
+    submenuTimeoutRef.current = setTimeout(() => {
+      setSubmenuIdx(null);
+      setSubmenuPos(null);
+    }, 100);
   };
 
   if (!open) return null;
@@ -139,22 +211,25 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ open, onClose, anchorP
   const menuContent = (
     <div
       ref={menuRef}
-      className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded shadow-lg py-2 min-w-[200px]"
+      className={`fixed z-[99999] bg-white dark:bg-slate-800 border rounded-lg shadow-xl py-2 min-w-[200px] ${
+        onSubmenuMouseEnter ? 'border-red-500 border-2' : 'border-gray-200 dark:border-slate-600'
+      }`}
       style={{
         top: pos.y,
         left: pos.x,
         outline: 'none',
-        boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)',
-        border: '1.5px solid',
-        borderColor: isDark ? '#374151' : '#d1d5db',
-        fontFamily: 'monospace, sans-serif', // DEBUG: force font
-        fontWeight: 900,
-        zIndex: 9999,
+        boxShadow: isDark 
+          ? '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' 
+          : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        zIndex: 99999,
+        pointerEvents: 'auto',
       }}
       role="menu"
       tabIndex={-1}
       aria-label="Context menu"
       onKeyDown={handleKeyDown}
+      onMouseEnter={onSubmenuMouseEnter}
+      onMouseLeave={onSubmenuMouseLeave || handleMouseLeave}
     >
       <div className="flex flex-col gap-0 px-1 py-1">
         {items.map((item, idx) =>
@@ -163,17 +238,22 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ open, onClose, anchorP
           ) : (
             <button
               key={item.label || idx}
-              className={`flex items-center w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none 
-                ${item.disabled ? 'opacity-50 cursor-not-allowed text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}
+              className={`flex items-center w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 focus:bg-gray-50 dark:focus:bg-slate-700 focus:outline-none transition-colors duration-150 
+                ${item.disabled ? 'opacity-50 cursor-not-allowed text-gray-400 dark:text-slate-500' : 'text-gray-900 dark:text-slate-100'}`}
               role="menuitem"
               tabIndex={item.disabled ? -1 : 0}
               aria-disabled={item.disabled}
-              onClick={() => {
-                if (!item.disabled && item.onClick) item.onClick();
-                if (!item.submenu) onClose();
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!item.disabled && item.onClick) {
+                  item.onClick();
+                }
+                if (!item.submenu) {
+                  onClose();
+                }
               }}
               onMouseEnter={e => handleMouseEnter(idx, e)}
-              onMouseLeave={handleMouseLeave}
               disabled={item.disabled}
             >
               {item.icon && <span className="mr-2">{item.icon}</span>}
@@ -183,14 +263,42 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ open, onClose, anchorP
             </button>
           )
         )}
-        {/* Submenu */}
+        {/* Submenu - Direct rendering instead of recursive ContextMenu */}
         {submenuIdx !== null && items[submenuIdx]?.submenu && submenuPos && (
-          <ContextMenu
-            open={true}
-            onClose={onClose}
-            anchorPoint={submenuPos}
-            items={items[submenuIdx].submenu!}
-          />
+          <div
+            className="fixed z-[99999] bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-xl py-2 min-w-[200px]"
+            style={{
+              top: submenuPos.y,
+              left: submenuPos.x,
+              zIndex: 99999,
+              pointerEvents: 'auto',
+            }}
+            onMouseEnter={handleSubmenuMouseEnter}
+            onMouseLeave={handleSubmenuMouseLeave}
+          >
+            <div className="flex flex-col gap-0 px-1 py-1">
+              {items[submenuIdx].submenu!.map((subItem, subIdx) => (
+                <button
+                  key={subItem.label || subIdx}
+                  className={`flex items-center w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 focus:bg-gray-50 dark:focus:bg-slate-700 focus:outline-none transition-colors duration-150 
+                    ${subItem.disabled ? 'opacity-50 cursor-not-allowed text-gray-400 dark:text-slate-500' : 'text-gray-900 dark:text-slate-100'}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!subItem.disabled && subItem.onClick) {
+                      subItem.onClick();
+                    }
+                    onClose();
+                  }}
+                  disabled={subItem.disabled}
+                >
+                  {subItem.icon && <span className="mr-2">{subItem.icon}</span>}
+                  <span className="flex-1">{subItem.label}</span>
+                  {subItem.shortcut && <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{subItem.shortcut}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

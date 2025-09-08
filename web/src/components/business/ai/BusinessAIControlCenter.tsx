@@ -1,23 +1,108 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Input, Textarea, Switch, Tabs } from 'shared/components';
+import { Card, Button, Badge, Input, Textarea, Switch, Tabs, TabsList, TabsTrigger, TabsContent } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { Brain, Shield, Users, Settings, BarChart, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 
 interface BusinessAIConfig {
-  id: string;
   businessId: string;
   name: string;
   description: string;
-  aiPersonality: any;
-  capabilities: any;
-  restrictions: any;
+  aiPersonality: {
+    traits: string[];
+    communicationStyle: string;
+    expertise: string[];
+    tone: string;
+  };
+  capabilities: {
+    enabled: string[];
+    disabled: string[];
+    custom: string[];
+  };
+  restrictions: {
+    forbiddenTopics: string[];
+    accessLevel: string;
+    approvalRequired: string[];
+    employeeDataAccess: string;
+    clientDataAccess: string;
+  };
   securityLevel: 'standard' | 'high' | 'maximum';
   complianceMode: boolean;
   status: string;
   totalInteractions: number;
   lastInteractionAt: string;
+  learningSettings?: {
+    allowCentralizedLearning?: boolean;
+  };
+  lastCentralizedLearningAt?: string;
+}
+
+interface BusinessAIAnalytics {
+  totalInteractions: number;
+  averageResponseTime: number;
+  userSatisfaction: number;
+  averageConfidence: number;
+  helpfulnessRating: number;
+  approvedLearningEvents: number;
+  topQueries: Array<{
+    query: string;
+    count: number;
+    category: string;
+  }>;
+  usageByDepartment: Record<string, number>;
+}
+
+interface LearningEvent {
+  id: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  status: 'pending' | 'approved' | 'rejected';
+  impact: string;
+  eventType: string;
+  confidence: number;
+  learningData: Record<string, unknown>;
+}
+
+interface CentralizedInsights {
+  globalPatterns: Array<{
+    id: string;
+    pattern: string;
+    frequency: number;
+    impact: string;
+    description: string;
+    patternType: string;
+    modules: string[];
+    confidence: number;
+  }>;
+  collectiveInsights: Array<{
+    id: string;
+    insight: string;
+    confidence: number;
+    source: string;
+    title: string;
+    description: string;
+    type: string;
+    impact: 'high' | 'medium' | 'low';
+    implementationComplexity: string;
+  }>;
+  recommendations: Array<{
+    id: string;
+    recommendation: string;
+    priority: 'low' | 'medium' | 'high';
+    implementation: string;
+    title: string;
+    description: string;
+  }>;
+  industryMetrics: {
+    industry: string;
+    averageConfidence: number;
+    averageUserRating: number;
+    benchmarkScore: number;
+    industryRank: string;
+    totalInteractions: number;
+  };
 }
 
 interface BusinessAIControlCenterProps {
@@ -29,8 +114,9 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
   const [businessAI, setBusinessAI] = useState<BusinessAIConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [learningEvents, setLearningEvents] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<BusinessAIAnalytics | null>(null);
+  const [learningEvents, setLearningEvents] = useState<LearningEvent[]>([]);
+  const [centralizedInsights, setCentralizedInsights] = useState<CentralizedInsights | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -38,6 +124,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       loadBusinessAI();
       loadAnalytics();
       loadLearningEvents();
+      loadCentralizedInsights();
     }
   }, [businessId]);
 
@@ -78,6 +165,19 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       }
     } catch (error) {
       console.error('Failed to load learning events:', error);
+    }
+  };
+
+  const loadCentralizedInsights = async () => {
+    try {
+      const response = await fetch(`/api/business-ai/${businessId}/centralized-insights`);
+      if (response.ok) {
+        const data = await response.json();
+        // Store insights for use in the centralized tab
+        setCentralizedInsights(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to load centralized insights:', error);
     }
   };
 
@@ -181,13 +281,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
     );
   }
 
-  const tabs = [
-    { label: 'Overview', key: 'overview' },
-    { label: 'Configuration', key: 'configuration' },
-    { label: 'Capabilities', key: 'capabilities' },
-    { label: 'Security', key: 'security' },
-    { label: 'Learning', key: 'learning' }
-  ];
+
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -209,9 +303,18 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       </div>
 
       {/* Main Tabs */}
-      <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="configuration">Configuration</TabsTrigger>
+          <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="learning">Learning</TabsTrigger>
+          <TabsTrigger value="centralized">Centralized Insights</TabsTrigger>
+        </TabsList>
+
         {/* Overview Tab */}
-        {activeTab === 'overview' && (
+        <TabsContent value="overview" className="mt-6">
           <div className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* AI Status Card */}
@@ -280,25 +383,25 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Average Confidence</p>
-                      <p className="text-2xl font-bold">{(analytics.summary.averageConfidence * 100).toFixed(1)}%</p>
+                      <p className="text-2xl font-bold">{(analytics.averageConfidence * 100).toFixed(1)}%</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Helpfulness Rating</p>
-                      <p className="text-2xl font-bold">{analytics.summary.helpfulnessRating.toFixed(1)}%</p>
+                      <p className="text-2xl font-bold">{analytics.helpfulnessRating.toFixed(1)}%</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Learning Events Applied</p>
-                      <p className="text-2xl font-bold">{analytics.summary.approvedLearningEvents}</p>
+                      <p className="text-2xl font-bold">{analytics.approvedLearningEvents}</p>
                     </div>
                   </div>
                 </div>
               </Card>
             )}
           </div>
-        )}
+        </TabsContent>
 
         {/* Configuration Tab */}
-        {activeTab === 'configuration' && (
+        <TabsContent value="configuration" className="mt-6">
           <div className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Basic Configuration */}
@@ -311,7 +414,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       <label className="block text-sm font-medium mb-1">AI Assistant Name</label>
                       <Input
                         value={businessAI.name}
-                        onChange={(e: any) => setBusinessAI(prev => prev ? { ...prev, name: e.target.value } : null)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBusinessAI(prev => prev ? { ...prev, name: e.target.value } : null)}
                       />
                     </div>
                     
@@ -319,7 +422,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       <label className="block text-sm font-medium mb-1">Description</label>
                       <Textarea
                         value={businessAI.description}
-                        onChange={(e: any) => setBusinessAI(prev => prev ? { ...prev, description: e.target.value } : null)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBusinessAI(prev => prev ? { ...prev, description: e.target.value } : null)}
                         rows={3}
                       />
                     </div>
@@ -392,10 +495,10 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               </Card>
             </div>
           </div>
-        )}
+        </TabsContent>
 
         {/* Capabilities Tab */}
-        {activeTab === 'capabilities' && (
+        <TabsContent value="capabilities" className="mt-6">
           <div className="mt-6">
             <Card>
               <div className="p-4">
@@ -412,7 +515,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       </div>
                       <Switch
                         checked={Boolean(enabled)}
-                        onChange={(checked: any) => 
+                        onChange={(checked: boolean) => 
                           setBusinessAI(prev => prev ? {
                             ...prev,
                             capabilities: { ...prev.capabilities, [capability]: checked }
@@ -434,10 +537,10 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               </div>
             </Card>
           </div>
-        )}
+        </TabsContent>
 
         {/* Security Tab */}
-        {activeTab === 'security' && (
+        <TabsContent value="security" className="mt-6">
           <div className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Security Level */}
@@ -450,7 +553,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       <label className="block text-sm font-medium mb-1">Security Level</label>
                       <select
                         value={businessAI.securityLevel}
-                        onChange={(e: any) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
                           setBusinessAI(prev => prev ? { ...prev, securityLevel: e.target.value as 'standard' | 'high' | 'maximum' } : null)
                         }
                         className="w-full p-2 border rounded-md"
@@ -464,7 +567,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                     <div className="flex items-center space-x-2">
                       <Switch
                         checked={businessAI.complianceMode}
-                        onChange={(checked: any) => 
+                        onChange={(checked: boolean) => 
                           setBusinessAI(prev => prev ? { ...prev, complianceMode: checked } : null)
                         }
                       />
@@ -494,7 +597,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       <label className="block text-sm font-medium mb-1">Employee Data Access</label>
                       <select
                         value={businessAI.restrictions?.employeeDataAccess || 'limited'}
-                        onChange={(e: any) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
                           setBusinessAI(prev => prev ? {
                             ...prev,
                             restrictions: { ...prev.restrictions, employeeDataAccess: e.target.value }
@@ -512,7 +615,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                       <label className="block text-sm font-medium mb-1">Client Data Access</label>
                       <select
                         value={businessAI.restrictions?.clientDataAccess || 'none'}
-                        onChange={(e: any) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
                           setBusinessAI(prev => prev ? {
                             ...prev,
                             restrictions: { ...prev.restrictions, clientDataAccess: e.target.value }
@@ -537,11 +640,60 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               </Card>
             </div>
           </div>
-        )}
+        </TabsContent>
 
         {/* Learning Tab */}
-        {activeTab === 'learning' && (
-          <div className="mt-6">
+        <TabsContent value="learning" className="mt-6">
+          <div className="mt-6 space-y-6">
+            {/* Centralized Learning Settings */}
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Centralized Learning Settings</h3>
+                <p className="text-gray-600 mb-4">
+                  Enable your business AI to contribute to and benefit from global collective intelligence
+                </p>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                  <div>
+                    <h4 className="font-medium">Contribute to Global AI Learning</h4>
+                    <p className="text-sm text-gray-600">
+                      Share anonymized insights with the centralized AI system to help improve AI capabilities across all businesses
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={businessAI?.learningSettings?.allowCentralizedLearning || false}
+                      onChange={(checked: boolean) => updateBusinessAI({
+                        learningSettings: {
+                          ...businessAI?.learningSettings,
+                          allowCentralizedLearning: checked
+                        }
+                      })}
+                    />
+                    <span className="text-sm font-medium">
+                      {businessAI?.learningSettings?.allowCentralizedLearning ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </div>
+                </div>
+
+                {businessAI?.learningSettings?.allowCentralizedLearning && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">Centralized Learning Active</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      Your business AI is contributing to global intelligence. 
+                      {businessAI.lastCentralizedLearningAt && (
+                        <span> Last contribution: {new Date(businessAI.lastCentralizedLearningAt).toLocaleDateString()}</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Learning Events Approval */}
             <Card>
               <div className="p-4">
                 <h3 className="text-lg font-semibold mb-2">Learning Events Approval</h3>
@@ -595,8 +747,193 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               </div>
             </Card>
           </div>
-        )}
+        </TabsContent>
+
+        {/* Centralized Insights Tab */}
+        <TabsContent value="centralized" className="mt-6">
+          <div className="mt-6">
+            <CentralizedInsightsTab businessId={businessId} />
+          </div>
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+// Centralized Insights Tab Component
+const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }) => {
+  const [insights, setInsights] = useState<CentralizedInsights | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadCentralizedInsights();
+  }, [businessId]);
+
+  const loadCentralizedInsights = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/business-ai/${businessId}/centralized-insights`);
+      if (response.ok) {
+        const data = await response.json();
+        setInsights(data.data);
+      } else {
+        setError('Failed to load centralized insights');
+      }
+    } catch (error) {
+      console.error('Failed to load centralized insights:', error);
+      setError('Failed to load centralized insights');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <div className="p-4 text-center">
+          <AlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+          <p className="text-red-600">{error}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!insights) {
+    return (
+      <Card>
+        <div className="p-4 text-center">
+          <p className="text-gray-500">No centralized insights available</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Industry Metrics */}
+      <Card>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Industry Performance Comparison</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-500">Industry</p>
+              <p className="text-xl font-bold">{insights.industryMetrics.industry}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-500">Avg Confidence</p>
+              <p className="text-xl font-bold">{(insights.industryMetrics.averageConfidence * 100).toFixed(1)}%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-500">Avg User Rating</p>
+              <p className="text-xl font-bold">{(insights.industryMetrics.averageUserRating * 100).toFixed(1)}%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-500">Total Interactions</p>
+              <p className="text-xl font-bold">{insights.industryMetrics.totalInteractions}</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Global Patterns */}
+      <Card>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Global AI Patterns</h3>
+          {insights.globalPatterns.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No global patterns available</p>
+          ) : (
+            <div className="space-y-3">
+              {insights.globalPatterns.map((pattern) => (
+                <div key={pattern.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{pattern.description}</h4>
+                    <Badge className="bg-blue-100 text-blue-800">
+                      {(pattern.confidence * 100).toFixed(0)}% confidence
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    Type: {pattern.patternType} • Impact: {pattern.impact}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Frequency: {pattern.frequency} users • Modules: {pattern.modules.join(', ')}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Collective Insights */}
+      <Card>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-4">Collective Insights</h3>
+          {insights.collectiveInsights.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No collective insights available</p>
+          ) : (
+            <div className="space-y-3">
+              {insights.collectiveInsights.map((insight) => (
+                <div key={insight.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{insight.title}</h4>
+                    <Badge className={`${
+                      insight.impact === 'high' ? 'bg-red-100 text-red-800' :
+                      insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {insight.impact} impact
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{insight.description}</p>
+                  <p className="text-sm text-gray-500">
+                    Type: {insight.type} • Complexity: {insight.implementationComplexity}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* AI Recommendations */}
+      <Card>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-4">AI Improvement Recommendations</h3>
+          {insights.recommendations.length === 0 ? (
+            <p className="text-gray-500 text-center py-4">No recommendations available</p>
+          ) : (
+            <div className="space-y-3">
+              {insights.recommendations.map((rec, index: number) => (
+                <div key={index} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{rec.title}</h4>
+                    <Badge className={`${
+                      rec.priority === 'high' ? 'bg-red-100 text-red-800' :
+                      rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {rec.priority} priority
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Action:</strong> {rec.implementation}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 };

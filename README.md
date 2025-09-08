@@ -17,8 +17,15 @@ This is a modular ERP/LRM platform with a monorepo structure managed by pnpm wor
    ```
 2. Set up environment variables for each package as needed.
 3. Run the development servers:
-   - Frontend: `pnpm --filter web dev`
-   - Backend: `pnpm --filter server dev`
+   ```sh
+   pnpm dev
+   ```
+
+## 📚 Documentation
+
+- **[📖 Documentation Index](docs/README.md)** - Comprehensive guides and setup instructions
+- **[🧠 Memory Bank](memory-bank/)** - Project context, requirements, and development notes
+- **[🔧 Scripts](scripts/)** - Build and utility scripts
 
 ## Core Technologies
 - pnpm workspaces
@@ -30,5 +37,9 @@ This is a modular ERP/LRM platform with a monorepo structure managed by pnpm wor
 - Socket.IO
 - Tailwind CSS
 
-## Memory Bank
-See `memory-bank/` for all project context, requirements, and documentation.
+## Quick Development Commands
+
+- **Start all services**: `pnpm dev`
+- **Install dependencies**: `pnpm install`
+- **Build all packages**: `pnpm build`
+- **Run tests**: `pnpm test`

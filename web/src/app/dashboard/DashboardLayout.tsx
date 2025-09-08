@@ -5,7 +5,7 @@ import { LayoutDashboard, Folder, MessageSquare, Shield, Home, Briefcase, Gradua
 import GlobalTrashBin from '../../components/GlobalTrashBin';
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from 'next/navigation';
-import { COLORS } from 'shared/styles/theme';
+import { COLORS, getBrandColor, semanticColors } from 'shared/utils/brandColors';
 import ClientOnlyWrapper from '../ClientOnlyWrapper';
 import { createDashboard } from '../../api/dashboard';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -23,6 +23,7 @@ import DashboardDeletionModal from '../../components/DashboardDeletionModal';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
 import AIEnhancedSearchBar from '../../components/AIEnhancedSearchBar';
 import { Modal, DraggableWrapper } from 'shared/components';
+import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
 
 // Add CSS styles for enhanced drag and drop UX
@@ -190,11 +191,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { currentBranding, isBusinessContext, getHeaderStyles, getSidebarStyles } = useGlobalBranding();
   const { isWorkAuthenticated, currentBusinessId } = useWorkAuth();
   const { getFilteredModules, hasModuleAccess, getModuleAccessReason } = usePositionAwareModules();
+  const { getHeaderStyle, getBrandColor } = useThemeColors();
 
   const [showWorkTab, setShowWorkTab] = useState(false);
 
   // Determine if sidebar should be shown
-  const shouldShowSidebar = !(showWorkTab && !isWorkAuthenticated);
+  // Hide sidebars on Work tab (both pre- and post-auth) so BrandedWorkDashboard is full-width
+  const shouldShowSidebar = !showWorkTab;
 
   // Get available modules using position-aware filtering
   const getAvailableModules = (): ModuleConfig[] => {
@@ -485,8 +488,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: COLORS.neutralLight,
-        color: COLORS.neutralDark
+        background: getBrandColor('neutralLight'),
+        color: getBrandColor('neutralDark')
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px' }}>Loading dashboards...</div>
@@ -505,8 +508,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: COLORS.neutralLight,
-        color: COLORS.neutralDark
+        background: getBrandColor('neutralLight'),
+        color: getBrandColor('neutralDark')
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px', color: '#ef4444' }}>Error</div>
@@ -525,8 +528,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: COLORS.neutralLight,
-        color: COLORS.neutralDark
+        background: getBrandColor('neutralLight'),
+        color: getBrandColor('neutralDark')
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px' }}>No dashboards found</div>
@@ -534,7 +537,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => handleCreateDashboard()}
             style={{
-              background: COLORS.highlightYellow,
+              background: getBrandColor('highlightYellow'),
               color: '#000',
               border: 'none',
               padding: '8px 16px',
@@ -559,8 +562,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         top: 0,
         width: '100vw',
         height: 64,
-        background: isBusinessContext ? getHeaderStyles().backgroundColor : COLORS.neutralDark,
-        color: isBusinessContext ? getHeaderStyles().color : '#fff',
+        ...getHeaderStyle(isBusinessContext, isBusinessContext ? getHeaderStyles().backgroundColor : undefined),
         display: 'flex',
         alignItems: isMobile ? 'flex-start' : 'center',
         flexDirection: isMobile ? 'column' : 'row',
@@ -577,7 +579,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               style={{ height: 32, width: 'auto' }}
             />
           ) : (
-            <div style={{ fontWeight: 800, fontSize: 22, color: COLORS.highlightYellow }}>B</div>
+            <div style={{ fontWeight: 800, fontSize: 22, color: getBrandColor('highlightYellow') }}>B</div>
           )}
           <h1 style={{ 
             fontWeight: 600, 
@@ -800,7 +802,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
         <aside style={{
           width: shouldShowSidebar ? (sidebarCollapsed ? 0 : 240) : 0,
-          background: (showWorkTab || isBusinessContext) ? getSidebarStyles().backgroundColor : COLORS.neutralMid,
+          background: (showWorkTab || isBusinessContext) ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
           display: 'flex',
           flexDirection: 'column',
           padding: '20px 0',
@@ -909,15 +911,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </aside>
-        <main style={{ 
-          flexGrow: 1, 
-          overflowY: 'auto', 
-          background: COLORS.neutralLight, 
-          color: COLORS.neutralDark, 
+        <main className="flex-1 overflow-y-auto h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" style={{ 
           padding: 0, 
-          paddingRight: shouldShowSidebar ? 40 : 0, // No right padding when sidebar hidden
-          height: '100%',
-          marginLeft: shouldShowSidebar ? 0 : 0, // Full width when sidebar hidden
+          paddingRight: shouldShowSidebar ? 40 : 0,
+          marginLeft: 0,
           transition: 'margin-left 0.2s ease-in-out, padding-right 0.2s ease-in-out',
         }}>
           {showWorkTab ? (
@@ -930,8 +927,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
         <aside
           style={{
-            width: shouldShowSidebar ? 40 : 0, // Hide right sidebar when left sidebar hidden
-            background: isBusinessContext ? getSidebarStyles().backgroundColor : COLORS.neutralMid,
+            width: shouldShowSidebar ? 40 : 0,
+            background: isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',

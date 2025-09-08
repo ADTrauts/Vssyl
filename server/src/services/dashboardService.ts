@@ -1,5 +1,31 @@
 import { prisma } from '../lib/prisma';
-import { HouseholdRole } from '@prisma/client';
+import { HouseholdRole, Prisma } from '@prisma/client';
+
+export interface DashboardLayout {
+  widgets: Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    type: string;
+  }>;
+  [key: string]: unknown;
+}
+
+export interface DashboardPreferences {
+  theme?: 'light' | 'dark' | 'auto';
+  defaultView?: 'grid' | 'list';
+  refreshInterval?: number;
+  notifications?: boolean;
+  [key: string]: unknown;
+}
+
+export interface DashboardUpdateData {
+  name?: string;
+  layout?: DashboardLayout;
+  preferences?: DashboardPreferences;
+}
 
 // Dashboard service stubs
 export async function getDashboards(userId: string) {
@@ -110,7 +136,7 @@ export async function getAllUserDashboards(userId: string) {
   };
 }
 
-export async function createDashboard(userId: string, data: { name: string; layout?: any; preferences?: any; businessId?: string; institutionId?: string; householdId?: string }) {
+export async function createDashboard(userId: string, data: { name: string; layout?: DashboardLayout; preferences?: DashboardPreferences; businessId?: string; institutionId?: string; householdId?: string }) {
   // First, validate that the user exists
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -139,21 +165,21 @@ export async function createDashboard(userId: string, data: { name: string; layo
     data: {
       userId,
       name: data.name,
-      layout: data.layout,
-      preferences: data.preferences,
+      layout: data.layout as Prisma.InputJsonValue,
+      preferences: data.preferences as Prisma.InputJsonValue,
       businessId: data.businessId,
       institutionId: data.institutionId,
       householdId: data.householdId,
     },
   });
   // Create default widgets: chat and drive
-  const chatWidget = await prisma.widget.create({
+  await prisma.widget.create({
     data: {
       dashboardId: dashboard.id,
       type: 'chat',
     },
   });
-  const driveWidget = await prisma.widget.create({
+  await prisma.widget.create({
     data: {
       dashboardId: dashboard.id,
       type: 'drive',
@@ -183,7 +209,7 @@ export async function getDashboardById(userId: string, dashboardId: string) {
   });
 }
 
-export async function updateDashboard(userId: string, dashboardId: string, data: { name?: string; layout?: any; preferences?: any }) {
+export async function updateDashboard(userId: string, dashboardId: string, data: DashboardUpdateData) {
   // First, validate that the user exists
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -194,13 +220,23 @@ export async function updateDashboard(userId: string, dashboardId: string, data:
     throw new Error(`User with ID ${userId} not found`);
   }
 
+  const updateData: Record<string, unknown> = {};
+  
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+  if (data.layout !== undefined) {
+    // Use proper Prisma JSON type with validation
+    updateData.layout = data.layout as Prisma.InputJsonValue;
+  }
+  if (data.preferences !== undefined) {
+    // Use proper Prisma JSON type with validation
+    updateData.preferences = data.preferences as Prisma.InputJsonValue;
+  }
+
   const updated = await prisma.dashboard.updateMany({
     where: { id: dashboardId, userId },
-    data: {
-      ...(data.name !== undefined ? { name: data.name } : {}),
-      ...(data.layout !== undefined ? { layout: data.layout } : {}),
-      ...(data.preferences !== undefined ? { preferences: data.preferences } : {}),
-    },
+    data: updateData,
   });
   if (updated.count === 0) return null;
   return prisma.dashboard.findFirst({ where: { id: dashboardId, userId }, include: { widgets: true } });

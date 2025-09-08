@@ -65,6 +65,13 @@ export const ImpersonationProvider: React.FC<ImpersonationProviderProps> = ({ ch
 
   const startImpersonation = async (userId: string, reason?: string): Promise<boolean> => {
     try {
+      // First check if we're already impersonating
+      const currentResponse = await adminApiService.getCurrentImpersonation();
+      if (currentResponse.data?.active) {
+        console.log('Already impersonating a user, ending current session first');
+        await endImpersonation();
+      }
+
       const response = await adminApiService.startImpersonation(userId, reason);
       if (response.error) {
         console.error('Error starting impersonation:', response.error);

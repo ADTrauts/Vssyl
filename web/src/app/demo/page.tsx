@@ -6,8 +6,10 @@ import {
   TrashIcon, 
   FolderIcon, 
   ChatBubbleLeftIcon, 
-  Cog6ToothIcon 
+  Cog6ToothIcon,
+  PaintBrushIcon 
 } from '@heroicons/react/24/outline';
+import ColorSchemeDemo from '../../components/ColorSchemeDemo';
 
 export default function DemoIndexPage() {
   return (
@@ -186,6 +188,33 @@ export default function DemoIndexPage() {
               </Link>
             </div>
           </div>
+          {/* Color Scheme Demo */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+              <div className="flex items-center space-x-3">
+                <PaintBrushIcon className="w-8 h-8 text-blue-600" />
+                <div>
+                  <h2 className="text-xl font-semibold text-blue-900">
+                    Brand Color Scheme
+                  </h2>
+                  <p className="text-sm text-blue-700">
+                    NEW: Updated brand colors and theme system
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                View the new brand color system with green primary colors, 
+                improved dark mode, and consistent theming throughout the app.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Color Scheme Demo Section */}
+        <div className="mt-12">
+          <ColorSchemeDemo />
         </div>
 
         {/* Status Banner */}

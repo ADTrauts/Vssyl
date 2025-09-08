@@ -1,0 +1,189 @@
+// ============================================================================
+// ENTERPRISE AI DIGITAL TWIN MODELS
+// ============================================================================
+
+model BusinessAIDigitalTwin {
+  id              String   @id @default(uuid())
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId      String   @unique
+  
+  // AI Configuration
+  name            String   @default("Business AI Assistant")
+  description     String?
+  aiPersonality   Json     // Business-specific AI personality traits
+  capabilities    Json     // Enabled AI capabilities and features
+  restrictions    Json     // Security restrictions and limitations
+  
+  // Training & Learning Configuration
+  trainingData    Json?    // Business-specific training data references
+  learningSettings Json    // Learning preferences and controls
+  performanceMetrics Json? // AI performance tracking and analytics
+  
+  // Security & Compliance
+  securityLevel   String   @default("standard") // standard, high, maximum
+  complianceMode  Boolean  @default(false)
+  dataRetentionDays Int    @default(365) // Data retention period
+  auditSettings   Json     // Audit and logging configuration
+  encryptionRequired Boolean @default(true)
+  
+  // Access Control
+  adminUsers      String[] // User IDs with master control access
+  delegatedAdmins String[] // Users with limited admin rights
+  allowEmployeeInteraction Boolean @default(true)
+  allowCentralizedLearning Boolean @default(false)
+  
+  // Status & Metadata
+  status          String   @default("active") // active, paused, maintenance
+  lastTrainingAt  DateTime?
+  lastInteractionAt DateTime?
+  lastCentralizedLearningAt DateTime? // Track when last fed to centralized system
+  totalInteractions Int    @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  interactions    BusinessAIInteraction[]
+  learningEvents  BusinessAILearningEvent[]
+  usageMetrics    BusinessAIUsageMetric[]
+  
+  @@index([businessId])
+  @@index([status])
+  @@index([securityLevel])
+  @@map("business_ai_digital_twins")
+}
+
+model BusinessAIInteraction {
+  id              String   @id @default(uuid())
+  businessAI      BusinessAIDigitalTwin @relation(fields: [businessAIId], references: [id], onDelete: Cascade)
+  businessAIId    String
+  userId          String   // Employee who interacted
+  
+  // Interaction Details
+  interactionType String   // query, command, feedback, training, analysis
+  userInput       String
+  aiResponse      String
+  confidence      Float    @default(0.8)
+  processingTime  Int      @default(0) // Processing time in milliseconds
+  
+  // Context & Metadata
+  contextData     Json     // Business context at time of interaction
+  moduleContext   String?  // Which module the interaction occurred in
+  userRole        String?  // User's role/position during interaction
+  departmentId    String?  // Department context
+  
+  // Security & Compliance
+  securityLevel   String   // Level of security for this interaction
+  complianceFlags Json?    // Any compliance considerations
+  auditMetadata   Json?    // Audit trail information
+  dataClassification String @default("internal") // public, internal, confidential, restricted
+  
+  // Feedback & Learning
+  userFeedback    String?  // User's feedback on AI response
+  feedbackRating  Int?     // 1-10 satisfaction rating
+  wasHelpful      Boolean? // Simple helpful/not helpful feedback
+  correctionApplied Boolean @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([businessAIId])
+  @@index([userId])
+  @@index([interactionType])
+  @@index([createdAt])
+  @@index([moduleContext])
+  @@map("business_ai_interactions")
+}
+
+model BusinessAILearningEvent {
+  id              String   @id @default(uuid())
+  businessAI      BusinessAIDigitalTwin @relation(fields: [businessAIId], references: [id], onDelete: Cascade)
+  businessAIId    String
+  
+  // Learning Event Details
+  eventType       String   // training, correction, policy_update, feedback, pattern_discovery
+  sourceUserId    String?  // Who triggered the learning event
+  sourceType      String   // user_feedback, admin_training, automated_discovery, external_data
+  
+  // Learning Content
+  learningData    Json     // What the AI learned
+  previousBehavior String? // AI's previous behavior/response
+  newBehavior     String   // Updated AI behavior/response
+  confidence      Float    @default(0.7)
+  impact          String   @default("medium") // low, medium, high, critical
+  
+  // Validation & Approval
+  requiresApproval Boolean  @default(true)
+  approved        Boolean  @default(false)
+  approvedBy      String?  // Admin who approved
+  approvedAt      DateTime?
+  rejectionReason String?  // If rejected, why
+  
+  // Privacy & Security
+  privacyLevel    String   @default("internal") // public, internal, confidential, restricted
+  dataClassification String @default("business_process")
+  complianceReview Boolean @default(false)
+  
+  // Application & Results
+  applied         Boolean  @default(false)
+  appliedAt       DateTime?
+  effectiveness   Float?   // 0-1 how effective the learning was
+  rollbackAvailable Boolean @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([businessAIId])
+  @@index([eventType])
+  @@index([sourceUserId])
+  @@index([approved])
+  @@index([createdAt])
+  @@map("business_ai_learning_events")
+}
+
+model BusinessAIUsageMetric {
+  id              String   @id @default(uuid())
+  businessAI      BusinessAIDigitalTwin @relation(fields: [businessAIId], references: [id], onDelete: Cascade)
+  businessAIId    String
+  
+  // Time Period
+  date            DateTime @default(now())
+  period          String   // daily, weekly, monthly
+  
+  // Usage Statistics
+  totalInteractions     Int @default(0)
+  uniqueUsers          Int @default(0)
+  averageResponseTime  Int @default(0) // milliseconds
+  averageConfidence    Float @default(0.0)
+  averageUserRating    Float @default(0.0)
+  
+  // Capability Usage
+  queryInteractions    Int @default(0)
+  commandExecutions    Int @default(0)
+  analysisRequests     Int @default(0)
+  trainingEvents       Int @default(0)
+  
+  // Performance Metrics
+  successfulResponses  Int @default(0)
+  failedResponses      Int @default(0)
+  timeoutResponses     Int @default(0)
+  userCorrections      Int @default(0)
+  
+  // Department Breakdown
+  departmentUsage     Json? // Usage statistics by department
+  roleUsage           Json? // Usage statistics by user role
+  moduleUsage         Json? // Usage statistics by module
+  
+  // AI Learning Metrics
+  learningEventsGenerated Int @default(0)
+  learningEventsApproved  Int @default(0)
+  learningEventsApplied   Int @default(0)
+  knowledgeBaseGrowth     Float @default(0.0)
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([businessAIId, date, period])
+  @@index([businessAIId])
+  @@index([date])
+  @@index([period])
+  @@map("business_ai_usage_metrics")
+}

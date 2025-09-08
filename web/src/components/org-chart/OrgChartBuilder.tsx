@@ -35,14 +35,22 @@ import {
   MoreVertical
 } from 'lucide-react';
 
+interface OrgChartData {
+  tiers: OrganizationalTier[];
+  departments: Department[];
+  positions: Position[];
+}
+
 interface OrgChartBuilderProps {
-  orgChartData: any;
+  orgChartData: OrgChartData;
   businessId: string;
   onUpdate: () => void;
 }
 
 type EditMode = 'none' | 'tier' | 'department' | 'position';
 type EditAction = 'create' | 'edit';
+
+type EditingItem = OrganizationalTier | Department | Position | null;
 
 export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChartBuilderProps) {
   const { data: session } = useSession();
@@ -52,7 +60,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState<EditMode>('none');
   const [editAction, setEditAction] = useState<EditAction>('create');
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<EditingItem>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['tiers', 'departments', 'positions']));
 
   // Form states
@@ -92,25 +100,25 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     setExpandedSections(newExpanded);
   };
 
-  const startEdit = (mode: EditMode, action: EditAction, item?: any) => {
+  const startEdit = (mode: EditMode, action: EditAction, item?: EditingItem) => {
     setEditMode(mode);
     setEditAction(action);
-    setEditingItem(item);
+    setEditingItem(item || null);
     
     if (action === 'edit' && item) {
-      if (mode === 'tier') {
+      if (mode === 'tier' && 'level' in item) {
         setTierForm({
           name: item.name,
           level: item.level,
           description: item.description || ''
         });
-      } else if (mode === 'department') {
+      } else if (mode === 'department' && 'parentDepartmentId' in item) {
         setDepartmentForm({
           name: item.name,
           description: item.description || '',
           parentDepartmentId: item.parentDepartmentId || ''
         });
-      } else if (mode === 'position') {
+      } else if (mode === 'position' && 'tierId' in item && 'capacity' in item) {
         setPositionForm({
           name: item.name,
           description: item.description || '',
@@ -141,12 +149,16 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     try {
       if (editAction === 'create') {
         const data: CreateOrganizationalTierData = {
+          name: tierForm.name,
+          level: tierForm.level,
+          description: tierForm.description,
           businessId,
-          ...tierForm
+          defaultPermissions: [],
+          defaultModules: []
         };
         await createOrganizationalTier(data, session.accessToken);
       } else {
-        await updateOrganizationalTier(editingItem.id, tierForm, session.accessToken);
+        await updateOrganizationalTier(editingItem?.id || '', tierForm, session.accessToken);
       }
       
       onUpdate();
@@ -166,12 +178,16 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     try {
       if (editAction === 'create') {
         const data: CreateDepartmentData = {
+          name: departmentForm.name,
+          description: departmentForm.description,
+          parentDepartmentId: departmentForm.parentDepartmentId || undefined,
           businessId,
-          ...departmentForm
+          departmentModules: [],
+          departmentPermissions: []
         };
         await createDepartment(data, session.accessToken);
       } else {
-        await updateDepartment(editingItem.id, departmentForm, session.accessToken);
+        await updateDepartment(editingItem?.id || '', departmentForm, session.accessToken);
       }
       
       onUpdate();
@@ -191,12 +207,17 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     try {
       if (editAction === 'create') {
         const data: CreatePositionData = {
+          name: positionForm.name,
+          description: positionForm.description,
+          tierId: positionForm.tierId,
+          departmentId: positionForm.departmentId || undefined,
+          capacity: positionForm.capacity,
           businessId,
-          ...positionForm
+          permissions: []
         };
         await createPosition(data, session.accessToken);
       } else {
-        await updatePosition(editingItem.id, positionForm, session.accessToken);
+        await updatePosition(editingItem?.id || '', positionForm, session.accessToken);
       }
       
       onUpdate();

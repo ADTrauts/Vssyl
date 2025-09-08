@@ -1,0 +1,161 @@
+// ============================================================================
+// ORG CHART & PERMISSION SYSTEM MODELS
+// ============================================================================
+
+model OrganizationalTier {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  name        String   // "C-Suite", "VP Level", "Director", "Manager", "Employee"
+  level       Int      // 1 = highest, 5 = lowest
+  description String?
+  defaultPermissions Json? // Default permission set for this tier
+  defaultModules     Json? // Default modules for this tier
+  positions   Position[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([level])
+  @@map("organizational_tiers")
+}
+
+model Position {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  title       String
+  tier        OrganizationalTier @relation(fields: [tierId], references: [id])
+  tierId      String
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId String?
+  reportsTo   Position? @relation("PositionHierarchy", fields: [reportsToId], references: [id])
+  reportsToId String?
+  directReports Position[] @relation("PositionHierarchy")
+  headOfDepartment Department[] @relation("DepartmentHead")
+  permissions Json? // Permission set for this position
+  assignedModules Json? // Modules assigned to this position
+  maxOccupants Int @default(1) // How many people can have this position
+  customPermissions Json? // Override default permissions
+  employeePositions EmployeePosition[]
+  permissionSets PermissionSet[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, title])
+  @@index([businessId])
+  @@index([tierId])
+  @@index([departmentId])
+  @@index([reportsToId])
+  @@map("positions")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  moduleId    String   // Module identifier
+  featureId   String   // Feature identifier
+  action      String   // 'view', 'create', 'edit', 'delete', 'manage', 'admin'
+  description String
+  category    String   // 'basic', 'advanced', 'admin'
+  dependencies Json?   // Other permissions required
+  conflicts   Json?    // Conflicting permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([moduleId, featureId, action])
+  @@index([moduleId])
+  @@index([featureId])
+  @@index([action])
+  @@index([category])
+  @@map("permissions")
+}
+
+model PermissionSet {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  name        String   // "Full Access", "Executive Access", etc.
+  description String?
+  permissions Json     // Array of permission objects
+  category    String   // 'basic', 'advanced', 'admin'
+  template    Boolean  @default(false) // Whether this is a reusable template
+  positions   Position[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@index([category])
+  @@index([template])
+  @@map("permission_sets")
+}
+
+model EmployeePosition {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  positionId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  assignedAt  DateTime @default(now())
+  assignedBy  User     @relation("EmployeePositionAssignedBy", fields: [assignedById], references: [id])
+  assignedById String
+  startDate   DateTime
+  endDate     DateTime?
+  active      Boolean  @default(true)
+  customPermissions Json? // Individual overrides
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, positionId, businessId])
+  @@index([userId])
+  @@index([positionId])
+  @@index([businessId])
+  @@index([assignedById])
+  @@index([active])
+  @@map("employee_positions")
+}
+
+model PermissionManagementRights {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  grantedBy   User     @relation("PermissionManagementRightsGrantedBy", fields: [grantedById], references: [id])
+  grantedById String
+  grantedAt   DateTime @default(now())
+  scope       Json     // Which roles, modules, and levels they can manage
+  canGrantToOthers Boolean @default(false) // Can they give permission management to others?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@index([grantedById])
+  @@map("permission_management_rights")
+}
+
+model PermissionChange {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  changedById String
+  changedAt   DateTime @default(now())
+  changeType  String   // 'permission_granted', 'permission_revoked', 'role_created', 'role_modified'
+  targetRole  String?  // Role or position affected
+  permissionsChanged Json? // What permissions were changed
+  reason      String?  // Reason for the change
+  createdAt   DateTime @default(now())
+
+  @@index([businessId])
+  @@index([changedById])
+  @@index([changedAt])
+  @@index([changeType])
+  @@map("permission_changes")
+}

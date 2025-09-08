@@ -32,7 +32,7 @@ export interface SSOConfig {
   businessId: string;
   provider: string;
   name: string;
-  config: any; // Use any for Prisma JSON compatibility
+  config: SSOProviderConfig; // Use proper interface instead of unknown
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -43,6 +43,20 @@ export interface WorkCredentials {
   userId: string;
   role: string;
   jobId?: string;
+  permissions: string[];
+}
+
+export interface JWTWorkPayload {
+  type: string;
+  businessId: string;
+  userId: string;
+  role: string;
+  jobId?: string;
+  permissions: string[];
+  exp: number;
+}
+
+export interface JobPermissions {
   permissions: string[];
 }
 
@@ -58,7 +72,9 @@ export async function createSSOConfig(
       businessId,
       provider,
       name,
-      config: config as any, // Cast to any for Prisma JSON
+      // TODO: Prisma JSON compatibility issue - using any temporarily
+      // Need to research proper Prisma JSON field typing solutions
+      config: config as any,
       isActive: true
     }
   });
@@ -97,10 +113,12 @@ export async function updateSSOConfig(
     isActive?: boolean;
   }
 ): Promise<SSOConfig | null> {
-  const updateData: any = { ...data };
+  const updateData: Record<string, unknown> = { ...data };
   
   // Handle config separately for JSON compatibility
   if (data.config) {
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    // Need to research proper Prisma JSON field typing solutions
     updateData.config = data.config as any;
   }
   
@@ -121,7 +139,7 @@ export async function deleteSSOConfig(id: string): Promise<void> {
 
 // Generate work credentials JWT
 export function generateWorkCredentials(credentials: WorkCredentials): string {
-  const payload = {
+  const payload: JWTWorkPayload = {
     type: 'work',
     businessId: credentials.businessId,
     userId: credentials.userId,
@@ -137,7 +155,7 @@ export function generateWorkCredentials(credentials: WorkCredentials): string {
 // Verify work credentials JWT
 export function verifyWorkCredentials(token: string): WorkCredentials | null {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as JWTWorkPayload;
     
     if (decoded.type !== 'work') {
       return null;
@@ -179,7 +197,9 @@ export async function getUserWorkCredentials(
   let permissions: string[] = [];
   
   if (membership.job?.permissions) {
-    permissions = membership.job.permissions as string[];
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    // Need to research proper Prisma JSON field typing solutions
+    permissions = membership.job.permissions as any;
   } else {
     // Default role-based permissions
     switch (membership.role) {

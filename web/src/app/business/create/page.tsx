@@ -44,9 +44,9 @@ export default function CreateBusinessPage() {
       
       if (response.success) {
         setSuccess(true);
-        // Redirect to business profile page for initial setup instead of workspace
+        // Redirect to business admin dashboard for initial setup
         setTimeout(() => {
-          router.push(`/business/${response.data.id}/profile?new=true&showSetup=true`);
+          router.push(`/business/${response.data.id}`);
         }, 2000);
       }
     } catch (err: any) {
@@ -80,7 +80,7 @@ export default function CreateBusinessPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Business Created!</h2>
           <p className="text-gray-600 mb-4">
             Your business "{formData.name}" has been successfully created. 
-            You'll be redirected to your business profile page to complete setup.
+            You'll be redirected to your business admin dashboard to complete setup.
           </p>
           <div className="animate-pulse">
             <div className="h-2 bg-gray-200 rounded mb-2"></div>

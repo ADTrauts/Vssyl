@@ -1,0 +1,149 @@
+// ============================================================================
+// CHAT & COMMUNICATION MODELS
+// ============================================================================
+
+model Conversation {
+  id          String   @id @default(uuid())
+  name        String?
+  type        ConversationType @default(DIRECT)
+  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId String?
+  participants ConversationParticipant[]
+  messages    Message[]
+  threads     Thread[]
+  trashedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastMessageAt DateTime?
+
+  @@index([lastMessageAt])
+  @@index([type])
+  @@index([dashboardId])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  role           ParticipantRole @default(MEMBER)
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+  isActive       Boolean      @default(true)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  sender         User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId       String
+  content        String
+  type           MessageType @default(TEXT)
+  fileReferences FileReference[]
+  reactions      MessageReaction[]
+  readReceipts   ReadReceipt[]
+  thread         Thread?  @relation(fields: [threadId], references: [id])
+  threadId       String?
+  replyTo        Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyToId      String?
+  replies        Message[] @relation("MessageReplies")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  editedAt       DateTime?
+  deletedAt      DateTime?
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([threadId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model FileReference {
+  id        String   @id @default(uuid())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  file      File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId    String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, fileId])
+  @@index([messageId])
+  @@index([fileId])
+  @@map("file_references")
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
+}
+
+model ReadReceipt {
+  id        String   @id @default(uuid())
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  readAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("read_receipts")
+}
+
+model Thread {
+  id          String   @id @default(uuid())
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  name        String?
+  type        ThreadType @default(MESSAGE)
+  messages    Message[]
+  participants ThreadParticipant[]
+  parent      Thread?  @relation("ThreadParent", fields: [parentId], references: [id])
+  parentId    String?
+  children    Thread[] @relation("ThreadParent")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastMessageAt DateTime?
+
+  @@index([conversationId])
+  @@index([parentId])
+  @@index([type])
+  @@map("threads")
+}
+
+model ThreadParticipant {
+  id        String   @id @default(uuid())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  threadId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  role      ParticipantRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+  isActive  Boolean  @default(true)
+
+  @@unique([threadId, userId])
+  @@index([threadId])
+  @@index([userId])
+  @@map("thread_participants")
+}

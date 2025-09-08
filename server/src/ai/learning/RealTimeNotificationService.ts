@@ -1,6 +1,33 @@
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter } from 'events';
 
+// Define proper types for notification data
+export interface NotificationData {
+  patternType?: string;
+  affectedUsers?: number;
+  module?: string;
+  patternId?: string;
+  insightType?: string;
+  confidence?: number;
+  insightId?: string;
+  anomalyId?: string;
+  metric?: string;
+  value?: number;
+  threshold?: number;
+  checkType?: string;
+  status?: string;
+  details?: string;
+  checkId?: string;
+  [key: string]: unknown; // Allow additional properties
+}
+
+// Define WebSocket connection interface
+export interface WebSocketConnection {
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  send(data: string): void;
+  close(): void;
+}
+
 export interface Notification {
   id: string;
   type: 'pattern_discovery' | 'insight_generated' | 'anomaly_detected' | 'trend_alert' | 'compliance_warning' | 'performance_alert';
@@ -9,7 +36,7 @@ export interface Notification {
   priority: 'low' | 'medium' | 'high' | 'critical';
   category: 'ai_learning' | 'system' | 'security' | 'compliance' | 'performance';
   recipients: string[]; // User IDs or 'all' for broadcast
-  data: any; // Additional context data
+  data: NotificationData; // Use proper type instead of any
   read: boolean;
   acknowledged: boolean;
   createdAt: Date;
@@ -62,7 +89,7 @@ export class RealTimeNotificationService extends EventEmitter {
   private notifications: Map<string, Notification> = new Map();
   private templates: Map<string, NotificationTemplate> = new Map();
   private userPreferences: Map<string, NotificationPreferences> = new Map();
-  private activeConnections: Map<string, any> = new Map(); // WebSocket connections
+  private activeConnections: Map<string, WebSocketConnection> = new Map(); // Use proper type
 
   constructor(prisma: PrismaClient) {
     super();
@@ -156,8 +183,8 @@ export class RealTimeNotificationService extends EventEmitter {
   async sendNotification(
     templateId: string,
     recipients: string[] | 'all',
-    variables: Record<string, any>,
-    customData?: any
+    variables: Record<string, string | number>, // Use proper type instead of any
+    customData?: NotificationData // Use proper type instead of any
   ): Promise<Notification[]> {
     try {
       const template = this.templates.get(templateId);
@@ -191,11 +218,11 @@ export class RealTimeNotificationService extends EventEmitter {
 
         const notification: Notification = {
           id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: template.type as any,
+          type: template.type as Notification['type'], // Use proper type casting
           title,
           message,
           priority: template.priority,
-          category: template.category as any,
+          category: template.category as Notification['category'], // Use proper type casting
           recipients: [userId],
           data: { ...variables, ...customData },
           read: false,
@@ -235,7 +262,7 @@ export class RealTimeNotificationService extends EventEmitter {
     priority: 'low' | 'medium' | 'high' | 'critical',
     category: string,
     recipients: string[] | 'all',
-    data?: any,
+    data?: NotificationData, // Use proper type instead of any
     actions?: NotificationAction[]
   ): Promise<Notification[]> {
     try {
@@ -253,13 +280,13 @@ export class RealTimeNotificationService extends EventEmitter {
 
         const notification: Notification = {
           id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          type: type as any,
+          type: type as Notification['type'], // Use proper type casting
           title,
           message,
           priority,
-          category: category as any,
+          category: category as Notification['category'], // Use proper type casting
           recipients: [userId],
-          data,
+          data: data || {}, // Use proper type
           read: false,
           acknowledged: false,
           createdAt: new Date(),
@@ -267,13 +294,18 @@ export class RealTimeNotificationService extends EventEmitter {
           actions: actions || []
         };
 
+        // Store notification
         this.notifications.set(notification.id, notification);
         notifications.push(notification);
 
+        // Emit real-time event
         this.emit('notification_created', notification);
+
+        // Send via different channels based on preferences
         await this.sendNotificationChannels(notification, preferences);
       }
 
+      console.log(`📢 Sent ${notifications.length} custom notifications`);
       return notifications;
 
     } catch (error) {
@@ -431,7 +463,7 @@ export class RealTimeNotificationService extends EventEmitter {
   /**
    * Set up WebSocket connection for real-time notifications
    */
-  setupWebSocketConnection(userId: string, connection: any): void {
+  setupWebSocketConnection(userId: string, connection: WebSocketConnection): void { // Use proper type
     this.activeConnections.set(userId, connection);
     
     connection.on('close', () => {
@@ -470,9 +502,9 @@ export class RealTimeNotificationService extends EventEmitter {
   }
 
   // Private helper methods
-  private processTemplate(template: string, variables: Record<string, any>): string {
+  private processTemplate(template: string, variables: Record<string, string | number>): string { // Use proper type instead of any
     return template.replace(/\{(\w+)\}/g, (match, variable) => {
-      return variables[variable] || match;
+      return String(variables[variable] || match);
     });
   }
 

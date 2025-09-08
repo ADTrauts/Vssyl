@@ -1,9 +1,9 @@
 console.log('[DEBUG] fileRouter loaded');
-import { Router } from 'express';
+import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
-import { listFiles, uploadFile, downloadFile, updateFile, deleteFile, multerUpload, multerUploadWithErrorHandling, listFilePermissions, grantFilePermission, updateFilePermission, revokeFilePermission, listTrashedFiles, restoreFile, hardDeleteFile, toggleFileStarred, reorderFiles, moveFile } from '../controllers/fileController';
+import { listFiles, uploadFile, downloadFile, updateFile, deleteFile, multerUploadWithErrorHandling, listFilePermissions, grantFilePermission, updateFilePermission, revokeFilePermission, listTrashedFiles, restoreFile, hardDeleteFile, toggleFileStarred, reorderFiles, moveFile } from '../controllers/fileController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // List all files for the authenticated user (optionally by folder)
 router.get('/', authenticateJWT, listFiles);

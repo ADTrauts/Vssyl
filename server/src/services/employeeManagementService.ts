@@ -3,6 +3,16 @@ import { EmployeePosition, Position, User, Business } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+export interface CustomPermission {
+  id: string;
+  moduleId: string;
+  featureId: string;
+  action: string;
+  grantedAt: Date;
+  grantedBy: string;
+  expiresAt?: Date;
+}
+
 export interface AssignEmployeeData {
   userId: string;
   positionId: string;
@@ -10,7 +20,7 @@ export interface AssignEmployeeData {
   assignedById: string;
   startDate: Date;
   endDate?: Date;
-  customPermissions?: any[];
+  customPermissions?: CustomPermission[];
 }
 
 export interface EmployeePositionData {
@@ -23,7 +33,7 @@ export interface EmployeePositionData {
   startDate: Date;
   endDate?: Date;
   active: boolean;
-  customPermissions?: any[];
+  customPermissions?: CustomPermission[];
   position: Position;
   user: User;
 }
@@ -83,7 +93,9 @@ export class EmployeeManagementService {
         assignedById: data.assignedById,
         startDate: data.startDate,
         endDate: data.endDate,
-        customPermissions: data.customPermissions,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        customPermissions: data.customPermissions as any,
         active: true,
       },
       include: {
@@ -183,6 +195,7 @@ export class EmployeeManagementService {
       startDate: ep.startDate,
       endDate: ep.endDate || undefined,
       active: ep.active,
+      // TODO: Prisma JSON compatibility issue - using any temporarily
       customPermissions: ep.customPermissions as any,
       position: ep.position,
       user: ep.user,
@@ -233,6 +246,7 @@ export class EmployeeManagementService {
       startDate: ep.startDate,
       endDate: ep.endDate || undefined,
       active: ep.active,
+      // TODO: Prisma JSON compatibility issue - using any temporarily
       customPermissions: ep.customPermissions as any,
       position: ep.position,
       user: ep.user,
@@ -282,6 +296,7 @@ export class EmployeeManagementService {
       startDate: ep.startDate,
       endDate: ep.endDate || undefined,
       active: ep.active,
+      // TODO: Prisma JSON compatibility issue - using any temporarily
       customPermissions: ep.customPermissions as any,
       position: ep.position,
       user: ep.user,
@@ -329,6 +344,7 @@ export class EmployeeManagementService {
       startDate: ep.startDate,
       endDate: ep.endDate || undefined,
       active: ep.active,
+      // TODO: Prisma JSON compatibility issue - using any temporarily
       customPermissions: ep.customPermissions as any,
       position: ep.position,
       user: ep.user,
@@ -378,6 +394,7 @@ export class EmployeeManagementService {
       startDate: ep.startDate,
       endDate: ep.endDate || undefined,
       active: ep.active,
+      // TODO: Prisma JSON compatibility issue - using any temporarily
       customPermissions: ep.customPermissions as any,
       position: ep.position,
       user: ep.user,
@@ -385,19 +402,27 @@ export class EmployeeManagementService {
   }
 
   /**
-   * Update employee assignment
+   * Update employee position assignment
    */
-  async updateEmployeeAssignment(
-    id: string,
-    data: Partial<{
+  async updateEmployeePosition(
+    assignmentId: string,
+    updates: Partial<{
       startDate: Date;
       endDate: Date;
-      customPermissions: any[];
+      customPermissions: CustomPermission[];
     }>
   ): Promise<EmployeePosition> {
+    const updateData: Record<string, unknown> = { ...updates };
+    
+    // Handle JSON fields separately for Prisma compatibility
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    if (updates.customPermissions) {
+      updateData.customPermissions = updates.customPermissions as any;
+    }
+    
     return await prisma.employeePosition.update({
-      where: { id },
-      data,
+      where: { id: assignmentId },
+      data: updateData,
       include: {
         position: true,
         user: {
@@ -521,7 +546,7 @@ export class EmployeeManagementService {
       businessId: string;
       assignedById: string;
       startDate: Date;
-      customPermissions?: any[];
+      customPermissions?: CustomPermission[];
     }>
   ): Promise<EmployeePosition[]> {
     const results: EmployeePosition[] = [];

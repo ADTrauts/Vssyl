@@ -1,0 +1,147 @@
+// ============================================================================
+// BILLING & SUBSCRIPTION MODELS
+// ============================================================================
+
+// Core tier subscriptions (Free, Standard, Enterprise)
+model Subscription {
+  id              String   @id @default(uuid())
+  userId          String
+  businessId      String?
+  tier            String   // 'free', 'standard', 'enterprise'
+  status          String   // 'active', 'cancelled', 'past_due', 'unpaid'
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd Boolean @default(false)
+  stripeSubscriptionId String?
+  stripeCustomerId    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  moduleSubscriptions ModuleSubscription[]
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([tier])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// Module-specific subscriptions (App Store model)
+model ModuleSubscription {
+  id              String   @id @default(uuid())
+  userId          String
+  businessId      String?
+  moduleId        String
+  coreSubscriptionId String?
+  tier            String   // 'premium', 'enterprise'
+  status          String   // 'active', 'cancelled', 'past_due'
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd Boolean @default(false)
+  stripeSubscriptionId String?
+  stripeCustomerId    String?
+  amount          Float
+  platformRevenue Float    @default(0) // For third-party modules
+  developerRevenue Float   @default(0) // For third-party modules
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  coreSubscription Subscription? @relation(fields: [coreSubscriptionId], references: [id], onDelete: SetNull)
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+  
+  @@index([userId])
+  @@index([businessId])
+  @@index([moduleId])
+  @@index([status])
+  @@map("module_subscriptions")
+}
+
+// Usage tracking for both core tiers and modules
+model UsageRecord {
+  id              String   @id @default(uuid())
+  subscriptionId  String?
+  moduleSubscriptionId String?
+  userId          String
+  businessId      String?
+  metric          String   // 'api_calls', 'storage_gb', 'ai_requests', 'messages', 'files'
+  quantity        Int
+  cost            Float
+  periodStart     DateTime
+  periodEnd       DateTime
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@index([subscriptionId])
+  @@index([moduleSubscriptionId])
+  @@index([userId])
+  @@index([metric])
+  @@index([periodStart])
+  @@map("usage_records")
+}
+
+// Invoice management
+model Invoice {
+  id              String   @id @default(uuid())
+  subscriptionId  String?
+  moduleSubscriptionId String?
+  businessId      String?
+  amount          Float
+  currency        String   @default("USD")
+  status          String   // 'draft', 'open', 'paid', 'void', 'uncollectible'
+  stripeInvoiceId String?
+  dueDate         DateTime?
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  moduleSubscription ModuleSubscription? @relation(fields: [moduleSubscriptionId], references: [id], onDelete: Cascade)
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
+
+  @@index([subscriptionId])
+  @@index([moduleSubscriptionId])
+  @@index([businessId])
+  @@index([status])
+  @@map("invoices")
+}
+
+// Developer revenue tracking for third-party modules
+model DeveloperRevenue {
+  id              String   @id @default(uuid())
+  developerId     String
+  moduleId        String
+  periodStart     DateTime
+  periodEnd       DateTime
+  totalRevenue    Float
+  platformRevenue Float
+  developerRevenue Float
+  payoutStatus    String   @default("pending") // 'pending', 'paid', 'failed'
+  payoutDate      DateTime?
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  developer       User     @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  @@index([developerId])
+  @@index([moduleId])
+  @@index([periodStart])
+  @@map("developer_revenue")
+}

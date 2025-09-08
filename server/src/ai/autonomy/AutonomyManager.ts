@@ -8,7 +8,7 @@ export interface AutonomyDecision {
   autonomyLevel: number;
   confidence: number;
   riskAssessment: RiskAssessment;
-  suggestedModifications?: any[];
+  suggestedModifications?: string[];
 }
 
 export interface RiskAssessment {
@@ -27,6 +27,21 @@ export interface AutonomyContext {
   timeCommitment?: number;
   dataSensitivity: 'public' | 'internal' | 'confidential' | 'restricted';
   urgency: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// Define proper interface for autonomy settings
+export interface AutonomySettings {
+  userId: string;
+  scheduling?: number;
+  communication?: number;
+  fileManagement?: number;
+  taskCreation?: number;
+  dataAnalysis?: number;
+  crossModuleActions?: number;
+  financialThreshold?: number;
+  timeCommitmentThreshold?: number;
+  peopleAffectedThreshold?: number;
+  [key: string]: unknown;
 }
 
 export class AutonomyManager {
@@ -83,7 +98,7 @@ export class AutonomyManager {
   /**
    * Get user's autonomy settings
    */
-  private async getUserAutonomySettings(userId: string) {
+  private async getUserAutonomySettings(userId: string): Promise<AutonomySettings> {
     const settings = await this.prisma.aIAutonomySettings.findUnique({
       where: { userId }
     });
@@ -92,17 +107,17 @@ export class AutonomyManager {
       // Create default settings
       return await this.prisma.aIAutonomySettings.create({
         data: { userId }
-      });
+      }) as AutonomySettings;
     }
 
-    return settings;
+    return settings as AutonomySettings;
   }
 
   /**
    * Get autonomy level for specific action type
    */
-  private getActionAutonomyLevel(actionType: string, settings: any): number {
-    const actionTypeMap: Record<string, keyof typeof settings> = {
+  private getActionAutonomyLevel(actionType: string, settings: AutonomySettings): number {
+    const actionTypeMap: Record<string, keyof AutonomySettings> = {
       'schedule_meeting': 'scheduling',
       'send_message': 'communication',
       'organize_files': 'fileManagement',
@@ -112,33 +127,37 @@ export class AutonomyManager {
     };
 
     const settingKey = actionTypeMap[actionType] || 'crossModuleActions';
-    return settings[settingKey] || 20;
+    const value = settings[settingKey];
+    return typeof value === 'number' ? value : 20;
   }
 
   /**
    * Assess risk factors for the action
    */
-  private async assessRisk(context: AutonomyContext, settings: any): Promise<RiskAssessment> {
+  private async assessRisk(context: AutonomyContext, settings: AutonomySettings): Promise<RiskAssessment> {
     const factors: string[] = [];
     let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
     let impact = 'minimal';
 
     // Financial impact assessment
-    if (context.financialImpact && context.financialImpact > settings.financialThreshold) {
+    const financialThreshold = typeof settings.financialThreshold === 'number' ? settings.financialThreshold : 100;
+    if (context.financialImpact && context.financialImpact > financialThreshold) {
       factors.push(`Financial impact exceeds threshold ($${context.financialImpact})`);
       riskLevel = this.elevateRisk(riskLevel, 'medium');
       impact = 'financial';
     }
 
     // Time commitment assessment
-    if (context.timeCommitment && context.timeCommitment > settings.timeCommitmentThreshold) {
+    const timeCommitmentThreshold = typeof settings.timeCommitmentThreshold === 'number' ? settings.timeCommitmentThreshold : 60;
+    if (context.timeCommitment && context.timeCommitment > timeCommitmentThreshold) {
       factors.push(`Time commitment exceeds threshold (${context.timeCommitment} minutes)`);
       riskLevel = this.elevateRisk(riskLevel, 'medium');
       impact = 'time';
     }
 
     // People affected assessment
-    if (context.affectedUsers.length > settings.peopleAffectedThreshold) {
+    const peopleAffectedThreshold = typeof settings.peopleAffectedThreshold === 'number' ? settings.peopleAffectedThreshold : 5;
+    if (context.affectedUsers.length > peopleAffectedThreshold) {
       factors.push(`${context.affectedUsers.length} people will be affected`);
       riskLevel = this.elevateRisk(riskLevel, 'high');
       impact = 'social';
@@ -185,7 +204,7 @@ export class AutonomyManager {
   /**
    * Determine if approval is required
    */
-  private requiresApproval(context: AutonomyContext, settings: any, riskAssessment: RiskAssessment): boolean {
+  private requiresApproval(context: AutonomyContext, settings: AutonomySettings, riskAssessment: RiskAssessment): boolean {
     // Always require approval for critical risk
     if (riskAssessment.level === 'critical') {
       return true;
@@ -198,15 +217,18 @@ export class AutonomyManager {
     }
 
     // Check specific thresholds
-    if (context.financialImpact && context.financialImpact > settings.financialThreshold) {
+    const financialThreshold = typeof settings.financialThreshold === 'number' ? settings.financialThreshold : 100;
+    if (context.financialImpact && context.financialImpact > financialThreshold) {
       return true;
     }
 
-    if (context.timeCommitment && context.timeCommitment > settings.timeCommitmentThreshold) {
+    const timeCommitmentThreshold = typeof settings.timeCommitmentThreshold === 'number' ? settings.timeCommitmentThreshold : 60;
+    if (context.timeCommitment && context.timeCommitment > timeCommitmentThreshold) {
       return true;
     }
 
-    if (context.affectedUsers.length > settings.peopleAffectedThreshold) {
+    const peopleAffectedThreshold = typeof settings.peopleAffectedThreshold === 'number' ? settings.peopleAffectedThreshold : 5;
+    if (context.affectedUsers.length > peopleAffectedThreshold) {
       return true;
     }
 
@@ -295,18 +317,18 @@ export class AutonomyManager {
   /**
    * Update user autonomy settings
    */
-  async updateAutonomySettings(userId: string, settings: Partial<any>): Promise<any> {
+  async updateAutonomySettings(userId: string, settings: Partial<AutonomySettings>): Promise<AutonomySettings> {
     return await this.prisma.aIAutonomySettings.upsert({
       where: { userId },
       update: settings,
       create: { userId, ...settings }
-    });
+    }) as AutonomySettings;
   }
 
   /**
    * Get autonomy recommendations based on user behavior
    */
-  async getAutonomyRecommendations(userId: string): Promise<any[]> {
+  async getAutonomyRecommendations(userId: string): Promise<Record<string, unknown>[]> {
     // Analyze user's past actions and success rates
     const recentActions = await this.prisma.aIConversationHistory.findMany({
       where: { 
@@ -334,10 +356,18 @@ export class AutonomyManager {
     }
 
     // Analyze risk patterns
-    const highRiskActions = recentActions.filter(action => 
-      action.actions && Array.isArray(action.actions) && 
-      action.actions.some((a: any) => a.riskLevel === 'high')
-    );
+    const highRiskActions = recentActions.filter(action => {
+      if (!action.actions || !Array.isArray(action.actions)) {
+        return false;
+      }
+      
+      return action.actions.some((a: unknown) => {
+        if (typeof a === 'object' && a !== null && 'riskLevel' in a) {
+          return (a as Record<string, unknown>).riskLevel === 'high';
+        }
+        return false;
+      });
+    });
 
     if (highRiskActions.length > recentActions.length * 0.3) {
       recommendations.push({

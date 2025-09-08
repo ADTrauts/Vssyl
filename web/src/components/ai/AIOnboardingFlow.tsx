@@ -24,6 +24,20 @@ interface AIOnboardingFlowProps {
 
 type OnboardingStep = 'welcome' | 'personality' | 'complete';
 
+interface AIPersonalityData {
+  confidence: number;
+  traits?: string[];
+  preferences?: Record<string, unknown>;
+}
+
+interface PersonalityData {
+  traits: string[];
+  preferences: Record<string, unknown>;
+  communicationStyle: string;
+  workStyle: string;
+  learningStyle: string;
+}
+
 export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) {
   const { data: session } = useSession();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
@@ -38,7 +52,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
     if (!session?.accessToken) return;
 
     try {
-      const response = await authenticatedApiCall<{ data: any }>(
+      const response = await authenticatedApiCall<{ data: AIPersonalityData }>(
         '/api/ai/personality',
         {},
         session.accessToken
@@ -58,7 +72,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
     }
   };
 
-  const handlePersonalityComplete = (personalityData: any) => {
+  const handlePersonalityComplete = (personalityData: PersonalityData) => {
     setCurrentStep('complete');
   };
 

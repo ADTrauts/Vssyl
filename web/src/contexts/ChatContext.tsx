@@ -320,8 +320,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // Load conversations on mount and when session changes
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    if (session?.accessToken) {
+      loadConversations();
+    }
+  }, [session?.accessToken, loadConversations]);
 
   // Load messages when active conversation changes
   useEffect(() => {

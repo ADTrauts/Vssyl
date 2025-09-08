@@ -42,5 +42,6 @@ export * from './Stepper';
 export * from './Toast';
 export * from './ToastProvider';
 export * from './ClassificationBadge';
+export * from './BrandButton';
 import ErrorBoundary2 from './ErrorBoundary2';
 export { ErrorBoundary2 as ErrorBoundary }; 

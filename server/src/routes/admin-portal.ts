@@ -1,13 +1,13 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AdminService } from '../services/adminService';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Middleware to require admin role
-const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const user = (req as any).user;
+const requireAdmin = (req: Request, res: Response, next: () => void) => {
+  const user = req.user;
   if (!user || user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -17,7 +17,11 @@ const requireAdmin = (req: Request, res: Response, next: Function) => {
 // Test endpoint to verify authentication
 router.get('/test', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     res.json({ 
       message: 'Admin authentication working!',
       user: {
@@ -53,11 +57,14 @@ router.get('/dashboard/stats', authenticateJWT, requireAdmin, async (req: Reques
     ]);
 
     res.json({
-      totalUsers: totalUsers,
-      activeUsers: totalUsers, // Since we don't have status field, assume all are active
-      totalBusinesses: totalBusinesses,
-      monthlyRevenue: monthlyRevenue._sum.amount || 0,
-      systemHealth: 99.9 // Mock value for now
+      success: true,
+      data: {
+        totalUsers: totalUsers,
+        activeUsers: totalUsers, // Since we don't have status field, assume all are active
+        totalBusinesses: totalBusinesses,
+        monthlyRevenue: monthlyRevenue._sum.amount || 0,
+        systemHealth: 99.9 // Mock value for now
+      }
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -73,7 +80,10 @@ router.get('/dashboard/activity', authenticateJWT, requireAdmin, async (req: Req
       orderBy: { timestamp: 'desc' }
     });
 
-    res.json(recentActivity);
+    res.json({
+      success: true,
+      data: recentActivity
+    });
   } catch (error) {
     console.error('Error fetching recent activity:', error);
     res.status(500).json({ error: 'Failed to fetch recent activity' });
@@ -89,7 +99,11 @@ router.post('/users/:userId/impersonate', authenticateJWT, requireAdmin, async (
   try {
     const { userId } = req.params;
     const { reason } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Verify the target user exists
     const targetUser = await prisma.user.findUnique({
@@ -161,7 +175,11 @@ router.post('/users/:userId/impersonate', authenticateJWT, requireAdmin, async (
 // End impersonation session
 router.post('/impersonation/end', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Find active impersonation session
     const impersonation = await prisma.adminImpersonation.findFirst({
@@ -222,7 +240,10 @@ router.post('/impersonation/end', authenticateJWT, requireAdmin, async (req: Req
 // Get current impersonation session
 router.get('/impersonation/current', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const impersonation = await prisma.adminImpersonation.findFirst({
       where: {
@@ -259,7 +280,11 @@ router.get('/impersonation/current', authenticateJWT, requireAdmin, async (req: 
 // Get impersonation history for admin
 router.get('/impersonation/history', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const { page = 1, limit = 20 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -300,7 +325,7 @@ router.get('/users', authenticateJWT, requireAdmin, async (req: Request, res: Re
     const { page = 1, limit = 20, search, role } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (search) {
       where.OR = [
         { email: { contains: search as string, mode: 'insensitive' } },
@@ -323,7 +348,13 @@ router.get('/users', authenticateJWT, requireAdmin, async (req: Request, res: Re
           userNumber: true,
           role: true,
           createdAt: true,
-          emailVerified: true
+          emailVerified: true,
+          _count: {
+            select: {
+              businesses: true,
+              files: true
+            }
+          }
         }
       }),
       prisma.user.count({ where })
@@ -373,7 +404,11 @@ router.patch('/users/:userId/status', authenticateJWT, requireAdmin, async (req:
   try {
     const { userId } = req.params;
     const { status, reason } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Note: User model doesn't have a status field, so we'll just log the action
     console.log(`Admin ${adminUser.id} attempted to update user ${userId} status to ${status}. Reason: ${reason || 'No reason provided'}`);
@@ -397,11 +432,12 @@ router.patch('/users/:userId/status', authenticateJWT, requireAdmin, async (req:
 router.post('/users/:userId/reset-password', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
 
-    // Generate new password
-    const newPassword = Math.random().toString(36).slice(-8);
-    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     // In a real implementation, you would hash the password and send it via email
     // For now, we'll just log the action
     console.log(`Admin ${adminUser.id} reset password for user ${userId}`);
@@ -423,7 +459,7 @@ router.get('/moderation/reported', authenticateJWT, requireAdmin, async (req: Re
     const { page = 1, limit = 20, status, type } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (type) where.contentType = type;
 
@@ -459,7 +495,11 @@ router.patch('/moderation/reports/:reportId', authenticateJWT, requireAdmin, asy
   try {
     const { reportId } = req.params;
     const { status, action, reason } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const report = await prisma.contentReport.update({
       where: { id: reportId },
@@ -592,7 +632,7 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
     const { page = 1, limit = 20, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status;
 
     const [subscriptions, total] = await Promise.all([
@@ -637,6 +677,53 @@ router.get('/billing/payments', authenticateJWT, requireAdmin, async (req: Reque
   }
 });
 
+// Get developer payouts
+router.get('/billing/payouts', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: Record<string, unknown> = {};
+    if (status) where.payoutStatus = status;
+
+    const [payouts, total] = await Promise.all([
+      prisma.developerRevenue.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { createdAt: 'desc' },
+        include: {
+          developer: {
+            select: { email: true, name: true }
+          },
+          module: {
+            select: { name: true }
+          }
+        }
+      }),
+      prisma.developerRevenue.count({ where })
+    ]);
+
+    res.json({
+      payouts: payouts.map(payout => ({
+        id: payout.id,
+        developerId: payout.developerId,
+        developerName: payout.developer.name || payout.developer.email,
+        amount: payout.developerRevenue,
+        status: payout.payoutStatus,
+        requestedAt: payout.createdAt,
+        paidAt: payout.payoutDate
+      })),
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
+  } catch (error) {
+    console.error('Error fetching developer payouts:', error);
+    res.status(500).json({ error: 'Failed to fetch developer payouts' });
+  }
+});
+
 // ============================================================================
 // SECURITY & COMPLIANCE
 // ============================================================================
@@ -647,7 +734,7 @@ router.get('/security/events', authenticateJWT, requireAdmin, async (req: Reques
     const { page = 1, limit = 20, severity, type } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (severity) where.severity = severity;
     if (type) where.eventType = type;
 
@@ -679,7 +766,7 @@ router.get('/security/audit-logs', authenticateJWT, requireAdmin, async (req: Re
     const { page = 1, limit = 20, adminId, action } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (adminId) where.adminId = adminId;
     if (action) where.action = action;
 
@@ -740,8 +827,13 @@ router.get('/security/compliance', authenticateJWT, requireAdmin, async (req: Re
 router.post('/security/events/:eventId/resolve', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
-    const adminId = (req as any).user.id;
-    const result = await AdminService.resolveSecurityEvent(eventId, adminId);
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.resolveSecurityEvent(eventId, adminUser.id);
     res.json(result);
   } catch (error) {
     console.error('Error resolving security event:', error);
@@ -815,7 +907,11 @@ router.patch('/system/config/:configKey', authenticateJWT, requireAdmin, async (
   try {
     const { configKey } = req.params;
     const { configValue, description } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const config = await prisma.systemConfig.upsert({
       where: { configKey },
@@ -866,8 +962,13 @@ router.get('/moderation/rules', authenticateJWT, requireAdmin, async (req: Reque
 router.post('/moderation/bulk-action', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { reportIds, action } = req.body;
-    const adminId = (req as any).user.id;
-    const result = await AdminService.bulkModerationAction(reportIds, action, adminId);
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.bulkModerationAction(reportIds, action, adminUser.id);
     res.json(result);
   } catch (error) {
     console.error('Error performing bulk moderation action:', error);
@@ -890,8 +991,13 @@ router.put('/moderation/reports/:reportId', authenticateJWT, requireAdmin, async
   try {
     const { reportId } = req.params;
     const { status, action, reason } = req.body;
-    const adminId = (req as any).user.id;
-    const result = await AdminService.updateReportStatus(reportId, status, action, reason, adminId);
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.updateReportStatus(reportId, status, action, reason, adminUser.id);
     res.json(result);
   } catch (error) {
     console.error('Error updating report status:', error);
@@ -912,8 +1018,13 @@ router.get('/system/backup', authenticateJWT, requireAdmin, async (req: Request,
 
 router.post('/system/backup', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminId = (req as any).user.id;
-    const result = await AdminService.createBackup(adminId);
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.createBackup(adminUser.id);
     res.json(result);
   } catch (error) {
     console.error('Error creating backup:', error);
@@ -934,8 +1045,13 @@ router.get('/system/maintenance', authenticateJWT, requireAdmin, async (req: Req
 router.post('/system/maintenance', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { enabled, message } = req.body;
-    const adminId = (req as any).user.id;
-    const result = await AdminService.setMaintenanceMode(enabled, message, adminId);
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.setMaintenanceMode(enabled, message, adminUser.id);
     res.json(result);
   } catch (error) {
     console.error('Error setting maintenance mode:', error);
@@ -946,15 +1062,18 @@ router.post('/system/maintenance', authenticateJWT, requireAdmin, async (req: Re
 // Module Management Routes
 router.get('/modules/submissions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { status, category, developer, dateRange, qualityScore } = req.query;
-    const adminUser = (req as any).user;
+    const { status, category, developer, dateRange } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const submissions = await AdminService.getModuleSubmissions({
       status: status as string,
       category: category as string,
-      developer: developer as string,
-      dateRange: dateRange as string,
-      qualityScore: qualityScore as string
+      developerId: developer as string,
+      dateRange: dateRange as string
     });
 
     console.log(`Admin ${adminUser.id} retrieved module submissions with filters:`, req.query);
@@ -971,7 +1090,12 @@ router.get('/modules/submissions', authenticateJWT, requireAdmin, async (req: Re
 
 router.get('/modules/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const stats = await AdminService.getModuleStats();
 
     console.log(`Admin ${adminUser.id} retrieved module stats`);
@@ -990,7 +1114,11 @@ router.post('/modules/submissions/:submissionId/review', authenticateJWT, requir
   try {
     const { submissionId } = req.params;
     const { action, reviewNotes } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.reviewModuleSubmission(
       submissionId,
@@ -1014,7 +1142,11 @@ router.post('/modules/submissions/:submissionId/review', authenticateJWT, requir
 router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { submissionIds, action } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.bulkModuleAction(
       submissionIds,
@@ -1036,7 +1168,12 @@ router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: R
 
 router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const analytics = await AdminService.getModuleAnalytics();
 
     console.log(`Admin ${adminUser.id} retrieved module analytics`);
@@ -1053,7 +1190,12 @@ router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Requ
 
 router.get('/modules/developers/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const stats = await AdminService.getDeveloperStats();
 
     console.log(`Admin ${adminUser.id} retrieved developer stats`);
@@ -1072,7 +1214,11 @@ router.patch('/modules/:moduleId/status', authenticateJWT, requireAdmin, async (
   try {
     const { moduleId } = req.params;
     const { status } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updateModuleStatus(moduleId, status, adminUser.id);
 
@@ -1091,7 +1237,11 @@ router.patch('/modules/:moduleId/status', authenticateJWT, requireAdmin, async (
 router.get('/modules/:moduleId/revenue', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { moduleId } = req.params;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const revenue = await AdminService.getModuleRevenue(moduleId);
 
@@ -1110,12 +1260,16 @@ router.get('/modules/:moduleId/revenue', authenticateJWT, requireAdmin, async (r
 router.get('/modules/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { status, category, developer, dateRange } = req.query;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const csvData = await AdminService.exportModuleData({
       status: status as string,
       category: category as string,
-      developer: developer as string,
+      developerId: developer as string,
       dateRange: dateRange as string
     });
 
@@ -1133,14 +1287,16 @@ router.get('/modules/export', authenticateJWT, requireAdmin, async (req: Request
 // Business Intelligence Routes
 router.get('/business-intelligence', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { dateRange, userType, metricType, segment } = req.query;
-    const adminUser = (req as any).user;
+    const { dateRange, userType } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const data = await AdminService.getBusinessIntelligence({
       dateRange: dateRange as string,
-      userType: userType as string,
-      metricType: metricType as string,
-      segment: segment as string
+      userType: userType as string
     });
 
     console.log(`Admin ${adminUser.id} retrieved business intelligence data with filters:`, req.query);
@@ -1157,15 +1313,16 @@ router.get('/business-intelligence', authenticateJWT, requireAdmin, async (req: 
 
 router.get('/business-intelligence/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { dateRange, userType, metricType, segment, format } = req.query;
-    const adminUser = (req as any).user;
+    const { dateRange, userType, format } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const exportData = await AdminService.exportBusinessIntelligence({
       dateRange: dateRange as string,
-      userType: userType as string,
-      metricType: metricType as string,
-      segment: segment as string,
-      format: format as string
+      userType: userType as string
     });
 
     console.log(`Admin ${adminUser.id} exported business intelligence data`);
@@ -1188,7 +1345,11 @@ router.get('/business-intelligence/export', authenticateJWT, requireAdmin, async
 router.post('/business-intelligence/ab-tests', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const testData = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.createABTest(testData, adminUser.id);
 
@@ -1207,7 +1368,11 @@ router.post('/business-intelligence/ab-tests', authenticateJWT, requireAdmin, as
 router.get('/business-intelligence/ab-tests/:testId/results', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { testId } = req.params;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const results = await AdminService.getABTestResults(testId);
 
@@ -1227,7 +1392,11 @@ router.patch('/business-intelligence/ab-tests/:testId', authenticateJWT, require
   try {
     const { testId } = req.params;
     const updates = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updateABTest(testId, updates, adminUser.id);
 
@@ -1245,7 +1414,12 @@ router.patch('/business-intelligence/ab-tests/:testId', authenticateJWT, require
 
 router.get('/business-intelligence/user-segments', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const segments = await AdminService.getUserSegments();
 
     console.log(`Admin ${adminUser.id} retrieved user segments`);
@@ -1263,7 +1437,11 @@ router.get('/business-intelligence/user-segments', authenticateJWT, requireAdmin
 router.post('/business-intelligence/user-segments', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const segmentData = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.createUserSegment(segmentData, adminUser.id);
 
@@ -1281,7 +1459,12 @@ router.post('/business-intelligence/user-segments', authenticateJWT, requireAdmi
 
 router.get('/business-intelligence/predictive-insights', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const insights = await AdminService.getPredictiveInsights();
 
     console.log(`Admin ${adminUser.id} retrieved predictive insights`);
@@ -1298,7 +1481,12 @@ router.get('/business-intelligence/predictive-insights', authenticateJWT, requir
 
 router.get('/business-intelligence/competitive-analysis', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const analysis = await AdminService.getCompetitiveAnalysis();
 
     console.log(`Admin ${adminUser.id} retrieved competitive analysis`);
@@ -1316,7 +1504,11 @@ router.get('/business-intelligence/competitive-analysis', authenticateJWT, requi
 router.post('/business-intelligence/custom-report', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const reportConfig = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const report = await AdminService.generateCustomReport(reportConfig, adminUser.id);
 
@@ -1335,14 +1527,17 @@ router.post('/business-intelligence/custom-report', authenticateJWT, requireAdmi
 // Customer Support Routes
 router.get('/support/tickets', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { status, priority, category, assignedTo, dateRange } = req.query;
-    const adminUser = (req as any).user;
+    const { status, priority, category, dateRange } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const tickets = await AdminService.getSupportTickets({
       status: status as string,
       priority: priority as string,
       category: category as string,
-      assignedTo: assignedTo as string,
       dateRange: dateRange as string
     });
 
@@ -1360,7 +1555,12 @@ router.get('/support/tickets', authenticateJWT, requireAdmin, async (req: Reques
 
 router.get('/support/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const stats = await AdminService.getSupportStats();
 
     console.log(`Admin ${adminUser.id} retrieved support stats`);
@@ -1379,7 +1579,11 @@ router.patch('/support/tickets/:ticketId', authenticateJWT, requireAdmin, async 
   try {
     const { ticketId } = req.params;
     const { action, data } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updateSupportTicket(ticketId, action, data, adminUser.id);
 
@@ -1397,7 +1601,12 @@ router.patch('/support/tickets/:ticketId', authenticateJWT, requireAdmin, async 
 
 router.get('/support/knowledge-base', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const articles = await AdminService.getKnowledgeBase();
 
     console.log(`Admin ${adminUser.id} retrieved knowledge base`);
@@ -1416,7 +1625,11 @@ router.patch('/support/knowledge-base/:articleId', authenticateJWT, requireAdmin
   try {
     const { articleId } = req.params;
     const { action, data } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updateKnowledgeArticle(articleId, action, data, adminUser.id);
 
@@ -1434,7 +1647,12 @@ router.patch('/support/knowledge-base/:articleId', authenticateJWT, requireAdmin
 
 router.get('/support/live-chats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const chats = await AdminService.getLiveChats();
 
     console.log(`Admin ${adminUser.id} retrieved live chats`);
@@ -1452,7 +1670,11 @@ router.get('/support/live-chats', authenticateJWT, requireAdmin, async (req: Req
 router.post('/support/live-chats/:chatId/join', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.joinLiveChat(chatId, adminUser.id);
 
@@ -1470,7 +1692,12 @@ router.post('/support/live-chats/:chatId/join', authenticateJWT, requireAdmin, a
 
 router.get('/support/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const analytics = await AdminService.getSupportAnalytics();
 
     console.log(`Admin ${adminUser.id} retrieved support analytics`);
@@ -1488,7 +1715,11 @@ router.get('/support/analytics', authenticateJWT, requireAdmin, async (req: Requ
 router.post('/support/tickets', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const ticketData = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.createSupportTicket(ticketData, adminUser.id);
 
@@ -1504,10 +1735,54 @@ router.post('/support/tickets', authenticateJWT, requireAdmin, async (req: Reque
   }
 });
 
+// Customer-facing support ticket creation (no authentication required)
+router.post('/support/tickets/customer', async (req: Request, res: Response) => {
+  try {
+    const { title, description, category, priority, contactEmail, contactPhone, userId, userName } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !category || !priority || !contactEmail) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Create the ticket using AdminService
+    const ticketData = {
+      title,
+      description,
+      category,
+      priority,
+      status: 'open',
+      customerId: userId || null,
+      customerEmail: contactEmail,
+      customerPhone: contactPhone,
+      customerName: userName || 'Anonymous',
+    };
+
+    const result = await AdminService.createSupportTicket(ticketData, null);
+
+    console.log(`Customer support ticket created: ${result.id}`);
+
+    res.json({
+      success: true,
+      data: {
+        ticketId: result.id,
+        message: 'Support ticket created successfully'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating customer support ticket:', error);
+    res.status(500).json({ error: 'Failed to create support ticket' });
+  }
+});
+
 router.post('/support/knowledge-base', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const articleData = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.createKnowledgeArticle(articleData, adminUser.id);
 
@@ -1526,14 +1801,17 @@ router.post('/support/knowledge-base', authenticateJWT, requireAdmin, async (req
 router.get('/support/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { status, priority, category, dateRange, format } = req.query;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const exportData = await AdminService.exportSupportData({
       status: status as string,
       priority: priority as string,
       category: category as string,
-      dateRange: dateRange as string,
-      format: format as string
+      dateRange: dateRange as string
     });
 
     console.log(`Admin ${adminUser.id} exported support data`);
@@ -1557,7 +1835,11 @@ router.get('/support/export', authenticateJWT, requireAdmin, async (req: Request
 router.get('/performance/metrics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { timeRange, metricType } = req.query;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const metrics = await AdminService.getPerformanceMetrics({
       timeRange: timeRange as string,
@@ -1578,7 +1860,12 @@ router.get('/performance/metrics', authenticateJWT, requireAdmin, async (req: Re
 
 router.get('/performance/scalability', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const scalability = await AdminService.getScalabilityMetrics();
 
     console.log(`Admin ${adminUser.id} retrieved scalability metrics`);
@@ -1595,7 +1882,12 @@ router.get('/performance/scalability', authenticateJWT, requireAdmin, async (req
 
 router.get('/performance/optimization', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const recommendations = await AdminService.getOptimizationRecommendations();
 
     console.log(`Admin ${adminUser.id} retrieved optimization recommendations`);
@@ -1614,7 +1906,11 @@ router.patch('/performance/optimization/:recommendationId', authenticateJWT, req
   try {
     const { recommendationId } = req.params;
     const { action } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updateOptimizationRecommendation(recommendationId, action, adminUser.id);
 
@@ -1632,13 +1928,16 @@ router.patch('/performance/optimization/:recommendationId', authenticateJWT, req
 
 router.get('/performance/alerts', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { severity, status, timeRange } = req.query;
-    const adminUser = (req as any).user;
+    const { severity, status } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const alerts = await AdminService.getPerformanceAlerts({
       severity: severity as string,
-      status: status as string,
-      timeRange: timeRange as string
+      status: status as string
     });
 
     console.log(`Admin ${adminUser.id} retrieved performance alerts`);
@@ -1657,7 +1956,11 @@ router.patch('/performance/alerts/:alertId', authenticateJWT, requireAdmin, asyn
   try {
     const { alertId } = req.params;
     const { action } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.updatePerformanceAlert(alertId, action, adminUser.id);
 
@@ -1675,7 +1978,12 @@ router.patch('/performance/alerts/:alertId', authenticateJWT, requireAdmin, asyn
 
 router.get('/performance/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
     const analytics = await AdminService.getPerformanceAnalytics();
 
     console.log(`Admin ${adminUser.id} retrieved performance analytics`);
@@ -1693,7 +2001,11 @@ router.get('/performance/analytics', authenticateJWT, requireAdmin, async (req: 
 router.post('/performance/alerts/configure', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const alertConfig = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const result = await AdminService.configurePerformanceAlert(alertConfig, adminUser.id);
 
@@ -1712,7 +2024,11 @@ router.post('/performance/alerts/configure', authenticateJWT, requireAdmin, asyn
 router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { timeRange, metricType, format } = req.query;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     const exportData = await AdminService.exportPerformanceData({
       timeRange: timeRange as string,

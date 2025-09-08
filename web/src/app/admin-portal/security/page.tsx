@@ -89,8 +89,19 @@ export default function SecurityPage() {
         return;
       }
 
-      const dataAny: any = eventsRes.data as any;
-      setSecurityEvents(Array.isArray(dataAny?.events) ? dataAny.events : Array.isArray(dataAny) ? dataAny : []);
+      if (metricsRes.error) {
+        setError(metricsRes.error);
+        return;
+      }
+
+      if (complianceRes.error) {
+        setError(complianceRes.error);
+        return;
+      }
+
+      // Handle events data properly
+      const eventsData = eventsRes.data as any;
+      setSecurityEvents(Array.isArray(eventsData?.events) ? eventsData.events : Array.isArray(eventsData) ? eventsData : []);
       setSecurityMetrics(metricsRes.data as SecurityMetrics);
       setComplianceStatus(complianceRes.data as ComplianceStatus);
       setError(null);
@@ -114,6 +125,40 @@ export default function SecurityPage() {
       loadSecurityData();
     } catch (err) {
       setError('Failed to resolve security event');
+    }
+  };
+
+  const exportSecurityData = async () => {
+    try {
+      setLoading(true);
+      
+      // Create CSV content
+      const csvHeaders = 'Event Type,Severity,User,IP Address,Timestamp,Resolved,Details\n';
+      const csvRows = securityEvents.map(event => {
+        const details = event.details ? JSON.stringify(event.details).replace(/"/g, '""') : '';
+        return `"${event.eventType}","${event.severity}","${event.userEmail || event.adminEmail || 'System'}","${event.ipAddress || 'N/A'}","${event.timestamp}","${event.resolved ? 'Yes' : 'No'}","${details}"`;
+      }).join('\n');
+      
+      const csvContent = csvHeaders + csvRows;
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `security-events-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setSuccess('Security data exported successfully');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to export security data');
+      console.error('Error exporting data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,7 +404,7 @@ export default function SecurityPage() {
           <h3 className="text-lg font-semibold text-gray-900">Security Events</h3>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => {/* Export functionality */}}
+              onClick={exportSecurityData}
               className="flex items-center space-x-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               <Download className="w-4 h-4" />

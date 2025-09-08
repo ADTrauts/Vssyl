@@ -90,8 +90,9 @@ export default function BusinessCreationModal({
           router.push(`/business/${response.data.id}/workspace`);
         }, 2000);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to create business');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create business';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -105,12 +106,13 @@ export default function BusinessCreationModal({
         setError(null);
         const resp = await businessAPI.getUserBusinesses();
         if (resp?.success && Array.isArray(resp.data)) {
-          setBusinesses(resp.data.map((b: any) => ({ id: b.id, name: b.name })));
+          setBusinesses(resp.data.map((b: { id: string; name: string }) => ({ id: b.id, name: b.name })));
         } else {
           setBusinesses([]);
         }
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load your businesses');
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to load your businesses';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -374,8 +376,9 @@ export default function BusinessCreationModal({
                     }
                     router.push(`/business/${selectedBusinessId}/workspace`);
                     onClose();
-                  } catch (e: any) {
-                    setError(e?.message || 'Failed to link module to business');
+                  } catch (e: unknown) {
+                    const errorMessage = e instanceof Error ? e.message : 'Failed to link module to business';
+                    setError(errorMessage);
                   } finally {
                     setLoading(false);
                   }

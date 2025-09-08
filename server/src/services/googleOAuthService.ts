@@ -2,6 +2,23 @@ import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../lib/prisma';
 import { getUserWorkCredentials, generateWorkCredentials } from './ssoService';
 
+interface GoogleWorkspaceUser {
+  id: string;
+  primaryEmail: string;
+  name: {
+    fullName: string;
+    givenName: string;
+    familyName: string;
+  };
+  suspended: boolean;
+  orgUnitPath: string;
+  isAdmin: boolean;
+  isEnforcedIn2Sv: boolean;
+  isEnrolledIn2Sv: boolean;
+  creationTime: string;
+  lastLoginTime: string;
+}
+
 export interface GoogleOAuthConfig {
   clientId: string;
   clientSecret: string;
@@ -221,7 +238,7 @@ export function validateGoogleOAuthConfig(config: GoogleOAuthConfig): boolean {
 export async function getGoogleWorkspaceUsers(
   accessToken: string,
   domain: string
-): Promise<any[]> {
+): Promise<GoogleWorkspaceUser[]> {
   try {
     const oauth2Client = new OAuth2Client();
     oauth2Client.setCredentials({ access_token: accessToken });

@@ -1,4 +1,4 @@
-import express, { Router, Request, Response } from 'express';
+import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import {
   getGroupedNotifications,
@@ -9,7 +9,7 @@ import {
   getSmartFilters
 } from '../controllers/advancedNotificationController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Apply authentication middleware to all routes
 router.use(authenticateJWT);

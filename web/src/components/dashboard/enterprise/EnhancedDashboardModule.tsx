@@ -50,17 +50,21 @@ interface QuickMetric {
   unit?: string;
 }
 
+interface ModuleConfig {
+  refreshInterval?: number;
+  dataSource?: string;
+  customSettings?: Record<string, unknown>;
+  permissions?: string[];
+}
+
 interface EnterpriseWidget {
   id: string;
-  title: string;
-  description: string;
-  category: 'analytics' | 'collaboration' | 'compliance' | 'productivity';
-  feature: string;
-  component: React.ComponentType<any>;
+  name: string;
+  type: string;
   icon: React.ReactNode;
   isActive: boolean;
   position: { x: number; y: number; w: number; h: number };
-  config?: any;
+  config?: ModuleConfig;
 }
 
 interface RecentAlert {

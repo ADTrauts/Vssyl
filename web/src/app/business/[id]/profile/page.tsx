@@ -104,11 +104,11 @@ export default function BusinessProfilePage() {
       ]);
 
       if (businessResponse.success) {
-        setBusiness(businessResponse.data);
+        setBusiness(businessResponse.data as unknown as Business);
       }
 
       if (analyticsResponse.success) {
-        setAnalytics(analyticsResponse.data);
+        setAnalytics(analyticsResponse.data as unknown as BusinessAnalytics);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load business data');
@@ -156,7 +156,7 @@ export default function BusinessProfilePage() {
     try {
       const response = await businessAPI.updateBusiness(businessId, updatedData);
       if (response.success) {
-        setBusiness(response.data);
+        setBusiness(response.data as unknown as Business);
         return { success: true };
       }
       return { success: false, error: 'Failed to update business' };
@@ -169,7 +169,7 @@ export default function BusinessProfilePage() {
     try {
       const response = await businessAPI.uploadLogo(businessId, logoUrl);
       if (response.success) {
-        setBusiness(response.data);
+        setBusiness(response.data as unknown as Business);
         return { success: true };
       }
       return { success: false, error: 'Failed to upload logo' };
@@ -182,7 +182,7 @@ export default function BusinessProfilePage() {
     try {
       const response = await businessAPI.removeLogo(businessId);
       if (response.success) {
-        setBusiness(response.data);
+        setBusiness(response.data as unknown as Business);
         return { success: true };
       }
       return { success: false, error: 'Failed to remove logo' };
@@ -237,6 +237,10 @@ export default function BusinessProfilePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* TEST: This should show if the new version is loading */}
+      <div style={{ background: 'red', color: 'white', padding: '10px', marginBottom: '10px' }}>
+        🔴 NEW VERSION LOADED - If you see this, the updated profile page is working!
+      </div>
       {/* Breadcrumb Navigation */}
       <div className="mb-6">
         <Breadcrumbs
@@ -459,4 +463,4 @@ export default function BusinessProfilePage() {
       />
     </div>
   );
-} 
+}

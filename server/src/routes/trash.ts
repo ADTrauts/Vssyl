@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { listTrashedItems, trashItem, restoreItem, deleteItem, emptyTrash } from '../controllers/trashController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Get all trashed items across all modules
 router.get('/items', authenticateJWT, listTrashedItems);

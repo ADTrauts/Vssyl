@@ -1,0 +1,228 @@
+// Support System Models
+// This module handles customer support tickets, knowledge base, and live chat
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  status      SupportTicketStatus @default(OPEN)
+  priority    SupportTicketPriority @default(MEDIUM)
+  category    String
+  tags        String[] // Array of tags
+  
+  // Customer information
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Assignment
+  assignedToId String?
+  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  
+  // Response tracking
+  responseTime     Float?   // in hours
+  resolutionTime   Float?   // in hours
+  satisfaction     Int?     // 1-5 rating
+  
+  // Attachments
+  attachments      SupportAttachment[]
+  
+  // Messages/Responses
+  messages         SupportMessage[]
+  
+  // Analytics
+  views            Int      @default(0)
+  lastViewedAt     DateTime?
+  
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  // Message details
+  content     String   @db.Text
+  isInternal  Boolean  @default(false) // Internal notes vs customer-visible
+  isFromCustomer Boolean @default(true)
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Attachments
+  attachments SupportAttachment[]
+  
+  @@map("support_messages")
+}
+
+model SupportAttachment {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int      // in bytes
+  path        String   // file path
+  
+  // Relations
+  ticketId    String?
+  ticket      SupportTicket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  messageId   String?
+  message     SupportMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("support_attachments")
+}
+
+model KnowledgeBaseArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  excerpt     String?  @db.Text
+  category    String
+  tags        String[]
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Status
+  status      KnowledgeBaseStatus @default(DRAFT)
+  
+  // Analytics
+  views       Int      @default(0)
+  helpful     Int      @default(0)
+  notHelpful  Int      @default(0)
+  
+  // SEO
+  slug        String   @unique
+  metaTitle   String?
+  metaDescription String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  publishedAt DateTime?
+  
+  @@map("knowledge_base_articles")
+}
+
+model LiveChatSession {
+  id          String   @id @default(cuid())
+  
+  // Customer
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Agent assignment
+  agentId     String?
+  agent       User?    @relation("LiveChatSessions", fields: [agentId], references: [id])
+  
+  // Session details
+  status      LiveChatStatus @default(WAITING)
+  subject     String?
+  notes       String?  @db.Text
+  
+  // Timestamps
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  lastMessageAt DateTime @default(now())
+  
+  // Analytics
+  messageCount Int     @default(0)
+  duration     Int?    // in minutes
+  satisfaction Int?    // 1-5 rating
+  
+  // Messages
+  messages    LiveChatMessage[]
+  
+  @@map("live_chat_sessions")
+}
+
+model LiveChatMessage {
+  id          String   @id @default(cuid())
+  sessionId   String
+  session     LiveChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Message details
+  content     String   @db.Text
+  isFromCustomer Boolean @default(true)
+  
+  // Author
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("live_chat_messages")
+}
+
+model SupportAnalytics {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  
+  // Ticket metrics
+  ticketsCreated    Int @default(0)
+  ticketsResolved   Int @default(0)
+  ticketsClosed     Int @default(0)
+  
+  // Response metrics
+  avgResponseTime   Float? // in hours
+  avgResolutionTime Float? // in hours
+  
+  // Satisfaction
+  avgSatisfaction   Float? // 1-5 rating
+  satisfactionCount Int @default(0)
+  
+  // Chat metrics
+  chatSessions      Int @default(0)
+  avgChatDuration   Float? // in minutes
+  
+  // Knowledge base
+  articleViews      Int @default(0)
+  articleHelpful    Int @default(0)
+  
+  @@unique([date])
+  @@map("support_analytics")
+}
+
+// Enums
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum KnowledgeBaseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LiveChatStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
