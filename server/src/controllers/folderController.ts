@@ -26,7 +26,7 @@ export async function listFolders(req: Request, res: Response) {
     }
     
     // Use raw SQL to include order field in sorting
-    let query = `SELECT * FROM "Folder" WHERE "userId" = $1`;
+    let query = `SELECT * FROM "folders" WHERE "userId" = $1`;
     const params = [userId];
     let paramIndex = 2;
     

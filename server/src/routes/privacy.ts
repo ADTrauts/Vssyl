@@ -10,7 +10,7 @@ import {
   exportUserData
 } from '../controllers/privacyController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Privacy settings
 router.get('/settings', getUserPrivacySettings);

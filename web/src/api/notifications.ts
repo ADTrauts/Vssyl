@@ -1,5 +1,16 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 
+// Notification data interfaces
+export interface NotificationData {
+  [key: string]: unknown;
+}
+
+export interface NotificationUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Notification {
   id: string;
   type: 'chat' | 'drive' | 'members' | 'business' | 'system' | 'mentions';
@@ -9,12 +20,8 @@ export interface Notification {
   createdAt: string;
   deliveredAt?: string;
   deleted: boolean;
-  data?: any;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  data?: NotificationData;
+  user?: NotificationUser;
 }
 
 export interface NotificationStats {
@@ -38,7 +45,7 @@ export interface CreateNotificationData {
   type: string;
   title: string;
   body?: string;
-  data?: any;
+  data?: NotificationData;
   userId: string;
 }
 

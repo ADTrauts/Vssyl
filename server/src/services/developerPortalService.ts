@@ -24,11 +24,70 @@ export interface ModuleRevenue {
   lifetimeValue: number;
 }
 
+export interface PayoutHistoryItem {
+  id: string;
+  amount: number;
+  status: string;
+  date: Date;
+}
+
 export interface PayoutRequest {
   developerId: string;
   amount: number;
   currency: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+}
+
+export interface DeveloperRevenue {
+  id: string;
+  developerRevenue: number;
+  periodStart: Date;
+  payoutStatus: string;
+}
+
+export interface ModuleSubscription {
+  id: string;
+  userId: string;
+  status: string;
+  createdAt: Date;
+  user: {
+    name: string | null;
+  };
+}
+
+export interface ModuleReview {
+  id: string;
+  rating: number;
+  reviewer: {
+    name: string | null;
+  };
+}
+
+export interface ModuleAnalytics {
+  moduleId: string;
+  moduleName: string;
+  monthlyRevenue: number;
+  activeSubscriptions: number;
+  totalInstallations: number;
+  averageRating: number;
+  totalReviews: number;
+  revenueHistory: Array<{
+    period: Date;
+    amount: number;
+    status: string;
+  }>;
+  subscriptionHistory: Array<{
+    userId: string;
+    userName: string | null;
+    status: string;
+    createdAt: Date;
+  }>;
+}
+
+export interface DeveloperDashboard {
+  stats: DeveloperStats;
+  moduleRevenue: ModuleRevenue[];
+  payoutHistory: PayoutHistoryItem[];
 }
 
 export class DeveloperPortalService {
@@ -193,7 +252,7 @@ export class DeveloperPortalService {
   /**
    * Get payout history
    */
-  static async getPayoutHistory(developerId: string): Promise<any[]> {
+  static async getPayoutHistory(developerId: string): Promise<PayoutHistoryItem[]> {
     const payouts = await prisma.developerRevenue.findMany({
       where: {
         developerId,
@@ -213,7 +272,7 @@ export class DeveloperPortalService {
   /**
    * Get module analytics
    */
-  static async getModuleAnalytics(moduleId: string): Promise<any> {
+  static async getModuleAnalytics(moduleId: string): Promise<ModuleAnalytics> {
     const module = await prisma.module.findUnique({
       where: { id: moduleId },
       include: {
@@ -234,14 +293,14 @@ export class DeveloperPortalService {
       throw new Error('Module not found');
     }
 
-    const monthlyRevenue = module.developerRevenue.reduce((sum: number, revenue: any) => {
+    const monthlyRevenue = module.developerRevenue.reduce((sum: number, revenue: DeveloperRevenue) => {
       return sum + revenue.developerRevenue;
     }, 0);
 
-    const activeSubscriptions = module.subscriptions.filter((sub: any) => sub.status === 'active');
+    const activeSubscriptions = module.subscriptions.filter((sub: ModuleSubscription) => sub.status === 'active');
     const totalInstallations = module.installations.length;
     const averageRating = module.moduleReviews.length > 0 
-      ? module.moduleReviews.reduce((sum: number, review: any) => sum + review.rating, 0) / module.moduleReviews.length
+      ? module.moduleReviews.reduce((sum: number, review: ModuleReview) => sum + review.rating, 0) / module.moduleReviews.length
       : 0;
 
     return {
@@ -252,12 +311,12 @@ export class DeveloperPortalService {
       totalInstallations,
       averageRating,
       totalReviews: module.moduleReviews.length,
-      revenueHistory: module.developerRevenue.map((revenue: any) => ({
+      revenueHistory: module.developerRevenue.map((revenue: DeveloperRevenue) => ({
         period: revenue.periodStart,
         amount: revenue.developerRevenue,
         status: revenue.payoutStatus,
       })),
-      subscriptionHistory: module.subscriptions.map((sub: any) => ({
+      subscriptionHistory: module.subscriptions.map((sub: ModuleSubscription) => ({
         userId: sub.userId,
         userName: sub.user.name,
         status: sub.status,
@@ -273,7 +332,7 @@ export class DeveloperPortalService {
     moduleId: string, 
     basePrice: number, 
     enterprisePrice?: number
-  ): Promise<any> {
+  ): Promise<unknown> {
     const module = await prisma.module.update({
       where: { id: moduleId },
       data: {
@@ -289,7 +348,7 @@ export class DeveloperPortalService {
   /**
    * Get developer dashboard data
    */
-  static async getDeveloperDashboard(developerId: string, businessId?: string): Promise<any> {
+  static async getDeveloperDashboard(developerId: string, businessId?: string): Promise<DeveloperDashboard> {
     const [stats, moduleRevenue, payoutHistory] = await Promise.all([
       this.getDeveloperStats(developerId, businessId),
       this.getModuleRevenue(developerId, businessId),

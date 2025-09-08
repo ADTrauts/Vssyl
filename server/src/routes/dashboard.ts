@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import express from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validateRequest';
 import * as dashboardController from '../controllers/dashboardController';
 import { asyncHandler } from '../index';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // GET /dashboards
 router.get('/', async (req, res, next) => {

@@ -1,5 +1,73 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 
+// Module manifest and configuration interfaces
+export interface ModuleManifest {
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  license: string;
+  entryPoint: string;
+  permissions: string[];
+  dependencies: string[];
+  runtime: {
+    apiVersion: string;
+    nodeVersion?: string;
+  };
+  frontend: {
+    entryUrl: string;
+    styles?: string[];
+    scripts?: string[];
+  };
+  settings: Record<string, {
+    type: 'string' | 'number' | 'boolean' | 'select';
+    default: unknown;
+    description: string;
+    required?: boolean;
+    options?: string[];
+  }>;
+}
+
+export interface ModuleConfiguration {
+  enabled: boolean;
+  settings: Record<string, unknown>;
+  permissions: string[];
+  customizations?: Record<string, unknown>;
+}
+
+export interface ModuleSubmission {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  category: string;
+  tags: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  reviewerId?: string;
+  developer: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface ModuleSubscription {
+  id: string;
+  moduleId: string;
+  userId: string;
+  businessId?: string;
+  tier: 'premium' | 'enterprise';
+  status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
+  amount: number;
+  currency: string;
+  startDate: string;
+  endDate?: string;
+  autoRenew: boolean;
+}
+
 export interface Module {
   id: string;
   name: string;
@@ -14,10 +82,10 @@ export interface Module {
   icon?: string;
   screenshots?: string[];
   tags?: string[];
-  manifest?: any;
+  manifest: ModuleManifest;
   dependencies?: string[];
   permissions?: string[];
-  configured?: any;
+  configured: ModuleConfiguration;
   installedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -37,7 +105,7 @@ export interface ModuleInstallation {
   moduleId: string;
   userId: string;
   installedAt: string;
-  configured: any;
+  configured: ModuleConfiguration;
   enabled: boolean;
 }
 
@@ -68,7 +136,7 @@ export interface ModuleRuntimeConfig {
   runtime: { apiVersion: string };
   frontend: { entryUrl: string };
   permissions: string[];
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   accessContext?: { scope: 'personal' | 'business'; businessId?: string };
 }
 
@@ -155,7 +223,7 @@ export const uninstallModule = async (moduleId: string, opts?: { scope?: 'person
 // Configure a module
 export const configureModule = async (
   moduleId: string, 
-  configuration: any
+  configuration: ModuleConfiguration
 ): Promise<{ message: string; installation: ModuleInstallation }> => {
   const response = await authenticatedApiCall<{ success: boolean; data: { message: string; installation: ModuleInstallation } }>(`/api/modules/${moduleId}/configure`, {
     method: 'PUT',
@@ -171,13 +239,13 @@ export const submitModule = async (moduleData: {
   version: string;
   category: string;
   tags: string[];
-  manifest: any;
+  manifest: ModuleManifest;
   dependencies: string[];
   permissions: string[];
   readme: string;
   license: string;
-}): Promise<{ message: string; submission: any }> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; submission: any } }>('/api/modules/submit', {
+}): Promise<{ message: string; submission: ModuleSubmission }> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; submission: ModuleSubmission } }>('/api/modules/submit', {
     method: 'POST',
     body: JSON.stringify(moduleData),
   });
@@ -185,16 +253,16 @@ export const submitModule = async (moduleData: {
 };
 
 // Get module submissions (admin only)
-export const getModuleSubmissions = async (): Promise<any[]> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: any[] }>('/api/modules/submissions', {
+export const getModuleSubmissions = async (): Promise<ModuleSubmission[]> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: ModuleSubmission[] }>('/api/modules/submissions', {
     method: 'GET',
   });
   return response.data;
 };
 
 // Get user's submissions
-export const getUserSubmissions = async (): Promise<any[]> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: any[] }>('/api/modules/user/submissions', {
+export const getUserSubmissions = async (): Promise<ModuleSubmission[]> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: ModuleSubmission[] }>('/api/modules/user/submissions', {
     method: 'GET',
   });
   return response.data;
@@ -205,8 +273,8 @@ export const reviewModuleSubmission = async (
   submissionId: string,
   action: 'approve' | 'reject',
   reviewNotes?: string
-): Promise<{ message: string; submission: any }> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; submission: any } }>(`/api/modules/submissions/${submissionId}/review`, {
+): Promise<{ message: string; submission: ModuleSubmission }> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; submission: ModuleSubmission } }>(`/api/modules/submissions/${submissionId}/review`, {
     method: 'POST',
     body: JSON.stringify({ action, reviewNotes }),
   });
@@ -217,8 +285,8 @@ export const reviewModuleSubmission = async (
 export const linkModuleToBusiness = async (
   moduleId: string,
   businessId: string
-): Promise<{ message: string; module: any }> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; module: any } }>('/api/modules/link-business', {
+): Promise<{ message: string; module: Module }> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; module: Module } }>('/api/modules/link-business', {
     method: 'POST',
     body: JSON.stringify({ moduleId, businessId }),
   });
@@ -226,16 +294,16 @@ export const linkModuleToBusiness = async (
 };
 
 // Get modules for a specific business
-export const getBusinessModules = async (businessId: string): Promise<any[]> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: any[] }>(`/api/modules/business/${businessId}`, {
+export const getBusinessModules = async (businessId: string): Promise<Module[]> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: Module[] }>(`/api/modules/business/${businessId}`, {
     method: 'GET',
   });
   return response.data;
 }; 
 
 // Create module subscription for paid modules
-export const createModuleSubscription = async (moduleId: string, tier: 'premium' | 'enterprise'): Promise<{ message: string; subscription: any }> => {
-  const response = await authenticatedApiCall<{ message: string; subscription: any }>('/api/billing/modules/subscribe', {
+export const createModuleSubscription = async (moduleId: string, tier: 'premium' | 'enterprise'): Promise<{ message: string; subscription: ModuleSubscription }> => {
+  const response = await authenticatedApiCall<{ message: string; subscription: ModuleSubscription }>('/api/billing/modules/subscribe', {
     method: 'POST',
     body: JSON.stringify({
       moduleId,
@@ -246,8 +314,8 @@ export const createModuleSubscription = async (moduleId: string, tier: 'premium'
 };
 
 // Get module subscription status
-export const getModuleSubscription = async (moduleId: string): Promise<any> => {
-  const response = await authenticatedApiCall<{ subscription: any }>(`/api/billing/modules/subscriptions/${moduleId}`, {
+export const getModuleSubscription = async (moduleId: string): Promise<ModuleSubscription | null> => {
+  const response = await authenticatedApiCall<{ subscription: ModuleSubscription }>(`/api/billing/modules/subscriptions/${moduleId}`, {
     method: 'GET',
   });
   return response.subscription;

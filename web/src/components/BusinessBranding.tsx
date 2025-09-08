@@ -166,6 +166,9 @@ interface BrandedButtonProps {
   onClick?: () => void;
   disabled?: boolean;
   className?: string;
+  // When rendering on a primary-colored background (e.g., header),
+  // use high-contrast styling for readability
+  tone?: 'default' | 'onPrimary';
 }
 
 export function BrandedButton({ 
@@ -174,7 +177,8 @@ export function BrandedButton({
   size = 'md', 
   onClick, 
   disabled,
-  className = ''
+  className = '',
+  tone = 'default'
 }: BrandedButtonProps) {
   const { branding } = useBusinessBranding();
 
@@ -221,6 +225,13 @@ export function BrandedButton({
           border: 'none',
         };
       case 'outline':
+        if (tone === 'onPrimary') {
+          return {
+            backgroundColor: 'transparent',
+            color: '#ffffff',
+            border: '1px solid rgba(255,255,255,0.9)',
+          };
+        }
         return {
           backgroundColor: 'transparent',
           color: branding.primaryColor || '#3b82f6',

@@ -1,0 +1,140 @@
+// ============================================================================
+// CALENDAR & EVENT MODELS
+// ============================================================================
+
+model Calendar {
+  id                     String              @id @default(uuid())
+  name                   String
+  color                  String?
+  type                   CalendarType        @default(LOCAL)
+  contextType            CalendarContextType
+  contextId              String
+  isPrimary              Boolean             @default(false)
+  isSystem               Boolean             @default(false)
+  isDeletable            Boolean             @default(true)
+  defaultReminderMinutes Int                 @default(10)
+  visibility             String?             // future: private/public/link
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  // Relationships
+  events                 Event[]
+  members                CalendarMember[]
+
+  @@index([contextType, contextId])
+  @@map("calendars")
+}
+
+model CalendarMember {
+  id         String   @id @default(uuid())
+  calendar   Calendar @relation(fields: [calendarId], references: [id])
+  calendarId String
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  role       String   // OWNER | ADMIN | EDITOR | READER | FREE_BUSY
+  createdAt  DateTime @default(now())
+
+  @@unique([calendarId, userId])
+  @@index([userId])
+  @@map("calendar_members")
+}
+
+model Event {
+  id               String       @id @default(uuid())
+  calendar         Calendar     @relation(fields: [calendarId], references: [id])
+  calendarId       String
+  title            String
+  description      String?
+  location         String?
+  onlineMeetingLink String?
+  startAt          DateTime
+  endAt            DateTime
+  allDay           Boolean      @default(false)
+  timezone         String       @default("UTC")
+  status           EventStatus  @default(CONFIRMED)
+  // Recurrence (RRULE) support
+  recurrenceRule   String?
+  recurrenceEndAt  DateTime?
+  parentEventId    String?
+  parentEvent      Event?       @relation("EventRecurrence", fields: [parentEventId], references: [id])
+  exceptions       Event[]      @relation("EventRecurrence")
+  createdById      String?
+  updatedById      String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  attendees        EventAttendee[]
+  reminders        Reminder[]
+  attachments      EventAttachment[]
+  comments         EventComment[]
+  rsvpTokens       RsvpToken[]
+
+  @@index([calendarId])
+  @@index([startAt, endAt])
+  @@map("events")
+}
+
+model EventAttendee {
+  id        String  @id @default(uuid())
+  event     Event   @relation(fields: [eventId], references: [id])
+  eventId   String
+  userId    String?
+  email     String?
+  response  String? // NEEDS_ACTION | ACCEPTED | DECLINED | TENTATIVE
+
+  @@index([eventId])
+  @@map("event_attendees")
+}
+
+model Reminder {
+  id            String         @id @default(uuid())
+  event         Event          @relation(fields: [eventId], references: [id])
+  eventId       String
+  method        ReminderMethod @default(APP)
+  minutesBefore Int            @default(10)
+  dispatchedAt  DateTime?
+
+  @@index([eventId])
+  @@map("reminders")
+}
+
+model EventAttachment {
+  id        String  @id @default(uuid())
+  event     Event   @relation(fields: [eventId], references: [id])
+  eventId   String
+  driveFileId String?
+  externalUrl String?
+
+  @@index([eventId])
+  @@map("event_attachments")
+}
+
+model EventComment {
+  id        String   @id @default(uuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_comments")
+}
+
+model RsvpToken {
+  id             String   @id @default(uuid())
+  token          String   @unique
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        String
+  attendeeEmail  String
+  response       String   // The response this token represents
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([token])
+  @@index([eventId])
+  @@map("rsvp_tokens")
+}

@@ -4,30 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button, Modal, Avatar } from 'shared/components';
-import { businessAPI } from '../api/business';
+import { businessAPI, Business } from '../api/business';
 import { educationalAPI } from '../api/educational';
 import { Building2, User, Plus, ChevronRight, GraduationCap, Settings } from 'lucide-react';
 
-interface Business {
-  id: string;
-  name: string;
-  ein: string;
-  members: Array<{
-    id: string;
-    role: string;
-    title?: string;
-    department?: string;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-    };
-  }>;
-  dashboards: Array<{
-    id: string;
-    name: string;
-  }>;
-}
 
 interface EducationalInstitution {
   id: string;
@@ -92,8 +72,9 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
       if (institutionResponse.success) {
         setInstitutions(institutionResponse.data);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load accounts');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load accounts';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -107,8 +88,8 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
   };
 
   const handleSwitchToBusiness = (business: Business) => {
-    // Switch to business workspace (completely separate experience)
-    router.push(`/business/${business.id}/workspace`);
+    // Switch to business admin dashboard (main business management hub)
+    router.push(`/business/${business.id}`);
     setShowModal(false);
     onClose?.();
   };
@@ -150,7 +131,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
   };
 
   const getUserRole = (business: Business) => {
-    const userMember = business.members.find(member => 
+    const userMember = business.members?.find(member => 
       member.user.email === session?.user?.email
     );
     return userMember?.role || 'EMPLOYEE';
@@ -269,7 +250,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                         </h3>
                         <p className="text-sm text-gray-600">EIN: {business.ein}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {getRoleDisplayName(getUserRole(business))} • {business.members.length} members
+                          {getRoleDisplayName(getUserRole(business))} • {business._count?.members || business.members?.length || 0} members
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">

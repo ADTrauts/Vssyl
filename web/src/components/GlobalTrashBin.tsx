@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 
 interface GlobalTrashBinProps {
   className?: string;
-  onItemTrashed?: (item: any) => void;
+  onItemTrashed?: (item: TrashedItem) => void;
 }
 
 export default function GlobalTrashBin({ className = '', onItemTrashed }: GlobalTrashBinProps) {

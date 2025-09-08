@@ -4,14 +4,14 @@ import AdvancedLearningEngine from '../ai/learning/AdvancedLearningEngine';
 import PredictiveIntelligenceEngine from '../ai/intelligence/PredictiveIntelligenceEngine';
 import IntelligentRecommendationsEngine from '../ai/intelligence/IntelligentRecommendationsEngine';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 const prisma = new PrismaClient();
 const learningEngine = new AdvancedLearningEngine(prisma);
 const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
 const recommendationsEngine = new IntelligentRecommendationsEngine(prisma);
 
 // JWT authentication middleware (local definition)
-const authenticateJWT = (req: any, res: any, next: any) => {
+const authenticateJWT = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
@@ -27,7 +27,7 @@ const authenticateJWT = (req: any, res: any, next: any) => {
   try {
     // For now, we'll use a simple token validation
     // In production, you'd verify the JWT token properly
-    req.user = { id: 'user_id_from_token' }; // This should be extracted from JWT
+    (req as any).user = { id: 'user_id_from_token' }; // This should be extracted from JWT
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -43,7 +43,7 @@ const authenticateJWT = (req: any, res: any, next: any) => {
 router.post('/learning/event', authenticateJWT, async (req, res) => {
   try {
     const { eventType, module, data, confidence, impact } = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -80,7 +80,7 @@ router.post('/learning/event', authenticateJWT, async (req, res) => {
  */
 router.get('/learning/analytics', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -108,7 +108,7 @@ router.get('/learning/analytics', authenticateJWT, async (req, res) => {
  */
 router.get('/learning/patterns', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -139,7 +139,7 @@ router.get('/learning/patterns', authenticateJWT, async (req, res) => {
 router.post('/predictive/analyze', authenticateJWT, async (req, res) => {
   try {
     const { context } = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -167,7 +167,7 @@ router.post('/predictive/analyze', authenticateJWT, async (req, res) => {
  */
 router.get('/predictive/analytics', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -198,7 +198,7 @@ router.get('/predictive/analytics', authenticateJWT, async (req, res) => {
 router.post('/recommendations/generate', authenticateJWT, async (req, res) => {
   try {
     const { context } = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -226,7 +226,7 @@ router.post('/recommendations/generate', authenticateJWT, async (req, res) => {
  */
 router.get('/recommendations/analytics', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -256,7 +256,7 @@ router.put('/recommendations/:recommendationId/status', authenticateJWT, async (
   try {
     const { recommendationId } = req.params;
     const { status } = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -267,18 +267,18 @@ router.put('/recommendations/:recommendationId/status', authenticateJWT, async (
     }
 
     // Update recommendation status in database
-      const updatedRecommendation = await prisma.aILearningEvent.updateMany({
+    await prisma.aILearningEvent.updateMany({
       where: {
         userId,
         eventType: 'recommendation',
-          // schema uses newBehavior JSON string; match by substring as a pragmatic approach
-          newBehavior: { contains: recommendationId }
+        // schema uses newBehavior JSON string; match by substring as a pragmatic approach
+        newBehavior: { contains: recommendationId }
       },
       data: {
-          // store status update inside patternData for audit
-          patternData: {
-            set: { status }
-          }
+        // store status update inside patternData for audit
+        patternData: {
+          set: { status }
+        }
       }
     });
 
@@ -304,7 +304,7 @@ router.put('/recommendations/:recommendationId/status', authenticateJWT, async (
  */
 router.get('/dashboard', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });
@@ -366,7 +366,7 @@ router.get('/dashboard', authenticateJWT, async (req, res) => {
 router.post('/insights/generate', authenticateJWT, async (req, res) => {
   try {
     const { context } = req.body;
-    const userId = req.user?.id;
+    const userId = (req.user as any)?.id;
 
     if (!userId) {
       return res.status(400).json({ error: 'User ID required' });

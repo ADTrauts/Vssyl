@@ -127,8 +127,8 @@ export default function AdminModulesPage() {
         adminApiService.getModuleStats()
       ]);
 
-      setSubmissions(submissionsRes.data || []);
-      setStats(statsRes.data || null);
+      setSubmissions(submissionsRes.data?.data || []);
+      setStats(statsRes.data?.data || null);
     } catch (err) {
       console.error('Error loading module data:', err);
       setError('Failed to load module data. Please try again.');
@@ -336,7 +336,7 @@ export default function AdminModulesPage() {
     });
   };
 
-  const filteredSubmissions = submissions.filter(submission => {
+  const filteredSubmissions = (submissions || []).filter(submission => {
     const matchesSearch = submission.module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          submission.submitter.name.toLowerCase().includes(searchTerm.toLowerCase());
     

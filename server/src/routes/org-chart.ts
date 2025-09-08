@@ -4,7 +4,7 @@ import orgChartService from '../services/orgChartService';
 import permissionService from '../services/permissionService';
 import employeeManagementService from '../services/employeeManagementService';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Apply authentication middleware to all routes
 router.use(authenticateJWT);

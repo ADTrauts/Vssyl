@@ -22,6 +22,18 @@ export interface SubscriptionData {
   interval: 'month' | 'year';
 }
 
+export interface StripeSubscriptionData {
+  id: string;
+  current_period_start: number;
+  current_period_end: number;
+  data?: unknown;
+}
+
+export interface ModuleSubscriptionResult {
+  subscription: unknown; // Will be defined by Prisma model
+  stripeSubscription: StripeSubscriptionData;
+}
+
 export class PaymentService {
   /**
    * Create a payment intent for module subscription
@@ -69,7 +81,7 @@ export class PaymentService {
   /**
    * Create a subscription for a module
    */
-  static async createModuleSubscription(data: SubscriptionData): Promise<any> {
+  static async createModuleSubscription(data: SubscriptionData): Promise<ModuleSubscriptionResult> {
     if (!stripe) {
       throw new Error('Stripe not configured');
     }
@@ -170,7 +182,7 @@ export class PaymentService {
         type: 'module_subscription',
       },
     });
-    const subscription: any = (createdSubscription as any)?.data ?? createdSubscription;
+    const subscription: StripeSubscriptionData = (createdSubscription as any)?.data ?? createdSubscription as any;
 
     // Create module subscription record
     const moduleSubscription = await prisma.moduleSubscription.create({
@@ -199,7 +211,7 @@ export class PaymentService {
   /**
    * Cancel a module subscription
    */
-  static async cancelModuleSubscription(subscriptionId: string): Promise<any> {
+  static async cancelModuleSubscription(subscriptionId: string): Promise<unknown> {
     if (!stripe) {
       throw new Error('Stripe not configured');
     }
@@ -222,10 +234,10 @@ export class PaymentService {
     // Update local subscription
     const updatedSubscription = await prisma.moduleSubscription.update({
       where: { id: subscriptionId },
-      data: ({
+      data: {
         status: 'cancelled',
         cancelAtPeriodEnd: true,
-      } as any),
+      },
     });
 
     return updatedSubscription;
@@ -234,7 +246,7 @@ export class PaymentService {
   /**
    * Reactivate a cancelled subscription
    */
-  static async reactivateModuleSubscription(subscriptionId: string): Promise<any> {
+  static async reactivateModuleSubscription(subscriptionId: string): Promise<unknown> {
     if (!stripe) {
       throw new Error('Stripe not configured');
     }
@@ -257,10 +269,10 @@ export class PaymentService {
     // Update local subscription
     const updatedSubscription = await prisma.moduleSubscription.update({
       where: { id: subscriptionId },
-      data: ({
+      data: {
         status: 'active',
         cancelAtPeriodEnd: false,
-      } as any),
+      },
     });
 
     return updatedSubscription;

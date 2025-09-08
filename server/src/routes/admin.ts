@@ -1,14 +1,14 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AuditService } from '../services/auditService';
 import { userNumberService } from '../services/userNumberService';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Middleware to require admin role
-const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const user = (req as any).user;
+const requireAdmin = (req: Request, res: Response, next: () => void) => {
+  const user = req.user;
   if (!user || user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Admin access required' });
   }
@@ -46,7 +46,7 @@ router.put('/users/:userId/location', authenticateJWT, requireAdmin, async (req:
   try {
     const { userId } = req.params;
     const { countryId, regionId, townId } = req.body;
-    const adminUser = (req as any).user;
+    const adminUser = req.user;
 
     if (!countryId || !regionId || !townId) {
       return res.status(400).json({ error: 'Country, region, and town IDs are required' });
@@ -111,6 +111,10 @@ router.put('/users/:userId/location', authenticateJWT, requireAdmin, async (req:
       ? `${currentUser.country.name}, ${currentUser.region.name}, ${currentUser.town.name}`
       : 'Unknown';
     const newLocation = `${country.name}, ${region.name}, ${town.name}`;
+
+    if (!adminUser) {
+      return res.status(500).json({ error: 'Admin user not found' });
+    }
 
     await AuditService.logLocationChange(
       userId,

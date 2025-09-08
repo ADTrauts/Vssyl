@@ -21,8 +21,17 @@ import {
 import { Card, Button, Badge, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
+interface PersonalityData {
+  traits: Record<string, number>;
+  preferences: Record<string, unknown>;
+  communicationStyle?: string;
+  workStyle?: string;
+  learningStyle?: string;
+  autonomySettings?: Record<string, unknown>;
+}
+
 interface PersonalityQuestionnaireProps {
-  onComplete: (personalityData: any) => void;
+  onComplete: (personalityData: PersonalityData) => void;
   onSkip?: () => void;
 }
 
@@ -30,7 +39,7 @@ interface QuestionSection {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ size?: string | number; className?: string }>;
   questions: Question[];
 }
 
@@ -46,7 +55,7 @@ interface Question {
 
 interface Answer {
   questionId: string;
-  value: any;
+  value: string | number | string[];
   score?: number;
 }
 
@@ -282,7 +291,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
   const answeredQuestions = Object.keys(answers).length;
   const progress = (answeredQuestions / totalQuestions) * 100;
 
-  const handleAnswer = (questionId: string, value: any) => {
+  const handleAnswer = (questionId: string, value: string | number | string[]) => {
     let score = 0;
     
     // Convert answers to numerical scores for personality traits

@@ -7,7 +7,7 @@ import {
   acceptInvitation
 } from '../controllers/educationalController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Create a new educational institution
 router.post('/', createInstitution);

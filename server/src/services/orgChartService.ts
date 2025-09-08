@@ -3,13 +3,28 @@ import { Business, OrganizationalTier, Department, Position } from '@prisma/clie
 
 const prisma = new PrismaClient();
 
+export interface PermissionData {
+  moduleId: string;
+  featureId: string;
+  action: string;
+  description?: string;
+  category?: string;
+}
+
+export interface ModuleData {
+  moduleId: string;
+  name: string;
+  isActive: boolean;
+  settings?: Record<string, unknown>;
+}
+
 export interface CreateOrganizationalTierData {
   businessId: string;
   name: string;
   level: number;
   description?: string;
-  defaultPermissions?: any;
-  defaultModules?: any;
+  defaultPermissions?: PermissionData[];
+  defaultModules?: ModuleData[];
 }
 
 export interface CreateDepartmentData {
@@ -18,8 +33,8 @@ export interface CreateDepartmentData {
   description?: string;
   parentDepartmentId?: string;
   headPositionId?: string;
-  departmentModules?: any;
-  departmentPermissions?: any;
+  departmentModules?: ModuleData[];
+  departmentPermissions?: PermissionData[];
 }
 
 export interface CreatePositionData {
@@ -28,10 +43,10 @@ export interface CreatePositionData {
   tierId: string;
   departmentId?: string;
   reportsToId?: string;
-  permissions?: any;
-  assignedModules?: any;
+  permissions?: PermissionData[];
+  assignedModules?: ModuleData[];
   maxOccupants?: number;
-  customPermissions?: any;
+  customPermissions?: PermissionData[];
 }
 
 export interface OrgChartStructure {
@@ -52,8 +67,10 @@ export class OrgChartService {
         name: data.name,
         level: data.level,
         description: data.description,
-        defaultPermissions: data.defaultPermissions,
-        defaultModules: data.defaultModules,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        // Need to research proper Prisma JSON field typing solutions
+        defaultPermissions: data.defaultPermissions as any,
+        defaultModules: data.defaultModules as any,
       },
     });
   }
@@ -73,11 +90,22 @@ export class OrgChartService {
    */
   async updateOrganizationalTier(
     id: string,
-    data: Partial<CreateOrganizationalTierData>
+    data: Partial<Omit<CreateOrganizationalTierData, 'businessId'>>
   ): Promise<OrganizationalTier> {
+    const updateData: Record<string, unknown> = { ...data };
+    
+    // Handle JSON fields separately for Prisma compatibility
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    if (data.defaultPermissions) {
+      updateData.defaultPermissions = data.defaultPermissions as any;
+    }
+    if (data.defaultModules) {
+      updateData.defaultModules = data.defaultModules as any;
+    }
+    
     return await prisma.organizationalTier.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
@@ -101,8 +129,9 @@ export class OrgChartService {
         description: data.description,
         parentDepartmentId: data.parentDepartmentId,
         headPositionId: data.headPositionId,
-        departmentModules: data.departmentModules,
-        departmentPermissions: data.departmentPermissions,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        departmentModules: data.departmentModules as any,
+        departmentPermissions: data.departmentPermissions as any,
       },
     });
   }
@@ -148,11 +177,22 @@ export class OrgChartService {
    */
   async updateDepartment(
     id: string,
-    data: Partial<CreateDepartmentData>
+    data: Partial<Omit<CreateDepartmentData, 'businessId'>>
   ): Promise<Department> {
+    const updateData: Record<string, unknown> = { ...data };
+    
+    // Handle JSON fields separately for Prisma compatibility
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    if (data.departmentModules) {
+      updateData.departmentModules = data.departmentModules as any;
+    }
+    if (data.departmentPermissions) {
+      updateData.departmentPermissions = data.departmentPermissions as any;
+    }
+    
     return await prisma.department.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 
@@ -176,10 +216,11 @@ export class OrgChartService {
         tierId: data.tierId,
         departmentId: data.departmentId,
         reportsToId: data.reportsToId,
-        permissions: data.permissions,
-        assignedModules: data.assignedModules,
+        // TODO: Prisma JSON compatibility issue - using any temporarily
+        permissions: data.permissions as any,
+        assignedModules: data.assignedModules as any,
         maxOccupants: data.maxOccupants || 1,
-        customPermissions: data.customPermissions,
+        customPermissions: data.customPermissions as any,
       },
     });
   }
@@ -260,11 +301,25 @@ export class OrgChartService {
    */
   async updatePosition(
     id: string,
-    data: Partial<CreatePositionData>
+    data: Partial<Omit<CreatePositionData, 'businessId'>>
   ): Promise<Position> {
+    const updateData: Record<string, unknown> = { ...data };
+    
+    // Handle JSON fields separately for Prisma compatibility
+    // TODO: Prisma JSON compatibility issue - using any temporarily
+    if (data.permissions) {
+      updateData.permissions = data.permissions as any;
+    }
+    if (data.assignedModules) {
+      updateData.assignedModules = data.assignedModules as any;
+    }
+    if (data.customPermissions) {
+      updateData.customPermissions = data.customPermissions as any;
+    }
+    
     return await prisma.position.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

@@ -3,6 +3,213 @@ import { getSession } from 'next-auth/react';
 // Route admin API calls through Next.js API proxy to avoid CORS and centralize auth
 const API_BASE = '/api/admin-portal';
 
+// Admin data interfaces
+export interface SystemConfig {
+  configKey: string;
+  configValue: string | number | boolean;
+  description: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface AnalyticsFilters {
+  dateRange?: string;
+  userType?: string;
+  metric?: string;
+  businessId?: string;
+  moduleId?: string;
+}
+
+export interface AnalyticsData {
+  totalUsers: number;
+  activeUsers: number;
+  newUsers: number;
+  totalRevenue: number;
+  moduleUsage: Record<string, number>;
+  userGrowth: number;
+  revenueGrowth: number;
+}
+
+export interface BusinessIntelligenceData {
+  userGrowth: {
+    totalUsers: number;
+    newUsers: number;
+    growthRate: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  };
+  revenueMetrics: {
+    totalRevenue: number;
+    monthlyRevenue: number;
+    growthRate: number;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  };
+  engagementMetrics: {
+    activeUsers: number;
+    averageSessionTime: number;
+    featureUsage: Record<string, number>;
+    trend: 'increasing' | 'decreasing' | 'stable';
+  };
+  predictiveInsights: Array<{
+    type: string;
+    title: string;
+    description: string;
+    confidence: number;
+    impact: 'high' | 'medium' | 'low';
+  }>;
+}
+
+export interface ABTestData {
+  name: string;
+  description: string;
+  variantA: Record<string, unknown>;
+  variantB: Record<string, unknown>;
+  trafficSplit: number;
+  metrics: string[];
+  status: 'running' | 'paused' | 'completed';
+}
+
+export interface UserSegmentData {
+  name: string;
+  description: string;
+  criteria: Record<string, unknown>;
+  filters: Record<string, unknown>;
+  userCount: number;
+}
+
+export interface ReportConfig {
+  name: string;
+  type: string;
+  parameters: Record<string, unknown>;
+  format: 'csv' | 'json' | 'pdf';
+  filters: Record<string, unknown>;
+}
+
+export interface SupportTicket {
+  id: string;
+  title: string;
+  description: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  category: string;
+  userId: string;
+  assignedTo?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface KnowledgeArticle {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  status: 'draft' | 'published' | 'archived';
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PerformanceMetrics {
+  cpu: {
+    usage: number;
+    cores: number;
+    temperature?: number;
+  };
+  memory: {
+    total: number;
+    used: number;
+    available: number;
+    usage: number;
+  };
+  disk: {
+    total: number;
+    used: number;
+    available: number;
+    usage: number;
+  };
+  network: {
+    bytesIn: number;
+    bytesOut: number;
+    connections: number;
+  };
+  application: {
+    responseTime: number;
+    throughput: number;
+    errorRate: number;
+    activeUsers: number;
+  };
+  database: {
+    connections: number;
+    queries: number;
+    cacheHitRate: number;
+  };
+}
+
+export interface PerformanceAlert {
+  id: string;
+  type: 'warning' | 'error' | 'info';
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  timestamp: string;
+  acknowledged: boolean;
+  resolved: boolean;
+}
+
+export interface SecurityEvent {
+  id: string;
+  eventType: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  userId?: string;
+  userEmail?: string;
+  adminId: string;
+  adminEmail?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  details: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface ModuleSubmission {
+  id: string;
+  moduleId: string;
+  moduleName: string;
+  developerId: string;
+  developerName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  reviewerId?: string;
+}
+
+export interface ModuleManifest {
+  name: string;
+  version: string;
+  description: string;
+  author: string;
+  license: string;
+  entryPoint: string;
+  permissions: string[];
+  dependencies: string[];
+  runtime: {
+    apiVersion: string;
+    nodeVersion?: string;
+  };
+  frontend: {
+    entryUrl: string;
+    styles?: string[];
+    scripts?: string[];
+  };
+  settings: Record<string, {
+    type: 'string' | 'number' | 'boolean' | 'select';
+    default: unknown;
+    description: string;
+    required?: boolean;
+    options?: string[];
+  }>;
+}
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -132,7 +339,7 @@ class AdminApiService {
   // CONTENT MODERATION
   // ============================================================================
 
-  async getReportedContent(filters: any) {
+  async getReportedContent(filters: Record<string, unknown>) {
     return this.makeRequest('/moderation/reports', {
       method: 'POST',
       headers: {
@@ -196,6 +403,21 @@ class AdminApiService {
     });
 
     return this.makeRequest(`/billing/payments?${searchParams.toString()}`);
+  }
+
+  async getDeveloperPayouts(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+
+    return this.makeRequest(`/billing/payouts?${searchParams.toString()}`);
   }
 
   // ============================================================================
@@ -263,7 +485,7 @@ class AdminApiService {
     return this.makeRequest('/system/config');
   }
 
-  async updateSystemConfig(configKey: string, configValue: any, description: string) {
+  async updateSystemConfig(configKey: string, configValue: string | number | boolean, description: string) {
     return this.makeRequest(`/system/config/${configKey}`, {
       method: 'PATCH',
       body: JSON.stringify({ configValue, description }),
@@ -338,7 +560,7 @@ class AdminApiService {
   }
 
   // Analytics methods
-  async getAnalytics(filters: any) {
+  async getAnalytics(filters: AnalyticsFilters) {
     const params = new URLSearchParams();
     Object.entries(filters || {}).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== 'all') {
@@ -351,7 +573,7 @@ class AdminApiService {
     });
   }
 
-  async exportAnalytics(filters: any, format: 'csv' | 'json') {
+  async exportAnalytics(filters: AnalyticsFilters, format: 'csv' | 'json') {
     return this.makeRequest(`/analytics/export?format=${format}`, {
       method: 'POST',
       headers: {
@@ -365,7 +587,7 @@ class AdminApiService {
     return this.makeRequest('/analytics/realtime');
   }
 
-  async getCustomReport(reportConfig: any) {
+  async getCustomReport(reportConfig: ReportConfig) {
     return this.makeRequest('/analytics/custom-report', {
       method: 'POST',
       headers: {
@@ -395,7 +617,7 @@ class AdminApiService {
   }
 
   // Module Management methods
-  async getModuleSubmissions(filters?: any): Promise<ApiResponse<ModuleSubmission[]>> {
+  async getModuleSubmissions(filters?: Record<string, unknown>): Promise<ApiResponse<ModuleSubmission[]>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -413,7 +635,7 @@ class AdminApiService {
     });
   }
 
-  async getModuleStats(): Promise<ApiResponse<ModuleStats>> {
+  async getModuleStats(): Promise<ApiResponse<any>> {
     console.log('Getting module stats');
     return this.makeRequest(`/modules/stats`, {
       method: 'GET'
@@ -475,7 +697,7 @@ class AdminApiService {
     });
   }
 
-  async exportModuleData(filters?: any): Promise<ApiResponse<Blob>> {
+  async exportModuleData(filters?: Record<string, unknown>): Promise<ApiResponse<Blob>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -494,7 +716,7 @@ class AdminApiService {
   }
 
   // Business Intelligence methods
-  async getBusinessIntelligence(filters?: any): Promise<ApiResponse<any>> {
+  async getBusinessIntelligence(filters?: Record<string, unknown>): Promise<ApiResponse<BusinessIntelligenceData>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -512,7 +734,7 @@ class AdminApiService {
     });
   }
 
-  async exportBusinessIntelligence(filters?: any, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
+  async exportBusinessIntelligence(filters?: Record<string, unknown>, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -531,7 +753,7 @@ class AdminApiService {
     });
   }
 
-  async createABTest(testData: any): Promise<ApiResponse<any>> {
+  async createABTest(testData: ABTestData): Promise<ApiResponse<ABTestData>> {
     console.log('Creating A/B test:', testData);
     return this.makeRequest(`/business-intelligence/ab-tests`, {
       method: 'POST',
@@ -546,7 +768,7 @@ class AdminApiService {
     });
   }
 
-  async updateABTest(testId: string, updates: any): Promise<ApiResponse<any>> {
+  async updateABTest(testId: string, updates: Partial<ABTestData>): Promise<ApiResponse<ABTestData>> {
     console.log('Updating A/B test:', testId, updates);
     return this.makeRequest(`/business-intelligence/ab-tests/${testId}`, {
       method: 'PATCH',
@@ -561,7 +783,7 @@ class AdminApiService {
     });
   }
 
-  async createUserSegment(segmentData: any): Promise<ApiResponse<any>> {
+  async createUserSegment(segmentData: UserSegmentData): Promise<ApiResponse<UserSegmentData>> {
     console.log('Creating user segment:', segmentData);
     return this.makeRequest(`/business-intelligence/user-segments`, {
       method: 'POST',
@@ -583,7 +805,7 @@ class AdminApiService {
     });
   }
 
-  async generateCustomReport(reportConfig: any): Promise<ApiResponse<any>> {
+  async generateCustomReport(reportConfig: ReportConfig): Promise<ApiResponse<Record<string, unknown>>> {
     console.log('Generating custom report:', reportConfig);
     return this.makeRequest(`/business-intelligence/custom-report`, {
       method: 'POST',
@@ -592,7 +814,7 @@ class AdminApiService {
   }
 
   // Customer Support methods
-  async getSupportTickets(filters?: any): Promise<ApiResponse<any>> {
+  async getSupportTickets(filters?: Record<string, unknown>): Promise<ApiResponse<SupportTicket[]>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -617,7 +839,7 @@ class AdminApiService {
     });
   }
 
-  async updateSupportTicket(ticketId: string, action: string, data?: any): Promise<ApiResponse<any>> {
+  async updateSupportTicket(ticketId: string, action: string, data?: Record<string, unknown>): Promise<ApiResponse<SupportTicket>> {
     console.log('Updating support ticket:', ticketId, action);
     return this.makeRequest(`/support/tickets/${ticketId}`, {
       method: 'PATCH',
@@ -632,7 +854,7 @@ class AdminApiService {
     });
   }
 
-  async updateKnowledgeArticle(articleId: string, action: string, data?: any): Promise<ApiResponse<any>> {
+  async updateKnowledgeArticle(articleId: string, action: string, data?: Record<string, unknown>): Promise<ApiResponse<KnowledgeArticle>> {
     console.log('Updating knowledge article:', articleId, action);
     return this.makeRequest(`/support/knowledge-base/${articleId}`, {
       method: 'PATCH',
@@ -661,7 +883,7 @@ class AdminApiService {
     });
   }
 
-  async createSupportTicket(ticketData: any): Promise<ApiResponse<any>> {
+  async createSupportTicket(ticketData: Omit<SupportTicket, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<SupportTicket>> {
     console.log('Creating support ticket:', ticketData);
     return this.makeRequest(`/support/tickets`, {
       method: 'POST',
@@ -669,7 +891,7 @@ class AdminApiService {
     });
   }
 
-  async createKnowledgeArticle(articleData: any): Promise<ApiResponse<any>> {
+  async createKnowledgeArticle(articleData: Omit<KnowledgeArticle, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<KnowledgeArticle>> {
     console.log('Creating knowledge article:', articleData);
     return this.makeRequest(`/support/knowledge-base`, {
       method: 'POST',
@@ -677,7 +899,7 @@ class AdminApiService {
     });
   }
 
-  async exportSupportData(filters?: any, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
+  async exportSupportData(filters?: Record<string, unknown>, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -697,7 +919,7 @@ class AdminApiService {
   }
 
   // Performance & Scalability methods
-  async getPerformanceMetrics(filters?: any): Promise<ApiResponse<any>> {
+  async getPerformanceMetrics(filters?: Record<string, unknown>): Promise<ApiResponse<PerformanceMetrics>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -737,7 +959,7 @@ class AdminApiService {
     });
   }
 
-  async getPerformanceAlerts(filters?: any): Promise<ApiResponse<any>> {
+  async getPerformanceAlerts(filters?: Record<string, unknown>): Promise<ApiResponse<PerformanceAlert[]>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -770,7 +992,7 @@ class AdminApiService {
     });
   }
 
-  async configurePerformanceAlert(alertConfig: any): Promise<ApiResponse<any>> {
+  async configurePerformanceAlert(alertConfig: Omit<PerformanceAlert, 'id' | 'timestamp' | 'acknowledged' | 'resolved'>): Promise<ApiResponse<PerformanceAlert>> {
     console.log('Configuring performance alert:', alertConfig);
     return this.makeRequest(`/performance/alerts/configure`, {
       method: 'POST',
@@ -778,7 +1000,7 @@ class AdminApiService {
     });
   }
 
-  async exportPerformanceData(filters?: any, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
+  async exportPerformanceData(filters?: Record<string, unknown>, format: 'csv' | 'pdf' = 'csv'): Promise<ApiResponse<Blob>> {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -797,7 +1019,7 @@ class AdminApiService {
     });
   }
 
-  async exportSecurityReport(filters: any, format: 'csv' | 'json') {
+  async exportSecurityReport(filters: Record<string, unknown>, format: 'csv' | 'json') {
     const queryParams = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -852,42 +1074,7 @@ class AdminApiService {
   }
 }
 
-// Add type definitions for module management
-interface ModuleSubmission {
-  id: string;
-  moduleId: string;
-  submitterId: string;
-  submitter: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  reviewNotes?: string;
-  submittedAt: string;
-  reviewedAt?: string;
-  module: {
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    category: string;
-    developer: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    manifest: any;
-    permissions: string[];
-    dependencies: string[];
-    downloads?: number;
-    rating?: number;
-    reviewCount?: number;
-    pricingTier?: string;
-    revenueSplit?: number;
-  };
-}
-
+// Module stats interface
 interface ModuleStats {
   totalSubmissions: number;
   pendingReviews: number;
@@ -940,43 +1127,7 @@ export interface ContentReport {
   };
 }
 
-export interface SecurityEvent {
-  id: string;
-  eventType: string;
-  severity: string;
-  userId?: string;
-  userEmail?: string;
-  adminId?: string;
-  adminEmail?: string;
-  ipAddress: string;
-  userAgent: string;
-  details: any;
-  timestamp: string;
-  resolved: boolean;
-}
-
-export interface AuditLog {
-  id: string;
-  action: string;
-  resource: string;
-  details: string;
-  ipAddress: string;
-  timestamp: string;
-  success: boolean;
-  admin?: {
-    email: string;
-    name: string;
-  };
-}
-
-export interface SystemConfig {
-  id: string;
-  configKey: string;
-  configValue: any;
-  description?: string;
-  updatedBy: string;
-  updatedAt: string;
-} 
+ 
 
 // Named instance export for use in admin portal pages
 export const adminApiService = new AdminApiService();

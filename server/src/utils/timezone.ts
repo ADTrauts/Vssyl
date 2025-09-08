@@ -21,7 +21,7 @@ function formatToParts(date: Date, timeZone: string): DateParts {
     hour12: false,
   }).formatToParts(date);
 
-  const map: any = {};
+  const map: Record<string, string> = {};
   for (const p of parts) {
     if (p.type !== 'literal') map[p.type] = p.value;
   }

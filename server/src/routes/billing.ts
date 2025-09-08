@@ -23,7 +23,7 @@ import {
   getDeveloperRevenue,
 } from '../controllers/billingController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Core subscription routes
 router.post('/subscriptions', createSubscription);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Badge, Button, Tabs, ProgressBar, Alert } from 'shared/components';
+import { Card, Badge, Button, Tabs, TabsList, TabsTrigger, TabsContent, ProgressBar, Alert } from 'shared/components';
 import { 
   Brain, 
   TrendingUp, 
@@ -36,46 +36,9 @@ const CardDescription = ({ children, className = '' }: { children: React.ReactNo
   <p className={`text-sm text-gray-600 mb-4 ${className}`}>{children}</p>
 );
 
-const TabsList = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <div className={`flex border-b mb-4 ${className}`}>{children}</div>
-);
+// TabsList, TabsTrigger, TabsContent are now imported from shared/components
 
-const TabsTrigger = ({ 
-  value, 
-  children, 
-  isActive, 
-  onClick 
-}: { 
-  value: string; 
-  children: React.ReactNode; 
-  isActive: boolean; 
-  onClick: () => void;
-}) => (
-  <button
-    className={`px-4 py-2 -mb-px border-b-2 ${
-      isActive ? 'border-blue-600 text-blue-600 font-bold' : 'border-transparent text-gray-600'
-    }`}
-    onClick={onClick}
-  >
-    {children}
-  </button>
-);
-
-const TabsContent = ({ 
-  value, 
-  activeTab, 
-  children,
-  className = ''
-}: { 
-  value: string; 
-  activeTab: string; 
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div className={`${value === activeTab ? 'block' : 'hidden'} ${className}`}>
-    {children}
-  </div>
-);
+// TabsContent is now imported from shared/components
 
 const Progress = ({ value, className = '' }: { value: number; className?: string }) => (
   <div className={`w-full bg-gray-200 rounded-full h-2 ${className}`}>
@@ -418,68 +381,35 @@ export default function AILearningAdminPage() {
         </Button>
       </div>
 
-      <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger 
             value="overview" 
-            isActive={activeTab === 'overview'} 
-            onClick={() => setActiveTab('overview')}
+
           >
             Overview
           </TabsTrigger>
           <TabsTrigger 
             value="patterns" 
-            isActive={activeTab === 'patterns'} 
-            onClick={() => setActiveTab('patterns')}
+
           >
             Global Patterns
           </TabsTrigger>
           <TabsTrigger 
             value="insights" 
-            isActive={activeTab === 'insights'} 
-            onClick={() => setActiveTab('insights')}
+
           >
             Collective Insights
           </TabsTrigger>
-          <TabsTrigger 
-            value="health" 
-            isActive={activeTab === 'health'} 
-            onClick={() => setActiveTab('health')}
-          >
-            System Health
-          </TabsTrigger>
-          <TabsTrigger 
-            value="privacy" 
-            isActive={activeTab === 'privacy'} 
-            onClick={() => setActiveTab('privacy')}
-          >
-            Privacy & Settings
-          </TabsTrigger>
-          <TabsTrigger 
-            value="consent" 
-            isActive={activeTab === 'consent'} 
-            onClick={() => setActiveTab('consent')}
-          >
-            User Consent
-          </TabsTrigger>
-          <TabsTrigger 
-            value="scheduler" 
-            isActive={activeTab === 'scheduler'} 
-            onClick={() => setActiveTab('scheduler')}
-          >
-            Scheduler
-          </TabsTrigger>
-          <TabsTrigger 
-            value="analytics" 
-            isActive={activeTab === 'analytics'} 
-            onClick={() => setActiveTab('analytics')}
-          >
-            Advanced Analytics
-          </TabsTrigger>
+          <TabsTrigger value="health">System Health</TabsTrigger>
+          <TabsTrigger value="privacy">Privacy & Settings</TabsTrigger>
+          <TabsTrigger value="consent">User Consent</TabsTrigger>
+          <TabsTrigger value="scheduler">Scheduler</TabsTrigger>
+          <TabsTrigger value="analytics">Advanced Analytics</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -595,7 +525,7 @@ export default function AILearningAdminPage() {
         </TabsContent>
 
         {/* Global Patterns Tab */}
-        <TabsContent value="patterns" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="patterns" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Global Patterns</h2>
             <div className="flex space-x-2">
@@ -671,7 +601,7 @@ export default function AILearningAdminPage() {
         </TabsContent>
 
         {/* Collective Insights Tab */}
-        <TabsContent value="insights" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="insights"  className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Collective Insights</h2>
             <div className="flex space-x-2">
@@ -752,7 +682,7 @@ export default function AILearningAdminPage() {
         </TabsContent>
 
         {/* System Health Tab */}
-        <TabsContent value="health" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="health"  className="space-y-6">
           <h2 className="text-xl font-semibold">System Health Metrics</h2>
           
           {healthMetrics && (
@@ -862,7 +792,7 @@ export default function AILearningAdminPage() {
         </TabsContent>
 
         {/* Privacy & Settings Tab */}
-        <TabsContent value="privacy" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="privacy"  className="space-y-6">
           <h2 className="text-xl font-semibold">Privacy & Settings</h2>
           
           {privacySettings && (
@@ -910,7 +840,7 @@ export default function AILearningAdminPage() {
         </TabsContent>
 
         {/* User Consent Tab */}
-        <TabsContent value="consent" activeTab={activeTab} className="space-y-6">
+        <TabsContent value="consent"  className="space-y-6">
           <h2 className="text-xl font-semibold">User Consent Management</h2>
           
           <Card>
@@ -987,7 +917,7 @@ export default function AILearningAdminPage() {
       </TabsContent>
 
       {/* Scheduler Tab */}
-      <TabsContent value="scheduler" activeTab={activeTab} className="space-y-6">
+      <TabsContent value="scheduler"  className="space-y-6">
         <h2 className="text-xl font-semibold">Pattern Analysis Scheduler</h2>
         
         <Card>
@@ -1062,7 +992,7 @@ export default function AILearningAdminPage() {
       </TabsContent>
 
       {/* Advanced Analytics Tab */}
-      <TabsContent value="analytics" activeTab={activeTab} className="space-y-6">
+      <TabsContent value="analytics"  className="space-y-6">
         <h2 className="text-xl font-semibold">Advanced Analytics & Predictive Insights</h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1194,7 +1124,7 @@ export default function AILearningAdminPage() {
           </CardContent>
         </Card>
       </TabsContent>
+      </Tabs>
     </div>
-  </div>
   );
 }

@@ -1,5 +1,10 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 
+// Audit details interface
+export interface AuditDetails {
+  [key: string]: unknown;
+}
+
 export interface AuditLog {
   id: string;
   action: string;
@@ -7,7 +12,7 @@ export interface AuditLog {
   conversationId?: string;
   resourceType?: string;
   resourceId?: string;
-  details: any;
+  details: AuditDetails;
   timestamp: string;
   ipAddress?: string;
   userAgent?: string;

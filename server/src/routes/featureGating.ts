@@ -6,10 +6,9 @@ import {
   recordUsage,
   getSubscriptionInfo,
 } from '../controllers/featureGatingController';
-import { SubscriptionMiddleware } from '../middleware/subscriptionMiddleware';
 import { FeatureGatingService } from '../services/featureGatingService';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Check access to a specific feature
 router.get('/features/:featureName/access', checkFeatureAccess);
@@ -29,7 +28,7 @@ router.get('/subscription', getSubscriptionInfo);
 // Middleware for checking feature access in other routes
 router.use('/check/:featureName', async (req, res, next) => {
   const { featureName } = req.params;
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
 
   if (!userId) {
     return res.status(401).json({ error: 'Unauthorized' });

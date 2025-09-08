@@ -7,7 +7,7 @@ export interface CreateNotificationData {
   type: string;
   title: string;
   body?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   userId: string;
 }
 
@@ -15,7 +15,7 @@ export interface NotificationTrigger {
   type: 'chat_message' | 'chat_mention' | 'chat_reaction' | 'drive_shared' | 'drive_permission' | 'business_invitation' | 'member_request' | 'system_alert';
   title: string;
   body?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   recipients: string[];
   senderId?: string;
 }
@@ -31,7 +31,7 @@ export class NotificationService {
           type: data.type,
           title: data.title,
           body: data.body,
-          data: data.data || {},
+          data: data.data || {} as any, // TODO: Fix Prisma JSON field typing
           userId: data.userId
         },
         include: {
@@ -53,7 +53,7 @@ export class NotificationService {
           type: notification.type,
           title: notification.title,
           body: notification.body || undefined,
-          data: notification.data,
+          data: notification.data as Record<string, unknown>, // Fix type mismatch
           createdAt: notification.createdAt.toISOString(),
           read: notification.read
         });
@@ -65,7 +65,11 @@ export class NotificationService {
       // Send push notification
       try {
         const pushService = PushNotificationService.getInstance();
-        const pushPayload = pushService.createPayloadFromNotification(notification);
+        const pushPayload = pushService.createPayloadFromNotification({
+          ...notification,
+          body: notification.body || undefined, // Fix null vs undefined
+          data: notification.data as Record<string, unknown> // Fix type mismatch
+        });
         await pushService.sendToUser(data.userId, pushPayload);
       } catch (pushError) {
         console.error('Error sending push notification:', pushError);
@@ -78,11 +82,15 @@ export class NotificationService {
         if (emailService.isAvailable()) {
           const user = await prisma.user.findUnique({
             where: { id: data.userId },
-            select: { email: true, name: true }
+            select: { id: true, email: true, name: true }
           });
           
           if (user) {
-            const emailTemplate = emailService.createTemplateFromNotification(notification, user);
+            const emailTemplate = emailService.createTemplateFromNotification({
+              ...notification,
+              body: notification.body || undefined, // Fix null vs undefined
+              data: notification.data as Record<string, unknown> // Fix type mismatch
+            }, user);
             await emailService.sendToUser(data.userId, emailTemplate);
           }
         }
@@ -108,7 +116,7 @@ export class NotificationService {
           type: n.type,
           title: n.title,
           body: n.body,
-          data: n.data || {},
+          data: n.data || {} as any, // TODO: Fix Prisma JSON field typing
           userId: n.userId
         }))
       });
@@ -122,7 +130,7 @@ export class NotificationService {
             type: notification.type,
             title: notification.title,
             body: notification.body || undefined,
-            data: notification.data,
+            data: notification.data as Record<string, unknown>, // Fix type mismatch
             createdAt: new Date().toISOString(),
             read: false
           });
@@ -295,7 +303,7 @@ export class NotificationService {
    */
   static async markAsRead(userId: string, notificationIds?: string[]) {
     try {
-      const where: any = {
+      const where: Record<string, unknown> = {
         userId,
         read: false,
         deleted: false

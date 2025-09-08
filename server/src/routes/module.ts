@@ -16,7 +16,7 @@ import {
   getBusinessModules
 } from '../controllers/moduleController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Get installed modules for current user
 router.get('/installed', getInstalledModules);

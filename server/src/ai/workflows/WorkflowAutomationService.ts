@@ -108,7 +108,7 @@ export interface WorkflowExecution {
   workflowId: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timed_out';
   trigger: WorkflowTrigger;
-  variables: Record<string, any>;
+  variables: Record<string, unknown>;
   currentStep: string;
   stepResults: StepResult[];
   startTime: Date;
@@ -157,7 +157,7 @@ export interface AIDecision {
   output: any;
   confidence: number;
   reasoning: string;
-  alternatives: any[];
+  alternatives: Record<string, unknown>[];
   metadata: {
     modelUsed: string;
     modelVersion: string;
@@ -641,7 +641,7 @@ export class WorkflowAutomationService extends EventEmitter {
    */
   async executeWorkflow(
     workflowId: string,
-    variables: Record<string, any>,
+    variables: Record<string, unknown>,
     trigger: WorkflowTrigger,
     metadata: { initiatedBy: string; source: string; correlationId?: string; tags?: string[] }
   ): Promise<WorkflowExecution> {
@@ -1097,7 +1097,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute action step
    */
-  private async executeAction(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
+  private async executeAction(step: WorkflowStep, variables: Record<string, unknown>): Promise<Record<string, unknown>> {
     const action = step.config.action;
     const parameters = step.config.parameters || {};
 
@@ -1123,7 +1123,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute AI decision step
    */
-  private async executeAIDecision(step: WorkflowStep, variables: Record<string, any>, executionId: string): Promise<any> {
+  private async executeAIDecision(step: WorkflowStep, variables: Record<string, unknown>, executionId: string): Promise<Record<string, unknown>> {
     const aiModel = step.config.aiModel || 'default_model';
     const parameters = step.config.parameters || {};
 
@@ -1185,7 +1185,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute decision step
    */
-  private async executeDecision(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
+  private async executeDecision(step: WorkflowStep, variables: Record<string, unknown>): Promise<Record<string, unknown>> {
     const decisionLogic = step.config.decisionLogic || '';
     
     // Mock decision execution - in real implementation, this would use a proper expression evaluator
@@ -1199,7 +1199,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute loop step
    */
-  private async executeLoop(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
+  private async executeLoop(step: WorkflowStep, variables: Record<string, unknown>): Promise<Record<string, unknown>> {
     // Mock loop execution
     return { iterations: 3, result: 'loop_completed' };
   }
@@ -1207,7 +1207,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute parallel step
    */
-  private async executeParallel(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
+  private async executeParallel(step: WorkflowStep, variables: Record<string, unknown>): Promise<Record<string, unknown>> {
     // Mock parallel execution
     return { branches: 2, results: ['branch1_completed', 'branch2_completed'] };
   }
@@ -1215,7 +1215,7 @@ export class WorkflowAutomationService extends EventEmitter {
   /**
    * Execute human approval step
    */
-  private async executeHumanApproval(step: WorkflowStep, variables: Record<string, any>): Promise<any> {
+  private async executeHumanApproval(step: WorkflowStep, variables: Record<string, unknown>): Promise<Record<string, unknown>> {
     // Mock human approval
     return { approved: true, approver: 'system', timestamp: new Date() };
   }

@@ -122,11 +122,18 @@ interface FilterOptions {
 export default function SupportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [stats, setStats] = useState<SupportStats | null>(null);
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeBaseArticle[]>([]);
   const [liveChats, setLiveChats] = useState<LiveChat[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [ticketToAssign, setTicketToAssign] = useState<string | null>(null);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
+  const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<SupportTicket | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeBaseArticle | null>(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
@@ -162,17 +169,19 @@ export default function SupportPage() {
     setError(null);
     
     try {
-      const [ticketsRes, statsRes, knowledgeRes, chatsRes] = await Promise.all([
-        adminApiService.getSupportTickets(filters),
+      const [ticketsRes, statsRes, knowledgeRes, chatsRes, usersRes] = await Promise.all([
+        adminApiService.getSupportTickets(filters as any),
         adminApiService.getSupportStats(),
         adminApiService.getKnowledgeBase(),
-        adminApiService.getLiveChats()
+        adminApiService.getLiveChats(),
+        adminApiService.getUsers({ role: 'ADMIN', limit: 100 })
       ]);
 
-      setTickets(ticketsRes.data || []);
-      setStats(statsRes.data || null);
-      setKnowledgeBase(knowledgeRes.data || []);
-      setLiveChats(chatsRes.data || []);
+      setTickets((ticketsRes.data as any)?.data || []);
+      setStats((statsRes.data as any)?.data || null);
+      setKnowledgeBase((knowledgeRes.data as any)?.data || []);
+      setLiveChats((chatsRes.data as any)?.data || []);
+      setAdminUsers((usersRes.data as any)?.users || []);
     } catch (err) {
       console.error('Error loading support data:', err);
       setError('Failed to load support data. Please try again.');
@@ -287,13 +296,59 @@ export default function SupportPage() {
   };
 
   const handleTicketAction = async (ticketId: string, action: string, data?: any) => {
+    const actionKey = `${ticketId}-${action}`;
+    
     try {
+      setError(null);
+      setSuccess(null);
+      setActionLoading(actionKey);
+      
       await adminApiService.updateSupportTicket(ticketId, action, data);
-      loadData(); // Reload data
+      
+      // Show success message
+      const actionMessages = {
+        'assign': 'Ticket assigned successfully',
+        'start_progress': 'Ticket moved to in progress',
+        'resolve': 'Ticket resolved successfully',
+        'close': 'Ticket closed successfully'
+      };
+      
+      setSuccess(actionMessages[action as keyof typeof actionMessages] || 'Ticket updated successfully');
+      
+      // Reload data
+      await loadData();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+      
     } catch (err) {
       console.error('Error updating ticket:', err);
       setError('Failed to update ticket. Please try again.');
+    } finally {
+      setActionLoading(null);
     }
+  };
+
+  const handleAssignClick = (ticketId: string) => {
+    setTicketToAssign(ticketId);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignToUser = async (userId: string) => {
+    if (!ticketToAssign) return;
+    
+    try {
+      await handleTicketAction(ticketToAssign, 'assign', { assignedToId: userId });
+      setShowAssignModal(false);
+      setTicketToAssign(null);
+    } catch (err) {
+      console.error('Error assigning ticket:', err);
+    }
+  };
+
+  const handleStartProgress = (ticket: SupportTicket) => {
+    setSelectedTicketForDetails(ticket);
+    setShowTicketDetailsModal(true);
   };
 
   const handleArticleAction = async (articleId: string, action: string, data?: any) => {
@@ -367,7 +422,7 @@ export default function SupportPage() {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  const filteredTickets = tickets.filter(ticket => {
+  const filteredTickets = (tickets || []).filter(ticket => {
     const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          ticket.customer.name.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -512,6 +567,13 @@ export default function SupportPage() {
         </Alert>
       )}
 
+      {/* Success Alert */}
+      {success && (
+        <Alert onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
+
       {/* Content based on active tab */}
       {loading ? (
         <div className="flex justify-center py-12">
@@ -647,9 +709,14 @@ export default function SupportPage() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleTicketAction(ticket.id, 'assign')}
+                              onClick={() => handleAssignClick(ticket.id)}
+                              disabled={actionLoading === `${ticket.id}-assign`}
                             >
-                              <User className="w-4 h-4 mr-2" />
+                              {actionLoading === `${ticket.id}-assign` ? (
+                                <Spinner size={16} />
+                              ) : (
+                                <User className="w-4 h-4 mr-2" />
+                              )}
                               Assign
                             </Button>
                           )}
@@ -658,9 +725,14 @@ export default function SupportPage() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleTicketAction(ticket.id, 'start_progress')}
+                              onClick={() => handleStartProgress(ticket)}
+                              disabled={actionLoading === `${ticket.id}-start_progress`}
                             >
-                              <Clock className="w-4 h-4 mr-2" />
+                              {actionLoading === `${ticket.id}-start_progress` ? (
+                                <Spinner size={16} />
+                              ) : (
+                                <Clock className="w-4 h-4 mr-2" />
+                              )}
                               Start Progress
                             </Button>
                           )}
@@ -670,8 +742,13 @@ export default function SupportPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => handleTicketAction(ticket.id, 'resolve')}
+                              disabled={actionLoading === `${ticket.id}-resolve`}
                             >
-                              <CheckCircle className="w-4 h-4 mr-2" />
+                              {actionLoading === `${ticket.id}-resolve` ? (
+                                <Spinner size={16} />
+                              ) : (
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                              )}
                               Resolve
                             </Button>
                           )}
@@ -743,7 +820,7 @@ export default function SupportPage() {
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">Live Chat</h2>
                 <Badge color="green" size="sm">
-                  {liveChats.filter(chat => chat.status === 'active').length} Active
+                  {(liveChats || []).filter(chat => chat.status === 'active').length} Active
                 </Badge>
               </div>
 
@@ -928,6 +1005,134 @@ export default function SupportPage() {
               </div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Ticket Details Modal */}
+      <Modal open={showTicketDetailsModal} onClose={() => setShowTicketDetailsModal(false)}>
+        <div className="p-6 max-w-4xl">
+          <h2 className="text-xl font-semibold mb-4">Ticket Details - {selectedTicketForDetails?.title}</h2>
+          
+          {selectedTicketForDetails && (
+            <div className="space-y-6">
+              {/* Ticket Info */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">Customer Information</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Name:</span> {selectedTicketForDetails.customer.name}</p>
+                    <p><span className="font-medium">Email:</span> {selectedTicketForDetails.customer.email}</p>
+                    <p><span className="font-medium">Plan:</span> {selectedTicketForDetails.customer.plan}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">Ticket Details</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Status:</span> 
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedTicketForDetails.status === 'open' 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicketForDetails.status}
+                      </span>
+                    </p>
+                    <p><span className="font-medium">Priority:</span> 
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                        selectedTicketForDetails.priority === 'high' 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedTicketForDetails.priority}
+                      </span>
+                    </p>
+                    <p><span className="font-medium">Category:</span> {selectedTicketForDetails.category}</p>
+                    <p><span className="font-medium">Created:</span> {formatDate(selectedTicketForDetails.createdAt)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h3 className="font-medium text-gray-900 mb-2">Description</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-700">{selectedTicketForDetails.description}</p>
+                </div>
+              </div>
+
+              {/* Tags */}
+              {selectedTicketForDetails.tags && selectedTicketForDetails.tags.length > 0 && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTicketForDetails.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowTicketDetailsModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await handleTicketAction(selectedTicketForDetails.id, 'start_progress');
+                    setShowTicketDetailsModal(false);
+                  }}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Start Working on This
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Assignment Modal */}
+      <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)}>
+        <div className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Assign Ticket</h2>
+          <p className="text-gray-600 mb-6">Select an admin user to assign this ticket to:</p>
+          
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {adminUsers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                onClick={() => handleAssignToUser(user.id)}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {user.name?.charAt(0) || user.email.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{user.name || 'Unknown'}</p>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <User className="w-5 h-5 text-gray-400" />
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
+            <Button
+              variant="secondary"
+              onClick={() => setShowAssignModal(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>

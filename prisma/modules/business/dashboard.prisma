@@ -1,0 +1,67 @@
+// ============================================================================
+// DASHBOARD & WIDGET MODELS
+// ============================================================================
+
+model Dashboard {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  layout      Json?    // Stores widget positions, layout state
+  preferences Json?    // User-specific dashboard preferences
+  retentionPolicy RetentionPolicy?
+  complianceSettings ComplianceSettings?
+  widgets     Widget[]
+  conversations Conversation[]
+  files       File[]
+  folders     Folder[]
+  trashedAt   DateTime?
+  // Business, Educational, and Household contexts
+  business    Business? @relation(fields: [businessId], references: [id])
+  businessId  String?
+  institution EducationalInstitution? @relation(fields: [institutionId], references: [id])
+  institutionId String?
+  household   Household? @relation(fields: [householdId], references: [id])
+  householdId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([institutionId])
+  @@index([householdId])
+  @@map("dashboards")
+}
+
+model RetentionPolicy {
+  id                    String    @id @default(uuid())
+  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId           String    @unique
+  messageRetentionDays  Int       @default(365)
+  autoDeleteEnabled     Boolean   @default(false)
+  fileRetentionDays     Int       @default(730)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model ComplianceSettings {
+  id                    String    @id @default(uuid())
+  dashboard             Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId           String    @unique
+  complianceMode        String    @default("standard") // standard, strict, custom
+  encryptionEnabled     Boolean   @default(false)
+  auditLoggingEnabled   Boolean   @default(true)
+  dataResidency        String?   // e.g., "US", "EU", "APAC"
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Widget {
+  id          String   @id @default(uuid())
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
+  dashboardId String
+  type        String   // e.g., 'chat', 'drive', 'analytics', etc.
+  config      Json?    // Widget-specific config (e.g., filters, settings)
+  position    Json?    // Position/size in dashboard layout
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

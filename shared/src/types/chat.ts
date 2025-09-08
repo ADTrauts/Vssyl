@@ -156,7 +156,7 @@ export interface MarkAsReadRequest {
 
 export interface ChatEvent {
   type: 'message' | 'reaction' | 'typing' | 'presence' | 'read_receipt';
-  data: any;
+  data: Record<string, unknown>;
   conversationId: string;
   timestamp: string;
 }

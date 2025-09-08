@@ -289,7 +289,7 @@ export default function GlobalSearchBar({ className = '' }: GlobalSearchBarProps
                   <span className="mr-2">{moduleIcons[moduleId]}</span>
                   {moduleLabels[moduleId]}
                 </div>
-                {groupedResults[moduleId].map((item: any, idx: number) => (
+                {groupedResults[moduleId].map((item: SearchResult, idx: number) => (
                   <div
                     key={item.id}
                     className={`flex items-center px-4 py-2 cursor-pointer hover:bg-blue-50 transition ${selectedIndex === idx ? 'bg-blue-100' : ''}`}

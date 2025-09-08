@@ -2,10 +2,15 @@
 
 import React, { useEffect, useMemo, useRef } from 'react';
 
+interface ModuleMessage {
+  type: string;
+  payload?: Record<string, unknown>;
+}
+
 interface ModuleHostProps {
   entryUrl: string;
   moduleName: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 export default function ModuleHost({ entryUrl, moduleName, settings = {} }: ModuleHostProps) {
@@ -46,7 +51,7 @@ export default function ModuleHost({ entryUrl, moduleName, settings = {} }: Modu
       }
     }
 
-    function postToModule(message: any) {
+    function postToModule(message: ModuleMessage) {
       const iframe = iframeRef.current;
       if (!iframe || !iframe.contentWindow) return;
       if (!allowedOrigin) return;

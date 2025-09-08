@@ -44,17 +44,22 @@ interface DriveWidgetConfig {
   showFamilyActivity: boolean;
 }
 
-interface FileItem {
+// File data interfaces
+interface DriveFile {
   id: string;
   name: string;
-  type: string;
   size: number;
+  type: string;
   url: string;
   starred: boolean;
   createdAt: string;
   updatedAt: string;
-  isShared: boolean;
-  sharedWith: number;
+  tags?: string[];
+  folder?: {
+    name: string;
+  };
+  isShared?: boolean;
+  sharedWith?: number;
 }
 
 interface FolderItem {
@@ -97,7 +102,7 @@ export default function DriveWidget({
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [recentFiles, setRecentFiles] = useState<FileItem[]>([]);
+  const [recentFiles, setRecentFiles] = useState<DriveFile[]>([]);
   const [recentFolders, setRecentFolders] = useState<FolderItem[]>([]);
 
   // Ensure config is never null
@@ -190,21 +195,21 @@ export default function DriveWidget({
         
         if (dashboardType === 'household') {
           // Family-focused file organization
-          processedFiles = files.filter((f: any) => 
+          processedFiles = files.filter((f: DriveFile) => 
             f.tags?.includes('family') || 
             f.tags?.includes('shared') ||
             f.folder?.name?.includes('Family')
           );
         } else if (dashboardType === 'business') {
           // Business-focused files
-          processedFiles = files.filter((f: any) => 
+          processedFiles = files.filter((f: DriveFile) => 
             f.tags?.includes('work') || 
             f.tags?.includes('business') ||
             f.folder?.name?.includes('Work')
           );
         } else if (dashboardType === 'educational') {
           // Educational-focused files
-          processedFiles = files.filter((f: any) => 
+          processedFiles = files.filter((f: DriveFile) => 
             f.tags?.includes('school') || 
             f.tags?.includes('education') ||
             f.folder?.name?.includes('Course')
@@ -213,7 +218,7 @@ export default function DriveWidget({
 
         // Process files with sharing info
         const filesWithSharing = await Promise.all(
-          processedFiles.slice(0, safeConfig.maxFilesToShow).map(async (file: any) => {
+          processedFiles.slice(0, safeConfig.maxFilesToShow).map(async (file: DriveFile) => {
             return {
               ...file,
               isShared: Math.random() > 0.7, // Simulate some files being shared
@@ -226,7 +231,7 @@ export default function DriveWidget({
         setRecentFolders(folders.slice(0, 3));
 
         // Calculate storage usage
-        const totalSize = files.reduce((sum: number, file: any) => sum + file.size, 0);
+        const totalSize = files.reduce((sum: number, file: DriveFile) => sum + file.size, 0);
         const totalStorage = 10 * 1024 * 1024 * 1024; // 10GB for demo
         setStorageUsage({
           used: totalSize,
@@ -257,7 +262,7 @@ export default function DriveWidget({
       // Refresh the widget data
       const files = await listFiles(session.accessToken, '', false);
       const filesWithSharing = await Promise.all(
-        files.slice(0, safeConfig.maxFilesToShow).map(async (file: any) => ({
+        files.slice(0, safeConfig.maxFilesToShow).map(async (file: DriveFile) => ({
           ...file,
           isShared: Math.random() > 0.7,
           sharedWith: Math.floor(Math.random() * 5)

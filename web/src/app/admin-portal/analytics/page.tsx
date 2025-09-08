@@ -71,14 +71,22 @@ export default function AnalyticsPage() {
   const loadAnalyticsData = async () => {
     try {
       setLoading(true);
-      const response = await adminApiService.getAnalytics(filters);
+      const [analyticsRes, realtimeRes] = await Promise.all([
+        adminApiService.getAnalytics(filters),
+        adminApiService.getRealTimeMetrics()
+      ]);
       
-      if (response.error) {
-        setError(response.error);
+      if (analyticsRes.error) {
+        setError(analyticsRes.error);
         return;
       }
 
-      setAnalyticsData(response.data as AnalyticsData);
+      if (realtimeRes.error) {
+        setError(realtimeRes.error);
+        return;
+      }
+
+      setAnalyticsData(analyticsRes.data as AnalyticsData);
       setError(null);
     } catch (err) {
       setError('Failed to load analytics data');

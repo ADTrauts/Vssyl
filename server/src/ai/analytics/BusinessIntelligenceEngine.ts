@@ -16,7 +16,7 @@ export interface BusinessMetric {
   status: 'on_track' | 'at_risk' | 'off_track' | 'exceeded';
   frequency: 'hourly' | 'daily' | 'weekly' | 'monthly' | 'quarterly';
   lastUpdated: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface KPIDashboard {
@@ -62,9 +62,9 @@ export interface ChartWidget {
     yAxis?: string;
     series?: string[];
     colors?: string[];
-    options?: Record<string, any>;
+    options?: Record<string, unknown>;
   };
-  data?: any;
+  data?: Record<string, unknown>;
   lastUpdate: Date;
 }
 
@@ -96,9 +96,9 @@ export interface ReportSection {
   id: string;
   name: string;
   type: 'text' | 'chart' | 'table' | 'metric' | 'image';
-  content: any;
+  content: string | Record<string, unknown>;
   order: number;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }
 
 export interface DataQuery {
@@ -107,7 +107,7 @@ export interface DataQuery {
   description: string;
   type: 'sql' | 'mongodb' | 'elasticsearch' | 'api' | 'custom';
   query: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   dataSource: string;
   cacheDuration: number; // seconds
   lastExecuted?: Date;
@@ -527,11 +527,11 @@ export class BusinessIntelligenceEngine extends EventEmitter {
     }
   }
 
-  async generateReport(templateId: string, parameters: Record<string, any> = {}): Promise<{
+  async generateReport(templateId: string, parameters: Record<string, unknown> = {}): Promise<{
     reportId: string;
     template: ReportTemplate;
     generatedAt: Date;
-    sections: any[];
+    sections: ReportSection[];
   }> {
     try {
       const template = this.reportTemplates.get(templateId);

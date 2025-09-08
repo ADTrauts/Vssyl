@@ -188,10 +188,10 @@ export default function PerformancePage() {
         adminApiService.getPerformanceAlerts(filters)
       ]);
 
-      setMetrics(metricsRes.data || null);
-      setScalability(scalabilityRes.data || null);
-      setRecommendations(recommendationsRes.data || []);
-      setAlerts(alertsRes.data || []);
+      setMetrics(metricsRes.data?.data || null);
+      setScalability(scalabilityRes.data?.data || null);
+      setRecommendations(recommendationsRes.data?.data || []);
+      setAlerts(alertsRes.data?.data || []);
     } catch (err) {
       console.error('Error loading performance data:', err);
       setError('Failed to load performance data. Please try again.');
@@ -484,7 +484,7 @@ export default function PerformancePage() {
             }`}
           >
             <AlertTriangle className="w-4 h-4 inline mr-2" />
-            Alerts ({alerts.filter(a => !a.resolved).length})
+            Alerts ({(alerts || []).filter(a => !a.resolved).length})
           </button>
         </nav>
       </div>

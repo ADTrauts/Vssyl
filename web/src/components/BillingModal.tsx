@@ -14,7 +14,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useFeatureGating } from '../hooks/useFeatureGating';
-import { FeatureUsageDisplay } from './FeatureGate';
 import { authenticatedApiCall } from '../lib/apiUtils';
 
 interface Subscription {
@@ -41,12 +40,19 @@ interface ModuleSubscription {
   currentPeriodEnd: string;
 }
 
+interface UsageRecord {
+  date: string;
+  value: number;
+  unit: string;
+  description: string;
+}
+
 interface UsageData {
-  coreUsage: any[];
+  coreUsage: UsageRecord[];
   moduleUsage: Array<{
     moduleId: string;
     moduleName: string;
-    usage: any[];
+    usage: UsageRecord[];
   }>;
   period: {
     start: string;
@@ -91,7 +97,7 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
       // Load subscription data
       try {
         const subscriptionData = await authenticatedApiCall('/api/billing/subscriptions/user');
-        setSubscription(subscriptionData.subscription);
+        setSubscription((subscriptionData as any).subscription);
       } catch (error) {
         console.error('Failed to load subscription data:', error);
       }
@@ -99,7 +105,7 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
       // Load module subscriptions
       try {
         const moduleSubsData = await authenticatedApiCall('/api/billing/modules/subscriptions');
-        setModuleSubscriptions(moduleSubsData.subscriptions || []);
+        setModuleSubscriptions((moduleSubsData as any).subscriptions || []);
       } catch (error) {
         console.error('Failed to load module subscriptions:', error);
       }
@@ -107,7 +113,7 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
       // Load usage data
       try {
         const usageData = await authenticatedApiCall('/api/billing/usage');
-        setUsage(usageData);
+        setUsage(usageData as UsageData);
       } catch (error) {
         console.error('Failed to load usage data:', error);
       }
@@ -115,7 +121,7 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
       // Load invoices
       try {
         const invoicesData = await authenticatedApiCall('/api/billing/invoices');
-        setInvoices(invoicesData.invoices || []);
+        setInvoices((invoicesData as any).invoices || []);
       } catch (error) {
         console.error('Failed to load invoices:', error);
       }
@@ -177,8 +183,15 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
   return (
     <Modal open={isOpen} onClose={onClose} title="Billing & Subscriptions" size="large">
       <div className="max-h-[80vh] overflow-y-auto">
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab}>
-          {activeTab === 'overview' && (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs.List>
+            <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
+            <Tabs.Trigger value="modules">Modules</Tabs.Trigger>
+            <Tabs.Trigger value="usage">Usage</Tabs.Trigger>
+            <Tabs.Trigger value="invoices">Invoices</Tabs.Trigger>
+          </Tabs.List>
+          
+          <Tabs.Content value="overview">
             <div className="space-y-4">
               {/* Current Subscription */}
               <Card>
@@ -255,25 +268,15 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                   </p>
                   
                   <div className="space-y-4">
-                    {Object.values(features || {}).map((feature: any) => (
-                      <div key={feature.name} className="border rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h4 className="font-medium">{feature.name}</h4>
-                            <p className="text-sm text-gray-600">
-                              Requires {feature.requiredTier} tier
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={feature.hasAccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                              {feature.hasAccess ? 'Available' : 'Not Available'}
-                            </Badge>
-                          </div>
+                    {Object.values(features || {}).map((feature: { name: string; requiredTier: string; description: string; category: string }) => (
+                      <div key={feature.name} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <h4 className="font-medium">{feature.name}</h4>
+                          <p className="text-sm text-gray-600">{feature.description}</p>
                         </div>
-                        
-                        {feature.hasAccess && feature.usageInfo && (
-                          <FeatureUsageDisplay featureName={feature.name} />
-                        )}
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {feature.requiredTier} Tier
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -315,9 +318,9 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                 </Card>
               </div>
             </div>
-          )}
+          </Tabs.Content>
 
-          {activeTab === 'modules' && (
+          <Tabs.Content value="modules">
             <div className="space-y-4">
               <Card>
                 <div className="p-6">
@@ -374,9 +377,9 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                 </div>
               </Card>
             </div>
-          )}
+          </Tabs.Content>
 
-          {activeTab === 'usage' && (
+          <Tabs.Content value="usage">
             <div className="space-y-4">
               <Card>
                 <div className="p-6">
@@ -394,10 +397,10 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                       <div>
                         <h4 className="font-semibold mb-2">Core Platform Usage</h4>
                         <div className="space-y-2">
-                          {usage.coreUsage.map((record: any, index: number) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <span className="text-sm font-medium">{record.metric}</span>
-                              <span className="text-sm">{record.quantity} units</span>
+                          {usage.coreUsage.map((record: UsageRecord, index: number) => (
+                            <div key={index} className="flex items-center justify-between p-2 border-b">
+                              <span className="text-sm">{record.description}</span>
+                              <span className="text-sm font-medium">{record.value} {record.unit}</span>
                             </div>
                           ))}
                         </div>
@@ -411,10 +414,10 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                             <div key={moduleUsage.moduleId} className="border rounded-lg p-3">
                               <h5 className="font-medium mb-2">{moduleUsage.moduleName}</h5>
                               <div className="space-y-1">
-                                {moduleUsage.usage.map((record: any, index: number) => (
-                                  <div key={index} className="flex items-center justify-between text-sm">
-                                    <span>{record.metric}</span>
-                                    <span>{record.quantity} units</span>
+                                {moduleUsage.usage.map((record: UsageRecord, index: number) => (
+                                  <div key={index} className="flex items-center justify-between p-2 border-b">
+                                    <span className="text-sm">{record.description}</span>
+                                    <span className="text-sm font-medium">{record.value} {record.unit}</span>
                                   </div>
                                 ))}
                               </div>
@@ -432,9 +435,9 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                 </div>
               </Card>
             </div>
-          )}
+          </Tabs.Content>
 
-          {activeTab === 'invoices' && (
+          <Tabs.Content value="invoices">
             <div className="space-y-4">
               <Card>
                 <div className="p-6">
@@ -486,7 +489,7 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                 </div>
               </Card>
             </div>
-          )}
+          </Tabs.Content>
         </Tabs>
       </div>
     </Modal>

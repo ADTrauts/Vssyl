@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 
 // Widget service stubs
-export async function createWidget(userId: string, dashboardId: string, data: { type: string; config?: any; position?: any }) {
+export async function createWidget(userId: string, dashboardId: string, data: { type: string; config?: Record<string, unknown>; position?: Record<string, unknown> }) {
   // Ensure dashboard belongs to user
   const dashboard = await prisma.dashboard.findFirst({ where: { id: dashboardId, userId } });
   if (!dashboard) return null;
@@ -9,13 +9,13 @@ export async function createWidget(userId: string, dashboardId: string, data: { 
     data: {
       dashboardId,
       type: data.type,
-      config: data.config,
-      position: data.position,
+      config: data.config as any, // TODO: Fix Prisma JSON field typing
+      position: data.position as any, // TODO: Fix Prisma JSON field typing
     },
   });
 }
 
-export async function updateWidget(userId: string, widgetId: string, data: { type?: string; config?: any; position?: any }) {
+export async function updateWidget(userId: string, widgetId: string, data: { type?: string; config?: Record<string, unknown>; position?: Record<string, unknown> }) {
   // Ensure widget belongs to a dashboard owned by user
   const widget = await prisma.widget.findFirst({ where: { id: widgetId, dashboard: { userId } } });
   if (!widget) return null;
@@ -23,8 +23,8 @@ export async function updateWidget(userId: string, widgetId: string, data: { typ
     where: { id: widgetId },
     data: {
       ...(data.type !== undefined ? { type: data.type } : {}),
-      ...(data.config !== undefined ? { config: data.config } : {}),
-      ...(data.position !== undefined ? { position: data.position } : {}),
+      ...(data.config !== undefined ? { config: data.config as any } : {}), // TODO: Fix Prisma JSON field typing
+      ...(data.position !== undefined ? { position: data.position as any } : {}), // TODO: Fix Prisma JSON field typing
     },
   });
 }

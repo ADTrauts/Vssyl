@@ -31,16 +31,16 @@ export interface DashboardWidget {
   id: string;
   dashboardId: string;
   type: string;
-  config?: any;
-  position?: any;
+  config?: Record<string, unknown>;
+  position?: { x: number; y: number; width: number; height: number };
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateDashboardRequest {
   name: string;
-  layout?: any;
-  preferences?: any;
+  layout?: DashboardLayout;
+  preferences?: DashboardPreferences;
   businessId?: string;
   institutionId?: string;
   householdId?: string;
@@ -48,8 +48,8 @@ export interface CreateDashboardRequest {
 
 export interface UpdateDashboardRequest {
   name?: string;
-  layout?: any;
-  preferences?: any;
+  layout?: DashboardLayout;
+  preferences?: DashboardPreferences;
 }
 
 export interface DashboardResponse {

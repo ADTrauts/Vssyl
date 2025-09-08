@@ -1,12 +1,22 @@
 import { prisma } from '../lib/prisma';
+import { JsonValue } from '@prisma/client/runtime/library';
+
+export interface NotificationData {
+  id: string;
+  type: string;
+  title: string;
+  read: boolean;
+  createdAt: Date;
+  data?: JsonValue;
+}
 
 export interface NotificationGroup {
   id: string;
   type: string;
   title: string;
   count: number;
-  latestNotification: any;
-  notifications: any[];
+  latestNotification: NotificationData;
+  notifications: NotificationData[];
   priority: 'high' | 'medium' | 'low';
   isRead: boolean;
   createdAt: Date;
@@ -101,7 +111,7 @@ export class NotificationGroupingService {
   /**
    * Group notifications based on rules
    */
-  private groupNotifications(notifications: any[]): NotificationGroup[] {
+  private groupNotifications(notifications: NotificationData[]): NotificationGroup[] {
     const groups: Map<string, NotificationGroup> = new Map();
 
     for (const notification of notifications) {
@@ -114,7 +124,7 @@ export class NotificationGroupingService {
         continue;
       }
 
-      const groupKey = this.getGroupKey(notification, rule);
+      const groupKey = this.getGroupKey(notification);
       const existingGroup = groups.get(groupKey);
 
       if (existingGroup && this.shouldAddToGroup(notification, existingGroup, rule)) {
@@ -149,15 +159,15 @@ export class NotificationGroupingService {
   /**
    * Generate group key for notification
    */
-  private getGroupKey(notification: any, rule: GroupingRule): string {
+  private getGroupKey(notification: NotificationData): string {
     switch (notification.type) {
       case 'chat':
       case 'mentions':
-        return `${notification.type}_${notification.data?.conversationId || 'general'}`;
+        return `${notification.type}_${(notification.data as any)?.conversationId || 'general'}`;
       case 'drive':
-        return `${notification.type}_${notification.data?.senderId || 'system'}`;
+        return `${notification.type}_${(notification.data as any)?.senderId || 'system'}`;
       case 'system':
-        return `${notification.type}_${notification.data?.category || 'general'}`;
+        return `${notification.type}_${(notification.data as any)?.category || 'general'}`;
       default:
         return `${notification.type}_general`;
     }
@@ -166,7 +176,7 @@ export class NotificationGroupingService {
   /**
    * Check if notification should be added to existing group
    */
-  private shouldAddToGroup(notification: any, group: NotificationGroup, rule: GroupingRule): boolean {
+  private shouldAddToGroup(notification: NotificationData, group: NotificationGroup, rule: GroupingRule): boolean {
     const timeDiff = Math.abs(
       notification.createdAt.getTime() - group.latestNotification.createdAt.getTime()
     );
@@ -178,7 +188,7 @@ export class NotificationGroupingService {
   /**
    * Create individual group for notification
    */
-  private createIndividualGroup(notification: any): NotificationGroup {
+  private createIndividualGroup(notification: NotificationData): NotificationGroup {
     return {
       id: `individual_${notification.id}`,
       type: notification.type,
@@ -196,8 +206,8 @@ export class NotificationGroupingService {
   /**
    * Create group from notification
    */
-  private createGroupFromNotification(notification: any, rule: GroupingRule): NotificationGroup {
-    const groupKey = this.getGroupKey(notification, rule);
+  private createGroupFromNotification(notification: NotificationData, rule: GroupingRule): NotificationGroup {
+    const groupKey = this.getGroupKey(notification);
     
     return {
       id: groupKey,
@@ -216,14 +226,14 @@ export class NotificationGroupingService {
   /**
    * Generate title for grouped notifications
    */
-  private generateGroupTitle(notification: any, rule: GroupingRule): string {
+  private generateGroupTitle(notification: NotificationData, rule: GroupingRule): string {
     switch (notification.type) {
       case 'chat':
-        return `${notification.data?.senderName || 'Someone'} sent ${rule.maxGroupSize > 1 ? 'messages' : 'a message'}`;
+        return `${(notification.data as any)?.senderName || 'Someone'} sent ${rule.maxGroupSize > 1 ? 'messages' : 'a message'}`;
       case 'mentions':
-        return `${notification.data?.senderName || 'Someone'} mentioned you`;
+        return `${(notification.data as any)?.senderName || 'Someone'} mentioned you`;
       case 'drive':
-        return `${notification.data?.senderName || 'Someone'} shared files with you`;
+        return `${(notification.data as any)?.senderName || 'Someone'} shared files with you`;
       case 'system':
         return 'System notifications';
       default:

@@ -1,14 +1,49 @@
 import { authenticatedApiCall } from '@/lib/apiUtils';
 
 // Types for the org chart system
+
+// Permission and module data structures
+export interface PermissionData {
+  id: string;
+  name: string;
+  description: string;
+  moduleId: string;
+  category: 'basic' | 'advanced' | 'admin';
+  action: string;
+  resource: string;
+  dependencies?: string[];
+}
+
+export interface ModuleData {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  isActive: boolean;
+}
+
+export interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+}
+
+export interface PermissionCheckDetails {
+  source: 'position' | 'tier' | 'department' | 'custom' | 'inherited';
+  level: string;
+  grantedAt: string;
+  expiresAt?: string;
+}
+
 export interface OrganizationalTier {
   id: string;
   businessId: string;
   name: string;
   level: number;
   description?: string;
-  defaultPermissions?: any;
-  defaultModules?: any;
+  defaultPermissions: PermissionData[];
+  defaultModules: ModuleData[];
   createdAt: string;
   updatedAt: string;
 }
@@ -23,8 +58,8 @@ export interface Department {
   childDepartments?: Department[];
   headPositionId?: string;
   headPosition?: Position;
-  departmentModules?: any;
-  departmentPermissions?: any;
+  departmentModules: ModuleData[];
+  departmentPermissions: PermissionData[];
   positions?: Position[];
   createdAt: string;
   updatedAt: string;
@@ -41,8 +76,8 @@ export interface Position {
   department?: Department;
   capacity: number;
   currentEmployees: number;
-  permissions?: any;
-  permissionSets?: PermissionSet[];
+  permissions: PermissionData[];
+  permissionSets: PermissionSet[];
   createdAt: string;
   updatedAt: string;
 }
@@ -66,7 +101,7 @@ export interface PermissionSet {
   businessId: string;
   name: string;
   description: string;
-  permissions: any;
+  permissions: PermissionData[];
   isTemplate: boolean;
   templateType?: string;
   createdAt: string;
@@ -80,7 +115,7 @@ export interface EmployeePosition {
   positionId: string;
   position: Position;
   assignedById?: string;
-  assignedBy?: any;
+  assignedBy: UserData;
   effectiveDate: string;
   endDate?: string;
   isActive: boolean;
@@ -103,8 +138,8 @@ export interface CreateOrganizationalTierData {
   name: string;
   level: number;
   description?: string;
-  defaultPermissions?: any;
-  defaultModules?: any;
+  defaultPermissions: PermissionData[];
+  defaultModules: ModuleData[];
 }
 
 export interface CreateDepartmentData {
@@ -113,8 +148,8 @@ export interface CreateDepartmentData {
   description?: string;
   parentDepartmentId?: string;
   headPositionId?: string;
-  departmentModules?: any;
-  departmentPermissions?: any;
+  departmentModules: ModuleData[];
+  departmentPermissions: PermissionData[];
 }
 
 export interface CreatePositionData {
@@ -124,7 +159,7 @@ export interface CreatePositionData {
   tierId: string;
   departmentId?: string;
   capacity: number;
-  permissions?: any;
+  permissions: PermissionData[];
 }
 
 export interface CreatePermissionData {
@@ -142,7 +177,7 @@ export interface CreatePermissionSetData {
   businessId: string;
   name: string;
   description: string;
-  permissions: any;
+  permissions: PermissionData[];
   isTemplate?: boolean;
   templateType?: string;
 }
@@ -159,16 +194,16 @@ export interface PermissionCheckResult {
   hasPermission: boolean;
   source: 'position' | 'tier' | 'department' | 'custom' | 'inherited';
   level: string;
-  details?: any;
+  details: PermissionCheckDetails;
 }
 
 export interface UserPermissions {
   userId: string;
   businessId: string;
-  permissions: any;
-  positionPermissions: any;
-  customPermissions: any;
-  inheritedPermissions: any;
+  permissions: PermissionData[];
+  positionPermissions: PermissionData[];
+  customPermissions: PermissionData[];
+  inheritedPermissions: PermissionData[];
 }
 
 // Helper function to make authenticated API calls

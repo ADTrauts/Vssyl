@@ -16,7 +16,7 @@ export interface PushNotificationPayload {
   badge?: string;
   image?: string;
   tag?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   actions?: Array<{
     action: string;
     title: string;
@@ -24,6 +24,20 @@ export interface PushNotificationPayload {
   }>;
   requireInteraction?: boolean;
   silent?: boolean;
+}
+
+export interface NotificationData {
+  id: string;
+  title: string;
+  body?: string;
+  type: string;
+  data?: Record<string, unknown>;
+}
+
+export interface PrismaPushSubscription {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
 }
 
 export class PushNotificationService {
@@ -122,7 +136,7 @@ export class PushNotificationService {
         where: { userId }
       });
 
-      return subscriptions.map((sub: any) => ({
+      return subscriptions.map((sub: PrismaPushSubscription) => ({
         endpoint: sub.endpoint,
         keys: {
           p256dh: sub.p256dh,
@@ -224,7 +238,7 @@ export class PushNotificationService {
   /**
    * Create push notification payload from notification data
    */
-  createPayloadFromNotification(notification: any): PushNotificationPayload {
+  createPayloadFromNotification(notification: NotificationData): PushNotificationPayload {
     const icon = process.env.NEXT_PUBLIC_APP_URL + '/favicon.ico';
     const badge = process.env.NEXT_PUBLIC_APP_URL + '/notification-badge.png';
 

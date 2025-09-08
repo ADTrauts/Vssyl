@@ -15,9 +15,9 @@ function authenticateJWT(req: express.Request, res: express.Response, next: expr
   const authHeader = req.headers.authorization;
   if (authHeader) {
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.JWT_SECRET!, (err: any, decoded: any) => {
+    jwt.verify(token, process.env.JWT_SECRET!, (err: unknown, decoded: unknown) => {
       if (err) {
-        console.log('BusinessAI - JWT verification failed:', err.message);
+        console.log('BusinessAI - JWT verification failed:', err instanceof Error ? err.message : 'Unknown error');
         return res.sendStatus(403);
       }
       
@@ -27,11 +27,11 @@ function authenticateJWT(req: express.Request, res: express.Response, next: expr
       (req as any).user = decoded;
       
       // Try different possible user ID fields
-      const userId = decoded.userId || decoded.sub || decoded.id || decoded.user?.id;
+      const userId = (decoded as any)?.userId || (decoded as any)?.sub || (decoded as any)?.id || (decoded as any)?.user?.id;
       console.log('BusinessAI - Extracted userId:', userId);
       
       if (!userId) {
-        console.log('BusinessAI - No userId found in token, available fields:', Object.keys(decoded));
+        console.log('BusinessAI - No userId found in token, available fields:', Object.keys(decoded as Record<string, unknown>));
         return res.status(400).json({
           success: false,
           message: 'Invalid token: no user ID found'
@@ -72,11 +72,11 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
       message: 'Business AI Digital Twin initialized successfully',
       data: businessAI
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to initialize business AI:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to initialize business AI'
+      message: error instanceof Error ? error.message : 'Failed to initialize business AI'
     });
   }
 });
@@ -146,7 +146,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
         }
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get business AI config:', error);
     res.status(500).json({
       success: false,
@@ -171,11 +171,11 @@ router.put('/:businessId/config', async (req: express.Request, res: express.Resp
       success: true,
       message: 'Business AI configuration updated successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update business AI config:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update business AI configuration'
+      message: error instanceof Error ? error.message : 'Failed to update business AI configuration'
     });
   }
 });
@@ -208,11 +208,11 @@ router.post('/:businessId/interact', async (req: express.Request, res: express.R
       success: true,
       data: response
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Business AI interaction failed:', error);
     res.status(400).json({
       success: false,
-      message: error.message || 'AI interaction failed'
+      message: error instanceof Error ? error.message : 'AI interaction failed'
     });
   }
 });
@@ -279,7 +279,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
         }
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get employee AI access:', error);
     res.status(500).json({
       success: false,
@@ -331,7 +331,7 @@ router.get('/:businessId/analytics', async (req: express.Request, res: express.R
       success: true,
       data: analytics
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get business AI analytics:', error);
     res.status(500).json({
       success: false,
@@ -398,11 +398,59 @@ router.get('/:businessId/learning-events', async (req: express.Request, res: exp
       success: true,
       data: learningEvents
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to get learning events:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get learning events'
+    });
+  }
+});
+
+/**
+ * Get Centralized Learning Insights (Admin only)
+ * GET /api/business-ai/:businessId/centralized-insights
+ */
+router.get('/:businessId/centralized-insights', async (req: express.Request, res: express.Response) => {
+  try {
+    const { businessId } = req.params;
+    const userId = (req as any).user.userId;
+
+    // Validate admin access
+    const businessAI = await prisma.businessAIDigitalTwin.findUnique({
+      where: { businessId }
+    });
+
+    if (!businessAI) {
+      return res.status(404).json({
+        success: false,
+        message: 'Business AI not found'
+      });
+    }
+
+    const isAdmin = businessAI.adminUsers.includes(userId);
+    const member = await prisma.businessMember.findFirst({
+      where: { businessId, userId, isActive: true, role: 'ADMIN' }
+    });
+
+    if (!isAdmin && !member) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    const insights = await businessAIService.getCentralizedInsights(businessId);
+
+    res.json({
+      success: true,
+      data: insights
+    });
+  } catch (error: unknown) {
+    console.error('Failed to get centralized insights:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get centralized insights'
     });
   }
 });
@@ -475,7 +523,7 @@ router.put('/:businessId/learning-events/:eventId/review', async (req: express.R
       message: `Learning event ${approved ? 'approved' : 'rejected'} successfully`,
       data: updatedEvent
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to review learning event:', error);
     res.status(500).json({
       success: false,

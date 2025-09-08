@@ -1,0 +1,284 @@
+// ============================================================================
+// ANALYTICS & INTELLIGENCE PLATFORM MODELS
+// ============================================================================
+
+// Real-time Analytics
+model DataStream {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  source          String   // workflow, ai_model, user_activity, system_metrics
+  schema          Json     // Data stream schema
+  status          String   // active, paused, archived
+  config          Json?    // Stream configuration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  dataPoints      DataPoint[]
+  processors      StreamProcessor[]
+  
+  @@index([source])
+  @@index([status])
+  @@map("data_streams")
+}
+
+model DataPoint {
+  id              String   @id @default(uuid())
+  streamId        String
+  stream          DataStream @relation(fields: [streamId], references: [id])
+  timestamp       DateTime @default(now())
+  data            Json     // Actual data values
+  metadata        Json?    // Additional metadata
+  
+  @@index([streamId])
+  @@index([timestamp])
+  @@map("data_points")
+}
+
+model StreamProcessor {
+  id              String   @id @default(uuid())
+  streamId        String
+  stream          DataStream @relation(fields: [streamId], references: [id])
+  name            String
+  type            String   // filter, transform, aggregate, ml_model
+  config          Json     // Processor configuration
+  status          String   // active, paused, error
+  createdAt       DateTime @default(now())
+  
+  @@index([streamId])
+  @@index([type])
+  @@map("stream_processors")
+}
+
+model RealTimeMetric {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   // performance, business, user, system
+  value           Float
+  unit            String?
+  tags            Json?    // Key-value tags
+  timestamp       DateTime @default(now())
+  
+  @@index([name])
+  @@index([category])
+  @@index([timestamp])
+  @@map("real_time_metrics")
+}
+
+model RealTimeAlert {
+  id              String   @id @default(uuid())
+  metricName      String
+  condition       String   // threshold, trend, anomaly
+  threshold       Float?
+  severity        String   // low, medium, high, critical
+  message         String
+  status          String   // active, acknowledged, resolved
+  triggeredAt     DateTime @default(now())
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  
+  @@index([metricName])
+  @@index([severity])
+  @@index([status])
+  @@map("real_time_alerts")
+}
+
+// Analytics Dashboards
+model AnalyticsDashboard {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   // business, technical, user, ai
+  layout          Json     // Dashboard layout configuration
+  config          Json?    // Dashboard configuration
+  isPublic        Boolean  @default(false)
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  widgets         DashboardWidget[]
+  
+  @@index([category])
+  @@index([createdBy])
+  @@map("analytics_dashboards")
+}
+
+model DashboardWidget {
+  id              String   @id @default(uuid())
+  dashboardId     String
+  dashboard       AnalyticsDashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  name            String
+  type            String   // line, bar, pie, scatter, area, heatmap, metric
+  config          Json     // Widget configuration
+  position        Json     // Widget position in dashboard
+  dataSource      String?  // Data source for the widget
+  refreshInterval Int?     // Refresh interval in seconds
+  
+  @@index([dashboardId])
+  @@index([type])
+  @@map("dashboard_widgets")
+}
+
+// Predictive Intelligence
+model ForecastingModel {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  modelType       String   // arima, lstm, random_forest, etc.
+  algorithm       String   // Specific algorithm implementation
+  config          Json     // Model configuration
+  performance     Json?    // Model performance metrics
+  status          String   // training, active, archived
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  forecasts       Forecast[]
+  
+  @@index([modelType])
+  @@index([status])
+  @@map("forecasting_models")
+}
+
+model Forecast {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           ForecastingModel @relation(fields: [modelId], references: [id])
+  horizon         Int      // Forecast horizon in time units
+  confidence      Float    // Confidence level (0-1)
+  data            Json     // Forecast data points
+  metadata        Json?    // Additional forecast metadata
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?
+  
+  @@index([modelId])
+  @@index([horizon])
+  @@index([createdAt])
+  @@map("forecasts")
+}
+
+model AnomalyDetectionModel {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  modelType       String   // statistical, isolation_forest, autoencoder, etc.
+  algorithm       String   // Specific algorithm implementation
+  config          Json     // Model configuration
+  performance     Json?    // Model performance metrics
+  status          String   // training, active, archived
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  anomalies       Anomaly[]
+  
+  @@index([modelType])
+  @@index([status])
+  @@map("anomaly_detection_models")
+}
+
+model Anomaly {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           AnomalyDetectionModel @relation(fields: [modelId], references: [id])
+  severity        String   // low, medium, high, critical
+  data           Json     // Anomaly data and context
+  detectedAt     DateTime @default(now())
+  status         String   // new, investigating, resolved, false_positive
+  
+  @@index([modelId])
+  @@index([severity])
+  @@index([detectedAt])
+  @@map("anomalies")
+}
+
+// Business Intelligence
+model BusinessMetric {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   // financial, operational, customer, product
+  value           Float
+  unit            String?
+  target          Float?
+  trend           String   // increasing, decreasing, stable
+  lastUpdated     DateTime @default(now())
+  
+  @@index([name])
+  @@index([category])
+  @@index([lastUpdated])
+  @@map("business_metrics")
+}
+
+model KPIDashboard {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  category        String   // executive, operational, tactical
+  layout          Json     // Dashboard layout
+  config          Json?    // Dashboard configuration
+  isPublic        Boolean  @default(false)
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([category])
+  @@index([createdBy])
+  @@map("kpi_dashboards")
+}
+
+// AI-Powered Insights
+model PatternDiscovery {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  patternType     String   // behavioral, temporal, correlation, etc.
+  confidence      Float    // Confidence in the discovery (0-1)
+  data           Json     // Pattern data and evidence
+  metadata       Json?    // Additional metadata
+  discoveredAt   DateTime @default(now())
+  
+  @@index([patternType])
+  @@index([confidence])
+  @@index([discoveredAt])
+  @@map("pattern_discoveries")
+}
+
+model IntelligentInsight {
+  id              String   @id @default(uuid())
+  type            String   // pattern, prediction, trend, recommendation, anomaly, correlation
+  title           String
+  description     String
+  confidence      Float    // Confidence in the insight (0-1)
+  impact          String   // low, medium, high, critical
+  data           Json     // Insight data and context
+  actionable     Boolean  @default(false)
+  recommendations String[]
+  createdAt      DateTime @default(now())
+  
+  @@index([type])
+  @@index([impact])
+  @@index([actionable])
+  @@index([createdAt])
+  @@map("intelligent_insights")
+}
+
+model Recommendation {
+  id              String   @id @default(uuid())
+  type            String   // optimization, feature, workflow, security
+  title           String
+  description     String
+  priority        String   // low, medium, high, critical
+  status          String   // pending, approved, implemented, rejected
+  impact          String   // low, medium, high, critical
+  effort          String   // low, medium, high
+  data           Json     // Recommendation data and context
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@index([type])
+  @@index([priority])
+  @@index([status])
+  @@index([impact])
+  @@map("recommendations")
+}

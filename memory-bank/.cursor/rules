@@ -35,4 +35,13 @@
 
 ## Project Patterns
 
-- Always use `npx` when running CLI tools (e.g., Playwright, Prisma) to ensure the correct version and dependency resolution. This avoids issues with direct invocation and is now the standard for scripts and manual commands. 
+- Always use `npx` when running CLI tools (e.g., Playwright, Prisma) to ensure the correct version and dependency resolution. This avoids issues with direct invocation and is now the standard for scripts and manual commands.
+
+## AI Coding Standards & Best Practices
+- **ALWAYS follow the comprehensive coding standards** defined in `memory-bank/AI_CODING_STANDARDS.md`
+- **NEVER use `any` types** - replace with proper TypeScript types or `Record<string, unknown>`
+- **Maintain consistent patterns** for AI services, routes, and API responses
+- **Follow established architecture** for service classes, error handling, and database operations
+- **Use proper type assertions** with `unknown` first: `(data as unknown as Type)`
+- **Implement consistent error handling** with try-catch blocks and proper logging
+- **Follow the established service class pattern** extending EventEmitter with PrismaClient injection 

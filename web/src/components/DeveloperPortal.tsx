@@ -1,31 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Spinner, Alert, Modal } from 'shared/components';
-import { 
-  getDeveloperDashboard,
-  getDeveloperStats,
-  getModuleRevenue,
-  requestPayout,
-  getPayoutHistory,
-  type DeveloperStats,
-  type ModuleRevenue,
-} from '../api/developerPortal';
-import { 
-  DollarSign, 
-  Users, 
-  Download, 
-  Star,
-  TrendingUp,
-  CreditCard,
-  Calendar,
-  BarChart3,
-  Plus,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Loader
-} from 'lucide-react';
+import { Modal, Card, Alert, Button, Input, Spinner, Badge } from 'shared/components';
+import { DollarSign, Users, TrendingUp, Download, CheckCircle, Clock, AlertCircle, Star, Plus, BarChart3, Loader, CreditCard } from 'lucide-react';
+import { getDeveloperDashboard, requestPayout, DeveloperStats, ModuleRevenue, PayoutHistoryItem } from '../api/developerPortal';
 
 interface DeveloperPortalProps {
   open: boolean;
@@ -37,7 +15,7 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<DeveloperStats | null>(null);
   const [moduleRevenue, setModuleRevenue] = useState<ModuleRevenue[]>([]);
-  const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutHistoryItem[]>([]);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutLoading, setPayoutLoading] = useState(false);
@@ -57,9 +35,10 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
       setStats(dashboard.stats);
       setModuleRevenue(dashboard.moduleRevenue);
       setPayoutHistory(dashboard.payoutHistory);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading dashboard:', err);
-      setError(err.message || 'Failed to load developer dashboard');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load developer dashboard';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -79,9 +58,10 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
       setShowPayoutModal(false);
       setPayoutAmount('');
       await loadDashboard(); // Refresh data
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error requesting payout:', err);
-      setError(err.message || 'Failed to request payout');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to request payout';
+      setError(errorMessage);
     } finally {
       setPayoutLoading(false);
     }
@@ -228,7 +208,7 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                             </span>
                           </div>
                           <div className="text-sm text-gray-500">
-                            {new Date(payout.date).toLocaleDateString()}
+                            {new Date(payout.requestedAt).toLocaleDateString()}
                           </div>
                         </div>
                       ))}

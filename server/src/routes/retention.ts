@@ -21,7 +21,7 @@ import {
   autoClassifyData
 } from '../controllers/retentionController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Retention policy routes
 router.get('/policies', getRetentionPolicies);

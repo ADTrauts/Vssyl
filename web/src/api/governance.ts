@@ -34,15 +34,17 @@ export interface GovernancePolicy {
 export interface PolicyViolation {
   id: string;
   policyId: string;
+  policyName: string;
   resourceType: string;
   resourceId: string;
-  violationType: string;
+  violationType: 'content' | 'access' | 'compliance' | 'security';
   severity: 'low' | 'medium' | 'high' | 'critical';
-  message: string;
+  description: string;
   detectedAt: string;
+  status: 'open' | 'resolved' | 'ignored';
+  resolutionNotes?: string;
   resolvedAt?: string;
   resolvedBy?: string;
-  resolutionNotes?: string;
 }
 
 export interface GovernancePolicyCreateRequest {
@@ -65,12 +67,39 @@ export interface PolicyEnforcementRequest {
   resourceType: string;
   resourceId: string;
   content?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
+}
+
+export interface PolicyViolation {
+  id: string;
+  policyId: string;
+  policyName: string;
+  resourceType: string;
+  resourceId: string;
+  violationType: 'content' | 'access' | 'compliance' | 'security';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  detectedAt: string;
+  status: 'open' | 'resolved' | 'ignored';
+  resolutionNotes?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+
+export interface PolicyAction {
+  id: string;
+  policyId: string;
+  actionType: 'block' | 'warn' | 'log' | 'notify' | 'quarantine';
+  description: string;
+  executedAt: string;
+  status: 'pending' | 'executed' | 'failed';
+  result?: string;
+  errorMessage?: string;
 }
 
 export interface PolicyEnforcementResponse {
-  violations: any[];
-  actions: any[];
+  violations: PolicyViolation[];
+  actions: PolicyAction[];
   totalPolicies: number;
   totalViolations: number;
 }

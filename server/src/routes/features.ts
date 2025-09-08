@@ -35,7 +35,7 @@ router.get('/all', async (req: Request, res: Response) => {
 router.get('/check', async (req: Request, res: Response) => {
   try {
     const { feature, businessId } = req.query;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -73,7 +73,7 @@ router.get('/check', async (req: Request, res: Response) => {
 router.get('/module', async (req: Request, res: Response) => {
   try {
     const { module, businessId } = req.query;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -110,7 +110,7 @@ router.get('/module', async (req: Request, res: Response) => {
 router.post('/usage', async (req: Request, res: Response) => {
   try {
     const { feature, quantity = 1, businessId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -218,7 +218,7 @@ router.get('/by-tier', async (req: Request, res: Response) => {
 router.get('/user-summary', async (req: Request, res: Response) => {
   try {
     const { businessId } = req.query;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });

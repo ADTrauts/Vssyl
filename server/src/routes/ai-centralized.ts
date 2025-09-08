@@ -2,12 +2,12 @@ import * as express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { CentralizedLearningEngine } from '../ai/learning/CentralizedLearningEngine';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 const prisma = new PrismaClient();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
 
 // JWT authentication middleware (local definition)
-const authenticateJWT = (req: any, res: any, next: any) => {
+const authenticateJWT = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
@@ -23,7 +23,7 @@ const authenticateJWT = (req: any, res: any, next: any) => {
   try {
     // For now, we'll use a simple token validation
     // In production, you'd verify the JWT token properly
-    req.user = { id: 'user_id_from_token' }; // This should be extracted from JWT
+    (req as any).user = { id: 'user_id_from_token' }; // This should be extracted from JWT
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Invalid token' });
@@ -31,7 +31,7 @@ const authenticateJWT = (req: any, res: any, next: any) => {
 };
 
 // Admin-only middleware
-const requireAdmin = async (req: any, res: any, next: any) => {
+const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
     // For testing purposes, allow any authenticated request
     // In production, you'd verify the user is actually an admin

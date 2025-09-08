@@ -14,6 +14,11 @@ const mockDashboards = [
   { id: '3', name: 'Family Planning' },
 ];
 
+interface FileAction {
+  type: 'move-to-main' | 'move-to-trash' | 'export';
+  folderName?: string;
+}
+
 export default function DashboardManagementDemo() {
   const {
     isModalOpen,
@@ -30,7 +35,7 @@ export default function DashboardManagementDemo() {
     await openDeletionModal(dashboard);
   };
 
-  const handleConfirmDeletion = async (fileAction: any) => {
+  const handleConfirmDeletion = async (fileAction: FileAction) => {
     try {
       const result = await confirmDeletion(fileAction);
       

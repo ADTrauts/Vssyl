@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import {
   getHouseholds,
   createHousehold,
@@ -10,7 +10,7 @@ import {
   removeMember
 } from '../controllers/householdController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Household CRUD operations
 router.get('/', getHouseholds);

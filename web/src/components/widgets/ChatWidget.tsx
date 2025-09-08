@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { 
   MessageCircle, 
@@ -18,7 +18,7 @@ import {
 import { Card, Button, Badge, Spinner, Alert, Avatar } from 'shared/components';
 import { getConversations, getMessages } from '../../api/chat';
 import { formatRelativeTime } from '../../utils/format';
-import { Conversation, Message } from 'shared/types/chat';
+import { Conversation, Message, ReadReceipt } from 'shared/types/chat';
 
 interface ChatWidgetProps {
   id: string;
@@ -135,9 +135,9 @@ export default function ChatWidget({
         const conversationsWithStats = conversationsData
           .filter(conv => safeConfig.conversationTypes.includes(conv.type))
           .map(conv => {
-            const unreadCount = conv.messages?.filter((msg: any) => 
+            const unreadCount = conv.messages?.filter((msg: Message) => 
               msg.senderId !== session.user?.id && 
-              !msg.readReceipts?.some((receipt: any) => receipt.userId === session.user?.id)
+              !msg.readReceipts?.some((receipt: ReadReceipt) => receipt.userId === session.user?.id)
             ).length || 0;
 
             const lastMessage = conv.messages && conv.messages.length > 0 

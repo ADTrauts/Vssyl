@@ -6,7 +6,7 @@ import {
   getGoogleOAuthStatus
 } from '../controllers/googleOAuthController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Get Google OAuth authorization URL for business
 router.get('/business/:businessId/auth-url', getGoogleAuthUrl);

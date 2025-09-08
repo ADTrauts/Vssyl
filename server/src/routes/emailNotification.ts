@@ -8,7 +8,7 @@ import {
   updateUserEmailPreferences
 } from '../controllers/emailNotificationController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Apply authentication middleware to all routes
 router.use(authenticateJWT);

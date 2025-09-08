@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Alert, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
+interface RecentInsight {
+  id: string;
+  type: string;
+  description: string;
+  confidence: number;
+  timestamp: string;
+  impact: string;
+}
+
 interface LearningAnalytics {
   totalEvents: number;
   eventTypes: Record<string, number>;
@@ -9,7 +18,7 @@ interface LearningAnalytics {
   predictions: number;
   confidence: number;
   learningProgress: number;
-  recentInsights: any[];
+  recentInsights: RecentInsight[];
 }
 
 interface LearningPattern {
@@ -19,7 +28,7 @@ interface LearningPattern {
   strength: number;
   frequency: number;
   description: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 const LearningDashboard: React.FC = () => {
@@ -254,10 +263,10 @@ const LearningDashboard: React.FC = () => {
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Insights</h3>
             <div className="space-y-4">
-              {analytics.recentInsights.slice(0, 3).map((insight: any, index: number) => (
+              {analytics.recentInsights.slice(0, 3).map((insight: RecentInsight, index: number) => (
                 <div key={index} className="border-l-4 border-blue-500 pl-4">
                   <h4 className="font-medium text-gray-900 capitalize">
-                    {insight.insightType?.replace('_', ' ')} Insight
+                    {insight.type?.replace('_', ' ')} Insight
                   </h4>
                   <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
                   <div className="flex items-center mt-2 space-x-2">

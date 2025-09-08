@@ -19,7 +19,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useChat } from '../contexts/ChatContext';
-import { useGlobalTrash } from '../contexts/GlobalTrashContext';
+import { useGlobalTrash, TrashedItem } from '../contexts/GlobalTrashContext';
 import { useTrashDrop } from '../utils/trashUtils';
 import ClassificationBadge from './ClassificationBadge';
 import { getDataClassifications } from '../api/retention';
@@ -28,6 +28,12 @@ import ClassificationModal from './ClassificationModal';
 
 interface GlobalChatProps {
   className?: string;
+}
+
+interface ChatContext {
+  conversationId: string;
+  moduleId: string;
+  metadata?: Record<string, unknown>;
 }
 
 // GlobalChat Message Item Component
@@ -57,9 +63,9 @@ const GlobalChatMessageItem = React.memo(({
   hasUserReacted: (message: Message, emoji: string) => boolean;
   handleAddReaction: (messageId: string, emoji: string) => Promise<void>;
   handleRemoveReaction: (messageId: string, emoji: string) => Promise<void>;
-  trashItem: (item: any) => Promise<void>;
+  trashItem: (item: TrashedItem) => Promise<void>;
   activeConversation: Conversation | null;
-  chatContext: any;
+  chatContext: ChatContext;
   accessToken: string;
 }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);

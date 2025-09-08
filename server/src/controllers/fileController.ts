@@ -63,7 +63,7 @@ export async function listFiles(req: Request, res: Response) {
     }
     
     // Use raw SQL to include order field in sorting
-    let query = `SELECT * FROM "File" WHERE "userId" = $1`;
+    let query = `SELECT * FROM "files" WHERE "userId" = $1`;
     const params = [userId];
     let paramIndex = 2;
     

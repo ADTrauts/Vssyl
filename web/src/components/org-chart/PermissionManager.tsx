@@ -11,9 +11,13 @@ import {
   updatePermissionSet,
   deletePermissionSet,
   copyPermissionSet,
-  Permission,
-  PermissionSet,
-  CreatePermissionSetData
+  type Permission,
+  type PermissionSet,
+  type PermissionData,
+  type OrganizationalTier,
+  type Department,
+  type Position,
+  type CreatePermissionSetData
 } from '@/api/orgChart';
 import { 
   Plus, 
@@ -30,8 +34,14 @@ import {
   ChevronRight
 } from 'lucide-react';
 
+interface OrgChartData {
+  tiers: OrganizationalTier[];
+  departments: Department[];
+  positions: Position[];
+}
+
 interface PermissionManagerProps {
-  orgChartData: any;
+  orgChartData: OrgChartData;
   businessId: string;
   onUpdate: () => void;
 }
@@ -175,9 +185,15 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
       setPermissionSetForm({
         name: item.name,
         description: item.description,
-        permissions: item.permissions || {}
+        permissions: (item.permissions || []).reduce((acc, perm) => {
+          acc[perm.id] = true;
+          return acc;
+        }, {} as Record<string, boolean>)
       });
-      setSelectedPermissions(item.permissions || {});
+      setSelectedPermissions((item.permissions || []).reduce((acc, perm) => {
+        acc[perm.id] = true;
+        return acc;
+      }, {} as Record<string, boolean>));
     } else {
       setPermissionSetForm({
         name: '',
@@ -207,11 +223,23 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
 
     setLoading(true);
     try {
+      const permissions = Object.entries(permissionSetForm.permissions)
+        .filter(([_, enabled]) => enabled)
+        .map(([permissionId, _]) => ({ 
+          id: permissionId,
+          name: '',
+          description: '',
+          moduleId: '',
+          category: 'basic' as const,
+          action: '',
+          resource: ''
+        }));
+
       const data: CreatePermissionSetData = {
         businessId,
         name: permissionSetForm.name,
         description: permissionSetForm.description,
-        permissions: selectedPermissions,
+        permissions: permissions,
         isTemplate: false
       };
 
@@ -259,13 +287,13 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
   };
 
   const getPermissionCount = (permissionSet: PermissionSet) => {
-    const perms = permissionSet.permissions || {};
-    return Object.values(perms).filter(Boolean).length;
+    const perms = permissionSet.permissions || [];
+    return perms.length;
   };
 
   const getPermissionStatus = (permissionId: string, permissionSet: PermissionSet) => {
-    const perms = permissionSet.permissions || {};
-    return perms[permissionId] || false;
+    const perms = permissionSet.permissions || [];
+    return perms.some(perm => perm.id === permissionId);
   };
 
   return (

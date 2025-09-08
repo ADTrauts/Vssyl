@@ -107,11 +107,26 @@ export const createMessage = async (
   }, token);
 };
 
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  userName: string;
+  emoji: string;
+  createdAt: string;
+}
+
+export interface ReactionResponse {
+  messageId: string;
+  reaction: MessageReaction;
+  action: 'added' | 'removed';
+}
+
 export const addReaction = async (
   messageId: string, 
   reactionData: AddReactionRequest, 
   token: string
-): Promise<{ success: boolean; data: any; action: 'added' | 'removed' }> => {
+): Promise<{ success: boolean; data: ReactionResponse; action: 'added' | 'removed' }> => {
   return apiCall(`/messages/${messageId}/reactions`, {
     method: 'POST',
     body: JSON.stringify(reactionData),
@@ -121,7 +136,7 @@ export const addReaction = async (
 export const markAsRead = async (
   messageId: string, 
   token: string
-): Promise<{ success: boolean; data: any }> => {
+): Promise<{ success: boolean; data: { messageId: string; readAt: string } }> => {
   return apiCall(`/messages/${messageId}/read`, {
     method: 'POST',
   }, token);
@@ -173,7 +188,7 @@ export interface ChatSocketEvents {
   'thread:updated': (thread: Thread) => void;
   
   // Reaction events
-  'message_reaction': (data: { messageId: string; reaction: any; action: 'added' | 'removed' }) => void;
+  'message_reaction': (data: { messageId: string; reaction: MessageReaction; action: 'added' | 'removed' }) => void;
   
   // Error events
   'error': (error: { message: string; code?: string }) => void;
@@ -185,7 +200,7 @@ class ChatAPI {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private eventListeners: Map<string, Set<(...args: any[]) => void>> = new Map();
+  private eventListeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
 
   // WebSocket Management
   async connect(): Promise<void> {
@@ -247,7 +262,7 @@ class ChatAPI {
       }
     });
 
-    this.socket.on('message_reaction', (data: { messageId: string; reaction: any; action: 'added' | 'removed' }) => {
+    this.socket.on('message_reaction', (data: { messageId: string; reaction: MessageReaction; action: 'added' | 'removed' }) => {
       this.emitToListeners('message_reaction', data);
     });
 
@@ -264,7 +279,7 @@ class ChatAPI {
     });
   }
 
-  private emitToListeners(event: string, ...args: any[]): void {
+  private emitToListeners(event: string, ...args: unknown[]): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(listener => {

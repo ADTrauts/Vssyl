@@ -98,11 +98,24 @@ export async function getDashboardFileSummary(token: string, dashboardId: string
   return data.summary;
 }
 
+export interface DashboardMigration {
+  id: string;
+  dashboardId: string;
+  action: 'move-to-main' | 'move-to-trash' | 'export';
+  status: 'pending' | 'completed' | 'failed';
+  filesProcessed: number;
+  foldersProcessed: number;
+  totalSize: number;
+  createdAt: string;
+  completedAt?: string;
+  errorMessage?: string;
+}
+
 export async function deleteDashboardWithFiles(
   token: string, 
   dashboardId: string, 
   fileAction?: FileHandlingAction
-): Promise<{ deleted: number; migration?: any; message: string }> {
+): Promise<{ deleted: number; migration?: DashboardMigration; message: string }> {
   const res = await fetch(`${API_BASE}/${dashboardId}`, {
     method: 'DELETE',
     body: JSON.stringify({ fileAction }),

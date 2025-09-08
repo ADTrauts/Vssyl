@@ -19,7 +19,7 @@ export interface ActionParameter {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   required: boolean;
   description: string;
-  defaultValue?: any;
+  defaultValue?: string | number | boolean | string[] | Record<string, unknown>;
   validation?: string;
 }
 
@@ -27,10 +27,10 @@ export interface ExecutionStep {
   order: number;
   module: string;
   operation: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   description: string;
   rollbackOperation?: string;
-  rollbackParameters?: any;
+  rollbackParameters?: Record<string, unknown>;
 }
 
 export class ActionTemplates {
@@ -85,9 +85,9 @@ export class ActionTemplates {
    */
   async executeTemplate(
     templateId: string,
-    parameters: any,
+    parameters: Record<string, unknown>,
     userId: string
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const template = await this.getActionTemplate(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
@@ -1353,7 +1353,7 @@ export class ActionTemplates {
   /**
    * Validate template parameters
    */
-  private validateParameters(template: ActionTemplate, parameters: any): void {
+  private validateParameters(template: ActionTemplate, parameters: Record<string, unknown>): void {
     for (const param of template.parameters) {
       if (param.required && !(param.name in parameters)) {
         throw new Error(`Required parameter '${param.name}' is missing`);
@@ -1371,7 +1371,7 @@ export class ActionTemplates {
   /**
    * Execute a single step
    */
-  private async executeStep(step: ExecutionStep, parameters: any, userId: string): Promise<any> {
+  private async executeStep(step: ExecutionStep, parameters: Record<string, unknown>, userId: string): Promise<Record<string, unknown>> {
     // This would integrate with the actual module APIs
     // For now, return a mock result
     return {

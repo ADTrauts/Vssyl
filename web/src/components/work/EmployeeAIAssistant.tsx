@@ -16,7 +16,8 @@ import {
   Calendar,
   BarChart,
   Settings,
-  Shield
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 
 interface AIChat {
@@ -43,7 +44,15 @@ interface AICapability {
   id: string;
   name: string;
   description: string;
-  icon: any;
+  icon: React.ComponentType<{ size?: string | number; className?: string }>;
+  enabled: boolean;
+}
+
+interface AllowedCapability {
+  id: string;
+  name: string;
+  description: string;
+  iconName: string;
   enabled: boolean;
 }
 
@@ -182,27 +191,30 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
     }
   };
 
-  const transformCapabilities = (allowedCapabilities: any): AICapability[] => {
-    const capabilityIcons: Record<string, any> = {
-      documentAnalysis: FileText,
-      emailDrafting: Mail,
-      meetingSummarization: Calendar,
-      workflowOptimization: Settings,
-      dataAnalysis: BarChart,
-      projectManagement: Settings,
-      employeeAssistance: User,
-      complianceMonitoring: Shield
+  const transformCapabilities = (allowedCapabilities: AllowedCapability[]): AICapability[] => {
+    const iconMap: Record<string, React.ComponentType<{ size?: string | number; className?: string }>> = {
+      'brain': Brain,
+      'zap': Send, // Assuming Zap is Send
+      'shield': Shield,
+      'users': User, // Assuming Users is User
+      'trending-up': Sparkles, // Assuming TrendingUp is Sparkles
+      'calendar': Calendar,
+      'file-text': FileText,
+      'bar-chart-3': BarChart,
+      'lightbulb': Brain, // Assuming Lightbulb is Brain
+      'target': Brain, // Assuming Target is Brain
+      'clock': Brain, // Assuming Clock is Brain
+      'check-circle': Brain, // Assuming CheckCircle is Brain
+      'alert-circle': AlertCircle // Assuming AlertCircle is AlertCircle
     };
 
-    return Object.entries(allowedCapabilities)
-      .filter(([_, enabled]) => enabled)
-      .map(([capability, _]) => ({
-        id: capability,
-        name: capability.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-        description: getCapabilityDescription(capability),
-        icon: capabilityIcons[capability] || Sparkles,
-        enabled: true
-      }));
+    return allowedCapabilities.map(cap => ({
+      id: cap.id,
+      name: cap.name,
+      description: cap.description,
+      icon: iconMap[cap.iconName] || Brain,
+      enabled: cap.enabled
+    }));
   };
 
   if (error) {
@@ -387,9 +399,9 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
           <div className="flex gap-2">
             <Input
               value={currentQuery}
-              onChange={(e: any) => setCurrentQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentQuery(e.target.value)}
               placeholder="Ask your AI assistant anything..."
-              onKeyPress={(e: any) => {
+              onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleAIQuery(currentQuery);

@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Eye
 } from 'lucide-react';
+import { adminApiService } from '../../../lib/adminApiService';
 
 interface Subscription {
   id: string;
@@ -64,103 +65,35 @@ export default function FinancialManagement() {
       setLoading(true);
       setError(null);
 
-      // Mock data for now - replace with actual API calls
-      const mockSubscriptions: Subscription[] = [
-        {
-          id: 'sub_1',
-          userId: 'user_1',
-          userEmail: 'john.doe@example.com',
-          tier: 'standard',
-          status: 'active',
-          amount: 49.99,
-          currentPeriodStart: '2024-01-01T00:00:00Z',
-          currentPeriodEnd: '2024-02-01T00:00:00Z',
-          cancelAtPeriodEnd: false,
-        },
-        {
-          id: 'sub_2',
-          userId: 'user_2',
-          userEmail: 'jane.smith@example.com',
-          tier: 'enterprise',
-          status: 'active',
-          amount: 199.99,
-          currentPeriodStart: '2024-01-01T00:00:00Z',
-          currentPeriodEnd: '2024-02-01T00:00:00Z',
-          cancelAtPeriodEnd: false,
-        },
-        {
-          id: 'sub_3',
-          userId: 'user_3',
-          userEmail: 'bob.wilson@example.com',
-          tier: 'standard',
-          status: 'past_due',
-          amount: 49.99,
-          currentPeriodStart: '2024-01-01T00:00:00Z',
-          currentPeriodEnd: '2024-02-01T00:00:00Z',
-          cancelAtPeriodEnd: false,
-        },
-      ];
+      // Load real data from APIs
+      const [subscriptionsRes, paymentsRes, payoutsRes] = await Promise.all([
+        adminApiService.getSubscriptions({ page: 1, limit: 20 }),
+        adminApiService.getPayments({ page: 1, limit: 20 }),
+        adminApiService.getDeveloperPayouts({ page: 1, limit: 20 })
+      ]);
 
-      const mockPayments: Payment[] = [
-        {
-          id: 'pay_1',
-          subscriptionId: 'sub_1',
-          amount: 49.99,
-          status: 'succeeded',
-          createdAt: '2024-01-01T10:30:00Z',
-          customerEmail: 'john.doe@example.com',
-        },
-        {
-          id: 'pay_2',
-          subscriptionId: 'sub_2',
-          amount: 199.99,
-          status: 'succeeded',
-          createdAt: '2024-01-01T11:15:00Z',
-          customerEmail: 'jane.smith@example.com',
-        },
-        {
-          id: 'pay_3',
-          subscriptionId: 'sub_3',
-          amount: 49.99,
-          status: 'failed',
-          createdAt: '2024-01-01T12:00:00Z',
-          customerEmail: 'bob.wilson@example.com',
-        },
-      ];
+      if (subscriptionsRes.error) {
+        setError(subscriptionsRes.error);
+        return;
+      }
 
-      const mockPayouts: DeveloperPayout[] = [
-        {
-          id: 'payout_1',
-          developerId: 'dev_1',
-          developerName: 'John Developer',
-          amount: 1250.00,
-          status: 'paid',
-          requestedAt: '2024-01-15T09:00:00Z',
-          paidAt: '2024-01-16T14:30:00Z',
-        },
-        {
-          id: 'payout_2',
-          developerId: 'dev_2',
-          developerName: 'Jane Developer',
-          amount: 875.50,
-          status: 'pending',
-          requestedAt: '2024-01-20T10:00:00Z',
-        },
-        {
-          id: 'payout_3',
-          developerId: 'dev_3',
-          developerName: 'Bob Developer',
-          amount: 2100.00,
-          status: 'failed',
-          requestedAt: '2024-01-18T11:00:00Z',
-        },
-      ];
+      if (paymentsRes.error) {
+        setError(paymentsRes.error);
+        return;
+      }
 
-      setSubscriptions(mockSubscriptions);
-      setPayments(mockPayments);
-      setPayouts(mockPayouts);
+      if (payoutsRes.error) {
+        setError(payoutsRes.error);
+        return;
+      }
+
+      // Set data from API responses
+      setSubscriptions(subscriptionsRes.data?.subscriptions || []);
+      setPayments(paymentsRes.data?.payments || []);
+      setPayouts(payoutsRes.data?.payouts || []);
     } catch (err) {
       setError('Failed to load financial data');
+      console.error('Error loading financial data:', err);
     } finally {
       setLoading(false);
     }

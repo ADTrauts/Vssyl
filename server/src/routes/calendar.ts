@@ -15,7 +15,7 @@ import {
   getFreeBusy
 } from '../controllers/calendarController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Calendar management
 router.get('/', listCalendars);
@@ -71,7 +71,7 @@ router.get('/rsvp', async (req, res) => {
     }
     // Optional: simple HTML response for inbox click
     res.send(`<html><body><p>RSVP recorded as ${String(response).toUpperCase()} for event.</p></body></html>`);
-  } catch (e) {
+  } catch (_) {
     res.status(500).json({ error: 'Failed to handle RSVP' });
   }
 });

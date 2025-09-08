@@ -1,11 +1,39 @@
 import { io, Socket } from 'socket.io-client';
 import { ChatEvent, TypingEvent, PresenceEvent } from 'shared/types/chat';
 
+// Chat data interfaces
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  userId: string;
+  content: string;
+  type: 'text' | 'file' | 'image' | 'system';
+  timestamp: string;
+  edited?: boolean;
+  deleted?: boolean;
+  metadata?: Record<string, unknown>;
+}
+
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+  timestamp: string;
+}
+
+export interface ReadReceipt {
+  messageId: string;
+  userId: string;
+  readAt: string;
+  conversationId: string;
+}
+
 export interface ChatSocketEvents {
-  message_received: (message: any) => void;
+  message_received: (message: ChatMessage) => void;
   user_typing: (data: TypingEvent) => void;
-  message_reaction: (data: { messageId: string; reaction: any }) => void;
-  message_read: (data: { messageId: string; readReceipt: any }) => void;
+  message_reaction: (data: { messageId: string; reaction: MessageReaction }) => void;
+  message_read: (data: { messageId: string; readReceipt: ReadReceipt }) => void;
   user_presence: (data: PresenceEvent) => void;
   error: (error: { message: string }) => void;
 }
@@ -151,7 +179,7 @@ export class ChatSocketClient {
     }
   }
 
-  public sendMessage(message: any): void {
+  public sendMessage(message: ChatMessage): void {
     if (this.socket?.connected) {
       this.socket.emit('new_message', message);
     }
@@ -207,7 +235,7 @@ export class ChatSocketClient {
     if (listeners) {
       listeners.forEach(listener => {
         try {
-          (listener as any)(data);
+          (listener as (data: unknown) => void)(data);
         } catch (error) {
           console.error(`Error in ${event} listener:`, error);
         }

@@ -1,0 +1,86 @@
+// ============================================================================
+// DRIVE & FILE MANAGEMENT MODELS
+// ============================================================================
+
+model File {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  name        String
+  path        String?
+  type        String
+  size        Int
+  url         String
+  folder      Folder?  @relation(fields: [folderId], references: [id])
+  folderId    String?
+  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId String?
+  order       Int      @default(0) // Order within folder for drag-and-drop
+  starred     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  permissions FilePermission[]
+  trashedAt   DateTime?
+  activities  Activity[]
+  fileReferences FileReference[]
+
+  @@index([userId])
+  @@index([folderId])
+  @@index([dashboardId])
+  @@map("files")
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  name      String
+  parent    Folder?  @relation("FolderParent", fields: [parentId], references: [id])
+  parentId  String?
+  dashboard Dashboard? @relation(fields: [dashboardId], references: [id])
+  dashboardId String?
+  order     Int      @default(0) // Order within parent folder for drag-and-drop
+  starred   Boolean  @default(false)
+  children  Folder[] @relation("FolderParent")
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  trashedAt DateTime?
+
+  @@index([userId])
+  @@index([parentId])
+  @@index([dashboardId])
+  @@map("folders")
+}
+
+model FilePermission {
+  id        String   @id @default(uuid())
+  file      File     @relation(fields: [fileId], references: [id])
+  fileId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  canRead   Boolean  @default(true)
+  canWrite  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([fileId, userId])
+  @@index([fileId])
+  @@index([userId])
+  @@map("file_permissions")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  type      String   // 'create', 'edit', 'delete', 'share', 'download'
+  timestamp DateTime @default(now())
+  details   Json?    // Additional activity details
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  file      File     @relation(fields: [fileId], references: [id])
+  fileId    String
+
+  @@index([userId])
+  @@index([fileId])
+  @@index([timestamp])
+  @@map("activities")
+}

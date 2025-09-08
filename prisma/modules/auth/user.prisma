@@ -1,0 +1,304 @@
+// ============================================================================
+// USER & AUTHENTICATION MODELS
+// ============================================================================
+
+model User {
+  id              String   @id @default(uuid())
+  name            String?
+  email           String   @unique
+  password        String
+  role            Role     @default(USER)
+  emailVerified   DateTime?
+  image           String?
+  stripeCustomerId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // User Numbering System
+  userNumber      String?  @unique // e.g., "1-06-201-00023"
+  country         Country? @relation(fields: [countryId], references: [id])
+  countryId       String?
+  region          Region?  @relation(fields: [regionId], references: [id])
+  regionId        String?
+  town            Town?    @relation(fields: [townId], references: [id])
+  townId          String?
+  locationDetectedAt DateTime? // Track when location was detected
+  locationUpdatedAt DateTime?  // Track manual location updates
+  
+  // Billing and Subscription relationships
+  subscriptions   Subscription[]
+  moduleSubscriptions ModuleSubscription[]
+  usageRecords    UsageRecord[]
+  invoices        Invoice[]
+  developerRevenue DeveloperRevenue[]
+  
+  // Existing relationships
+  messages        Message[]
+  files           File[]
+  businesses      BusinessMember[]
+  modules         Module[] @relation("ModuleDeveloper") // Modules developed by this user
+  
+  // Missing relation fields
+  notifications   Notification[]
+  pushSubscriptions PushSubscription[]
+  userPreferences UserPreference[]
+  dashboards      Dashboard[]
+  auditLogs       AuditLog[]
+  userConsents    UserConsent[]
+  dataDeletionRequests DataDeletionRequest[]
+  userPrivacySettings UserPrivacySettings?
+  folders         Folder[]
+  filePermissions FilePermission[]
+  activities      Activity[]
+  refreshTokens   RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  messageReactions MessageReaction[]
+  readReceipts    ReadReceipt[]
+  conversationParticipants ConversationParticipant[]
+  threadParticipants ThreadParticipant[]
+  businessInvitations BusinessInvitation[] @relation("BusinessInvitationInvitedBy")
+  institutionMembers InstitutionMember[]
+  institutionInvitations InstitutionInvitation[] @relation("InstitutionInvitationInvitedBy")
+  relationshipsSent Relationship[] @relation("RelationshipSender")
+  relationshipsReceived Relationship[] @relation("RelationshipReceiver")
+  businessFollows BusinessFollow[]
+  moduleInstallations ModuleInstallation[] @relation("ModuleUser")
+  moduleSubmissions ModuleSubmission[] @relation("ModuleSubmitter")
+  moduleSubmissionReviews ModuleSubmission[] @relation("ModuleSubmissionReviewer")
+  moduleReviews   ModuleReview[] @relation("ModuleReviewer")
+  householdMembers HouseholdMember[]
+  aiPersonalityProfiles AIPersonalityProfile[]
+  aiAutonomySettings AIAutonomySettings[]
+  aiApprovalRequests AIApprovalRequest[]
+  aiConversationHistories AIConversationHistory[]
+  aiUsageTrackings AIUsageTracking[]
+  aiLearningEvents AILearningEvent[]
+
+  // Calendar relations
+  calendarMemberships CalendarMember[]
+  // Calendar event comments
+  eventComments EventComment[]
+
+  // Admin portal relations
+  contentReports ContentReport[] @relation("ContentReporter")
+  impersonatedUsers AdminImpersonation[] @relation("ImpersonatedUser")
+  impersonatedBy AdminImpersonation[] @relation("AdminImpersonator")
+
+  // Support system relations
+  supportTickets SupportTicket[] // Tickets created by this user
+  assignedTickets SupportTicket[] @relation("AssignedTickets") // Tickets assigned to this user (if admin/agent)
+  supportMessages SupportMessage[] // Messages sent by this user
+  knowledgeBaseArticles KnowledgeBaseArticle[] // Articles created by this user
+  liveChatSessions LiveChatSession[] // Chat sessions for this user
+  liveChatSessionsAsAgent LiveChatSession[] @relation("LiveChatSessions") // Chat sessions where user is agent
+  liveChatMessages LiveChatMessage[] // Chat messages sent by this user
+
+  // Org Chart & Permission System relations
+  employeePositions EmployeePosition[]
+  assignedEmployeePositions EmployeePosition[] @relation("EmployeePositionAssignedBy")
+  permissionManagementRights PermissionManagementRights[]
+  grantedPermissionManagementRights PermissionManagementRights[] @relation("PermissionManagementRightsGrantedBy")
+  permissionChanges PermissionChange[]
+
+  @@map("users")
+  @@index([userNumber])
+  @@index([countryId, regionId, townId])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  type        String
+  title       String
+  body        String?
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  deliveredAt DateTime?
+  deleted     Boolean  @default(false)
+  deliveries  NotificationDelivery[]
+}
+
+model NotificationDelivery {
+  id             String         @id @default(uuid())
+  notification   Notification   @relation(fields: [notificationId], references: [id])
+  notificationId String
+  channel        String   // e.g., 'in-app', 'email', 'push'
+  deliveredAt    DateTime?
+  status         String   // e.g., 'pending', 'delivered', 'failed'
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, endpoint])
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  key       String
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// User consent and privacy management
+model UserConsent {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  consentType String   // 'TERMS_OF_SERVICE', 'PRIVACY_POLICY', 'DATA_PROCESSING', 'MARKETING', 'COLLECTIVE_AI_LEARNING'
+  version     String   // Version of the consent document
+  granted     Boolean  @default(false)
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, consentType, version])
+  @@index([userId])
+  @@index([consentType])
+  @@map("user_consents")
+}
+
+// Data deletion requests (GDPR right to be forgotten)
+model DataDeletionRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  status      String   @default("PENDING") // 'PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'
+  reason      String?  // Optional reason for deletion
+  requestedAt DateTime @default(now())
+  processedAt DateTime?
+  completedAt DateTime?
+  notes       String?  // Admin notes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("data_deletion_requests")
+}
+
+// User privacy settings
+model UserPrivacySettings {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id])
+  profileVisibility     String   @default("PUBLIC") // 'PUBLIC', 'PRIVATE', 'BUSINESS_ONLY'
+  activityVisibility    String   @default("PUBLIC") // 'PUBLIC', 'PRIVATE', 'BUSINESS_ONLY'
+  allowDataProcessing   Boolean  @default(true)
+  allowMarketingEmails  Boolean  @default(false)
+  allowAnalytics        Boolean  @default(true)
+  allowAuditLogs        Boolean  @default(true)
+  allowCollectiveLearning Boolean @default(false) // Consent for centralized AI learning
+  dataRetentionPeriod   Int      @default(2555) // Days (7 years default)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("user_privacy_settings")
+}
+
+// Location Models for User Numbering System
+model Country {
+  id        String   @id @default(uuid())
+  name      String
+  phoneCode String   @unique // e.g., "1", "44", "33"
+  regions   Region[]
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("countries")
+}
+
+model Region {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   // 3-digit code, e.g., "001", "002"
+  country   Country  @relation(fields: [countryId], references: [id])
+  countryId String
+  towns     Town[]
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countryId, code])
+  @@map("regions")
+}
+
+model Town {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   // 3-digit code, e.g., "001", "002"
+  region    Region   @relation(fields: [regionId], references: [id])
+  regionId  String
+  users     User[]
+  userSerials UserSerial[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([regionId, code])
+  @@map("towns")
+}
+
+model UserSerial {
+  id        String   @id @default(uuid())
+  town      Town     @relation(fields: [townId], references: [id])
+  townId    String
+  lastSerial Int     @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([townId])
+  @@map("user_serials")
+}

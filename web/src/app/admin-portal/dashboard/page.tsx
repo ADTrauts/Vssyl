@@ -214,26 +214,35 @@ export default function AdminDashboard() {
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group">
+          <button 
+            onClick={() => window.location.href = '/admin-portal/users'}
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+          >
             <div className="p-2 rounded-lg bg-red-100 w-fit mb-3">
               <Shield className="w-5 h-5 text-red-600" />
             </div>
-            <h3 className="font-medium text-gray-900 mb-1">Ban User</h3>
-            <p className="text-sm text-gray-600">Quickly ban a problematic user</p>
+            <h3 className="font-medium text-gray-900 mb-1">Manage Users</h3>
+            <p className="text-sm text-gray-600">Ban, suspend, or manage user accounts</p>
           </button>
-          <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group">
+          <button 
+            onClick={() => window.location.href = '/admin-portal/moderation'}
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+          >
             <div className="p-2 rounded-lg bg-blue-100 w-fit mb-3">
               <Activity className="w-5 h-5 text-blue-600" />
             </div>
             <h3 className="font-medium text-gray-900 mb-1">Review Content</h3>
-            <p className="text-sm text-gray-600">Review reported content</p>
+            <p className="text-sm text-gray-600">Review reported content and violations</p>
           </button>
-          <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group">
+          <button 
+            onClick={() => window.location.href = '/admin-portal/performance'}
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+          >
             <div className="p-2 rounded-lg bg-green-100 w-fit mb-3">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <h3 className="font-medium text-gray-900 mb-1">System Health</h3>
-            <p className="text-sm text-gray-600">Check system performance</p>
+            <p className="text-sm text-gray-600">Check system performance and metrics</p>
           </button>
         </div>
       </div>
@@ -242,26 +251,38 @@ export default function AdminDashboard() {
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">System Alerts</h2>
         <div className="space-y-3">
-          {alerts.map((alert, index) => (
-            <div key={index} className={`p-4 border rounded-lg ${
-              alert.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' :
-              alert.type === 'warning' ? 'text-yellow-600 bg-yellow-50 border-yellow-200' :
-              'text-red-600 bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-start space-x-3">
-                {alert.type === 'success' ? (
-                  <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                )}
-                <div className="flex-1">
-                  <h4 className="font-medium">{alert.title}</h4>
-                  <p className="text-sm mt-1">{alert.message}</p>
-                  <p className="text-xs mt-2 opacity-75">{alert.timestamp}</p>
+          {alerts.length > 0 ? (
+            alerts.map((alert, index) => (
+              <div key={index} className={`p-4 border rounded-lg ${
+                alert.type === 'success' ? 'text-green-600 bg-green-50 border-green-200' :
+                alert.type === 'warning' ? 'text-yellow-600 bg-yellow-50 border-yellow-200' :
+                'text-red-600 bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  {alert.type === 'success' ? (
+                    <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <h4 className="font-medium">{alert.title}</h4>
+                    <p className="text-sm mt-1">{alert.message}</p>
+                    <p className="text-xs mt-2 opacity-75">{alert.timestamp}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-4 border rounded-lg text-gray-600 bg-gray-50 border-gray-200">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <h4 className="font-medium">All Systems Operational</h4>
+                  <p className="text-sm mt-1">No active alerts at this time</p>
                 </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

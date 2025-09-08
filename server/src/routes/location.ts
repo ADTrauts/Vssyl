@@ -1,8 +1,8 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { locationService } from '../services/locationService';
 import { authenticateJWT } from '../middleware/auth';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Get all countries
 router.get('/countries', async (req: Request, res: Response) => {
@@ -42,7 +42,11 @@ router.get('/towns/:regionId', async (req: Request, res: Response) => {
 // Get user's current location (authenticated)
 router.get('/user-location', authenticateJWT, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    const userId = req.user.id;
     const location = await locationService.getUserLocation(userId);
     
     if (!location) {

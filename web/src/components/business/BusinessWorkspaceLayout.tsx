@@ -16,7 +16,8 @@ import {
   Home,
   LogOut,
   Package,
-  Brain
+  Brain,
+  Calendar
 } from 'lucide-react';
 import GlobalTrashBin from '../GlobalTrashBin';
 import { useSession } from "next-auth/react";
@@ -26,9 +27,9 @@ import ClientOnlyWrapper from '../../app/ClientOnlyWrapper';
 import { BusinessBrandingProvider } from '../../components/BusinessBranding';
 import AvatarContextMenu from '../AvatarContextMenu';
 import { useBusinessConfiguration } from '../../contexts/BusinessConfigurationContext';
+import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 
 interface BusinessWorkspaceLayoutProps {
-  children: React.ReactNode;
   business: Business;
 }
 
@@ -36,6 +37,12 @@ interface Module {
   id: string;
   name: string;
   hidden?: boolean;
+}
+
+interface BusinessModule {
+  id: string;
+  name?: string;
+  status: string;
 }
 
 const BUSINESS_MODULES: Module[] = [
@@ -52,6 +59,7 @@ const MODULE_ICONS = {
   dashboard: LayoutDashboard,
   drive: Folder,
   chat: MessageSquare,
+  calendar: Calendar,
   ai: Brain,
   members: Users,
   admin: Shield,
@@ -74,10 +82,19 @@ interface Business {
     fontFamily?: string;
     customCSS?: string;
   };
+  members?: Array<{
+    id: string;
+    role: 'EMPLOYEE' | 'ADMIN' | 'MANAGER';
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
   // Add other fields as needed from the API response
 }
 
-export default function BusinessWorkspaceLayout({ children, business }: BusinessWorkspaceLayoutProps) {
+export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
@@ -119,7 +136,7 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
     const userModules = configuration.enabledModules?.filter(m => m.status === 'enabled') || [];
     
     // Convert BusinessModule[] to Module[]
-    const modules: Module[] = userModules.map((bModule: any) => ({
+    const modules: Module[] = userModules.map((bModule: BusinessModule) => ({
       id: bModule.id,
       name: bModule.name || bModule.id,
       hidden: false
@@ -225,7 +242,8 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
   }, [sidebarOpen]);
 
   const navigateToModule = (moduleId: string) => {
-    router.push(`/business/${business.id}/workspace/${moduleId}`);
+    // Update URL to show the module in the main content area
+    router.push(`/business/${business.id}/workspace?module=${moduleId}`);
   };
 
   const navigateToTab = (tabId: string) => {
@@ -233,7 +251,7 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
     if (tabId === 'dashboard') {
       router.push(`/business/${business.id}/workspace`);
     } else {
-      router.push(`/business/${business.id}/workspace/${tabId}`);
+      router.push(`/business/${business.id}/workspace?module=${tabId}`);
     }
   };
 
@@ -245,13 +263,36 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
     router.push(`/business/${business.id}/profile`);
   };
 
-  // Business dashboard tabs
-  const businessTabs = [
+  // Core modules that are always available
+  const CORE_MODULES = [
     { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
-    { id: 'analytics', name: 'Analytics', icon: BarChart3 },
-    { id: 'members', name: 'Members', icon: Users },
-    { id: 'modules', name: 'Modules', icon: Package },
-    { id: 'settings', name: 'Settings', icon: Settings },
+    { id: 'drive', name: 'Drive', icon: Folder },
+    { id: 'chat', name: 'Chat', icon: MessageSquare },
+    { id: 'calendar', name: 'Calendar', icon: Calendar },
+  ];
+
+  // Additional modules based on business configuration
+  const getAdditionalModules = (): Array<{ id: string; name: string; icon: any }> => {
+    if (!configuration || !session?.user?.id) {
+      return [];
+    }
+
+    const enabledModules = configuration.enabledModules?.filter(m => m.status === 'enabled') || [];
+    const coreModuleIds = CORE_MODULES.map(m => m.id);
+    
+    return enabledModules
+      .filter(m => !coreModuleIds.includes(m.id))
+      .map(m => ({
+        id: m.id,
+        name: m.name || m.id,
+        icon: MODULE_ICONS[m.id as keyof typeof MODULE_ICONS] || Package
+      }));
+  };
+
+  // Combine core and additional modules for tabs
+  const businessTabs = [
+    ...CORE_MODULES,
+    ...getAdditionalModules()
   ];
 
   // Determine current tab based on pathname
@@ -266,6 +307,12 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
     
     // Otherwise, use the last part as the tab ID
     return lastPart || 'dashboard';
+  };
+
+  // Get current module from URL params
+  const getCurrentModule = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('module') || 'dashboard';
   };
   
   const currentTab = getCurrentTab();
@@ -423,6 +470,37 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
 
           {/* Right: User Avatar and Actions */}
           <div style={{ display: 'flex', alignItems: 'center', marginTop: isMobile ? 8 : 0, flex: '0 0 auto', gap: 12 }}>
+            {/* Admin Dashboard Button - Only show for admins/managers */}
+            {(business.members?.find((m: { user: { id: string }; role: string }) => m.user.id === session?.user?.id)?.role === 'ADMIN' || 
+              business.members?.find((m: { user: { id: string }; role: string }) => m.user.id === session?.user?.id)?.role === 'MANAGER') && (
+              <button
+                onClick={() => router.push(`/business/${business.id}`)}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  color: '#fff',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.2s',
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'none';
+                }}
+                title="Business Admin Dashboard"
+              >
+                <Shield size={14} />
+                Admin
+              </button>
+            )}
             <button
               onClick={handleSwitchToPersonal}
               style={{
@@ -462,7 +540,7 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
             background: COLORS.neutralMid,
             color: '#fff',
             padding: sidebarCollapsed ? 0 : '24px 16px',
-            display: 'flex',
+            display: 'none',
             flexDirection: 'column',
             transition: 'width 0.2s ease-in-out, padding 0.2s ease-in-out',
             flexShrink: 0,
@@ -558,14 +636,17 @@ export default function BusinessWorkspaceLayout({ children, business }: Business
             color: COLORS.neutralDark,
             padding: 0
           }}>
-            {children}
+            <BusinessWorkspaceContent 
+              business={business}
+              currentModule={getCurrentModule()}
+            />
           </main>
 
           {/* Right Quick-Access Sidebar */}
           <aside style={{
             width: 68,
             background: COLORS.neutralMid,
-            display: 'flex',
+            display: 'none',
             flexDirection: 'column',
             alignItems: 'center',
             padding: '20px 0',

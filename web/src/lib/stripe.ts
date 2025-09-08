@@ -139,9 +139,16 @@ export const formatAmountFromStripe = (amount: number): number => {
   return amount / 100; // Convert from cents
 };
 
-export const getStripeError = (error: any): string => {
+// Stripe error interface
+export interface StripeError {
+  type: 'StripeCardError' | 'StripeInvalidRequestError' | 'StripeAPIError' | 'StripeConnectionError' | 'StripeAuthenticationError' | string;
+  message?: string;
+  code?: string;
+}
+
+export const getStripeError = (error: StripeError): string => {
   if (error.type === 'StripeCardError') {
-    return error.message;
+    return error.message || 'Card error occurred';
   } else if (error.type === 'StripeInvalidRequestError') {
     return 'Invalid request to Stripe.';
   } else if (error.type === 'StripeAPIError') {

@@ -373,7 +373,7 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
                           {violation.resourceType} - {violation.resourceId}
                         </span>
                       </div>
-                      <p className="text-sm mb-2">{violation.message}</p>
+                      <p className="text-sm mb-2">{violation.description}</p>
                       <div className="text-xs text-gray-500">
                         Detected: {new Date(violation.detectedAt).toLocaleString()}
                         {violation.resolvedAt && (
@@ -467,10 +467,10 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
                 <div className="mt-4">
                   <h5 className="font-medium mb-2">Violations:</h5>
                   <div className="space-y-2">
-                    {enforcementResult.violations.map((violation: any, index: number) => (
+                    {enforcementResult.violations.map((violation: PolicyViolation, index: number) => (
                       <div key={index} className="text-sm p-2 bg-red-50 border border-red-200 rounded">
                         <div className="font-medium">{violation.policyName}</div>
-                        <div className="text-gray-600">{violation.message}</div>
+                        <div className="text-gray-600">{violation.description}</div>
                       </div>
                     ))}
                   </div>

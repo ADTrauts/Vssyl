@@ -4,38 +4,55 @@ import React, { createContext, useContext, useState, useCallback, ReactNode } fr
 import { configureModule } from '../api/modules';
 import { toast } from 'react-hot-toast';
 
-interface ModuleSettings {
+// Module settings interfaces
+export interface ModuleStorageSettings {
+  quota: number;
+  compression: boolean;
+  backup: boolean;
+}
+
+export interface ModuleNotificationSettings {
+  email: boolean;
+  push: boolean;
+  frequency: 'immediate' | 'daily' | 'weekly';
+}
+
+export interface ModuleSecuritySettings {
+  encryption: boolean;
+  auditLog: boolean;
+  accessControl: 'strict' | 'moderate' | 'open';
+}
+
+export interface ModuleIntegrationSettings {
+  externalServices: string[];
+  webhooks: boolean;
+  apiAccess: boolean;
+}
+
+export interface ModuleSettings {
   [moduleId: string]: {
     permissions: string[];
-    storage?: {
-      quota: number;
-      compression: boolean;
-      backup: boolean;
-    };
-    notifications?: {
-      email: boolean;
-      push: boolean;
-      frequency: 'immediate' | 'daily' | 'weekly';
-    };
-    security?: {
-      encryption: boolean;
-      auditLog: boolean;
-      accessControl: 'strict' | 'moderate' | 'open';
-    };
-    integrations?: {
-      externalServices: string[];
-      webhooks: boolean;
-      apiAccess: boolean;
-    };
+    storage?: ModuleStorageSettings;
+    notifications?: ModuleNotificationSettings;
+    security?: ModuleSecuritySettings;
+    integrations?: ModuleIntegrationSettings;
   };
+}
+
+export interface ModuleSettingsUpdate {
+  permissions?: string[];
+  storage?: Partial<ModuleStorageSettings>;
+  notifications?: Partial<ModuleNotificationSettings>;
+  security?: Partial<ModuleSecuritySettings>;
+  integrations?: Partial<ModuleIntegrationSettings>;
 }
 
 interface ModuleSettingsContextType {
   settings: ModuleSettings;
   loading: boolean;
   error: string | null;
-  updateModuleSettings: (moduleId: string, settings: any) => Promise<void>;
-  getModuleSettings: (moduleId: string) => any;
+  updateModuleSettings: (moduleId: string, settings: ModuleSettingsUpdate) => Promise<void>;
+  getModuleSettings: (moduleId: string) => ModuleSettings[string] | undefined;
   resetModuleSettings: (moduleId: string) => void;
 }
 
@@ -52,7 +69,7 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
   const [error, setError] = useState<string | null>(null);
 
   // Update module settings
-  const updateModuleSettings = useCallback(async (moduleId: string, newSettings: any) => {
+  const updateModuleSettings = useCallback(async (moduleId: string, newSettings: ModuleSettingsUpdate) => {
     if (!businessId) {
       toast.error('No business selected');
       return;
@@ -95,7 +112,7 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
 
   // Get module settings
   const getModuleSettings = useCallback((moduleId: string) => {
-    return settings[moduleId] || {};
+    return settings[moduleId];
   }, [settings]);
 
   // Reset module settings

@@ -1,0 +1,538 @@
+// ============================================================================
+// AI & MACHINE LEARNING MODELS
+// ============================================================================
+
+model AIPersonalityProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  personalityData Json     // Stores PersonalityProfile data
+  learningHistory Json[]   // Array of learning events
+  lastUpdated     DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("ai_personality_profiles")
+}
+
+model AIAutonomySettings {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  scheduling      Int      @default(30) // 0-100 autonomy level
+  communication   Int      @default(20)
+  fileManagement  Int      @default(40)
+  taskCreation    Int      @default(30)
+  dataAnalysis    Int      @default(60)
+  crossModuleActions Int   @default(20)
+  
+  // Override settings
+  workHoursOverride     Boolean @default(false)
+  familyTimeOverride    Boolean @default(false)
+  sleepHoursOverride    Boolean @default(false)
+  
+  // Approval thresholds
+  financialThreshold    Float   @default(0)      // Dollar amount requiring approval
+  timeCommitmentThreshold Int   @default(60)     // Minutes requiring approval
+  peopleAffectedThreshold Int   @default(1)      // Number of people requiring approval
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("ai_autonomy_settings")
+}
+
+model AIApprovalRequest {
+  id              String           @id @default(uuid())
+  userId          String
+  requestType     String           // Type of action requiring approval
+  actionData      Json             // Details of the proposed action
+  affectedUsers   String[]         // Array of user IDs affected
+  reasoning       String           // AI's reasoning for the action
+  status          AIRequestStatus  @default(PENDING)
+  
+  // Response tracking
+  responses       Json[]           // Array of user responses
+  approvedBy      String?          // User ID who approved
+  rejectedBy      String?          // User ID who rejected
+  rejectionReason String?
+  
+  // Timing
+  expiresAt       DateTime
+  respondedAt     DateTime?
+  executedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  
+  // Relationships
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("ai_approval_requests")
+}
+
+model AIConversationHistory {
+  id              String              @id @default(uuid())
+  userId          String
+  sessionId       String              // Groups related interactions
+  interactionType AIInteractionType
+  
+  // Request data
+  userQuery       String
+  context         Json                // User context at time of request
+  priority        String              @default("medium")
+  
+  // Response data
+  aiResponse      String
+  confidence      Float               @default(0.8)
+  reasoning       String?
+  actions         Json[]              // Actions suggested/taken
+  
+  // Processing metadata
+  provider        String              // openai, anthropic, local
+  model           String
+  tokensUsed      Int                 @default(0)
+  cost            Float               @default(0)
+  processingTime  Int                 @default(0) // milliseconds
+  
+  // Learning and feedback
+  userFeedback    String?
+  feedbackRating  Int?                // 1-10 user satisfaction
+  correctionApplied Boolean          @default(false)
+  
+  createdAt       DateTime            @default(now())
+  
+  // Relationships
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([sessionId])
+  @@index([interactionType])
+  @@index([createdAt])
+  @@map("ai_conversation_history")
+}
+
+model AIUsageTracking {
+  id              String   @id @default(uuid())
+  userId          String
+  month           Int      // 1-12
+  year            Int
+  
+  // Usage counts
+  totalInteractions     Int @default(0)
+  queryInteractions     Int @default(0)
+  actionRequests        Int @default(0)
+  approvalsRequested    Int @default(0)
+  approvalsGranted      Int @default(0)
+  
+  // Cost tracking
+  totalCost       Float    @default(0)
+  openaiCost      Float    @default(0)
+  anthropicCost   Float    @default(0)
+  
+  // Token usage
+  totalTokens     Int      @default(0)
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  
+  // Performance metrics
+  avgResponseTime Int      @default(0) // milliseconds
+  avgConfidence   Float    @default(0)
+  userSatisfaction Float   @default(0) // Average feedback rating
+  
+  // Feature usage
+  crossModuleQueries    Int @default(0)
+  personalityLearning   Int @default(0)
+  proactiveInsights     Int @default(0)
+  autonomousActions     Int @default(0)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, month, year])
+  @@index([userId])
+  @@index([year, month])
+  @@map("ai_usage_tracking")
+}
+
+model AILearningEvent {
+  id              String   @id @default(uuid())
+  userId          String
+  eventType       String   // correction, reinforcement, pattern_recognition, preference_update
+  context         String   // Module or situation context
+  
+  // Learning data
+  oldBehavior     String?  // Previous AI behavior/response
+  newBehavior     String   // Updated AI behavior/response
+  userFeedback    String?  // User's explicit feedback
+  confidence      Float    @default(0.7)
+  
+  // Pattern recognition
+  patternData     Json?    // Data about identified patterns
+  frequency       Int      @default(1) // How often this pattern occurs
+  
+  // Application
+  applied         Boolean  @default(false)
+  validated       Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("ai_learning_events")
+}
+
+// ===== CENTRALIZED AI LEARNING MODELS =====
+
+// Global learning events for centralized pattern recognition
+model GlobalLearningEvent {
+  id              String   @id @default(uuid())
+  userId          String   // Hashed user ID for privacy
+  eventType       String   // Type of learning event
+  context         String   // Module or situation context
+  
+  // Pattern data
+  patternData     Json?    // Anonymized pattern data
+  confidence      Float    @default(0.7)
+  impact          String   // low, medium, high, critical
+  
+  // Aggregation
+  frequency       Int      @default(1)
+  
+  // Processing
+  applied         Boolean  @default(false)
+  validated       Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([context])
+  @@index([createdAt])
+  @@map("global_learning_events")
+}
+
+// Global patterns discovered across all users
+model GlobalPattern {
+  id              String   @id @default(uuid())
+  patternType     String   // behavioral, temporal, preference, workflow, communication
+  description     String
+  frequency       Int      // How many users exhibit this pattern
+  confidence      Float    // 0-1 confidence in the pattern
+  strength        Float    // 0-1 how strong the pattern is
+  modules         String[] // Which modules this pattern affects
+  userSegment     String   // all, business, personal, household, enterprise
+  impact          String   // positive, neutral, negative
+  recommendations String[]
+  dataPoints      Int      // Number of data points supporting this pattern
+  lastUpdated     DateTime @default(now())
+  trend           String   // increasing, decreasing, stable
+  privacyLevel    String   // public, aggregated, anonymized
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([patternType])
+  @@index([userSegment])
+  @@index([impact])
+  @@index([confidence])
+  @@index([lastUpdated])
+  @@map("global_patterns")
+}
+
+// Collective insights generated from global patterns
+model CollectiveInsight {
+  id                      String   @id @default(uuid())
+  type                    String   // optimization, trend, opportunity, risk, best_practice
+  title                   String
+  description             String
+  confidence              Float
+  impact                  String   // low, medium, high, critical
+  affectedModules         String[]
+  affectedUserSegments    String[]
+  actionable              Boolean
+  recommendations         String[]
+  implementationComplexity String   // simple, moderate, complex
+  estimatedBenefit        Float    // 0-1 scale
+  dataPoints              Int
+  lastValidated           DateTime @default(now())
+  
+  createdAt               DateTime @default(now())
+  
+  @@index([type])
+  @@index([impact])
+  @@index([actionable])
+  @@index([estimatedBenefit])
+  @@index([createdAt])
+  @@map("collective_insights")
+}
+
+// System configuration for AI learning settings
+model SystemConfiguration {
+  key                     String   @id
+  value                   String   // JSON string of configuration
+  description             String?
+  updatedBy               String?
+  updatedAt               DateTime @default(now())
+  
+  @@map("system_configuration")
+}
+
+// ===== ADVANCED AI FEATURES =====
+
+// A/B Testing for AI models and features
+model ABTest {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  status          String   // draft, active, paused, completed
+  startDate       DateTime?
+  endDate         DateTime?
+  trafficSplit    Float    @default(0.5) // Percentage of traffic to test variant
+  targetAudience  Json?    // Audience targeting criteria
+  successMetrics  String[] // Metrics to track for success
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  variants        ABTestVariant[]
+  results         ABTestResult[]
+  
+  @@index([status])
+  @@index([startDate])
+  @@map("ab_tests")
+}
+
+model ABTestVariant {
+  id          String   @id @default(uuid())
+  abTestId    String
+  abTest      ABTest   @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  config      Json     // Variant-specific configuration
+  trafficWeight Float  @default(1.0) // Relative traffic weight
+  isControl   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  results     ABTestResult[]
+  
+  @@index([abTestId])
+  @@map("ab_test_variants")
+}
+
+model ABTestResult {
+  id            String   @id @default(uuid())
+  abTestId      String
+  abTest        ABTest   @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+  variantId     String
+  variant       ABTestVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  userId        String?
+  sessionId     String?
+  eventType     String   // impression, click, conversion, etc.
+  eventData     Json?
+  timestamp     DateTime @default(now())
+  
+  @@index([abTestId])
+  @@index([variantId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("ab_test_results")
+}
+
+// Workflow automation and decision support
+model WorkflowDefinition {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  version         String   @default("1.0.0")
+  status          String   // draft, active, archived
+  category        String   // business_process, data_pipeline, ml_pipeline
+  triggers        Json     // Workflow trigger conditions
+  steps           Json     // Workflow step definitions
+  variables       Json     // Workflow variables and configuration
+  metadata        Json?    // Additional workflow metadata
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  executions      WorkflowExecution[]
+  
+  @@index([status])
+  @@index([category])
+  @@index([createdBy])
+  @@map("workflow_definitions")
+}
+
+model WorkflowExecution {
+  id              String   @id @default(uuid())
+  workflowId      String
+  workflow        WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  status          String   // running, completed, failed, cancelled
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  input           Json?    // Input data for the workflow
+  output          Json?    // Output data from the workflow
+  error           String?  // Error message if failed
+  metadata        Json?    // Execution metadata
+  
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+// AI Model Management
+model AIModel {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  version         String   @default("1.0.0")
+  modelType       String   // classification, regression, forecasting, etc.
+  framework       String   // tensorflow, pytorch, scikit-learn, etc.
+  status          String   // training, deployed, archived
+  performance     Json?    // Model performance metrics
+  metadata        Json?    // Model metadata and configuration
+  artifacts       Json?    // Model artifacts and files
+  trainingData    Json?    // Training data information
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  versions        AIModelVersion[]
+  deployments     AIModelDeployment[]
+  experiments     AIModelExperiment[]
+  abTests         ModelABTest[]
+  
+  @@index([modelType])
+  @@index([status])
+  @@index([createdBy])
+  @@map("ai_models")
+}
+
+model AIModelVersion {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           AIModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  version         String
+  description     String?
+  performance     Json?    // Version-specific performance metrics
+  artifacts       Json?    // Version-specific artifacts
+  trainingMetrics Json?    // Training metrics and logs
+  deployedAt      DateTime?
+  createdAt       DateTime @default(now())
+  
+  deployments     AIModelDeployment[]
+  
+  @@index([modelId])
+  @@index([version])
+  @@map("ai_model_versions")
+}
+
+model AIModelDeployment {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           AIModel  @relation(fields: [modelId], references: [id])
+  versionId       String
+  version         AIModelVersion @relation(fields: [versionId], references: [id])
+  environment     String   // development, staging, production
+  status          String   // deploying, active, failed, inactive
+  endpoint        String?  // API endpoint URL
+  config          Json?    // Deployment configuration
+  deployedAt      DateTime @default(now())
+  deactivatedAt   DateTime?
+  
+  @@index([modelId])
+  @@index([versionId])
+  @@index([environment])
+  @@index([status])
+  @@map("ai_model_deployments")
+}
+
+model AIModelExperiment {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           AIModel  @relation(fields: [modelId], references: [id])
+  name            String
+  description     String?
+  status          String   // running, completed, failed
+  config          Json     // Experiment configuration
+  results         Json?    // Experiment results
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  @@index([modelId])
+  @@index([status])
+  @@map("ai_model_experiments")
+}
+
+model ModelABTest {
+  id              String   @id @default(uuid())
+  modelId         String
+  model           AIModel  @relation(fields: [modelId], references: [id])
+  name            String
+  description     String?
+  status          String   // active, completed, cancelled
+  variants        String[] // Model version IDs to test
+  trafficSplit    Json     // Traffic distribution configuration
+  metrics         String[] // Metrics to track
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  results         Json?    // A/B test results
+  
+  @@index([modelId])
+  @@index([status])
+  @@map("model_ab_tests")
+}
+
+// AutoML Service
+model AutoMLJob {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  status          String   // pending, running, completed, failed
+  dataset         Json     // Dataset configuration
+  task            String   // classification, regression, forecasting
+  algorithms      String[] // Algorithms to try
+  hyperparameters Json?    // Hyperparameter search space
+  constraints     Json?    // Resource and time constraints
+  results         Json?    // Job results and best model
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  createdBy       String?
+  
+  trials          AutoMLTrial[]
+  
+  @@index([status])
+  @@index([task])
+  @@index([createdBy])
+  @@map("automl_jobs")
+}
+
+model AutoMLTrial {
+  id              String   @id @default(uuid())
+  jobId           String
+  job             AutoMLJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  trialNumber     Int
+  algorithm       String
+  hyperparameters Json     // Trial-specific hyperparameters
+  performance     Json?    // Trial performance metrics
+  status          String   // running, completed, failed
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  
+  @@index([jobId])
+  @@index([trialNumber])
+  @@index([status])
+  @@map("automl_trials")
+}

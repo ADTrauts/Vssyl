@@ -40,6 +40,40 @@ interface ConversationItem {
   confidence?: number;
 }
 
+interface AIAction {
+  type: string;
+  module: string;
+  operation: string;
+  requiresApproval: boolean;
+  reasoning: string;
+}
+
+interface AIInsight {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  confidence: number;
+  source?: string;
+}
+
+interface CrossModuleConnection {
+  id: string;
+  moduleId: string;
+  moduleName: string;
+  connectionType: string;
+  description: string;
+  relevance: number;
+}
+
+interface AIMetadata {
+  processingTime: number;
+  modelUsed: string;
+  tokensUsed: number;
+  contextWindow: number;
+  [key: string]: unknown;
+}
+
 // Detect if input is a question/command vs search query
 function detectIntentType(input: string): 'ai_query' | 'search' {
   const aiIndicators = [
@@ -196,11 +230,11 @@ export default function AIEnhancedSearchBar({
           response: string;
           confidence: number;
           reasoning?: string;
-          actions?: any[];
-          insights?: any[];
+          actions?: AIAction[];
+          insights?: AIInsight[];
           personalityAlignment?: number;
-          crossModuleConnections?: any[];
-          metadata?: any;
+          crossModuleConnections?: CrossModuleConnection[];
+          metadata?: AIMetadata;
         }
       }>(
         '/api/ai/twin',
@@ -227,7 +261,10 @@ export default function AIEnhancedSearchBar({
         timestamp: new Date(),
         aiResponse: {
           id: `ai-res-${Date.now()}`,
-          ...response.data
+          response: response.data.response,
+          confidence: response.data.confidence,
+          reasoning: response.data.reasoning,
+          actions: response.data.actions
         },
         confidence: response.data.confidence
       };

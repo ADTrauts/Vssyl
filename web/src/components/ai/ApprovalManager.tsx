@@ -20,11 +20,25 @@ import {
 } from 'lucide-react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
+interface ActionData {
+  type: string;
+  target: string;
+  parameters: Record<string, unknown>;
+  context: Record<string, unknown>;
+}
+
+interface Modification {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+  reason: string;
+}
+
 interface ApprovalRequest {
   id: string;
   userId: string;
   actionType: string;
-  actionData: any;
+  actionData: ActionData;
   affectedUsers: string[];
   reasoning: string;
   riskAssessment: {
@@ -51,7 +65,7 @@ interface ApprovalResponse {
   userName: string;
   response: 'approve' | 'reject' | 'modify';
   reasoning?: string;
-  modifications?: any;
+  modifications?: Modification[];
   timestamp: string;
 }
 

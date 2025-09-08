@@ -1,12 +1,24 @@
 import { authenticatedApiCall } from './apiUtils';
 
+// Notification data interfaces
+export interface NotificationData {
+  id: string;
+  type: string;
+  title: string;
+  body?: string;
+  priority: 'high' | 'medium' | 'low';
+  isRead: boolean;
+  createdAt: Date;
+  data?: Record<string, unknown>;
+}
+
 export interface NotificationGroup {
   id: string;
   type: string;
   title: string;
   count: number;
-  latestNotification: any;
-  notifications: any[];
+  latestNotification: NotificationData;
+  notifications: NotificationData[];
   priority: 'high' | 'medium' | 'low';
   isRead: boolean;
   createdAt: Date;
@@ -37,6 +49,13 @@ export interface AdvancedNotificationStats {
   grouped: number;
   byType: Record<string, number>;
   byPriority: Record<string, number>;
+}
+
+export interface SmartFiltersResponse {
+  highPriority: SmartFilter;
+  unread: SmartFilter;
+  recent: SmartFilter;
+  byType: SmartFilter[];
 }
 
 export class AdvancedNotificationService {
@@ -166,17 +185,12 @@ export class AdvancedNotificationService {
   /**
    * Get smart filters
    */
-  async getSmartFilters(): Promise<{
-    highPriority: SmartFilter;
-    unread: SmartFilter;
-    recent: SmartFilter;
-    byType: SmartFilter[];
-  }> {
+  async getSmartFilters(): Promise<SmartFiltersResponse> {
     try {
       const response = await authenticatedApiCall(
         '/api/advanced-notifications/filters',
         { method: 'GET' }
-      ) as { filters: any };
+      ) as { filters: SmartFiltersResponse };
 
       return response.filters;
     } catch (error) {

@@ -13,7 +13,7 @@ import {
   getChatAnalytics
 } from '../controllers/chatController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Conversation routes
 router.get('/conversations', getConversations);

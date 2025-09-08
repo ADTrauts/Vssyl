@@ -336,6 +336,159 @@ export class BusinessAIDigitalTwinService {
     }
   }
 
+  /**
+   * Get centralized learning insights for business AI improvement
+   */
+  async getCentralizedInsights(businessId: string): Promise<any> {
+    try {
+      const businessAI = await this.getBusinessAI(businessId);
+      if (!businessAI) {
+        throw new Error('Business AI not found');
+      }
+
+      // Get business context for industry-specific insights
+      const business = await this.prisma.business.findUnique({
+        where: { id: businessId },
+        select: { industry: true, size: true }
+      });
+
+      // Get global patterns relevant to this business
+      const globalPatterns = await this.prisma.globalPattern.findMany({
+        where: {
+          userSegment: 'business',
+          confidence: { gte: 0.7 }
+        },
+        orderBy: { confidence: 'desc' },
+        take: 10
+      });
+
+      // Get collective insights
+      const collectiveInsights = await this.prisma.collectiveInsight.findMany({
+        where: {
+          affectedUserSegments: { has: 'business' },
+          actionable: true,
+          confidence: { gte: 0.7 }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      });
+
+      // Get cross-business AI performance metrics
+      const industryMetrics = await this.getIndustryAIMetrics(business?.industry || null);
+
+      return {
+        globalPatterns,
+        collectiveInsights,
+        industryMetrics,
+        recommendations: this.generateBusinessAIRecommendations(
+          globalPatterns,
+          collectiveInsights,
+          industryMetrics,
+          businessAI
+        )
+      };
+    } catch (error) {
+      console.error('Failed to get centralized insights:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get industry-specific AI performance metrics
+   */
+  private async getIndustryAIMetrics(industry: string | null): Promise<any> {
+    try {
+      // Get all business AIs in the same industry
+      const industryBusinesses = await this.prisma.business.findMany({
+        where: { industry: industry || 'general' },
+        select: { id: true }
+      });
+
+      const businessIds = industryBusinesses.map(b => b.id);
+
+      // Get aggregated metrics
+      const metrics = await this.prisma.businessAIUsageMetric.aggregate({
+        where: {
+          businessAI: {
+            businessId: { in: businessIds }
+          }
+        },
+        _avg: {
+          averageConfidence: true,
+          averageUserRating: true,
+          averageResponseTime: true
+        },
+        _count: {
+          totalInteractions: true
+        }
+      });
+
+      return {
+        industry: industry || 'general',
+        averageConfidence: metrics._avg.averageConfidence || 0,
+        averageUserRating: metrics._avg.averageUserRating || 0,
+        averageResponseTime: metrics._avg.averageResponseTime || 0,
+        totalInteractions: metrics._count.totalInteractions || 0
+      };
+    } catch (error) {
+      console.error('Failed to get industry metrics:', error);
+      return {
+        industry: industry || 'general',
+        averageConfidence: 0,
+        averageUserRating: 0,
+        averageResponseTime: 0,
+        totalInteractions: 0
+      };
+    }
+  }
+
+  /**
+   * Generate AI improvement recommendations based on centralized insights
+   */
+  private generateBusinessAIRecommendations(
+    globalPatterns: any[],
+    collectiveInsights: any[],
+    industryMetrics: any,
+    businessAI: any
+  ): any[] {
+    const recommendations = [];
+
+    // Performance-based recommendations
+    if (industryMetrics.averageConfidence > 0.8 && businessAI.averageConfidence < 0.7) {
+      recommendations.push({
+        type: 'performance',
+        priority: 'high',
+        title: 'Improve AI Confidence',
+        description: 'Your AI confidence is below industry average. Consider reviewing training data and response patterns.',
+        action: 'Review recent interactions and identify low-confidence responses'
+      });
+    }
+
+    // Pattern-based recommendations
+    for (const pattern of globalPatterns.slice(0, 3)) {
+      recommendations.push({
+        type: 'pattern',
+        priority: 'medium',
+        title: `Adopt Industry Pattern: ${pattern.name}`,
+        description: pattern.description,
+        action: `Implement ${pattern.name} pattern in your AI configuration`
+      });
+    }
+
+    // Insight-based recommendations
+    for (const insight of collectiveInsights.slice(0, 2)) {
+      recommendations.push({
+        type: 'insight',
+        priority: 'medium',
+        title: `Industry Insight: ${insight.title}`,
+        description: insight.description,
+        action: insight.recommendedAction || 'Review and consider implementing this insight'
+      });
+    }
+
+    return recommendations;
+  }
+
   // Private helper methods
 
   private async getBusinessAI(businessId: string) {
@@ -502,10 +655,8 @@ export class BusinessAIDigitalTwinService {
     context: EmployeeWorkContext
   ): Promise<void> {
     // Generate learning events based on interaction patterns
-    // This is a simplified version - more sophisticated logic would be added
-    
     if (businessAI.learningSettings.autoLearning) {
-      await this.prisma.businessAILearningEvent.create({
+      const learningEvent = await this.prisma.businessAILearningEvent.create({
         data: {
           businessAIId: businessAI.id,
           eventType: 'pattern_discovery',
@@ -525,7 +676,118 @@ export class BusinessAIDigitalTwinService {
           requiresApproval: businessAI.learningSettings.requireApproval
         }
       });
+
+      // Feed to centralized learning system if enabled
+      if (businessAI.learningSettings.allowCentralizedLearning) {
+        await this.feedToCentralizedLearning(businessAI, learningEvent, context);
+      }
     }
+  }
+
+  /**
+   * Feed business AI insights to centralized learning system
+   */
+  private async feedToCentralizedLearning(
+    businessAI: any, 
+    learningEvent: any, 
+    context: EmployeeWorkContext
+  ): Promise<void> {
+    try {
+      // Get business context for industry insights
+      const business = await this.prisma.business.findUnique({
+        where: { id: businessAI.businessId },
+        select: {
+          industry: true,
+          size: true,
+          address: true
+        }
+      });
+
+      // Sanitize and anonymize data for centralized learning
+      const sanitizedData = {
+        eventType: 'BUSINESS_AI_INSIGHT',
+        context: {
+          businessIndustry: business?.industry || 'unknown',
+          businessSize: business?.size || 'unknown',
+          businessLocation: this.anonymizeLocation(business?.address),
+          interactionPattern: {
+            queryType: this.categorizeQuery(learningEvent.learningData.query),
+            responseQuality: learningEvent.confidence,
+            contextModule: context.currentModule,
+            userRole: context.userRole
+          }
+        },
+        patternData: {
+          pattern: learningEvent.learningData.patterns,
+          impact: learningEvent.impact,
+          timestamp: new Date()
+        },
+        confidence: learningEvent.confidence,
+        impact: learningEvent.impact
+      };
+
+      // Process global learning event
+      await this.centralizedLearning.processGlobalLearningEvent(
+        `business_${businessAI.businessId}`, // Use business ID as user ID for tracking
+        sanitizedData
+      );
+
+      // Update business AI metrics
+      await this.prisma.businessAIDigitalTwin.update({
+        where: { id: businessAI.id },
+        data: {
+          lastCentralizedLearningAt: new Date()
+        }
+      });
+
+    } catch (error) {
+      console.error('Failed to feed to centralized learning:', error);
+      // Don't fail the main operation if centralized learning fails
+    }
+  }
+
+  /**
+   * Anonymize business address for privacy
+   */
+  private anonymizeLocation(address: any): string {
+    if (!address) return 'unknown';
+    
+    // Handle different address formats
+    if (typeof address === 'string') {
+      const parts = address.split(',');
+      return parts[0]?.trim() || 'unknown'; // Just city name
+    }
+    
+    if (typeof address === 'object') {
+      if (address.city) {
+        return address.city;
+      }
+      if (address.state) {
+        return address.state;
+      }
+      if (address.country) {
+        return address.country;
+      }
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * Categorize user queries for pattern analysis
+   */
+  private categorizeQuery(query: string): string {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('document') || lowerQuery.includes('file')) return 'document_analysis';
+    if (lowerQuery.includes('email') || lowerQuery.includes('draft')) return 'email_drafting';
+    if (lowerQuery.includes('meeting') || lowerQuery.includes('summary')) return 'meeting_summarization';
+    if (lowerQuery.includes('workflow') || lowerQuery.includes('process')) return 'workflow_optimization';
+    if (lowerQuery.includes('data') || lowerQuery.includes('analytics')) return 'data_analysis';
+    if (lowerQuery.includes('project') || lowerQuery.includes('plan')) return 'project_management';
+    if (lowerQuery.includes('help') || lowerQuery.includes('assist')) return 'employee_assistance';
+    
+    return 'general_query';
   }
 
   private async auditBusinessAIAction(

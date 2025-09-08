@@ -2,25 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand Colors from shared/src/styles/theme.ts */
 :root {
+  /* Light mode colors */
   --background: #ffffff;
   --foreground: #171717;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
+  
+  /* Brand colors */
+  --accent-red: #F24E1E;
+  --primary-green: #228B22;
+  --highlight-yellow: #FFCD1E;
+  --secondary-purple: #A259FF;
+  --info-blue: #278BEE;
+  --neutral-dark: #333333;
+  --neutral-mid: #2E2E2E;
+  --neutral-light: #F4F4F4;
+  
+  /* Semantic colors for light mode */
+  --primary: var(--info-blue);
+  --secondary: var(--primary-green);
+  --accent: var(--accent-red);
+  --muted: var(--neutral-light);
+  --card: #ffffff;
+  --card-foreground: var(--neutral-dark);
+  --border: #e5e7eb;
+  --input: #ffffff;
+  --ring: var(--primary-green);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #f1f5f9;
   }
 }
 
 /* Dark mode class-based support */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  
+  /* Adjust brand colors for dark mode */
+  --accent-red: #ff6b47;
+  --primary-green: #4ade80;
+  --highlight-yellow: #fbbf24;
+  --secondary-purple: #c084fc;
+  --info-blue: #60a5fa;
+  --neutral-dark: #f1f5f9;
+  --neutral-mid: #e2e8f0;
+  --neutral-light: #1e293b;
+  
+  /* Semantic colors for dark mode */
+  --primary: var(--info-blue);
+  --secondary: var(--primary-green);
+  --accent: var(--accent-red);
+  --muted: var(--neutral-light);
+  --card: #1e293b;
+  --card-foreground: var(--neutral-dark);
+  --border: #334155;
+  --input: #1e293b;
+  --ring: var(--primary-green);
 }
 
 .dark body {
@@ -34,47 +78,310 @@ body {
   font-family: var(--font-inter), sans-serif;
 }
 
-/* Dark mode overrides for common elements */
+/* Enhanced dark mode overrides */
 .dark .bg-white {
-  background-color: #1a1a1a;
-}
-
-.dark .text-gray-900 {
-  color: #f3f4f6;
-}
-
-.dark .text-gray-700 {
-  color: #d1d5db;
-}
-
-.dark .text-gray-600 {
-  color: #9ca3af;
-}
-
-.dark .text-gray-500 {
-  color: #6b7280;
-}
-
-.dark .border-gray-200 {
-  border-color: #374151;
-}
-
-.dark .border-gray-300 {
-  border-color: #4b5563;
+  background-color: var(--card) !important;
 }
 
 .dark .bg-gray-50 {
-  background-color: #1f2937;
+  background-color: #1e293b !important;
 }
 
 .dark .bg-gray-100 {
-  background-color: #374151;
+  background-color: #334155 !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #475569 !important;
+}
+
+.dark .bg-gray-800 {
+  background-color: #1e293b !important;
+}
+
+.dark .text-gray-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-500 {
+  color: #64748b !important;
+}
+
+.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+.dark .text-gray-300 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #334155 !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #475569 !important;
+}
+
+.dark .border-gray-700 {
+  border-color: #475569 !important;
 }
 
 .dark .hover\:bg-gray-50:hover {
-  background-color: #1f2937;
+  background-color: #334155 !important;
 }
 
 .dark .hover\:bg-gray-100:hover {
-  background-color: #374151;
+  background-color: #475569 !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background-color: #475569 !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: #334155 !important;
+}
+
+.dark .hover\:bg-red-100:hover {
+  background-color: #7f1d1d !important;
+}
+
+/* Widget-specific dark mode fixes */
+.dark .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-400 {
+  color: #60a5fa !important;
+}
+
+.dark .text-green-600 {
+  color: #4ade80 !important;
+}
+
+.dark .text-green-400 {
+  color: #4ade80 !important;
+}
+
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+.dark .text-red-400 {
+  color: #f87171 !important;
+}
+
+.dark .text-yellow-500 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-yellow-400 {
+  color: #fbbf24 !important;
+}
+
+/* Comprehensive theme transition support */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body, 
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+.bg-gray-200,
+.text-gray-900,
+.text-gray-800,
+.text-gray-700,
+.text-gray-600,
+.border-gray-200,
+.border-gray-300 {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Force immediate theme updates for stubborn components */
+.dark * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Ensure consistent text colors in dark mode */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: #f1f5f9 !important;
+}
+
+.dark p, .dark span, .dark div {
+  color: inherit;
+}
+
+/* Fix any remaining hardcoded colors */
+.dark [style*="background: #fafafa"],
+.dark [style*="background:#fafafa"] {
+  background: #1e293b !important;
+}
+
+.dark [style*="color: #333"],
+.dark [style*="color:#333"] {
+  color: #f1f5f9 !important;
+}
+
+/* Input and form dark mode fixes */
+.dark input {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark input::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 1px #60a5fa !important;
+}
+
+/* Progress bar dark mode */
+.dark .bg-gray-200 {
+  background-color: #334155 !important;
+}
+
+.dark .bg-blue-600 {
+  background-color: #60a5fa !important;
+}
+
+/* Widget-specific background fixes */
+.dark .bg-blue-50 {
+  background-color: #1e293b !important;
+}
+
+.dark .bg-blue-100 {
+  background-color: #334155 !important;
+}
+
+/* Ensure proper text contrast in dark panels */
+.dark .bg-blue-50 .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .bg-blue-50 .text-gray-600 {
+  color: #94a3b8 !important;
+}
+
+/* Brand utility classes */
+.text-brand-primary {
+  color: var(--primary);
+}
+
+.text-brand-secondary {
+  color: var(--secondary);
+}
+
+.text-brand-accent {
+  color: var(--accent);
+}
+
+.bg-brand-primary {
+  background-color: var(--primary);
+}
+
+.bg-brand-secondary {
+  background-color: var(--secondary);
+}
+
+.bg-brand-accent {
+  background-color: var(--accent);
+}
+
+.border-brand-primary {
+  border-color: var(--primary);
+}
+
+.border-brand-secondary {
+  border-color: var(--secondary);
+}
+
+.border-brand-accent {
+  border-color: var(--accent);
+}
+
+/* Override common Tailwind classes with brand colors */
+.bg-blue-600 {
+  background-color: var(--info-blue) !important; /* Blue buttons */
+}
+
+.bg-blue-500 {
+  background-color: var(--info-blue) !important; /* Blue buttons */
+}
+
+.text-blue-600 {
+  color: var(--info-blue) !important;
+}
+
+.text-blue-500 {
+  color: var(--info-blue) !important;
+}
+
+.border-blue-600 {
+  border-color: var(--info-blue) !important;
+}
+
+.border-blue-500 {
+  border-color: var(--info-blue) !important;
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: #1e60cc !important; /* Darker blue */
+}
+
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--info-blue) !important;
+}
+
+/* Make buttons more prominent with brand colors */
+button:not(.no-brand) {
+  transition: all 0.2s ease;
+}
+
+button.bg-blue-600:not(.no-brand),
+button.bg-blue-500:not(.no-brand) {
+  background-color: var(--info-blue) !important;
+  border-color: var(--info-blue) !important;
+}
+
+button.bg-blue-600:hover:not(.no-brand),
+button.bg-blue-500:hover:not(.no-brand) {
+  background-color: #1e60cc !important; /* Darker blue */
+}
+
+/* Accent elements */
+.bg-red-500,
+.bg-red-600 {
+  background-color: var(--accent-red) !important;
+}
+
+.text-red-500,
+.text-red-600 {
+  color: var(--accent-red) !important;
+}
+
+.bg-yellow-400,
+.bg-yellow-500 {
+  background-color: var(--highlight-yellow) !important;
+}
+
+.text-yellow-500,
+.text-yellow-600 {
+  color: var(--highlight-yellow) !important;
 }

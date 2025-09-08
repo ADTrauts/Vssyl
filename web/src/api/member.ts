@@ -111,14 +111,37 @@ export const searchUsers = async (query: string, limit = 20, offset = 0): Promis
   });
 };
 
-export const sendConnectionRequest = async (receiverId: string, message?: string): Promise<{ relationship: any }> => {
+export interface ConnectionRelationship {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'pending' | 'accepted' | 'declined' | 'blocked';
+  type: 'colleague' | 'regular';
+  message?: string;
+  createdAt: string;
+  updatedAt: string;
+  sender: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  receiver: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+}
+
+export const sendConnectionRequest = async (receiverId: string, message?: string): Promise<{ relationship: ConnectionRelationship }> => {
   return authenticatedApiCall('/api/member/connections/request', {
     method: 'POST',
     body: JSON.stringify({ receiverId, message }),
   });
 };
 
-export const updateConnectionRequest = async (relationshipId: string, action: 'accept' | 'decline' | 'block'): Promise<{ relationship: any }> => {
+export const updateConnectionRequest = async (relationshipId: string, action: 'accept' | 'decline' | 'block'): Promise<{ relationship: ConnectionRelationship }> => {
   return authenticatedApiCall(`/api/member/connections/${relationshipId}`, {
     method: 'PUT',
     body: JSON.stringify({ relationshipId, action }),

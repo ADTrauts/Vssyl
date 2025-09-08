@@ -26,7 +26,7 @@ interface User {
   role: string;
   createdAt: string;
   emailVerified: boolean;
-  _count: {
+  _count?: {
     businesses: number;
     files: number;
   };
@@ -252,8 +252,8 @@ export default function UserManagement() {
                   </td>
                   <td className="py-4 px-4">
                     <div className="text-sm text-gray-600">
-                      <div>{user._count.businesses} businesses</div>
-                      <div>{user._count.files} files</div>
+                      <div>{user._count?.businesses || 0} businesses</div>
+                      <div>{user._count?.files || 0} files</div>
                     </div>
                   </td>
                   <td className="py-4 px-4">

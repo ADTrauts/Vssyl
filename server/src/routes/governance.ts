@@ -9,7 +9,7 @@ import {
   resolvePolicyViolation
 } from '../controllers/governanceController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Governance policy routes
 router.get('/policies', getGovernancePolicies);

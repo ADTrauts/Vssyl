@@ -16,6 +16,20 @@ export interface EmailTemplate {
   text: string;
 }
 
+export interface NotificationData {
+  id: string;
+  type: string;
+  title: string;
+  body?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface UserData {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 export class EmailNotificationService {
   private static instance: EmailNotificationService;
   private transporter: nodemailer.Transporter | null = null;
@@ -158,7 +172,7 @@ export class EmailNotificationService {
   /**
    * Create email template from notification data
    */
-  createTemplateFromNotification(notification: any, user: any): EmailTemplate {
+  createTemplateFromNotification(notification: NotificationData, user: UserData): EmailTemplate {
     const appName = 'Block on Block';
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
@@ -178,7 +192,7 @@ export class EmailNotificationService {
       }
     };
 
-    const getActionUrl = (type: string, data: any) => {
+    const getActionUrl = (type: string, data: Record<string, unknown>) => {
       switch (type) {
         case 'chat':
         case 'mentions':
@@ -193,7 +207,7 @@ export class EmailNotificationService {
     };
 
     const icon = getNotificationIcon(notification.type);
-    const actionUrl = getActionUrl(notification.type, notification.data);
+    const actionUrl = getActionUrl(notification.type, notification.data || {});
 
     const subject = `${icon} ${notification.title}`;
     

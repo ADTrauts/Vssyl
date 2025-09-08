@@ -1,0 +1,90 @@
+// ============================================================================
+// SECURITY & COMPLIANCE MODELS
+// ============================================================================
+
+// SSO Integration
+model SSOProvider {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // oauth2, saml, ldap, oidc
+  config          Json     // Provider configuration
+  status          String   // active, inactive, error
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  sessions        SSOSession[]
+  
+  @@index([type])
+  @@index([status])
+  @@map("sso_providers")
+}
+
+model SSOSession {
+  id              String   @id @default(uuid())
+  providerId      String
+  provider        SSOProvider @relation(fields: [providerId], references: [id])
+  userId          String
+  sessionToken    String   @unique
+  expiresAt       DateTime
+  metadata        Json?    // Session metadata
+  createdAt       DateTime @default(now())
+  
+  @@index([providerId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sso_sessions")
+}
+
+// Enterprise Security
+model ComplianceFramework {
+  id              String   @id @default(uuid())
+  name            String   // SOC 2, ISO 27001, GDPR, etc.
+  version         String
+  description     String?
+  status          String   // active, inactive, deprecated
+  controls        Json     // Framework controls
+  config          Json?    // Framework configuration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([name])
+  @@index([status])
+  @@map("compliance_frameworks")
+}
+
+model SecurityIncident {
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  severity        String   // low, medium, high, critical
+  status          String   // open, investigating, resolved, closed
+  category        String   // data_breach, unauthorized_access, etc.
+  affectedUsers   Int?
+  data           Json     // Incident details and evidence
+  reportedAt      DateTime @default(now())
+  resolvedAt      DateTime?
+  reportedBy      String?
+  
+  @@index([severity])
+  @@index([status])
+  @@index([category])
+  @@index([reportedAt])
+  @@map("security_incidents")
+}
+
+model SecurityAudit {
+  id              String   @id @default(uuid())
+  type            String   // access, data, compliance, system
+  scope           String   // user, module, system, data
+  findings        Json     // Audit findings
+  recommendations String[]
+  status          String   // pending, in_progress, completed
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  auditor         String?
+  
+  @@index([type])
+  @@index([scope])
+  @@index([status])
+  @@map("security_audits")
+}

@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Briefcase, Building2, Users, ArrowRight, Plus, Shield, LogOut } from 'lucide-react';
-import { Card, Button, Badge, Avatar, Alert, Spinner } from 'shared/components';
-import { getUserBusinesses } from '../api/business';
+import { Card, Button, Badge, Avatar, Alert, Spinner, Modal } from 'shared/components';
+import { getUserBusinesses, businessAPI } from '../api/business';
 import { useWorkAuth } from '../contexts/WorkAuthContext';
 import BrandedWorkDashboard from './BrandedWorkDashboard';
+import { formatRelativeTime } from '@/utils/format';
+import { toast } from 'react-hot-toast';
 
 interface BusinessMember {
   id: string;
@@ -15,6 +17,8 @@ interface BusinessMember {
   title?: string;
   department?: string;
   joinedAt: string;
+  leftAt?: string;
+  isActive?: boolean;
   user: {
     id: string;
     name: string;
@@ -27,8 +31,8 @@ interface Business {
   name: string;
   logo?: string;
   industry?: string;
-  members: BusinessMember[];
-  _count: {
+  members?: BusinessMember[];
+  _count?: {
     members: number;
   };
 }
@@ -54,6 +58,14 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [authenticatingBusinessId, setAuthenticatingBusinessId] = useState<string | null>(null);
   const [showBrandedDashboard, setShowBrandedDashboard] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinToken, setJoinToken] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string>('');
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -69,6 +81,44 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       setShowBrandedDashboard(false);
     }
   }, [isWorkAuthenticated, workCredentials]);
+
+  // Helper to accept invitation tokens
+  const acceptInvite = async (token: string) => {
+    setJoinError(null);
+    setJoinLoading(true);
+    try {
+      if (!token.trim()) {
+        setJoinError('Please enter a valid token');
+        return;
+      }
+      await businessAPI.acceptInvitation(token.trim());
+      toast.success('Invitation accepted');
+      setShowJoinModal(false);
+      setJoinToken('');
+      await loadBusinesses();
+    } catch (err: any) {
+      setJoinError(err?.message || 'Failed to accept invitation');
+    } finally {
+      setJoinLoading(false);
+      // Clear invite params from URL
+      if (pathname) {
+        router.replace(pathname);
+      }
+    }
+  };
+
+  // Auto-detect invite tokens from URL and accept
+  useEffect(() => {
+    if (!searchParams) return;
+    const urlToken = searchParams.get('invite') || searchParams.get('token') || searchParams.get('invitation');
+    if (urlToken) {
+      setJoinToken(urlToken);
+      setShowJoinModal(true);
+      // Auto-accept
+      void acceptInvite(urlToken);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const loadBusinesses = async () => {
     try {
@@ -96,7 +146,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
   const getCurrentUserMembership = (business: Business) => {
     const userId = session?.user?.id;
     if (!userId) return null;
-    return business.members.find(member => member.user.id === userId);
+    return (business.members || []).find(member => member.user.id === userId) || null;
   };
 
   const getRoleDisplayName = (role: string) => {
@@ -116,6 +166,8 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       default: return 'gray';
     }
   };
+
+  const getStatusColor = (active?: boolean) => (active ? 'green' : 'gray');
 
   const handleSwitchToWork = async (businessId: string) => {
     try {
@@ -195,13 +247,6 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
               <span>Logout Work</span>
             </Button>
           )}
-          <Button
-            onClick={handleCreateBusiness}
-            className="flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Business</span>
-          </Button>
         </div>
       </div>
 
@@ -284,6 +329,9 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                         <Badge color={getRoleColor(membership.role)}>
                           {getRoleDisplayName(membership.role)}
                         </Badge>
+                        <Badge color={getStatusColor(membership.isActive)}>
+                          {membership.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
                         {membership.title && (
                           <span className="text-sm text-gray-600">
                             {membership.title}
@@ -296,7 +344,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                         </p>
                       )}
                       <p className="text-sm text-gray-500 mt-1">
-                        {business._count.members} team member{business._count.members !== 1 ? 's' : ''}
+                        {(business._count?.members ?? 0)} team member{(business._count?.members ?? 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
                   </div>
@@ -305,8 +353,11 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Member since</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {new Date(membership.joinedAt).toLocaleDateString()}
+                        {formatRelativeTime(membership.joinedAt)}
                       </p>
+                      {!membership.isActive && membership.leftAt && (
+                        <p className="text-xs text-gray-500">Left {formatRelativeTime(membership.leftAt)}</p>
+                      )}
                     </div>
                     <Button
                       onClick={() => handleSwitchToWork(business.id)}
@@ -334,7 +385,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={handleCreateBusiness} role="button">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Building2 className="w-6 h-6 text-blue-600" />
             </div>
@@ -346,7 +397,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
         </Card>
         
         <Card className="p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={() => { setJoinError(null); setJoinToken(''); setShowJoinModal(true); }} role="button">
             <div className="p-2 bg-green-100 rounded-lg">
               <Users className="w-6 h-6 text-green-600" />
             </div>
@@ -358,7 +409,14 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
         </Card>
         
         <Card className="p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={() => {
+            if (businesses.length === 1) {
+              router.push(`/business/${businesses[0].id}/workspace/members`);
+            } else {
+              setSelectedBusinessId(businesses[0]?.id || '');
+              setShowManageModal(true);
+            }
+          }} role="button">
             <div className="p-2 bg-purple-100 rounded-lg">
               <Shield className="w-6 h-6 text-purple-600" />
             </div>
@@ -369,6 +427,84 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
           </div>
         </Card>
       </div>
+
+      {/* Join Business Modal */}
+      {showJoinModal && (
+        <Modal open={showJoinModal} onClose={() => setShowJoinModal(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Join Business</h3>
+            <p className="text-sm text-gray-600 mb-4">Paste your invitation token to join the business.</p>
+            {joinError && (
+              <div className="mb-3">
+                <Alert type="error" title="Invitation Error">{joinError}</Alert>
+              </div>
+            )}
+            <input
+              type="text"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              placeholder="Invitation token"
+              value={joinToken}
+              onChange={(e) => setJoinToken(e.target.value)}
+            />
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setShowJoinModal(false)}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  setJoinError(null);
+                  setJoinLoading(true);
+                  try {
+                    if (!joinToken.trim()) {
+                      setJoinError('Please enter a valid token');
+                    } else {
+                      await businessAPI.acceptInvitation(joinToken.trim());
+                      setShowJoinModal(false);
+                      setJoinToken('');
+                      await loadBusinesses();
+                    }
+                  } catch (err: any) {
+                    setJoinError(err?.message || 'Failed to accept invitation');
+                  } finally {
+                    setJoinLoading(false);
+                  }
+                }}
+                disabled={joinLoading}
+                className="flex items-center space-x-2"
+              >
+                {joinLoading ? <Spinner size={16} /> : null}
+                <span>Accept Invite</span>
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Manage Access - Choose Business Modal */}
+      {showManageModal && (
+        <Modal open={showManageModal} onClose={() => setShowManageModal(false)}>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Business</h3>
+            <p className="text-sm text-gray-600 mb-4">Choose a business to manage members and permissions.</p>
+            <select
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              value={selectedBusinessId}
+              onChange={(e) => setSelectedBusinessId(e.target.value)}
+            >
+              {businesses.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setShowManageModal(false)}>Cancel</Button>
+              <Button onClick={() => {
+                if (selectedBusinessId) {
+                  setShowManageModal(false);
+                  router.push(`/business/${selectedBusinessId}/workspace/members`);
+                }
+              }}>Continue</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 } 

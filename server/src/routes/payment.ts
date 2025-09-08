@@ -8,7 +8,7 @@ import {
   getPaymentMethods,
 } from '../controllers/paymentController';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // Create payment intent
 router.post('/intent', createPaymentIntent);

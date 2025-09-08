@@ -3,56 +3,51 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { businessAPI } from '../../../../../api/business';
-import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { Card, Button, Spinner, Alert, Badge } from 'shared/components';
 import { 
   BarChart3, 
-  Users, 
-  Folder, 
-  MessageSquare, 
-  TrendingUp, 
+  TrendingUp,
   TrendingDown,
+  Users,
+  MessageSquare,
+  Folder,
   Calendar,
-  Activity,
-  Download
+  Download,
+  Filter,
+  RefreshCw
 } from 'lucide-react';
 
 interface AnalyticsData {
-  memberCount: number;
-  fileCount: number;
-  conversationCount: number;
-  storageUsed: number;
-  memberGrowth: number;
-  fileGrowth: number;
-  conversationGrowth: number;
-  storageGrowth: number;
-  topMembers: Array<{
+  overview: {
+    totalMembers: number;
+    activeMembers: number;
+    totalFiles: number;
+    totalMessages: number;
+    totalEvents: number;
+  };
+  activity: {
+    date: string;
+    members: number;
+    files: number;
+    messages: number;
+    events: number;
+  }[];
+  topUsers: Array<{
     id: string;
     name: string;
     email: string;
-    activityCount: number;
-    lastActive: string;
-  }>;
-  recentActivity: Array<{
-    id: string;
-    type: string;
-    description: string;
-    timestamp: string;
-    user?: {
-      name: string;
-      email: string;
-    };
-  }>;
-  monthlyStats: Array<{
-    month: string;
-    members: number;
+    activity: number;
     files: number;
-    conversations: number;
-    storage: number;
+    messages: number;
   }>;
+  storage: {
+    used: number;
+    total: number;
+    files: number;
+  };
 }
 
-export default function BusinessAnalyticsPage() {
+export default function WorkAnalyticsPage() {
   const params = useParams();
   const { data: session } = useSession();
   const businessId = params.id as string;
@@ -73,36 +68,62 @@ export default function BusinessAnalyticsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await businessAPI.getBusinessAnalytics(businessId);
+      // TODO: Replace with actual API call to get business analytics
+      // const response = await businessAPI.getBusinessAnalytics(businessId, timeRange);
       
-      if (response.success) {
-        setAnalytics(response.data);
-      } else {
-        setError('Failed to load analytics data');
-      }
+      // Mock data for now
+      const mockAnalytics: AnalyticsData = {
+        overview: {
+          totalMembers: 25,
+          activeMembers: 18,
+          totalFiles: 156,
+          totalMessages: 342,
+          totalEvents: 28
+        },
+        activity: [
+          { date: '2024-01-08', members: 15, files: 8, messages: 23, events: 3 },
+          { date: '2024-01-09', members: 18, files: 12, messages: 31, events: 2 },
+          { date: '2024-01-10', members: 16, files: 6, messages: 28, events: 4 },
+          { date: '2024-01-11', members: 20, files: 15, messages: 42, events: 1 },
+          { date: '2024-01-12', members: 17, files: 9, messages: 35, events: 3 },
+          { date: '2024-01-13', members: 12, files: 4, messages: 18, events: 0 },
+          { date: '2024-01-14', members: 14, files: 7, messages: 25, events: 2 }
+        ],
+        topUsers: [
+          { id: '1', name: 'John Doe', email: 'john@company.com', activity: 45, files: 12, messages: 28 },
+          { id: '2', name: 'Jane Smith', email: 'jane@company.com', activity: 38, files: 8, messages: 35 },
+          { id: '3', name: 'Mike Johnson', email: 'mike@company.com', activity: 32, files: 15, messages: 22 },
+          { id: '4', name: 'Sarah Wilson', email: 'sarah@company.com', activity: 28, files: 6, messages: 31 },
+          { id: '5', name: 'David Brown', email: 'david@company.com', activity: 25, files: 9, messages: 18 }
+        ],
+        storage: {
+          used: 2.4,
+          total: 10,
+          files: 156
+        }
+      };
+
+      setAnalytics(mockAnalytics);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatStorageSize = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const formatStorageSize = (gb: number): string => {
+    if (gb < 1) {
+      return `${(gb * 1024).toFixed(0)} MB`;
+    }
+    return `${gb.toFixed(1)} GB`;
   };
 
-  const formatGrowth = (growth: number) => {
-    const isPositive = growth >= 0;
-    return (
-      <span className={`flex items-center ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {isPositive ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-        {Math.abs(growth)}%
-      </span>
-    );
+  const getActivityTrend = (current: number, previous: number): { trend: 'up' | 'down' | 'stable', percentage: number } => {
+    if (previous === 0) return { trend: 'stable', percentage: 0 };
+    const percentage = ((current - previous) / previous) * 100;
+    if (percentage > 5) return { trend: 'up', percentage: Math.abs(percentage) };
+    if (percentage < -5) return { trend: 'down', percentage: Math.abs(percentage) };
+    return { trend: 'stable', percentage: Math.abs(percentage) };
   };
 
   if (loading) {
@@ -115,7 +136,7 @@ export default function BusinessAnalyticsPage() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="container mx-auto p-6">
         <Alert type="error" title="Error Loading Analytics">
           {error}
         </Alert>
@@ -125,186 +146,205 @@ export default function BusinessAnalyticsPage() {
 
   if (!analytics) {
     return (
-      <div className="p-6">
-        <Alert type="error" title="Analytics Not Available">
-          Analytics data is not available for this business.
+      <div className="container mx-auto p-6">
+        <Alert type="error" title="No Analytics Data">
+          No analytics data available for this business.
         </Alert>
       </div>
     );
   }
 
+  const memberTrend = getActivityTrend(analytics.overview.activeMembers, analytics.overview.totalMembers * 0.7);
+  const fileTrend = getActivityTrend(analytics.overview.totalFiles, analytics.overview.totalFiles * 0.9);
+  const messageTrend = getActivityTrend(analytics.overview.totalMessages, analytics.overview.totalMessages * 0.8);
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Business Analytics</h1>
-          <p className="text-gray-600 mt-2">
-            Comprehensive insights into your business performance and team activity
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-6 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Work Analytics</h1>
+            <p className="text-gray-600">Business activity and usage insights</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
+            <Button variant="secondary" size="sm">
+              <Filter className="w-4 h-4 mr-2" />
+              Filter
+            </Button>
+            <Button variant="secondary" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button size="sm" onClick={loadAnalytics}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="flex border rounded-lg">
-            {(['7d', '30d', '90d'] as const).map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-4 py-2 text-sm font-medium ${
-                  timeRange === range
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                } ${range === '7d' ? 'rounded-l-lg' : ''} ${range === '90d' ? 'rounded-r-lg' : ''}`}
-              >
-                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
-              </button>
-            ))}
-          </div>
-          <Button variant="secondary">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Members</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.memberCount}</p>
-              <div className="mt-2">
-                {formatGrowth(analytics.memberGrowth)}
-              </div>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Files</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.fileCount}</p>
-              <div className="mt-2">
-                {formatGrowth(analytics.fileGrowth)}
-              </div>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Folder className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.conversationCount}</p>
-              <div className="mt-2">
-                {formatGrowth(analytics.conversationGrowth)}
-              </div>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900">{formatStorageSize(analytics.storageUsed)}</p>
-              <div className="mt-2">
-                {formatGrowth(analytics.storageGrowth)}
-              </div>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Active Members */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Most Active Members</h2>
-          <div className="space-y-4">
-            {analytics.topMembers.slice(0, 5).map((member, index) => (
-              <div key={member.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-sm font-medium">
-                    {member.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{member.name}</p>
-                    <p className="text-sm text-gray-500">{member.email}</p>
+        <div className="space-y-6">
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active Members</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.overview.activeMembers}</p>
+                  <div className="flex items-center mt-1">
+                    {memberTrend.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500 mr-1" />}
+                    {memberTrend.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500 mr-1" />}
+                    <span className={`text-xs ${memberTrend.trend === 'up' ? 'text-green-600' : memberTrend.trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {memberTrend.percentage.toFixed(1)}%
+                    </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-gray-900">{member.activityCount} activities</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(member.lastActive).toLocaleDateString()}
-                  </p>
+                <Users className="w-8 h-8 text-blue-500" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Files</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalFiles}</p>
+                  <div className="flex items-center mt-1">
+                    {fileTrend.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500 mr-1" />}
+                    {fileTrend.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500 mr-1" />}
+                    <span className={`text-xs ${fileTrend.trend === 'up' ? 'text-green-600' : fileTrend.trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {fileTrend.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                <Folder className="w-8 h-8 text-green-500" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Messages</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalMessages}</p>
+                  <div className="flex items-center mt-1">
+                    {messageTrend.trend === 'up' && <TrendingUp className="w-4 h-4 text-green-500 mr-1" />}
+                    {messageTrend.trend === 'down' && <TrendingDown className="w-4 h-4 text-red-500 mr-1" />}
+                    <span className={`text-xs ${messageTrend.trend === 'up' ? 'text-green-600' : messageTrend.trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {messageTrend.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+                <MessageSquare className="w-8 h-8 text-purple-500" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Events</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalEvents}</p>
+                </div>
+                <Calendar className="w-8 h-8 text-orange-500" />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Storage Used</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatStorageSize(analytics.storage.used)}</p>
+                  <p className="text-xs text-gray-500">of {formatStorageSize(analytics.storage.total)}</p>
+                </div>
+                <BarChart3 className="w-8 h-8 text-indigo-500" />
+              </div>
+            </Card>
+          </div>
+
+          {/* Activity Chart */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Over Time</h3>
+            <div className="h-64 flex items-end space-x-2">
+              {analytics.activity.map((day, index) => {
+                const maxActivity = Math.max(...analytics.activity.map(d => d.members + d.files + d.messages));
+                const height = ((day.members + day.files + day.messages) / maxActivity) * 200;
+                
+                return (
+                  <div key={day.date} className="flex-1 flex flex-col items-center">
+                    <div className="w-full bg-blue-500 rounded-t" style={{ height: `${height}px` }}></div>
+                    <div className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-left">
+                      {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Top Users and Storage */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Users */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Active Users</h3>
+              <div className="space-y-4">
+                {analytics.topUsers.map((user, index) => (
+                  <div key={user.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gray-900">{user.activity} activities</p>
+                      <p className="text-sm text-gray-500">{user.files} files, {user.messages} messages</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Storage Usage */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Storage Usage</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span>Used Storage</span>
+                    <span>{formatStorageSize(analytics.storage.used)} / {formatStorageSize(analytics.storage.total)}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-500 h-2 rounded-full" 
+                      style={{ width: `${(analytics.storage.used / analytics.storage.total) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <p className="text-2xl font-bold text-gray-900">{analytics.storage.files}</p>
+                    <p className="text-sm text-gray-600">Files</p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <p className="text-2xl font-bold text-gray-900">{((analytics.storage.used / analytics.storage.total) * 100).toFixed(1)}%</p>
+                    <p className="text-sm text-gray-600">Used</p>
+                  </div>
                 </div>
               </div>
-            ))}
+            </Card>
           </div>
-        </Card>
-
-        {/* Recent Activity */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Activity</h2>
-          <div className="space-y-4">
-            {analytics.recentActivity.slice(0, 5).map((activity, index) => (
-              <div key={activity.id || index} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Activity className="w-4 h-4 text-gray-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleDateString()} • {activity.user?.name || 'System'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Monthly Trends */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Monthly Trends</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Month</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-900">Members</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-900">Files</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-900">Conversations</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-900">Storage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analytics.monthlyStats.map((stat, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-900">{stat.month}</td>
-                  <td className="py-3 px-4 text-right text-gray-900">{stat.members}</td>
-                  <td className="py-3 px-4 text-right text-gray-900">{stat.files}</td>
-                  <td className="py-3 px-4 text-right text-gray-900">{stat.conversations}</td>
-                  <td className="py-3 px-4 text-right text-gray-900">{formatStorageSize(stat.storage)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
-} 
+}

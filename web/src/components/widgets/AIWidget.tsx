@@ -56,7 +56,7 @@ interface AIAction {
   type: string;
   module: string;
   operation: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   requiresApproval: boolean;
   affectedUsers?: string[];
   reasoning: string;
@@ -85,6 +85,18 @@ interface AIInsight {
   priority: 'low' | 'medium' | 'high';
 }
 
+interface AIOperation {
+  id: string;
+  type: string;
+  module: string;
+  operation: string;
+  parameters: Record<string, unknown>;
+  requiresApproval: boolean;
+  affectedUsers?: string[];
+  reasoning: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'executed';
+}
+
 const defaultConfig: AIWidgetConfig = {
   showPersonality: true,
   showInsights: true,
@@ -111,7 +123,7 @@ export default function AIWidget({
   const [showSettings, setShowSettings] = useState(false);
   const [personality, setPersonality] = useState<PersonalityInsight[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
-  const [autonomySettings, setAutonomySettings] = useState<any>(null);
+  const [autonomySettings, setAutonomySettings] = useState<Record<string, unknown> | null>(null);
   const [showFeedback, setShowFeedback] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -137,7 +149,20 @@ export default function AIWidget({
 
   const loadConversationHistory = async () => {
     try {
-      const response = await authenticatedApiCall<{ data: any[] }>(
+      const response = await authenticatedApiCall<{ data: Array<{
+        id: string;
+        userQuery: string;
+        aiResponse: string;
+        createdAt: string;
+        confidence: number;
+        reasoning: string;
+        actions?: string[];
+        userFeedback?: {
+          rating: number;
+          comment?: string;
+          timestamp: string;
+        };
+      }> }>(
         '/api/ai/history?limit=10',
         {},
         session?.accessToken
@@ -150,11 +175,21 @@ export default function AIWidget({
         timestamp: new Date(item.createdAt),
         confidence: item.confidence,
         reasoning: item.reasoning,
-        actions: item.actions || [],
+        actions: (item.actions || []).map(actionString => ({
+          id: Math.random().toString(),
+          type: 'action',
+          module: 'ai',
+          operation: actionString,
+          parameters: {} as Record<string, unknown>,
+          requiresApproval: false,
+          affectedUsers: [],
+          reasoning: '',
+          status: 'pending' as const
+        })),
         feedback: item.userFeedback ? {
-          rating: item.feedbackRating,
-          comment: item.userFeedback,
-          timestamp: new Date(item.createdAt)
+          rating: item.userFeedback.rating,
+          comment: item.userFeedback.comment,
+          timestamp: new Date(item.userFeedback.timestamp)
         } : undefined
       }));
 
@@ -166,7 +201,7 @@ export default function AIWidget({
 
   const loadPersonalityData = async () => {
     try {
-      const response = await authenticatedApiCall<{ data: any }>(
+      const response = await authenticatedApiCall<{ data: { traits: Record<string, number>; confidence: number } }>(
         '/api/ai/personality',
         {},
         session?.accessToken
@@ -216,7 +251,7 @@ export default function AIWidget({
 
   const loadAutonomySettings = async () => {
     try {
-      const response = await authenticatedApiCall<{ data: any }>(
+      const response = await authenticatedApiCall<{ data: { crossModuleActions: number; contextAwareness: number; riskLevel: number } }>(
         '/api/ai/autonomy',
         {},
         session?.accessToken
@@ -235,7 +270,7 @@ export default function AIWidget({
     setError(null);
 
     try {
-      const response = await authenticatedApiCall<{ data: any }>(
+      const response = await authenticatedApiCall<{ data: { id: string; response: string; confidence: number; reasoning?: string; actions?: string[] } }>(
         '/api/ai/chat',
         {
           method: 'POST',
@@ -260,7 +295,17 @@ export default function AIWidget({
         timestamp: new Date(),
         confidence: response.data.confidence,
         reasoning: response.data.reasoning,
-        actions: response.data.actions || []
+        actions: (response.data.actions || []).map(actionString => ({
+          id: Math.random().toString(),
+          type: 'action',
+          module: 'ai',
+          operation: actionString,
+          parameters: {} as Record<string, unknown>,
+          requiresApproval: false,
+          affectedUsers: [],
+          reasoning: '',
+          status: 'pending' as const
+        }))
       };
 
       setConversations(prev => [...prev, newConversation]);
@@ -268,7 +313,18 @@ export default function AIWidget({
 
       // Execute any approved actions
       if (response.data.actions && response.data.actions.length > 0) {
-        handleAIActions(response.data.actions);
+        const mappedActions = response.data.actions.map(actionString => ({
+          id: Math.random().toString(),
+          type: 'action',
+          module: 'ai',
+          operation: actionString,
+          parameters: {} as Record<string, unknown>,
+          requiresApproval: false,
+          affectedUsers: [],
+          reasoning: '',
+          status: 'pending' as const
+        }));
+        handleAIActions(mappedActions);
       }
 
     } catch (error) {
@@ -600,7 +656,7 @@ export default function AIWidget({
           
           {safeConfig.autonomyDisplay && autonomySettings && (
             <div className="mt-2 text-xs text-gray-500">
-              Autonomy: {autonomySettings.crossModuleActions}% • 
+              Autonomy: {(autonomySettings.crossModuleActions as number)}% • 
               Context: {dashboardType} • 
               Status: Active
             </div>
