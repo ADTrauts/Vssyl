@@ -9,6 +9,7 @@ import { DragEndEvent } from '@dnd-kit/core';
 import { useHydration } from '../HydrationHandler';
 import { useSession } from 'next-auth/react';
 import { getConversations } from '../../api/chat';
+import { getHousehold, getHouseholds, Household, getRoleDisplayName, getRoleColor } from '../../api/household';
 import { Conversation } from 'shared/types/chat';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
@@ -352,6 +353,9 @@ function DashboardContent({
   const { isHydrated } = useHydration();
   const { data: session } = useSession();
   const [isMobile, setIsMobile] = useState(false);
+  const [household, setHousehold] = useState<Household | null>(null);
+  const [householdLoading, setHouseholdLoading] = useState(false);
+  const [householdError, setHouseholdError] = useState<string | null>(null);
   
   // Check if current dashboard is a household dashboard
   // For now, we'll detect household dashboards by name patterns
@@ -369,12 +373,40 @@ function DashboardContent({
     if ((dashboard as any).householdId) {
       return (dashboard as any).householdId;
     }
-    // Fallback: if it's a household dashboard, return a mock ID for now
-    if (isHouseholdDashboard(dashboard)) {
-      return 'mock-household-id';
-    }
     return undefined;
   };
+
+  // Load household data when viewing a household dashboard
+  useEffect(() => {
+    const loadHousehold = async () => {
+      if (!session?.accessToken || !currentDashboard) return;
+      if (!isHouseholdDashboard(currentDashboard)) {
+        setHousehold(null);
+        setHouseholdError(null);
+        return;
+      }
+      try {
+        setHouseholdLoading(true);
+        setHouseholdError(null);
+        const hId = getHouseholdId(currentDashboard);
+        if (hId) {
+          const h = await getHousehold(session.accessToken, hId);
+          setHousehold(h);
+        } else {
+          // Fallback: use user's primary household or first household
+          const households = await getHouseholds(session.accessToken);
+          const primary = households.find(h => h.isPrimary) || households[0] || null;
+          setHousehold(primary);
+        }
+      } catch (e) {
+        setHouseholdError(e instanceof Error ? e.message : 'Failed to load household');
+      } finally {
+        setHouseholdLoading(false);
+      }
+    };
+
+    loadHousehold();
+  }, [session?.accessToken, currentDashboard]);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 700);
@@ -426,7 +458,7 @@ function DashboardContent({
                   </div>
                   <div>
                     <h3 style={{ margin: '0', color: '#ea580c', fontSize: '18px', fontWeight: '600' }}>
-                      {currentDashboard.name} Members
+                      {household ? household.name : currentDashboard.name} Members
                     </h3>
                     <p style={{ margin: '0', color: '#c2410c', fontSize: '13px' }}>
                       Manage your household members and their roles
@@ -437,7 +469,6 @@ function DashboardContent({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     onClick={() => {
-                      // Quick invite modal logic will go here
                       router.push(`/household/manage?dashboard=${currentDashboard.id}`);
                     }}
                     style={{
@@ -473,92 +504,38 @@ function DashboardContent({
                   </button>
                 </div>
               </div>
-
-              {/* Mock Member Avatars */}
+              {/* Household Members */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingTop: '8px', borderTop: '1px solid #fed7aa' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '12px', color: '#c2410c', fontWeight: '500' }}>Family Members:</span>
-                  
-                  {/* Mock member avatars */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#3b82f6', 
-                      borderRadius: '50%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }} title="You (Owner)">
-                      Me
+                  {householdLoading && (
+                    <span style={{ fontSize: '12px', color: '#c2410c' }}>Loading...</span>
+                  )}
+                  {householdError && (
+                    <span style={{ fontSize: '12px', color: '#b91c1c' }}>{householdError}</span>
+                  )}
+                  {household && household.members && household.members.length > 0 && (
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {household.members.slice(0, 8).map((m) => (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 12, background: '#ffedd5', border: '1px solid #fed7aa' }} title={m.user.email}>
+                          <div style={{ 
+                            width: 24, height: 24, borderRadius: '50%',
+                            background: '#ea580c', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700
+                          }}>
+                            {(m.user.name || m.user.email).slice(0,1).toUpperCase()}
+                          </div>
+                          <span style={{ fontSize: 12, color: '#7c2d12', fontWeight: 600 }}>{m.user.name || m.user.email.split('@')[0]}</span>
+                          <span style={{ fontSize: 11, color: '#9a3412', opacity: 0.9 }}>• {getRoleDisplayName(m.role)}</span>
+                        </div>
+                      ))}
+                      {household.members.length > 8 && (
+                        <div style={{ fontSize: 12, color: '#9a3412' }}>+{household.members.length - 8} more</div>
+                      )}
                     </div>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#10b981', 
-                      borderRadius: '50%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }} title="Spouse">
-                      S
-                    </div>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#f59e0b', 
-                      borderRadius: '50%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }} title="Child">
-                      K1
-                    </div>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#ef4444', 
-                      borderRadius: '50%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }} title="Teen">
-                      K2
-                    </div>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#ddd', 
-                      borderRadius: '50%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      color: '#666',
-                      fontSize: '20px',
-                      cursor: 'pointer'
-                    }} 
-                    title="Add Member"
-                    onClick={() => router.push(`/household/manage?dashboard=${currentDashboard.id}`)}
-                    >
-                      +
-                    </div>
-                  </div>
+                  )}
                 </div>
-                
                 <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#c2410c' }}>
-                  <span>5 members • 2 online</span>
+                  <span>{household?.members?.length || 0} members</span>
                 </div>
               </div>
             </div>

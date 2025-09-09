@@ -122,6 +122,16 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
     },
     { divider: true },
     
+    // Notifications
+    {
+      icon: <Bell className="w-4 h-4" />,
+      label: 'Notifications',
+      onClick: () => {
+        router.push('/notifications');
+        handleClose();
+      },
+    },
+    
     // Profile and settings
     {
       icon: <User className="w-4 h-4" />,

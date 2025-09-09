@@ -280,3 +280,11 @@
 - **AI-ready codebase** with excellent type information
 
 The Block-on-Block codebase is now **~95% type safe** and well on its way to achieving **100% type safety** across the entire monorepo! 🚀
+
+### Latest Session (Global Header + Workspace Branding)
+- Created shared header `web/src/components/GlobalHeaderTabs.tsx` and integrated into business workspace via `DashboardLayoutWrapper`.
+- Tabs are identical across personal and business contexts; Work tab is active on `/business/...` routes.
+- Header branding behavior:
+  - Personal pages: show "Block on Block".
+  - Business workspace: pull name/logo from Business Admin (via `getBusiness(id)` → `branding.logoUrl`, `name`), fallback to `BusinessConfigurationContext.branding` → `GlobalBrandingContext`.
+- Right quick-access sidebar aligned under the fixed header (top offset 64px) in workspace.
