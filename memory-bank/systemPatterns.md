@@ -2290,3 +2290,13 @@ if (error) {
 - **Debugging**: Proper error logging for developers
 - **Recovery**: Users can retry failed operations
 - **Professional Feel**: Handles edge cases gracefully
+
+## Global Header Unification & Branding Source Pattern (2025-09)
+- Use a single shared header component `web/src/components/GlobalHeaderTabs.tsx` across personal dashboard and business workspace.
+- Tab parity: identical tabs and behavior everywhere; Work tab is active on `/business/...` routes.
+- Branding rules:
+  - Personal context: show product brand "Block on Block".
+  - Business workspace: prefer Business Admin data fetched live via `getBusiness(id, token)` → `data.name` and `data.branding.logoUrl`.
+  - Fallbacks: `BusinessConfigurationContext.branding` → `GlobalBrandingContext`.
+- Layout rules: Fixed header height 64px; workspace content and right quick-access sidebar offset to start below header.
+- Integration points: `DashboardLayoutWrapper` must render `<GlobalHeaderTabs />` and avoid duplicating header UI in pages.

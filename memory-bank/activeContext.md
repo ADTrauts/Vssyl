@@ -224,3 +224,23 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
 5. **Real-time Theme Updates** - No page reloads required for theme changes
 
 The theme system is now production-ready with comprehensive dark mode support, smooth transitions, and consistent theming across all components! 🎨
+
+### Latest UI/UX Consistency Updates (Current Session)
+- Unified global header across personal dashboard and business workspace using `web/src/components/GlobalHeaderTabs.tsx`.
+- Business workspace now uses the same tab strip as personal dashboards.
+- Header branding dynamically switches:
+  - Personal routes: shows "Block on Block".
+  - Business workspace routes (`/business/[id]/...`): shows business name and logo from Business Admin branding.
+- Source of truth for workspace branding:
+  - Primary: live business record via `getBusiness(id, token)` to read `data.name` and `data.branding.logoUrl`.
+  - Fallbacks: `BusinessConfigurationContext.branding` → `GlobalBrandingContext`.
+- Work tab is highlighted on business workspace routes; personal tabs are not set active there.
+
+#### Impacted Files
+- `web/src/components/GlobalHeaderTabs.tsx` (new): shared global header and tabs.
+- `web/src/components/business/DashboardLayoutWrapper.tsx`: uses `GlobalHeaderTabs` and offsets content by 64px.
+- `web/src/app/business/[id]/workspace/layout.tsx`: no logic change; wraps with providers.
+
+#### Notes
+- Avoid duplicating header logic in feature pages; always use `GlobalHeaderTabs`.
+- When adding branding, prefer Business Admin (`branding.logoUrl`, colors) so it stays consistent with admin settings.

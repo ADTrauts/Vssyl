@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { 
   Bell, 
   Settings, 
@@ -22,7 +21,7 @@ import {
 import { Avatar, Button, Badge } from 'shared/components';
 import { useSafeSession } from '../../lib/useSafeSession';
 import { useRouter } from 'next/navigation';
-import { getNotifications, markAsRead, markAllAsRead, deleteNotification, type Notification } from '../../api/notifications';
+import { getNotifications, markAsRead, markAllAsRead, type Notification } from '../../api/notifications';
 import { useNotificationSocket } from '../../lib/notificationSocket';
 
 
@@ -45,6 +44,33 @@ export default function NotificationsPage() {
   const [showRead, setShowRead] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
+
+  const getNormalizedType = (rawType: string): 'chat' | 'drive' | 'members' | 'business' | 'system' | 'mentions' => {
+    switch (rawType) {
+      case 'chat_message':
+      case 'chat_reaction':
+      case 'chat':
+        return 'chat';
+      case 'chat_mention':
+      case 'mentions':
+        return 'mentions';
+      case 'drive_shared':
+      case 'drive_permission':
+      case 'drive':
+        return 'drive';
+      case 'business_invitation':
+      case 'business':
+        return 'business';
+      case 'member_request':
+      case 'members':
+        return 'members';
+      case 'system_alert':
+      case 'system':
+        return 'system';
+      default:
+        return 'system';
+    }
+  };
 
   // Load notifications from API
   useEffect(() => {
@@ -163,17 +189,17 @@ export default function NotificationsPage() {
 
   const categories: NotificationCategory[] = [
     { id: 'all', label: 'All', icon: Bell, count: notifications.length, unreadCount: notifications.filter(n => !n.read).length },
-    { id: 'mentions', label: 'Mentions', icon: AtSign, count: notifications.filter(n => n.type === 'mentions').length, unreadCount: notifications.filter(n => n.type === 'mentions' && !n.read).length },
-    { id: 'chat', label: 'Chat', icon: MessageSquare, count: notifications.filter(n => n.type === 'chat').length, unreadCount: notifications.filter(n => n.type === 'chat' && !n.read).length },
-    { id: 'drive', label: 'Drive', icon: Folder, count: notifications.filter(n => n.type === 'drive').length, unreadCount: notifications.filter(n => n.type === 'drive' && !n.read).length },
-    { id: 'members', label: 'Members', icon: Users, count: notifications.filter(n => n.type === 'members').length, unreadCount: notifications.filter(n => n.type === 'members' && !n.read).length },
-    { id: 'business', label: 'Business', icon: Building, count: notifications.filter(n => n.type === 'business').length, unreadCount: notifications.filter(n => n.type === 'business' && !n.read).length },
-    { id: 'system', label: 'System', icon: AlertCircle, count: notifications.filter(n => n.type === 'system').length, unreadCount: notifications.filter(n => n.type === 'system' && !n.read).length },
+    { id: 'mentions', label: 'Mentions', icon: AtSign, count: notifications.filter(n => getNormalizedType(n.type) === 'mentions').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'mentions' && !n.read).length },
+    { id: 'chat', label: 'Chat', icon: MessageSquare, count: notifications.filter(n => getNormalizedType(n.type) === 'chat').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'chat' && !n.read).length },
+    { id: 'drive', label: 'Drive', icon: Folder, count: notifications.filter(n => getNormalizedType(n.type) === 'drive').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'drive' && !n.read).length },
+    { id: 'members', label: 'Members', icon: Users, count: notifications.filter(n => getNormalizedType(n.type) === 'members').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'members' && !n.read).length },
+    { id: 'business', label: 'Business', icon: Building, count: notifications.filter(n => getNormalizedType(n.type) === 'business').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'business' && !n.read).length },
+    { id: 'system', label: 'System', icon: AlertCircle, count: notifications.filter(n => getNormalizedType(n.type) === 'system').length, unreadCount: notifications.filter(n => getNormalizedType(n.type) === 'system' && !n.read).length },
   ];
 
   const filteredNotifications = notifications.filter(notification => {
     // Category filter
-    if (selectedCategory !== 'all' && notification.type !== selectedCategory) {
+    if (selectedCategory !== 'all' && getNormalizedType(notification.type) !== selectedCategory) {
       return false;
     }
     
@@ -369,7 +395,7 @@ export default function NotificationsPage() {
             ) : (
               <div className="space-y-3">
                 {filteredNotifications.map((notification) => {
-                  const Icon = getNotificationIcon(notification.type);
+                  const Icon = getNotificationIcon(getNormalizedType(notification.type));
                   return (
                     <div
                       key={notification.id}
@@ -428,7 +454,7 @@ export default function NotificationsPage() {
                               <Archive className="w-3 h-3 mr-1" />
                               Archive
                             </Button>
-                            {notification.data?.conversationId && (
+                            {Boolean((notification.data as any)?.conversationId) && (
                               <Button variant="ghost" size="sm" className="text-xs">
                                 <ChevronRight className="w-3 h-3 mr-1" />
                                 Go to conversation

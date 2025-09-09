@@ -25,10 +25,10 @@ import GlobalTrashBin from '../GlobalTrashBin';
 import { COLORS, getBrandColor } from 'shared/utils/brandColors';
 import ClientOnlyWrapper from '../../app/ClientOnlyWrapper';
 import AvatarContextMenu from '../AvatarContextMenu';
+import GlobalHeaderTabs from '../GlobalHeaderTabs';
 import { useBusinessConfiguration } from '../../contexts/BusinessConfigurationContext';
 import { useGlobalBranding } from '../../contexts/GlobalBrandingContext';
 import { usePositionAwareModules } from '../PositionAwareModuleProvider';
-import { useThemeColors } from '../../hooks/useThemeColors';
 import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 
 interface Business {
@@ -70,9 +70,8 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   
-  const { currentBranding, isBusinessContext, getHeaderStyles, getSidebarStyles } = useGlobalBranding();
+  const { currentBranding, isBusinessContext, getSidebarStyles, getHeaderStyles } = useGlobalBranding();
   const { getFilteredModules } = usePositionAwareModules();
-  const { getHeaderStyle, getBrandColor } = useThemeColors();
 
   // Get available modules using position-aware filtering
   const getAvailableModules = () => {
@@ -109,119 +108,8 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {/* Full-width header - same as main dashboard */}
-      <header style={{
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        width: '100vw',
-        height: 64,
-        ...getHeaderStyle(isBusinessContext, isBusinessContext ? getHeaderStyles().backgroundColor : undefined),
-        display: 'flex',
-        alignItems: isMobile ? 'flex-start' : 'center',
-        flexDirection: isMobile ? 'column' : 'row',
-        padding: isMobile ? '0 12px' : '0 32px',
-        flexShrink: 0,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: '0 0 auto' }}>
-          {business.logo ? (
-            <img 
-              src={business.logo} 
-              alt={`${business.name} logo`}
-              style={{ height: 32, width: 'auto' }}
-            />
-          ) : (
-            <div style={{ fontWeight: 800, fontSize: 22, color: getBrandColor('highlightYellow') }}>B</div>
-          )}
-          <h1 style={{ 
-            fontWeight: 600, 
-            fontSize: 18, 
-            color: isBusinessContext ? getHeaderStyles().color : '#fff' 
-          }}>
-            {business.name}
-          </h1>
-        </div>
-        
-        {/* Tab Navigation */}
-        <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
-              {/* Core modules */}
-              {['dashboard', 'drive', 'chat', 'calendar'].map((moduleId, index) => {
-                const Icon = MODULE_ICONS[moduleId as keyof typeof MODULE_ICONS] || LayoutDashboard;
-                const isActive = currentModule === moduleId;
-                
-                return (
-                  <button
-                    key={moduleId}
-                    onClick={() => navigateToModule(moduleId)}
-                    style={{
-                      background: isActive ? '#fff' : 'rgba(255, 255, 255, 0.1)',
-                      color: isActive ? (business.branding?.primaryColor || '#3b82f6') : '#fff',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderBottom: 'none',
-                      borderRadius: index === 0 ? '8px 0 0 0' : '0',
-                      padding: '8px 24px 10px 24px',
-                      marginLeft: index === 0 ? 0 : -1,
-                      fontWeight: 700,
-                      fontSize: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      position: 'relative',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <Icon size={20} style={{ marginRight: 4 }} />
-                    {moduleId === 'dashboard' ? 'Overview' : moduleId.charAt(0).toUpperCase() + moduleId.slice(1)}
-                  </button>
-                );
-              })}
-              
-              {/* Additional modules */}
-              {modules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).map((module, index) => {
-                const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
-                const isActive = currentModule === module.id;
-                
-                return (
-                  <button
-                    key={module.id}
-                    onClick={() => navigateToModule(module.id)}
-                    style={{
-                      background: isActive ? '#fff' : 'rgba(255, 255, 255, 0.1)',
-                      color: isActive ? (business.branding?.primaryColor || '#3b82f6') : '#fff',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderBottom: 'none',
-                      borderRadius: '0',
-                      padding: '8px 24px 10px 24px',
-                      marginLeft: -1,
-                      fontWeight: 700,
-                      fontSize: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      position: 'relative',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    <Icon size={20} style={{ marginRight: 4 }} />
-                    {module.name}
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
-          <ClientOnlyWrapper>
-            <AvatarContextMenu />
-          </ClientOnlyWrapper>
-        </div>
-      </header>
-
+      {/* Global Header (shared tabs) */}
+      <GlobalHeaderTabs />
       {/* Main content area below header */}
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
         {/* Left Sidebar */}

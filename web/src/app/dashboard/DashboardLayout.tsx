@@ -284,9 +284,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         router.push(`/dashboard/${newDashboard.id}`);
         return;
       }
-      
-      // Force reload to update dashboard list for household dashboards only
-      window.location.reload();
+      // Note: Do not force a full reload here; it would close the invitation modal.
+      // The dashboard list will update on next render, and we navigate after creation.
     } catch (error) {
       console.error('Failed to create dashboard:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to create dashboard');
