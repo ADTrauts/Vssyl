@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import { 
@@ -131,23 +131,7 @@ export default function BusinessIntelligencePage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, [filters]);
-
-  // Auto-refresh
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      loadData();
-    }, 60000); // Refresh every minute
-
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -317,7 +301,23 @@ export default function BusinessIntelligencePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Load data
+  useEffect(() => {
+    loadData();
+  }, [filters, loadData]);
+
+  // Auto-refresh
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadData();
+    }, 60000); // Refresh every minute
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadData]);
 
   const handleExport = async (format: 'csv' | 'pdf') => {
     setExportLoading(true);

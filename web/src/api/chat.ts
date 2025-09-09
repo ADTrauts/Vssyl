@@ -2,18 +2,13 @@ import { io, Socket } from 'socket.io-client';
 import { getSession } from 'next-auth/react';
 import {
   Conversation,
-  ConversationParticipant,
   Message,
   Thread,
-  ThreadParticipant,
-  FileReference,
   MessageReaction,
-  ReadReceipt,
   CreateConversationRequest,
   CreateMessageRequest,
   CreateThreadRequest,
-  AddReactionRequest,
-  MarkAsReadRequest
+  AddReactionRequest
 } from 'shared/types/chat';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
@@ -226,7 +221,7 @@ class ChatAPI {
       });
 
       this.setupSocketListeners();
-    } catch (error) {
+    } catch (_error) {
       // Failed to initialize WebSocket connection - non-critical, silent fail
       // Don't throw - let the application continue without WebSocket
     }
@@ -240,7 +235,7 @@ class ChatAPI {
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', (reason: string) => {
+    this.socket.on('disconnect', (_reason: string) => {
       // Disconnected from chat server
       this.handleReconnect();
     });
@@ -317,21 +312,23 @@ class ChatAPI {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    this.eventListeners.get(event)!.add(listener as any);
+    this.eventListeners
+      .get(event)!
+      .add(listener as unknown as (...args: unknown[]) => void);
     
     if (this.socket) {
-      this.socket.on(event, listener as any);
+      this.socket.on(event, listener as unknown as (...args: unknown[]) => void);
     }
   }
 
   off<T extends keyof ChatSocketEvents>(event: T, listener: ChatSocketEvents[T]): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.delete(listener as any);
+      listeners.delete(listener as unknown as (...args: unknown[]) => void);
     }
     
     if (this.socket) {
-      this.socket.off(event, listener as any);
+      this.socket.off(event, listener as unknown as (...args: unknown[]) => void);
     }
   }
 

@@ -10,6 +10,7 @@ import { LogoUpload } from './LogoUpload';
 import { MemberManagement } from './MemberManagement';
 import { BusinessAnalytics } from './BusinessAnalytics';
 import DashboardBuildOutModal from '../../../../components/DashboardBuildOutModal';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { ChevronRight, Settings, Palette, Users, BarChart3 } from 'lucide-react';
 
 interface Business {
@@ -58,6 +59,7 @@ export default function BusinessProfilePage() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const businessId = params.id as string;
+  const { updateModuleStatus, loadConfiguration, updateBranding } = useBusinessConfiguration();
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [analytics, setAnalytics] = useState<BusinessAnalytics | null>(null);
@@ -170,6 +172,8 @@ export default function BusinessProfilePage() {
       const response = await businessAPI.uploadLogo(businessId, logoUrl);
       if (response.success) {
         setBusiness(response.data as unknown as Business);
+        // Propagate branding change to workspace immediately
+        try { await updateBranding({ logo: logoUrl }); } catch {}
         return { success: true };
       }
       return { success: false, error: 'Failed to upload logo' };
@@ -183,6 +187,8 @@ export default function BusinessProfilePage() {
       const response = await businessAPI.removeLogo(businessId);
       if (response.success) {
         setBusiness(response.data as unknown as Business);
+        // Propagate branding change to workspace immediately
+        try { await updateBranding({ logo: undefined as unknown as string }); } catch {}
         return { success: true };
       }
       return { success: false, error: 'Failed to remove logo' };
@@ -451,15 +457,26 @@ export default function BusinessProfilePage() {
       <DashboardBuildOutModal
         isOpen={showSetup}
         onClose={() => setShowSetup(false)}
-        onComplete={(selectedModuleIds: string[]) => {
+        onComplete={async (selectedModuleIds: string[]) => {
           setSelectedModules(selectedModuleIds);
           setShowSetup(false);
-          // TODO: Install selected modules for the business
-          console.log('Selected modules for business:', selectedModuleIds);
-          // Redirect to workspace after setup
+          if (selectedModuleIds.length > 0) {
+            try {
+              for (const id of selectedModuleIds) {
+                await updateModuleStatus(id, 'enabled');
+              }
+              // Ensure workspace picks up newly installed modules immediately
+              try { await loadConfiguration(businessId); } catch {}
+            } catch (e) {
+              // Non-blocking; proceed to workspace regardless
+              console.warn('One or more module installs failed during setup:', e);
+            }
+          }
           router.push(`/business/${businessId}/workspace`);
         }}
         dashboardName={`${business?.name || 'Business'} Workspace`}
+        businessId={businessId}
+        scope="business"
       />
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, Button, Input, Alert, Spinner } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import { useImpersonation } from '../../../contexts/ImpersonationContext';
@@ -62,9 +62,36 @@ export default function ImpersonatePage() {
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await adminApiService.getUsers({
+        page: currentPage,
+        limit: 20,
+        search: searchTerm || undefined
+      });
+
+      if (response.error) {
+        setError(response.error);
+        return;
+      }
+
+      const data = response.data as any;
+      setUsers(data.users || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      setError('Failed to load users');
+      console.error('Error loading users:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, searchTerm]);
+
   useEffect(() => {
     loadUsers();
-  }, [currentPage]);
+  }, [currentPage, loadUsers]);
 
   useEffect(() => {
     console.log('Modal state changed:', showConfirmModal);
@@ -100,32 +127,7 @@ export default function ImpersonatePage() {
     }
   }, [isImpersonating, currentSession]);
 
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await adminApiService.getUsers({
-        page: currentPage,
-        limit: 20,
-        search: searchTerm || undefined
-      });
-
-      if (response.error) {
-        setError(response.error);
-        return;
-      }
-
-      const data = response.data as any;
-      setUsers(data.users || []);
-      setTotalPages(data.totalPages || 1);
-    } catch (err) {
-      setError('Failed to load users');
-      console.error('Error loading users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleSearch = () => {
     setCurrentPage(1);

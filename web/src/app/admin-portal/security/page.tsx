@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { 
   Shield, 
@@ -66,16 +66,7 @@ export default function SecurityPage() {
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  useEffect(() => {
-    loadSecurityData();
-    
-    if (autoRefresh) {
-      const interval = setInterval(loadSecurityData, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [filters, autoRefresh]);
-
-  const loadSecurityData = async () => {
+  const loadSecurityData = useCallback(async () => {
     try {
       setLoading(true);
       const [eventsRes, metricsRes, complianceRes] = await Promise.all([
@@ -111,7 +102,16 @@ export default function SecurityPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadSecurityData();
+    
+    if (autoRefresh) {
+      const interval = setInterval(loadSecurityData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [filters, autoRefresh, loadSecurityData]);
 
   const resolveEvent = async (eventId: string) => {
     try {

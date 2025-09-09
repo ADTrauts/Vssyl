@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { 
   BarChart3, 
@@ -59,16 +59,7 @@ export default function AnalyticsPage() {
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  useEffect(() => {
-    loadAnalyticsData();
-    
-    if (autoRefresh) {
-      const interval = setInterval(loadAnalyticsData, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [filters, autoRefresh]);
-
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
       const [analyticsRes, realtimeRes] = await Promise.all([
@@ -94,7 +85,16 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadAnalyticsData();
+    
+    if (autoRefresh) {
+      const interval = setInterval(loadAnalyticsData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [filters, autoRefresh, loadAnalyticsData]);
 
   const exportData = async (format: 'csv' | 'json') => {
     try {

@@ -113,38 +113,10 @@ export default function BusinessAdminPage() {
 
   const checkSetupStatus = async () => {
     try {
-      // Check org chart status
-      const orgChartResponse = await fetch(`/api/org-chart/structure/${businessId}`, {
-        headers: {
-          'Authorization': `Bearer ${session?.accessToken}`
-        }
-      });
-      const orgChartExists = orgChartResponse.ok;
-
-      // Check AI assistant status
-      const aiResponse = await fetch(`/api/business-ai/${businessId}/config`, {
-        headers: {
-          'Authorization': `Bearer ${session?.accessToken}`
-        }
-      });
-      const aiExists = aiResponse.ok;
-
-      // Check modules status (simplified - assume modules exist if business exists)
-      const modulesExist = true;
-
-      // Check branding status
-      const brandingExists = business?.branding?.primaryColor || business?.logo;
-
-      // Check employees status
-      const employeesExist = (business?.members?.length || 0) > 1; // More than just the owner
-
-      setSetupStatus({
-        orgChart: orgChartExists,
-        branding: !!brandingExists,
-        modules: modulesExist,
-        aiAssistant: aiExists,
-        employees: employeesExist
-      });
+      const resp = await businessAPI.getBusinessSetupStatus(businessId);
+      if (resp.success) {
+        setSetupStatus(resp.data as any);
+      }
     } catch (error) {
       console.error('Failed to check setup status:', error);
     }
