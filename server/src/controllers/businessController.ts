@@ -976,6 +976,59 @@ export const getBusinessModuleAnalytics = async (req: Request, res: Response) =>
   }
 };
 
+// Get business setup status (org chart, branding, modules, AI, employees)
+export const getBusinessSetupStatus = async (req: Request, res: Response) => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+
+    // Ensure the requester is a member of this business
+    const userMembership = await prisma.businessMember.findFirst({
+      where: { businessId: id, userId: user.id, isActive: true }
+    });
+    if (!userMembership) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    const [business, orgCounts, moduleInstallCount, activeMemberCount] = await Promise.all([
+      prisma.business.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          logo: true,
+          branding: true,
+          aiSettings: true,
+          aiDigitalTwin: { select: { id: true } }
+        }
+      }),
+      prisma.$transaction([
+        prisma.organizationalTier.count({ where: { businessId: id } }) as any,
+        prisma.position.count({ where: { businessId: id } }) as any
+      ]),
+      (prisma as any).businessModuleInstallation.count({ where: { businessId: id } }),
+      prisma.businessMember.count({ where: { businessId: id, isActive: true } })
+    ]);
+
+    const [tierCount, positionCount] = orgCounts as unknown as [number, number];
+
+    const setup = {
+      orgChart: (tierCount || 0) > 0 || (positionCount || 0) > 0,
+      branding: !!(business?.logo) || !!(business?.branding && Object.keys(business.branding as Record<string, unknown>).length > 0),
+      modules: (moduleInstallCount || 0) > 0,
+      aiAssistant: !!business?.aiSettings || !!business?.aiDigitalTwin,
+      employees: (activeMemberCount || 0) > 1 // more than just the owner/admin
+    };
+
+    return res.json({ success: true, data: setup });
+  } catch (error) {
+    handleError(res, error, 'Failed to get business setup status');
+  }
+};
+
 // Helper function to generate activity descriptions
 const getActivityDescription = (activity: any): string => {
   const { type, details } = activity;

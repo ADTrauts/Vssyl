@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import { 
@@ -100,23 +100,7 @@ export default function AdminModulesPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([]);
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Auto-refresh
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      loadData();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -225,7 +209,23 @@ export default function AdminModulesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Load data
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Auto-refresh
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadData]);
 
   const handleReview = (submission: ModuleSubmission, action: 'approve' | 'reject') => {
     setSelectedSubmission(submission);

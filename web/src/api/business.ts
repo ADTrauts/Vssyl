@@ -291,6 +291,21 @@ export const getBusinessModuleAnalytics = async (
   return apiCall(`/${id}/module-analytics`, { method: 'GET' }, token);
 };
 
+export interface BusinessSetupStatus {
+  orgChart: boolean;
+  branding: boolean;
+  modules: boolean;
+  aiAssistant: boolean;
+  employees: boolean;
+}
+
+export const getBusinessSetupStatus = async (
+  id: string,
+  token: string
+): Promise<{ success: boolean; data: BusinessSetupStatus }> => {
+  return apiCall(`/${id}/setup-status`, { method: 'GET' }, token);
+};
+
 export const followBusiness = async (businessId: string, token: string): Promise<{ success: boolean; message: string }> => {
   return apiCall(`/${businessId}/follow`, { method: 'POST' }, token);
 };
@@ -493,6 +508,18 @@ class BusinessAPI {
     }
 
     return getBusinessAnalytics(id, this.token!);
+  }
+
+  async getBusinessSetupStatus(id: string) {
+    if (!this.token) {
+      const session = await getSession();
+      if (!session?.accessToken) {
+        throw new Error('No authentication token available');
+      }
+      this.token = session.accessToken;
+    }
+
+    return getBusinessSetupStatus(id, this.token!);
   }
 }
 

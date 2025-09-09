@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import { 
@@ -160,23 +160,7 @@ export default function PerformancePage() {
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'scalability' | 'optimization' | 'alerts'>('overview');
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, [filters]);
-
-  // Auto-refresh
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      loadData();
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -332,7 +316,23 @@ export default function PerformancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  // Load data
+  useEffect(() => {
+    loadData();
+  }, [filters, loadData]);
+
+  // Auto-refresh
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      loadData();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadData]);
 
   const handleOptimizationAction = async (recommendationId: string, action: string) => {
     try {

@@ -16,7 +16,8 @@ import {
   followBusiness,
   unfollowBusiness,
   getBusinessFollowers,
-  getUserFollowing
+  getUserFollowing,
+  getBusinessSetupStatus
 } from '../controllers/businessController';
 
 const router: express.Router = express.Router();
@@ -24,6 +25,7 @@ const router: express.Router = express.Router();
 // Business management routes
 router.post('/', createBusiness);
 router.get('/', getUserBusinesses);
+router.get('/:id/setup-status', getBusinessSetupStatus);
 router.get('/:id', getBusiness);
 router.put('/:id', updateBusiness);
 

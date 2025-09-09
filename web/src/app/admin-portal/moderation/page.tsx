@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { 
   Shield, 
@@ -78,16 +78,7 @@ export default function ModerationPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
 
-  useEffect(() => {
-    loadModerationData();
-    
-    if (autoRefresh) {
-      const interval = setInterval(loadModerationData, 30000); // Refresh every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [filters, autoRefresh]);
-
-  const loadModerationData = async () => {
+  const loadModerationData = useCallback(async () => {
     try {
       setLoading(true);
       const [reportsRes, statsRes, rulesRes] = await Promise.all([
@@ -111,7 +102,16 @@ export default function ModerationPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadModerationData();
+    
+    if (autoRefresh) {
+      const interval = setInterval(loadModerationData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [filters, autoRefresh, loadModerationData]);
 
   const handleBulkAction = async (action: string) => {
     if (selectedReports.length === 0) return;
