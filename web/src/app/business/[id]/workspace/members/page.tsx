@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { Card, Button, Spinner, Alert, Avatar, Badge } from 'shared/components';
 import { 
   Users, 
@@ -40,6 +41,7 @@ interface BusinessMember {
 export default function WorkMembersPage() {
   const params = useParams();
   const { data: session } = useSession();
+  const { hasPermission } = useBusinessConfiguration();
   const businessId = params.id as string;
 
   const [members, setMembers] = useState<BusinessMember[]>([]);
@@ -245,10 +247,12 @@ export default function WorkMembersPage() {
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Invite Member
-            </Button>
+            {hasPermission('members', 'invite') && (
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Invite Member
+              </Button>
+            )}
           </div>
       </div>
 
@@ -373,9 +377,11 @@ export default function WorkMembersPage() {
                     <Button variant="ghost" size="sm">
                       <Mail className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    {hasPermission('members', 'manage') && (
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    )}
                                   </div>
                                 </div>
                                 </div>
@@ -394,12 +400,12 @@ export default function WorkMembersPage() {
                   : 'Invite your first team member to get started'
                 }
               </p>
-              {!searchTerm && roleFilter === 'all' && (
+              {!searchTerm && roleFilter === 'all' && hasPermission('members', 'invite') && (
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
                   Invite Member
                 </Button>
-            )}
+              )}
         </div>
       )}
             </Card>

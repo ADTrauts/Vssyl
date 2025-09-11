@@ -123,7 +123,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
   const [editMode, setEditMode] = useState<EditMode>('none');
   const [editAction, setEditAction] = useState<EditAction>('create');
   const [editingItem, setEditingItem] = useState<PermissionSet | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['permission-sets', 'templates']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['permission-sets', 'templates', 'department-modules']));
   const [selectedPermissions, setSelectedPermissions] = useState<Record<string, boolean>>({});
 
   // Form states
@@ -502,6 +502,74 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Department Module Assignment */}
+      <Card>
+        <div className="p-6">
+          <div 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => toggleSection('department-modules')}
+          >
+            <div className="flex items-center space-x-3">
+              <Building2 className="w-5 h-5 text-gray-400" />
+              <h3 className="text-lg font-medium text-gray-900">Department Module Access</h3>
+              <Badge color="blue">{orgChartData.departments.length}</Badge>
+            </div>
+            {expandedSections.has('department-modules') ? (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+          
+          {expandedSections.has('department-modules') && (
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-gray-600">
+                Assign specific modules to departments. Employees in each department will only see modules assigned to their department.
+              </p>
+              
+              {orgChartData.departments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No departments found. Create departments in the Organization Chart tab first.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orgChartData.departments.map((department) => (
+                    <div key={department.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-gray-900">{department.name}</h4>
+                        <Badge color="blue">{department.positions?.length || 0} positions</Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Available Modules
+                        </label>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {Object.keys(modulePermissions).map((moduleId) => (
+                            <label key={moduleId} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                // TODO: Connect to actual department module assignment
+                                defaultChecked={false}
+                              />
+                              <span className="text-sm text-gray-700">
+                                {(modulePermissions as any)[moduleId]?.name || moduleId}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}

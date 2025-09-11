@@ -14,6 +14,8 @@ import { OrgChartBuilder } from '../../../../components/org-chart/OrgChartBuilde
 import { PermissionManager } from '../../../../components/org-chart/PermissionManager';
 import { EmployeeManager } from '../../../../components/org-chart/EmployeeManager';
 import { CreateOrgChartModal } from '../../../../components/org-chart/CreateOrgChartModal';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
+import { businessAPI } from '@/api/business';
 
 type ActiveTab = 'org-chart' | 'permissions' | 'employees';
 
@@ -22,6 +24,7 @@ export default function OrgChartPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const businessId = params.id as string;
+  const { loadOrgChart } = useBusinessConfiguration();
 
   const [orgChartData, setOrgChartData] = useState<OrgChartStructure | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +36,8 @@ export default function OrgChartPage() {
   useEffect(() => {
     if (businessId && session?.accessToken) {
       loadOrgChartData();
+      // Keep workspace context in sync
+      loadOrgChart(businessId);
     }
   }, [businessId, session?.accessToken]);
 
@@ -47,11 +52,11 @@ export default function OrgChartPage() {
       
       if (response.success) {
         setOrgChartData(response.data);
-        // Extract business name from the first tier or department
-        if (response.data.tiers.length > 0) {
-          // This would need to be fetched from business API in a real implementation
-          setBusinessName('Business');
-        }
+        // Load real business name for header
+        try {
+          const biz = await businessAPI.getBusiness(businessId);
+          if (biz.success) setBusinessName((biz.data as any).name || 'Business');
+        } catch {}
       } else {
         setError('Failed to load org chart data');
       }
@@ -71,6 +76,8 @@ export default function OrgChartPage() {
       
       if (response.success) {
         await loadOrgChartData();
+        // Sync workspace context immediately
+        try { await loadOrgChart(businessId); } catch {}
         setShowCreateModal(false);
       } else {
         setError('Failed to create default org chart');
@@ -82,8 +89,9 @@ export default function OrgChartPage() {
     }
   };
 
-  const handleOrgChartUpdate = () => {
-    loadOrgChartData();
+  const handleOrgChartUpdate = async () => {
+    await loadOrgChartData();
+    try { await loadOrgChart(businessId); } catch {}
   };
 
   if (loading) {
@@ -123,12 +131,12 @@ export default function OrgChartPage() {
         <Breadcrumbs
           items={[
             {
-              label: 'Workspace',
-              onClick: () => router.push(`/business/${businessId}/workspace`),
+              label: 'Admin',
+              onClick: () => router.push(`/business/${businessId}`),
             },
             {
               label: businessName || 'Business',
-              onClick: () => router.push(`/business/${businessId}/workspace`),
+              onClick: () => router.push(`/business/${businessId}`),
             },
             {
               label: 'Org Chart & Permissions',
@@ -150,7 +158,7 @@ export default function OrgChartPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              onClick={() => router.push(`/business/${businessId}/workspace`)}
+              onClick={() => router.push(`/business/${businessId}`)}
               className="flex items-center space-x-2"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />

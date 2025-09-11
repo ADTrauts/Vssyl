@@ -86,7 +86,9 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
 
   const loadEmployeeAIAccess = async () => {
     try {
-      const response = await fetch(`/api/business-ai/${businessId}/employee-access`);
+      const response = await fetch(`/api/business-ai/${businessId}/employee-access`, {
+        headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+      });
       if (response.ok) {
         const data = await response.json();
         setBusinessAI(data.data.businessAI);
@@ -124,7 +126,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
     try {
       const response = await fetch(`/api/business-ai/${businessId}/interact`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}) },
         body: JSON.stringify({
           query: finalQuery,
           context: {

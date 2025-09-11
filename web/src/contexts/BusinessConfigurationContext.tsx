@@ -258,10 +258,24 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
         employeeData = [];
       }
 
+      // Load business data for branding
+      let businessData: any = null;
+      try {
+        const businessResponse = await fetch(`/api/business/${businessId}`, {
+          headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+        });
+        if (businessResponse.ok) {
+          const businessResult = await businessResponse.json();
+          businessData = businessResult.data;
+        }
+      } catch (error) {
+        console.warn('Failed to load business data for branding:', error);
+      }
+
       // Create business configuration
       const businessConfig: BusinessConfiguration = {
         businessId,
-        name: 'Sample Business',
+        name: businessData?.name || 'Sample Business',
         enabledModules: businessModules,
         modulePermissions: {
           'dashboard': ['view'],
@@ -271,11 +285,11 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
           'analytics': ['view']
         },
         branding: {
-          primaryColor: '#3b82f6',
-          secondaryColor: '#1e40af',
-          accentColor: '#f59e0b',
-          fontFamily: 'Inter',
-          logo: 'logo.png'
+          primaryColor: businessData?.branding?.primaryColor || '#3b82f6',
+          secondaryColor: businessData?.branding?.secondaryColor || '#1e40af',
+          accentColor: businessData?.branding?.accentColor || '#f59e0b',
+          fontFamily: businessData?.branding?.fontFamily || 'Inter',
+          logo: businessData?.logo || businessData?.branding?.logo
         },
         settings: {
           allowModuleInstallation: true,
@@ -584,7 +598,11 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
 
     try {
       // Update module configuration
-      await configureModule(moduleId, { permissions });
+      await configureModule(moduleId, { 
+        enabled: true, 
+        permissions,
+        settings: {}
+      });
       
       // Send WebSocket update if connected
       if (websocket && wsConnected) {
@@ -611,8 +629,24 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
     if (!configuration) return;
 
     try {
-      // TODO: Replace with actual API call
-      // await businessAPI.updateBranding(configuration.businessId, branding, session?.accessToken);
+      // Call the actual API to update business branding
+      const response = await fetch(`/api/business/${configuration.businessId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {})
+        },
+        body: JSON.stringify({
+          branding: {
+            ...configuration.branding,
+            ...branding
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update branding');
+      }
 
       // Optimistic update
       setConfiguration(prev => {
@@ -643,7 +677,7 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
       await loadConfiguration(configuration.businessId);
       throw err;
     }
-  }, [configuration, websocket, loadConfiguration]);
+  }, [configuration, websocket, loadConfiguration, session?.accessToken]);
 
   // Update settings
   const updateSettings = useCallback(async (settings: Partial<BusinessConfiguration['settings']>) => {

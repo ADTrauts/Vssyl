@@ -230,10 +230,25 @@ router.get('/structure/:businessId', async (req, res) => {
   try {
     const { businessId } = req.params;
     const structure = await orgChartService.getOrgChartStructure(businessId);
-    res.json(structure);
+    
+    // Transform the response to match frontend expectations
+    const response = {
+      success: true,
+      data: {
+        tiers: structure.tiers,
+        departments: structure.departments,
+        positions: structure.positions,
+        hierarchy: {
+          departments: structure.departments,
+          positions: structure.positions
+        }
+      }
+    };
+    
+    res.json(response);
   } catch (error) {
     console.error('Error fetching org chart structure:', error);
-    res.status(500).json({ error: 'Failed to fetch org chart structure' });
+    res.status(500).json({ success: false, error: 'Failed to fetch org chart structure' });
   }
 });
 
@@ -455,10 +470,10 @@ router.get('/employees/:businessId', async (req, res) => {
   try {
     const { businessId } = req.params;
     const employees = await employeeManagementService.getBusinessEmployees(businessId);
-    res.json(employees);
+    res.json({ success: true, data: employees });
   } catch (error) {
     console.error('Error fetching employees:', error);
-    res.status(500).json({ error: 'Failed to fetch employees' });
+    res.status(500).json({ success: false, error: 'Failed to fetch employees' });
   }
 });
 
