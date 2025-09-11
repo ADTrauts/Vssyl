@@ -70,7 +70,7 @@ export default function BusinessBrandingPage() {
   };
 
   const handleBack = () => {
-    router.push(`/business/${businessId}/profile`);
+    router.push(`/business/${businessId}`);
   };
 
   if (loading) {

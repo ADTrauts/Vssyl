@@ -117,23 +117,23 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
   const rightPanelIconSize = 20;
   const rightPanelTouchSize = isMobile ? 36 : 28;
   const { data: session } = useSession();
-  const { configuration, loading: configLoading } = useBusinessConfiguration();
+  const { configuration, loading: configLoading, getModulesForUser } = useBusinessConfiguration();
 
-  // Business branding
-  const branding = business.branding || {};
+  // Business branding - prefer configuration over business object
+  const branding = configuration?.branding || business.branding || {};
   const primaryColor = branding.primaryColor || COLORS.infoBlue;
   const secondaryColor = branding.secondaryColor || COLORS.neutralDark;
   const accentColor = branding.accentColor || COLORS.highlightYellow;
 
-  // Get modules for current user
+  // Get modules for current user based on permissions
   const getAvailableModules = (): Module[] => {
     if (!configuration || !session?.user?.id) {
       // Fallback to default modules
       return BUSINESS_MODULES;
     }
 
-    // Use enabledModules directly since getModulesForUser may not be available here
-    const userModules = configuration.enabledModules?.filter(m => m.status === 'enabled') || [];
+    // Use getModulesForUser to filter by position and department permissions
+    const userModules = getModulesForUser(session.user.id);
     
     // Convert BusinessModule[] to Module[]
     const modules: Module[] = userModules.map((bModule: BusinessModule) => ({
@@ -326,7 +326,7 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
       secondaryColor,
       accentColor,
       fontFamily: branding.fontFamily || '',
-      customCSS: branding.customCSS || '',
+      customCSS: (branding as any).customCSS || '',
     }}>
       <div style={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
         {/* Main Header */}

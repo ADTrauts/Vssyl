@@ -60,6 +60,7 @@ export default function BrandedWorkDashboard({
     loading: configLoading, 
     error: configError,
     getEnabledModules,
+    getModulesForUser,
     hasPermission 
   } = useBusinessConfiguration();
   const router = useRouter();
@@ -140,13 +141,13 @@ export default function BrandedWorkDashboard({
     }
   };
 
-  // Get available modules from business configuration
+  // Get available modules from business configuration based on user permissions
   const getAvailableModules = () => {
-    if (!configuration) return [];
+    if (!configuration || !session?.user?.id) return [];
     
-    const enabledModules = getEnabledModules();
+    const userModules = getModulesForUser(session.user.id);
     
-    return enabledModules.map(module => ({
+    return userModules.map(module => ({
       id: module.id,
       name: module.name,
       icon: getModuleIcon(module.id),

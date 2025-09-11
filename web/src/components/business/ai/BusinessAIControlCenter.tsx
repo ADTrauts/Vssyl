@@ -39,18 +39,23 @@ interface BusinessAIConfig {
 }
 
 interface BusinessAIAnalytics {
-  totalInteractions: number;
-  averageResponseTime: number;
-  userSatisfaction: number;
-  averageConfidence: number;
-  helpfulnessRating: number;
-  approvedLearningEvents: number;
-  topQueries: Array<{
-    query: string;
-    count: number;
-    category: string;
-  }>;
-  usageByDepartment: Record<string, number>;
+  businessAI: {
+    id: string;
+    name: string;
+    status: string;
+    totalInteractions: number;
+    lastInteractionAt: string | null;
+  };
+  metrics: any[];
+  recentInteractions: any[];
+  learningEvents: any[];
+  summary: {
+    totalInteractions: number;
+    averageConfidence: number;
+    approvedLearningEvents: number;
+    totalLearningEvents: number;
+    helpfulnessRating: number;
+  };
 }
 
 interface LearningEvent {
@@ -130,7 +135,9 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
 
   const loadBusinessAI = async () => {
     try {
-      const response = await fetch(`/api/business-ai/${businessId}/config`);
+      const response = await fetch(`/api/business-ai/${businessId}/config`, {
+        headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+      });
       if (response.ok) {
         const data = await response.json();
         setBusinessAI(data.data);
@@ -146,7 +153,9 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
 
   const loadAnalytics = async () => {
     try {
-      const response = await fetch(`/api/business-ai/${businessId}/analytics`);
+      const response = await fetch(`/api/business-ai/${businessId}/analytics`, {
+        headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+      });
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data.data);
@@ -158,7 +167,9 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
 
   const loadLearningEvents = async () => {
     try {
-      const response = await fetch(`/api/business-ai/${businessId}/learning-events?status=pending`);
+      const response = await fetch(`/api/business-ai/${businessId}/learning-events?status=pending`, {
+        headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+      });
       if (response.ok) {
         const data = await response.json();
         setLearningEvents(data.data);
@@ -170,7 +181,9 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
 
   const loadCentralizedInsights = async () => {
     try {
-      const response = await fetch(`/api/business-ai/${businessId}/centralized-insights`);
+      const response = await fetch(`/api/business-ai/${businessId}/centralized-insights`, {
+        headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
+      });
       if (response.ok) {
         const data = await response.json();
         // Store insights for use in the centralized tab
@@ -186,7 +199,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
     try {
       const response = await fetch(`/api/business-ai/${businessId}/initialize`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}) },
         body: JSON.stringify({
           name: `Business AI Assistant`,
           description: 'AI Digital Twin for your business'
@@ -212,7 +225,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
     try {
       const response = await fetch(`/api/business-ai/${businessId}/config`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {}) },
         body: JSON.stringify(updates)
       });
 
@@ -383,15 +396,15 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Average Confidence</p>
-                      <p className="text-2xl font-bold">{(analytics.averageConfidence * 100).toFixed(1)}%</p>
+                      <p className="text-2xl font-bold">{((analytics.summary?.averageConfidence || 0) * 100).toFixed(1)}%</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Helpfulness Rating</p>
-                      <p className="text-2xl font-bold">{analytics.helpfulnessRating.toFixed(1)}%</p>
+                      <p className="text-2xl font-bold">{(analytics.summary?.helpfulnessRating || 0).toFixed(1)}%</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Learning Events Applied</p>
-                      <p className="text-2xl font-bold">{analytics.approvedLearningEvents}</p>
+                      <p className="text-2xl font-bold">{analytics.summary?.approvedLearningEvents || 0}</p>
                     </div>
                   </div>
                 </div>

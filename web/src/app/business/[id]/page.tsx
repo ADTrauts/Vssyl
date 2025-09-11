@@ -7,6 +7,8 @@ import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
 import { businessAPI } from '@/api/business';
 import { BusinessBrandingProvider, BrandedHeader, BrandedButton } from '@/components/BusinessBranding';
 import AvatarContextMenu from '@/components/AvatarContextMenu';
+import BillingModal from '@/components/BillingModal';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { 
   Building2, 
   Users, 
@@ -23,7 +25,8 @@ import {
   Zap,
   Target,
   Briefcase,
-  User
+  User,
+  CreditCard
 } from 'lucide-react';
 
 interface Business {
@@ -86,6 +89,7 @@ export default function BusinessAdminPage() {
     aiAssistant: false,
     employees: false
   });
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   useEffect(() => {
     if (businessId && session?.accessToken) {
@@ -132,6 +136,12 @@ export default function BusinessAdminPage() {
     if (!business || !session?.user?.id) return false;
     const userMember = business.members.find(m => m.user.id === session.user.id);
     return userMember?.role === 'ADMIN' || userMember?.role === 'MANAGER';
+  };
+
+  // Check if user can manage billing
+  const canManageBilling = () => {
+    if (!session?.user?.id) return false;
+    return isOwnerOrAdmin();
   };
 
   if (loading) {
@@ -355,7 +365,7 @@ export default function BusinessAdminPage() {
               <Button 
                 variant="primary" 
                 className="w-full"
-                onClick={() => router.push(`/business/${businessId}/workspace/ai`)}
+                onClick={() => router.push(`/business/${businessId}/ai`)}
               >
                 <Brain className="w-4 h-4 mr-2" />
                 {setupStatus.aiAssistant ? "Manage AI Assistant" : "Set Up AI Assistant"}
@@ -394,7 +404,7 @@ export default function BusinessAdminPage() {
               <Button 
                 variant="primary" 
                 className="w-full"
-                onClick={() => router.push(`/business/${businessId}/workspace/settings`)}
+                onClick={() => router.push(`/business/${businessId}/branding`)}
               >
                 <Palette className="w-4 h-4 mr-2" />
                 {setupStatus.branding ? "Update Branding" : "Set Up Branding"}
@@ -431,7 +441,7 @@ export default function BusinessAdminPage() {
               <Button 
                 variant="primary" 
                 className="w-full"
-                onClick={() => router.push(`/business/${businessId}/workspace/modules`)}
+                onClick={() => router.push(`/business/${businessId}/profile?tab=analytics`)}
               >
                 <Package className="w-4 h-4 mr-2" />
                 Manage Modules
@@ -439,6 +449,41 @@ export default function BusinessAdminPage() {
               </Button>
             </div>
           </Card>
+
+          {/* Billing & Subscription - Only for Admins/Managers */}
+          {canManageBilling() && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <CreditCard className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Billing & Subscription</h3>
+                    <p className="text-sm text-gray-600">Manage your business subscription and billing</p>
+                  </div>
+                </div>
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium text-gray-700">Current Plan</span>
+                  <Badge color="blue">Enterprise</Badge>
+                </div>
+                
+                <Button 
+                  variant="primary" 
+                  className="w-full"
+                  onClick={() => setShowBillingModal(true)}
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Manage Billing & Subscriptions
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -547,6 +592,14 @@ export default function BusinessAdminPage() {
           </Card>
         )}
       </div>
+
+      {/* Billing Modal - Only for authorized users */}
+      {canManageBilling() && (
+        <BillingModal 
+          isOpen={showBillingModal}
+          onClose={() => setShowBillingModal(false)}
+        />
+      )}
     </BusinessBrandingProvider>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { getBusiness, updateBusiness, uploadLogo, removeLogo } from '../../../../../api/business';
 import { Card, Button, Badge, Spinner, Alert, Modal, Toast, Avatar } from 'shared/components';
 import BillingModal from '../../../../../components/BillingModal';
@@ -79,6 +80,7 @@ const FONT_OPTIONS = [
 export default function BusinessSettingsPage() {
   const params = useParams();
   const { data: session } = useSession();
+  const { hasPermission } = useBusinessConfiguration();
   const businessId = params.id as string;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -94,6 +96,7 @@ export default function BusinessSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [removingLogo, setRemovingLogo] = useState(false);
   const [canManage, setCanManage] = useState(false);
+  const canManageSettings = hasPermission('settings', 'manage');
   const [showBillingModal, setShowBillingModal] = useState(false);
 
   // Form states
@@ -203,7 +206,7 @@ export default function BusinessSettingsPage() {
       
       if (response.success) {
         const businessData = response.data;
-        setBusiness(businessData);
+        setBusiness(businessData as unknown as Business);
         
         // Initialize form data
         setProfileForm({
@@ -219,7 +222,7 @@ export default function BusinessSettingsPage() {
         setBrandingForm({
           primaryColor: businessData.branding?.primaryColor || '#3b82f6',
           secondaryColor: businessData.branding?.secondaryColor || '#1e40af',
-          accentColor: businessData.branding?.accentColor || '#f59e0b',
+          accentColor: (businessData.branding as any)?.accentColor || '#f59e0b',
           fontFamily: businessData.branding?.fontFamily || '',
           customCSS: businessData.branding?.customCSS || ''
         });
@@ -303,7 +306,7 @@ export default function BusinessSettingsPage() {
       const response = await uploadLogo(businessId, tempUrl, session.accessToken);
       
       if (response.success) {
-        setBusiness(prev => prev ? { ...prev, logo: response.data.logo } : null);
+        setBusiness(prev => prev ? { ...prev, logo: response.data.logoUrl } : null);
         showSuccessMessage('Logo uploaded successfully!');
         setShowLogoUpload(false);
       }
@@ -605,7 +608,7 @@ export default function BusinessSettingsPage() {
               </div>
             </div>
 
-            {canManage && (
+            {canManageSettings && (
               <div className="flex justify-end pt-6">
                 <Button onClick={handleProfileSave} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
@@ -763,7 +766,7 @@ export default function BusinessSettingsPage() {
               </div>
             </div>
 
-            {canManage && (
+            {canManageSettings && (
               <div className="flex justify-end pt-6">
                 <Button onClick={handleBrandingSave} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
@@ -1008,9 +1011,9 @@ export default function BusinessSettingsPage() {
               </div>
             </div>
 
-            {canManage && (
+            {canManageSettings && (
               <div className="flex justify-end pt-6">
-                <Button disabled={!canManage}>
+                <Button>
                   <Save className="w-4 h-4 mr-2" />
                   Save Preferences
                 </Button>
