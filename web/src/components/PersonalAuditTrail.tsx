@@ -457,11 +457,11 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
                     </div>
                     
                     <p className="text-sm text-gray-600 mb-2">
-                      {log.details && typeof log.details === 'object' && log.details.fileName && (
-                        <span>File: {log.details.fileName}</span>
+                      {log.details && typeof log.details === 'object' && log.details !== null && 'fileName' in log.details && (
+                        <span>File: {(log.details as any).fileName}</span>
                       )}
-                      {log.details && typeof log.details === 'object' && log.details.message && (
-                        <span>Message: {log.details.message.substring(0, 100)}...</span>
+                      {log.details && typeof log.details === 'object' && log.details !== null && 'message' in log.details && typeof (log.details as any).message === 'string' && (
+                        <span>Message: {(log.details as any).message.substring(0, 100)}...</span>
                       )}
                     </p>
                     

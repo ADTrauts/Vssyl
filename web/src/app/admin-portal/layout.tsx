@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { redirect } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Shield, LayoutDashboard, Users, BarChart3, CreditCard, Code, Lock, Settings, Activity, LogOut, User, Eye, Home, DollarSign, Package, UserCheck, Key, Bug, Brain, MessageSquare } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, BarChart3, CreditCard, Code, Lock, Settings, Activity, LogOut, User, Eye, Home, DollarSign, Package, UserCheck, Key, Bug, Brain, MessageSquare, Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
@@ -45,6 +45,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
     { id: 'business-intelligence', label: 'Business Intelligence', icon: Brain, path: '/admin-portal/business-intelligence' },
     { id: 'ai-learning', label: 'AI Learning', icon: Brain, path: '/admin-portal/ai-learning' },
+    { id: 'ai-context', label: 'AI Context Debug', icon: Search, path: '/admin-portal/ai-context' },
     { id: 'business-ai', label: 'Business AI Global', icon: Brain, path: '/admin-portal/business-ai' },
     { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
     { id: 'impersonate', label: 'User Impersonation', icon: UserCheck, path: '/admin-portal/impersonate' },

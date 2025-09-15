@@ -32,7 +32,7 @@ export default function UserNumberDisplay({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       {showLabel && (
-        <span className="text-sm font-medium text-gray-700">Block ID:</span>
+        <span className="text-sm font-medium text-gray-700">Vssyl ID:</span>
       )}
       <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
         {userNumber}
@@ -40,7 +40,7 @@ export default function UserNumberDisplay({
       <button
         onClick={copyToClipboard}
         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-        title="Copy Block ID"
+        title="Copy Vssyl ID"
       >
         {copied ? 'Copied!' : 'Copy'}
       </button>

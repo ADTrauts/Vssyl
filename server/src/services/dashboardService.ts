@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma';
 import { HouseholdRole, Prisma } from '@prisma/client';
 
 export interface DashboardLayout {
-  widgets: Array<{
+  widgets?: Array<{
     id: string;
     x: number;
     y: number;
@@ -14,7 +14,7 @@ export interface DashboardLayout {
 }
 
 export interface DashboardPreferences {
-  theme?: 'light' | 'dark' | 'auto';
+  theme?: 'light' | 'dark' | 'system';
   defaultView?: 'grid' | 'list';
   refreshInterval?: number;
   notifications?: boolean;

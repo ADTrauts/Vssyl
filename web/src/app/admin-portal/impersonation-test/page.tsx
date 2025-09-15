@@ -122,7 +122,7 @@ export default function ImpersonationTest() {
               <div>
                 <div className="font-medium">{user.name || 'No name'}</div>
                 <div className="text-sm text-gray-500">{user.email}</div>
-                <div className="text-xs text-gray-400">Block ID: {user.userNumber}</div>
+                <div className="text-xs text-gray-400">Vssyl ID: {user.userNumber}</div>
               </div>
               <button
                 onClick={() => handleImpersonate(user)}

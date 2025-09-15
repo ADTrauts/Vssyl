@@ -1,7 +1,7 @@
 {
-  "name": "server",
+  "name": "vssyl-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Vssyl Backend Server",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -47,7 +47,7 @@
     "passport-local": "^1.0.0",
     "passport-oauth2": "^1.8.0",
     "rrule": "^2.8.1",
-    "shared": "workspace:*",
+    "vssyl-shared": "workspace:*",
     "socket.io": "^4.8.1",
     "stripe": "^18.4.0",
     "web-push": "^3.6.7",

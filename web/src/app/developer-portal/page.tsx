@@ -214,16 +214,16 @@ export default function DeveloperPortalPage() {
       {/* Tabs */}
       <Tabs 
         value={activeTab} 
-        onChange={setActiveTab}
-        tabs={[
-          { key: 'overview', label: 'Overview' },
-          { key: 'revenue', label: 'Revenue' },
-          { key: 'payouts', label: 'Payouts' },
-          { key: 'modules', label: 'Modules' }
-        ]}
+        onValueChange={setActiveTab}
       >
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
+        <Tabs.List>
+          <Tabs.Trigger value="overview">Overview</Tabs.Trigger>
+          <Tabs.Trigger value="revenue">Revenue</Tabs.Trigger>
+          <Tabs.Trigger value="payouts">Payouts</Tabs.Trigger>
+          <Tabs.Trigger value="modules">Modules</Tabs.Trigger>
+        </Tabs.List>
+
+        <Tabs.Content value="overview">
           <div className="space-y-6">
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -305,9 +305,9 @@ export default function DeveloperPortalPage() {
             </div>
           </Card>
         </div>
-      )}
+        </Tabs.Content>
 
-      {activeTab === 'revenue' && (
+        <Tabs.Content value="revenue">
         <div className="space-y-6">
           <Card>
             <div className="p-6">
@@ -349,9 +349,9 @@ export default function DeveloperPortalPage() {
             </div>
           </Card>
         </div>
-      )}
+        </Tabs.Content>
 
-      {activeTab === 'payouts' && (
+        <Tabs.Content value="payouts">
         <div className="space-y-6">
           <Card>
             <div className="p-6">
@@ -408,9 +408,9 @@ export default function DeveloperPortalPage() {
             </div>
           </Card>
         </div>
-      )}
+        </Tabs.Content>
 
-      {activeTab === 'modules' && (
+        <Tabs.Content value="modules">
         <div className="space-y-6">
           <Card>
             <div className="p-6">
@@ -533,7 +533,7 @@ export default function DeveloperPortalPage() {
             </div>
           </Card>
         </div>
-      )}
+        </Tabs.Content>
       </Tabs>
 
       {/* Payout Modal */}

@@ -1361,7 +1361,7 @@ export class ActionTemplates {
 
       if (param.validation && parameters[param.name]) {
         const validValues = param.validation.split('|');
-        if (!validValues.includes(parameters[param.name])) {
+        if (!validValues.includes(String(parameters[param.name]))) {
           throw new Error(`Invalid value for parameter '${param.name}'. Valid values: ${validValues.join(', ')}`);
         }
       }

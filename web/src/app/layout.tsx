@@ -25,8 +25,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Block on Block",
-  description: "Block on Block - Your Digital Workspace",
+  title: "Vssyl",
+  description: "Vssyl - Your Digital Workspace",
 };
 
 export default function RootLayout({

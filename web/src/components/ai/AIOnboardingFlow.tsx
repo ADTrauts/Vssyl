@@ -31,11 +31,12 @@ interface AIPersonalityData {
 }
 
 interface PersonalityData {
-  traits: string[];
+  traits: Record<string, number>;
   preferences: Record<string, unknown>;
-  communicationStyle: string;
-  workStyle: string;
-  learningStyle: string;
+  communicationStyle?: string;
+  workStyle?: string;
+  learningStyle?: string;
+  autonomySettings?: Record<string, unknown>;
 }
 
 export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) {

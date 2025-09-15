@@ -100,7 +100,7 @@ export default function ModulesPage() {
   useEffect(() => {
     if (scope === 'business' && businessId) {
       // Use the features from the hook instead of calling a non-existent method
-      const businessFeaturesData = features.filter(f => f.hasAccess);
+      const businessFeaturesData = Object.values(features).filter((f: any) => f.hasAccess);
       setBusinessFeatures({
         subscriptionTier: businessFeaturesData.length > 0 ? 'standard' : 'free',
         moduleLimit: 'Unlimited',
@@ -170,13 +170,31 @@ export default function ModulesPage() {
             description: 'Core dashboard functionality',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
             status: 'installed',
             updatedAt: new Date().toISOString(),
             pricingTier: 'free',
+            manifest: {
+              name: 'Dashboard',
+              version: '1.0.0',
+              description: 'Core dashboard functionality',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: 'index.js',
+              permissions: [],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/dashboard' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: []
+            },
           },
           {
             id: '2',
@@ -184,13 +202,31 @@ export default function ModulesPage() {
             description: 'File storage and management',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
             status: 'installed',
             updatedAt: new Date().toISOString(),
             pricingTier: 'free',
+            manifest: {
+              name: 'Drive',
+              version: '1.0.0',
+              description: 'File storage and management',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: 'index.js',
+              permissions: [],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/drive' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: []
+            },
           },
           {
             id: '3',
@@ -198,13 +234,31 @@ export default function ModulesPage() {
             description: 'Real-time messaging and collaboration',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
             status: 'installed',
             updatedAt: new Date().toISOString(),
             pricingTier: 'free',
+            manifest: {
+              name: 'Chat',
+              version: '1.0.0',
+              description: 'Real-time messaging and collaboration',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: 'index.js',
+              permissions: [],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/chat' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: []
+            },
           },
           {
             id: '4',
@@ -212,13 +266,31 @@ export default function ModulesPage() {
             description: 'Event scheduling and calendar management',
             version: '1.0.0',
             category: 'Productivity',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
             status: 'available',
             updatedAt: new Date().toISOString(),
             pricingTier: 'free',
+            manifest: {
+              name: 'Calendar',
+              version: '1.0.0',
+              description: 'Event scheduling and calendar management',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: 'index.js',
+              permissions: [],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/calendar' },
+              settings: {}
+            },
+            configured: {
+              enabled: false,
+              settings: {},
+              permissions: []
+            },
           }
         ];
         setModules(mockModules);

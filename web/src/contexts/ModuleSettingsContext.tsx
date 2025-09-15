@@ -45,6 +45,7 @@ export interface ModuleSettingsUpdate {
   notifications?: Partial<ModuleNotificationSettings>;
   security?: Partial<ModuleSecuritySettings>;
   integrations?: Partial<ModuleIntegrationSettings>;
+  [key: string]: unknown;
 }
 
 interface ModuleSettingsContextType {
@@ -80,18 +81,41 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
       setError(null);
 
       // Update local state immediately (optimistic update)
-      setSettings(prev => ({
-        ...prev,
-        [moduleId]: {
-          ...prev[moduleId],
-          ...newSettings
-        }
-      }));
+      setSettings(prev => {
+        const currentModule = prev[moduleId] || { permissions: [] };
+        return {
+          ...prev,
+          [moduleId]: {
+            permissions: newSettings.permissions || currentModule.permissions,
+            storage: newSettings.storage ? {
+              quota: newSettings.storage.quota ?? currentModule.storage?.quota ?? 1000,
+              compression: newSettings.storage.compression ?? currentModule.storage?.compression ?? false,
+              backup: newSettings.storage.backup ?? currentModule.storage?.backup ?? false
+            } : currentModule.storage,
+            notifications: newSettings.notifications ? {
+              email: newSettings.notifications.email ?? currentModule.notifications?.email ?? false,
+              push: newSettings.notifications.push ?? currentModule.notifications?.push ?? false,
+              frequency: newSettings.notifications.frequency ?? currentModule.notifications?.frequency ?? 'immediate'
+            } : currentModule.notifications,
+            security: newSettings.security ? {
+              encryption: newSettings.security.encryption ?? currentModule.security?.encryption ?? false,
+              auditLog: newSettings.security.auditLog ?? currentModule.security?.auditLog ?? false,
+              accessControl: newSettings.security.accessControl ?? currentModule.security?.accessControl ?? 'moderate'
+            } : currentModule.security,
+            integrations: newSettings.integrations ? {
+              externalServices: newSettings.integrations.externalServices ?? currentModule.integrations?.externalServices ?? [],
+              webhooks: newSettings.integrations.webhooks ?? currentModule.integrations?.webhooks ?? false,
+              apiAccess: newSettings.integrations.apiAccess ?? currentModule.integrations?.apiAccess ?? false
+            } : currentModule.integrations
+          }
+        };
+      });
 
       // Save to backend
       await configureModule(moduleId, {
-        businessId,
-        settings: newSettings
+        enabled: true,
+        settings: newSettings as Record<string, unknown>,
+        permissions: newSettings.permissions || []
       });
 
       toast.success('Module settings updated successfully');

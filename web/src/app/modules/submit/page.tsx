@@ -219,7 +219,23 @@ export default function SubmitModulePage() {
         version: submission.version,
         category: submission.category,
         tags: submission.tags,
-        manifest: submission.manifest,
+        manifest: {
+          name: submission.name,
+          version: submission.version,
+          description: submission.description,
+          author: 'Developer', // This should come from user context
+          license: submission.license,
+          entryPoint: submission.manifest.entryPoint,
+          permissions: submission.manifest.permissions,
+          dependencies: submission.manifest.dependencies,
+          runtime: {
+            apiVersion: '1.0.0'
+          },
+          frontend: {
+            entryUrl: submission.manifest.frontend?.entryUrl || ''
+          },
+          settings: submission.manifest.settings
+        },
         dependencies: submission.manifest.dependencies,
         permissions: submission.manifest.permissions,
         readme: submission.readme,
@@ -232,7 +248,7 @@ export default function SubmitModulePage() {
       setSubmittedModuleName(submission.name);
       
       // Extract module ID from the response for business linking
-      const moduleId = response?.submission?.module?.id;
+      const moduleId = response?.submission?.id;
       setSubmittedModuleId(moduleId || null);
       setShowBusinessModal(true);
     } catch (err) {

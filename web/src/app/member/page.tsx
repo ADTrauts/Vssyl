@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { UserSearch } from '../../components/member/UserSearch';
 import { ConnectionList } from '../../components/member/ConnectionList';
 import { PendingRequestsList } from '../../components/member/PendingRequestsList';
+import { SentRequestsList } from '../../components/member/SentRequestsList';
 import { ConnectionAnalytics } from '../../components/member/ConnectionAnalytics';
 import { Card, ToastProvider } from 'shared/components';
-import { Users, Search, Clock, BarChart3 } from 'lucide-react';
+import { Users, Search, Clock, BarChart3, Send } from 'lucide-react';
 
-type TabType = 'search' | 'connections' | 'pending' | 'analytics';
+type TabType = 'search' | 'connections' | 'pending' | 'sent' | 'analytics';
 
 export default function MemberManagementPage() {
   const [activeTab, setActiveTab] = useState<TabType>('search');
@@ -17,6 +18,7 @@ export default function MemberManagementPage() {
     { id: 'search', label: 'Search & Connect', icon: Search },
     { id: 'connections', label: 'Connections', icon: Users },
     { id: 'pending', label: 'Pending Requests', icon: Clock },
+    { id: 'sent', label: 'Sent Requests', icon: Send },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
@@ -44,7 +46,20 @@ export default function MemberManagementPage() {
         return (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Pending Requests</h2>
+            <p className="text-gray-600 mb-4">Connection requests sent to you</p>
             <PendingRequestsList 
+              onRequestUpdated={() => {
+                // Request updated
+              }}
+            />
+          </Card>
+        );
+      case 'sent':
+        return (
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Sent Requests</h2>
+            <p className="text-gray-600 mb-4">Connection requests you've sent to others</p>
+            <SentRequestsList 
               onRequestUpdated={() => {
                 // Request updated
               }}

@@ -16,7 +16,10 @@ const mockDashboards = [
 
 interface FileAction {
   type: 'move-to-main' | 'move-to-trash' | 'export';
+  createFolder?: boolean;
   folderName?: string;
+  retentionDays?: number;
+  format?: 'zip' | 'tar';
 }
 
 export default function DashboardManagementDemo() {
@@ -35,16 +38,16 @@ export default function DashboardManagementDemo() {
     await openDeletionModal(dashboard);
   };
 
-  const handleConfirmDeletion = async (fileAction: FileAction) => {
+  const handleConfirmDeletion = async (fileAction: FileAction | null) => {
     try {
-      const result = await confirmDeletion(fileAction);
+      const result = await confirmDeletion(fileAction as any);
       
       // Show success message based on action taken
       if (result.migration) {
         if (fileAction?.type === 'move-to-main') {
           toast.success(`Dashboard deleted. Files moved to "${fileAction.folderName}"`);
         } else if (fileAction?.type === 'move-to-trash') {
-          toast.success(`Dashboard deleted. ${result.migration.trashedFiles || 0} files moved to trash`);
+          toast.success(`Dashboard deleted. ${result.migration.filesProcessed || 0} files moved to trash`);
         } else if (fileAction?.type === 'export') {
           toast.success(`Dashboard deleted. Export will be available for download shortly`);
         }

@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <rect x="4" y="4" width="24" height="24" rx="6" fill="#6366f1" fillOpacity="0.12" />
             <rect x="10" y="10" width="12" height="12" rx="3" fill="#6366f1" fillOpacity="0.24" />
           </svg>
-          <span className="mt-3 text-2xl font-extrabold" style={{ color: '#333333' }}>Block on Block</span>
+          <span className="mt-3 text-2xl font-extrabold" style={{ color: '#333333' }}>Vssyl</span>
         </div>
         <div className="w-full flex flex-col items-center justify-center">{children}</div>
       </div>

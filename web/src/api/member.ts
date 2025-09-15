@@ -169,6 +169,31 @@ export const getPendingRequests = async (): Promise<{ requests: PendingRequest[]
   });
 };
 
+export interface SentRequest {
+  id: string;
+  receiver: {
+    id: string;
+    name: string | null;
+    email: string;
+    organization?: {
+      id: string;
+      name: string;
+      type: 'business' | 'institution';
+      role: string;
+    } | null;
+  };
+  type: 'REGULAR' | 'COLLEAGUE';
+  message: string | null;
+  organizationId: string | null;
+  createdAt: string;
+}
+
+export const getSentRequests = async (): Promise<{ requests: SentRequest[] }> => {
+  return authenticatedApiCall('/api/member/connections/sent', {
+    method: 'GET',
+  });
+};
+
 // Business Employee Management APIs
 
 export const inviteEmployee = async (

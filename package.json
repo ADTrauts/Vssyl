@@ -1,7 +1,7 @@
 {
-  "name": "block-on-block",
+  "name": "vssyl",
   "version": "1.0.0",
-  "description": "",
+  "description": "Vssyl - Revolutionary Digital Workspace Platform",
   "main": "index.js",
   "scripts": {
     "dev": "pnpm run build:shared && concurrently \"pnpm --filter web dev\" \"pnpm --filter server dev\"",
@@ -43,7 +43,7 @@
     "jest-matcher-utils": "30.0.0-beta.3",
     "playwright": "^1.52.0",
     "prettier": "^3.5.3",
-    "prisma": "^6.9.0",
+    "prisma": "^6.10.1",
     "tailwindcss": "^3.4.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "5.7.2",

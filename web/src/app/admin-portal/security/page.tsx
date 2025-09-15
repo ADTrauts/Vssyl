@@ -59,6 +59,7 @@ export default function SecurityPage() {
   const [complianceStatus, setComplianceStatus] = useState<ComplianceStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     severity: 'all',
     status: 'all',
@@ -234,6 +235,13 @@ export default function SecurityPage() {
       {error && (
         <Alert onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {/* Success Alert */}
+      {success && (
+        <Alert type="success" onClose={() => setSuccess(null)}>
+          {success}
         </Alert>
       )}
 

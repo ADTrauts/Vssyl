@@ -46,11 +46,11 @@ export async function sendWelcomeEmail(email: string, name: string) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to: email,
-    subject: 'Welcome to Block on Block',
+    subject: 'Welcome to Vssyl',
     html: `
-      <h1>Welcome to Block on Block!</h1>
+      <h1>Welcome to Vssyl!</h1>
       <p>Hi ${name},</p>
-      <p>Thank you for joining Block on Block. We're excited to have you on board!</p>
+      <p>Thank you for joining Vssyl. We're excited to have you on board!</p>
       <p>Get started by exploring your dashboard and customizing it to your needs.</p>
     `,
   });
@@ -124,14 +124,14 @@ export async function sendBusinessInvitationEmail(
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
     to: email,
-    subject: `You've been invited to join ${businessName} on Block on Block`,
+    subject: `You've been invited to join ${businessName} on Vssyl`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2563eb; margin-bottom: 20px;">You've been invited!</h1>
         
         <p>Hi there,</p>
         
-        <p><strong>${invitedByName}</strong> has invited you to join <strong>${businessName}</strong> on Block on Block.</p>
+        <p><strong>${invitedByName}</strong> has invited you to join <strong>${businessName}</strong> on Vssyl.</p>
         
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #1e293b;">Invitation Details:</h3>

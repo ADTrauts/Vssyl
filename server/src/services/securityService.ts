@@ -318,7 +318,7 @@ export class SecurityService {
         status: 'warning',
         description: 'GDPR compliance check failed',
         lastChecked: new Date(),
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       };
     }
   }
@@ -356,7 +356,7 @@ export class SecurityService {
         status: 'warning',
         description: 'HIPAA compliance check failed',
         lastChecked: new Date(),
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       };
     }
   }
@@ -398,7 +398,7 @@ export class SecurityService {
         status: 'warning',
         description: 'SOC2 compliance check failed',
         lastChecked: new Date(),
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       };
     }
   }
@@ -440,7 +440,7 @@ export class SecurityService {
         status: 'warning',
         description: 'PCI DSS compliance check failed',
         lastChecked: new Date(),
-        details: { error: error.message }
+        details: { error: error instanceof Error ? error.message : String(error) }
       };
     }
   }

@@ -69,7 +69,7 @@ export default function SettingsPage() {
   const handleCopyBlockId = () => {
     if (session?.user?.userNumber) {
       navigator.clipboard.writeText(session.user.userNumber);
-      toast.success('Block ID copied to clipboard!');
+      toast.success('Vssyl ID copied to clipboard!');
     }
   };
 
@@ -104,20 +104,20 @@ export default function SettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Block ID Section */}
+          {/* Vssyl ID Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center mb-4">
               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
                 <Globe className="w-4 h-4 text-blue-600" />
               </div>
-              <h2 className="text-xl font-semibold text-gray-900">Your Block ID</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Your Vssyl ID</h2>
             </div>
             
             <div className="space-y-4">
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Block ID</p>
+                    <p className="text-sm font-medium text-gray-700 mb-1">Vssyl ID</p>
                     <p className="text-lg font-mono text-gray-900">
                       {session.user.userNumber || 'Not assigned'}
                     </p>
@@ -139,15 +139,15 @@ export default function SettingsPage() {
                   <div>
                     <h3 className="text-sm font-medium text-yellow-800 mb-1">Permanent Identifier</h3>
                     <p className="text-sm text-yellow-700">
-                      Your Block ID is a permanent, immutable identifier that cannot be changed. 
-                      It's used for secure identification across all Block on Block services.
+                      Your Vssyl ID is a permanent, immutable identifier that cannot be changed. 
+                      It's used for secure identification across all Vssyl services.
                     </p>
                   </div>
                 </div>
               </div>
               
               <div className="text-sm text-gray-600">
-                <p>Your Block ID is your unique identifier in the Block on Block system.</p>
+                <p>Your Vssyl ID is your unique identifier in the Vssyl system.</p>
                 <p className="mt-1">Format: Country-Region-Town-UserSerial</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                     <h3 className="text-sm font-medium text-blue-800 mb-1">Location Locked</h3>
                     <p className="text-sm text-blue-700">
                       Your location was automatically detected during registration and is now locked. 
-                      This ensures your Block ID remains consistent and secure.
+                      This ensures your Vssyl ID remains consistent and secure.
                     </p>
                   </div>
                 </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Badge, Alert, Spinner, Modal } from 'shared/components';
-import { getModuleSubmissions, reviewModuleSubmission } from '../../../api/modules';
+import { getModuleSubmissions, reviewModuleSubmission, type ModuleSubmission } from '../../../api/modules';
 import { 
   Eye, 
   CheckCircle, 
@@ -17,35 +17,6 @@ import {
   Shield
 } from 'lucide-react';
 
-interface ModuleSubmission {
-  id: string;
-  moduleId: string;
-  submitterId: string;
-  submitter: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  reviewNotes?: string;
-  submittedAt: string;
-  reviewedAt?: string;
-  module: {
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    category: string;
-    developer: {
-      id: string;
-      name: string;
-      email: string;
-    };
-    manifest: any;
-    permissions: string[];
-    dependencies: string[];
-  };
-}
 
 export default function AdminModulesPage() {
   const router = useRouter();
@@ -74,37 +45,17 @@ export default function AdminModulesPage() {
         const mockSubmissions: ModuleSubmission[] = [
           {
             id: '1',
-            moduleId: '1',
-            submitterId: '1',
-            submitter: {
+            name: 'Advanced Calendar',
+            description: 'Enhanced calendar with team scheduling and integrations',
+            version: '2.0.0',
+            category: 'PRODUCTIVITY',
+            tags: ['calendar', 'scheduling', 'team'],
+            status: 'pending',
+            submittedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+            developer: {
               id: '1',
               name: 'John Developer',
               email: 'john@example.com'
-            },
-            status: 'PENDING',
-            submittedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-            module: {
-              id: '1',
-              name: 'Advanced Calendar',
-              description: 'Enhanced calendar with team scheduling and integrations',
-              version: '2.0.0',
-              category: 'PRODUCTIVITY',
-              developer: {
-                id: '1',
-                name: 'John Developer',
-                email: 'john@example.com'
-              },
-              manifest: {
-                permissions: ['calendar:read', 'calendar:write', 'team:read'],
-                dependencies: ['react', 'date-fns'],
-                entryPoint: '/calendar',
-                settings: {
-                  defaultView: 'month',
-                  workingHours: { start: '09:00', end: '17:00' }
-                }
-              },
-              permissions: ['calendar:read', 'calendar:write', 'team:read'],
-              dependencies: ['react', 'date-fns']
             }
           }
         ];
@@ -119,11 +70,11 @@ export default function AdminModulesPage() {
 
   const getStatusBadge = (status: ModuleSubmission['status']) => {
     switch (status) {
-      case 'PENDING':
+      case 'pending':
         return <Badge color="yellow" size="sm">Pending Review</Badge>;
-      case 'APPROVED':
+      case 'approved':
         return <Badge color="green" size="sm">Approved</Badge>;
-      case 'REJECTED':
+      case 'rejected':
         return <Badge color="red" size="sm">Rejected</Badge>;
       default:
         return null;
@@ -132,11 +83,11 @@ export default function AdminModulesPage() {
 
   const getStatusIcon = (status: ModuleSubmission['status']) => {
     switch (status) {
-      case 'PENDING':
+      case 'pending':
         return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'APPROVED':
+      case 'approved':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'REJECTED':
+      case 'rejected':
         return <XCircle className="w-4 h-4 text-red-500" />;
       default:
         return null;
@@ -160,7 +111,7 @@ export default function AdminModulesPage() {
       // Update local state
       setSubmissions(prev => prev.map(sub => 
         sub.id === selectedSubmission.id 
-          ? { ...sub, status: reviewAction === 'approve' ? 'APPROVED' : 'REJECTED' }
+          ? { ...sub, status: reviewAction === 'approve' ? 'approved' : 'rejected' }
           : sub
       ));
 
@@ -215,7 +166,7 @@ export default function AdminModulesPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Review</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {submissions.filter(s => s.status === 'PENDING').length}
+                  {submissions.filter(s => s.status === 'pending').length}
                 </p>
               </div>
             </div>
@@ -227,7 +178,7 @@ export default function AdminModulesPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {submissions.filter(s => s.status === 'APPROVED').length}
+                  {submissions.filter(s => s.status === 'approved').length}
                 </p>
               </div>
             </div>
@@ -239,7 +190,7 @@ export default function AdminModulesPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Rejected</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {submissions.filter(s => s.status === 'REJECTED').length}
+                  {submissions.filter(s => s.status === 'rejected').length}
                 </p>
               </div>
             </div>
@@ -277,15 +228,15 @@ export default function AdminModulesPage() {
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {submission.module.name}
+                          {submission.name}
                         </h3>
                         {getStatusBadge(submission.status)}
                       </div>
-                      <p className="text-gray-600 mb-2">{submission.module.description}</p>
+                      <p className="text-gray-600 mb-2">{submission.description}</p>
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>v{submission.module.version}</span>
-                        <span>{submission.module.category}</span>
-                        <span>by {submission.submitter.name}</span>
+                        <span>v{submission.version}</span>
+                        <span>{submission.category}</span>
+                        <span>by {submission.developer.name}</span>
                         <span>Submitted {formatDate(submission.submittedAt)}</span>
                       </div>
                     </div>
@@ -293,35 +244,9 @@ export default function AdminModulesPage() {
                   {getStatusIcon(submission.status)}
                 </div>
 
-                {/* Module Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Permissions Required</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {submission.module.permissions.map(permission => (
-                        <Badge key={permission} color="yellow" size="sm">
-                          <Shield className="w-3 h-3 mr-1" />
-                          {permission}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Dependencies</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {submission.module.dependencies.map(dependency => (
-                        <Badge key={dependency} color="gray" size="sm">
-                          <Download className="w-3 h-3 mr-1" />
-                          {dependency}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
 
                 {/* Action Buttons */}
-                {submission.status === 'PENDING' && (
+                {submission.status === 'pending' && (
                   <div className="flex space-x-3 pt-4 border-t border-gray-200">
                     <Button
                       variant="primary"
@@ -363,10 +288,10 @@ export default function AdminModulesPage() {
             {selectedSubmission && (
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">
-                  Reviewing: <strong>{selectedSubmission.module.name}</strong>
+                  Reviewing: <strong>{selectedSubmission.name}</strong>
                 </p>
                 <p className="text-sm text-gray-600">
-                  Submitted by: {selectedSubmission.submitter.name} ({selectedSubmission.submitter.email})
+                  Submitted by: {selectedSubmission.developer.name} ({selectedSubmission.developer.email})
                 </p>
               </div>
             )}

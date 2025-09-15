@@ -1,0 +1,63 @@
+# Simple Cloud Build for Vssyl Server
+steps:
+  # Build and push server image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+      - '-f'
+      - './server/Dockerfile.simple'
+      - '.'
+    id: 'build-server'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+    id: 'push-server'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+    id: 'push-server-latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'vssyl-server'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '5000'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--max-instances'
+      - '10'
+      - '--set-env-vars'
+      - 'NODE_ENV=production'
+    id: 'deploy-server'
+
+# Store images in Google Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY

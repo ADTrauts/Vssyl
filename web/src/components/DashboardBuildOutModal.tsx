@@ -149,12 +149,30 @@ export default function DashboardBuildOutModal({
               description: scope === 'business' ? 'Enterprise file storage and management' : 'File storage and management',
               version: '1.0.0',
               category: 'Core',
-              developer: 'Block on Block',
+              developer: 'Vssyl',
               rating: 5,
               reviewCount: 0,
               downloads: 0,
               status: 'available',
-              pricingTier: scope === 'business' ? 'enterprise' : 'free'
+              pricingTier: scope === 'business' ? 'enterprise' : 'free',
+              manifest: {
+                name: 'Drive',
+                version: '1.0.0',
+                description: 'File storage and management',
+                author: 'Vssyl',
+                license: 'MIT',
+                entryPoint: 'index.js',
+                permissions: [],
+                dependencies: [],
+                runtime: { apiVersion: '1.0' },
+                frontend: { entryUrl: '/drive' },
+                settings: {}
+              },
+              configured: {
+                enabled: false,
+                settings: {},
+                permissions: []
+              }
             },
             {
               id: 'chat',
@@ -162,12 +180,30 @@ export default function DashboardBuildOutModal({
               description: scope === 'business' ? 'Enterprise messaging and collaboration' : 'Real-time messaging and collaboration',
               version: '1.0.0',
               category: 'Core',
-              developer: 'Block on Block',
+              developer: 'Vssyl',
               rating: 5,
               reviewCount: 0,
               downloads: 0,
               status: 'available',
-              pricingTier: scope === 'business' ? 'enterprise' : 'free'
+              pricingTier: scope === 'business' ? 'enterprise' : 'free',
+              manifest: {
+                name: 'Chat',
+                version: '1.0.0',
+                description: 'Real-time messaging and collaboration',
+                author: 'Vssyl',
+                license: 'MIT',
+                entryPoint: 'index.js',
+                permissions: [],
+                dependencies: [],
+                runtime: { apiVersion: '1.0' },
+                frontend: { entryUrl: '/chat' },
+                settings: {}
+              },
+              configured: {
+                enabled: false,
+                settings: {},
+                permissions: []
+              }
             },
             {
               id: 'analytics',
@@ -175,12 +211,30 @@ export default function DashboardBuildOutModal({
               description: scope === 'business' ? 'Enterprise insights and activity tracking' : 'Insights and activity tracking',
               version: '1.0.0',
               category: 'Core',
-              developer: 'Block on Block',
+              developer: 'Vssyl',
               rating: 5,
               reviewCount: 0,
               downloads: 0,
               status: 'available',
-              pricingTier: scope === 'business' ? 'enterprise' : 'free'
+              pricingTier: scope === 'business' ? 'enterprise' : 'free',
+              manifest: {
+                name: 'Analytics',
+                version: '1.0.0',
+                description: 'Insights and activity tracking',
+                author: 'Vssyl',
+                license: 'MIT',
+                entryPoint: 'index.js',
+                permissions: [],
+                dependencies: [],
+                runtime: { apiVersion: '1.0' },
+                frontend: { entryUrl: '/analytics' },
+                settings: {}
+              },
+              configured: {
+                enabled: false,
+                settings: {},
+                permissions: []
+              }
             }
           ];
           modules = mockModules;

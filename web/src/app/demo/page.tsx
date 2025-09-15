@@ -17,7 +17,7 @@ export default function DemoIndexPage() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Block on Block - Feature Demos
+            Vssyl - Feature Demos
           </h1>
           <p className="text-xl text-gray-600">
             Explore the latest features and functionality

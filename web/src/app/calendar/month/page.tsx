@@ -248,7 +248,7 @@ function MonthInner() {
                     // Create ICS content
                     let icsContent = 'BEGIN:VCALENDAR\r\n';
                     icsContent += 'VERSION:2.0\r\n';
-                    icsContent += 'PRODID:-//Block on Block//Calendar//EN\r\n';
+                    icsContent += 'PRODID:-//Vssyl//Calendar//EN\r\n';
                     icsContent += 'CALSCALE:GREGORIAN\r\n';
                     icsContent += 'METHOD:PUBLISH\r\n';
                     
@@ -417,7 +417,7 @@ function MonthInner() {
         contextId={(currentDashboard as any)?.business?.id || (currentDashboard as any)?.household?.id || currentDashboard?.id}
         defaultStart={draftStart}
         defaultEnd={draftEnd}
-        eventToEdit={editingEvent}
+        eventToEdit={editingEvent || undefined}
       />
     </div>
   );

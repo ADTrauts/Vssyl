@@ -194,7 +194,9 @@ export default function SupportPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Submit Support Ticket</h2>
               
               {error && (
-                <Alert type="error" title="Error" message={error} className="mb-6" />
+                <Alert type="error" title="Error" className="mb-6">
+                  {error}
+                </Alert>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -294,7 +296,7 @@ export default function SupportPage() {
                     className="flex items-center space-x-2"
                   >
                     {loading ? (
-                      <Spinner size="sm" />
+                      <Spinner size={16} />
                     ) : (
                       <MessageSquare className="w-4 h-4" />
                     )}

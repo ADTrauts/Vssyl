@@ -14,6 +14,7 @@ export interface GoogleOAuthConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  [key: string]: unknown;
 }
 
 export interface GoogleOAuthStatus {

@@ -190,7 +190,7 @@ function WeekInner() {
           onUpdated={() => setShowDrawer(false)}
           contextType={currentDashboard ? (getDashboardType(currentDashboard).toUpperCase() as any) : undefined}
           contextId={(currentDashboard as any)?.business?.id || (currentDashboard as any)?.household?.id || currentDashboard?.id}
-          eventToEdit={editingEvent}
+          eventToEdit={editingEvent || undefined}
         />
       </div>
     </div>

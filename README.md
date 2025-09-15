@@ -1,7 +1,7 @@
-# Block on Block Monorepo
+# Vssyl Monorepo
 
 ## Overview
-This is a modular ERP/LRM platform with a monorepo structure managed by pnpm workspaces.
+Vssyl is a revolutionary digital workspace platform - a modular ERP/LRM platform with a monorepo structure managed by pnpm workspaces.
 
 ### Packages
 - `web/` – Next.js frontend (TypeScript, Tailwind CSS, NextAuth.js)
