@@ -77,6 +77,7 @@ interface ModuleFilters {
   developer: string;
   dateRange: string;
   qualityScore: string;
+  [key: string]: unknown;
 }
 
 export default function AdminModulesPage() {
@@ -111,8 +112,8 @@ export default function AdminModulesPage() {
         adminApiService.getModuleStats()
       ]);
 
-      setSubmissions(submissionsRes.data?.data || []);
-      setStats(statsRes.data?.data || null);
+      setSubmissions((submissionsRes as any)?.data || []);
+      setStats((statsRes as any)?.data || null);
     } catch (err) {
       console.error('Error loading module data:', err);
       setError('Failed to load module data. Please try again.');

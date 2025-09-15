@@ -73,10 +73,10 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-extrabold mb-2" style={{ color: COLORS.neutralDark }}>
-            Welcome to Block on Block!
+            Welcome to Vssyl!
           </h2>
           <p className="text-gray-600 mb-6">
-            Your account has been created successfully. Here's your unique Block ID:
+            Your account has been created successfully. Here's your unique Vssyl ID:
           </p>
           
           {userNumber && (
@@ -110,7 +110,7 @@ export default function RegisterPage() {
           Create your account
         </h2>
         <p className="text-center text-sm text-gray-600 mt-2">
-          You'll receive a unique Block ID for identification
+          You'll receive a unique Vssyl ID for identification
         </p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>

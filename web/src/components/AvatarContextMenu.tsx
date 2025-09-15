@@ -101,7 +101,7 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
 
   const handleCopyBlockId = () => {
     navigator.clipboard.writeText(userNumber);
-    toast.success('Block ID copied to clipboard!');
+    toast.success('Vssyl ID copied to clipboard!');
   };
 
   const contextMenuItems: ContextMenuItem[] = [
@@ -115,7 +115,7 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
       disabled: true,
     },
     {
-      label: `Block ID: ${userNumber}`,
+      label: `Vssyl ID: ${userNumber}`,
       disabled: true,
       icon: <Copy className="w-4 h-4" />,
       onClick: handleCopyBlockId,

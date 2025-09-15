@@ -173,7 +173,7 @@ export class EmailNotificationService {
    * Create email template from notification data
    */
   createTemplateFromNotification(notification: NotificationData, user: UserData): EmailTemplate {
-    const appName = 'Block on Block';
+    const appName = 'Vssyl';
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     
     const getNotificationIcon = (type: string) => {
@@ -293,13 +293,13 @@ View all notifications: ${appUrl}/notifications
       subject: 'Test Email Notification',
       html: `
         <h1>Test Email</h1>
-        <p>This is a test email from the Block on Block notification system.</p>
+        <p>This is a test email from the Vssyl notification system.</p>
         <p>If you received this email, the email notification service is working correctly!</p>
       `,
       text: `
 Test Email
 
-This is a test email from the Block on Block notification system.
+This is a test email from the Vssyl notification system.
 
 If you received this email, the email notification service is working correctly!
       `.trim()

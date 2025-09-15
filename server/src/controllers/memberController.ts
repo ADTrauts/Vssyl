@@ -533,6 +533,66 @@ export const getPendingRequests = async (req: Request, res: Response) => {
   }
 };
 
+export const getSentRequests = async (req: Request, res: Response) => {
+  try {
+    const currentUserId = req.user?.id;
+
+    if (!currentUserId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const sentRequests = await prisma.relationship.findMany({
+      where: {
+        senderId: currentUserId,
+        status: 'PENDING',
+      },
+      include: {
+        receiver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            businesses: {
+              select: {
+                business: { select: { id: true, name: true } },
+                role: true,
+              },
+            },
+            institutionMembers: {
+              select: {
+                institution: { select: { id: true, name: true } },
+                role: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const requests = sentRequests.map(rel => {
+      return {
+        id: rel.id,
+        receiver: {
+          id: rel.receiver.id,
+          name: rel.receiver.name,
+          email: rel.receiver.email,
+          organization: getOrganizationInfo(rel.receiver),
+        },
+        type: rel.type,
+        message: rel.message,
+        organizationId: rel.organizationId,
+        createdAt: rel.createdAt,
+      };
+    });
+
+    res.json({ requests });
+  } catch (error) {
+    console.error('Error getting sent requests:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // Business Employee Management APIs
 
 export const inviteEmployee = async (req: Request, res: Response) => {

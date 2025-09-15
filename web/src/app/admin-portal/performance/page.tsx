@@ -140,6 +140,7 @@ interface FilterOptions {
   metricType: string;
   severity: string;
   status: string;
+  [key: string]: unknown;
 }
 
 export default function PerformancePage() {
@@ -172,10 +173,10 @@ export default function PerformancePage() {
         adminApiService.getPerformanceAlerts(filters)
       ]);
 
-      setMetrics(metricsRes.data?.data || null);
-      setScalability(scalabilityRes.data?.data || null);
-      setRecommendations(recommendationsRes.data?.data || []);
-      setAlerts(alertsRes.data?.data || []);
+      setMetrics((metricsRes as any)?.data || null);
+      setScalability((scalabilityRes as any)?.data || null);
+      setRecommendations((recommendationsRes as any)?.data || []);
+      setAlerts((alertsRes as any)?.data || []);
     } catch (err) {
       console.error('Error loading performance data:', err);
       setError('Failed to load performance data. Please try again.');

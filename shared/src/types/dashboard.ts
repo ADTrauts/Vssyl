@@ -7,6 +7,15 @@ export interface DashboardLayout {
     width: number;
     height: number;
   };
+  widgets?: Array<{
+    id: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    type: string;
+  }>;
+  [key: string]: unknown;
 }
 
 export interface DashboardPreferences {
@@ -14,6 +23,7 @@ export interface DashboardPreferences {
   refreshInterval?: number;
   notifications?: boolean;
   defaultView?: 'grid' | 'list';
+  [key: string]: unknown;
 }
 
 export interface Dashboard {

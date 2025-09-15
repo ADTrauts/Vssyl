@@ -57,7 +57,6 @@ const MODULE_ICONS = {
   admin: Shield,
   members: Users,
   analytics: BarChart3,
-  connections: Users,
   ai: Brain,
   calendar: Calendar,
 };

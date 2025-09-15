@@ -9,6 +9,7 @@ interface RecentInsight {
   confidence: number;
   timestamp: string;
   impact: string;
+  significance: number;
 }
 
 interface LearningAnalytics {

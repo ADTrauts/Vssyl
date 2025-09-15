@@ -23,7 +23,7 @@ Update Rules for productContext.md
 ---
 
 ## Product Purpose
-Block on Block is a next-generation modular ERP and Life Resource Manager platform. It empowers individuals, teams, and organizations to build personalized, context-aware workspaces by combining proprietary and third-party modules (Blocks) in a unified dashboard experience.
+Vssyl is a next-generation modular ERP and Life Resource Manager platform. It empowers individuals, teams, and organizations to build personalized, context-aware workspaces by combining proprietary and third-party modules (Blocks) in a unified dashboard experience.
 
 ### Problems Solved
 - Fragmented workflows across multiple SaaS tools

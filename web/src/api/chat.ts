@@ -102,14 +102,7 @@ export const createMessage = async (
   }, token);
 };
 
-export interface MessageReaction {
-  id: string;
-  messageId: string;
-  userId: string;
-  userName: string;
-  emoji: string;
-  createdAt: string;
-}
+// MessageReaction is imported from shared/types/chat
 
 export interface ReactionResponse {
   messageId: string;
@@ -317,7 +310,7 @@ class ChatAPI {
       .add(listener as unknown as (...args: unknown[]) => void);
     
     if (this.socket) {
-      this.socket.on(event, listener as unknown as (...args: unknown[]) => void);
+      this.socket.on(event as string, listener as (...args: any[]) => void);
     }
   }
 
@@ -328,7 +321,7 @@ class ChatAPI {
     }
     
     if (this.socket) {
-      this.socket.off(event, listener as unknown as (...args: unknown[]) => void);
+      this.socket.off(event as string, listener as (...args: any[]) => void);
     }
   }
 

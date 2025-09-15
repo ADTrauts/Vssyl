@@ -66,11 +66,29 @@ export default function ModuleManagementModal({
             description: 'File storage and management system',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Drive',
+              version: '1.0.0',
+              description: 'File storage and management system',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/drive',
+              permissions: ['files:read', 'files:write'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/drive' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['files:read', 'files:write']
+            }
           },
           {
             id: 'chat',
@@ -78,11 +96,29 @@ export default function ModuleManagementModal({
             description: 'Real-time messaging and collaboration',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Chat',
+              version: '1.0.0',
+              description: 'Real-time messaging and collaboration',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/chat',
+              permissions: ['messages:read', 'messages:write'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/chat' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['messages:read', 'messages:write']
+            }
           },
           {
             id: 'analytics',
@@ -90,11 +126,29 @@ export default function ModuleManagementModal({
             description: 'Dashboard analytics and insights',
             version: '1.0.0',
             category: 'Core',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 5,
             reviewCount: 0,
             downloads: 0,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Analytics',
+              version: '1.0.0',
+              description: 'Dashboard analytics and insights',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/analytics',
+              permissions: ['data:read'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/analytics' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['data:read']
+            }
           },
           {
             id: 'calendar',
@@ -102,11 +156,29 @@ export default function ModuleManagementModal({
             description: 'Schedule and event management',
             version: '1.0.0',
             category: 'Productivity',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 4.5,
             reviewCount: 12,
             downloads: 150,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Calendar',
+              version: '1.0.0',
+              description: 'Schedule and event management',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/calendar',
+              permissions: ['events:read', 'events:write'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/calendar' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['events:read', 'events:write']
+            }
           },
           {
             id: 'tasks',
@@ -114,11 +186,29 @@ export default function ModuleManagementModal({
             description: 'Task and project management',
             version: '1.0.0',
             category: 'Productivity',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 4.3,
             reviewCount: 8,
             downloads: 120,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Tasks',
+              version: '1.0.0',
+              description: 'Task and project management',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/tasks',
+              permissions: ['tasks:read', 'tasks:write'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/tasks' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['tasks:read', 'tasks:write']
+            }
           },
           {
             id: 'notes',
@@ -126,11 +216,29 @@ export default function ModuleManagementModal({
             description: 'Quick notes and documentation',
             version: '1.0.0',
             category: 'Productivity',
-            developer: 'Block on Block',
+            developer: 'Vssyl',
             rating: 4.7,
             reviewCount: 25,
             downloads: 200,
-            status: 'available'
+            status: 'available',
+            manifest: {
+              name: 'Notes',
+              version: '1.0.0',
+              description: 'Quick notes and documentation',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: '/api/notes',
+              permissions: ['notes:read', 'notes:write'],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: '/modules/notes' },
+              settings: {}
+            },
+            configured: {
+              enabled: true,
+              settings: {},
+              permissions: ['notes:read', 'notes:write']
+            }
           }
         ];
         

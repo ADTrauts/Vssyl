@@ -91,6 +91,7 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
           provider: 'google',
           name: 'Google Workspace',
           config: config,
+          isEnabled: true,
           isActive: true
         }
       }, session.accessToken);
@@ -122,7 +123,9 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
       const response = await updateBusiness(businessId, {
         ssoConfig: {
           provider: 'google',
-          isActive: false
+          isEnabled: false,
+          isActive: false,
+          config: {}
         }
       }, session.accessToken);
 

@@ -4,6 +4,7 @@ export interface WidgetPosition {
   y: number;
   width: number;
   height: number;
+  [key: string]: unknown;
 }
 
 export interface WidgetConfig {
@@ -20,6 +21,7 @@ export interface WidgetConfig {
     operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan';
     value: string | number;
   }[];
+  [key: string]: unknown;
 }
 
 export interface Widget {

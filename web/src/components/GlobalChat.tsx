@@ -30,11 +30,7 @@ interface GlobalChatProps {
   className?: string;
 }
 
-interface ChatContext {
-  conversationId: string;
-  moduleId: string;
-  metadata?: Record<string, unknown>;
-}
+// Remove the local ChatContext interface - we'll use the one from ChatContext
 
 // GlobalChat Message Item Component
 const GlobalChatMessageItem = React.memo(({ 
@@ -50,7 +46,6 @@ const GlobalChatMessageItem = React.memo(({
   handleRemoveReaction,
   trashItem,
   activeConversation,
-  chatContext,
   accessToken
 }: {
   message: Message;
@@ -65,7 +60,6 @@ const GlobalChatMessageItem = React.memo(({
   handleRemoveReaction: (messageId: string, emoji: string) => Promise<void>;
   trashItem: (item: TrashedItem) => Promise<void>;
   activeConversation: Conversation | null;
-  chatContext: ChatContext;
   accessToken: string;
 }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -881,7 +875,6 @@ export default function GlobalChat({ className = '' }: GlobalChatProps) {
                             handleRemoveReaction={handleRemoveReaction}
                             trashItem={trashItem}
                             activeConversation={activeConversation}
-                            chatContext={chatContext}
                             accessToken={session?.accessToken || ''}
                           />
                         ))

@@ -6,6 +6,7 @@ import {
   updateConnectionRequest,
   getConnections,
   getPendingRequests,
+  getSentRequests,
   removeConnection,
   bulkRemoveConnections,
   bulkUpdateConnectionRequests,
@@ -35,6 +36,7 @@ router.post('/connections/request', sendConnectionRequest);
 router.put('/connections/:relationshipId', updateConnectionRequest);
 router.get('/connections', getConnections);
 router.get('/connections/pending', getPendingRequests);
+router.get('/connections/sent', getSentRequests);
 router.delete('/connections/:relationshipId', removeConnection);
 
 // Bulk Operations Routes

@@ -88,9 +88,9 @@ export default function FinancialManagement() {
       }
 
       // Set data from API responses
-      setSubscriptions(subscriptionsRes.data?.subscriptions || []);
-      setPayments(paymentsRes.data?.payments || []);
-      setPayouts(payoutsRes.data?.payouts || []);
+      setSubscriptions((subscriptionsRes.data as any)?.subscriptions || []);
+      setPayments((paymentsRes.data as any)?.payments || []);
+      setPayouts((payoutsRes.data as any)?.payouts || []);
     } catch (err) {
       setError('Failed to load financial data');
       console.error('Error loading financial data:', err);

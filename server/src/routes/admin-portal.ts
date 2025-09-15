@@ -1758,14 +1758,14 @@ router.post('/support/tickets/customer', async (req: Request, res: Response) => 
       customerName: userName || 'Anonymous',
     };
 
-    const result = await AdminService.createSupportTicket(ticketData, null);
+    const result = await AdminService.createSupportTicket(ticketData);
 
-    console.log(`Customer support ticket created: ${result.id}`);
+    console.log(`Customer support ticket created: ${(result as any).id}`);
 
     res.json({
       success: true,
       data: {
-        ticketId: result.id,
+        ticketId: (result as any).id,
         message: 'Support ticket created successfully'
       }
     });

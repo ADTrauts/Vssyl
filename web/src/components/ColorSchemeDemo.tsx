@@ -18,7 +18,7 @@ export default function ColorSchemeDemo() {
   return (
     <div className="p-8 bg-white dark:bg-slate-800 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-        Block on Block Brand Colors
+        Vssyl Brand Colors
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

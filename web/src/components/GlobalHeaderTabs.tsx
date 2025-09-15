@@ -167,10 +167,10 @@ export default function GlobalHeaderTabs() {
         {effectiveBusiness && brandLogo ? (
           <img src={brandLogo} alt={`${brandName || 'Business'} logo`} style={{ height: 32, width: 'auto' }} />
         ) : (
-          <div style={{ fontWeight: 800, fontSize: 22, color: getHeaderStyles().color }}>B</div>
+          <div style={{ fontWeight: 800, fontSize: 22, color: getHeaderStyles().color }}>V</div>
         )}
         <h1 style={{ fontWeight: 600, fontSize: 18, color: isBusinessContext ? getHeaderStyles().color : '#fff' }}>
-          {effectiveBusiness ? (brandName || 'Workspace') : 'Block on Block'}
+          {effectiveBusiness ? (brandName || 'Workspace') : 'Vssyl'}
         </h1>
       </div>
       <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>

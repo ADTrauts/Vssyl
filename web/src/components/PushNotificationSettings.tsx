@@ -92,7 +92,7 @@ export default function PushNotificationSettings({ className = '' }: PushNotific
     try {
       const success = await pushService.testNotification(
         'Test Notification',
-        'This is a test push notification from Block on Block!'
+        'This is a test push notification from Vssyl!'
       );
       
       if (success) {

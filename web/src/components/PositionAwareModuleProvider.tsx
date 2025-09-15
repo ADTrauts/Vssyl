@@ -94,6 +94,12 @@ export function PositionAwareModuleProvider({ children }: PositionAwareModulePro
             }
           });
 
+          // Special handling for members/connections: remove personal connections if business has members
+          const hasBusinessMembers = convertedBusinessModules.some(m => m.id === 'members');
+          if (hasBusinessMembers) {
+            availableModules = availableModules.filter(m => m.id !== 'connections');
+          }
+
           // Add admin module if user has admin permissions
           const userPosition = businessConfig.getUserPosition(session.user.id);
           if (userPosition) {

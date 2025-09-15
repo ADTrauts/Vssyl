@@ -71,7 +71,7 @@ export default function AdminDevelopersPage() {
       }
 
       setStats(statsRes.data as DeveloperStats);
-      setPayouts(payoutsRes.data?.payouts || []);
+      setPayouts((payoutsRes.data as any)?.payouts || []);
       setError(null);
     } catch (err) {
       setError('Failed to load developer data');
@@ -94,7 +94,7 @@ export default function AdminDevelopersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <Spinner size="lg" />
+        <Spinner size={48} />
       </div>
     );
   }
@@ -123,7 +123,9 @@ export default function AdminDevelopersPage() {
       </div>
 
       {error && (
-        <Alert type="error" title="Error" message={error} />
+        <Alert type="error" title="Error">
+          {error}
+        </Alert>
       )}
 
       {/* Stats */}
@@ -241,7 +243,7 @@ export default function AdminDevelopersPage() {
                       ${payout.amount.toLocaleString()}
                     </span>
                     <Badge 
-                      variant={payout.status === 'paid' ? 'success' : payout.status === 'pending' ? 'warning' : 'error'}
+                      color={payout.status === 'paid' ? 'green' : payout.status === 'pending' ? 'yellow' : 'red'}
                     >
                       {payout.status.charAt(0).toUpperCase() + payout.status.slice(1)}
                     </Badge>

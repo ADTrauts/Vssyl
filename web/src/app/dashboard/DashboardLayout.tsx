@@ -585,7 +585,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             fontSize: 18, 
             color: isBusinessContext ? getHeaderStyles().color : '#fff' 
           }}>
-            {isBusinessContext ? currentBranding?.name : 'Block on Block'}
+            {isBusinessContext ? currentBranding?.name : 'Vssyl'}
           </h1>
         </div>
         <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
@@ -944,8 +944,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             overflow: 'hidden',
           }}
         >
-          {/* All main module icons, including dynamic people icon */}
-          {modules.filter(m => m.id !== 'members' && m.id !== 'connections').map(module => {
+          {/* All main module icons */}
+          {modules.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
             const isActive = pathname.startsWith(`/${module.id}`);
             return (
@@ -974,46 +974,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               </button>
             );
           })}
-          {/* People icon: routes to members or connections based on context */}
-          {(() => {
-            const isBusiness = isBusinessContext && currentDashboard && 'business' in currentDashboard && !!currentDashboard.business;
-            const peopleTooltip = isBusiness ? 'Members' : 'Connections';
-            const handlePeopleClick = () => {
-              if (isBusiness && 'business' in currentDashboard && currentDashboard.business) {
-                router.push(`/business/${currentDashboard.business.id}/workspace/members`);
-              } else {
-                router.push('/member');
-              }
-            };
-            const isActive = isBusiness && 'business' in currentDashboard && currentDashboard.business
-              ? pathname.startsWith(`/business/${currentDashboard.business.id}/workspace/members`)
-              : pathname.startsWith('/member');
-            return (
-              <button
-                key="people"
-                className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${isActive ? 'bg-gray-800' : 'hover:bg-gray-700'} ${isActive ? 'text-white' : 'text-gray-300'}`}
-                style={{
-                  background: isActive ? '#1f2937' : 'transparent',
-                  color: isActive ? '#fff' : '#cbd5e1',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  margin: '8px 0',
-                  borderRadius: 8,
-                  transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-                }}
-                onClick={handlePeopleClick}
-                title={peopleTooltip}
-              >
-                <Users size={22} />
-              </button>
-            );
-          })()}
           
           {/* Marketplace/Modules Icon */}
           <button

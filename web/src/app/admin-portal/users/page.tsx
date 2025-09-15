@@ -186,7 +186,7 @@ export default function UserManagement() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search users by email, name, or Block ID..."
+                placeholder="Search users by email, name, or Vssyl ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -221,7 +221,7 @@ export default function UserManagement() {
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-medium text-gray-900">User</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Block ID</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900">Vssyl ID</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Role</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-900">Activity</th>
@@ -317,7 +317,7 @@ export default function UserManagement() {
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="font-medium">{selectedUser.name || 'No name'}</div>
                   <div className="text-sm text-gray-500">{selectedUser.email}</div>
-                  <div className="text-sm text-gray-500">Block ID: {selectedUser.userNumber}</div>
+                  <div className="text-sm text-gray-500">Vssyl ID: {selectedUser.userNumber}</div>
                 </div>
               </div>
               <div>

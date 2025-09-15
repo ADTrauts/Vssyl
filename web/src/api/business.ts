@@ -22,7 +22,9 @@ export interface BusinessBranding {
 
 export interface SSOConfiguration {
   provider: 'google' | 'azure' | 'okta' | 'saml';
+  name?: string;
   isEnabled: boolean;
+  isActive?: boolean;
   config: Record<string, unknown>;
 }
 

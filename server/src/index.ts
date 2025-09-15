@@ -75,6 +75,7 @@ import calendarRouter from './routes/calendar';
 import orgChartRouter from './routes/org-chart';
 import businessAIRouter from './routes/businessAI';
 import adminBusinessAIRouter from './routes/adminBusinessAI';
+import aiContextDebugRouter from './routes/ai-context-debug';
 import { authenticateJWT } from './middleware/auth';
 
 
@@ -406,6 +407,7 @@ app.use('/api/org-chart', orgChartRouter);
 app.use('/api/calendar', authenticateJWT, calendarRouter);
 app.use('/api/business-ai', businessAIRouter);
 app.use('/api/admin/business-ai', adminBusinessAIRouter);
+app.use('/api/ai-context-debug', aiContextDebugRouter);
 
 // Schedule cleanup jobs
 startCleanupJob();

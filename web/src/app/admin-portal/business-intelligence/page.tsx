@@ -114,6 +114,7 @@ interface FilterOptions {
   userType: string;
   metricType: string;
   segment: string;
+  [key: string]: unknown;
 }
 
 export default function BusinessIntelligencePage() {
@@ -137,7 +138,7 @@ export default function BusinessIntelligencePage() {
     
     try {
       const response = await adminApiService.getBusinessIntelligence(filters);
-      setData(response.data?.data || null);
+      setData((response as any)?.data || null);
     } catch (err) {
       console.error('Error loading business intelligence data:', err);
       setError('Failed to load business intelligence data. Please try again.');

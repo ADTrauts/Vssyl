@@ -5,15 +5,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@prisma/client'],
     // Improve build stability
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
-    // Reduce hot reload conflicts
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
   },
   // Improve build performance and stability
   swcMinify: true,
@@ -114,8 +105,57 @@ const nextConfig = {
   async rewrites() {
     return [];
   },
-  // Improve build output
+  // Improve build output for Cloud Run
   output: 'standalone',
+  // Production optimizations
+  ...(process.env.NODE_ENV === 'production' && {
+    // Enable compression
+    compress: true,
+    // Optimize images
+    images: {
+      domains: ['storage.googleapis.com'],
+      formats: ['image/webp', 'image/avif'],
+    },
+    // Production headers
+    async headers() {
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            {
+              key: 'X-Frame-Options',
+              value: 'DENY',
+            },
+            {
+              key: 'X-Content-Type-Options',
+              value: 'nosniff',
+            },
+            {
+              key: 'X-XSS-Protection',
+              value: '1; mode=block',
+            },
+            {
+              key: 'Referrer-Policy',
+              value: 'strict-origin-when-cross-origin',
+            },
+            {
+              key: 'Permissions-Policy',
+              value: 'camera=(), microphone=(), geolocation=()',
+            },
+          ],
+        },
+        {
+          source: '/api/(.*)',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-cache, no-store, must-revalidate',
+            },
+          ],
+        },
+      ];
+    },
+  }),
   // Development-specific optimizations
   ...(process.env.NODE_ENV === 'development' && {
     // Reduce hot reload frequency

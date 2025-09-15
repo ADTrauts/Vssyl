@@ -560,7 +560,7 @@ export async function createEvent(req: Request, res: Response) {
       icsLines.push('BEGIN:VCALENDAR');
       icsLines.push('VERSION:2.0');
       icsLines.push('METHOD:REQUEST');
-      icsLines.push('PRODID:-//Block on Block//Calendar//EN');
+      icsLines.push('PRODID:-//Vssyl//Calendar//EN');
       icsLines.push('BEGIN:VEVENT');
       icsLines.push(`UID:${event.id}`);
       icsLines.push(`DTSTART:${dtStart}`);
@@ -711,7 +711,7 @@ export async function updateEvent(req: Request, res: Response) {
         icsLines.push('BEGIN:VCALENDAR');
         icsLines.push('VERSION:2.0');
         icsLines.push('METHOD:UPDATE');
-        icsLines.push('PRODID:-//Block on Block//Calendar//EN');
+        icsLines.push('PRODID:-//Vssyl//Calendar//EN');
         icsLines.push('BEGIN:VEVENT');
         icsLines.push(`UID:${refreshed.id}`);
         icsLines.push(`DTSTART:${dtStart}`);
@@ -815,7 +815,7 @@ export async function deleteEvent(req: Request, res: Response) {
       icsLines.push('BEGIN:VCALENDAR');
       icsLines.push('VERSION:2.0');
       icsLines.push('METHOD:CANCEL');
-      icsLines.push('PRODID:-//Block on Block//Calendar//EN');
+      icsLines.push('PRODID:-//Vssyl//Calendar//EN');
       icsLines.push('BEGIN:VEVENT');
       icsLines.push(`UID:${id}`);
       icsLines.push('STATUS:CANCELLED');
@@ -1195,7 +1195,7 @@ export async function exportIcsEvents(req: Request, res: Response) {
     // Build ICS content
     let icsContent = 'BEGIN:VCALENDAR\r\n';
     icsContent += 'VERSION:2.0\r\n';
-    icsContent += 'PRODID:-//Block on Block//Calendar//EN\r\n';
+    icsContent += 'PRODID:-//Vssyl//Calendar//EN\r\n';
     icsContent += 'CALSCALE:GREGORIAN\r\n';
     icsContent += 'METHOD:PUBLISH\r\n';
     
