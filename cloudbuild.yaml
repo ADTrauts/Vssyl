@@ -88,7 +88,7 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-env-vars'
-      - 'NODE_ENV=production'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://temp:temp@localhost:5432/temp'
     id: 'deploy-server'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
