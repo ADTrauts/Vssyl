@@ -366,6 +366,16 @@ app.get('/api/profile', authenticateJWT, (req, res) => {
 //   res.json({ message: 'Welcome, admin!' });
 // });
 
+// Public health endpoint
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    service: 'vssyl-server',
+    version: '1.0.0'
+  });
+});
+
 app.use('/api/dashboard', authenticateJWT, dashboardRouter);
 app.use('/api/widget', authenticateJWT, widgetRouter);
 console.log('[DEBUG] Registering /api/drive route');
