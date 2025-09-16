@@ -88,7 +88,7 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://temp:temp@localhost:5432/temp'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:ArthurGeorge116!@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db'
     id: 'deploy-server'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
