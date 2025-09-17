@@ -90,7 +90,7 @@ steps:
       - '--add-cloudsql-instances'
       - 'vssyl-472202:us-central1:vssyl-db'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
     id: 'deploy-server'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -115,7 +115,7 @@ steps:
       - '--max-instances'
       - '20'
       - '--set-env-vars'
-      - 'NODE_ENV=production,NEXTAUTH_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,NEXT_PUBLIC_API_URL=https://vssyl-server-235369681725.us-central1.run.app,NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app,BACKEND_URL=https://vssyl-server-235369681725.us-central1.run.app'
+      - 'NODE_ENV=production,NEXTAUTH_URL=https://vssyl.com,NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,NEXT_PUBLIC_API_URL=https://vssyl.com/api,NEXT_PUBLIC_API_BASE_URL=https://vssyl.com/api,NEXT_PUBLIC_APP_URL=https://vssyl.com,BACKEND_URL=https://vssyl.com/api'
     id: 'deploy-web'
 
 # Store images in Google Container Registry
