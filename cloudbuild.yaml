@@ -16,7 +16,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:fix-db-connection'
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
       - '-f'
@@ -29,7 +29,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:fix-db-connection'
     id: 'push-server'
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -43,7 +43,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:fix-db-connection'
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
       - '-f'
@@ -56,7 +56,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:fix-db-connection'
     id: 'push-web'
 
   - name: 'gcr.io/cloud-builders/docker'
@@ -73,7 +73,7 @@ steps:
       - 'deploy'
       - 'vssyl-server'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:fix-db-connection'
       - '--region'
       - 'us-central1'
       - '--platform'
@@ -90,7 +90,7 @@ steps:
       - '--add-cloudsql-instances'
       - 'vssyl-472202:us-central1:vssyl-db'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@172.30.0.4:5432/vssyl_production?sslmode=require,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@172.30.0.4:5432/vssyl_production?sslmode=require,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app'
     id: 'deploy-server'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -100,7 +100,7 @@ steps:
       - 'deploy'
       - 'vssyl-web'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:fix-db-connection'
       - '--region'
       - 'us-central1'
       - '--platform'
