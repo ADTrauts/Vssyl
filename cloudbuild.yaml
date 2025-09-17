@@ -90,7 +90,7 @@ steps:
       - '--add-cloudsql-instances'
       - 'vssyl-472202:us-central1:vssyl-db'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az`/XuvQ)QFN)[*@172.30.0.4:5432/vssyl_production?sslmode=require,DIRECT_URL=postgresql://vssyl_user:5az`/XuvQ)QFN)[*@172.30.0.4:5432/vssyl_production?sslmode=require,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@172.30.0.4:5432/vssyl_production?sslmode=require,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@172.30.0.4:5432/vssyl_production?sslmode=require,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl-web-235369681725.us-central1.run.app,NEXT_PUBLIC_APP_URL=https://vssyl-web-235369681725.us-central1.run.app'
     id: 'deploy-server'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
