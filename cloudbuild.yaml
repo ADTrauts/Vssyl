@@ -125,7 +125,7 @@ steps:
       - '--add-cloudsql-instances'
       - 'vssyl-472202:us-central1:vssyl-db'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,DATABASE_MIGRATE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
     id: 'deploy-server'
     waitFor: ['push-server', 'push-server-latest']
 
