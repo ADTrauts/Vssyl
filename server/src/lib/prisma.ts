@@ -5,7 +5,10 @@ declare global {
 }
 
 // Configure Prisma client for Cloud SQL Unix socket connection
-const prismaConfig: any = {};
+const prismaConfig: any = {
+  // Add connection pool settings to prevent timeout issues
+  log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+};
 
 // If using Cloud SQL Unix socket connection, configure the client accordingly
 if (process.env.DATABASE_URL?.includes('/cloudsql/')) {

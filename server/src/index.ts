@@ -189,11 +189,23 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
       user: createUserResponse(user)
     });
   } catch (err: unknown) {
+    console.error('Registration error:', err);
+    
     if (typeof err === 'object' && err && 'code' in err && (err as Record<string, unknown>).code === 'P2002') {
       res.status(409).json({ message: 'Email already in use' });
       return;
     }
-    throw err;
+    
+    // Handle database connection errors
+    if (typeof err === 'object' && err && 'message' in err) {
+      const errorMessage = (err as Record<string, unknown>).message as string;
+      if (errorMessage.includes('connection pool') || errorMessage.includes('timeout')) {
+        res.status(503).json({ message: 'Database temporarily unavailable. Please try again.' });
+        return;
+      }
+    }
+    
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
 }));
 
