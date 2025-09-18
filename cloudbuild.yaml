@@ -1,6 +1,6 @@
-# Optimized Cloud Build configuration for Vssyl with caching and parallel builds
+# Ultra-fast Cloud Build configuration with aggressive caching
 steps:
-  # Step 1: Install dependencies with caching
+  # Step 1: Install dependencies with aggressive caching
   - name: 'node:20'
     entrypoint: 'bash'
     args:
@@ -11,32 +11,49 @@ steps:
         # Install pnpm
         npm install -g pnpm
         
-        # Check if we can restore from cache (using Cloud Build's built-in caching)
-        if [ -d "/workspace/.buildcache/node_modules" ]; then
-          echo "Restoring node_modules from cache..."
-          cp -r /workspace/.buildcache/node_modules /workspace/
-          cp -r /workspace/.buildcache/shared/node_modules /workspace/shared/ 2>/dev/null || true
-          cp -r /workspace/.buildcache/server/node_modules /workspace/server/ 2>/dev/null || true
-          cp -r /workspace/.buildcache/web/node_modules /workspace/web/ 2>/dev/null || true
+        # Create cache directory
+        mkdir -p /workspace/.buildcache
+        
+        # Check for existing node_modules cache
+        if [ -d "/workspace/.buildcache/root_node_modules" ]; then
+          echo "🚀 Restoring root node_modules from cache..."
+          cp -r /workspace/.buildcache/root_node_modules /workspace/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/shared_node_modules" ]; then
+          echo "🚀 Restoring shared node_modules from cache..."
+          cp -r /workspace/.buildcache/shared_node_modules /workspace/shared/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/server_node_modules" ]; then
+          echo "🚀 Restoring server node_modules from cache..."
+          cp -r /workspace/.buildcache/server_node_modules /workspace/server/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/web_node_modules" ]; then
+          echo "🚀 Restoring web node_modules from cache..."
+          cp -r /workspace/.buildcache/web_node_modules /workspace/web/node_modules
         fi
         
         # Install dependencies (will be fast if cache hit)
-        pnpm install --frozen-lockfile
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile --prefer-offline
         
-        # Cache the node_modules for next build
-        echo "Caching node_modules for next build..."
-        mkdir -p /workspace/.buildcache
-        cp -r /workspace/node_modules /workspace/.buildcache/ 2>/dev/null || true
-        cp -r /workspace/shared/node_modules /workspace/.buildcache/shared/ 2>/dev/null || true
-        cp -r /workspace/server/node_modules /workspace/.buildcache/server/ 2>/dev/null || true
-        cp -r /workspace/web/node_modules /workspace/.buildcache/web/ 2>/dev/null || true
+        # Cache node_modules for next build
+        echo "💾 Caching node_modules for next build..."
+        cp -r /workspace/node_modules /workspace/.buildcache/root_node_modules 2>/dev/null || true
+        cp -r /workspace/shared/node_modules /workspace/.buildcache/shared_node_modules 2>/dev/null || true
+        cp -r /workspace/server/node_modules /workspace/.buildcache/server_node_modules 2>/dev/null || true
+        cp -r /workspace/web/node_modules /workspace/.buildcache/web_node_modules 2>/dev/null || true
         
         # Build shared package
+        echo "🔨 Building shared package..."
         pnpm run build:shared
+        
+        echo "✅ Dependencies installed and shared package built"
     id: 'install-deps'
 
-
-  # Step 2: Build server and web in parallel
+  # Step 2: Build server and web in parallel with aggressive caching
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -50,6 +67,9 @@ steps:
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+      - '--progress=plain'
       - '.'
     id: 'build-server'
     waitFor: ['install-deps']
@@ -67,6 +87,9 @@ steps:
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+      - '--progress=plain'
       - '.'
     id: 'build-web'
     waitFor: ['install-deps']
