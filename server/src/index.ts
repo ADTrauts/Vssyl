@@ -492,21 +492,17 @@ if (process.env.NODE_ENV === 'production') {
     console.log('Migration URL value:', migrationUrl);
     console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
     
-    // Temporarily skip migrations while fixing database URL format
-    console.log('⚠️  TEMPORARILY SKIPPING MIGRATIONS - FIXING DATABASE URL FORMAT');
-    console.log('✅ Database migrations skipped (temporary)');
+    // Run migrations with corrected database URL format
+    const migrationEnv = {
+      ...process.env,
+      DATABASE_URL: migrationUrl
+    };
     
-    // TODO: Fix database URL format and re-enable migrations
-    // const migrationEnv = {
-    //   ...process.env,
-    //   DATABASE_URL: migrationUrl
-    // };
-    // 
-    // execSync('npx prisma migrate deploy', { 
-    //   stdio: 'inherit',
-    //   env: migrationEnv
-    // });
-    // console.log('✅ Database migrations completed');
+    execSync('npx prisma migrate deploy', { 
+      stdio: 'inherit',
+      env: migrationEnv
+    });
+    console.log('✅ Database migrations completed');
   } catch (error) {
     console.error('❌ Database migration failed:', error);
     process.exit(1);
