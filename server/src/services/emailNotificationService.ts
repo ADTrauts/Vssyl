@@ -174,7 +174,7 @@ export class EmailNotificationService {
    */
   createTemplateFromNotification(notification: NotificationData, user: UserData): EmailTemplate {
     const appName = 'Vssyl';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
     
     const getNotificationIcon = (type: string) => {
       switch (type) {

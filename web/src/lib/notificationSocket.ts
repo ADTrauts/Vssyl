@@ -32,7 +32,7 @@ export const useNotificationSocket = (): NotificationSocketHook => {
     }
 
     try {
-      socketRef.current = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000', {
+      socketRef.current = io(process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api', {
         auth: {
           token: session.accessToken
         },

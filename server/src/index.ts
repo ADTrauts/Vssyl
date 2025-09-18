@@ -21,6 +21,7 @@ import educationalRouter from './routes/educational';
 import householdRouter from './routes/household';
 import ssoRouter from './routes/sso';
 import googleOAuthRouter from './routes/googleOAuth';
+import healthRouter from './routes/health';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import { 
@@ -106,7 +107,7 @@ console.log('Starting server...');
 app.use(express.json());
 app.use(passport.initialize() as express.RequestHandler);
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'https://vssyl.com',
   credentials: true,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type'],
@@ -376,6 +377,9 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+// Health check routes (no authentication required)
+app.use('/api', healthRouter);
+
 app.use('/api/dashboard', authenticateJWT, dashboardRouter);
 app.use('/api/widget', authenticateJWT, widgetRouter);
 console.log('[DEBUG] Registering /api/drive route');
@@ -457,6 +461,22 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
   res.status(status).json(response);
 });
+
+// Run database migrations in production
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔄 Running database migrations...');
+  try {
+    const { execSync } = require('child_process');
+    execSync('npx prisma migrate deploy', { 
+      stdio: 'inherit',
+      env: { ...process.env }
+    });
+    console.log('✅ Database migrations completed');
+  } catch (error) {
+    console.error('❌ Database migration failed:', error);
+    process.exit(1);
+  }
+}
 
 // Initialize HTTP server
 const httpServer = createServer(app);

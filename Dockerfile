@@ -40,4 +40,5 @@ RUN cd server && pnpm build
 EXPOSE 5000
 
 # Start server
-CMD ["cd", "server", "&&", "pnpm", "start"]
+WORKDIR /app/server
+CMD ["pnpm", "start"]

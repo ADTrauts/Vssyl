@@ -61,9 +61,8 @@ export class ChatSocketService {
               cors: {
           origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
           const allowed = [
-            process.env.FRONTEND_URL || 'http://localhost:3000',
-            'http://localhost:3000',
-            'http://127.0.0.1:3000'
+            process.env.FRONTEND_URL || 'https://vssyl.com',
+            'https://vssyl.com'
           ];
           if (!origin || allowed.includes(origin)) {
             callback(null, true);

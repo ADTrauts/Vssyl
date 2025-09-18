@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
     setSuccess(false);
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "https://vssyl.com/api";
       const res = await fetch(`${apiBase}/api/auth/verify-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,7 +58,7 @@ export default function VerifyEmailPage() {
     setError(null);
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "https://vssyl.com/api";
       const res = await fetch(`${apiBase}/api/auth/resend-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

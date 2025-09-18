@@ -106,7 +106,7 @@ export class SupportTicketEmailService {
    */
   private getTicketAssignedTemplate(ticket: any): EmailTemplate {
     const assignedToName = ticket.assignedTo?.name || 'our support team';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
     
     return {
       subject: `Your support ticket has been assigned - ${ticket.title}`,
@@ -187,7 +187,7 @@ export class SupportTicketEmailService {
    */
   private getTicketInProgressTemplate(ticket: any): EmailTemplate {
     const assignedToName = ticket.assignedTo?.name || 'our support team';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
     
     return {
       subject: `We're working on your support ticket - ${ticket.title}`,
@@ -268,7 +268,7 @@ export class SupportTicketEmailService {
    */
   private getTicketResolvedTemplate(ticket: any): EmailTemplate {
     const assignedToName = ticket.assignedTo?.name || 'our support team';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
     const resolvedAt = ticket.resolvedAt ? new Date(ticket.resolvedAt).toLocaleDateString() : 'Recently';
     
     return {
