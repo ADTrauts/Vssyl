@@ -107,7 +107,11 @@ console.log('Starting server...');
 app.use(express.json());
 app.use(passport.initialize() as express.RequestHandler);
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'https://vssyl.com',
+  origin: [
+    process.env.FRONTEND_URL || 'https://vssyl.com',
+    'https://vssyl.com',
+    'https://vssyl-web-235369681725.us-central1.run.app' // Cloud Run web service
+  ],
   credentials: true,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type'],
