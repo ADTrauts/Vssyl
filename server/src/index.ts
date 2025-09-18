@@ -485,17 +485,24 @@ if (process.env.NODE_ENV === 'production') {
     // Use migration URL without connection pool parameters
     const migrationUrl = process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL;
     console.log('Using migration URL:', migrationUrl ? 'SET' : 'NOT SET');
+    console.log('Migration URL value:', migrationUrl);
+    console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
     
-    const migrationEnv = {
-      ...process.env,
-      DATABASE_URL: migrationUrl
-    };
+    // Temporarily skip migrations to get server running
+    console.log('⚠️  TEMPORARILY SKIPPING MIGRATIONS FOR DEBUGGING');
+    console.log('✅ Database migrations skipped (temporary)');
     
-    execSync('npx prisma migrate deploy', { 
-      stdio: 'inherit',
-      env: migrationEnv
-    });
-    console.log('✅ Database migrations completed');
+    // Uncomment this when ready to run migrations again:
+    // const migrationEnv = {
+    //   ...process.env,
+    //   DATABASE_URL: migrationUrl
+    // };
+    // 
+    // execSync('npx prisma migrate deploy', { 
+    //   stdio: 'inherit',
+    //   env: migrationEnv
+    // });
+    // console.log('✅ Database migrations completed');
   } catch (error) {
     console.error('❌ Database migration failed:', error);
     process.exit(1);
