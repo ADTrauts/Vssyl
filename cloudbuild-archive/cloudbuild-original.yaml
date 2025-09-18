@@ -1,46 +1,17 @@
-# Optimized Cloud Build configuration for Vssyl with caching and parallel builds
+# Cloud Build configuration for Vssyl
 steps:
-  # Step 1: Restore cache and install dependencies (cached layer)
-  - name: 'gcr.io/cloud-builders/docker'
+  # Build shared package first
+  - name: 'node:20'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Create cache directory
-        mkdir -p /workspace/.cache
-        
-        # Try to restore cache from previous build
-        if gsutil -q stat gs://$PROJECT_ID-build-cache/deps.tar.gz; then
-          echo "Restoring dependency cache..."
-          gsutil cp gs://$PROJECT_ID-build-cache/deps.tar.gz /workspace/.cache/
-          cd /workspace && tar -xzf .cache/deps.tar.gz
-        else
-          echo "No dependency cache found, installing fresh..."
-        fi
-        
-        # Install dependencies
         cd /workspace
         npm install -g pnpm
-        pnpm install --frozen-lockfile
-        
-        # Cache dependencies for next build
-        echo "Caching dependencies..."
-        tar -czf .cache/deps.tar.gz node_modules shared/node_modules server/node_modules web/node_modules
-        gsutil cp .cache/deps.tar.gz gs://$PROJECT_ID-build-cache/
-    id: 'restore-cache'
-
-  # Step 2: Build shared package (cached if unchanged)
-  - name: 'gcr.io/cloud-builders/docker'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        cd /workspace
+        pnpm install
         pnpm run build:shared
-    id: 'build-shared'
-    waitFor: ['restore-cache']
 
-  # Step 3: Build server and web in parallel
+  # Build and push server image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -52,12 +23,22 @@ steps:
       - './server/Dockerfile.production'
       - '--build-arg'
       - 'NODE_ENV=production'
-      - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
       - '.'
     id: 'build-server'
-    waitFor: ['build-shared']
 
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+    id: 'push-server'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+    id: 'push-server-latest'
+
+  # Build and push web image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -69,42 +50,22 @@ steps:
       - './web/Dockerfile.production'
       - '--build-arg'
       - 'NODE_ENV=production'
-      - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
       - '.'
     id: 'build-web'
-    waitFor: ['build-shared']
-
-  # Step 4: Push images in parallel
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
-    id: 'push-server'
-    waitFor: ['build-server']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
-    id: 'push-server-latest'
-    waitFor: ['build-server']
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
     id: 'push-web'
-    waitFor: ['build-web']
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
     id: 'push-web-latest'
-    waitFor: ['build-web']
 
-  # Step 5: Deploy services in parallel
+  # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
@@ -131,7 +92,6 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
@@ -157,7 +117,6 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,NEXTAUTH_URL=https://vssyl.com,NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,NEXT_PUBLIC_API_URL=https://vssyl.com/api,NEXT_PUBLIC_API_BASE_URL=https://vssyl.com/api,NEXT_PUBLIC_APP_URL=https://vssyl.com,BACKEND_URL=https://vssyl.com/api'
     id: 'deploy-web'
-    waitFor: ['push-web', 'push-web-latest']
 
 # Store images in Google Container Registry
 images:
@@ -171,9 +130,3 @@ options:
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
-  # Enable Docker layer caching
-  substitution_option: 'ALLOW_LOOSE'
-  dynamic_substitutions: true
-
-# Timeout
-timeout: '1200s'
