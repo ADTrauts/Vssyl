@@ -19,7 +19,7 @@ export default function TestApiPage() {
       console.log('Session in test:', session);
 
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
-      const response = await fetch(`${API_BASE_URL}/api/admin-portal/test`, {
+      const response = await fetch(`${API_BASE_URL}/admin-portal/test`, {
         headers: {
           'Content-Type': 'application/json',
           ...(session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : {})

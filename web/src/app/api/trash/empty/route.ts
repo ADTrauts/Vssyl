@@ -7,7 +7,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/api/trash/empty`, {
+    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/trash/empty`, {
       method: 'DELETE',
       headers: {
         'Authorization': authHeader,
