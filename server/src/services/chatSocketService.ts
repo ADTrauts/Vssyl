@@ -62,7 +62,8 @@ export class ChatSocketService {
           origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
           const allowed = [
             process.env.FRONTEND_URL || 'https://vssyl.com',
-            'https://vssyl.com'
+            'https://vssyl.com',
+            'https://vssyl-web-235369681725.us-central1.run.app' // Cloud Run web service
           ];
           if (!origin || allowed.includes(origin)) {
             callback(null, true);
