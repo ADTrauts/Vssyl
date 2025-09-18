@@ -101,7 +101,7 @@ export async function listFiles(req: Request, res: Response) {
     // Add full URLs to all files
     const filesWithFullUrls = (files as any[]).map(file => ({
       ...file,
-      url: `${process.env.BACKEND_URL || 'http://localhost:5000'}${file.url}`
+      url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${file.url}`
     }));
     
     res.json({ files: filesWithFullUrls });
@@ -149,7 +149,7 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     // Return the file with a full URL for the frontend
     const fileWithFullUrl = {
       ...fileRecord,
-      url: `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/${filename}`
+      url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/uploads/${filename}`
     };
 
     // Create activity record for file upload

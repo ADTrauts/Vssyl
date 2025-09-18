@@ -10,7 +10,7 @@ export async function POST(
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:5000'}/api/trash/restore/${params.id}`, {
+    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/api/trash/restore/${params.id}`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,

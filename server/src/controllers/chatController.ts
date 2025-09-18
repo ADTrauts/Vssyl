@@ -532,7 +532,7 @@ export const getMessages = async (req: Request, res: Response) => {
         ...fileRef,
         file: {
           ...fileRef.file,
-          url: `${process.env.BACKEND_URL || 'http://localhost:5000'}${fileRef.file.url}`
+          url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${fileRef.file.url}`
         }
       }))
     }));
@@ -726,7 +726,7 @@ export const createMessage = async (req: Request, res: Response) => {
         ...fileRef,
         file: {
           ...fileRef.file,
-          url: `${process.env.BACKEND_URL || 'http://localhost:5000'}${fileRef.file.url}`
+          url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${fileRef.file.url}`
         }
       }))
     };

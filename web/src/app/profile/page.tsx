@@ -27,7 +27,8 @@ export default function Profile() {
       const accessToken = getAccessToken(session);
       if (accessToken) {
         try {
-          const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + '/profile', {
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+          const res = await fetch(API_BASE_URL + '/profile', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });
           if (res.ok) {
@@ -57,7 +58,8 @@ export default function Profile() {
     }
     setUpdating(true);
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL + '/profile', {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
+      const res = await fetch(API_BASE_URL + '/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

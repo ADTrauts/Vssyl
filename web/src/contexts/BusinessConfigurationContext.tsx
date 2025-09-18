@@ -813,7 +813,8 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
 
     try {
       // Try to connect to real WebSocket first
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `ws://localhost:3001/business/${businessId}`;
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || apiBaseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + `/business/${businessId}`;
       const realWebSocket = new WebSocket(wsUrl);
       
       realWebSocket.onopen = () => {

@@ -11,7 +11,7 @@ import {
   AddReactionRequest
 } from 'shared/types/chat';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
 
 // Helper function to make authenticated API calls
 async function apiCall<T>(
@@ -201,7 +201,7 @@ class ChatAPI {
     }
 
     try {
-      this.socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000', {
+      this.socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api', {
         auth: {
           token: session.accessToken
         },
