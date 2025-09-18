@@ -479,9 +479,14 @@ if (process.env.NODE_ENV === 'production') {
   console.log('🔄 Running database migrations...');
   try {
     const { execSync } = require('child_process');
+    // Use migration URL without connection pool parameters
+    const migrationEnv = {
+      ...process.env,
+      DATABASE_URL: process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL
+    };
     execSync('npx prisma migrate deploy', { 
       stdio: 'inherit',
-      env: { ...process.env }
+      env: migrationEnv
     });
     console.log('✅ Database migrations completed');
   } catch (error) {
