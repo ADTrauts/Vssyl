@@ -1,0 +1,198 @@
+# Ultra-fast Cloud Build configuration with aggressive caching
+steps:
+  # Step 1: Install dependencies with aggressive caching
+  - name: 'node:20'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd /workspace
+        
+        # Install pnpm
+        npm install -g pnpm
+        
+        # Create cache directory
+        mkdir -p /workspace/.buildcache
+        
+        # Check for existing node_modules cache
+        if [ -d "/workspace/.buildcache/root_node_modules" ]; then
+          echo "🚀 Restoring root node_modules from cache..."
+          cp -r /workspace/.buildcache/root_node_modules /workspace/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/shared_node_modules" ]; then
+          echo "🚀 Restoring shared node_modules from cache..."
+          cp -r /workspace/.buildcache/shared_node_modules /workspace/shared/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/server_node_modules" ]; then
+          echo "🚀 Restoring server node_modules from cache..."
+          cp -r /workspace/.buildcache/server_node_modules /workspace/server/node_modules
+        fi
+        
+        if [ -d "/workspace/.buildcache/web_node_modules" ]; then
+          echo "🚀 Restoring web node_modules from cache..."
+          cp -r /workspace/.buildcache/web_node_modules /workspace/web/node_modules
+        fi
+        
+        # Install dependencies (will be fast if cache hit)
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile --prefer-offline
+        
+        # Cache node_modules for next build
+        echo "💾 Caching node_modules for next build..."
+        cp -r /workspace/node_modules /workspace/.buildcache/root_node_modules 2>/dev/null || true
+        cp -r /workspace/shared/node_modules /workspace/.buildcache/shared_node_modules 2>/dev/null || true
+        cp -r /workspace/server/node_modules /workspace/.buildcache/server_node_modules 2>/dev/null || true
+        cp -r /workspace/web/node_modules /workspace/.buildcache/web_node_modules 2>/dev/null || true
+        
+        # Build shared package
+        echo "🔨 Building shared package..."
+        pnpm run build:shared
+        
+        echo "✅ Dependencies installed and shared package built"
+    id: 'install-deps'
+
+  # Step 2: Build server and web in parallel with aggressive caching
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+      - '-f'
+      - './server/Dockerfile.production'
+      - '--build-arg'
+      - 'NODE_ENV=production'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+      - '--progress=plain'
+      - '.'
+    id: 'build-server'
+    waitFor: ['install-deps']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+      - '-f'
+      - './web/Dockerfile.production'
+      - '--build-arg'
+      - 'NODE_ENV=production'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+      - '--progress=plain'
+      - '.'
+    id: 'build-web'
+    waitFor: ['install-deps']
+
+  # Step 3: Push images in parallel
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+    id: 'push-server'
+    waitFor: ['build-server']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+    id: 'push-server-latest'
+    waitFor: ['build-server']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+    id: 'push-web'
+    waitFor: ['build-web']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+    id: 'push-web-latest'
+    waitFor: ['build-web']
+
+  # Step 4: Deploy services in parallel
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'vssyl-server'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '5000'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--max-instances'
+      - '10'
+      - '--add-cloudsql-instances'
+      - 'vssyl-472202:us-central1:vssyl-db'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db&connection_limit=20&pool_timeout=20,DATABASE_MIGRATE_URL=postgresql://vssyl_user:5az%60%2FXuvQ%29QFN%29%5B%2A@/vssyl_production?host=/cloudsql/vssyl-472202:us-central1:vssyl-db,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
+    id: 'deploy-server'
+    waitFor: ['push-server', 'push-server-latest']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'vssyl-web'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '3000'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--max-instances'
+      - '20'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,NEXTAUTH_URL=https://vssyl.com,NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,NEXT_PUBLIC_API_URL=https://vssyl.com/api,NEXT_PUBLIC_API_BASE_URL=https://vssyl.com/api,NEXT_PUBLIC_APP_URL=https://vssyl.com,BACKEND_URL=https://vssyl.com/api'
+    id: 'deploy-web'
+    waitFor: ['push-web', 'push-web-latest']
+
+# Store images in Google Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+  - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+  # Enable Docker layer caching
+  substitution_option: 'ALLOW_LOOSE'
+  dynamic_substitutions: true
+
+# Timeout
+timeout: '1200s'
