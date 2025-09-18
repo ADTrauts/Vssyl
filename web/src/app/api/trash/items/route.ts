@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
     }
 
-    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/api/trash/items`, {
+    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/trash/items`, {
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/api/trash/items`, {
+    const response = await fetch(`${process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/trash/items`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,

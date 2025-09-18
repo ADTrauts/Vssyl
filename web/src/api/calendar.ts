@@ -151,7 +151,7 @@ export const calendarAPI = {
       throw new Error('No authentication token available');
     }
     
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/api/calendar/events/export?${query.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/calendar/events/export?${query.toString()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {

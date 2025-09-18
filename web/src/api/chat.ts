@@ -19,7 +19,7 @@ async function apiCall<T>(
   options: RequestInit = {}, 
   token?: string
 ): Promise<T> {
-  const url = `${API_BASE_URL}/api/chat${endpoint}`;
+  const url = `${API_BASE_URL}/chat${endpoint}`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

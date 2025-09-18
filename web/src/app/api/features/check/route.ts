@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to backend
-    const backendUrl = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/features/check`);
+    const backendUrl = new URL(`${process.env.NEXT_PUBLIC_API_URL}/features/check`);
     backendUrl.searchParams.set('feature', feature);
     if (businessId) {
       backendUrl.searchParams.set('businessId', businessId);

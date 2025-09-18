@@ -188,10 +188,10 @@ export default function AILearningAdminPage() {
     try {
       setLoading(true);
       const [healthRes, patternsRes, insightsRes, privacyRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/centralized-ai/health`),
-        fetch(`${API_BASE_URL}/api/centralized-ai/patterns`),
-        fetch(`${API_BASE_URL}/api/centralized-ai/insights`),
-        fetch(`${API_BASE_URL}/api/centralized-ai/privacy/settings`)
+        fetch(`${API_BASE_URL}/centralized-ai/health`),
+        fetch(`${API_BASE_URL}/centralized-ai/patterns`),
+        fetch(`${API_BASE_URL}/centralized-ai/insights`),
+        fetch(`${API_BASE_URL}/centralized-ai/privacy/settings`)
       ]);
 
       if (healthRes.ok) {
@@ -223,7 +223,7 @@ export default function AILearningAdminPage() {
 
   const triggerPatternAnalysis = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/patterns/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/patterns/analyze`, {
         method: 'POST'
       });
       
@@ -237,7 +237,7 @@ export default function AILearningAdminPage() {
 
   const refreshConsentStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/consent/stats`);
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/consent/stats`);
       if (response.ok) {
         const data = await response.json();
         setConsentStats(data.data);
@@ -249,7 +249,7 @@ export default function AILearningAdminPage() {
 
   const refreshSchedulerStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/scheduler/status`);
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/scheduler/status`);
       if (response.ok) {
         const data = await response.json();
         setSchedulerStatus(data.data);
@@ -261,7 +261,7 @@ export default function AILearningAdminPage() {
 
   const triggerManualAnalysis = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/scheduler/trigger-analysis`, {
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/scheduler/trigger-analysis`, {
         method: 'POST'
       });
       if (response.ok) {
@@ -275,7 +275,7 @@ export default function AILearningAdminPage() {
 
   const triggerManualInsights = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/scheduler/trigger-insights`, {
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/scheduler/trigger-insights`, {
         method: 'POST'
       });
       if (response.ok) {
@@ -289,7 +289,7 @@ export default function AILearningAdminPage() {
 
   const generateTrendForecasts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/analytics/forecasts`);
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/analytics/forecasts`);
       if (response.ok) {
         const data = await response.json();
         setTrendForecasts(data.data);
@@ -304,7 +304,7 @@ export default function AILearningAdminPage() {
       // Get the first insight to analyze
       if (insights.length > 0) {
         const insightId = insights[0].id;
-        const response = await fetch(`${API_BASE_URL}/api/centralized-ai/analytics/impact/${insightId}`);
+        const response = await fetch(`${API_BASE_URL}/centralized-ai/analytics/impact/${insightId}`);
         if (response.ok) {
           const data = await response.json();
           setImpactAnalyses([data.data]);
@@ -319,7 +319,7 @@ export default function AILearningAdminPage() {
     if (!selectedUserId.trim()) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/centralized-ai/analytics/predictions/${selectedUserId}`);
+      const response = await fetch(`${API_BASE_URL}/centralized-ai/analytics/predictions/${selectedUserId}`);
       if (response.ok) {
         const data = await response.json();
         setUserPredictions(data.data);

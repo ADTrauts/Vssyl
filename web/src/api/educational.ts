@@ -8,7 +8,7 @@ async function apiCall<T>(
   options: RequestInit = {}, 
   token?: string
 ): Promise<T> {
-  const url = `${API_BASE_URL}/api/educational${endpoint}`;
+  const url = `${API_BASE_URL}/educational${endpoint}`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
