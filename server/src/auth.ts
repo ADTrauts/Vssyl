@@ -78,77 +78,44 @@ export async function registerUser(
 ): Promise<User> {
   const hashedPassword = await bcrypt.hash(password, 10);
   
-  try {
-    // Detect user location
-    const location = await geolocationService.detectUserLocation(clientIP);
-    
-    // Generate user number
-    const userNumberData = await userNumberService.generateUserNumber(location);
-    
-    const userData: Prisma.UserCreateInput = {
-      email,
-      password: hashedPassword,
-      name,
-      userNumber: userNumberData.userNumber,
-      country: { connect: { id: userNumberData.countryId } },
-      region: { connect: { id: userNumberData.regionId } },
-      town: { connect: { id: userNumberData.townId } },
-      locationDetectedAt: new Date()
-    };
+  // Detect user location
+  const location = await geolocationService.detectUserLocation(clientIP);
+  
+  // Generate user number
+  const userNumberData = await userNumberService.generateUserNumber(location);
+  
+  const userData: Prisma.UserCreateInput = {
+    email,
+    password: hashedPassword,
+    name,
+    userNumber: userNumberData.userNumber,
+    country: { connect: { id: userNumberData.countryId } },
+    region: { connect: { id: userNumberData.regionId } },
+    town: { connect: { id: userNumberData.townId } },
+    locationDetectedAt: new Date()
+  };
 
-    return prisma.user.create({
-      data: userData,
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        name: true,
-        role: true,
-        emailVerified: true,
-        userNumber: true,
-        image: true,
-        stripeCustomerId: true,
-        createdAt: true,
-        updatedAt: true,
-        countryId: true,
-        regionId: true,
-        townId: true,
-        locationDetectedAt: true,
-        locationUpdatedAt: true
-      }
-    });
-  } catch (error) {
-    console.error('Block ID generation failed, creating user without Block ID:', error);
-    
-    // Fallback: create user without Block ID if the system fails
-    const userData: Prisma.UserCreateInput = {
-      email,
-      password: hashedPassword,
-      name
-    };
-
-    return prisma.user.create({
-      data: userData,
-      select: {
-        id: true,
-        email: true,
-        password: true,
-        name: true,
-        role: true,
-        emailVerified: true,
-        userNumber: true,
-        image: true,
-        stripeCustomerId: true,
-        createdAt: true,
-        updatedAt: true,
-        countryId: true,
-        regionId: true,
-        townId: true,
-        locationDetectedAt: true,
-        locationUpdatedAt: true
-      }
-    });
-  }
+  return prisma.user.create({
+    data: userData,
+    select: {
+      id: true,
+      email: true,
+      password: true,
+      name: true,
+      role: true,
+      emailVerified: true,
+      userNumber: true,
+      image: true,
+      stripeCustomerId: true,
+      createdAt: true,
+      updatedAt: true,
+      countryId: true,
+      regionId: true,
+      townId: true,
+      locationDetectedAt: true,
+      locationUpdatedAt: true
+    }
+  });
 }
 
 export default passport; 
