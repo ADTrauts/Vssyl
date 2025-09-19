@@ -122,35 +122,6 @@ app.options('*', cors(corsOptions));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Simple test endpoint to verify server is working
-app.get('/api/test', (req: Request, res: Response) => {
-  console.log('Test endpoint called');
-  res.json({ 
-    message: 'Server is working!', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    databaseConfigured: !!process.env.DATABASE_URL
-  });
-});
-
-// Test endpoint without database
-app.post('/api/test-register', (req: Request, res: Response) => {
-  console.log('Test registration called with body:', req.body);
-  const { email, password, name } = req.body;
-  
-  if (!email || !password) {
-    console.log('Missing email or password');
-    return res.status(400).json({ message: 'Email and password are required' });
-  }
-  
-  console.log('Test registration successful');
-  res.status(201).json({ 
-    message: 'Test registration successful',
-    user: { email, name: name || 'Test User' },
-    timestamp: new Date().toISOString()
-  });
-});
-
 // Add general request logging
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
