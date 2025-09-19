@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { createServer } from 'http';
+import { execSync } from 'child_process';
 
 // Explicitly load .env from the server directory
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -492,21 +493,19 @@ if (process.env.NODE_ENV === 'production') {
     console.log('Migration URL value:', migrationUrl);
     console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
     
-    // Temporarily skip migrations to get server running first (ChatGPT strategy)
-    console.log('⚠️  SKIPPING MIGRATIONS - FOLLOWING CHATGPT HIGH-LEVEL APPROACH');
-    console.log('✅ Database migrations skipped - will fix connection first');
+    // Run database migrations
+    console.log('🔄 Running database migrations...');
     
-    // Will re-enable once we confirm database connection works
-    // const migrationEnv = {
-    //   ...process.env,
-    //   DATABASE_URL: migrationUrl
-    // };
-    // 
-    // execSync('npx prisma migrate deploy', { 
-    //   stdio: 'inherit',
-    //   env: migrationEnv
-    // });
-    // console.log('✅ Database migrations completed');
+    const migrationEnv = {
+      ...process.env,
+      DATABASE_URL: migrationUrl
+    };
+    
+    execSync('npx prisma migrate deploy', { 
+      stdio: 'inherit',
+      env: migrationEnv
+    });
+    console.log('✅ Database migrations completed');
   } catch (error) {
     console.error('❌ Database migration failed:', error);
     process.exit(1);
