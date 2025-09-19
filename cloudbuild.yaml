@@ -93,7 +93,7 @@ steps:
       - '--subnet'
       - 'default'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:ThJhZWJiKPFa1AWPUNgxI61v1%2Fzo810j348ncouT3w0%3D%25@172.30.1.2:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:ThJhZWJiKPFa1AWPUNgxI61v1%2Fzo810j348ncouT3w0%3D%25@172.30.1.2:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.1.2:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.1.2:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com'
     id: 'deploy-server'
     waitFor: ['push-server', 'push-server-latest']
 
