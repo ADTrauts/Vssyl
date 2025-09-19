@@ -107,7 +107,12 @@ const nextConfig = {
     return [];
   },
   async rewrites() {
-    return [];
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/:path*`,
+      },
+    ];
   },
   // Improve build output for Cloud Run
   output: 'standalone',
