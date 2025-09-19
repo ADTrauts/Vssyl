@@ -78,21 +78,19 @@ export async function registerUser(
 ): Promise<User> {
   const hashedPassword = await bcrypt.hash(password, 10);
   
-  // Detect user location
-  const location = await geolocationService.detectUserLocation(clientIP);
-  
-  // Generate user number
-  const userNumberData = await userNumberService.generateUserNumber(location);
+  // Temporarily skip Block ID generation until location tables are created
+  console.log('⚠️  Skipping Block ID generation - location tables not yet migrated');
   
   const userData: Prisma.UserCreateInput = {
     email,
     password: hashedPassword,
     name,
-    userNumber: userNumberData.userNumber,
-    country: { connect: { id: userNumberData.countryId } },
-    region: { connect: { id: userNumberData.regionId } },
-    town: { connect: { id: userNumberData.townId } },
-    locationDetectedAt: new Date()
+    // Block ID fields will be null for now
+    userNumber: null,
+    country: null,
+    region: null,
+    town: null,
+    locationDetectedAt: null
   };
 
   return prisma.user.create({
