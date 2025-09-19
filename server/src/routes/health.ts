@@ -56,6 +56,44 @@ router.get('/ready', async (req, res) => {
   }
 });
 
+// Database schema check endpoint
+router.get('/schema', async (req, res) => {
+  try {
+    // Check which tables exist
+    const tables = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      ORDER BY table_name;
+    `;
+    
+    // Check specifically for location tables
+    const locationTables = await prisma.$queryRaw`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('countries', 'regions', 'towns', 'user_serials')
+      ORDER BY table_name;
+    `;
+    
+    res.status(200).json({
+      status: 'success',
+      timestamp: new Date().toISOString(),
+      tables: tables,
+      locationTables: locationTables,
+      hasLocationTables: (locationTables as any[]).length === 4
+    });
+  } catch (error) {
+    console.error('Schema check failed:', error);
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Schema check failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Liveness check endpoint (simple ping)
 router.get('/live', (req, res) => {
   res.status(200).json({
