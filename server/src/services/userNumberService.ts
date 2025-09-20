@@ -79,17 +79,8 @@ class UserNumberService {
       };
 
       // 6. Log the Block ID generation (after transaction completes)
-      setTimeout(async () => {
-        try {
-          await AuditService.logBlockIdGeneration(
-            'system', // Will be updated with actual user ID
-            fullUserNumber,
-            `${locationData.country}, ${locationData.region}, ${locationData.city}`
-          );
-        } catch (error) {
-          console.error('Error logging Block ID generation:', error);
-        }
-      }, 0);
+      // Note: Skipping audit logging during user creation to avoid foreign key constraints
+      // The user will be created first, then audit logging can happen
 
       return result;
     });

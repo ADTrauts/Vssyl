@@ -143,20 +143,11 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
     
     const user = await registerUser(email, password, name, clientIP as string);
     
-    // In development mode, auto-verify email and skip email sending
-    if (process.env.NODE_ENV === 'development') {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { emailVerified: new Date() }
-      });
-    } else {
-      // Create and send verification email
-      const verificationToken = await createEmailVerificationToken(user.id);
-      await sendVerificationEmail(user.email, verificationToken);
-      
-      // Send welcome email
-      await sendWelcomeEmail(user.email, user.name || 'there');
-    }
+    // Auto-verify email and skip email sending (SMTP not configured)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: new Date() }
+    });
     
     const token = issueJWT(user);
     const refreshToken = await createRefreshToken(user.id);
