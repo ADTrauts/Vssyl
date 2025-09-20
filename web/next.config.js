@@ -108,6 +108,11 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      // Proxy Socket.IO to backend
+      {
+        source: '/socket.io/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/socket.io/:path*`,
+      },
       // Proxy specific auth endpoints to backend (register, login, etc.)
       {
         source: '/api/auth/register',
