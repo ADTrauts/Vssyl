@@ -143,11 +143,21 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
     
     const user = await registerUser(email, password, name, clientIP as string);
     
-    // Auto-verify email and skip email sending (SMTP not configured)
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { emailVerified: new Date() }
-    });
+    // Send verification email if SMTP is configured, otherwise auto-verify
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      // Create and send verification email
+      const verificationToken = await createEmailVerificationToken(user.id);
+      await sendVerificationEmail(user.email, verificationToken);
+      
+      // Send welcome email
+      await sendWelcomeEmail(user.email, user.name || 'there');
+    } else {
+      // Auto-verify email if SMTP is not configured
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: new Date() }
+      });
+    }
     
     const token = issueJWT(user);
     const refreshToken = await createRefreshToken(user.id);
@@ -355,6 +365,32 @@ app.post('/api/auth/resend-verification', asyncHandler(async (req: Request, res:
 app.post('/api/auth/_log', (req: Request, res: Response) => {
   // Just return success for NextAuth.js internal logging
   res.status(200).json({ success: true });
+});
+
+// Temporary endpoint to list users (for debugging)
+app.get('/api/debug/users', async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        userNumber: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.json({
+      count: users.length,
+      users: users
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 });
 
 // JWT authentication middleware - using imported function from middleware/auth
