@@ -493,6 +493,11 @@ if (process.env.NODE_ENV === 'production') {
     console.log('Migration URL value:', migrationUrl);
     console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
     
+    const migrationEnv = {
+      ...process.env,
+      DATABASE_URL: migrationUrl
+    };
+
     execSync('npx prisma migrate deploy', {
       stdio: 'inherit',
       env: migrationEnv
