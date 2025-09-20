@@ -493,9 +493,11 @@ if (process.env.NODE_ENV === 'production') {
     console.log('Migration URL value:', migrationUrl);
     console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
     
-    // Temporarily skip migrations to avoid container startup failures
-    console.log('⚠️  SKIPPING MIGRATIONS - Database auth issues during startup');
-    console.log('✅ Database migrations skipped - will handle separately');
+    execSync('npx prisma migrate deploy', {
+      stdio: 'inherit',
+      env: migrationEnv
+    });
+    console.log('✅ Database migrations completed');
   } catch (error) {
     console.error('❌ Database migration failed:', error);
     process.exit(1);
