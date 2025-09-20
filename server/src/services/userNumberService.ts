@@ -24,28 +24,30 @@ class UserNumberService {
       }
 
       // 2. Find or create Region (3-digit code)
+      const normalizedRegionCode = locationData.regionCode.padStart(3, '0'); // Ensure 3 digits
       let region = await tx.region.findUnique({
-        where: { countryId_code: { countryId: country.id, code: locationData.regionCode } },
+        where: { countryId_code: { countryId: country.id, code: normalizedRegionCode } },
       });
       if (!region) {
         region = await tx.region.create({
           data: {
             name: locationData.region,
-            code: locationData.regionCode.padStart(3, '0'), // Ensure 3 digits
+            code: normalizedRegionCode,
             countryId: country.id,
           },
         });
       }
 
       // 3. Find or create Town (3-digit code)
+      const normalizedTownCode = this.generateTownCode(locationData.city).padStart(3, '0'); // Ensure 3 digits
       let town = await tx.town.findUnique({
-        where: { regionId_code: { regionId: region.id, code: locationData.city } },
+        where: { regionId_code: { regionId: region.id, code: normalizedTownCode } },
       });
       if (!town) {
         town = await tx.town.create({
           data: {
             name: locationData.city,
-            code: this.generateTownCode(locationData.city).padStart(3, '0'), // Ensure 3 digits
+            code: normalizedTownCode,
             regionId: region.id,
           },
         });
