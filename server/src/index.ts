@@ -360,6 +360,12 @@ app.post('/api/auth/resend-verification', asyncHandler(async (req: Request, res:
   res.json({ message: 'Verification email sent' });
 }));
 
+// NextAuth.js internal logging endpoint
+app.post('/api/auth/_log', (req: Request, res: Response) => {
+  // Just return success for NextAuth.js internal logging
+  res.status(200).json({ success: true });
+});
+
 // JWT authentication middleware - using imported function from middleware/auth
 
 // Temporarily disabled due to type conflicts
