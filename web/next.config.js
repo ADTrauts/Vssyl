@@ -108,9 +108,23 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      // Proxy specific auth endpoints to backend (register, login, etc.)
+      {
+        source: '/api/auth/register',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/register`,
+      },
+      {
+        source: '/api/auth/login',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/login`,
+      },
+      // Proxy all other API routes to backend
       {
         source: '/api/((?!auth).*)/:path*',
         destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/$1/:path*`,
+      },
+      {
+        source: '/api/((?!auth).*)$',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/$1`,
       },
     ];
   },
