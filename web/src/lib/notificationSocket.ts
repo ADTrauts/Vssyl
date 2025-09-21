@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { io, Socket } from 'socket.io-client';
+import { getWebSocketConfig } from './websocketUtils';
 
 export interface NotificationEvent {
   id: string;
@@ -32,25 +33,28 @@ export const useNotificationSocket = (): NotificationSocketHook => {
     }
 
     try {
-      socketRef.current = io(process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api', {
+      // Use centralized WebSocket configuration
+      const config = getWebSocketConfig();
+      
+      socketRef.current = io(config.url, {
+        ...config.options,
         auth: {
           token: session.accessToken
-        },
-        transports: ['websocket', 'polling']
+        }
       });
 
       socketRef.current.on('connect', () => {
-        console.log('Notification socket connected');
+        console.log('✅ Notification socket connected successfully');
         isConnectedRef.current = true;
       });
 
       socketRef.current.on('disconnect', () => {
-        console.log('Notification socket disconnected');
+        console.log('🔌 Notification socket disconnected');
         isConnectedRef.current = false;
       });
 
       socketRef.current.on('connect_error', (error) => {
-        console.error('Notification socket connection error:', error);
+        console.error('❌ Notification socket connection error:', error);
         isConnectedRef.current = false;
       });
 

@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { getSession } from 'next-auth/react';
+import { getWebSocketConfig } from '../lib/websocketUtils';
 import {
   Conversation,
   Message,
@@ -201,15 +202,14 @@ class ChatAPI {
     }
 
     try {
-      this.socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api', {
+      // Use centralized WebSocket configuration
+      const config = getWebSocketConfig();
+      
+      this.socket = io(config.url, {
+        ...config.options,
         auth: {
           token: session.accessToken
         },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
         forceNew: true
       });
 

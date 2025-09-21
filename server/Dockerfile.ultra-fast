@@ -1,18 +1,20 @@
-# Optimized multi-stage build for server with better caching
+# Ultra-fast Docker build with maximum layer caching
+# This version is optimized for Cloud Build's Docker layer caching
 FROM node:20-alpine AS base
 
-# Install pnpm
+# Install pnpm (this layer rarely changes)
 RUN npm install -g pnpm
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first (for better caching)
+# Copy package files first (this layer will be cached if package files don't change)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 
-# Install dependencies (this layer will be cached if package files don't change)
+# Install dependencies (cached if package files unchanged)
+# This is the most expensive operation, so we want it cached
 RUN pnpm install --frozen-lockfile
 
 # Copy shared source and build (cached if shared code doesn't change)
@@ -23,17 +25,16 @@ RUN cd shared && pnpm build
 COPY prisma/ ./prisma/
 RUN npx prisma generate
 
-# Copy TypeScript config
+# Copy TypeScript config (cached if config doesn't change)
 COPY tsconfig.json ./
 
-# Copy server source (this will change most often, so it's last)
-COPY server/src/ ./server/src/
-COPY server/tsconfig.json ./server/
+# Copy server source (this changes most often, so it's last)
+COPY server/ ./server/
 
 # Build server (only rebuilds if server code changes)
 RUN cd server && pnpm build
 
-# Production stage - much smaller final image
+# Production stage - minimal final image
 FROM node:20-alpine AS production
 
 # Install pnpm
@@ -47,7 +48,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 
-# Install only production dependencies
+# Install only production dependencies (cached if package files unchanged)
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts from build stage

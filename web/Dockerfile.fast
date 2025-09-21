@@ -1,4 +1,4 @@
-# Optimized multi-stage build for server with better caching
+# Fast Docker build with optimized layer caching
 FROM node:20-alpine AS base
 
 # Install pnpm
@@ -7,12 +7,12 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy package files first (for better caching)
+# Copy package files first (this layer will be cached if package files don't change)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
-COPY server/package.json ./server/
+COPY web/package.json ./web/
 
-# Install dependencies (this layer will be cached if package files don't change)
+# Install dependencies (cached if package files unchanged)
 RUN pnpm install --frozen-lockfile
 
 # Copy shared source and build (cached if shared code doesn't change)
@@ -26,14 +26,22 @@ RUN npx prisma generate
 # Copy TypeScript config
 COPY tsconfig.json ./
 
-# Copy server source (this will change most often, so it's last)
-COPY server/src/ ./server/src/
-COPY server/tsconfig.json ./server/
+# Copy Next.js config and other static files (cached if config doesn't change)
+COPY web/next.config.js ./web/
+COPY web/tailwind.config.js ./web/
+COPY web/postcss.config.js ./web/
+COPY web/tsconfig.json ./web/
 
-# Build server (only rebuilds if server code changes)
-RUN cd server && pnpm build
+# Copy public assets (cached if assets don't change)
+COPY web/public/ ./web/public/
 
-# Production stage - much smaller final image
+# Copy web source (this changes most often, so it's last)
+COPY web/src/ ./web/src/
+
+# Build web application (only rebuilds if web code changes)
+RUN cd web && pnpm build
+
+# Production stage - minimal final image
 FROM node:20-alpine AS production
 
 # Install pnpm
@@ -45,23 +53,23 @@ WORKDIR /app
 # Copy package files for production install
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
-COPY server/package.json ./server/
+COPY web/package.json ./web/
 
-# Install only production dependencies
+# Install only production dependencies (cached if package files unchanged)
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built artifacts from build stage
+# Copy built shared package
 COPY --from=base /app/shared/dist ./shared/dist
 COPY --from=base /app/shared/package.json ./shared/
-COPY --from=base /app/server/dist ./server/dist
-COPY --from=base /app/server/package.json ./server/
+
+# Copy built Next.js application
+COPY --from=base /app/web/.next/standalone ./
+COPY --from=base /app/web/.next/static ./web/.next/static
+COPY --from=base /app/web/public ./web/public
 
 # Copy Prisma schema and generate client for production
 COPY prisma/ ./prisma/
 RUN npx prisma generate
-
-# Create uploads directory
-RUN mkdir -p /app/uploads
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S vssyl -u 1001
@@ -71,11 +79,11 @@ RUN chown -R vssyl:nodejs /app
 USER vssyl
 
 # Expose port
-EXPOSE 5000
+EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD node -e "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Start the application
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "web/server.js"]

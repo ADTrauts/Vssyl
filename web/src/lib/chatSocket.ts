@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { ChatEvent, TypingEvent, PresenceEvent } from 'shared/types/chat';
+import { getWebSocketConfig } from './websocketUtils';
 
 // Chat data interfaces
 export interface ChatMessage {
@@ -80,32 +81,30 @@ export class ChatSocketClient {
       }
 
       this.token = token;
-      const serverUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+      
+      // Use centralized WebSocket configuration
+      const config = getWebSocketConfig();
 
       try {
-        this.socket = io(serverUrl, {
-          auth: { token },
-          transports: ['websocket', 'polling'],
-          reconnection: true,
-          reconnectionAttempts: this.maxReconnectAttempts,
-          reconnectionDelay: this.reconnectDelay,
-          timeout: 20000,
+        this.socket = io(config.url, {
+          ...config.options,
+          auth: { token }
         });
 
         this.socket.on('connect', () => {
-          // Chat WebSocket connected
+          console.log('✅ Chat WebSocket connected successfully');
           this.reconnectAttempts = 0;
           resolve();
         });
 
         this.socket.on('connect_error', (error) => {
-          console.error('Chat WebSocket connection error:', error);
+          console.error('❌ Chat WebSocket connection error:', error);
           // Don't reject - just log the error and resolve
           resolve();
         });
 
         this.socket.on('disconnect', (reason) => {
-          // Chat WebSocket disconnected
+          console.log('🔌 Chat WebSocket disconnected:', reason);
           if (reason === 'io server disconnect') {
             // Server disconnected us, try to reconnect
             this.socket?.connect();
@@ -113,12 +112,12 @@ export class ChatSocketClient {
         });
 
         this.socket.on('reconnect_attempt', (attemptNumber) => {
-          // Chat WebSocket reconnection attempt
+          console.log(`🔄 Chat WebSocket reconnection attempt ${attemptNumber}`);
           this.reconnectAttempts = attemptNumber;
         });
 
         this.socket.on('reconnect_failed', () => {
-          console.error('Chat WebSocket reconnection failed');
+          console.error('❌ Chat WebSocket reconnection failed');
         });
 
         // Set up event listeners

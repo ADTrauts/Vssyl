@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import { useSession } from 'next-auth/react';
 import { useWorkAuth } from './WorkAuthContext';
 import { installModule, uninstallModule, configureModule, getInstalledModules, ModuleDetails } from '../api/modules';
+import { getWebSocketConfig } from '../lib/websocketUtils';
 import { 
   OrganizationalTier, 
   Department, 
@@ -812,9 +813,9 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
     }
 
     try {
-      // Try to connect to real WebSocket first
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
-      const wsUrl = process.env.NEXT_PUBLIC_WS_URL || apiBaseUrl.replace('https://', 'wss://').replace('http://', 'ws://') + `/business/${businessId}`;
+      // Use centralized WebSocket configuration
+      const config = getWebSocketConfig();
+      const wsUrl = `${config.url}/business/${businessId}`;
       const realWebSocket = new WebSocket(wsUrl);
       
       realWebSocket.onopen = () => {

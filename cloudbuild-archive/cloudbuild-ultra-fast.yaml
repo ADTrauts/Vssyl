@@ -1,6 +1,7 @@
-# Simple, working Cloud Build with Docker layer caching
+# Ultra-fast Cloud Build with effective Docker layer caching
+# This version uses Docker's built-in caching more effectively
 steps:
-  # Step 1: Build server with Docker caching
+  # Step 1: Build server with aggressive Docker caching
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -9,15 +10,18 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
       - '-f'
-      - './server/Dockerfile.production'
+      - './server/Dockerfile.ultra-fast'
       - '--build-arg'
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      - '--progress=plain'
       - '.'
     id: 'build-server'
 
-  # Step 2: Build web with Docker caching (parallel)
+  # Step 2: Build web with aggressive Docker caching (parallel)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -26,11 +30,14 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
       - '-f'
-      - './web/Dockerfile.production'
+      - './web/Dockerfile.ultra-fast'
       - '--build-arg'
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      - '--progress=plain'
       - '.'
     id: 'build-web'
 
@@ -149,10 +156,10 @@ images:
   - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
   - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
 
-# Build options
+# Build options for faster builds
 options:
   machineType: 'E2_HIGHCPU_8'
-  diskSizeGb: '100'
+  diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
 
 # Timeout
