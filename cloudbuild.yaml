@@ -1,6 +1,6 @@
-# Optimized Cloud Build with proper caching
+# Simplified Cloud Build configuration with working caching
 steps:
-  # Step 1: Build server with Docker caching
+  # Step 1: Build server and web in parallel with Docker layer caching
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -9,16 +9,14 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
       - '-f'
-      - './server/Dockerfile'
+      - './server/Dockerfile.production'
       - '--build-arg'
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
-      - '--progress=plain'
       - '.'
     id: 'build-server'
 
-  # Step 2: Build web with Docker caching (parallel)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -27,12 +25,11 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
       - '-f'
-      - './web/Dockerfile'
+      - './web/Dockerfile.production'
       - '--build-arg'
       - 'NODE_ENV=production'
       - '--cache-from'
       - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
-      - '--progress=plain'
       - '.'
     id: 'build-web'
 
@@ -57,7 +54,7 @@ steps:
     id: 'push-web-latest'
     waitFor: ['build-web']
 
-  # Step 4: Deploy services in parallel
+  # Step 3: Deploy services in parallel
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
@@ -88,19 +85,9 @@ steps:
       - '--subnet'
       - 'default'
       - '--set-env-vars'
-      - 'NODE_ENV=production'
-      - '--set-env-vars'
-      - 'DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20'
-      - '--set-env-vars'
-      - 'DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20'
-      - '--set-env-vars'
-      - 'JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI='
-      - '--set-env-vars'
-      - 'JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4='
-      - '--set-env-vars'
-      - 'FRONTEND_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_APP_URL=https://vssyl.com'
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,SMTP_HOST=smtp.sendgrid.net,SMTP_PORT=587,SMTP_SECURE=false'  
+      - '--set-secrets'
+      - 'SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,SMTP_FROM=smtp-from:latest'
     id: 'deploy-server'
     waitFor: ['push-server', 'push-server-latest']
 
@@ -126,21 +113,7 @@ steps:
       - '--max-instances'
       - '20'
       - '--set-env-vars'
-      - 'NODE_ENV=production'
-      - '--set-env-vars'
-      - 'NEXTAUTH_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI='
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_API_URL=https://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_APP_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'BACKEND_URL=https://vssyl-server-235369681725.us-central1.run.app'
+      - 'NODE_ENV=production,NEXTAUTH_URL=https://vssyl.com,NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,NEXT_PUBLIC_API_URL=https://vssyl.com/api,NEXT_PUBLIC_API_BASE_URL=https://vssyl.com/api,NEXT_PUBLIC_APP_URL=https://vssyl.com,BACKEND_URL=https://vssyl-server-zykigsc2xa-uc.a.run.app'                   
     id: 'deploy-web'
     waitFor: ['push-web', 'push-web-latest']
 
