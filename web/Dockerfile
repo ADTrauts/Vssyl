@@ -63,9 +63,9 @@ COPY --from=base /app/shared/dist ./shared/dist
 COPY --from=base /app/shared/package.json ./shared/
 
 # Copy built Next.js application
-COPY --from=base /app/web/.next/standalone ./
-COPY --from=base /app/web/.next/static ./web/.next/static
-COPY --from=base /app/web/public ./web/public
+COPY --from=base /app/web/.next ./.next
+COPY --from=base /app/web/public ./public
+COPY --from=base /app/web/package.json ./package.json
 
 # Copy Prisma schema and generate client for production
 COPY prisma/ ./prisma/
@@ -82,4 +82,4 @@ USER vssyl
 EXPOSE 3000
 
 # Start the application
-CMD ["node", "web/server.js"]
+CMD ["pnpm", "start"]
