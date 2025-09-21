@@ -1,6 +1,6 @@
 import { getSession, signOut } from 'next-auth/react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
 
 export interface ApiError extends Error {
   status?: number;
@@ -23,6 +23,17 @@ export async function authenticatedApiCall<T>(
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
+  
+  // Debug logging to help troubleshoot API routing
+  if (process.env.NODE_ENV === 'development') {
+    console.log('API Call Debug:', {
+      endpoint,
+      API_BASE_URL,
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+      finalUrl: url
+    });
+  }
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
