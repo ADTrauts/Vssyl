@@ -1,146 +1,186 @@
-# Simple, working Cloud Build with Docker layer caching
+# Optimized Cloud Build with proper caching and conditional builds
 steps:
-  # Step 1: Build server with Docker caching
-  - name: 'gcr.io/cloud-builders/docker'
+  # Step 1: Check what changed to determine what to build
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
-      - '-f'
-      - './server/Dockerfile'
-      - '--build-arg'
-      - 'NODE_ENV=production'
-      - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:latest'
-      - '.'
+      - '-c'
+      - |
+        echo "🔍 Checking what changed..."
+        
+        # Check if server-related files changed
+        if git diff --name-only HEAD~1 HEAD | grep -E '^(server/|shared/|prisma/|package\.json|pnpm-lock\.yaml)' > /dev/null; then
+          echo "SERVER_CHANGED=true" >> /workspace/build_flags
+          echo "✅ Server needs rebuild"
+        else
+          echo "SERVER_CHANGED=false" >> /workspace/build_flags
+          echo "⏭️ Server unchanged, skipping"
+        fi
+        
+        # Check if web-related files changed
+        if git diff --name-only HEAD~1 HEAD | grep -E '^(web/|shared/|prisma/|package\.json|pnpm-lock\.yaml)' > /dev/null; then
+          echo "WEB_CHANGED=true" >> /workspace/build_flags
+          echo "✅ Web needs rebuild"
+        else
+          echo "WEB_CHANGED=false" >> /workspace/build_flags
+          echo "⏭️ Web unchanged, skipping"
+        fi
+    id: 'check-changes'
+
+  # Step 2: Build server (only if changed)
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$SERVER_CHANGED" = "true" ]; then
+          echo "🏗️ Building server..."
+          docker build \
+            -t gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID \
+            -t gcr.io/$PROJECT_ID/vssyl-server:latest \
+            -f ./server/Dockerfile \
+            --build-arg NODE_ENV=production \
+            --cache-from gcr.io/$PROJECT_ID/vssyl-server:latest \
+            --progress=plain \
+            .
+          echo "✅ Server built successfully"
+        else
+          echo "⏭️ Skipping server build (no changes)"
+          # Pull existing image to use as cache
+          docker pull gcr.io/$PROJECT_ID/vssyl-server:latest || true
+        fi
     id: 'build-server'
+    waitFor: ['check-changes']
 
-  # Step 2: Build web with Docker caching (parallel)
+  # Step 3: Build web (only if changed, parallel with server)
   - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
-      - '-f'
-      - './web/Dockerfile'
-      - '--build-arg'
-      - 'NODE_ENV=production'
-      - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:latest'
-      - '.'
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$WEB_CHANGED" = "true" ]; then
+          echo "🏗️ Building web..."
+          docker build \
+            -t gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID \
+            -t gcr.io/$PROJECT_ID/vssyl-web:latest \
+            -f ./web/Dockerfile \
+            --build-arg NODE_ENV=production \
+            --cache-from gcr.io/$PROJECT_ID/vssyl-web:latest \
+            --progress=plain \
+            .
+          echo "✅ Web built successfully"
+        else
+          echo "⏭️ Skipping web build (no changes)"
+          # Pull existing image to use as cache
+          docker pull gcr.io/$PROJECT_ID/vssyl-web:latest || true
+        fi
     id: 'build-web'
+    waitFor: ['check-changes']
 
-  # Step 3: Push images in parallel
+  # Step 4: Push images (only if built)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$SERVER_CHANGED" = "true" ]; then
+          echo "📤 Pushing server images..."
+          docker push gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID
+          docker push gcr.io/$PROJECT_ID/vssyl-server:latest
+          echo "✅ Server images pushed"
+        else
+          echo "⏭️ Skipping server push (no changes)"
+        fi
     id: 'push-server'
     waitFor: ['build-server']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:latest']
-    id: 'push-server-latest'
-    waitFor: ['build-server']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$WEB_CHANGED" = "true" ]; then
+          echo "📤 Pushing web images..."
+          docker push gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID
+          docker push gcr.io/$PROJECT_ID/vssyl-web:latest
+          echo "✅ Web images pushed"
+        else
+          echo "⏭️ Skipping web push (no changes)"
+        fi
     id: 'push-web'
     waitFor: ['build-web']
 
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/vssyl-web:latest']
-    id: 'push-web-latest'
-    waitFor: ['build-web']
-
-  # Step 4: Deploy services in parallel
+  # Step 5: Deploy services (only if built)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - 'vssyl-server'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '5000'
-      - '--memory'
-      - '2Gi'
-      - '--cpu'
-      - '2'
-      - '--max-instances'
-      - '10'
-      - '--add-cloudsql-instances'
-      - 'vssyl-472202:us-central1:vssyl-db'
-      - '--vpc-egress'
-      - 'all-traffic'
-      - '--network'
-      - 'default'
-      - '--subnet'
-      - 'default'
-      - '--set-env-vars'
-      - 'NODE_ENV=production'
-      - '--set-env-vars'
-      - 'DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20'
-      - '--set-env-vars'
-      - 'DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20'
-      - '--set-env-vars'
-      - 'JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI='
-      - '--set-env-vars'
-      - 'JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4='
-      - '--set-env-vars'
-      - 'FRONTEND_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_APP_URL=https://vssyl.com'
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$SERVER_CHANGED" = "true" ]; then
+          echo "🚀 Deploying server..."
+          gcloud run deploy vssyl-server \
+            --image gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 5000 \
+            --memory 2Gi \
+            --cpu 2 \
+            --max-instances 10 \
+            --add-cloudsql-instances vssyl-472202:us-central1:vssyl-db \
+            --vpc-egress all-traffic \
+            --network default \
+            --subnet default \
+            --set-env-vars NODE_ENV=production \
+            --set-env-vars DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20 \
+            --set-env-vars DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20 \
+            --set-env-vars JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI= \
+            --set-env-vars JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4= \
+            --set-env-vars FRONTEND_URL=https://vssyl.com \
+            --set-env-vars NEXT_PUBLIC_APP_URL=https://vssyl.com
+          echo "✅ Server deployed"
+        else
+          echo "⏭️ Skipping server deploy (no changes)"
+        fi
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest']
+    waitFor: ['push-server']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - 'vssyl-web'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '3000'
-      - '--memory'
-      - '1Gi'
-      - '--cpu'
-      - '1'
-      - '--max-instances'
-      - '20'
-      - '--set-env-vars'
-      - 'NODE_ENV=production'
-      - '--set-env-vars'
-      - 'NEXTAUTH_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI='
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_API_URL=https://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app'
-      - '--set-env-vars'
-      - 'NEXT_PUBLIC_APP_URL=https://vssyl.com'
-      - '--set-env-vars'
-      - 'BACKEND_URL=https://vssyl-server-235369681725.us-central1.run.app'
+      - '-c'
+      - |
+        source /workspace/build_flags
+        if [ "$WEB_CHANGED" = "true" ]; then
+          echo "🚀 Deploying web..."
+          gcloud run deploy vssyl-web \
+            --image gcr.io/$PROJECT_ID/vssyl-web:$BUILD_ID \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 3000 \
+            --memory 1Gi \
+            --cpu 1 \
+            --max-instances 20 \
+            --set-env-vars NODE_ENV=production \
+            --set-env-vars NEXTAUTH_URL=https://vssyl.com \
+            --set-env-vars NEXTAUTH_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI= \
+            --set-env-vars NEXT_PUBLIC_API_URL=https://vssyl-server-235369681725.us-central1.run.app \
+            --set-env-vars NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app \
+            --set-env-vars NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app \
+            --set-env-vars NEXT_PUBLIC_APP_URL=https://vssyl.com \
+            --set-env-vars BACKEND_URL=https://vssyl-server-235369681725.us-central1.run.app
+          echo "✅ Web deployed"
+        else
+          echo "⏭️ Skipping web deploy (no changes)"
+        fi
     id: 'deploy-web'
-    waitFor: ['push-web', 'push-web-latest']
+    waitFor: ['push-web']
 
 # Store images in Google Container Registry
 images:

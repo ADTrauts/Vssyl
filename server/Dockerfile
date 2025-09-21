@@ -1,5 +1,5 @@
-# Simple single-stage Docker build for server
-FROM node:20-alpine
+# Optimized multi-stage Docker build for server with proper caching
+FROM node:20-alpine AS base
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -7,20 +7,57 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy all files
-COPY . .
+# Copy package files first (for better caching)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY shared/package.json ./shared/
+COPY server/package.json ./server/
 
-# Install dependencies
+# Install dependencies (this layer will be cached if package files don't change)
 RUN pnpm install --frozen-lockfile
 
-# Build shared package
+# Copy shared source and build (cached if shared code doesn't change)
+COPY shared/ ./shared/
 RUN cd shared && pnpm build
 
-# Generate Prisma client
+# Copy Prisma schema (cached if schema doesn't change)
+COPY prisma/ ./prisma/
 RUN npx prisma generate
 
-# Build server
+# Copy TypeScript config
+COPY tsconfig.json ./
+
+# Copy server source (this changes most often, so it's last)
+COPY server/ ./server/
+
+# Build server (only rebuilds if server code changes)
 RUN cd server && pnpm build
+
+# Production stage - minimal final image
+FROM node:20-alpine AS production
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files for production install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY shared/package.json ./shared/
+COPY server/package.json ./server/
+
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy built artifacts from build stage
+COPY --from=base /app/shared/dist ./shared/dist
+COPY --from=base /app/shared/package.json ./shared/
+COPY --from=base /app/server/dist ./server/dist
+COPY --from=base /app/server/package.json ./server/
+
+# Copy Prisma schema and generate client for production
+COPY prisma/ ./prisma/
+RUN npx prisma generate
 
 # Create uploads directory
 RUN mkdir -p /app/uploads
