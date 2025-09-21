@@ -46,8 +46,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
 COPY server/package.json ./server/
 
-# Install only production dependencies
+# Install production dependencies including Prisma
 RUN pnpm install --frozen-lockfile --prod
+RUN pnpm add prisma@6.10.1
 
 # Copy built artifacts from build stage
 COPY --from=base /app/shared/dist ./shared/dist
