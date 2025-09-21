@@ -33,4 +33,5 @@ USER vssyl
 EXPOSE 3000
 
 # Start the application
-CMD ["cd", "web", "&&", "pnpm", "start"]
+WORKDIR /app/web
+CMD ["pnpm", "start"]
