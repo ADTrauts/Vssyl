@@ -194,6 +194,25 @@ export class WebSocketManager {
   }
 
   /**
+   * Attempt to reconnect WebSocket
+   */
+  private attemptReconnection(): void {
+    if (this.retryCount >= this.maxRetries) {
+      console.warn('Max reconnection attempts reached, switching to polling');
+      this.handleWebSocketFailure();
+      return;
+    }
+
+    this.retryCount++;
+    console.log(`Attempting reconnection ${this.retryCount}/${this.maxRetries}`);
+    
+    // Wait before retrying
+    setTimeout(() => {
+      this.connect();
+    }, 2000 * this.retryCount); // Exponential backoff
+  }
+
+  /**
    * Handle WebSocket errors
    */
   private handleError(error: Error): void {
