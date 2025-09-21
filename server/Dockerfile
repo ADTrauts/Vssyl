@@ -48,7 +48,7 @@ COPY server/package.json ./server/
 
 # Install production dependencies including Prisma
 RUN pnpm install --frozen-lockfile --prod
-RUN pnpm add prisma@6.10.1
+RUN pnpm add prisma@6.10.1 -w
 
 # Copy built artifacts from build stage
 COPY --from=base /app/shared/dist ./shared/dist
