@@ -352,66 +352,24 @@ class ChatAPI {
 
   // REST API Methods
   async getConversations(token?: string, dashboardId?: string): Promise<Conversation[]> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const params = new URLSearchParams();
     if (dashboardId) {
       params.append('dashboardId', dashboardId);
     }
     
     const queryString = params.toString();
-    const url = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch conversations');
-    }
-
-    const result = await response.json();
+    const result = await apiCall<{ success: boolean; data: Conversation[] }>(endpoint, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
 
   async getConversation(id: string, token?: string): Promise<Conversation> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`/api/chat/conversations/${id}`, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch conversation');
-    }
-
-    const result = await response.json();
+    const result = await apiCall<{ success: boolean; data: Conversation }>(`/api/chat/conversations/${id}`, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
 
   async getMessages(conversationId: string, token?: string, page = 1, limit = 50, threadId?: string): Promise<Message[]> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const params = new URLSearchParams();
     params.append('page', page.toString());
     params.append('limit', limit.toString());
@@ -419,16 +377,8 @@ class ChatAPI {
       params.append('threadId', threadId);
     }
 
-    const response = await fetch(`/api/chat/conversations/${conversationId}/messages?${params.toString()}`, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch messages');
-    }
-
-    const result = await response.json();
+    const endpoint = `/api/chat/conversations/${conversationId}/messages?${params.toString()}`;
+    const result = await apiCall<{ success: boolean; data: Message[] }>(endpoint, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
 

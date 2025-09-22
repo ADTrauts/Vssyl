@@ -58,6 +58,55 @@ SMTP_PASS=your-mailgun-password
 SMTP_SECURE=false
 ```
 
+## DNS Configuration for SendGrid
+
+### Required DNS Records for SendGrid Authentication
+
+When using SendGrid, you need to add these DNS records to your domain for proper email authentication:
+
+```
+Record 1 (CNAME):
+- Host: em739
+- Type: CNAME  
+- Value: u56193661.wl162.sendgrid.net
+- TTL: 4 hours
+
+Record 2 (CNAME):
+- Host: s1._domainkey
+- Type: CNAME
+- Value: s1.domainkey.u56193661.wl162.sendgrid.net
+- TTL: 4 hours
+
+Record 3 (CNAME):
+- Host: s2._domainkey
+- Type: CNAME
+- Value: s2.domainkey.u56193661.wl162.sendgrid.net
+- TTL: 4 hours
+
+Record 4 (TXT):
+- Host: _dmarc
+- Type: TXT
+- Value: v=DMARC1; p=none;
+- TTL: 4 hours
+
+Record 5 (CNAME):
+- Host: url4090
+- Type: CNAME
+- Value: sendgrid.net
+- TTL: 4 hours
+
+Record 6 (CNAME):
+- Host: 56193661
+- Type: CNAME
+- Value: sendgrid.net
+- TTL: 4 hours
+```
+
+### DNS Propagation
+- DNS changes can take 24-48 hours to fully propagate
+- Check SendGrid dashboard to verify records show as "Verified"
+- Use online DNS checker tools to monitor propagation status
+
 ## Testing Email Notifications
 
 1. **Start the development server:**
@@ -74,6 +123,8 @@ npx tsx scripts/test-email-notifications.ts
 ```
 
 4. **Check email preferences** in the notification settings page
+
+5. **Verify DNS records** are propagated and verified in SendGrid dashboard
 
 ## Features Implemented
 
