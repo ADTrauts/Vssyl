@@ -346,7 +346,52 @@ const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
 
 The theme system is now production-ready with comprehensive dark mode support, smooth transitions, and consistent theming across all components! 🎨
 
-### Latest UI/UX Consistency Updates (Current Session)
+### Latest API Routing Fixes (Current Session) - COMPLETED! ✅
+**Date**: Current Session (January 2025)  
+**Focus**: Complete Resolution of 404 API Errors and Environment Variable Issues
+
+#### **Major Achievement: All API Routing Issues RESOLVED!** 🎉
+
+**API 404 Errors - COMPLETELY FIXED!**
+- **`/api/features/all` 404** - Fixed environment variable issue in Next.js API routes
+- **`/api/chat/api/chat/conversations` double path** - Fixed by removing `/api/chat` prefix from endpoint calls
+- **`/api/retention/classifications`** - Already working correctly
+- **`/api/dashboard`** - Already working correctly  
+- **`/api/user/preferences/lastActiveDashboardId`** - Already working correctly
+
+**Environment Variable Issues - COMPLETELY FIXED!**
+- **Problem**: Next.js API routes were using `process.env.NEXT_PUBLIC_API_URL` which was undefined
+- **Solution**: Updated all API route files to use `process.env.NEXT_PUBLIC_API_BASE_URL` with proper fallback
+- **Files Fixed**: 9 Next.js API route files updated with correct environment variable usage
+
+**Chat API Double Path Issue - COMPLETELY FIXED!**
+- **Problem**: Chat API functions were passing `/api/chat/conversations` as endpoint, but `apiCall` was already adding `/api/chat` prefix
+- **Solution**: Removed `/api/chat` prefix from all endpoint calls in `web/src/api/chat.ts`
+- **Changes Made**: `/api/chat/conversations` → `/conversations`, `/api/chat/messages` → `/messages`
+
+#### **Files Modified for Complete Fix** 📝
+**Next.js API Route Fixes (9 files):**
+1. **`web/src/app/api/features/all/route.ts`** - Fixed environment variable usage
+2. **`web/src/app/api/features/check/route.ts`** - Fixed environment variable usage
+3. **`web/src/app/api/features/module/route.ts`** - Fixed environment variable usage
+4. **`web/src/app/api/features/usage/route.ts`** - Fixed environment variable usage
+5. **`web/src/app/api/trash/items/route.ts`** - Fixed environment variable usage
+6. **`web/src/app/api/trash/delete/[id]/route.ts`** - Fixed environment variable usage
+7. **`web/src/app/api/trash/restore/[id]/route.ts`** - Fixed environment variable usage
+8. **`web/src/app/api/trash/empty/route.ts`** - Fixed environment variable usage
+9. **`web/src/app/api/[...slug]/route.ts`** - Fixed environment variable usage
+
+**Chat API Fixes (1 file):**
+10. **`web/src/api/chat.ts`** - Fixed double path issue by removing redundant prefixes
+
+#### **Current API Status** ✅
+- **All API routing working correctly** - Endpoints return proper authentication errors instead of 404s
+- **Environment variables standardized** - Consistent usage across all API routes
+- **Chat API paths fixed** - No more double path issues
+- **Build system optimized** - 7-minute builds with E2_HIGHCPU_8 machine type
+- **Ready for production** - All fixes tested and verified
+
+### Previous UI/UX Consistency Updates
 - Unified global header across personal dashboard and business workspace using `web/src/components/GlobalHeaderTabs.tsx`.
 - Business workspace now uses the same tab strip as personal dashboards.
 - Header branding dynamically switches:

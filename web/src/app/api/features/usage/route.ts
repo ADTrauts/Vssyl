@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to backend
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/features/usage`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/features/usage`;
     
     const response = await fetch(backendUrl, {
       method: 'POST',

@@ -54,20 +54,20 @@ export const getConversations = async (token: string, dashboardId?: string): Pro
   }
   
   const queryString = params.toString();
-  const endpoint = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/conversations${queryString ? `?${queryString}` : ''}`;
   
   return apiCall(endpoint, { method: 'GET' }, token);
 };
 
 export const getConversation = async (id: string, token: string): Promise<{ success: boolean; data: Conversation }> => {
-  return apiCall(`/api/chat/conversations/${id}`, { method: 'GET' }, token);
+  return apiCall(`/conversations/${id}`, { method: 'GET' }, token);
 };
 
 export const createConversation = async (
   conversationData: CreateConversationRequest, 
   token: string
 ): Promise<{ success: boolean; data: Conversation }> => {
-  return apiCall('/api/chat/conversations', {
+  return apiCall('/conversations', {
     method: 'POST',
     body: JSON.stringify(conversationData),
   }, token);
@@ -88,7 +88,7 @@ export const getMessages = async (
   if (options.threadId) params.append('threadId', options.threadId);
 
   const queryString = params.toString();
-  const endpoint = `/api/chat/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
   
   return apiCall(endpoint, { method: 'GET' }, token);
 };
@@ -98,7 +98,7 @@ export const createMessage = async (
   messageData: CreateMessageRequest, 
   token: string
 ): Promise<{ success: boolean; data: Message }> => {
-  return apiCall(`/api/chat/conversations/${conversationId}/messages`, {
+  return apiCall(`/conversations/${conversationId}/messages`, {
     method: 'POST',
     body: JSON.stringify(messageData),
   }, token);
@@ -117,7 +117,7 @@ export const addReaction = async (
   reactionData: AddReactionRequest, 
   token: string
 ): Promise<{ success: boolean; data: ReactionResponse; action: 'added' | 'removed' }> => {
-  return apiCall(`/api/chat/messages/${messageId}/reactions`, {
+  return apiCall(`/messages/${messageId}/reactions`, {
     method: 'POST',
     body: JSON.stringify(reactionData),
   }, token);
@@ -127,7 +127,7 @@ export const markAsRead = async (
   messageId: string, 
   token: string
 ): Promise<{ success: boolean; data: { messageId: string; readAt: string } }> => {
-  return apiCall(`/api/chat/messages/${messageId}/read`, {
+  return apiCall(`/messages/${messageId}/read`, {
     method: 'POST',
   }, token);
 };
@@ -136,7 +136,7 @@ export const getThreads = async (
   conversationId: string, 
   token: string
 ): Promise<{ success: boolean; data: Thread[] }> => {
-  return apiCall(`/api/chat/conversations/${conversationId}/threads`, { method: 'GET' }, token);
+  return apiCall(`/conversations/${conversationId}/threads`, { method: 'GET' }, token);
 };
 
 export const createThread = async (
@@ -144,7 +144,7 @@ export const createThread = async (
   threadData: CreateThreadRequest, 
   token: string
 ): Promise<{ success: boolean; data: Thread }> => {
-  return apiCall(`/api/chat/conversations/${conversationId}/threads`, {
+  return apiCall(`/conversations/${conversationId}/threads`, {
     method: 'POST',
     body: JSON.stringify(threadData),
   }, token);
@@ -359,14 +359,14 @@ class ChatAPI {
     }
     
     const queryString = params.toString();
-    const endpoint = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `/conversations${queryString ? `?${queryString}` : ''}`;
 
     const result = await apiCall<{ success: boolean; data: Conversation[] }>(endpoint, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
 
   async getConversation(id: string, token?: string): Promise<Conversation> {
-    const result = await apiCall<{ success: boolean; data: Conversation }>(`/api/chat/conversations/${id}`, { method: 'GET' }, token);
+    const result = await apiCall<{ success: boolean; data: Conversation }>(`/conversations/${id}`, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
 
@@ -378,7 +378,7 @@ class ChatAPI {
       params.append('threadId', threadId);
     }
 
-    const endpoint = `/api/chat/conversations/${conversationId}/messages?${params.toString()}`;
+    const endpoint = `/conversations/${conversationId}/messages?${params.toString()}`;
     const result = await apiCall<{ success: boolean; data: Message[] }>(endpoint, { method: 'GET' }, token);
     return result.data || result; // Handle both { success, data } and direct response
   }
@@ -403,13 +403,13 @@ class ChatAPI {
     };
 
     console.log('Sending message request:', {
-      url: `/api/chat/conversations/${conversationId}/messages`,
+      url: `/conversations/${conversationId}/messages`,
       method: 'POST',
       headers,
       body: requestBody
     });
 
-    const response = await fetch(`/api/chat/conversations/${conversationId}/messages`, {
+    const response = await fetch(`/conversations/${conversationId}/messages`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
@@ -437,7 +437,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/messages/${messageId}`, {
+    const response = await fetch(`/messages/${messageId}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ content }),
@@ -458,7 +458,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/messages/${messageId}`, {
+    const response = await fetch(`/messages/${messageId}`, {
       method: 'DELETE',
       headers,
     });
@@ -477,7 +477,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/api/chat/conversations', {
+    const response = await fetch('/conversations', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -505,7 +505,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/conversations/${conversationId}/threads`, {
+    const response = await fetch(`/conversations/${conversationId}/threads`, {
       method: 'GET',
       headers,
     });
@@ -527,7 +527,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/conversations/${conversationId}/threads`, {
+    const response = await fetch(`/conversations/${conversationId}/threads`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -558,13 +558,13 @@ class ChatAPI {
 
     const requestBody = { emoji };
     console.log('Adding reaction request:', {
-      url: `/api/chat/messages/${messageId}/reactions`,
+      url: `/messages/${messageId}/reactions`,
       method: 'POST',
       headers,
       body: requestBody
     });
 
-    const response = await fetch(`/api/chat/messages/${messageId}/reactions`, {
+    const response = await fetch(`/messages/${messageId}/reactions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
@@ -589,7 +589,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/messages/${messageId}/reactions/${emoji}`, {
+    const response = await fetch(`/messages/${messageId}/reactions/${emoji}`, {
       method: 'DELETE',
       headers,
     });
@@ -606,7 +606,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/api/chat/messages/${messageId}/read`, {
+    const response = await fetch(`/messages/${messageId}/read`, {
       method: 'POST',
       headers,
     });

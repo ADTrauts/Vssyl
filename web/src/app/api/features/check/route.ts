@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to backend
-    const backendUrl = new URL(`${process.env.NEXT_PUBLIC_API_URL}/features/check`);
+    const backendUrl = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/features/check`);
     backendUrl.searchParams.set('feature', feature);
     if (businessId) {
       backendUrl.searchParams.set('businessId', businessId);

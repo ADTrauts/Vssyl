@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to backend
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/features/all`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/features/all`;
     
     const response = await fetch(backendUrl, {
       method: 'GET',
