@@ -160,3 +160,17 @@ playwright/.cache/
 
 # Prisma
 prisma/migrations/
+
+# Build cache files (don't upload these)
+.cache/
+.buildcache/
+node_modules/
+.pnpm-store/
+
+# Archive files (don't upload old configs)
+cloudbuild-archive/
+
+# Documentation (not needed for build)
+docs/
+memory-bank/
+BUILD_CACHING_GUIDE.md

@@ -1,37 +1,39 @@
-# Multi-stage build for production web app
+# Multi-stage build for production web app with optimized caching
 FROM node:20-alpine AS base
 
-# Install pnpm
+# Install pnpm (this layer rarely changes)
 RUN npm install -g pnpm
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (these change less frequently)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared/package.json ./shared/
 COPY web/package.json ./web/
 
-# Install dependencies (including Prisma for generation)
+# Install dependencies (this layer is cached unless package files change)
 RUN pnpm install --frozen-lockfile
 
-# Build shared package
-COPY shared/ ./shared/
-RUN cd shared && pnpm build
-
-# Copy Prisma schema
+# Copy Prisma schema (changes less frequently than source code)
 COPY prisma/ ./prisma/
 
-# Generate Prisma client first
+# Generate Prisma client (cached unless schema changes)
 RUN npx prisma generate
 
-# Copy TypeScript config
+# Copy TypeScript config (rarely changes)
 COPY tsconfig.json ./
 
-# Copy web source
+# Copy shared package source (changes less frequently than web)
+COPY shared/ ./shared/
+
+# Build shared package (cached unless shared code changes)
+RUN cd shared && pnpm build
+
+# Copy web source (changes most frequently - this comes last)
 COPY web/ ./web/
 
-# Build web application
+# Build web application (this layer rebuilds when web code changes)
 RUN cd web && pnpm build
 
 # Production stage

@@ -1,40 +1,37 @@
 #!/bin/bash
 
-# Setup build cache for faster Cloud Build deployments
-# This script creates a Cloud Storage bucket for caching dependencies
+# Setup Cloud Storage bucket for build caching
+# This script creates the necessary Cloud Storage bucket and sets up permissions
 
 set -e
 
-PROJECT_ID=${1:-$(gcloud config get-value project)}
-
+# Get project ID
+PROJECT_ID=$(gcloud config get-value project)
 if [ -z "$PROJECT_ID" ]; then
-    echo "❌ Error: No project ID provided and no default project set"
-    echo "Usage: $0 [PROJECT_ID]"
-    echo "Or set default project: gcloud config set project YOUR_PROJECT_ID"
+    echo "❌ No project ID found. Please run 'gcloud config set project YOUR_PROJECT_ID'"
     exit 1
 fi
 
-echo "🚀 Setting up build cache for project: $PROJECT_ID"
-
-# Create the build cache bucket
 BUCKET_NAME="${PROJECT_ID}-build-cache"
 REGION="us-central1"
 
-echo "📦 Creating build cache bucket: $BUCKET_NAME"
+echo "🚀 Setting up build cache for project: $PROJECT_ID"
+echo "📦 Bucket name: $BUCKET_NAME"
+echo "🌍 Region: $REGION"
 
-# Check if bucket exists
-if gsutil ls -b gs://$BUCKET_NAME >/dev/null 2>&1; then
-    echo "✅ Build cache bucket already exists: gs://$BUCKET_NAME"
+# Create the bucket if it doesn't exist
+echo "🔍 Checking if bucket exists..."
+if gsutil ls gs://$BUCKET_NAME >/dev/null 2>&1; then
+    echo "✅ Bucket $BUCKET_NAME already exists"
 else
-    # Create bucket
+    echo "📦 Creating bucket $BUCKET_NAME..."
     gsutil mb -l $REGION gs://$BUCKET_NAME
-    echo "✅ Created build cache bucket: gs://$BUCKET_NAME"
+    echo "✅ Bucket created successfully"
 fi
 
-# Set bucket lifecycle policy to clean up old caches
-echo "🗑️  Setting up cache cleanup policy..."
-
-cat > /tmp/cache-lifecycle.json << EOF
+# Set bucket lifecycle policy to manage costs
+echo "⚙️ Setting up lifecycle policy..."
+cat > /tmp/lifecycle.json << EOF
 {
   "rule": [
     {
@@ -42,41 +39,36 @@ cat > /tmp/cache-lifecycle.json << EOF
         "type": "Delete"
       },
       "condition": {
-        "age": 7
+        "age": 30
       }
     }
   ]
 }
 EOF
 
-gsutil lifecycle set /tmp/cache-lifecycle.json gs://$BUCKET_NAME
-rm /tmp/cache-lifecycle.json
+gsutil lifecycle set /tmp/lifecycle.json gs://$BUCKET_NAME
+rm /tmp/lifecycle.json
+echo "✅ Lifecycle policy set (files older than 30 days will be deleted)"
 
-echo "✅ Cache cleanup policy set (7 days retention)"
+# Set appropriate permissions
+echo "🔐 Setting up permissions..."
+gsutil iam ch serviceAccount:$PROJECT_ID@cloudbuild.gserviceaccount.com:objectAdmin gs://$BUCKET_NAME
+echo "✅ Permissions set for Cloud Build service account"
 
-# Set up Cloud Build service account permissions
-echo "🔐 Setting up Cloud Build permissions..."
-
-# Get the Cloud Build service account
-BUILD_SA="${PROJECT_ID}@cloudbuild.gserviceaccount.com"
-
-# Grant storage admin role for cache operations
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-    --member="serviceAccount:$BUILD_SA" \
-    --role="roles/storage.admin" \
-    --quiet
-
-echo "✅ Cloud Build service account granted storage permissions"
+# Create initial cache structure
+echo "📁 Creating initial cache structure..."
+gsutil mkdir -p gs://$BUCKET_NAME/pnpm-cache
+gsutil mkdir -p gs://$BUCKET_NAME/node_modules
+echo "✅ Cache structure created"
 
 echo ""
 echo "🎉 Build cache setup complete!"
 echo ""
-echo "📋 Next steps:"
-echo "1. Update your Cloud Build trigger to use cloudbuild-optimized.yaml"
-echo "2. First build will be slow (no cache), subsequent builds will be much faster"
-echo "3. Dependencies will be cached for 7 days"
+echo "📋 Summary:"
+echo "   • Bucket: gs://$BUCKET_NAME"
+echo "   • Region: $REGION"
+echo "   • Lifecycle: 30 days"
+echo "   • Permissions: Cloud Build service account has objectAdmin access"
 echo ""
-echo "💡 Expected improvements:"
-echo "   - First build: ~15 minutes (same as before)"
-echo "   - Subsequent builds: ~3-5 minutes (70% faster!)"
-echo "   - Only changed layers will rebuild"
+echo "🚀 Your next build will start caching dependencies!"
+echo "   Subsequent builds should be significantly faster."
