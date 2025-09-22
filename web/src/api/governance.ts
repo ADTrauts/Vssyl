@@ -1,6 +1,6 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
 // Types
 export interface GovernancePolicyRule {

@@ -112,7 +112,7 @@ export const calendarAPI = {
     });
   },
   deleteEvent: async (id: string, opts?: { editMode?: 'THIS'|'SERIES'; occurrenceStartAt?: string }) => {
-    const url = new URL(`/api/calendar/events/${id}`, process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api');
+    const url = new URL(`/api/calendar/events/${id}`, process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '');
     if (opts?.editMode) url.searchParams.set('editMode', opts.editMode);
     if (opts?.occurrenceStartAt) url.searchParams.set('occurrenceStartAt', opts.occurrenceStartAt);
     // Use path+search for proxy path
@@ -151,7 +151,7 @@ export const calendarAPI = {
       throw new Error('No authentication token available');
     }
     
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api'}/calendar/events/export?${query.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || ''}/api/calendar/events/export?${query.toString()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {

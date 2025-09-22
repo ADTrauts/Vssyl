@@ -1,6 +1,6 @@
 import { getSession, signOut } from 'next-auth/react';
 
-// Use relative URLs to go through Next.js rewrites instead of direct backend calls
+// Use relative URLs to go through Next.js API proxy instead of direct backend calls
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
 export interface ApiError extends Error {
