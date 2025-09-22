@@ -15,7 +15,8 @@ interface DecodedToken {
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-        const response = await fetch('/api/auth/refresh', {
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken: token.refreshToken }),
@@ -58,7 +59,8 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const response = await fetch('/api/auth/login', {
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
+          const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

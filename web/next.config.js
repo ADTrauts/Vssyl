@@ -113,18 +113,10 @@ const nextConfig = {
         source: '/socket.io/:path*',
         destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/socket.io/:path*`,
       },
-      // Proxy specific auth endpoints to backend (register, login, etc.)
+      // Proxy specific auth endpoints to backend (register, etc.)
       {
         source: '/api/auth/register',
         destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/register`,
-      },
-      {
-        source: '/api/auth/login',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/login`,
-      },
-      {
-        source: '/api/auth/refresh',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/refresh`,
       },
       // Proxy all other API routes to backend
       {
