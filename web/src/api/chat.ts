@@ -53,20 +53,20 @@ export const getConversations = async (token: string, dashboardId?: string): Pro
   }
   
   const queryString = params.toString();
-  const endpoint = `/conversations${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
   
   return apiCall(endpoint, { method: 'GET' }, token);
 };
 
 export const getConversation = async (id: string, token: string): Promise<{ success: boolean; data: Conversation }> => {
-  return apiCall(`/conversations/${id}`, { method: 'GET' }, token);
+  return apiCall(`/api/chat/conversations/${id}`, { method: 'GET' }, token);
 };
 
 export const createConversation = async (
   conversationData: CreateConversationRequest, 
   token: string
 ): Promise<{ success: boolean; data: Conversation }> => {
-  return apiCall('/conversations', {
+  return apiCall('/api/chat/conversations', {
     method: 'POST',
     body: JSON.stringify(conversationData),
   }, token);
@@ -87,7 +87,7 @@ export const getMessages = async (
   if (options.threadId) params.append('threadId', options.threadId);
 
   const queryString = params.toString();
-  const endpoint = `/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/api/chat/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
   
   return apiCall(endpoint, { method: 'GET' }, token);
 };
@@ -97,7 +97,7 @@ export const createMessage = async (
   messageData: CreateMessageRequest, 
   token: string
 ): Promise<{ success: boolean; data: Message }> => {
-  return apiCall(`/conversations/${conversationId}/messages`, {
+  return apiCall(`/api/chat/conversations/${conversationId}/messages`, {
     method: 'POST',
     body: JSON.stringify(messageData),
   }, token);
@@ -116,7 +116,7 @@ export const addReaction = async (
   reactionData: AddReactionRequest, 
   token: string
 ): Promise<{ success: boolean; data: ReactionResponse; action: 'added' | 'removed' }> => {
-  return apiCall(`/messages/${messageId}/reactions`, {
+  return apiCall(`/api/chat/messages/${messageId}/reactions`, {
     method: 'POST',
     body: JSON.stringify(reactionData),
   }, token);
@@ -126,7 +126,7 @@ export const markAsRead = async (
   messageId: string, 
   token: string
 ): Promise<{ success: boolean; data: { messageId: string; readAt: string } }> => {
-  return apiCall(`/messages/${messageId}/read`, {
+  return apiCall(`/api/chat/messages/${messageId}/read`, {
     method: 'POST',
   }, token);
 };
@@ -135,7 +135,7 @@ export const getThreads = async (
   conversationId: string, 
   token: string
 ): Promise<{ success: boolean; data: Thread[] }> => {
-  return apiCall(`/conversations/${conversationId}/threads`, { method: 'GET' }, token);
+  return apiCall(`/api/chat/conversations/${conversationId}/threads`, { method: 'GET' }, token);
 };
 
 export const createThread = async (
@@ -143,7 +143,7 @@ export const createThread = async (
   threadData: CreateThreadRequest, 
   token: string
 ): Promise<{ success: boolean; data: Thread }> => {
-  return apiCall(`/conversations/${conversationId}/threads`, {
+  return apiCall(`/api/chat/conversations/${conversationId}/threads`, {
     method: 'POST',
     body: JSON.stringify(threadData),
   }, token);
