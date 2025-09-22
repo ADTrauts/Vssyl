@@ -118,15 +118,8 @@ const nextConfig = {
         source: '/api/auth/register',
         destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/register`,
       },
-      // Proxy all other API routes to backend
-      {
-        source: '/api/((?!auth).*)/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/$1/:path*`,
-      },
-      {
-        source: '/api/((?!auth).*)$',
-        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/$1`,
-      },
+      // Note: All other API routes are handled by the API proxy route handler at /api/[...slug]/route.ts
+      // This avoids conflicts between Next.js rewrites and the API proxy route handler
     ];
   },
   // Improve build output for Cloud Run
