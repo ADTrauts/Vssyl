@@ -45,7 +45,7 @@ steps:
         npm install -g pnpm
         
         # Set pnpm cache directory
-        export PATH="/workspace/.cache/pnpm:$PATH"
+        export PATH="/workspace/.cache/pnpm:$$PATH"
         
         # Restore node_modules if cached
         if [ -d "/workspace/.cache/node_modules" ] && [ "$(ls -A /workspace/.cache/node_modules)" ]; then
