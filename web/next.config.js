@@ -122,6 +122,10 @@ const nextConfig = {
         source: '/api/auth/login',
         destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/login`,
       },
+      {
+        source: '/api/auth/refresh',
+        destination: `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/auth/refresh`,
+      },
       // Proxy all other API routes to backend
       {
         source: '/api/((?!auth).*)/:path*',
