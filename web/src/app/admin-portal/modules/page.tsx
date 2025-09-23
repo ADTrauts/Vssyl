@@ -118,30 +118,6 @@ export default function AdminModulesPage() {
       console.error('Error loading module data:', err);
       setError('Failed to load module data. Please try again.');
       
-      // Set empty data instead of mock data - show real error state
-      setSubmissions([]);
-      setStats(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([]);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // Load submissions and stats
-      const [submissionsRes, statsRes] = await Promise.all([
-        adminApiService.getModuleSubmissions(filters),
-        adminApiService.getModuleStats()
-      ]);
-
-      setSubmissions((submissionsRes as any)?.data || []);
-      setStats((statsRes as any)?.data || null);
-    } catch (err) {
-      console.error('Error loading module data:', err);
-      setError('Failed to load module data. Please try again.');
-      
       // Fallback to mock data
       setSubmissions([
         {

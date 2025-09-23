@@ -97,8 +97,8 @@ export default function AdminDashboard() {
       // Load real system alerts from API
       try {
         const alertsResponse = await adminApiService.getSystemHealth();
-        if (alertsResponse.data?.alerts) {
-          setAlerts(alertsResponse.data.alerts);
+        if (alertsResponse.data && typeof alertsResponse.data === 'object' && 'alerts' in alertsResponse.data) {
+          setAlerts((alertsResponse.data as any).alerts || []);
         } else {
           // No alerts is good - system is healthy
           setAlerts([]);
