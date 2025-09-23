@@ -85,6 +85,48 @@ router.post('/create-andrew-admin', async (req: Request, res: Response) => {
   }
 });
 
+// Update admin user password
+router.post('/update-andrew-password', async (req: Request, res: Response) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password is required'
+      });
+    }
+
+    console.log('🔐 Updating Andrew admin password...');
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const updatedUser = await prisma.user.update({
+      where: { email: 'Andrew.Trautman@Vssyl.con' },
+      data: { password: hashedPassword },
+      select: { id: true, email: true, name: true, role: true }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Admin password updated successfully',
+      user: {
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating admin password:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update admin password',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Get current admin users
 router.get('/admin-users', async (req: Request, res: Response) => {
   try {
