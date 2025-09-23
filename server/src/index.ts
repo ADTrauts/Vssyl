@@ -79,6 +79,7 @@ import businessAIRouter from './routes/businessAI';
 import adminBusinessAIRouter from './routes/adminBusinessAI';
 import aiContextDebugRouter from './routes/ai-context-debug';
 import profilePhotosRouter from './routes/profilePhotos';
+import adminSetupRouter from './routes/admin-setup';
 import { authenticateJWT } from './middleware/auth';
 
 
@@ -474,6 +475,7 @@ app.use('/api/business-ai', businessAIRouter);
 app.use('/api/admin/business-ai', adminBusinessAIRouter);
 app.use('/api/ai-context-debug', aiContextDebugRouter);
 app.use('/api/profile-photos', profilePhotosRouter);
+app.use('/api/admin-setup', adminSetupRouter);
 
 // Schedule cleanup jobs
 startCleanupJob();

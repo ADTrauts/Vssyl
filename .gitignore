@@ -20,3 +20,4 @@ playwright-report/
 .env.local
 .env.production
 .env.development
+vssyl-storage-key.json
