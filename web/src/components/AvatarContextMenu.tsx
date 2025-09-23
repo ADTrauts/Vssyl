@@ -30,6 +30,8 @@ import DeveloperPortal from './DeveloperPortal';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../hooks/useTheme';
+import { getProfilePhotos } from '../api/profilePhotos';
+import { ProfilePhotos, UserProfile } from '../api/profilePhotos';
 
 interface AvatarContextMenuProps {
   className?: string;
@@ -46,10 +48,25 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
   const triggerRef = useRef<HTMLDivElement>(null);
   const [hydrated, setHydrated] = useState(false);
   const { theme, isDark } = useTheme();
+  const [profilePhotos, setProfilePhotos] = useState<ProfilePhotos | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setHydrated(true);
-  }, []);
+    if (session?.user) {
+      loadProfilePhotos();
+    }
+  }, [session]);
+
+  const loadProfilePhotos = async () => {
+    try {
+      const response = await getProfilePhotos();
+      setProfilePhotos(response.photos);
+      setUserProfile(response.user);
+    } catch (err) {
+      console.error('Error loading profile photos:', err);
+    }
+  };
 
   // Don't render while loading, not mounted, or not hydrated
   if (!hydrated || !mounted || status === "loading") return null;
@@ -137,7 +154,7 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
       icon: <User className="w-4 h-4" />,
       label: 'Profile Settings',
       onClick: () => {
-        setShowSettings(true);
+        router.push('/profile/settings');
         handleClose();
       },
     },
@@ -241,6 +258,9 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
             alt={session.user.name || session.user.email || ''}
             nameOrEmail={session.user.name ? session.user.name : (session.user.email ? session.user.email : '')}
             size={32}
+            context="personal"
+            personalPhoto={profilePhotos?.personal}
+            businessPhoto={profilePhotos?.business}
           />
           {/* Online status indicator for chat context */}
           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />

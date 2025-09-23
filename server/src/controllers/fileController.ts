@@ -5,6 +5,7 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import { getOrCreateChatFilesFolder } from '../services/driveService';
 import { NotificationService } from '../services/notificationService';
+import { storageService } from '../services/storageService';
 
 const prisma = new PrismaClient();
 
@@ -12,10 +13,18 @@ interface RequestWithFile extends Request {
   file?: Express.Multer.File;
 }
 
-// TODO: This Multer setup is designed to be easily swapped for Google Cloud Storage, S3, or other cloud providers.
-// When ready, replace the storage engine and update the upload/download logic accordingly.
+// Configure multer based on storage provider
 const upload = multer({
-  dest: path.join(__dirname, '../../uploads'),
+  storage: storageService.getProvider() === 'gcs' ? multer.memoryStorage() : multer.diskStorage({
+    destination: (req, file, cb) => {
+      const uploadDir = process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads');
+      cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+  }),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     // Accept all files for now, add type checks as needed
@@ -112,19 +121,17 @@ export async function listFiles(req: Request, res: Response) {
 }
 
 export async function uploadFile(req: RequestWithFile, res: Response) {
-  // TODO: When migrating to Google Cloud Storage or S3, upload the file to the cloud here
-  // and store the resulting URL in the database instead of a local path.
-
-  
   if (!hasUserId(req.user)) {
     res.sendStatus(401);
     return;
   }
+  
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     if (!req.file.originalname || req.file.originalname.trim() === '') {
       return res.status(400).json({ message: 'File name is required' });
     }
+    
     const userId = (req.user as any).id || (req.user as any).sub;
     let { folderId, chat, dashboardId } = req.body;
     
@@ -133,24 +140,37 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       const chatFolder = await getOrCreateChatFilesFolder(userId);
       folderId = chatFolder.id;
     }
-    const { originalname, mimetype, size, filename } = req.file;
+    
+    const { originalname, mimetype, size } = req.file;
+    
+    // Generate unique file path
+    const fileExtension = path.extname(originalname);
+    const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
+    
+    // Upload file using storage service
+    const uploadResult = await storageService.uploadFile(req.file, uniqueFilename, {
+      makePublic: true,
+      metadata: {
+        userId,
+        originalName: originalname,
+        folderId: folderId || '',
+        dashboardId: dashboardId || '',
+      },
+    });
+    
+    // Create file record in database
     const fileRecord = await prisma.file.create({
       data: {
         userId,
         name: originalname,
         type: mimetype,
         size,
-        url: `/uploads/${filename}`,
+        url: uploadResult.url,
+        path: uploadResult.path,
         folderId: folderId || null,
         dashboardId: dashboardId || null,
       },
     });
-
-    // Return the file with a full URL for the frontend
-    const fileWithFullUrl = {
-      ...fileRecord,
-      url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/uploads/${filename}`
-    };
 
     // Create activity record for file upload
     await prisma.activity.create({
@@ -167,12 +187,13 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       },
     });
 
-    res.status(201).json({ file: fileWithFullUrl });
+    res.status(201).json({ file: fileRecord });
   } catch (err) {
     console.error('Error in uploadFile:', err);
     res.status(500).json({ message: 'Failed to upload file' });
   }
 }
+
 
 export async function getItemActivity(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
@@ -588,12 +609,37 @@ export async function hardDeleteFile(req: Request, res: Response) {
   try {
     const userId = (req.user as any).id || (req.user as any).sub;
     const { id } = req.params;
+    
+    // Get file details before deletion
+    const fileToDelete = await prisma.file.findFirst({
+      where: { id, userId, trashedAt: { not: null } },
+    });
+    
+    if (!fileToDelete) {
+      return res.status(404).json({ message: 'File not found or not trashed' });
+    }
+    
+    // Delete file from storage if path exists
+    if (fileToDelete.path) {
+      const deleteResult = await storageService.deleteFile(fileToDelete.path);
+      if (!deleteResult.success) {
+        console.warn(`Failed to delete file from storage: ${deleteResult.error}`);
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+    
+    // Delete from database
     const file = await prisma.file.deleteMany({
       where: { id, userId, trashedAt: { not: null } },
     });
-    if (file.count === 0) return res.status(404).json({ message: 'File not found or not trashed' });
+    
+    if (file.count === 0) {
+      return res.status(404).json({ message: 'File not found or not trashed' });
+    }
+    
     res.json({ deleted: true });
   } catch (err) {
+    console.error('Error in hardDeleteFile:', err);
     res.status(500).json({ message: 'Failed to permanently delete file' });
   }
 } 

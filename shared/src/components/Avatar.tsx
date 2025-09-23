@@ -28,9 +28,22 @@ type AvatarProps = {
   size?: number;
   nameOrEmail?: string; // for fallback initials
   className?: string;
+  context?: 'personal' | 'business'; // Context for photo selection
+  personalPhoto?: string | null;
+  businessPhoto?: string | null;
 };
 
-export const Avatar: React.FC<AvatarProps & { forceTheme?: 'light' | 'dark' }> = ({ src, alt = '', size = 40, nameOrEmail, className, forceTheme }) => {
+export const Avatar: React.FC<AvatarProps & { forceTheme?: 'light' | 'dark' }> = ({ 
+  src, 
+  alt = '', 
+  size = 40, 
+  nameOrEmail, 
+  className, 
+  forceTheme,
+  context = 'personal',
+  personalPhoto,
+  businessPhoto
+}) => {
   const initials = getInitials(nameOrEmail || alt);
   const fallbackRef = useRef<HTMLDivElement>(null);
   const spanRef = useRef<HTMLSpanElement>(null);
@@ -42,6 +55,32 @@ export const Avatar: React.FC<AvatarProps & { forceTheme?: 'light' | 'dark' }> =
     }
     return false;
   });
+
+  // Determine which photo to use based on context
+  const getContextualPhoto = () => {
+    if (src) return src; // Explicit src takes precedence
+    
+    if (context === 'business' && businessPhoto) {
+      return businessPhoto;
+    }
+    
+    if (context === 'personal' && personalPhoto) {
+      return personalPhoto;
+    }
+    
+    // Fallback to the other context if current context doesn't have a photo
+    if (context === 'business' && personalPhoto) {
+      return personalPhoto;
+    }
+    
+    if (context === 'personal' && businessPhoto) {
+      return businessPhoto;
+    }
+    
+    return null;
+  };
+
+  const photoSrc = getContextualPhoto();
 
   useEffect(() => {
     if (forceTheme) {
@@ -59,10 +98,10 @@ export const Avatar: React.FC<AvatarProps & { forceTheme?: 'light' | 'dark' }> =
   const fallbackText = isDark ? '#f3f4f6' : '#111827'; // Tailwind text-gray-100 or text-gray-900
   const borderColor = isDark ? '#374151' : '#e5e7eb'; // Tailwind border-gray-700 or border-gray-200
 
-  if (src && !imgError) {
+  if (photoSrc && !imgError) {
     return (
       <img
-        src={src}
+        src={photoSrc}
         alt={alt}
         width={size}
         height={size}

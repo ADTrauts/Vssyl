@@ -10,6 +10,8 @@ model User {
   role            Role     @default(USER)
   emailVerified   DateTime?
   image           String?
+  personalPhoto   String?  // Personal profile photo
+  businessPhoto   String?  // Professional/business profile photo
   stripeCustomerId String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

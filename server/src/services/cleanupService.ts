@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import cron from 'node-cron';
 import { File, Folder } from '@prisma/client';
+import { storageService } from './storageService';
 
 /**
  * Finds and permanently deletes files and folders that have been in the trash for more than 30 days.
@@ -33,8 +34,20 @@ export const deleteOldTrashedItems = async () => {
     });
 
     if (oldFiles.length > 0) {
-      // TODO: In a real-world scenario, you would also delete the actual files from storage (e.g., S3, GCS) here.
-      // For now, we are just deleting the database records.
+      // Delete files from storage
+      let storageDeletions = 0;
+      for (const file of oldFiles) {
+        if (file.path) {
+          const deleteResult = await storageService.deleteFile(file.path);
+          if (deleteResult.success) {
+            storageDeletions++;
+          } else {
+            console.warn(`Failed to delete file from storage: ${file.path} - ${deleteResult.error}`);
+          }
+        }
+      }
+      
+      // Delete database records
       const fileIdsToDelete = oldFiles.map((f) => f.id);
       await prisma.file.deleteMany({
         where: {
@@ -43,7 +56,7 @@ export const deleteOldTrashedItems = async () => {
           },
         },
       });
-      console.log(`Successfully deleted ${fileIdsToDelete.length} old file(s) from the trash.`);
+      console.log(`Successfully deleted ${fileIdsToDelete.length} old file(s) from the trash (${storageDeletions} from storage).`);
     }
 
     if (oldFolders.length > 0) {
@@ -80,7 +93,9 @@ export const scheduleTrashCleanup = () => {
 
 export const startCleanupJob = () => {
   // Schedule to run every day at midnight
-  cron.schedule('0 0 * * *', async () => {
-    // ... existing code ...
+  cron.schedule('0 0 * * *', deleteOldTrashedItems, {
+    timezone: "America/New_York"
   });
+  
+  console.log('✅ Trash cleanup job scheduled to run daily at midnight');
 }; 

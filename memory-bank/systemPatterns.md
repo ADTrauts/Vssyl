@@ -18,6 +18,8 @@ Update Rules for systemPatterns.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2025-09-22: Added Google Cloud Storage Integration patterns (storage abstraction layer, profile photo upload system, trash integration, uniform bucket access handling, Application Default Credentials, context-aware avatars).**
+- **2025-01-22: Added API Routing & Environment Variable Patterns (Next.js API route configuration, environment variable hierarchy, chat API path handling, browser cache management, WebSocket authentication patterns).**
 - **2025-09-19: Added Google Cloud Production Issues Resolution patterns (build system fixes, localhost URL replacement, environment variable standardization, database connection fixes, load balancer cleanup, architecture simplification).**
 - **2025-01: Added Business Admin Dashboard & AI Integration patterns (central admin hub, AI assistant UX, navigation flow, org chart management, business branding, module management, user flow integration).**
 - **2025-01: Added Theme System & UI Consistency patterns (comprehensive dark mode support, avatar dropdown fixes, real-time theme updates, global header theming, custom hooks for theme management).**
@@ -45,6 +47,437 @@ Update Rules for systemPatterns.md
 ---
 
 # System Architecture and Patterns
+
+## [2025-09-22] Google Cloud Storage Integration Patterns ✅
+
+### **Storage Abstraction Layer Pattern**
+**Purpose**: Unified interface for multiple storage providers (local filesystem and Google Cloud Storage)
+**Implementation**: `server/src/services/storageService.ts`
+
+```typescript
+// Storage service with dynamic provider switching
+class StorageService {
+  private provider: StorageProviderType;
+  private gcsBucket?: any;
+  
+  constructor() {
+    this.provider = (process.env.STORAGE_PROVIDER as StorageProviderType) || 'local';
+    this.initializeStorage();
+  }
+  
+  public async uploadFile(
+    file: Express.Multer.File,
+    destinationPath: string,
+    options: UploadOptions = {}
+  ): Promise<UploadResult> {
+    if (this.provider === 'gcs' && this.gcsBucket) {
+      return this.uploadToGCS(file, destinationPath, options);
+    } else {
+      return this.uploadToLocal(file, destinationPath);
+    }
+  }
+}
+```
+
+**Key Features**:
+- **Dynamic Provider Switching**: Environment variable controls storage provider
+- **Unified Interface**: Same API for local and cloud storage
+- **Error Handling**: Graceful fallback and proper error management
+- **Uniform Bucket Access**: Handles Google Cloud Storage uniform access patterns
+
+### **Profile Photo Upload System Pattern**
+**Purpose**: Context-aware photo management with personal and business photos
+**Implementation**: `web/src/components/PhotoUpload.tsx`, `server/src/controllers/profilePhotoController.ts`
+
+```typescript
+// Context-aware photo upload component
+interface PhotoUploadProps {
+  currentPhoto?: string | null;
+  photoType: 'personal' | 'business';
+  onUpload: (file: File) => Promise<void>;
+  onRemove: () => Promise<void>;
+}
+
+// Database schema with separate photo fields
+model User {
+  id            String   @id @default(cuid())
+  personalPhoto String?  // Personal profile photo
+  businessPhoto String?  // Professional/business profile photo
+  image         String?  // Legacy/default photo
+}
+```
+
+**Key Features**:
+- **Context Awareness**: Different photos for personal vs business contexts
+- **Drag & Drop**: Intuitive file upload interface
+- **Validation**: File type and size validation
+- **Error Handling**: User-friendly error messages and retry mechanisms
+
+### **Google Cloud Storage Configuration Pattern**
+**Purpose**: Secure cloud storage setup with Application Default Credentials
+**Implementation**: Environment variables and service account configuration
+
+```bash
+# Environment Configuration
+STORAGE_PROVIDER=gcs
+GOOGLE_CLOUD_PROJECT_ID=vssyl-472202
+GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202
+# No key file needed with Application Default Credentials
+```
+
+**Key Features**:
+- **Application Default Credentials**: Secure authentication without key files
+- **Service Account Permissions**: Storage Admin role for full access
+- **Uniform Bucket Access**: Simplified permission management
+- **Environment-based Configuration**: Easy switching between local and cloud
+
+### **Trash Integration Pattern**
+**Purpose**: Cloud storage cleanup integrated with trash functionality
+**Implementation**: `server/src/services/cleanupService.ts`
+
+```typescript
+// Trash cleanup with storage integration
+export async function deleteOldTrashedItems() {
+  const oldFiles = await prisma.file.findMany({
+    where: {
+      trashedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    }
+  });
+
+  for (const file of oldFiles) {
+    if (file.path) {
+      await storageService.deleteFile(file.path);
+    }
+    await prisma.file.delete({ where: { id: file.id } });
+  }
+}
+```
+
+**Key Features**:
+- **Scheduled Cleanup**: Daily cleanup job for old trashed files
+- **Storage Deletion**: Files removed from cloud storage when permanently deleted
+- **Database Cleanup**: Trash records removed from database
+- **Error Handling**: Graceful handling of storage deletion failures
+
+### **Context-Aware Avatar Pattern**
+**Purpose**: Different avatar images based on context (personal vs business)
+**Implementation**: `shared/src/components/Avatar.tsx`
+
+```typescript
+// Context-aware avatar component
+interface AvatarProps {
+  context?: 'personal' | 'business';
+  personalPhoto?: string | null;
+  businessPhoto?: string | null;
+  image?: string | null;
+}
+
+const getPhotoSrc = (context: string, personalPhoto?: string | null, businessPhoto?: string | null, image?: string | null) => {
+  if (context === 'personal' && personalPhoto) return personalPhoto;
+  if (context === 'business' && businessPhoto) return businessPhoto;
+  return image || '/default-avatar.png';
+};
+```
+
+**Key Features**:
+- **Context Switching**: Different photos for different contexts
+- **Fallback Hierarchy**: Personal → Business → Default → Placeholder
+- **Consistent Interface**: Same component for all avatar use cases
+- **Type Safety**: Proper TypeScript interfaces for all props
+
+### **Uniform Bucket Access Handling Pattern**
+**Purpose**: Handle Google Cloud Storage uniform bucket-level access restrictions
+**Implementation**: `server/src/services/storageService.ts`
+
+```typescript
+// Handle uniform bucket access restrictions
+if (options.makePublic) {
+  try {
+    await gcsFile.makePublic();
+  } catch (error: any) {
+    if (error.message.includes('uniform bucket-level access')) {
+      console.log('ℹ️  Bucket has uniform access - objects inherit bucket permissions');
+    } else {
+      throw error;
+    }
+  }
+}
+```
+
+**Key Features**:
+- **Error Handling**: Graceful handling of uniform access restrictions
+- **Permission Inheritance**: Objects inherit bucket-level permissions
+- **Logging**: Informative messages about permission behavior
+- **Fallback Behavior**: Continue operation even when individual object permissions fail
+
+### **File Upload API Pattern**
+**Purpose**: RESTful API for file upload operations with proper validation
+**Implementation**: `server/src/controllers/profilePhotoController.ts`
+
+```typescript
+// Profile photo upload endpoint
+export const uploadProfilePhoto = async (req: Request, res: Response) => {
+  const { photoType } = req.body;
+  const file = req.file;
+  
+  if (!file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+  
+  const destinationPath = `profile-photos/${userId}-${photoType}-${timestamp}.${ext}`;
+  const uploadResult = await storageService.uploadFile(file, destinationPath, { makePublic: true });
+  
+  // Update user record with new photo URL
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { [photoType === 'personal' ? 'personalPhoto' : 'businessPhoto']: uploadResult.url }
+  });
+};
+```
+
+**Key Features**:
+- **File Validation**: Type and size validation before upload
+- **Unique Naming**: Timestamp-based unique file names
+- **Database Updates**: User record updated with photo URL
+- **Error Handling**: Comprehensive error responses
+- **Type Safety**: Proper TypeScript interfaces for all operations
+
+### **Environment Variable Management Pattern**
+**Purpose**: Consistent environment variable usage across storage operations
+**Implementation**: `.env` configuration and service initialization
+
+```typescript
+// Environment variable hierarchy
+const config = {
+  provider: process.env.STORAGE_PROVIDER || 'local',
+  gcs: {
+    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || '',
+    bucketName: process.env.GOOGLE_CLOUD_STORAGE_BUCKET || 'vssyl-storage',
+    keyFilename: process.env.GOOGLE_CLOUD_KEY_FILE // Optional with ADC
+  },
+  local: {
+    uploadDir: process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads')
+  }
+};
+```
+
+**Key Features**:
+- **Fallback Values**: Sensible defaults for all configuration
+- **Provider Switching**: Easy switching between storage providers
+- **Security**: No hardcoded credentials or sensitive information
+- **Documentation**: Clear setup instructions in `GOOGLE_CLOUD_SETUP.md`
+
+## [2025-01-22] API Routing & Environment Variable Patterns ✅
+
+### **Next.js API Route Configuration Pattern**
+**Problem**: Inconsistent environment variable usage across Next.js API routes causing 404 errors
+**Solution**: Standardized environment variable hierarchy with proper fallbacks
+
+```typescript
+// ✅ CORRECT: Use NEXT_PUBLIC_API_BASE_URL with fallback
+const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/features/all`;
+
+// ❌ INCORRECT: Using undefined NEXT_PUBLIC_API_URL
+const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/features/all`;
+```
+
+**Pattern Rules**:
+1. **Primary**: Use `NEXT_PUBLIC_API_BASE_URL` for all API routes
+2. **Fallback**: Always provide production URL fallback
+3. **Consistency**: Use same pattern across all API route files
+4. **Testing**: Verify endpoints return auth errors, not 404s
+
+### **Chat API Path Handling Pattern**
+**Problem**: Double path issues in chat API (`/api/chat/api/chat/conversations`)
+**Solution**: Remove redundant prefixes from endpoint calls
+
+```typescript
+// ✅ CORRECT: Remove /api/chat prefix from endpoint calls
+const endpoint = `/conversations${queryString ? `?${queryString}` : ''}`;
+return apiCall(endpoint, { method: 'GET' }, token);
+
+// ❌ INCORRECT: Double prefix creates /api/chat/api/chat/conversations
+const endpoint = `/api/chat/conversations${queryString ? `?${queryString}` : ''}`;
+return apiCall(endpoint, { method: 'GET' }, token);
+```
+
+**Pattern Rules**:
+1. **Single Prefix**: `apiCall` function already adds `/api/chat` prefix
+2. **Endpoint Calls**: Pass relative paths without `/api/chat` prefix
+3. **Consistency**: Apply same pattern to all chat API functions
+4. **Testing**: Verify paths resolve to single `/api/chat/conversations`
+
+### **Environment Variable Hierarchy Pattern**
+**Problem**: Mixed usage of different environment variable names
+**Solution**: Establish clear hierarchy with consistent fallbacks
+
+```typescript
+// ✅ STANDARDIZED HIERARCHY
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                    process.env.NEXT_PUBLIC_API_URL || 
+                    'https://vssyl-server-235369681725.us-central1.run.app';
+
+// WebSocket Configuration
+const baseUrl = process.env.NEXT_PUBLIC_WS_URL || 
+                process.env.NEXT_PUBLIC_API_BASE_URL || 
+                process.env.NEXT_PUBLIC_API_URL || 
+                'https://vssyl-server-235369681725.us-central1.run.app';
+```
+
+**Hierarchy Order**:
+1. `NEXT_PUBLIC_WS_URL` (WebSocket specific)
+2. `NEXT_PUBLIC_API_BASE_URL` (Primary API URL)
+3. `NEXT_PUBLIC_API_URL` (Legacy fallback)
+4. Production URL (Final fallback)
+
+### **Browser Cache Management Pattern**
+**Problem**: Users see old error logs after successful deployment
+**Solution**: Implement cache-busting strategies and user guidance
+
+**Cache-Busting Strategies**:
+1. **Hard Refresh**: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+2. **Clear Cache**: Developer Tools → Empty Cache and Hard Reload
+3. **Incognito Mode**: Test in private window to bypass cache
+4. **Build Verification**: Always test endpoints directly with curl
+
+**User Guidance Pattern**:
+```typescript
+// Debug logging to help identify cache issues
+console.log('API Call Debug:', {
+  endpoint,
+  API_BASE_URL,
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  finalUrl: url,
+  isRelative: !url.startsWith('http')
+});
+```
+
+### **WebSocket Authentication Pattern**
+**Problem**: WebSocket connection failures when user not authenticated
+**Solution**: Implement proper authentication flow with graceful degradation
+
+```typescript
+// ✅ CORRECT: Check authentication before connecting
+public connect(token: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (!token) {
+      // No token provided - non-critical, silent fail
+      resolve(); // Resolve without connecting
+      return;
+    }
+    // ... proceed with WebSocket connection
+  });
+}
+
+// ✅ CORRECT: Handle authentication errors gracefully
+socket.on('connect_error', (error) => {
+  console.error('❌ WebSocket connection error:', error);
+  // Don't reject - just log the error and resolve
+  resolve();
+});
+```
+
+**Authentication Flow**:
+1. **Check Token**: Verify authentication token exists
+2. **Silent Fail**: Don't throw errors for missing authentication
+3. **Graceful Degradation**: App continues without WebSocket features
+4. **Reconnection**: Attempt reconnection when authentication is restored
+
+### **Build System Optimization Pattern**
+**Problem**: Builds taking 20+ minutes due to resource constraints
+**Solution**: Optimize Cloud Build configuration for speed and reliability
+
+```yaml
+# ✅ OPTIMIZED BUILD CONFIGURATION
+options:
+  machineType: 'E2_HIGHCPU_8'  # High-performance machine
+  diskSizeGb: '100'
+  logging: CLOUD_LOGGING_ONLY
+  env:
+    - 'DOCKER_BUILDKIT=1'  # Enable buildkit for better caching
+
+timeout: '1200s'  # 20-minute timeout
+```
+
+**Optimization Rules**:
+1. **Machine Type**: Use E2_HIGHCPU_8 for faster builds
+2. **Docker Buildkit**: Enable for better layer caching
+3. **Timeout**: Set reasonable timeout (20 minutes)
+4. **Logging**: Use CLOUD_LOGGING_ONLY for better performance
+
+### **API Testing & Verification Pattern**
+**Problem**: Difficult to verify API fixes without proper testing
+**Solution**: Implement systematic testing approach
+
+**Testing Checklist**:
+1. **Direct Testing**: Use curl to test endpoints directly
+2. **Response Verification**: Check for auth errors, not 404s
+3. **Build Verification**: Confirm successful deployment
+4. **Browser Testing**: Test with cleared cache
+5. **WebSocket Testing**: Verify authentication requirements
+
+**Example Testing Commands**:
+```bash
+# Test API endpoints directly
+curl -H "Authorization: Bearer test-token" "https://vssyl.com/api/features/all"
+curl -H "Authorization: Bearer test-token" "https://vssyl.com/api/chat/conversations?dashboardId=test"
+
+# Expected: {"error":"Unauthorized"} or {"message":"Invalid or expired token"}
+# Not Expected: {"message":"Not Found"} (404 error)
+```
+
+### **Files Modified Pattern**
+**Systematic Approach to API Route Fixes**:
+
+**Next.js API Route Files (9 files)**:
+- `web/src/app/api/features/all/route.ts`
+- `web/src/app/api/features/check/route.ts`
+- `web/src/app/api/features/module/route.ts`
+- `web/src/app/api/features/usage/route.ts`
+- `web/src/app/api/trash/items/route.ts`
+- `web/src/app/api/trash/delete/[id]/route.ts`
+- `web/src/app/api/trash/restore/[id]/route.ts`
+- `web/src/app/api/trash/empty/route.ts`
+- `web/src/app/api/[...slug]/route.ts`
+
+**API Client Files (1 file)**:
+- `web/src/api/chat.ts`
+
+**Pattern Rules**:
+1. **Systematic Updates**: Update all related files at once
+2. **Consistent Patterns**: Apply same fix pattern across all files
+3. **Testing**: Test each endpoint after fixes
+4. **Documentation**: Document all changes in commit messages
+
+### **Deployment Verification Pattern**
+**Problem**: Difficult to verify fixes are deployed correctly
+**Solution**: Implement deployment verification workflow
+
+**Verification Steps**:
+1. **Build Status**: Check Cloud Build logs for success
+2. **Image Updates**: Verify both frontend and backend images updated
+3. **Git Tracking**: Confirm changes committed and pushed
+4. **Direct Testing**: Test endpoints with curl commands
+5. **Browser Testing**: Test with cleared cache
+
+**Example Verification**:
+```bash
+# Check build status
+gcloud builds describe 8990f80d-b65b-4adf-948e-4a6ad87fe7fc
+
+# Test endpoints
+curl -H "Authorization: Bearer test-token" "https://vssyl.com/api/features/all"
+# Expected: {"error":"Unauthorized"} (not 404)
+```
+
+### **Success Metrics**
+- ✅ **API Routing**: All endpoints return auth errors, not 404s
+- ✅ **Environment Variables**: Consistent usage across all files
+- ✅ **Build Performance**: 7-8 minute builds consistently
+- ✅ **WebSocket**: Proper authentication flow with graceful degradation
+- ✅ **Browser Cache**: Clear guidance for cache management
+- ✅ **Testing**: Systematic verification approach
 
 ## [2025-09-19] Google Cloud Production Issues Resolution Pattern ✅
 
