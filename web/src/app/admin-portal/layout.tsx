@@ -29,7 +29,23 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     );
   }
 
-  if (!session || session.user.role !== 'ADMIN') {
+  // Debug logging
+  console.log('Admin Portal Debug:', {
+    status,
+    hasSession: !!session,
+    sessionUser: session?.user,
+    userRole: session?.user?.role,
+    isAdmin: session?.user?.role === 'ADMIN',
+    sessionKeys: session ? Object.keys(session) : []
+  });
+
+  if (!session) {
+    console.log('No session found, redirecting to login');
+    redirect('/auth/login');
+  }
+
+  if (session.user.role !== 'ADMIN') {
+    console.log('User role is not ADMIN:', session.user.role);
     redirect('/auth/login');
   }
 
