@@ -234,22 +234,7 @@ export default function SupportPage() {
         }
       ]);
 
-      setStats({
-        totalTickets: 156,
-        openTickets: 23,
-        resolvedToday: 8,
-        averageResponseTime: 2.3,
-        customerSatisfaction: 4.2,
-        activeAgents: 5,
-        averageResolutionTime: 8.5,
-        topCategories: [
-          { category: 'Technical', count: 45, percentage: 29 },
-          { category: 'Billing', count: 32, percentage: 21 },
-          { category: 'Account', count: 28, percentage: 18 },
-          { category: 'Features', count: 25, percentage: 16 },
-          { category: 'Other', count: 26, percentage: 16 }
-        ]
-      });
+      setStats(null);
 
       setKnowledgeBase([
         {

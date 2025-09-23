@@ -94,21 +94,20 @@ export default function AdminDashboard() {
         systemHealth: 99.9
       });
 
-      // Mock alerts for now - in real implementation, these would come from API
-      setAlerts([
-        {
-          type: 'success',
-          title: 'System Online',
-          message: 'All systems are operating normally',
-          timestamp: '2 minutes ago'
-        },
-        {
-          type: 'warning',
-          title: 'High CPU Usage',
-          message: 'Server CPU usage is at 85%',
-          timestamp: '15 minutes ago'
+      // Load real system alerts from API
+      try {
+        const alertsResponse = await adminApiService.getSystemHealth();
+        if (alertsResponse.data?.alerts) {
+          setAlerts(alertsResponse.data.alerts);
+        } else {
+          // No alerts is good - system is healthy
+          setAlerts([]);
         }
-      ]);
+      } catch (alertError) {
+        console.error('Error loading system alerts:', alertError);
+        // Set empty alerts array instead of mock data
+        setAlerts([]);
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       setError('Failed to load dashboard data');
