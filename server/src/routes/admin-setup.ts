@@ -127,6 +127,99 @@ router.post('/update-andrew-password', async (req: Request, res: Response) => {
   }
 });
 
+// Check if user exists and promote to admin
+router.post('/promote-existing-user', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+
+    console.log(`🔍 Looking for existing user: ${email}`);
+    
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true, name: true, role: true, createdAt: true }
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    if (existingUser.role === 'ADMIN') {
+      return res.json({
+        success: true,
+        message: 'User is already an admin',
+        user: {
+          email: existingUser.email,
+          name: existingUser.name,
+          role: existingUser.role,
+          createdAt: existingUser.createdAt
+        }
+      });
+    }
+
+    // Promote to admin
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: { role: 'ADMIN' },
+      select: { id: true, email: true, name: true, role: true, createdAt: true }
+    });
+
+    return res.json({
+      success: true,
+      message: 'User promoted to admin successfully',
+      user: {
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error promoting user:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to promote user',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Delete duplicate admin account
+router.delete('/delete-duplicate-admin', async (req: Request, res: Response) => {
+  try {
+    console.log('🗑️ Deleting duplicate admin account...');
+    
+    const deletedUser = await prisma.user.delete({
+      where: { email: 'Andrew.Trautman@Vssyl.con' },
+      select: { id: true, email: true, name: true, role: true, createdAt: true }
+    });
+
+    return res.json({
+      success: true,
+      message: 'Duplicate admin account deleted successfully',
+      deletedUser
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting duplicate admin:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete duplicate admin',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Get current admin users
 router.get('/admin-users', async (req: Request, res: Response) => {
   try {
@@ -145,6 +238,29 @@ router.get('/admin-users', async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch admin users'
+    });
+  }
+});
+
+// Get all users (for debugging)
+router.get('/all-users', async (req: Request, res: Response) => {
+  try {
+    const allUsers = await prisma.user.findMany({
+      select: { email: true, name: true, role: true, createdAt: true },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    return res.json({
+      success: true,
+      totalUsers: allUsers.length,
+      users: allUsers
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching all users:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch all users'
     });
   }
 });
