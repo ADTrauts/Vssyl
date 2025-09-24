@@ -662,15 +662,16 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
   }
 });
 
-// Get payment data (return empty for now since Payment model was removed)
+// Get payment data
 router.get('/billing/payments', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    res.json({
-      payments: [],
-      total: 0,
-      page: 1,
-      totalPages: 0
+    const { page = 1, limit = 20, status } = req.query;
+    const result = await AdminService.getPayments({
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string
     });
+    res.json(result);
   } catch (error) {
     console.error('Error fetching payments:', error);
     res.status(500).json({ error: 'Failed to fetch payments' });

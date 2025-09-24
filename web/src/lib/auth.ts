@@ -141,6 +141,15 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // If the user is coming from a protected route, redirect them back
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      // If they're coming from the root, let the home page handle the redirect
+      if (url === baseUrl || url === baseUrl + '/') {
+        return baseUrl;
+      }
+      // Default to dashboard for authenticated users
       return '/dashboard';
     }
   },

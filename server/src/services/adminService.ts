@@ -42,6 +42,8 @@ interface ContentReportFilters {
   status?: string;
   severity?: string;
   contentType?: string;
+  page?: number;
+  limit?: number;
 }
 
 interface AnalyticsFilters {
@@ -426,71 +428,79 @@ export class AdminService {
 
   static async getReportedContent(filters: ContentReportFilters) {
     try {
-      // Mock reported content - in a real implementation, this would query the database
-      const mockReports = [
-        {
-          id: 'report_1',
-          contentType: 'post',
-          reason: 'Inappropriate content',
-          status: 'pending',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-          reporter: {
-            email: 'user1@example.com',
-            name: 'John Doe'
-          },
-          content: {
-            id: 'content_1',
-            title: 'Sample Post',
-            description: 'This is a sample post that was reported',
-            url: 'https://example.com/post/1'
-          },
-          severity: 'high' as const,
-          autoModerated: false
-        },
-        {
-          id: 'report_2',
-          contentType: 'comment',
-          reason: 'Spam content',
-          status: 'resolved',
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-          reviewedBy: 'admin@blockonblock.com',
-          reviewedAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
-          action: 'removed',
-          reporter: {
-            email: 'user2@example.com',
-            name: 'Jane Smith'
-          },
-          content: {
-            id: 'content_2',
-            title: 'Sample Comment',
-            description: 'This is a spam comment',
-            url: 'https://example.com/comment/2'
-          },
-          severity: 'medium' as const,
-          autoModerated: true
-        }
-      ];
-
-      // Apply filters
-      let filteredReports = mockReports;
+      // Build where clause for filtering
+      const whereClause: any = {};
       
       if (filters.status && filters.status !== 'all') {
-        filteredReports = filteredReports.filter(report => report.status === filters.status);
+        whereClause.status = filters.status;
       }
       
       if (filters.severity && filters.severity !== 'all') {
-        filteredReports = filteredReports.filter(report => report.severity === filters.severity);
+        whereClause.severity = filters.severity;
       }
       
       if (filters.contentType && filters.contentType !== 'all') {
-        filteredReports = filteredReports.filter(report => report.contentType === filters.contentType);
+        whereClause.contentType = filters.contentType;
       }
 
+      // Calculate pagination
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const skip = (page - 1) * limit;
+
+      // Get total count for pagination
+      const total = await prisma.contentReport.count({
+        where: whereClause
+      });
+
+      // Get reports with pagination
+      const reports = await prisma.contentReport.findMany({
+        where: whereClause,
+        include: {
+          reporter: {
+            select: {
+              id: true,
+              email: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      });
+
+      // Transform data to match frontend expectations
+      const transformedReports = reports.map(report => ({
+        id: report.id,
+        contentType: report.contentType,
+        reason: report.reason,
+        status: report.status,
+        createdAt: report.createdAt.toISOString(),
+        reviewedBy: report.reviewedBy,
+        reviewedAt: report.reviewedAt?.toISOString(),
+        action: report.action,
+        reporter: {
+          email: report.reporter.email,
+          name: report.reporter.name || 'Unknown User'
+        },
+        content: {
+          id: report.contentId,
+          title: 'No title', // TODO: Add contentTitle field to schema
+          description: 'No description', // TODO: Add contentDescription field to schema
+          url: '#' // TODO: Add contentUrl field to schema
+        },
+        severity: 'medium' as 'low' | 'medium' | 'high' | 'critical', // TODO: Add severity field to schema
+        autoModerated: false // TODO: Add autoModerated field to schema
+      }));
+
       return {
-        reports: filteredReports,
-        total: filteredReports.length,
-        page: 1,
-        totalPages: 1
+        reports: transformedReports,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit)
       };
     } catch (error) {
       console.error('Error getting reported content:', error);
@@ -500,9 +510,18 @@ export class AdminService {
 
   static async updateReportStatus(reportId: string, status: string, action: string, reason: string, adminId: string) {
     try {
-      // Mock update - in a real implementation, this would update the database
-      console.log(`Admin ${adminId} updated report ${reportId} to status ${status} with action ${action}`);
-      
+      // Update the report in the database
+      const updatedReport = await prisma.contentReport.update({
+        where: { id: reportId },
+        data: {
+          status,
+          action,
+          details: reason,
+          reviewedBy: adminId,
+          reviewedAt: new Date()
+        }
+      });
+
       // Log the moderation action
       await this.logSecurityEvent({
         eventType: 'content_moderated',
@@ -526,6 +545,69 @@ export class AdminService {
       };
     } catch (error) {
       console.error('Error updating report status:', error);
+      throw error;
+    }
+  }
+
+  static async createContentReport(data: {
+    reporterId: string;
+    contentId: string;
+    contentType: string;
+    reason: string;
+    severity?: string;
+    contentTitle?: string;
+    contentDescription?: string;
+    contentUrl?: string;
+  }) {
+    try {
+      const report = await prisma.contentReport.create({
+        data: {
+          reporterId: data.reporterId,
+          contentId: data.contentId,
+          contentType: data.contentType,
+          reason: data.reason,
+          status: 'pending'
+        },
+        include: {
+          reporter: {
+            select: {
+              id: true,
+              email: true,
+              name: true
+            }
+          }
+        }
+      });
+
+      return report;
+    } catch (error) {
+      console.error('Error creating content report:', error);
+      throw error;
+    }
+  }
+
+  static async getModerationStats() {
+    try {
+      const [
+        totalReports,
+        pendingReports,
+        autoModeratedReports,
+        resolvedReports
+      ] = await Promise.all([
+        prisma.contentReport.count(),
+        prisma.contentReport.count({ where: { status: 'pending' } }),
+        prisma.contentReport.count({ where: { status: 'pending' } }), // Mock auto-moderated count
+        prisma.contentReport.count({ where: { status: 'resolved' } })
+      ]);
+
+      return {
+        totalReports,
+        pendingReview: pendingReports,
+        autoModerated: autoModeratedReports,
+        resolved: resolvedReports
+      };
+    } catch (error) {
+      console.error('Error getting moderation stats:', error);
       throw error;
     }
   }
@@ -812,11 +894,107 @@ export class AdminService {
     limit?: number;
     status?: string;
   }) {
+    const { page = 1, limit = 20, status } = params;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+
+    const [payments, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        include: {
+          subscription: {
+            include: { user: true }
+          },
+          moduleSubscription: {
+            include: { 
+              user: true,
+              module: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.invoice.count({ where })
+    ]);
+
     return {
-      payments: [],
-      total: 0,
-      page: 1,
-      totalPages: 0
+      payments: payments.map(payment => ({
+        id: payment.id,
+        subscriptionId: payment.subscriptionId,
+        moduleSubscriptionId: payment.moduleSubscriptionId,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        createdAt: payment.createdAt.toISOString(),
+        paidAt: payment.paidAt?.toISOString(),
+        customerEmail: payment.subscription?.user?.email || payment.moduleSubscription?.user?.email || 'Unknown',
+        stripeInvoiceId: payment.stripeInvoiceId
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    };
+  }
+
+  static async getDeveloperPayouts(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
+    const { page = 1, limit = 20, status } = params;
+    const skip = (page - 1) * limit;
+
+    const where: Record<string, unknown> = {};
+    if (status) where.payoutStatus = status;
+
+    const [payouts, total] = await Promise.all([
+      prisma.developerRevenue.findMany({
+        where,
+        include: {
+          developer: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          module: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.developerRevenue.count({ where })
+    ]);
+
+    return {
+      payouts: payouts.map(payout => ({
+        id: payout.id,
+        developerId: payout.developerId,
+        developerName: payout.developer.name || 'Unknown Developer',
+        developerEmail: payout.developer.email,
+        moduleName: payout.module.name,
+        amount: payout.developerRevenue,
+        totalRevenue: payout.totalRevenue,
+        platformRevenue: payout.platformRevenue,
+        status: payout.payoutStatus,
+        requestedAt: payout.createdAt.toISOString(),
+        paidAt: payout.payoutDate?.toISOString(),
+        periodStart: payout.periodStart.toISOString(),
+        periodEnd: payout.periodEnd.toISOString()
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     };
   }
 
@@ -938,55 +1116,14 @@ export class AdminService {
   // MODERATION METHODS
   // ============================================================================
 
-  static async getModerationStats() {
-    try {
-      // Get total reports
-      const totalReports = await prisma.contentReport.count();
-      
-      // Get pending reviews
-      const pendingReview = await prisma.contentReport.count({
-        where: {
-          status: 'pending'
-        }
-      });
-
-      // Get auto-moderated (mock data for now)
-      const autoModerated = Math.floor(totalReports * 0.3); // 30% auto-moderated
-
-      // Get resolved today
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const resolvedToday = await prisma.contentReport.count({
-        where: {
-          status: 'resolved',
-          reviewedAt: {
-            gte: today
-          }
-        }
-      });
-
-      // Calculate average response time (mock calculation)
-      const averageResponseTime = 45; // minutes
-
-      return {
-        totalReports,
-        pendingReview,
-        autoModerated,
-        resolvedToday,
-        averageResponseTime
-      };
-    } catch (error) {
-      console.error('Error getting moderation stats:', error);
-      throw error;
-    }
-  }
 
   static async getModerationRules() {
     try {
-      // Mock moderation rules - in a real implementation, these would come from a database
+      // TODO: Fix ModerationRule model access
+      // For now, return mock data
       return [
         {
-          id: 'rule_1',
+          id: '1',
           name: 'Spam Detection',
           description: 'Automatically flag content containing spam keywords',
           conditions: ['Contains spam keywords', 'Multiple links', 'Repetitive content'],
@@ -995,31 +1132,13 @@ export class AdminService {
           priority: 1
         },
         {
-          id: 'rule_2',
+          id: '2',
           name: 'Inappropriate Content',
           description: 'Detect and flag inappropriate or offensive content',
           conditions: ['Contains profanity', 'Hate speech', 'Violent content'],
           actions: ['Remove content', 'Ban user', 'Send warning'],
           enabled: true,
           priority: 2
-        },
-        {
-          id: 'rule_3',
-          name: 'Copyright Violation',
-          description: 'Identify potential copyright violations',
-          conditions: ['Duplicate content', 'Known copyrighted material'],
-          actions: ['Flag for review', 'Remove content'],
-          enabled: true,
-          priority: 3
-        },
-        {
-          id: 'rule_4',
-          name: 'Bot Detection',
-          description: 'Detect automated bot activity',
-          conditions: ['Rapid posting', 'Pattern-based content', 'Suspicious timing'],
-          actions: ['Temporary ban', 'Require verification'],
-          enabled: true,
-          priority: 4
         }
       ];
     } catch (error) {
@@ -1065,19 +1184,24 @@ export class AdminService {
   // ============================================================================
 
   static async getSystemHealth() {
-    // In a real implementation, you would collect actual system metrics
-    // For now, we'll return mock data
-    const systemHealth = {
-      cpu: Math.floor(Math.random() * 30) + 20, // 20-50%
-      memory: Math.floor(Math.random() * 40) + 40, // 40-80%
-      disk: Math.floor(Math.random() * 30) + 50, // 50-80%
-      network: Math.floor(Math.random() * 50) + 10, // 10-60 Mbps
-      uptime: '99.9%',
-      responseTime: Math.floor(Math.random() * 50) + 100, // 100-150ms
-      errorRate: (Math.random() * 0.1).toFixed(3) // 0-0.1%
-    };
-
-    return systemHealth;
+    try {
+      const { SystemMonitoringService } = await import('./systemMonitoringService');
+      return await SystemMonitoringService.getSystemHealth();
+    } catch (error) {
+      console.error('Error getting system health:', error);
+      // Fallback to basic metrics
+      return {
+        cpu: 0,
+        memory: 0,
+        disk: 0,
+        network: 0,
+        uptime: '0d 0h 0m',
+        responseTime: 0,
+        activeConnections: 0,
+        errorRate: 0,
+        timestamp: new Date()
+      };
+    }
   }
 
   static async getSystemConfig() {
@@ -1116,17 +1240,18 @@ export class AdminService {
 
   static async getBackupStatus() {
     try {
-      // Mock backup status - in a real implementation, this would check actual backup status
-      return {
-        lastBackup: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 24 hours ago
-        nextBackup: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
-        backupSize: '2.5 GB',
-        status: 'success' as const,
-        retentionDays: 30
-      };
+      const { SystemMonitoringService } = await import('./systemMonitoringService');
+      return await SystemMonitoringService.getBackupStatus();
     } catch (error) {
       console.error('Error getting backup status:', error);
-      throw error;
+      // Fallback to basic status
+      return {
+        lastBackup: new Date().toISOString(),
+        nextBackup: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        backupSize: '0 GB',
+        status: 'failed' as const,
+        retentionDays: 30
+      };
     }
   }
 
@@ -1159,23 +1284,24 @@ export class AdminService {
 
   static async getMaintenanceMode() {
     try {
-      // Mock maintenance mode - in a real implementation, this would check actual maintenance status
+      const { SystemMonitoringService } = await import('./systemMonitoringService');
+      return await SystemMonitoringService.getMaintenanceMode();
+    } catch (error) {
+      console.error('Error getting maintenance mode:', error);
+      // Fallback to basic status
       return {
         enabled: false,
         message: 'System is currently under maintenance. Please try again later.',
-        scheduledStart: null,
-        scheduledEnd: null
+        scheduledStart: undefined,
+        scheduledEnd: undefined
       };
-    } catch (error) {
-      console.error('Error getting maintenance mode:', error);
-      throw error;
     }
   }
 
   static async setMaintenanceMode(enabled: boolean, message: string, adminId: string) {
     try {
-      // Mock maintenance mode setting - in a real implementation, this would update actual maintenance status
-      console.log(`Admin ${adminId} ${enabled ? 'enabled' : 'disabled'} maintenance mode`);
+      const { SystemMonitoringService } = await import('./systemMonitoringService');
+      await SystemMonitoringService.setMaintenanceMode(enabled, message, adminId);
       
       // Log the maintenance mode action
       await this.logSecurityEvent({
