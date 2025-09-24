@@ -68,7 +68,22 @@ steps:
     id: 'push-web-latest'
     waitFor: ['build-web']
 
-  # Step 4: Deploy services in parallel
+  # Step 4: Initialize database schema
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🔧 Initializing database schema..."
+        export DATABASE_URL="postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
+        cd /workspace
+        npx prisma generate
+        npx prisma db push
+        echo "✅ Database schema initialized"
+    id: 'init-database'
+    waitFor: ['push-server', 'push-server-latest']
+
+  # Step 5: Deploy services in parallel
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
@@ -99,11 +114,11 @@ steps:
       - '--subnet'
       - 'default'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false'  
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,SMTP_HOST=smtp.gmail.com,SMTP_PORT=587,SMTP_SECURE=false'  
       - '--set-secrets'
       - 'SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,SMTP_FROM=smtp-from:latest,OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest']
+    waitFor: ['init-database']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
