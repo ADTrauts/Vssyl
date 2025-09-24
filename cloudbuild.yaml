@@ -91,7 +91,7 @@ steps:
       - '--max-instances'
       - '10'
       - '--add-cloudsql-instances'
-      - 'vssyl-472202:us-central1:vssyl-db'
+      - 'vssyl-472202:us-central1:vssyl-db-optimized'
       - '--vpc-egress'
       - 'all-traffic'
       - '--network'
