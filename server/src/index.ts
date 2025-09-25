@@ -518,35 +518,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json(response);
 });
 
-// Run database migrations in production
-if (process.env.NODE_ENV === 'production') {
-  console.log('🔄 Running database migrations...');
-  console.log('DATABASE_MIGRATE_URL:', process.env.DATABASE_MIGRATE_URL ? 'SET' : 'NOT SET');
-  console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-  
-  try {
-    const { execSync } = require('child_process');
-    // Use migration URL without connection pool parameters
-    const migrationUrl = process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL;
-    console.log('Using migration URL:', migrationUrl ? 'SET' : 'NOT SET');
-    console.log('Migration URL value:', migrationUrl);
-    console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
-    
-    const migrationEnv = {
-      ...process.env,
-      DATABASE_URL: migrationUrl
-    };
-
-    execSync('npx prisma migrate deploy', {
-      stdio: 'inherit',
-      env: migrationEnv
-    });
-    console.log('✅ Database migrations completed');
-  } catch (error) {
-    console.error('❌ Database migration failed:', error);
-    process.exit(1);
-  }
-}
+// Database migrations are now handled during build/deploy phase
+// This prevents multiple Cloud Run instances from running migrations simultaneously
+console.log('✅ Server starting without automatic migrations (handled during deployment)');
 
 // Initialize HTTP server
 const httpServer = createServer(app);
