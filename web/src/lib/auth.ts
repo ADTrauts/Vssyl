@@ -75,8 +75,15 @@ export const authOptions: NextAuthOptions = {
           }
 
           const data = await response.json();
+          console.log('NextAuth Authorize - Backend response:', { 
+            hasData: !!data, 
+            hasToken: !!data?.token, 
+            userId: data?.user?.id,
+            userEmail: data?.user?.email 
+          });
+          
           if (data && data.token) {
-            return {
+            const user = {
               id: data.user.id,
               email: data.user.email,
               name: data.user.name,
@@ -86,7 +93,17 @@ export const authOptions: NextAuthOptions = {
               refreshToken: data.refreshToken,
               emailVerified: !!data.user.emailVerified,
             } as any;
+            
+            console.log('NextAuth Authorize - Returning user:', { 
+              id: user.id, 
+              email: user.email, 
+              hasAccessToken: !!user.accessToken 
+            });
+            
+            return user;
           }
+          
+          console.log('NextAuth Authorize - No token in response, returning null');
           return null;
         } catch (error: unknown) {
           console.error('Auth error:', error);
@@ -159,6 +176,9 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  jwt: {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET,
