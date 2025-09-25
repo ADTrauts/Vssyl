@@ -68,23 +68,7 @@ steps:
     id: 'push-web-latest'
     waitFor: ['build-web']
 
-  # Step 4: Initialize database schema
-  - name: 'node:18-alpine'
-    entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        echo "🔧 Initializing database schema..."
-        export DATABASE_URL="postgresql://vssyl_user:Arthur%26George116%21%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
-        cd /workspace
-        npm install -g prisma
-        npx prisma generate
-        npx prisma db push
-        echo "✅ Database schema initialized"
-    id: 'init-database'
-    waitFor: ['push-server', 'push-server-latest']
-
-  # Step 5: Deploy services in parallel
+  # Step 4: Deploy services in parallel
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
@@ -119,7 +103,7 @@ steps:
       - '--set-secrets'
       - 'SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,SMTP_FROM=smtp-from:latest,OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
-    waitFor: ['init-database']
+    waitFor: ['push-server', 'push-server-latest']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
