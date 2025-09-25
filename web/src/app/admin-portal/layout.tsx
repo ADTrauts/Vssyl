@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
 import { ImpersonationBanner } from '../../components/admin-portal/ImpersonationBanner';
+import AvatarContextMenu from '../../components/AvatarContextMenu';
 
 interface AdminPortalLayoutProps {
   children: React.ReactNode;
@@ -92,17 +93,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span className="text-sm text-gray-300">System Online</span>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-gray-300" />
-                  <span className="text-sm text-gray-300">{session.user.email}</span>
-                </div>
-                <Link href="/dashboard" className="text-sm text-gray-300 hover:text-white transition-colors">Back to App</Link>
-                <Link href="/api/auth/signout" className="text-sm text-gray-300 hover:text-white transition-colors flex items-center space-x-1">
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </Link>
-              </div>
+              <AvatarContextMenu className="text-white" />
             </div>
           </div>
         </header>
