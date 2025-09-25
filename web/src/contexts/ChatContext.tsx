@@ -316,7 +316,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       chatAPI.off('message:new', handleNewMessage);
       chatAPI.off('message_reaction', handleReactionUpdate);
     };
-  }, [session?.accessToken, handleNewMessage, handleReactionUpdate]);
+  }, [session?.accessToken]);
 
   // Load conversations on mount and when session changes
   useEffect(() => {

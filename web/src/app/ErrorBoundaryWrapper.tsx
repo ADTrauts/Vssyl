@@ -90,7 +90,8 @@ export default function ErrorBoundaryWrapper({ children }: { children: React.Rea
       onError={handleError}
       onReset={() => {
         // Clear any error state and try to recover
-        window.location.reload();
+        // Don't automatically reload to prevent infinite loops
+        console.log('Error boundary reset - not reloading to prevent loops');
       }}
     >
       {children}
