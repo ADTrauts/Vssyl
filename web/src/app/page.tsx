@@ -8,13 +8,22 @@ export default function Home() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
+    console.log('Home page redirect check:', { 
+      status, 
+      hasSession: !!session, 
+      hasAccessToken: !!session?.accessToken,
+      sessionKeys: session ? Object.keys(session) : []
+    });
+    
     if (status === 'loading') return; // Still loading auth state
 
     if (session?.accessToken) {
       // User is authenticated, redirect to dashboard
+      console.log('Redirecting to dashboard');
       router.replace('/dashboard');
     } else {
       // User is not authenticated, redirect to login
+      console.log('Redirecting to login');
       router.replace('/auth/login');
     }
   }, [router, session, status]);
