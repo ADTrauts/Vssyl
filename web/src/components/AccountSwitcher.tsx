@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Modal, Avatar } from 'shared/components';
 import { businessAPI, Business } from '../api/business';
 import { educationalAPI } from '../api/educational';
-import { Building2, User, Plus, ChevronRight, GraduationCap, Settings } from 'lucide-react';
+import { Building2, User, Plus, ChevronRight, GraduationCap, Settings, Shield } from 'lucide-react';
 
 
 interface EducationalInstitution {
@@ -102,6 +102,13 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
       // If no dashboard exists, create one or redirect to institution creation
       router.push(`/educational/${institution.id}/dashboard`);
     }
+    setShowModal(false);
+    onClose?.();
+  };
+
+  const handleSwitchToAdmin = () => {
+    // Switch to admin portal
+    router.push('/admin-portal');
     setShowModal(false);
     onClose?.();
   };
@@ -223,6 +230,26 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
           </div>
+
+          {/* Admin Portal - Only show for admin users */}
+          {session?.user?.role === 'ADMIN' && (
+            <div className="border border-red-200 rounded-lg p-4 hover:bg-red-50 cursor-pointer transition-colors"
+                 onClick={handleSwitchToAdmin}>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Admin Portal
+                  </h3>
+                  <p className="text-sm text-gray-600">System administration</p>
+                  <p className="text-xs text-gray-500 mt-1">Full platform access</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </div>
+            </div>
+          )}
 
           {/* Business Accounts */}
           <div>

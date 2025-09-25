@@ -13,7 +13,7 @@ import {
 } from 'shared/types/chat';
 
 // Use relative URLs to go through Next.js API proxy
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
 
 // Helper function to make authenticated API calls
 async function apiCall<T>(

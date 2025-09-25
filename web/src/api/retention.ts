@@ -1,6 +1,6 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
 
 // Types for retention policies
 export interface RetentionPolicy {
