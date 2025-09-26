@@ -89,7 +89,7 @@ export class DigitalLifeTwinService {
     
     // Initialize revolutionary cross-module intelligence
     this.contextEngine = new CrossModuleContextEngine();
-    this.digitalLifeTwinCore = new DigitalLifeTwinCore();
+    this.digitalLifeTwinCore = new DigitalLifeTwinCore(this.contextEngine, prisma);
 
     // Initialize AI providers
     this.openaiProvider = new OpenAIProvider();

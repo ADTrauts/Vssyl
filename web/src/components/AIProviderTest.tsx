@@ -23,24 +23,23 @@ export default function AIProviderTest() {
   ]);
 
   const testProvider = async (providerName: string) => {
-    if (!session?.accessToken) return;
-
-    setProviders(prev => prev.map(p => 
-      p.name === providerName ? { ...p, status: 'testing' } : p
-    ));
-
-    const startTime = Date.now();
+    if (!session?.accessToken) {
+      console.error('No session or access token available');
+      return;
+    }
 
     try {
-      const response = await authenticatedApiCall<{
-        response: string;
-        confidence: number;
-        metadata: {
-          provider: string;
-          processingTime: number;
-        };
-      }>('/api/ai/twin', {
+      setProviders(prev => prev.map(p => 
+        p.name === providerName ? { ...p, status: 'testing' } : p
+      ));
+
+      const startTime = Date.now();
+
+      const response = await authenticatedApiCall('/api/ai/twin', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           query: `Test message: Please respond with "AI connection successful for ${providerName}" and include today's date. This is a connection test.`,
           context: {
@@ -53,20 +52,24 @@ export default function AIProviderTest() {
 
       const responseTime = Date.now() - startTime;
 
+      // Handle the response safely
+      const responseData = response as any;
+      
       setProviders(prev => prev.map(p => 
         p.name === providerName ? {
           ...p,
           status: 'connected',
-          response: response.response,
+          response: responseData?.response || 'Connection successful',
           responseTime
         } : p
       ));
     } catch (error) {
+      console.error('Error testing AI provider:', error);
       setProviders(prev => prev.map(p => 
         p.name === providerName ? {
           ...p,
           status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Component error occurred'
         } : p
       ));
     }
