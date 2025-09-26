@@ -160,11 +160,33 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
     },
     {
       icon: <Brain className="w-4 h-4" />,
-      label: 'AI Assistant',
-      onClick: () => {
-        router.push('/ai');
-        handleClose();
-      },
+      label: 'AI Control Center',
+      submenu: [
+        {
+          icon: <BarChart3 className="w-4 h-4" />,
+          label: 'AI Overview',
+          onClick: () => {
+            router.push('/ai');
+            handleClose();
+          },
+        },
+        {
+          icon: <Settings className="w-4 h-4" />,
+          label: 'Autonomy Settings',
+          onClick: () => {
+            router.push('/ai?tab=autonomy');
+            handleClose();
+          },
+        },
+        {
+          icon: <User className="w-4 h-4" />,
+          label: 'Personality Profile',
+          onClick: () => {
+            router.push('/ai?tab=personality');
+            handleClose();
+          },
+        },
+      ],
     },
     {
       icon: <Settings className="w-4 h-4" />,

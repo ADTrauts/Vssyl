@@ -237,7 +237,8 @@ export class DigitalLifeTwinCore {
     const aiResponse = await this.callAIProvider(provider, prompt, {
       temperature: 0.7,
       maxTokens: 1000,
-      personalityMode: true
+      personalityMode: true,
+      userId: query.userId
     });
     
     return {
@@ -623,13 +624,61 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   }
 
   private async callAIProvider(provider: string, prompt: string, options: any): Promise<any> {
-    // This would call the appropriate AI provider
-    // For now, return a mock response
-    return {
-      response: "I understand your request and I'm analyzing your digital life patterns to provide the best response.",
-      confidence: 0.8,
-      reasoning: "Based on your personality and current context"
-    };
+    try {
+      // Import AI providers
+      const { OpenAIProvider } = await import('../providers/OpenAIProvider');
+      const { AnthropicProvider } = await import('../providers/AnthropicProvider');
+      const { LocalProvider } = await import('../providers/LocalProvider');
+
+      // Create AI request object
+      const aiRequest = {
+        id: `ai_req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: options.userId || 'system',
+        query: prompt,
+        context: options,
+        timestamp: new Date(),
+        priority: 'medium' as const
+      };
+
+      // Create user context (minimal for now)
+      const userContext = {
+        userId: options.userId || 'system',
+        personalityProfile: {},
+        preferences: {},
+        recentActivity: [],
+        dashboardContext: {},
+        personality: {},
+        autonomySettings: {}
+      };
+
+      // Call the appropriate provider
+      let response;
+      if (provider === 'openai') {
+        const openaiProvider = new OpenAIProvider();
+        response = await openaiProvider.process(aiRequest, userContext, {});
+      } else if (provider === 'anthropic') {
+        const anthropicProvider = new AnthropicProvider();
+        response = await anthropicProvider.process(aiRequest, userContext, {});
+      } else {
+        const localProvider = new LocalProvider();
+        response = await localProvider.process(aiRequest, userContext, {});
+      }
+
+      return {
+        response: response.response,
+        confidence: response.confidence,
+        reasoning: response.reasoning || "Generated using AI provider analysis"
+      };
+    } catch (error) {
+      console.error(`Error calling AI provider ${provider}:`, error);
+      
+      // Fallback to mock response if AI provider fails
+      return {
+        response: "I understand your request and I'm working to provide the best response. (AI provider temporarily unavailable)",
+        confidence: 0.6,
+        reasoning: "Fallback response due to AI provider connection issue"
+      };
+    }
   }
 
   private async getAutonomySettings(userId: string): Promise<any> {

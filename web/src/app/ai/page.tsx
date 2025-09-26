@@ -19,6 +19,7 @@ import {
 import AutonomyControls from '../../components/ai/AutonomyControls';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
 import ErrorBoundary from '../../components/ErrorBoundary';
+import AIProviderTest from '../../components/AIProviderTest';
 
 interface AIStats {
   totalConversations: number;
@@ -36,6 +37,15 @@ interface AIStats {
 
 function AIPageContent() {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Handle URL parameters for direct tab navigation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['overview', 'autonomy', 'personality'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, []);
   const [aiStats, setAiStats] = useState<AIStats>({
     totalConversations: 0,
     totalActions: 0,
@@ -250,6 +260,9 @@ function AIPageContent() {
               </p>
             </div>
           </Card>
+
+          {/* AI Provider Test */}
+          <AIProviderTest />
 
           {/* Recent Activity */}
           <Card className="p-6">
