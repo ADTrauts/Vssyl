@@ -18,8 +18,12 @@ import {
 } from 'lucide-react';
 import AutonomyControls from '../../components/ai/AutonomyControls';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
+import AutonomousActions from '../../components/ai/AutonomousActions';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import AIProviderTest from '../../components/AIProviderTest';
+import SmartPatternInsights from '../../components/ai/SmartPatternInsights';
+import { authenticatedApiCall } from '../../lib/apiUtils';
+import { useSession } from 'next-auth/react';
 
 interface AIStats {
   totalConversations: number;
@@ -36,13 +40,14 @@ interface AIStats {
 }
 
 function AIPageContent() {
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState('overview');
   
   // Handle URL parameters for direct tab navigation
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'autonomy', 'personality'].includes(tabParam)) {
+    if (tabParam && ['overview', 'autonomy', 'personality', 'actions', 'patterns'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -72,37 +77,60 @@ function AIPageContent() {
       setError('Failed to load AI data');
       setLoading(false);
     }
-  }, []);
+  }, [session]);
 
   const loadAIData = async () => {
+    if (!session?.accessToken) return;
+
     try {
       setError(null);
       setLoading(true);
       
-      // Mock data for now - replace with real API calls later
-      const mockStats: AIStats = {
-        totalConversations: 127,
-        totalActions: 89,
-        averageConfidence: 87,
-        autonomyLevel: 65,
-        learningProgress: 73,
-        recentConversations: [
-          { id: '1', type: 'Schedule Meeting', confidence: 92, timestamp: '2 hours ago' },
-          { id: '2', type: 'File Organization', confidence: 88, timestamp: '4 hours ago' },
-          { id: '3', type: 'Message Response', confidence: 85, timestamp: '6 hours ago' },
-          { id: '4', type: 'Task Creation', confidence: 79, timestamp: '8 hours ago' }
-        ]
-      };
+      // Load real AI statistics
+      const statsResponse = await authenticatedApiCall<{
+        success: boolean;
+        stats: AIStats;
+      }>('/api/ai-stats/stats', {
+        method: 'GET'
+      }, session.accessToken);
 
-      setAiStats(mockStats);
-      setRecentConversations(mockStats.recentConversations);
-      
-      // Check if personality is completed (mock for now)
-      setPersonalityCompleted(false);
+      if (statsResponse.success) {
+        setAiStats(statsResponse.stats);
+        setRecentConversations(statsResponse.stats.recentConversations);
+      } else {
+        throw new Error('Failed to load AI statistics');
+      }
+
+      // Check if personality profile exists
+      try {
+        const personalityResponse = await authenticatedApiCall<{
+          success: boolean;
+          profile?: any;
+        }>('/api/ai/personality/profile', {
+          method: 'GET'
+        }, session.accessToken);
+        
+        setPersonalityCompleted(personalityResponse.success && personalityResponse.profile);
+      } catch (personalityError) {
+        console.warn('Could not load personality profile:', personalityError);
+        setPersonalityCompleted(false);
+      }
       
     } catch (error) {
       console.error('Failed to load AI data:', error);
-      setError('Failed to load AI data. Please refresh the page.');
+      setError('Failed to load AI data. Please check your connection and try again.');
+      
+      // Fallback to basic data if API fails
+      const fallbackStats: AIStats = {
+        totalConversations: 0,
+        totalActions: 0,
+        averageConfidence: 0,
+        autonomyLevel: 0,
+        learningProgress: 0,
+        recentConversations: []
+      };
+      setAiStats(fallbackStats);
+      setRecentConversations([]);
     } finally {
       setLoading(false);
     }
@@ -205,6 +233,28 @@ function AIPageContent() {
           >
             <Brain className="h-4 w-4 inline mr-2" />
             Personality
+          </button>
+          <button
+            onClick={() => setActiveTab('actions')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'actions'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Zap className="h-4 w-4 inline mr-2" />
+            Actions
+          </button>
+          <button
+            onClick={() => setActiveTab('patterns')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'patterns'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <TrendingUp className="h-4 w-4 inline mr-2" />
+            Smart Patterns
           </button>
         </nav>
       </div>
@@ -342,6 +392,18 @@ function AIPageContent() {
           </p>
           <PersonalityQuestionnaire onComplete={handlePersonalityComplete} />
         </Card>
+      )}
+
+      {activeTab === 'actions' && (
+        <div className="space-y-6">
+          <AutonomousActions />
+        </div>
+      )}
+
+      {activeTab === 'patterns' && (
+        <div className="space-y-6">
+          <SmartPatternInsights />
+        </div>
       )}
     </div>
   );

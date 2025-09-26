@@ -24,8 +24,12 @@ export class OpenAIProvider {
       costPerOutputToken: 0.000015, // $15 per 1M output tokens
     };
 
+    if (!this.config.apiKey) {
+      console.warn('OpenAI API key not configured - OpenAI provider will return fallback responses');
+    }
+
     this.client = new OpenAI({
-      apiKey: this.config.apiKey,
+      apiKey: this.config.apiKey || 'dummy-key',
     });
   }
 
@@ -36,6 +40,11 @@ export class OpenAIProvider {
     const startTime = Date.now();
 
     try {
+      // Check if API key is configured
+      if (!this.config.apiKey) {
+        return this.getFallbackResponse(request, 'OpenAI API key not configured');
+      }
+
       // Build system prompt with user context
       const systemPrompt = this.buildSystemPrompt(context);
       
@@ -59,8 +68,19 @@ export class OpenAIProvider {
         throw new Error('No response from OpenAI');
       }
 
-      // Parse structured response
-      const parsedResponse = JSON.parse(response);
+      // Parse structured response with error handling
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(response);
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response as JSON:', response);
+        // Try to extract useful information from the raw response
+        parsedResponse = {
+          response: response,
+          confidence: 0.7,
+          reasoning: 'Response received but not in expected JSON format'
+        };
+      }
 
       // Calculate costs
       const inputTokens = completion.usage?.prompt_tokens || 0;
@@ -89,24 +109,30 @@ export class OpenAIProvider {
 
     } catch (error) {
       console.error('OpenAI processing error:', error);
-      
-      return {
-        id: this.generateResponseId(),
-        requestId: request.id,
-        response: 'I apologize, but I encountered an error processing your request. Please try again.',
-        confidence: 0,
-        reasoning: 'Processing error occurred',
-        actions: [],
-        metadata: {
-          provider: 'openai',
-          model: this.config.model,
-          tokens: 0,
-          cost: 0,
-          processingTime: Date.now() - startTime,
-          error: error instanceof Error ? error.message : 'Unknown error occurred'
-        }
-      };
+      return this.getFallbackResponse(request, error instanceof Error ? error.message : 'Unknown error');
     }
+  }
+
+  /**
+   * Generate fallback response when OpenAI is unavailable
+   */
+  private getFallbackResponse(request: AIRequest, errorMessage: string): AIResponse {
+    return {
+      id: this.generateResponseId(),
+      requestId: request.id,
+      response: 'I understand your request and I\'m working to provide the best response. (OpenAI temporarily unavailable)',
+      confidence: 0.6,
+      reasoning: 'Fallback response due to OpenAI API issue',
+      actions: [],
+      metadata: {
+        provider: 'openai',
+        model: this.config.model,
+        tokens: 0,
+        cost: 0,
+        processingTime: 0,
+        error: errorMessage
+      }
+    };
   }
 
   /**

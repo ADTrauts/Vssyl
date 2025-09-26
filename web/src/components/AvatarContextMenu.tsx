@@ -19,7 +19,8 @@ import {
   Building,
   Copy,
   Brain,
-  HelpCircle
+  HelpCircle,
+  Zap
 } from 'lucide-react';
 import NotificationBadge from './NotificationBadge';
 import { Avatar, ContextMenu, ContextMenuItem } from 'shared/components';
@@ -183,6 +184,14 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
           label: 'Personality Profile',
           onClick: () => {
             router.push('/ai?tab=personality');
+            handleClose();
+          },
+        },
+        {
+          icon: <Zap className="w-4 h-4" />,
+          label: 'Autonomous Actions',
+          onClick: () => {
+            router.push('/ai?tab=actions');
             handleClose();
           },
         },

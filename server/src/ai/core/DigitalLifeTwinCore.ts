@@ -4,6 +4,7 @@ import { PersonalityEngine } from './PersonalityEngine';
 import { DecisionEngine } from './DecisionEngine';
 import { AdvancedLearningEngine } from '../learning/AdvancedLearningEngine';
 import { ActionExecutor } from './ActionExecutor';
+import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
 
 const prisma = new PrismaClient();
 
@@ -67,13 +68,28 @@ export class DigitalLifeTwinCore {
   private decisionEngine: DecisionEngine;
   private learningEngine: AdvancedLearningEngine;
   private actionExecutor: ActionExecutor;
+  private smartPatternEngine: SmartPatternEngine;
 
-  constructor() {
-    this.contextEngine = new CrossModuleContextEngine();
-    this.personalityEngine = new PersonalityEngine(prisma);
-    this.decisionEngine = new DecisionEngine(prisma);
-    this.learningEngine = new AdvancedLearningEngine(prisma);
-    this.actionExecutor = new ActionExecutor(prisma);
+  constructor(contextEngine?: CrossModuleContextEngine, prismaClient?: PrismaClient) {
+    const prisma = prismaClient || new PrismaClient();
+    
+    this.contextEngine = contextEngine || new CrossModuleContextEngine();
+    
+    try {
+      this.personalityEngine = new PersonalityEngine(prisma);
+      this.decisionEngine = new DecisionEngine(prisma);
+      this.learningEngine = new AdvancedLearningEngine(prisma);
+      this.actionExecutor = new ActionExecutor(prisma);
+      this.smartPatternEngine = new SmartPatternEngine(prisma);
+    } catch (error) {
+      console.error('Error initializing DigitalLifeTwinCore engines:', error);
+      // Initialize with minimal functionality if engines fail
+      this.personalityEngine = null as any;
+      this.decisionEngine = null as any;
+      this.learningEngine = null as any;
+      this.actionExecutor = null as any;
+      this.smartPatternEngine = null as any;
+    }
   }
 
   /**
@@ -83,29 +99,92 @@ export class DigitalLifeTwinCore {
     const startTime = Date.now();
 
     try {
-      // 1. Get comprehensive user context
-      const userContext = await this.contextEngine.getUserContext(query.userId);
+      // Validate input
+      if (!query || !query.query || !query.userId) {
+        throw new Error('Invalid query: missing required fields');
+      }
+
+      // 1. Get comprehensive user context (with fallback)
+      let userContext: UserContext;
+      try {
+        userContext = await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+      } catch (error) {
+        console.warn('Error getting user context:', error);
+        userContext = this.createFallbackUserContext(query.userId);
+      }
       
-      // 2. Get user's personality profile
-      const personality = await this.personalityEngine.getPersonalityProfile(query.userId);
+      // 2. Get user's personality profile (with fallback)
+      let personality;
+      try {
+        personality = await this.personalityEngine?.getPersonalityProfile(query.userId) || {};
+      } catch (error) {
+        console.warn('Error getting personality profile:', error);
+        personality = {};
+      }
       
-      // 3. Analyze the query intent and determine response strategy
-      const queryAnalysis = await this.analyzeQuery(query, userContext, personality);
+      // 3. Get smart pattern analysis and predictions
+      let smartAnalysis: any = { patterns: [], predictions: [], suggestions: [] };
+      try {
+        smartAnalysis = await this.smartPatternEngine?.analyzeAndPredict(query.userId, {
+          currentQuery: query.query,
+          currentModule: query.context.currentModule,
+          urgency: query.context.urgency
+        }) || smartAnalysis;
+      } catch (error) {
+        console.warn('Error getting smart pattern analysis:', error);
+      }
+
+      // 4. Enhance query with semantic understanding
+      let semanticEnhancement: any = { 
+        originalQuery: query.query, 
+        enhancedContext: query.query, 
+        relatedQueries: [], 
+        confidenceBoost: 0, 
+        suggestedCategories: ['general'] 
+      };
+      try {
+        semanticEnhancement = await this.smartPatternEngine?.enhanceQueryWithSemantics(query.query, query.userId) || semanticEnhancement;
+      } catch (error) {
+        console.warn('Error enhancing query with semantics:', error);
+      }
+
+      // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
+      const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
       
-      // 4. Generate Digital Life Twin response
-      const response = await this.generateLifeTwinResponse(query, userContext, personality, queryAnalysis);
+      // 6. Generate Digital Life Twin response (enhanced with smart insights and semantics)
+      const response = await this.generateLifeTwinResponse(query, userContext, personality, queryAnalysis, smartAnalysis, semanticEnhancement);
       
-      // 5. Identify cross-module connections and opportunities
-      const connections = await this.identifyCrossModuleConnections(query, userContext, response);
+      // 5. Identify cross-module connections and opportunities (with error handling)
+      let connections: CrossModuleConnection[] = [];
+      try {
+        connections = await this.identifyCrossModuleConnections(query, userContext, response);
+      } catch (error) {
+        console.warn('Error identifying cross-module connections:', error);
+      }
       
-      // 6. Determine actions the Digital Life Twin should take
-      const actions = await this.determineActions(query, userContext, personality, response);
+      // 6. Determine actions the Digital Life Twin should take (with error handling)
+      let actions: LifeTwinAction[] = [];
+      try {
+        actions = await this.determineActions(query, userContext, personality, response);
+      } catch (error) {
+        console.warn('Error determining actions:', error);
+      }
       
-      // 7. Extract relevant insights
-      const relevantInsights = this.extractRelevantInsights(userContext, query);
+      // 7. Extract relevant insights (with error handling)
+      let relevantInsights: CrossModuleInsight[] = [];
+      try {
+        relevantInsights = this.extractRelevantInsights(userContext, query);
+      } catch (error) {
+        console.warn('Error extracting insights:', error);
+      }
       
-      // 8. Calculate personality alignment
-      const personalityAlignment = this.calculatePersonalityAlignment(response, personality);
+      // 8. Calculate personality alignment (with error handling)
+      let personalityAlignment = 0.5;
+      try {
+        personalityAlignment = this.calculatePersonalityAlignment(response, personality);
+      } catch (error) {
+        console.warn('Error calculating personality alignment:', error);
+      }
       
       // 9. Learn from this interaction (using mock AIRequest/AIResponse for now)
       await this.learningEngine.processInteraction(
@@ -182,9 +261,9 @@ export class DigitalLifeTwinCore {
   }
 
   /**
-   * Analyze query intent and context
+   * Analyze query intent and context (enhanced with smart patterns and semantics)
    */
-  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: any) {
+  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: any, smartAnalysis?: any, semanticEnhancement?: any) {
     const queryLower = query.query.toLowerCase();
     
     // Determine query type
@@ -219,16 +298,18 @@ export class DigitalLifeTwinCore {
   }
 
   /**
-   * Generate response as Digital Life Twin
+   * Generate response as Digital Life Twin (enhanced with smart insights and semantics)
    */
   private async generateLifeTwinResponse(
     query: LifeTwinQuery, 
     userContext: UserContext, 
     personality: any, 
-    analysis: any
+    analysis: any,
+    smartAnalysis?: any,
+    semanticEnhancement?: any
   ) {
-    // Build context-aware prompt
-    const prompt = this.buildDigitalTwinPrompt(query, userContext, personality, analysis);
+    // Build context-aware prompt (enhanced with smart patterns and semantics)
+    const prompt = this.buildDigitalTwinPrompt(query, userContext, personality, analysis, smartAnalysis, semanticEnhancement);
     
     // Use appropriate AI provider based on complexity and privacy
     const provider = this.selectAIProvider(analysis.complexity, query.query);
@@ -252,9 +333,9 @@ export class DigitalLifeTwinCore {
   }
 
   /**
-   * Build comprehensive prompt for Digital Life Twin
+   * Build comprehensive prompt for Digital Life Twin (enhanced with smart patterns and semantics)
    */
-  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: any, analysis: any): string {
+  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: any, analysis: any, smartAnalysis?: any, semanticEnhancement?: any): string {
     const currentTime = new Date().toLocaleString();
     
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
@@ -280,6 +361,19 @@ ${userContext.patterns.slice(0, 3).map(p => `- ${p.pattern} (${Math.round(p.conf
 
 KEY INSIGHTS:
 ${userContext.crossModuleInsights.slice(0, 3).map(i => `- ${i.title}: ${i.description}`).join('\n')}
+
+SMART PATTERN ANALYSIS:
+${smartAnalysis?.patterns?.slice(0, 3).map((p: any) => `- ${p.pattern} (${Math.round(p.confidence * 100)}% confidence)`).join('\n') || '- Learning your patterns...'}
+
+INTELLIGENT PREDICTIONS:
+${smartAnalysis?.predictions?.slice(0, 2).map((pred: any) => `- ${pred.description} (${Math.round(pred.confidence * 100)}% confidence)`).join('\n') || '- Building predictive insights...'}
+
+SEMANTIC CONTEXT:
+${semanticEnhancement?.relatedQueries?.length > 0 ? 
+  `Similar past queries:\n${semanticEnhancement.relatedQueries.slice(0, 2).map((rq: any) => `- "${rq.query}" (${Math.round(rq.similarity * 100)}% similar)`).join('\n')}` : 
+  '- Learning query patterns...'}
+- Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
+- Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
 
 CURRENT CONTEXT:
 - Time: ${currentTime}
@@ -779,6 +873,73 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     if (query.includes('file') || query.includes('organization')) return 'organization';
     if (query.includes('communication')) return 'communication';
     return 'general';
+  }
+
+  /**
+   * Create fallback user context when full context cannot be loaded
+   */
+  private createFallbackUserContext(userId: string): UserContext {
+    return {
+      userId,
+      timestamp: new Date(),
+      activeModules: ['household', 'chat', 'drive', 'business'],
+      crossModuleInsights: [],
+      currentFocus: {
+        module: 'general',
+        activity: 'general_usage',
+        priority: 'medium',
+        timeSpent: 0
+      },
+      patterns: [],
+      relationships: [],
+      preferences: {
+        communication: {
+          preferredChannels: ['email', 'chat'],
+          responseTimeExpectations: { email: 240, chat: 30 },
+          formalityLevel: 70,
+          timezone: 'UTC'
+        },
+        work: {
+          productiveHours: [9, 10, 11, 14, 15, 16],
+          focusBlockPreference: 120,
+          interruptionTolerance: 50,
+          collaborationStyle: 'collaborative',
+          prioritizationMethod: 'importance'
+        },
+        personal: {
+          socialEngagement: 70,
+          privacyLevel: 80,
+          sharingComfort: 60,
+          planningHorizon: 7
+        }
+      },
+      lifeState: {
+        workLifeBalance: { 
+          score: 70, 
+          trend: 'stable', 
+          concerns: [], 
+          opportunities: [] 
+        },
+        productivity: { 
+          score: 75, 
+          peakHours: [9, 10, 14, 15], 
+          efficiency: 75,
+          bottlenecks: [] 
+        },
+        relationships: { 
+          score: 80, 
+          socialConnections: 25, 
+          communicationHealth: 80,
+          networkGrowth: 5 
+        },
+        goals: {
+          activeGoals: 5,
+          progressRate: 70,
+          completionRate: 80,
+          alignment: 75
+        }
+      }
+    };
   }
 }
 
