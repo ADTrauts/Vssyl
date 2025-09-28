@@ -4,9 +4,9 @@ import { authenticatedApiCall } from '../lib/apiUtils';
 
 export interface FeatureConfig {
   name: string;
-  requiredTier: 'free' | 'standard' | 'enterprise';
+  requiredTier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise';
   module: string;
-  category: 'core' | 'premium' | 'enterprise';
+  category: 'personal' | 'business';
   description: string;
   usageLimit?: number;
   usageMetric?: string;
@@ -24,9 +24,8 @@ export interface FeatureAccess {
 }
 
 export interface ModuleFeatureAccess {
-  core: { available: string[]; locked: string[] };
-  premium: { available: string[]; locked: string[] };
-  enterprise: { available: string[]; locked: string[] };
+  personal: { available: string[]; locked: string[] };
+  business: { available: string[]; locked: string[] };
 }
 
 export function useFeatureGating(businessId?: string) {
@@ -123,7 +122,7 @@ export function useFeatureGating(businessId?: string) {
   // Get module feature access summary
   const getModuleFeatureAccess = async (module: string): Promise<ModuleFeatureAccess> => {
     if (!session?.user?.id) {
-      return { core: { available: [], locked: [] }, premium: { available: [], locked: [] }, enterprise: { available: [], locked: [] } };
+      return { personal: { available: [], locked: [] }, business: { available: [], locked: [] } };
     }
 
     // Return cached if available
@@ -144,7 +143,7 @@ export function useFeatureGating(businessId?: string) {
         method: 'GET'
       });
       
-      const moduleAccess = response && typeof response === 'object' && 'access' in response ? response.access as ModuleFeatureAccess : { core: { available: [], locked: [] }, premium: { available: [], locked: [] }, enterprise: { available: [], locked: [] } };
+      const moduleAccess = response && typeof response === 'object' && 'access' in response ? response.access as ModuleFeatureAccess : { personal: { available: [], locked: [] }, business: { available: [], locked: [] } };
       
       // Cache the result
       setModuleFeatures(prev => ({
@@ -155,12 +154,12 @@ export function useFeatureGating(businessId?: string) {
       return moduleAccess;
     } catch (err) {
       console.error(`Failed to get module feature access for ${module}:`, err);
-      return { core: { available: [], locked: [] }, premium: { available: [], locked: [] }, enterprise: { available: [], locked: [] } };
+      return { personal: { available: [], locked: [] }, business: { available: [], locked: [] } };
     }
   };
 
   // Get features by category
-  const getFeaturesByCategory = (category: 'core' | 'premium' | 'enterprise'): FeatureConfig[] => {
+  const getFeaturesByCategory = (category: 'personal' | 'business'): FeatureConfig[] => {
     return Object.values(features).filter(feature => feature.category === category);
   };
 
@@ -170,23 +169,26 @@ export function useFeatureGating(businessId?: string) {
   };
 
   // Get features by tier
-  const getFeaturesByTier = (tier: 'free' | 'standard' | 'enterprise'): FeatureConfig[] => {
+  const getFeaturesByTier = (tier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise'): FeatureConfig[] => {
     return Object.values(features).filter(feature => feature.requiredTier === tier);
   };
 
   // Check if user has enterprise access
   const hasEnterpriseAccess = async (): Promise<boolean> => {
-    return await hasFeature('dashboard_advanced_analytics') || 
-           await hasFeature('drive_advanced_sharing') ||
-           await hasFeature('chat_encryption') ||
-           await hasFeature('calendar_resource_booking');
+    return await hasFeature('custom_integrations') || 
+           await hasFeature('dedicated_support');
   };
 
-  // Check if user has standard access
-  const hasStandardAccess = async (): Promise<boolean> => {
-    return await hasFeature('drive_basic_sharing') || 
-           await hasFeature('chat_file_sharing') ||
-           await hasFeature('calendar_attendees');
+  // Check if user has business access
+  const hasBusinessAccess = async (): Promise<boolean> => {
+    return await hasFeature('team_management') || 
+           await hasFeature('enterprise_features');
+  };
+
+  // Check if user has pro access
+  const hasProAccess = async (): Promise<boolean> => {
+    return await hasFeature('ai_unlimited') || 
+           await hasFeature('ads_free');
   };
 
   // Record feature usage
@@ -227,7 +229,8 @@ export function useFeatureGating(businessId?: string) {
     getFeaturesByModule,
     getFeaturesByTier,
     hasEnterpriseAccess,
-    hasStandardAccess,
+    hasBusinessAccess,
+    hasProAccess,
     
     // Usage tracking
     recordUsage
@@ -276,9 +279,8 @@ export function useFeature(featureName: string, businessId?: string) {
 // Hook for checking module access
 export function useModuleFeatures(module: string, businessId?: string) {
   const [moduleAccess, setModuleAccess] = useState<ModuleFeatureAccess>({
-    core: { available: [], locked: [] },
-    premium: { available: [], locked: [] },
-    enterprise: { available: [], locked: [] }
+    personal: { available: [], locked: [] },
+    business: { available: [], locked: [] }
   });
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
@@ -308,8 +310,7 @@ export function useModuleFeatures(module: string, businessId?: string) {
   return {
     moduleAccess,
     loading,
-    hasCore: moduleAccess.core.available.length > 0,
-    hasPremium: moduleAccess.premium.available.length > 0,
-    hasEnterprise: moduleAccess.enterprise.available.length > 0
+    hasPersonal: moduleAccess.personal.available.length > 0,
+    hasBusiness: moduleAccess.business.available.length > 0
   };
 }

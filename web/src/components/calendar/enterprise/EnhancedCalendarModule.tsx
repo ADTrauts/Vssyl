@@ -73,7 +73,7 @@ interface EnhancedCalendarModuleProps {
 
 export default function EnhancedCalendarModule({ businessId, className = '' }: EnhancedCalendarModuleProps) {
   const { recordUsage } = useFeatureGating(businessId);
-  const { moduleAccess, hasEnterprise } = useModuleFeatures('calendar', businessId);
+  const { moduleAccess, hasBusiness: hasEnterprise } = useModuleFeatures('calendar', businessId);
   
   // Core state
   const [events, setEvents] = useState<CalendarEvent[]>([]);

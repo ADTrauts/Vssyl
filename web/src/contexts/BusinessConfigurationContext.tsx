@@ -791,91 +791,19 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
 
   // Subscribe to WebSocket updates
   const subscribeToUpdates = useCallback((businessId: string) => {
-    // During development, use polling by default to avoid WebSocket errors
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    if (isDevelopment) {
-      console.log('Development mode: using polling instead of WebSocket');
-      setUsePolling(true);
-      startPolling(businessId);
-      return;
-    }
+    // Business-specific WebSocket endpoints are not implemented yet
+    // Use polling for business configuration updates
+    console.log('Using polling for business configuration updates');
+    setUsePolling(true);
+    startPolling(businessId);
+    return;
+  }, [startPolling]);
 
-    // Don't create new WebSocket if we're using polling or have too many errors
-    if (usePolling || wsErrorCount >= maxWsErrors) {
-      console.log('Using polling instead of WebSocket due to errors or configuration');
-      startPolling(businessId);
-      return;
-    }
-
-    // Close existing connection if any
-    if (websocket) {
-      websocket.close();
-    }
-
-    try {
-      // Use centralized WebSocket configuration
-      const config = getWebSocketConfig();
-      const wsUrl = `${config.url}/business/${businessId}`;
-      const realWebSocket = new WebSocket(wsUrl);
-      
-      realWebSocket.onopen = () => {
-        console.log('WebSocket connected successfully');
-        setWsConnected(true);
-        setWsErrorCount(0);
-        setUsePolling(false);
-      };
-
-      realWebSocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'business_config_update' && data.businessId === businessId) {
-            console.log('Received business config update via WebSocket');
-            loadConfiguration(businessId);
-          }
-        } catch (err) {
-          console.error('Failed to parse WebSocket message:', err);
-        }
-      };
-
-      realWebSocket.onerror = (error) => {
-        console.warn('WebSocket connection failed, falling back to polling');
-        setWsErrorCount(prev => prev + 1);
-        setWsConnected(false);
-        
-        // If too many errors, switch to polling permanently
-        if (wsErrorCount + 1 >= maxWsErrors) {
-          setUsePolling(true);
-          startPolling(businessId);
-        }
-      };
-
-      realWebSocket.onclose = () => {
-        console.log('WebSocket connection closed');
-        setWsConnected(false);
-        
-        // If not manually closed and we haven't switched to polling, try polling
-        if (!usePolling && wsErrorCount < maxWsErrors) {
-          startPolling(businessId);
-        }
-      };
-
-      setWebsocket(realWebSocket);
-    } catch (error) {
-      console.warn('Failed to create WebSocket, using polling instead:', error);
-      setUsePolling(true);
-      startPolling(businessId);
-    }
-  }, [websocket, wsErrorCount, usePolling, maxWsErrors, loadConfiguration, startPolling]);
-
-  // Unsubscribe from WebSocket updates
+  // Unsubscribe from updates
   const unsubscribeFromUpdates = useCallback(() => {
-    if (websocket) {
-      websocket.close();
-      setWebsocket(null);
-    }
     stopPolling();
     setWsConnected(false);
-  }, [websocket, stopPolling]);
+  }, [stopPolling]);
 
   // Get enabled modules
   const getEnabledModules = useCallback(() => {

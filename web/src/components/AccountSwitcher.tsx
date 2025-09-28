@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Modal, Avatar } from 'shared/components';
 import { businessAPI, Business } from '../api/business';
 import { educationalAPI } from '../api/educational';
-import { Building2, User, Plus, ChevronRight, GraduationCap, Settings, Shield } from 'lucide-react';
+import { Building2, User, Plus, ChevronRight, GraduationCap, Settings, Shield, RotateCcw } from 'lucide-react';
 
 
 interface EducationalInstitution {
@@ -55,25 +55,54 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
     }
   }, [isModalOpen]);
 
+  // Force refresh accounts when modal is opened (to catch newly created businesses)
+  const handleRefreshAccounts = async () => {
+    await loadAccounts();
+  };
+
   const loadAccounts = async () => {
     setLoading(true);
     setError(null);
     
+    // Check if user is authenticated
+    if (!session?.accessToken) {
+      setError('Please log in to view your accounts');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const [businessResponse, institutionResponse] = await Promise.all([
-        businessAPI.getUserBusinesses(),
-        educationalAPI.getUserInstitutions()
+        businessAPI.getUserBusinesses().catch(err => {
+          console.error('Business API error:', err);
+          return { success: false as const, error: err.message };
+        }),
+        educationalAPI.getUserInstitutions().catch(err => {
+          console.error('Educational API error:', err);
+          return { success: false as const, error: err.message };
+        })
       ]);
       
       if (businessResponse.success) {
         setBusinesses(businessResponse.data);
+      } else {
+        console.warn('Failed to load businesses:', (businessResponse as any).error);
       }
       
       if (institutionResponse.success) {
         setInstitutions(institutionResponse.data);
+      } else {
+        console.warn('Failed to load institutions:', (institutionResponse as any).error);
       }
+      
+      // Only set error if both failed
+      if (!businessResponse.success && !institutionResponse.success) {
+        setError(`Failed to load accounts: ${(businessResponse as any).error || (institutionResponse as any).error}`);
+      }
+      
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load accounts';
+      console.error('Account loading error:', err);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -210,6 +239,19 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
               {error}
             </div>
           )}
+
+          {/* Refresh Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleRefreshAccounts}
+              disabled={loading}
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
+              title="Refresh accounts"
+            >
+              <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
 
           {/* Personal Account */}
           <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"

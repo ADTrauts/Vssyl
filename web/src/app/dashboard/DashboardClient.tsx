@@ -23,7 +23,6 @@ import { Shield } from 'lucide-react';
 import HouseholdMemberManager from '../../components/household/HouseholdMemberManager';
 import DriveWidget from '../../components/widgets/DriveWidget';
 import ChatWidget from '../../components/widgets/ChatWidget';
-import AnalyticsWidget from '../../components/widgets/AnalyticsWidget';
 import CalendarWidget from '../../components/widgets/CalendarWidget';
 import DashboardBuildOutModal from '../../components/DashboardBuildOutModal';
 import ModuleManagementModal from '../../components/ModuleManagementModal';
@@ -133,18 +132,6 @@ function WidgetContent({
         }}
         onRemove={() => onRemoveWidget(widget.id)}
         {...dashboardContext}
-      />
-    );
-  }
-  if (type === 'analytics') {
-    return (
-      <AnalyticsWidget
-        id={widget.id}
-        config={widget.config}
-        onConfigChange={(config) => {
-          // TODO: Implement widget config update
-        }}
-        onRemove={() => onRemoveWidget(widget.id)}
       />
     );
   }
@@ -571,21 +558,6 @@ function DashboardContent({
                 }}
               >
                 Add Drive Widget
-              </button>
-              <button
-                onClick={() => onAddWidget('analytics')}
-                disabled={widgetLoading}
-                style={{ 
-                  padding: '6px 12px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: widgetLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px'
-                }}
-              >
-                Add Analytics Widget
               </button>
             </div>
             

@@ -18,41 +18,56 @@ export const stripe = STRIPE_CONFIG.secretKey
 // Stripe product IDs for different tiers
 export const STRIPE_PRODUCTS = {
   FREE: 'prod_free',
-  STANDARD: 'prod_standard',
+  PRO: 'prod_pro',
+  BUSINESS_BASIC: 'prod_business_basic',
+  BUSINESS_ADVANCED: 'prod_business_advanced',
   ENTERPRISE: 'prod_enterprise',
-  MODULE_PREMIUM: 'prod_module_premium',
-  MODULE_ENTERPRISE: 'prod_module_enterprise',
 };
 
 // Stripe price IDs for different tiers
 export const STRIPE_PRICES = {
-  STANDARD_MONTHLY: 'price_standard_monthly',
-  STANDARD_YEARLY: 'price_standard_yearly',
+  PRO_MONTHLY: 'price_pro_monthly',
+  PRO_YEARLY: 'price_pro_yearly',
+  BUSINESS_BASIC_MONTHLY: 'price_business_basic_monthly',
+  BUSINESS_BASIC_YEARLY: 'price_business_basic_yearly',
+  BUSINESS_ADVANCED_MONTHLY: 'price_business_advanced_monthly',
+  BUSINESS_ADVANCED_YEARLY: 'price_business_advanced_yearly',
   ENTERPRISE_MONTHLY: 'price_enterprise_monthly',
   ENTERPRISE_YEARLY: 'price_enterprise_yearly',
-  MODULE_PREMIUM_MONTHLY: 'price_module_premium_monthly',
-  MODULE_PREMIUM_YEARLY: 'price_module_premium_yearly',
-  MODULE_ENTERPRISE_MONTHLY: 'price_module_enterprise_monthly',
-  MODULE_ENTERPRISE_YEARLY: 'price_module_enterprise_yearly',
 };
 
 // Pricing configuration
 export const PRICING_CONFIG = {
-  STANDARD: {
-    monthly: 29.99,
-    yearly: 299.99, // ~17% discount
+  FREE: {
+    monthly: 0,
+    yearly: 0,
+    features: ['basic_modules', 'limited_ai', 'ads_supported'],
+  },
+  PRO: {
+    monthly: 29.00,
+    yearly: 290.00, // ~17% discount
+    features: ['all_modules', 'unlimited_ai', 'no_ads'],
+  },
+  BUSINESS_BASIC: {
+    monthly: 49.99,
+    yearly: 499.99, // ~17% discount
+    perEmployee: 5.00,
+    includedEmployees: 10,
+    features: ['all_modules', 'basic_ai', 'team_management', 'enterprise_features'],
+  },
+  BUSINESS_ADVANCED: {
+    monthly: 69.99,
+    yearly: 699.99, // ~17% discount
+    perEmployee: 5.00,
+    includedEmployees: 10,
+    features: ['all_modules', 'advanced_ai', 'team_management', 'enterprise_features', 'advanced_analytics'],
   },
   ENTERPRISE: {
-    monthly: 99.99,
-    yearly: 999.99, // ~17% discount
-  },
-  MODULE_PREMIUM: {
-    monthly: 9.99,
-    yearly: 99.99, // ~17% discount
-  },
-  MODULE_ENTERPRISE: {
-    monthly: 29.99,
-    yearly: 299.99, // ~17% discount
+    monthly: 129.99,
+    yearly: 1299.99, // ~17% discount
+    perEmployee: 5.00,
+    includedEmployees: 10,
+    features: ['all_modules', 'unlimited_ai', 'team_management', 'enterprise_features', 'advanced_analytics', 'custom_integrations', 'dedicated_support'],
   },
 };
 

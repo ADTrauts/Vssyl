@@ -81,7 +81,7 @@ interface EnhancedChatModuleProps {
 
 export default function EnhancedChatModule({ businessId, className = '' }: EnhancedChatModuleProps) {
   const { recordUsage } = useFeatureGating(businessId);
-  const { moduleAccess, hasEnterprise } = useModuleFeatures('chat', businessId);
+  const { moduleAccess, hasBusiness: hasEnterprise } = useModuleFeatures('chat', businessId);
   
   // Core state
   const [channels, setChannels] = useState<ChatChannel[]>([]);

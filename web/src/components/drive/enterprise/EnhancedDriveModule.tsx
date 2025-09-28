@@ -55,7 +55,7 @@ interface EnhancedDriveModuleProps {
 
 export default function EnhancedDriveModule({ businessId, className = '' }: EnhancedDriveModuleProps) {
   const { recordUsage } = useFeatureGating(businessId);
-  const { moduleAccess, hasEnterprise } = useModuleFeatures('drive', businessId);
+  const { moduleAccess, hasBusiness: hasEnterprise } = useModuleFeatures('drive', businessId);
   
   // Core state
   const [items, setItems] = useState<DriveItem[]>([]);

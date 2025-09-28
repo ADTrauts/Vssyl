@@ -2,18 +2,24 @@
 // BILLING & SUBSCRIPTION MODELS
 // ============================================================================
 
-// Core tier subscriptions (Free, Standard, Enterprise)
+// Core tier subscriptions (Free, Pro, Business Basic/Advanced, Enterprise)
 model Subscription {
   id              String   @id @default(uuid())
   userId          String
   businessId      String?
-  tier            String   // 'free', 'standard', 'enterprise'
+  tier            String   // 'free', 'pro', 'business_basic', 'business_advanced', 'enterprise'
   status          String   // 'active', 'cancelled', 'past_due', 'unpaid'
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   cancelAtPeriodEnd Boolean @default(false)
   stripeSubscriptionId String?
   stripeCustomerId    String?
+  
+  // Business-specific fields
+  employeeCount   Int?     // Total employees for business plans
+  includedEmployees Int?   // Included employees (10 for business plans)
+  additionalEmployeeCost Float? // Cost for additional employees
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   

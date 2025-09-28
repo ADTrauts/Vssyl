@@ -18,11 +18,14 @@ import { authenticatedApiCall } from '../lib/apiUtils';
 
 interface Subscription {
   id: string;
-  tier: 'free' | 'standard' | 'enterprise';
+  tier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise';
   status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  employeeCount?: number;
+  includedEmployees?: number;
+  additionalEmployeeCost?: number;
 }
 
 interface ModuleSubscription {
@@ -135,9 +138,10 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
   const getTierColor = (tier: string) => {
     switch (tier) {
       case 'free': return 'bg-gray-100 text-gray-800';
-      case 'standard': return 'bg-blue-100 text-blue-800';
-      case 'enterprise': return 'bg-purple-100 text-purple-800';
-      case 'premium': return 'bg-green-100 text-green-800';
+      case 'pro': return 'bg-blue-100 text-blue-800';
+      case 'business_basic': return 'bg-green-100 text-green-800';
+      case 'business_advanced': return 'bg-purple-100 text-purple-800';
+      case 'enterprise': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -208,10 +212,13 @@ export default function BillingModal({ isOpen, onClose }: BillingModalProps) {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold capitalize">{subscription.tier} Plan</h3>
+                          <h3 className="text-lg font-semibold capitalize">{subscription.tier.replace('_', ' ')} Plan</h3>
                           <p className="text-sm text-gray-600">
-                            {subscription.tier === 'free' ? 'Free tier' : 
-                             subscription.tier === 'standard' ? '$49.99/month' : 'Custom pricing'}
+                            {subscription.tier === 'free' ? 'Free tier with ads' : 
+                             subscription.tier === 'pro' ? '$29.00/month' :
+                             subscription.tier === 'business_basic' ? `$49.99/month + $5/employee (${subscription.includedEmployees || 10} included)` :
+                             subscription.tier === 'business_advanced' ? `$69.99/month + $5/employee (${subscription.includedEmployees || 10} included)` :
+                             subscription.tier === 'enterprise' ? `$129.99/month + $5/employee (${subscription.includedEmployees || 10} included)` : 'Custom pricing'}
                           </p>
                         </div>
                         <div className="flex gap-2">
