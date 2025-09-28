@@ -149,7 +149,7 @@ router.post('/usage', async (req: Request, res: Response) => {
 
 /**
  * GET /api/features/by-category?category=<category>
- * Get features by category (core, premium, enterprise)
+ * Get features by category (personal, business)
  */
 router.get('/by-category', async (req: Request, res: Response) => {
   try {
@@ -159,11 +159,11 @@ router.get('/by-category', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Category parameter is required' });
     }
 
-    if (!['core', 'premium', 'enterprise'].includes(category)) {
-      return res.status(400).json({ error: 'Invalid category. Must be core, premium, or enterprise' });
+    if (!['personal', 'business'].includes(category)) {
+      return res.status(400).json({ error: 'Invalid category. Must be personal or business' });
     }
 
-    const features = FeatureGatingService.getFeaturesByCategory(category as 'core' | 'premium' | 'enterprise');
+    const features = FeatureGatingService.getFeaturesByCategory(category as 'personal' | 'business');
 
     res.json({
       success: true,
@@ -181,7 +181,7 @@ router.get('/by-category', async (req: Request, res: Response) => {
 
 /**
  * GET /api/features/by-tier?tier=<tier>
- * Get features by subscription tier (free, standard, enterprise)
+ * Get features by subscription tier (free, pro, business_basic, business_advanced, enterprise)
  */
 router.get('/by-tier', async (req: Request, res: Response) => {
   try {
@@ -191,11 +191,11 @@ router.get('/by-tier', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Tier parameter is required' });
     }
 
-    if (!['free', 'standard', 'enterprise'].includes(tier)) {
-      return res.status(400).json({ error: 'Invalid tier. Must be free, standard, or enterprise' });
+    if (!['free', 'pro', 'business_basic', 'business_advanced', 'enterprise'].includes(tier)) {
+      return res.status(400).json({ error: 'Invalid tier. Must be free, pro, business_basic, business_advanced, or enterprise' });
     }
 
-    const features = FeatureGatingService.getFeaturesByTier(tier as 'free' | 'standard' | 'enterprise');
+    const features = FeatureGatingService.getFeaturesByTier(tier as 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise');
 
     res.json({
       success: true,
