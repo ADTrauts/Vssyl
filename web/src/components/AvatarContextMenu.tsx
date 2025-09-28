@@ -105,8 +105,21 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
     toast.success(`Theme changed to ${newTheme}`);
   };
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/auth/login" });
+  const handleSignOut = async () => {
+    try {
+      // Clear any local storage that might interfere
+      localStorage.removeItem('lastActiveDashboardId');
+      
+      // Sign out with redirect to home page (which will show landing page)
+      await signOut({ 
+        callbackUrl: "/",
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: force redirect to home
+      window.location.href = '/';
+    }
   };
 
   const handleTriggerClick = () => {

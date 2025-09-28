@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import LandingPage from './landing/page';
 
 export default function Home() {
   const router = useRouter();
@@ -17,15 +18,17 @@ export default function Home() {
     
     if (status === 'loading') return; // Still loading auth state
 
-    if (session?.accessToken) {
-      // User is authenticated, redirect to dashboard
-      console.log('Redirecting to dashboard');
-      router.replace('/dashboard');
-    } else {
-      // User is not authenticated, redirect to login
-      console.log('Redirecting to login');
-      router.replace('/auth/login');
-    }
+    // Add a small delay to ensure session state is fully updated
+    const timeoutId = setTimeout(() => {
+      if (session?.accessToken) {
+        // User is authenticated, redirect to dashboard
+        console.log('Redirecting to dashboard');
+        router.replace('/dashboard');
+      }
+      // If not authenticated, show landing page (no redirect needed)
+    }, 100); // Small delay to ensure session state is settled
+
+    return () => clearTimeout(timeoutId);
   }, [router, session, status]);
 
   // Show loading state while checking authentication
@@ -40,5 +43,11 @@ export default function Home() {
     );
   }
 
+  // If user is not authenticated, show landing page
+  if (!session?.accessToken) {
+    return <LandingPage />;
+  }
+
+  // If user is authenticated, the useEffect will handle redirect
   return null;
 }

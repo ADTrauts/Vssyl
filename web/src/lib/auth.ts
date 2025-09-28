@@ -158,20 +158,31 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log('NextAuth redirect callback:', { url, baseUrl });
+      
+      // Handle signout - redirect to home page (which will show landing page)
+      if (url.includes('/api/auth/signout') || url.includes('signOut')) {
+        console.log('Logout detected, redirecting to home');
+        return baseUrl;
+      }
+      
       // If the user is coming from a protected route, redirect them back
       if (url.startsWith(baseUrl)) {
         return url;
       }
+      
       // If they're coming from the root, let the home page handle the redirect
       if (url === baseUrl || url === baseUrl + '/') {
         return baseUrl;
       }
+      
       // Default to dashboard for authenticated users
       return '/dashboard';
     }
   },
   pages: {
     signIn: '/auth/login',
+    signOut: '/',
     error: '/auth/login',
   },
   session: {

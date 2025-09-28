@@ -24,6 +24,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email,
         password,
+        redirect: false, // Prevent NextAuth from handling redirect automatically
       });
 
       if (result?.error) {
@@ -31,11 +32,10 @@ export default function LoginPage() {
         return;
       }
 
-      if (result?.ok && result?.url && typeof result.url === 'string' && result.url.startsWith('/')) {
-        window.location.href = result.url;
-        return;
-      } else if (result?.ok) {
-        window.location.href = '/dashboard';
+      if (result?.ok) {
+        // Successful login - redirect to dashboard
+        console.log('Login successful, redirecting to dashboard');
+        router.push('/dashboard');
         return;
       }
     } catch (err: any) {

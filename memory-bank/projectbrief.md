@@ -31,7 +31,8 @@ Vssyl is a revolutionary digital workspace platform that combines:
 - **Stripe Integration**: Complete payment processing and subscription management
 - **Billing Infrastructure**: Database schema, API endpoints, service layer
 - **Developer Portal**: Revenue analytics and payout management
-- **Feature Gating**: Usage-based access control
+- **Feature Gating**: Simplified usage-based access control
+- **Pricing Structure**: Simplified 5-tier system (Free, Pro, Business Basic, Business Advanced, Enterprise)
 - **Status**: Fully functional and ready for production
 
 #### **3. Core Platform Features** ✅
@@ -203,10 +204,10 @@ Vssyl is a revolutionary digital workspace platform that combines:
 - Comprehensive developer portal and tools
 
 ### **3. Comprehensive Billing System**
-- Tiered subscription model (Free, Standard, Enterprise)
-- Module-specific subscriptions with pricing
+- Simplified 5-tier subscription model (Free, Pro, Business Basic, Business Advanced, Enterprise)
+- Context-aware module features (personal vs business lanes)
 - Revenue sharing for third-party developers
-- Advanced usage tracking and feature gating
+- Simplified usage tracking and feature gating
 
 ### **4. Real-time Collaboration**
 - Live chat with file sharing and reactions

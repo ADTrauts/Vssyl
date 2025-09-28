@@ -50,8 +50,21 @@ export class SessionErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: undefined });
   };
 
-  handleSignOut = () => {
-    signOut({ callbackUrl: '/auth/login' });
+  handleSignOut = async () => {
+    try {
+      // Clear any local storage that might interfere
+      localStorage.removeItem('lastActiveDashboardId');
+      
+      // Sign out with redirect to home page (which will show landing page)
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: force redirect to home
+      window.location.href = '/';
+    }
   };
 
   render() {
