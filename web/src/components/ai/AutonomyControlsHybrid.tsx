@@ -33,6 +33,7 @@ export default function AutonomyControlsHybrid() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [hasCrashed, setHasCrashed] = useState(false);
 
   // Debug logging
   console.log('AutonomyControlsHybrid render - settings:', settings);
@@ -40,18 +41,46 @@ export default function AutonomyControlsHybrid() {
   console.log('AutonomyControlsHybrid render - error:', error);
   console.log('AutonomyControlsHybrid render - isAuthenticated:', isAuthenticated);
 
+  // Global error handler for this component
+  const handleError = (error: any, context: string) => {
+    console.error(`Error in ${context}:`, error);
+    setHasCrashed(true);
+    setError(`Component error in ${context}. Please refresh the page.`);
+    setIsAuthenticated(false);
+  };
+
+  // If component has crashed, show fallback UI
+  if (hasCrashed) {
+    return (
+      <Card className="p-6">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Component Error</h3>
+          <p className="text-gray-600 mb-4">The autonomy controls encountered an error. Please refresh the page.</p>
+          <Button onClick={() => window.location.reload()}>
+            Refresh Page
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   useEffect(() => {
     console.log('AutonomyControlsHybrid mounted');
     
-    // Check authentication
-    if (session?.accessToken) {
-      console.log('Session found, setting authenticated to true');
-      setIsAuthenticated(true);
-      loadAutonomySettings();
-      loadRecommendations();
-    } else {
-      console.log('No session found, setting authenticated to false');
-      setIsAuthenticated(false);
+    // Check authentication with error boundary
+    try {
+      if (session?.accessToken) {
+        console.log('Session found, setting authenticated to true');
+        setIsAuthenticated(true);
+        loadAutonomySettings();
+        loadRecommendations();
+      } else {
+        console.log('No session found, setting authenticated to false');
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      handleError(error, 'useEffect initialization');
     }
 
     return () => {
@@ -241,79 +270,84 @@ export default function AutonomyControlsHybrid() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Success Message */}
-      {saved && (
-        <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <span>Settings saved successfully!</span>
-        </Alert>
-      )}
-
+  try {
+    return (
       <div className="space-y-6">
-        <div className="text-center py-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Hybrid Autonomy Controls</h3>
-          <p className="text-gray-600 mb-4">
-            This is a hybrid version that gradually adds back the original functionality.
-          </p>
-          
-          {settings ? (
-            <div className="text-sm text-green-600">
-              ✅ Settings loaded: {Object.keys(settings).length} properties
-            </div>
-          ) : (
-            <div className="text-sm text-yellow-600">
-              ⚠️ Settings not loaded yet
-            </div>
-          )}
-          
-          {recommendations.length > 0 ? (
-            <div className="text-sm text-green-600">
-              ✅ Recommendations loaded: {recommendations.length} items
-            </div>
-          ) : (
-            <div className="text-sm text-yellow-600">
-              ⚠️ No recommendations loaded
-            </div>
-          )}
-          
-          <Button onClick={saveSettings} disabled={loading || !settings} className="mt-4">
-            {loading ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </div>
-      </div>
+        {/* Success Message */}
+        {saved && (
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <span>Settings saved successfully!</span>
+          </Alert>
+        )}
 
-      {/* Recommendations */}
-      {recommendations && Array.isArray(recommendations) && recommendations.length > 0 && (
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Info className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">AI Recommendations</h2>
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hybrid Autonomy Controls</h3>
+            <p className="text-gray-600 mb-4">
+              This is a hybrid version that gradually adds back the original functionality.
+            </p>
+            
+            {settings ? (
+              <div className="text-sm text-green-600">
+                ✅ Settings loaded: {Object.keys(settings).length} properties
+              </div>
+            ) : (
+              <div className="text-sm text-yellow-600">
+                ⚠️ Settings not loaded yet
+              </div>
+            )}
+            
+            {recommendations.length > 0 ? (
+              <div className="text-sm text-green-600">
+                ✅ Recommendations loaded: {recommendations.length} items
+              </div>
+            ) : (
+              <div className="text-sm text-yellow-600">
+                ⚠️ No recommendations loaded
+              </div>
+            )}
+            
+            <Button onClick={saveSettings} disabled={loading || !settings} className="mt-4">
+              {loading ? 'Saving...' : 'Save Settings'}
+            </Button>
           </div>
-          
-          <div className="space-y-3">
-            {recommendations.map((rec, index) => (
-              <Alert key={index}>
-                {rec.type === 'increase_autonomy' ? (
-                  <TrendingUp className="h-4 w-4" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4" />
-                )}
-                <span>
-                  <strong>{rec.type === 'increase_autonomy' ? 'Increase' : 'Decrease'} Autonomy</strong>
-                  <br />
-                  {rec.reason}
-                  <br />
-                  <span className="text-sm text-gray-600">
-                    Suggested level: {rec.suggestedLevel}%
+        </div>
+
+        {/* Recommendations */}
+        {recommendations && Array.isArray(recommendations) && recommendations.length > 0 && (
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Info className="h-5 w-5" />
+              <h2 className="text-xl font-semibold">AI Recommendations</h2>
+            </div>
+            
+            <div className="space-y-3">
+              {recommendations.map((rec, index) => (
+                <Alert key={index}>
+                  {rec.type === 'increase_autonomy' ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4" />
+                  )}
+                  <span>
+                    <strong>{rec.type === 'increase_autonomy' ? 'Increase' : 'Decrease'} Autonomy</strong>
+                    <br />
+                    {rec.reason}
+                    <br />
+                    <span className="text-sm text-gray-600">
+                      Suggested level: {rec.suggestedLevel}%
+                    </span>
                   </span>
-                </span>
-              </Alert>
-            ))}
-          </div>
-        </Card>
-      )}
-    </div>
-  );
+                </Alert>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
+    );
+  } catch (error) {
+    handleError(error, 'render method');
+    return null; // This will be caught by the hasCrashed check above
+  }
 }
