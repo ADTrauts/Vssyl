@@ -300,6 +300,12 @@ export default function AutonomyControls() {
     );
   }
 
+  // Debug logging
+  console.log('AutonomyControls render - settings:', settings);
+  console.log('AutonomyControls render - recommendations:', recommendations);
+  console.log('AutonomyControls render - error:', error);
+  console.log('AutonomyControls render - isAuthenticated:', isAuthenticated);
+
   return (
     <div className="space-y-6">
         {/* Success Message */}
@@ -318,11 +324,12 @@ export default function AutonomyControls() {
               Control how much autonomy your AI has in different areas. Higher levels mean the AI can take more actions without your approval.
             </p>
             
-            {autonomyCategories.map((category) => {
-              const value = settings?.[category.key as keyof AutonomySettings] as number || 0;
-              const autonomyInfo = getAutonomyLevel(value);
-              const riskInfo = getRiskLevel(value);
-              const Icon = category.icon;
+            {autonomyCategories && Array.isArray(autonomyCategories) ? autonomyCategories.map((category) => {
+              try {
+                const value = settings?.[category.key as keyof AutonomySettings] as number || 0;
+                const autonomyInfo = getAutonomyLevel(value) || { level: 'Unknown', color: 'bg-gray-100 text-gray-800' };
+                const riskInfo = getRiskLevel(value) || { level: 'Unknown Risk', color: 'bg-gray-100 text-gray-800' };
+                const Icon = category.icon || AlertTriangle;
               
               return (
                 <div key={category.key} className="space-y-3 p-4 border rounded-lg">
@@ -355,7 +362,23 @@ export default function AutonomyControls() {
                   </div>
                 </div>
               );
-            })}
+              } catch (error) {
+                console.error('Error rendering autonomy category:', category.key, error);
+                return (
+                  <div key={category.key} className="space-y-3 p-4 border rounded-lg bg-red-50">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      <span className="font-medium text-red-700">Error loading {category.label}</span>
+                    </div>
+                    <p className="text-sm text-red-600">Please refresh the page to try again.</p>
+                  </div>
+                );
+              }
+            }) : (
+              <div className="text-center py-4 text-gray-500">
+                Error loading autonomy categories. Please refresh the page.
+              </div>
+            )}
           </div>
 
           <hr />
@@ -494,24 +517,36 @@ export default function AutonomyControls() {
             </div>
             
             <div className="space-y-3">
-              {recommendations && Array.isArray(recommendations) ? recommendations.map((rec, index) => (
-                <Alert key={index}>
-                  {rec.type === 'increase_autonomy' ? (
-                    <TrendingUp className="h-4 w-4" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4" />
-                  )}
-                  <span>
-                    <strong>{rec.type === 'increase_autonomy' ? 'Increase' : 'Decrease'} Autonomy</strong>
-                    <br />
-                    {rec.reason}
-                    <br />
-                    <span className="text-sm text-gray-600">
-                      Suggested level: {rec.suggestedLevel}%
-                    </span>
-                  </span>
-                </Alert>
-              )) : (
+              {recommendations && Array.isArray(recommendations) ? recommendations.map((rec, index) => {
+                try {
+                  return (
+                    <Alert key={index}>
+                      {rec.type === 'increase_autonomy' ? (
+                        <TrendingUp className="h-4 w-4" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4" />
+                      )}
+                      <span>
+                        <strong>{rec.type === 'increase_autonomy' ? 'Increase' : 'Decrease'} Autonomy</strong>
+                        <br />
+                        {rec.reason}
+                        <br />
+                        <span className="text-sm text-gray-600">
+                          Suggested level: {rec.suggestedLevel}%
+                        </span>
+                      </span>
+                    </Alert>
+                  );
+                } catch (error) {
+                  console.error('Error rendering recommendation:', index, error);
+                  return (
+                    <Alert key={index}>
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>Error loading recommendation. Please refresh the page.</span>
+                    </Alert>
+                  );
+                }
+              }) : (
                 <div className="text-center py-4 text-gray-500">
                   No recommendations available at this time.
                 </div>
