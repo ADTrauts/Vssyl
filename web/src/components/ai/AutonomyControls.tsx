@@ -69,26 +69,26 @@ export default function AutonomyControls() {
     try {
       setError(null);
       console.log('Loading autonomy settings...');
-      const data = await authenticatedApiCall<AutonomySettings>('/api/ai/autonomy');
-      console.log('API response received:', data);
-      console.log('Response type:', typeof data);
-      console.log('Response keys:', data ? Object.keys(data) : 'null');
+      const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy');
+      console.log('API response received:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', response ? Object.keys(response) : 'null');
       
       // Check if response contains an error message
-      if (data && typeof data === 'object' && 'message' in data) {
-        console.warn('API returned error message:', data.message);
-        setError(`API Error: ${data.message}`);
+      if (response && typeof response === 'object' && 'error' in response) {
+        console.warn('API returned error message:', response.error);
+        setError(`API Error: ${response.error}`);
         return;
       }
       
-      // Add defensive check to ensure data is valid
-      if (data && typeof data === 'object' && !('message' in data)) {
-        console.log('Setting settings with data:', data);
-        setSettings(data);
+      // Handle the wrapped response structure
+      if (response && response.success && response.data) {
+        console.log('Setting settings with data:', response.data);
+        setSettings(response.data);
         console.log('Settings updated successfully');
       } else {
-        console.warn('Invalid data received from API:', data);
-        setError('Invalid data received from API');
+        console.warn('Invalid response structure from API:', response);
+        setError('Invalid response structure from API');
         // Keep default settings if API returns invalid data
       }
     } catch (error: unknown) {
@@ -108,22 +108,22 @@ export default function AutonomyControls() {
   const loadRecommendations = async () => {
     try {
       console.log('Loading recommendations...');
-      const data = await authenticatedApiCall<AutonomyRecommendation[]>('/api/ai/autonomy/recommendations');
-      console.log('Recommendations response:', data);
+      const response = await authenticatedApiCall<AutonomyRecommendation[]>('/api/ai/autonomy/recommendations');
+      console.log('Recommendations response:', response);
       
       // Check if response contains an error message
-      if (data && typeof data === 'object' && 'message' in data) {
-        console.warn('Recommendations API returned error:', data.message);
+      if (response && typeof response === 'object' && 'error' in response) {
+        console.warn('Recommendations API returned error:', response.error);
         setRecommendations([]);
         return;
       }
       
-      // Add defensive check to ensure data is valid
-      if (Array.isArray(data)) {
-        console.log('Setting recommendations:', data);
-        setRecommendations(data);
+      // Handle the direct response structure (not wrapped)
+      if (Array.isArray(response)) {
+        console.log('Setting recommendations:', response);
+        setRecommendations(response);
       } else {
-        console.warn('Invalid recommendations data received:', data);
+        console.warn('Invalid recommendations response structure:', response);
         setRecommendations([]);
       }
     } catch (error) {
@@ -218,13 +218,18 @@ export default function AutonomyControls() {
     setLoading(true);
     setError(null);
     try {
-      await authenticatedApiCall('/api/ai/autonomy', {
+      const response = await authenticatedApiCall<{ success: boolean; data?: any }>('/api/ai/autonomy', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      
+      if (response && response.success) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } else {
+        setError('Failed to save settings. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to save settings:', error);
       setError('Failed to save settings. Please try again.');
