@@ -274,23 +274,8 @@ export default function AutonomyControls() {
     }
   };
 
-  // Show error state if there's an error
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <span>{error}</span>
-        </Alert>
-        <Button onClick={() => {
-          setError(null);
-          loadAutonomySettings();
-        }}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  // Show warning if there's an error, but don't block the interface
+  // The error will be shown as a warning banner above the controls
 
   // Debug logging
   console.log('AutonomyControls render - settings:', settings);
@@ -305,6 +290,24 @@ export default function AutonomyControls() {
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <span>Settings saved successfully!</span>
+          </Alert>
+        )}
+
+        {/* Warning Message - Show error as warning, don't block interface */}
+        {error && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <span>{error}</span>
+            <Button 
+              onClick={() => {
+                setError(null);
+                loadAutonomySettings();
+              }}
+              size="sm"
+              className="ml-2"
+            >
+              Retry
+            </Button>
           </Alert>
         )}
 
