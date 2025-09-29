@@ -69,6 +69,10 @@ export default function AutonomyControlsHybrid() {
       console.log('Loading autonomy settings...');
       const response = await authenticatedApiCall('/api/ai/autonomy', {
         method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       }, session.accessToken);
 
       console.log('Autonomy settings response:', response);
@@ -98,6 +102,10 @@ export default function AutonomyControlsHybrid() {
       console.log('Loading recommendations...');
       const response = await authenticatedApiCall('/api/ai/autonomy/recommendations', {
         method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       }, session.accessToken);
 
       console.log('Recommendations response:', response);
