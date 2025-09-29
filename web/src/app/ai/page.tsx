@@ -312,7 +312,9 @@ function AIPageContent() {
           </Card>
 
           {/* AI Provider Test */}
-          <AIProviderTest />
+          <ErrorBoundary>
+            <AIProviderTest />
+          </ErrorBoundary>
 
           {/* Recent Activity */}
           <Card className="p-6">
@@ -377,7 +379,9 @@ function AIPageContent() {
           <p className="text-gray-600 mb-6">
             Control how much autonomy your AI has in different areas. Higher levels mean the AI can take more actions without your approval.
           </p>
-          <AutonomyControls />
+          <ErrorBoundary>
+            <AutonomyControls />
+          </ErrorBoundary>
         </Card>
       )}
 
@@ -390,19 +394,25 @@ function AIPageContent() {
           <p className="text-gray-600 mb-6">
             Help your AI understand your personality, preferences, and working style. This information helps your AI make better decisions and provide more personalized assistance.
           </p>
-          <PersonalityQuestionnaire onComplete={handlePersonalityComplete} />
+          <ErrorBoundary>
+            <PersonalityQuestionnaire onComplete={handlePersonalityComplete} />
+          </ErrorBoundary>
         </Card>
       )}
 
       {activeTab === 'actions' && (
         <div className="space-y-6">
-          <AutonomousActions />
+          <ErrorBoundary>
+            <AutonomousActions />
+          </ErrorBoundary>
         </div>
       )}
 
       {activeTab === 'patterns' && (
         <div className="space-y-6">
-          <SmartPatternInsights />
+          <ErrorBoundary>
+            <SmartPatternInsights />
+          </ErrorBoundary>
         </div>
       )}
     </div>

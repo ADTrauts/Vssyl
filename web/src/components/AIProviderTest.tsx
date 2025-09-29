@@ -29,12 +29,14 @@ export default function AIProviderTest() {
     }
 
     try {
+      console.log('Starting AI provider test for:', providerName);
       setProviders(prev => prev.map(p => 
         p.name === providerName ? { ...p, status: 'testing' } : p
       ));
 
       const startTime = Date.now();
 
+      console.log('Making API call to /api/ai/twin...');
       const response = await authenticatedApiCall('/api/ai/twin', {
         method: 'POST',
         headers: {
@@ -51,6 +53,7 @@ export default function AIProviderTest() {
       }, session.accessToken);
 
       const responseTime = Date.now() - startTime;
+      console.log('API call completed. Response:', response);
 
       // Handle the response safely
       const responseData = response as any;
@@ -65,6 +68,11 @@ export default function AIProviderTest() {
       ));
     } catch (error) {
       console.error('Error testing AI provider:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       setProviders(prev => prev.map(p => 
         p.name === providerName ? {
           ...p,
