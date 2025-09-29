@@ -12,9 +12,16 @@ const prismaConfig: any = {
 
 // If using Cloud SQL Unix socket connection, configure the client accordingly
 if (process.env.DATABASE_URL?.includes('/cloudsql/')) {
+  // URL encode the password in the DATABASE_URL to handle special characters
+  const url = new URL(process.env.DATABASE_URL);
+  if (url.password) {
+    url.password = encodeURIComponent(url.password);
+  }
+  const encodedUrl = url.toString();
+  
   prismaConfig.datasources = {
     db: {
-      url: process.env.DATABASE_URL
+      url: encodedUrl + '?connection_limit=5&pool_timeout=20&connect_timeout=60'
     }
   };
 }
