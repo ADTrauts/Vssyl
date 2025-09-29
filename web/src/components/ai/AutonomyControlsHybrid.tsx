@@ -67,12 +67,8 @@ export default function AutonomyControlsHybrid() {
 
     try {
       console.log('Loading autonomy settings...');
-      const response = await authenticatedApiCall('/api/ai/autonomy', {
+      const response = await authenticatedApiCall(`/api/ai/autonomy?t=${Date.now()}`, {
         method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
       }, session.accessToken);
 
       console.log('Autonomy settings response:', response);
@@ -100,12 +96,8 @@ export default function AutonomyControlsHybrid() {
 
     try {
       console.log('Loading recommendations...');
-      const response = await authenticatedApiCall('/api/ai/autonomy/recommendations', {
+      const response = await authenticatedApiCall(`/api/ai/autonomy/recommendations?t=${Date.now()}`, {
         method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
       }, session.accessToken);
 
       console.log('Recommendations response:', response);
