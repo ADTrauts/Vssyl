@@ -17,8 +17,6 @@ import {
   RefreshCw
 } from 'lucide-react';
 import AutonomyControls from '../../components/ai/AutonomyControls';
-import AutonomyControlsTest from '../../components/ai/AutonomyControlsTest';
-import AutonomyControlsHybrid from '../../components/ai/AutonomyControlsHybrid';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
 import AutonomousActions from '../../components/ai/AutonomousActions';
 import ErrorBoundary from '../../components/ErrorBoundary';
@@ -420,7 +418,7 @@ function AIPageContent() {
                </Button>
              </div>
            }>
-             <AutonomyControlsHybrid />
+             <AutonomyControls />
            </ErrorBoundary>
         </Card>
       )}
