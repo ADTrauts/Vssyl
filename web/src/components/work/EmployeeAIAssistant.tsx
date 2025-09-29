@@ -91,17 +91,35 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
       });
       if (response.ok) {
         const data = await response.json();
-        setBusinessAI(data.data.businessAI);
-        setCapabilities(transformCapabilities(data.data.allowedCapabilities));
+        
+        // Safely handle the response data
+        if (data?.data) {
+          setBusinessAI(data.data.businessAI || null);
+          setCapabilities(transformCapabilities(data.data.allowedCapabilities));
+        } else {
+          console.warn('Unexpected API response structure:', data);
+          setBusinessAI(null);
+          setCapabilities([]);
+        }
         setError(null);
       } else if (response.status === 404) {
         setError('Business AI not configured');
+        setBusinessAI(null);
+        setCapabilities([]);
       } else if (response.status === 403) {
         setError('Access denied to business AI');
+        setBusinessAI(null);
+        setCapabilities([]);
+      } else {
+        setError('Failed to load business AI access');
+        setBusinessAI(null);
+        setCapabilities([]);
       }
     } catch (error) {
       console.error('Failed to load business AI access:', error);
       setError('Failed to connect to business AI');
+      setBusinessAI(null);
+      setCapabilities([]);
     }
   };
 
@@ -193,7 +211,13 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
     }
   };
 
-  const transformCapabilities = (allowedCapabilities: AllowedCapability[]): AICapability[] => {
+  const transformCapabilities = (allowedCapabilities: AllowedCapability[] | null | undefined): AICapability[] => {
+    // Handle null, undefined, or non-array values
+    if (!allowedCapabilities || !Array.isArray(allowedCapabilities)) {
+      console.warn('allowedCapabilities is not an array:', allowedCapabilities);
+      return [];
+    }
+
     const iconMap: Record<string, React.ComponentType<{ size?: string | number; className?: string }>> = {
       'brain': Brain,
       'zap': Send, // Assuming Zap is Send

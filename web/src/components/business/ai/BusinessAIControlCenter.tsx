@@ -172,10 +172,17 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       });
       if (response.ok) {
         const data = await response.json();
-        setLearningEvents(data.data);
+        // Safely handle the response data
+        if (Array.isArray(data.data)) {
+          setLearningEvents(data.data);
+        } else {
+          console.warn('Learning events data is not an array:', data.data);
+          setLearningEvents([]);
+        }
       }
     } catch (error) {
       console.error('Failed to load learning events:', error);
+      setLearningEvents([]);
     }
   };
 
@@ -187,10 +194,16 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       if (response.ok) {
         const data = await response.json();
         // Store insights for use in the centralized tab
-        setCentralizedInsights(data.data);
+        if (data?.data) {
+          setCentralizedInsights(data.data);
+        } else {
+          console.warn('Centralized insights data is missing:', data);
+          setCentralizedInsights(null);
+        }
       }
     } catch (error) {
       console.error('Failed to load centralized insights:', error);
+      setCentralizedInsights(null);
     }
   };
 
@@ -717,7 +730,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                   </p>
                 ) : (
                   <div className="space-y-4">
-                    {learningEvents.map((event) => (
+                    {learningEvents && Array.isArray(learningEvents) ? learningEvents.map((event) => (
                       <div key={event.id} className="border rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -754,7 +767,7 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                           </div>
                         </div>
                       </div>
-                    ))}
+                    )) : null}
                   </div>
                 )}
               </div>
@@ -865,7 +878,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
             <p className="text-gray-500 text-center py-4">No global patterns available</p>
           ) : (
             <div className="space-y-3">
-              {insights.globalPatterns.map((pattern) => (
+              {insights.globalPatterns && Array.isArray(insights.globalPatterns) ? insights.globalPatterns.map((pattern) => (
                 <div key={pattern.id} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium">{pattern.description}</h4>
@@ -880,7 +893,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
                     Frequency: {pattern.frequency} users • Modules: {pattern.modules.join(', ')}
                   </p>
                 </div>
-              ))}
+              )) : null}
             </div>
           )}
         </div>
@@ -894,7 +907,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
             <p className="text-gray-500 text-center py-4">No collective insights available</p>
           ) : (
             <div className="space-y-3">
-              {insights.collectiveInsights.map((insight) => (
+              {insights.collectiveInsights && Array.isArray(insights.collectiveInsights) ? insights.collectiveInsights.map((insight) => (
                 <div key={insight.id} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium">{insight.title}</h4>
@@ -911,7 +924,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
                     Type: {insight.type} • Complexity: {insight.implementationComplexity}
                   </p>
                 </div>
-              ))}
+              )) : null}
             </div>
           )}
         </div>
@@ -925,7 +938,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
             <p className="text-gray-500 text-center py-4">No recommendations available</p>
           ) : (
             <div className="space-y-3">
-              {insights.recommendations.map((rec, index: number) => (
+              {insights.recommendations && Array.isArray(insights.recommendations) ? insights.recommendations.map((rec, index: number) => (
                 <div key={index} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium">{rec.title}</h4>
@@ -942,7 +955,7 @@ const CentralizedInsightsTab: React.FC<{ businessId: string }> = ({ businessId }
                     <strong>Action:</strong> {rec.implementation}
                   </p>
                 </div>
-              ))}
+              )) : null}
             </div>
           )}
         </div>
