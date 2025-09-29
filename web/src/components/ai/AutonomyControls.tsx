@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 // Use the correct path from web directory
 import { Card } from 'shared/components';
 import { Button } from 'shared/components';
@@ -44,6 +45,7 @@ interface AutonomyRecommendation {
 }
 
 export default function AutonomyControls() {
+  const { data: session } = useSession();
   const [settings, setSettings] = useState<AutonomySettings>({
     scheduling: 30,
     communication: 20,
