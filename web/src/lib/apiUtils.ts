@@ -55,8 +55,8 @@ export async function authenticatedApiCall<T>(
   if ((response.status === 401 || response.status === 403) && !token) {
     console.log('Authentication error detected, attempting token refresh...');
     
-    // Force NextAuth to refresh the session
-    const refreshedSession = await getSession({ forceRefresh: true });
+    // Get a fresh session (NextAuth will automatically refresh if needed)
+    const refreshedSession = await getSession();
     
     if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
       console.log('Token refreshed successfully, retrying request...');
