@@ -85,6 +85,13 @@ function AIPageContent() {
     }
   }, [session]);
 
+  // Debug logging for autonomy tab
+  useEffect(() => {
+    if (activeTab === 'autonomy') {
+      console.log('Rendering autonomy tab content');
+    }
+  }, [activeTab]);
+
   const loadAIData = async () => {
     if (!session?.accessToken) return;
 
@@ -386,7 +393,6 @@ function AIPageContent() {
 
       {activeTab === 'autonomy' && (
         <Card className="p-6">
-          {console.log('Rendering autonomy tab content')}
           <div className="flex items-center gap-2 mb-4">
             <Settings className="h-5 w-5" />
             <h2 className="text-xl font-semibold">AI Autonomy Settings</h2>
