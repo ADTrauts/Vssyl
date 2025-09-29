@@ -300,9 +300,8 @@ export default function AutonomyControls() {
     );
   }
 
-  try {
-    return (
-      <div className="space-y-6">
+  return (
+    <div className="space-y-6">
         {/* Success Message */}
         {saved && (
           <Alert>
@@ -320,7 +319,7 @@ export default function AutonomyControls() {
             </p>
             
             {autonomyCategories.map((category) => {
-              const value = settings[category.key as keyof AutonomySettings] as number;
+              const value = settings?.[category.key as keyof AutonomySettings] as number || 0;
               const autonomyInfo = getAutonomyLevel(value);
               const riskInfo = getRiskLevel(value);
               const Icon = category.icon;
@@ -487,7 +486,7 @@ export default function AutonomyControls() {
         </div>
 
         {/* Recommendations */}
-        {recommendations.length > 0 && (
+        {recommendations && Array.isArray(recommendations) && recommendations.length > 0 && (
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Info className="h-5 w-5" />
@@ -495,7 +494,7 @@ export default function AutonomyControls() {
             </div>
             
             <div className="space-y-3">
-              {recommendations.map((rec, index) => (
+              {recommendations && Array.isArray(recommendations) ? recommendations.map((rec, index) => (
                 <Alert key={index}>
                   {rec.type === 'increase_autonomy' ? (
                     <TrendingUp className="h-4 w-4" />
@@ -512,24 +511,14 @@ export default function AutonomyControls() {
                     </span>
                   </span>
                 </Alert>
-              ))}
+              )) : (
+                <div className="text-center py-4 text-gray-500">
+                  No recommendations available at this time.
+                </div>
+              )}
             </div>
           </Card>
         )}
       </div>
     );
-  } catch (e) {
-    console.error('Unexpected error in AutonomyControls render:', e);
-    return (
-      <div className="space-y-4">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <span>An unexpected error occurred while rendering the autonomy controls.</span>
-        </Alert>
-        <Button onClick={() => window.location.reload()}>
-          Refresh Page
-        </Button>
-      </div>
-    );
-  }
 } 
