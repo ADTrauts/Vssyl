@@ -73,9 +73,10 @@ export default function AutonomyControlsHybrid() {
 
       console.log('Autonomy settings response:', response);
 
-      if (response.success && response.data) {
-        setSettings(response.data);
-        console.log('Autonomy settings loaded successfully:', response.data);
+      const responseData = response as any;
+      if (responseData.success && responseData.data) {
+        setSettings(responseData.data);
+        console.log('Autonomy settings loaded successfully:', responseData.data);
       } else {
         console.warn('Invalid response structure for autonomy settings:', response);
         setSettings(null);
@@ -101,9 +102,10 @@ export default function AutonomyControlsHybrid() {
 
       console.log('Recommendations response:', response);
 
-      if (Array.isArray(response)) {
-        setRecommendations(response);
-        console.log('Recommendations loaded successfully:', response);
+      const responseData = response as any;
+      if (Array.isArray(responseData)) {
+        setRecommendations(responseData);
+        console.log('Recommendations loaded successfully:', responseData);
       } else {
         console.warn('Recommendations response is not an array:', response);
         setRecommendations([]);
@@ -130,7 +132,8 @@ export default function AutonomyControlsHybrid() {
 
       console.log('Save settings response:', response);
 
-      if (response.success) {
+      const responseData = response as any;
+      if (responseData.success) {
         setSaved(true);
         console.log('Settings saved successfully');
         setTimeout(() => setSaved(false), 3000);
