@@ -424,7 +424,9 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
             interaction: {
               context: 'personality_questionnaire',
               personalityData,
-              answers: Object.values(answers)
+              answers: Object.values(answers),
+              query: 'Personality questionnaire completion',
+              timestamp: new Date().toISOString()
             },
             feedback: 'Initial personality questionnaire completed'
           })
