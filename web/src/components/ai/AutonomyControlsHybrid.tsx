@@ -88,6 +88,13 @@ export default function AutonomyControlsHybrid() {
       if (error.isAuthError || error.status === 401 || error.status === 403) {
         setError('Your session has expired. Please refresh the page to log in again.');
         setIsAuthenticated(false);
+        
+        // Redirect to login after a short delay to show the error message
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login';
+          }
+        }, 2000);
       } else {
         setError('Failed to load autonomy settings');
       }
@@ -124,6 +131,13 @@ export default function AutonomyControlsHybrid() {
       if (error.isAuthError || error.status === 401 || error.status === 403) {
         setError('Your session has expired. Please refresh the page to log in again.');
         setIsAuthenticated(false);
+        
+        // Redirect to login after a short delay to show the error message
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login';
+          }
+        }, 2000);
       } else {
         setError('Failed to load recommendations');
       }
@@ -161,6 +175,13 @@ export default function AutonomyControlsHybrid() {
       if (error.isAuthError || error.status === 401 || error.status === 403) {
         setError('Your session has expired. Please refresh the page to log in again.');
         setIsAuthenticated(false);
+        
+        // Redirect to login after a short delay to show the error message
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login';
+          }
+        }, 2000);
       } else {
         setError('Failed to save settings');
       }

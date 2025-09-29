@@ -54,15 +54,7 @@ export async function authenticatedApiCall<T>(
     if (response.status === 401 || response.status === 403) {
       console.log('Authentication error detected:', response.status, errorData);
       
-      // Only handle client-side redirects here
-      // Server-side redirects should be handled by the calling component
-      if (typeof window !== 'undefined') {
-        // Small delay to allow the error to be logged
-        setTimeout(() => {
-          signOut({ callbackUrl: '/auth/login' });
-        }, 100);
-      }
-      
+      // Don't automatically redirect - let the calling component handle it
       const error = new Error('Session expired. Please log in again.') as ApiError;
       error.status = response.status;
       error.isAuthError = true;
