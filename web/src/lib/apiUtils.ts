@@ -51,33 +51,35 @@ export async function authenticatedApiCall<T>(
 
   let response = await makeRequest(accessToken);
 
-  // If we get a 401/403 and we're using NextAuth (not a direct token), try to refresh
-  if ((response.status === 401 || response.status === 403) && !token) {
-    console.log('Authentication error detected, attempting token refresh...');
-    
-    // Get a fresh session (NextAuth will automatically refresh if needed)
-    const refreshedSession = await getSession();
-    
-    if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
-      console.log('Token refreshed successfully, retrying request...');
-      accessToken = refreshedSession.accessToken;
-      response = await makeRequest(accessToken);
-    }
-  }
+         // If we get a 401/403 and we're using NextAuth (not a direct token), try to refresh
+         if ((response.status === 401 || response.status === 403) && !token) {
+           console.log('Authentication error detected, attempting token refresh...');
+           
+           // Get a fresh session (NextAuth will automatically refresh if needed)
+           const refreshedSession = await getSession();
+           
+           if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
+             console.log('Token refreshed successfully, retrying request...');
+             accessToken = refreshedSession.accessToken;
+             response = await makeRequest(accessToken);
+           } else {
+             console.log('Token refresh failed or no new token available');
+           }
+         }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     
-    // Handle authentication errors (401, 403)
-    if (response.status === 401 || response.status === 403) {
-      console.log('Authentication error after refresh attempt:', response.status, errorData);
-      
-      // Don't automatically redirect - let the calling component handle it
-      const error = new Error('Session expired. Please log in again.') as ApiError;
-      error.status = response.status;
-      error.isAuthError = true;
-      throw error;
-    }
+         // Handle authentication errors (401, 403)
+         if (response.status === 401 || response.status === 403) {
+           console.log('Authentication error after refresh attempt:', response.status, errorData);
+           
+           // If refresh failed, the session is completely expired
+           const error = new Error('Session expired. Please refresh the page to log in again.') as ApiError;
+           error.status = response.status;
+           error.isAuthError = true;
+           throw error;
+         }
     
     // Handle other errors
     const error = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`) as ApiError;

@@ -66,10 +66,15 @@ export default function AutonomyControls() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const loadAutonomySettings = async () => {
+    if (!session?.accessToken) {
+      console.log('No access token available for loadAutonomySettings');
+      return;
+    }
+
     try {
       setError(null);
       console.log('Loading autonomy settings...');
-      const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy');
+      const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy', {}, session.accessToken);
       console.log('API response received:', response);
       
       // Handle the wrapped response structure
@@ -95,9 +100,14 @@ export default function AutonomyControls() {
   };
 
   const loadRecommendations = async () => {
+    if (!session?.accessToken) {
+      console.log('No access token available for loadRecommendations');
+      return;
+    }
+
     try {
       console.log('Loading recommendations...');
-      const response = await authenticatedApiCall<AutonomyRecommendation[]>('/api/ai/autonomy/recommendations');
+      const response = await authenticatedApiCall<AutonomyRecommendation[]>('/api/ai/autonomy/recommendations', {}, session.accessToken);
       console.log('Recommendations response:', response);
       
       // Check if response contains an error message
@@ -125,6 +135,12 @@ export default function AutonomyControls() {
   // Load autonomy settings on mount
   useEffect(() => {
     const loadData = async () => {
+      if (!session?.accessToken) {
+        console.log('No session available, skipping data load');
+        setIsAuthenticated(false);
+        return;
+      }
+
       try {
         // Try to load autonomy settings
         await loadAutonomySettings();
@@ -144,7 +160,7 @@ export default function AutonomyControls() {
     };
 
     loadData();
-  }, []);
+  }, [session?.accessToken]);
 
   // Safety check to prevent rendering with invalid settings
   if (!settings || typeof settings !== 'object') {
@@ -203,6 +219,11 @@ export default function AutonomyControls() {
   ];
 
   const saveSettings = async () => {
+    if (!session?.accessToken) {
+      setError('Please sign in to save your autonomy settings');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -210,7 +231,7 @@ export default function AutonomyControls() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
-      });
+      }, session.accessToken);
       
       if (response && response.success) {
         setSaved(true);
