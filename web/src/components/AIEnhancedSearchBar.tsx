@@ -8,6 +8,7 @@ import { useGlobalSearch } from '../contexts/GlobalSearchContext';
 import { SearchResult, SearchSuggestion } from 'shared/types/search';
 import { Button, Badge, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../lib/apiUtils';
+import ErrorBoundary from './ErrorBoundary';
 
 interface AIEnhancedSearchBarProps {
   className?: string;
@@ -226,6 +227,7 @@ export default function AIEnhancedSearchBar({
     try {
       // 🚀 Use Revolutionary Digital Life Twin endpoint
       const response = await authenticatedApiCall<{ 
+        success: boolean;
         data: {
           response: string;
           confidence: number;
@@ -253,32 +255,46 @@ export default function AIEnhancedSearchBar({
         session.accessToken
       );
 
+      // Validate response structure
+      if (!response.success || !response.data) {
+        throw new Error('Invalid response structure from AI service');
+      }
+
       // Add AI response to conversation
       const aiItem: ConversationItem = {
         id: `ai_${Date.now()}`,
         type: 'ai',
-        content: response.data.response,
+        content: response.data.response || 'I apologize, but I couldn\'t generate a proper response.',
         timestamp: new Date(),
         aiResponse: {
           id: `ai-res-${Date.now()}`,
-          response: response.data.response,
-          confidence: response.data.confidence,
+          response: response.data.response || 'No response generated',
+          confidence: response.data.confidence || 0.5,
           reasoning: response.data.reasoning,
-          actions: response.data.actions
+          actions: response.data.actions || []
         },
-        confidence: response.data.confidence
+        confidence: response.data.confidence || 0.5
       };
 
       setConversation(prev => [...prev, aiItem]);
 
     } catch (error) {
       console.error('AI query failed:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
       
-      // Add error message
+      // Add error message with more details
+      const errorMessage = error instanceof Error && error.message.includes('Invalid response structure') 
+        ? 'I encountered an issue with the AI service response. Please try again.'
+        : 'I apologize, but I encountered an error processing your request. Please try again.';
+        
       const errorItem: ConversationItem = {
         id: `error_${Date.now()}`,
         type: 'ai',
-        content: 'I apologize, but I encountered an error processing your request. Please try again.',
+        content: errorMessage,
         timestamp: new Date(),
         confidence: 0
       };
@@ -537,65 +553,67 @@ export default function AIEnhancedSearchBar({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Search Input */}
-      <div className="relative">
-        <div className={`flex items-center bg-white border rounded-lg shadow-sm focus-within:ring-2 focus-within:border-blue-500 ${
-          isAIMode ? 'border-blue-300 focus-within:ring-blue-500' : 'border-gray-300 focus-within:ring-blue-500'
-        }`}>
-          <div className="pl-3 pr-2">
-            {isAIMode ? (
-              <Brain className="w-5 h-5 text-blue-600" />
-            ) : (
-              <Search className="w-5 h-5 text-gray-400" />
-            )}
-          </div>
-          
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyPress}
-            onFocus={() => inputValue && setIsOpen(true)}
-            placeholder={isAIMode ? "Ask your AI assistant anything..." : "Search across all modules..."}
-            className="flex-1 py-3 px-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
-          />
-          
-          <div className="flex items-center pr-2 space-x-2">
-            {inputValue && (
-              <button
-                onClick={handleClear}
-                className="p-1 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+    <ErrorBoundary>
+      <div className={`relative ${className}`}>
+        {/* Search Input */}
+        <div className="relative">
+          <div className={`flex items-center bg-white border rounded-lg shadow-sm focus-within:ring-2 focus-within:border-blue-500 ${
+            isAIMode ? 'border-blue-300 focus-within:ring-blue-500' : 'border-gray-300 focus-within:ring-blue-500'
+          }`}>
+            <div className="pl-3 pr-2">
+              {isAIMode ? (
+                <Brain className="w-5 h-5 text-blue-600" />
+              ) : (
+                <Search className="w-5 h-5 text-gray-400" />
+              )}
+            </div>
             
-            {isAIMode && (
-              <Button
-                onClick={handleAIQuery}
-                disabled={!inputValue.trim() || isAILoading}
-                size="sm"
-                variant="primary"
-              >
-                {isAILoading ? <Spinner size={12} /> : <Send className="w-4 h-4" />}
-              </Button>
-            )}
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyPress}
+              onFocus={() => inputValue && setIsOpen(true)}
+              placeholder={isAIMode ? "Ask your AI assistant anything..." : "Search across all modules..."}
+              className="flex-1 py-3 px-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
+            />
             
-            <div className="flex items-center text-xs text-gray-400">
-              <Command className="w-3 h-3 mr-1" />
-              <span>K</span>
+            <div className="flex items-center pr-2 space-x-2">
+              {inputValue && (
+                <button
+                  onClick={handleClear}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              
+              {isAIMode && (
+                <Button
+                  onClick={handleAIQuery}
+                  disabled={!inputValue.trim() || isAILoading}
+                  size="sm"
+                  variant="primary"
+                >
+                  {isAILoading ? <Spinner size={12} /> : <Send className="w-4 h-4" />}
+                </Button>
+              )}
+              
+              <div className="flex items-center text-xs text-gray-400">
+                <Command className="w-3 h-3 mr-1" />
+                <span>K</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Dropdown Results - Rendered via Portal */}
-      {isOpen && isMounted && createPortal(
-        renderDropdownContent(),
-        document.body
-      )}
-    </div>
+        {/* Dropdown Results - Rendered via Portal */}
+        {isOpen && isMounted && createPortal(
+          renderDropdownContent(),
+          document.body
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
