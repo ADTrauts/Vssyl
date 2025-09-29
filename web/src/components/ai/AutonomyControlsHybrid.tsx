@@ -81,9 +81,16 @@ export default function AutonomyControlsHybrid() {
         console.warn('Invalid response structure for autonomy settings:', response);
         setSettings(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading autonomy settings:', error);
-      setError('Failed to load autonomy settings');
+      
+      // Handle authentication errors specifically
+      if (error.isAuthError || error.status === 401 || error.status === 403) {
+        setError('Your session has expired. Please refresh the page to log in again.');
+        setIsAuthenticated(false);
+      } else {
+        setError('Failed to load autonomy settings');
+      }
       setSettings(null);
     }
   };
@@ -110,9 +117,16 @@ export default function AutonomyControlsHybrid() {
         console.warn('Recommendations response is not an array:', response);
         setRecommendations([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading recommendations:', error);
-      setError('Failed to load recommendations');
+      
+      // Handle authentication errors specifically
+      if (error.isAuthError || error.status === 401 || error.status === 403) {
+        setError('Your session has expired. Please refresh the page to log in again.');
+        setIsAuthenticated(false);
+      } else {
+        setError('Failed to load recommendations');
+      }
       setRecommendations([]);
     }
   };
@@ -140,9 +154,16 @@ export default function AutonomyControlsHybrid() {
       } else {
         throw new Error('Failed to save settings');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving settings:', error);
-      setError('Failed to save settings');
+      
+      // Handle authentication errors specifically
+      if (error.isAuthError || error.status === 401 || error.status === 403) {
+        setError('Your session has expired. Please refresh the page to log in again.');
+        setIsAuthenticated(false);
+      } else {
+        setError('Failed to save settings');
+      }
     } finally {
       setLoading(false);
     }
