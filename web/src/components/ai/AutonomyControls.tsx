@@ -71,15 +71,6 @@ export default function AutonomyControls() {
       console.log('Loading autonomy settings...');
       const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy');
       console.log('API response received:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', response ? Object.keys(response) : 'null');
-      
-      // Check if response contains an error message
-      if (response && typeof response === 'object' && 'error' in response) {
-        console.warn('API returned error message:', response.error);
-        setError(`API Error: ${response.error}`);
-        return;
-      }
       
       // Handle the wrapped response structure
       if (response && response.success && response.data) {
@@ -89,15 +80,17 @@ export default function AutonomyControls() {
       } else {
         console.warn('Invalid response structure from API:', response);
         setError('Invalid response structure from API');
-        // Keep default settings if API returns invalid data
       }
     } catch (error: unknown) {
       console.error('Failed to load autonomy settings:', error);
       
-      // Don't set authentication to false - just show a warning
-      // This allows users to still use the interface with default settings
-      setError('Using default settings. Backend connection failed.');
-      // Keep default settings if API fails
+      // Handle authentication errors specifically
+      if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
+        setError('Your session has expired. Please refresh the page to log in again.');
+        setIsAuthenticated(false);
+      } else {
+        setError('Failed to load autonomy settings. Using default settings.');
+      }
     }
   };
 
@@ -139,10 +132,14 @@ export default function AutonomyControls() {
         setIsAuthenticated(true);
       } catch (error: unknown) {
         console.log('Failed to load autonomy data:', error);
-        // If API calls fail, still show the interface with default settings
-        // This allows users to configure settings even if backend is unavailable
-        setIsAuthenticated(true);
-        setError('Using default settings. Some features may be limited.');
+        // If API calls fail due to auth issues, show auth required
+        if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
+          setIsAuthenticated(false);
+        } else {
+          // For other errors, show interface with default settings
+          setIsAuthenticated(true);
+          setError('Using default settings. Some features may be limited.');
+        }
       }
     };
 

@@ -8,14 +8,14 @@ export interface ApiError extends Error {
   isAuthError?: boolean;
 }
 
-// Helper function to make authenticated API calls with proper error handling
+// Helper function to make authenticated API calls with automatic token refresh
 export async function authenticatedApiCall<T>(
   endpoint: string, 
   options: RequestInit = {}, 
   token?: string
 ): Promise<T> {
-  const session = token ? null : await getSession();
-  const accessToken = token || session?.accessToken;
+  let session = token ? null : await getSession();
+  let accessToken = token || session?.accessToken;
   
   if (!accessToken) {
     const error = new Error('No authentication token available') as ApiError;
@@ -35,24 +35,42 @@ export async function authenticatedApiCall<T>(
     isRelative: !url.startsWith('http')
   });
   
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
+  const makeRequest = async (token: string): Promise<Response> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
+
+    headers.Authorization = `Bearer ${token}`;
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
   };
 
-  headers.Authorization = `Bearer ${accessToken}`;
+  let response = await makeRequest(accessToken);
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  // If we get a 401/403 and we're using NextAuth (not a direct token), try to refresh
+  if ((response.status === 401 || response.status === 403) && !token) {
+    console.log('Authentication error detected, attempting token refresh...');
+    
+    // Force NextAuth to refresh the session
+    const refreshedSession = await getSession({ forceRefresh: true });
+    
+    if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
+      console.log('Token refreshed successfully, retrying request...');
+      accessToken = refreshedSession.accessToken;
+      response = await makeRequest(accessToken);
+    }
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     
     // Handle authentication errors (401, 403)
     if (response.status === 401 || response.status === 403) {
-      console.log('Authentication error detected:', response.status, errorData);
+      console.log('Authentication error after refresh attempt:', response.status, errorData);
       
       // Don't automatically redirect - let the calling component handle it
       const error = new Error('Session expired. Please log in again.') as ApiError;
