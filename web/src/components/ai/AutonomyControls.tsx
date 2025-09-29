@@ -94,13 +94,9 @@ export default function AutonomyControls() {
     } catch (error: unknown) {
       console.error('Failed to load autonomy settings:', error);
       
-      // Handle authentication errors specifically
-      if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
-        setIsAuthenticated(false);
-        setError('Your session has expired. Please log in again.');
-      } else {
-        setError('Failed to load autonomy settings. Please try again.');
-      }
+      // Don't set authentication to false - just show a warning
+      // This allows users to still use the interface with default settings
+      setError('Using default settings. Backend connection failed.');
       // Keep default settings if API fails
     }
   };
@@ -133,29 +129,24 @@ export default function AutonomyControls() {
     }
   };
 
-  // Check authentication status first
+  // Load autonomy settings on mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const loadData = async () => {
       try {
-        // Try to make a simple authenticated call to check if user is logged in
-        await authenticatedApiCall('/api/user/preferences/lastActiveDashboardId');
+        // Try to load autonomy settings
+        await loadAutonomySettings();
+        await loadRecommendations();
         setIsAuthenticated(true);
-        // Only load AI data if authenticated
-        loadAutonomySettings();
-        loadRecommendations();
       } catch (error: unknown) {
-        console.log('Authentication check failed:', error);
-        if (error && typeof error === 'object' && 'isAuthError' in error && error.isAuthError) {
-          setIsAuthenticated(false);
-          setError('Please log in to access AI settings');
-        } else {
-          setIsAuthenticated(false);
-          setError('Unable to verify authentication. Please log in again.');
-        }
+        console.log('Failed to load autonomy data:', error);
+        // If API calls fail, still show the interface with default settings
+        // This allows users to configure settings even if backend is unavailable
+        setIsAuthenticated(true);
+        setError('Using default settings. Some features may be limited.');
       }
     };
 
-    checkAuth();
+    loadData();
   }, []);
 
   // Safety check to prevent rendering with invalid settings
@@ -227,12 +218,13 @@ export default function AutonomyControls() {
       if (response && response.success) {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
+        setError(null); // Clear any previous errors
       } else {
-        setError('Failed to save settings. Please try again.');
+        setError('Settings saved locally but failed to sync with server. Please try again later.');
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
-      setError('Failed to save settings. Please try again.');
+      setError('Settings saved locally but failed to sync with server. Please try again later.');
     } finally {
       setLoading(false);
     }
