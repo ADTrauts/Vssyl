@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import AutonomyControls from '../../components/ai/AutonomyControls';
+import AutonomyControlsTest from '../../components/ai/AutonomyControlsTest';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
 import AutonomousActions from '../../components/ai/AutonomousActions';
 import ErrorBoundary from '../../components/ErrorBoundary';
@@ -400,26 +401,26 @@ function AIPageContent() {
           <p className="text-gray-600 mb-6">
             Control how much autonomy your AI has in different areas. Higher levels mean the AI can take more actions without your approval.
           </p>
-          <ErrorBoundary fallback={
-            <div className="p-4 border border-red-200 rounded-lg bg-red-50">
-              <div className="flex items-center gap-2 text-red-700">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="font-medium">Error loading autonomy controls</span>
-              </div>
-              <p className="text-sm text-red-600 mt-2">
-                There was an error loading the autonomy settings. Please try refreshing the page.
-              </p>
-              <Button 
-                onClick={() => window.location.reload()} 
-                className="mt-3"
-                size="sm"
-              >
-                Refresh Page
-              </Button>
-            </div>
-          }>
-            <AutonomyControls />
-          </ErrorBoundary>
+           <ErrorBoundary fallback={
+             <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+               <div className="flex items-center gap-2 text-red-700">
+                 <AlertTriangle className="h-5 w-5" />
+                 <span className="font-medium">Error loading autonomy controls</span>
+               </div>
+               <p className="text-sm text-red-600 mt-2">
+                 There was an error loading the autonomy settings. Please try refreshing the page.
+               </p>
+               <Button 
+                 onClick={() => window.location.reload()} 
+                 className="mt-3"
+                 size="sm"
+               >
+                 Refresh Page
+               </Button>
+             </div>
+           }>
+             <AutonomyControlsTest />
+           </ErrorBoundary>
         </Card>
       )}
 
