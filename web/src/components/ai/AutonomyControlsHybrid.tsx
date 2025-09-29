@@ -123,7 +123,7 @@ export default function AutonomyControlsHybrid() {
           if (typeof window !== 'undefined') {
             window.location.href = '/auth/login';
           }
-        }, 2000);
+        }, 8000);
       } else {
         setError('Failed to load autonomy settings');
       }
@@ -166,7 +166,7 @@ export default function AutonomyControlsHybrid() {
           if (typeof window !== 'undefined') {
             window.location.href = '/auth/login';
           }
-        }, 2000);
+        }, 8000);
       } else {
         setError('Failed to load recommendations');
       }
@@ -210,7 +210,7 @@ export default function AutonomyControlsHybrid() {
           if (typeof window !== 'undefined') {
             window.location.href = '/auth/login';
           }
-        }, 2000);
+        }, 8000);
       } else {
         setError('Failed to save settings');
       }
