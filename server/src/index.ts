@@ -552,7 +552,9 @@ if (process.env.NODE_ENV === 'production') {
     console.log('✅ Database migrations completed');
   } catch (error) {
     console.error('❌ Database migration failed:', error);
-    process.exit(1);
+    console.error('⚠️  Continuing without migrations - server will start but database may be out of sync');
+    // Don't exit - let the server start so we can investigate the migration issue
+    // process.exit(1);
   }
 }
 
