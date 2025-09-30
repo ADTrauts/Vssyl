@@ -76,7 +76,7 @@ export default function AutonomyControls() {
     try {
       setError(null);
       console.log('Loading autonomy settings...');
-      const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy', {}, session.accessToken);
+      const response = await authenticatedApiCall<{ success: boolean; data: AutonomySettings }>('/api/ai/autonomy/settings', {}, session.accessToken);
       console.log('API response received:', response);
       
       // Handle the wrapped response structure

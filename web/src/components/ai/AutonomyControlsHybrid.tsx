@@ -96,7 +96,7 @@ export default function AutonomyControlsHybrid() {
 
     try {
       console.log('Loading autonomy settings...');
-      const response = await authenticatedApiCall(`/api/ai/autonomy?t=${Date.now()}`, {
+      const response = await authenticatedApiCall(`/api/ai/autonomy/settings?t=${Date.now()}`, {
         method: 'GET',
       }, session.accessToken);
 

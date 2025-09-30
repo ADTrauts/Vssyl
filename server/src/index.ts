@@ -463,13 +463,13 @@ app.use('/api/email-notifications', authenticateJWT, emailNotificationRouter);
 // app.use('/api/advanced-notifications', authenticateJWT, advancedNotificationRouter); // Temporarily disabled - functions not implemented
 app.use('/api/governance', authenticateJWT, governanceRouter);
 app.use('/api/ai', authenticateJWT, aiRouter);
-app.use('/api/ai/autonomy', aiAutonomyRouter);
-app.use('/api/ai/intelligence', aiIntelligenceRouter);
+app.use('/api/ai/autonomy', authenticateJWT, aiAutonomyRouter);
+app.use('/api/ai/intelligence', authenticateJWT, aiIntelligenceRouter);
 app.use('/api/ai/autonomous', authenticateJWT, aiAutonomousRouter);
 app.use('/api/ai-stats', authenticateJWT, aiStatsRouter);
 app.use('/api/ai/personality', authenticateJWT, aiPersonalityRouter);
 app.use('/api/ai/patterns', authenticateJWT, aiPatternsRouter);
-app.use('/api/centralized-ai', aiCentralizedRouter);
+app.use('/api/centralized-ai', authenticateJWT, aiCentralizedRouter);
 app.use('/api/billing', authenticateJWT, billingRouter);
 app.use('/api/feature-gating', authenticateJWT, featureGatingRouter);
 app.use('/api/features', authenticateJWT, featuresRouter);

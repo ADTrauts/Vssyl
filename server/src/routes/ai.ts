@@ -1,28 +1,8 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
-import type { User } from '@prisma/client';
 import { DigitalLifeTwinService, AIRequest } from '../ai/core/DigitalLifeTwinService';
 import { PersonalityEngine } from '../ai/core/PersonalityEngine';
 import { PrismaClient } from '@prisma/client';
-
-// JWT authentication middleware
-function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const authHeader = req.headers.authorization;
-  
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    
-    jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret', (err, decoded) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-      req.user = decoded as User;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
-}
+import { authenticateJWT } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 const prisma = new PrismaClient();

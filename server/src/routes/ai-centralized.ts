@@ -6,29 +6,7 @@ const router: express.Router = express.Router();
 const prisma = new PrismaClient();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
 
-// JWT authentication middleware (local definition)
-const authenticateJWT = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Invalid token format' });
-  }
-
-  try {
-    // For now, we'll use a simple token validation
-    // In production, you'd verify the JWT token properly
-    (req as any).user = { id: 'user_id_from_token' }; // This should be extracted from JWT
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
+import { authenticateJWT } from '../middleware/auth';
 
 // Admin-only middleware
 const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
