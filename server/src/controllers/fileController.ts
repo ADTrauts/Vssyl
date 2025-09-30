@@ -18,6 +18,13 @@ const upload = multer({
   storage: storageService.getProvider() === 'gcs' ? multer.memoryStorage() : multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads');
+      
+      // Ensure directory exists
+      const fs = require('fs');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
@@ -127,6 +134,15 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
   }
   
   try {
+    console.log('📁 File upload request received:', {
+      hasFile: !!req.file,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size,
+      mimeType: req.file?.mimetype,
+      storageProvider: storageService.getProvider(),
+      userId: (req.user as any).id || (req.user as any).sub
+    });
+
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
     if (!req.file.originalname || req.file.originalname.trim() === '') {
       return res.status(400).json({ message: 'File name is required' });
@@ -148,6 +164,12 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
     
     // Upload file using storage service
+    console.log('📤 Uploading file to storage:', {
+      filename: uniqueFilename,
+      provider: storageService.getProvider(),
+      isGCS: storageService.isGCSConfigured()
+    });
+    
     const uploadResult = await storageService.uploadFile(req.file, uniqueFilename, {
       makePublic: true,
       metadata: {
@@ -156,6 +178,11 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
         folderId: folderId || '',
         dashboardId: dashboardId || '',
       },
+    });
+    
+    console.log('✅ File uploaded successfully:', {
+      url: uploadResult.url,
+      path: uploadResult.path
     });
     
     // Create file record in database
@@ -189,8 +216,17 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
 
     res.status(201).json({ file: fileRecord });
   } catch (err) {
-    console.error('Error in uploadFile:', err);
-    res.status(500).json({ message: 'Failed to upload file' });
+    console.error('❌ Error in uploadFile:', {
+      error: err instanceof Error ? err.message : 'Unknown error',
+      stack: err instanceof Error ? err.stack : undefined,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size,
+      storageProvider: storageService.getProvider()
+    });
+    res.status(500).json({ 
+      message: 'Failed to upload file',
+      error: err instanceof Error ? err.message : 'Unknown error'
+    });
   }
 }
 

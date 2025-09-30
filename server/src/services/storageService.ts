@@ -43,7 +43,10 @@ export class StorageService {
   }
 
   private loadConfig(): StorageConfig {
-    const provider = (process.env.STORAGE_PROVIDER as 'local' | 'gcs') || 'local';
+    // Check both STORAGE_PROVIDER and FILE_STORAGE_TYPE for compatibility
+    const provider = (process.env.STORAGE_PROVIDER as 'local' | 'gcs') || 
+                    (process.env.FILE_STORAGE_TYPE === 'cloud-storage' ? 'gcs' : 'local') || 
+                    'local';
     
     if (provider === 'gcs') {
       return {

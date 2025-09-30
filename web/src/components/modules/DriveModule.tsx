@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, Button, Avatar, Badge, Spinner } from 'shared/components';
 import { 
   Folder, 
@@ -17,6 +18,7 @@ import {
   Eye
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useDashboard } from '../../contexts/DashboardContext';
 
 interface DriveItem {
   id: string;
@@ -38,6 +40,8 @@ interface DriveModuleProps {
 }
 
 export default function DriveModule({ businessId, className = '' }: DriveModuleProps) {
+  const { data: session } = useSession();
+  const { currentDashboard } = useDashboard();
   const [items, setItems] = useState<DriveItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -45,62 +49,171 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    const mockItems: DriveItem[] = [
-      {
-        id: '1',
-        name: 'Company Documents',
-        type: 'folder',
-        modifiedAt: '2024-01-15T10:30:00Z',
-        createdBy: 'John Doe',
-        permissions: ['view', 'edit']
-      },
-      {
-        id: '2',
-        name: 'Q4 Financial Report.pdf',
-        type: 'file',
-        size: 2048576,
-        modifiedAt: '2024-01-14T15:45:00Z',
-        createdBy: 'Jane Smith',
-        permissions: ['view'],
-        mimeType: 'application/pdf',
-        starred: true
-      },
-      {
-        id: '3',
-        name: 'Team Photos',
-        type: 'folder',
-        modifiedAt: '2024-01-13T09:15:00Z',
-        createdBy: 'Mike Johnson',
-        permissions: ['view', 'edit']
-      },
-      {
-        id: '4',
-        name: 'Marketing Strategy.docx',
-        type: 'file',
-        size: 1048576,
-        modifiedAt: '2024-01-12T14:20:00Z',
-        createdBy: 'Sarah Wilson',
-        permissions: ['view', 'edit'],
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      },
-      {
-        id: '5',
-        name: 'Product Roadmap.xlsx',
-        type: 'file',
-        size: 3145728,
-        modifiedAt: '2024-01-11T11:30:00Z',
-        createdBy: 'David Brown',
-        permissions: ['view'],
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  // Load real data from API
+  const loadFilesAndFolders = async () => {
+    if (!session?.accessToken) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const contextId = businessId || currentDashboard?.id;
+      const parentId = currentFolder;
+      
+      // Build API URLs with context and folder
+      const filesParams = new URLSearchParams();
+      if (contextId) filesParams.append('dashboardId', contextId);
+      if (parentId) filesParams.append('folderId', parentId);
+      
+      const foldersParams = new URLSearchParams();
+      if (contextId) foldersParams.append('dashboardId', contextId);
+      if (parentId) foldersParams.append('parentId', parentId);
+
+      const filesUrl = `/api/drive/files?${filesParams}`;
+      const foldersUrl = `/api/drive/folders?${foldersParams}`;
+
+      // Fetch files and folders with context and folder filtering
+      const [filesResponse, foldersResponse] = await Promise.all([
+        fetch(filesUrl, {
+          headers: { 'Authorization': `Bearer ${session.accessToken}` }
+        }),
+        fetch(foldersUrl, {
+          headers: { 'Authorization': `Bearer ${session.accessToken}` }
+        })
+      ]);
+
+      if (!filesResponse.ok || !foldersResponse.ok) {
+        throw new Error('Failed to fetch drive content');
       }
-    ];
 
-    setItems(mockItems);
-    setLoading(false);
-  }, []);
+      const filesData = await filesResponse.json();
+      const foldersData = await foldersResponse.json();
+      
+      // Map files to DriveItem format
+      const mappedFiles = (filesData.files || []).map((file: any) => ({
+        id: file.id,
+        name: file.name,
+        type: 'file' as const,
+        size: file.size,
+        modifiedAt: file.updatedAt || file.createdAt,
+        createdBy: file.createdBy || 'Unknown',
+        permissions: ['view', 'edit'], // Default permissions
+        mimeType: file.type,
+        starred: false,
+        shared: false
+      }));
+
+      // Map folders to DriveItem format
+      const mappedFolders = (foldersData.folders || []).map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        type: 'folder' as const,
+        modifiedAt: folder.updatedAt || folder.createdAt,
+        createdBy: folder.createdBy || 'Unknown',
+        permissions: ['view', 'edit'], // Default permissions
+        starred: false,
+        shared: false
+      }));
+
+      // Combine files and folders
+      setItems([...mappedFolders, ...mappedFiles]);
+
+    } catch (err) {
+      console.error('Error loading drive content:', err);
+      setError('Failed to load drive content. Please try again.');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFilesAndFolders();
+  }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder]);
+
+  // File upload handler
+  const handleFileUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      const files = target.files;
+      if (!files || !session?.accessToken) return;
+
+      try {
+        setLoading(true);
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append('file', file);
+          if (businessId) formData.append('dashboardId', businessId);
+          if (currentFolder) formData.append('folderId', currentFolder);
+
+          const response = await fetch('/api/drive/files', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.accessToken}` },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.status}`);
+          }
+        }
+
+        // Refresh content
+        await loadFilesAndFolders();
+        toast.success('Files uploaded successfully');
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast.error('Failed to upload files. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    input.click();
+  };
+
+  // Folder creation handler
+  const handleCreateFolder = async () => {
+    if (!session?.accessToken) return;
+
+    const name = prompt('Enter folder name:');
+    if (!name) return;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/drive/folders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify({ 
+          name,
+          dashboardId: businessId || null,
+          parentId: currentFolder || null
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create folder');
+      }
+
+      // Refresh content
+      await loadFilesAndFolders();
+      toast.success('Folder created successfully');
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast.error('Failed to create folder. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
@@ -151,26 +264,7 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
     }
   };
 
-  const handleUpload = () => {
-    // In a real app, this would trigger file upload
-    toast.success('File upload initiated');
-  };
 
-  const handleCreateFolder = () => {
-    const folderName = prompt('Enter folder name:');
-    if (folderName) {
-      const newFolder: DriveItem = {
-        id: Date.now().toString(),
-        name: folderName,
-        type: 'folder',
-        modifiedAt: new Date().toISOString(),
-        createdBy: 'Current User',
-        permissions: ['view', 'edit']
-      };
-      setItems(prev => [newFolder, ...prev]);
-      toast.success(`Created folder: ${folderName}`);
-    }
-  };
 
   const handleDelete = (itemId: string) => {
     if (confirm('Are you sure you want to delete this item?')) {
@@ -221,7 +315,7 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
             <Folder className="w-4 h-4 mr-2" />
             New Folder
           </Button>
-          <Button onClick={handleUpload}>
+          <Button onClick={handleFileUpload}>
             <Upload className="w-4 h-4 mr-2" />
             Upload
           </Button>
@@ -401,7 +495,7 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
           </p>
           {!searchQuery && (
             <div className="flex items-center justify-center space-x-3">
-              <Button onClick={handleUpload}>
+              <Button onClick={handleFileUpload}>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Files
               </Button>

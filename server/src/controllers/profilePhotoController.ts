@@ -13,6 +13,13 @@ const upload = multer({
   storage: storageService.getProvider() === 'gcs' ? multer.memoryStorage() : multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadDir = process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads/profile-photos');
+      
+      // Ensure directory exists
+      const fs = require('fs');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
       cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
