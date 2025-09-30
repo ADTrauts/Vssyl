@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Input, Textarea, Switch, Tabs, TabsList, TabsTrigger, TabsContent } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { Brain, Shield, Users, Settings, BarChart, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { useTheme } from '../../../hooks/useTheme';
 
 interface BusinessAIConfig {
   businessId: string;
@@ -116,6 +117,7 @@ interface BusinessAIControlCenterProps {
 
 export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = ({ businessId }) => {
   const { data: session } = useSession();
+  const { isDark } = useTheme();
   const [businessAI, setBusinessAI] = useState<BusinessAIConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -314,17 +316,17 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Brain className="h-8 w-8 text-blue-500" />
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+            <Brain className="h-8 w-8 text-blue-500 dark:text-blue-400" />
             Business AI Digital Twin
           </h1>
-          <p className="text-gray-600 mt-1">Manage your business AI assistant and employee access</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your business AI assistant and employee access</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={businessAI.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+          <Badge className={businessAI.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}>
             {businessAI.status}
           </Badge>
-          <Badge className="bg-blue-100 text-blue-800">{businessAI.securityLevel}</Badge>
+          <Badge className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">{businessAI.securityLevel}</Badge>
         </div>
       </div>
 
@@ -347,11 +349,11 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               <Card>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">AI Status</h3>
-                    <Brain className="h-4 w-4 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">AI Status</h3>
+                    <Brain className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="text-2xl font-bold">{businessAI.status}</div>
-                  <p className="text-xs text-gray-500">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{businessAI.status}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Last interaction: {businessAI.lastInteractionAt ? new Date(businessAI.lastInteractionAt).toLocaleDateString() : 'Never'}
                   </p>
                 </div>
@@ -361,11 +363,11 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               <Card>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Total Interactions</h3>
-                    <Users className="h-4 w-4 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Total Interactions</h3>
+                    <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="text-2xl font-bold">{businessAI.totalInteractions}</div>
-                  <p className="text-xs text-gray-500">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{businessAI.totalInteractions}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Employee AI conversations
                   </p>
                 </div>
@@ -375,11 +377,11 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               <Card>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Security Level</h3>
-                    <Shield className="h-4 w-4 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Security Level</h3>
+                    <Shield className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="text-2xl font-bold capitalize">{businessAI.securityLevel}</div>
-                  <p className="text-xs text-gray-500">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">{businessAI.securityLevel}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {businessAI.complianceMode ? 'Compliance mode enabled' : 'Standard mode'}
                   </p>
                 </div>
@@ -389,11 +391,11 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
               <Card>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Pending Reviews</h3>
-                    <AlertTriangle className="h-4 w-4 text-gray-500" />
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Pending Reviews</h3>
+                    <AlertTriangle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   </div>
-                  <div className="text-2xl font-bold">{learningEvents.length}</div>
-                  <p className="text-xs text-gray-500">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{learningEvents.length}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Learning events awaiting approval
                   </p>
                 </div>
@@ -404,20 +406,20 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
             {analytics && (
               <Card className="mt-6">
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-2">Usage Analytics</h3>
-                  <p className="text-gray-600 mb-4">AI performance and usage metrics</p>
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">Usage Analytics</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">AI performance and usage metrics</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <p className="text-sm text-gray-500">Average Confidence</p>
-                      <p className="text-2xl font-bold">{((analytics.summary?.averageConfidence || 0) * 100).toFixed(1)}%</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Average Confidence</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{((analytics.summary?.averageConfidence || 0) * 100).toFixed(1)}%</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Helpfulness Rating</p>
-                      <p className="text-2xl font-bold">{(analytics.summary?.helpfulnessRating || 0).toFixed(1)}%</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Helpfulness Rating</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{(analytics.summary?.helpfulnessRating || 0).toFixed(1)}%</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Learning Events Applied</p>
-                      <p className="text-2xl font-bold">{analytics.summary?.approvedLearningEvents || 0}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Learning Events Applied</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.summary?.approvedLearningEvents || 0}</p>
                     </div>
                   </div>
                 </div>
