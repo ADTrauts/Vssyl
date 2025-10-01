@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, Button, Avatar, Badge, Spinner, Input } from 'shared/components';
 import { useFeatureGating, useModuleFeatures } from '../../../hooks/useFeatureGating';
 import { FeatureGate } from '../../FeatureGate';
 import { FeatureBadge } from '../../EnterpriseUpgradePrompt';
+import { useDashboard } from '../../../contexts/DashboardContext';
 import { 
   Folder, 
   File, 
@@ -54,6 +56,8 @@ interface EnhancedDriveModuleProps {
 }
 
 export default function EnhancedDriveModule({ businessId, className = '' }: EnhancedDriveModuleProps) {
+  const { data: session } = useSession();
+  const { currentDashboard } = useDashboard();
   const { recordUsage } = useFeatureGating(businessId);
   const { moduleAccess, hasBusiness: hasEnterprise } = useModuleFeatures('drive', businessId);
   
@@ -65,6 +69,7 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
   
   // Enterprise features state
   const [showAdvancedSharing, setShowAdvancedSharing] = useState(false);
@@ -73,18 +78,105 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
   const [selectedFile, setSelectedFile] = useState<DriveItem | null>(null);
   const [classificationFilter, setClassificationFilter] = useState<string>('');
   const [showEnterprisePanel, setShowEnterprisePanel] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   // Load files with enterprise data
-  useEffect(() => {
-    loadEnhancedFiles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId]);
+  const loadEnhancedFiles = useCallback(async () => {
+    if (!session?.accessToken) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const contextId = businessId || currentDashboard?.id;
+      const parentId = currentFolder;
+      
+      // Build API URLs with context and folder
+      const filesParams = new URLSearchParams();
+      if (contextId) filesParams.append('dashboardId', contextId);
+      if (parentId) filesParams.append('folderId', parentId);
+      
+      const foldersParams = new URLSearchParams();
+      if (contextId) foldersParams.append('dashboardId', contextId);
+      if (parentId) foldersParams.append('parentId', parentId);
 
-  const loadEnhancedFiles = async () => {
+      const filesUrl = `/api/drive/files?${filesParams}`;
+      const foldersUrl = `/api/drive/folders?${foldersParams}`;
+
+      // Fetch files and folders with context and folder filtering
+      const [filesResponse, foldersResponse] = await Promise.all([
+        fetch(filesUrl, {
+          headers: { 'Authorization': `Bearer ${session.accessToken}` }
+        }),
+        fetch(foldersUrl, {
+          headers: { 'Authorization': `Bearer ${session.accessToken}` }
+        })
+      ]);
+
+      if (!filesResponse.ok || !foldersResponse.ok) {
+        throw new Error('Failed to fetch drive content');
+      }
+
+      const filesData = await filesResponse.json();
+      const foldersData = await foldersResponse.json();
+      
+      // Map files to DriveItem format with enterprise metadata
+      const mappedFiles = (filesData.files || []).map((file: any) => ({
+        id: file.id,
+        name: file.name,
+        type: 'file' as const,
+        size: file.size,
+        modifiedAt: file.updatedAt || file.createdAt,
+        createdBy: file.createdBy || 'Unknown',
+        permissions: ['view', 'edit'], // TODO: Get from API
+        mimeType: file.type,
+        starred: false,
+        shared: false,
+        // Enterprise metadata - will be enhanced with real data later
+        classification: file.classification || 'internal',
+        shareCount: file.shareCount || 0,
+        viewCount: file.viewCount || 0,
+        downloadCount: file.downloadCount || 0
+      }));
+
+      // Map folders to DriveItem format with enterprise metadata
+      const mappedFolders = (foldersData.folders || []).map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        type: 'folder' as const,
+        modifiedAt: folder.updatedAt || folder.createdAt,
+        createdBy: folder.createdBy || 'Unknown',
+        permissions: ['view', 'edit'], // TODO: Get from API
+        starred: false,
+        shared: false,
+        // Enterprise metadata
+        classification: folder.classification || 'internal',
+        shareCount: folder.shareCount || 0,
+        viewCount: folder.viewCount || 0
+      }));
+
+      // Combine files and folders
+      setItems([...mappedFolders, ...mappedFiles]);
+
+      // Record feature usage for analytics
+      recordUsage('drive_advanced_features');
+      
+    } catch (err) {
+      console.error('Error loading enhanced drive content:', err);
+      setError('Failed to load drive content. Please try again.');
+      setItems([]);
+      toast.error('Failed to load files');
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder, recordUsage]);
+
+  // Fallback mock data for demonstration (can be removed once API is fully implemented)
+  const loadMockEnterpriseData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Enhanced mock data with enterprise features
+      // Enhanced mock data with enterprise features - for fallback
       const mockItems: DriveItem[] = [
         {
           id: '1',
@@ -160,7 +252,11 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
+
+  useEffect(() => {
+    loadEnhancedFiles();
+  }, [loadEnhancedFiles]);
 
   const handleAdvancedShare = (item: DriveItem) => {
     setSelectedFile(item);
@@ -246,35 +342,86 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Enhanced Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-gray-900">Drive</h2>
-            {hasEnterprise && (
-              <FeatureBadge tier="enterprise" hasAccess={true} size="sm" />
-            )}
+    <div className={`space-y-6 p-6 ${className}`}>
+      {/* Bulk Actions Bar - Shows when items are selected */}
+      {selectedItems.size > 0 && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-4 animate-in slide-in-from-top">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={selectedItems.size === filteredItems.length}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedItems(new Set(filteredItems.map(item => item.id)));
+                } else {
+                  setSelectedItems(new Set());
+                }
+              }}
+              className="w-4 h-4"
+            />
+            <span className="font-medium">{selectedItems.size} selected</span>
           </div>
-          <p className="text-gray-600">
-            Enterprise file management with advanced security and compliance
-          </p>
+          
+          <div className="h-6 w-px bg-blue-400"></div>
+          
+          <div className="flex items-center gap-2">
+            <FeatureGate feature="drive_advanced_sharing" businessId={businessId}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleBulkAction('share')}
+                className="text-white hover:bg-blue-500"
+              >
+                <Share className="w-4 h-4 mr-1" />
+                Share
+              </Button>
+            </FeatureGate>
+            
+            <FeatureGate feature="drive_dlp" businessId={businessId}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleBulkAction('classify')}
+                className="text-white hover:bg-blue-500"
+              >
+                <Tag className="w-4 h-4 mr-1" />
+                Classify
+              </Button>
+            </FeatureGate>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBulkAction('download')}
+              className="text-white hover:bg-blue-500"
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Download
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBulkAction('delete')}
+              className="text-white hover:bg-red-500"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete
+            </Button>
+          </div>
+          
+          <div className="h-6 w-px bg-blue-400"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedItems(new Set())}
+            className="text-white hover:bg-blue-500"
+          >
+            Clear
+          </Button>
         </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="secondary" onClick={() => setShowEnterprisePanel(!showEnterprisePanel)}>
-            <Shield className="w-4 h-4 mr-2" />
-            Enterprise
-          </Button>
-          <Button variant="secondary">
-            <Folder className="w-4 h-4 mr-2" />
-            New Folder
-          </Button>
-          <Button>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Enterprise Panel */}
       {showEnterprisePanel && (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, Button, Avatar, Badge, Spinner } from 'shared/components';
 import { 
@@ -51,8 +51,8 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  // Load real data from API
-  const loadFilesAndFolders = async () => {
+  // Load real data from API - memoized to prevent infinite loops
+  const loadFilesAndFolders = useCallback(async () => {
     if (!session?.accessToken) return;
     
     try {
@@ -127,12 +127,11 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder]);
 
   useEffect(() => {
     loadFilesAndFolders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder]);
+  }, [loadFilesAndFolders]);
 
   // File upload handler
   const handleFileUpload = () => {
@@ -304,25 +303,7 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Drive</h2>
-          <p className="text-gray-600">Manage your business files and folders</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="secondary" onClick={handleCreateFolder}>
-            <Folder className="w-4 h-4 mr-2" />
-            New Folder
-          </Button>
-          <Button onClick={handleFileUpload}>
-            <Upload className="w-4 h-4 mr-2" />
-            Upload
-          </Button>
-        </div>
-      </div>
-
+    <div className={`space-y-6 p-6 ${className}`}>
       {/* Breadcrumbs */}
       {breadcrumbs.length > 0 && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
