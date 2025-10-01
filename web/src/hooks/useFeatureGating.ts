@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../lib/apiUtils';
 
@@ -85,7 +85,7 @@ export function useFeatureGating(businessId?: string) {
   };
 
   // Check feature access with detailed information
-  const checkFeatureAccess = async (featureName: string): Promise<FeatureAccess> => {
+  const checkFeatureAccess = useCallback(async (featureName: string): Promise<FeatureAccess> => {
     if (!session?.user?.id) {
       return { hasAccess: false, reason: 'Not authenticated' };
     }
@@ -117,10 +117,10 @@ export function useFeatureGating(businessId?: string) {
       console.error(`Failed to check feature access for ${featureName}:`, err);
       return { hasAccess: false, reason: 'Failed to check access' };
     }
-  };
+  }, [session?.user?.id, businessId]);
 
   // Get module feature access summary
-  const getModuleFeatureAccess = async (module: string): Promise<ModuleFeatureAccess> => {
+  const getModuleFeatureAccess = useCallback(async (module: string): Promise<ModuleFeatureAccess> => {
     if (!session?.user?.id) {
       return { personal: { available: [], locked: [] }, business: { available: [], locked: [] } };
     }
@@ -156,7 +156,7 @@ export function useFeatureGating(businessId?: string) {
       console.error(`Failed to get module feature access for ${module}:`, err);
       return { personal: { available: [], locked: [] }, business: { available: [], locked: [] } };
     }
-  };
+  }, [session?.user?.id, businessId, moduleFeatures]);
 
   // Get features by category
   const getFeaturesByCategory = (category: 'personal' | 'business'): FeatureConfig[] => {
