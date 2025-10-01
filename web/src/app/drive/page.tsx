@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { DriveModuleWrapper } from '../../components/drive/DriveModuleWrapper';
+import DrivePageContent from '../../components/drive/DrivePageContent';
 
 export default function DrivePage() {
   const { data: session, status } = useSession();
@@ -28,9 +28,5 @@ export default function DrivePage() {
     return null;
   }
   
-  return (
-    <div className="flex h-screen bg-gray-50">
-      <DriveModuleWrapper className="flex-1" />
-    </div>
-  );
+  return <DrivePageContent />;
 }
