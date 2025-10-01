@@ -77,6 +77,7 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
   // Load files with enterprise data
   useEffect(() => {
     loadEnhancedFiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
   const loadEnhancedFiles = async () => {

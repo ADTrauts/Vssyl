@@ -131,6 +131,7 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
 
   useEffect(() => {
     loadFilesAndFolders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder]);
 
   // File upload handler
