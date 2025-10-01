@@ -53,9 +53,10 @@ interface DriveItem {
 interface EnhancedDriveModuleProps {
   businessId: string;
   className?: string;
+  refreshTrigger?: number;
 }
 
-export default function EnhancedDriveModule({ businessId, className = '' }: EnhancedDriveModuleProps) {
+export default function EnhancedDriveModule({ businessId, className = '', refreshTrigger }: EnhancedDriveModuleProps) {
   const { data: session } = useSession();
   const { currentDashboard } = useDashboard();
   const { recordUsage } = useFeatureGating(businessId);
@@ -257,6 +258,13 @@ export default function EnhancedDriveModule({ businessId, className = '' }: Enha
   useEffect(() => {
     loadEnhancedFiles();
   }, [loadEnhancedFiles]);
+
+  // Listen to refresh trigger from parent
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadEnhancedFiles();
+    }
+  }, [refreshTrigger, loadEnhancedFiles]);
 
   const handleAdvancedShare = (item: DriveItem) => {
     setSelectedFile(item);

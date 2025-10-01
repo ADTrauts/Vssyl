@@ -1,7 +1,8 @@
-'use client';
+  'use client';
 
 import React, { useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useDashboard } from '../../contexts/DashboardContext';
 import DriveSidebar from '../../app/drive/DriveSidebar';
 import { DriveModuleWrapper } from './DriveModuleWrapper';
@@ -13,6 +14,8 @@ interface DrivePageContentProps {
 export function DrivePageContent({ className = '' }: DrivePageContentProps) {
   const { data: session } = useSession();
   const { currentDashboard, navigateToDashboard } = useDashboard();
+  const router = useRouter();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // File upload handler
   const handleFileUpload = useCallback(() => {
@@ -42,8 +45,8 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
           }
         }
         
-        // Trigger refresh - the module will handle this
-        window.location.reload();
+        // Trigger refresh without page reload
+        setRefreshTrigger(prev => prev + 1);
       } catch (error) {
         console.error('Upload failed:', error);
       }
@@ -76,8 +79,8 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
         console.error('Failed to create folder');
       }
       
-      // Trigger refresh
-      window.location.reload();
+      // Trigger refresh without page reload
+      setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error creating folder:', error);
     }
@@ -86,8 +89,9 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
   // Context switch handler
   const handleContextSwitch = useCallback(async (dashboardId: string) => {
     await navigateToDashboard(dashboardId);
-    window.location.href = `/drive?dashboard=${dashboardId}`;
-  }, [navigateToDashboard]);
+    // Use router.push for seamless navigation instead of page reload
+    router.push(`/drive?dashboard=${dashboardId}`);
+  }, [navigateToDashboard, router]);
 
   return (
     <div className={`flex h-screen bg-gray-50 ${className}`}>
@@ -101,7 +105,10 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       
       {/* Main Content - Context-aware module */}
       <div className="flex-1 overflow-hidden">
-        <DriveModuleWrapper className="h-full" />
+        <DriveModuleWrapper 
+          className="h-full" 
+          refreshTrigger={refreshTrigger}
+        />
       </div>
     </div>
   );

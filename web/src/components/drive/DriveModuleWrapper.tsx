@@ -6,6 +6,7 @@ import DriveModule from '../modules/DriveModule';
 
 interface DriveModuleWrapperProps {
   className?: string;
+  refreshTrigger?: number;
 }
 
 /**
@@ -13,7 +14,8 @@ interface DriveModuleWrapperProps {
  * or the enhanced enterprise Drive module based on feature access
  */
 export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
-  className = ''
+  className = '',
+  refreshTrigger
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -30,6 +32,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
       <EnhancedDriveModule 
         businessId={businessId}
         className={className}
+        refreshTrigger={refreshTrigger}
       />
     );
   }
@@ -39,6 +42,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
     <DriveModule 
       businessId={businessId || ''}
       className={className}
+      refreshTrigger={refreshTrigger}
     />
   );
 };

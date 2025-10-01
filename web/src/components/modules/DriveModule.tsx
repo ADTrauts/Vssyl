@@ -37,9 +37,10 @@ interface DriveItem {
 interface DriveModuleProps {
   businessId: string;
   className?: string;
+  refreshTrigger?: number;
 }
 
-export default function DriveModule({ businessId, className = '' }: DriveModuleProps) {
+export default function DriveModule({ businessId, className = '', refreshTrigger }: DriveModuleProps) {
   const { data: session } = useSession();
   const { currentDashboard } = useDashboard();
   const [items, setItems] = useState<DriveItem[]>([]);
@@ -132,6 +133,13 @@ export default function DriveModule({ businessId, className = '' }: DriveModuleP
   useEffect(() => {
     loadFilesAndFolders();
   }, [loadFilesAndFolders]);
+
+  // Listen to refresh trigger from parent
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadFilesAndFolders();
+    }
+  }, [refreshTrigger, loadFilesAndFolders]);
 
   // File upload handler
   const handleFileUpload = () => {
