@@ -6,6 +6,7 @@ import { useFeatureGating, useModuleFeatures } from '../../hooks/useFeatureGatin
 import { FeatureGate } from '../FeatureGate';
 import { io, Socket } from 'socket.io-client';
 import { getSession } from 'next-auth/react';
+import { getWebSocketConfig } from '../../lib/websocketUtils';
 import { 
   MessageSquare, 
   Send, 
@@ -224,12 +225,13 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
       const token = await getAccessToken();
       if (!token) return;
 
-    // Connect to WebSocket
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'ws://localhost:3001', {
+    // Connect to WebSocket using centralized configuration
+    const config = getWebSocketConfig();
+    const newSocket = io(config.url, {
+      ...config.options,
       auth: {
         token: token
-      },
-      transports: ['websocket']
+      }
     });
 
     newSocket.on('connect', () => {
@@ -341,15 +343,15 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
         throw new Error(data.error || 'Failed to load conversations');
       }
 
-      // Transform API data to component format
-      const apiChannels: ChatChannel[] = data.conversations.map((conv: any) => ({
+      // Transform API data to component format with proper fallbacks
+      const apiChannels: ChatChannel[] = (data.conversations || []).map((conv: any) => ({
         id: conv.id,
         name: conv.name || conv.participants.find((p: any) => p.user.id !== conv.createdBy)?.user.name || 'Direct Message',
         type: conv.type.toLowerCase(),
         unreadCount: conv.unreadCount || 0,
         lastMessage: conv.lastMessage?.content || 'No messages yet',
         lastMessageTime: conv.lastMessage?.createdAt || conv.updatedAt,
-        members: conv.participants.map((p: any) => ({
+        members: (conv.participants || []).map((p: any) => ({
           id: p.user.id,
           name: p.user.name || p.user.email,
           online: p.user.isOnline || false,
@@ -410,7 +412,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
       }
 
       // Transform API data to component format
-      const apiMessages: ChatMessage[] = data.messages.map((msg: any) => ({
+      const apiMessages: ChatMessage[] = (data.messages || []).map((msg: any) => ({
         id: msg.id,
         content: msg.content,
         sender: {
