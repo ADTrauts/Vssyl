@@ -377,7 +377,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                           {conversation.name || 'Direct Message'}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {conversation.participants.length} participant{conversation.participants.length !== 1 ? 's' : ''}
+                          {conversation.participants?.length || 0} participant{(conversation.participants?.length || 0) !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
