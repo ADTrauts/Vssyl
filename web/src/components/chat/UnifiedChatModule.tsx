@@ -5,6 +5,7 @@ import { Card, Button, Avatar, Badge, Spinner, Input } from 'shared/components';
 import { useFeatureGating, useModuleFeatures } from '../../hooks/useFeatureGating';
 import { FeatureGate } from '../FeatureGate';
 import { io, Socket } from 'socket.io-client';
+import { getSession } from 'next-auth/react';
 import { 
   MessageSquare, 
   Send, 
@@ -211,14 +212,17 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
     }
   }, [selectedChannel]);
 
+  // Helper function to get access token
+  const getAccessToken = async (): Promise<string | null> => {
+    const session = await getSession();
+    return session?.accessToken || null;
+  };
+
   // WebSocket connection
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('accessToken='))
-      ?.split('=')[1];
-
-    if (!token) return;
+    const connectWebSocket = async () => {
+      const token = await getAccessToken();
+      if (!token) return;
 
     // Connect to WebSocket
     const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'ws://localhost:3001', {
@@ -297,6 +301,9 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
         clearTimeout(typingTimeoutRef.current);
       }
     };
+    };
+
+    connectWebSocket();
   }, [selectedChannel?.id, hasEnterprise]);
 
   // Join conversation room when selected channel changes
@@ -309,13 +316,9 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
   const loadChatData = async () => {
     setLoading(true);
     try {
-      // Get access token from session
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
-      if (!token) {
+      // Get access token from session using NextAuth
+      const session = await getSession();
+      if (!session?.accessToken) {
         throw new Error('No access token found');
       }
 
@@ -323,7 +326,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
       const response = await fetch('/api/chat/conversations', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session.accessToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -382,11 +385,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
   const loadMessages = async (channelId: string) => {
     try {
       // Get access token from session
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token found');
       }
@@ -478,11 +477,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
     try {
       setUploading(true);
       // Get access token from session
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) {
         throw new Error('No access token found');
       }
@@ -592,11 +587,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
   // Threading functions
   const loadThreads = async (conversationId: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) return;
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/api/chat/conversations/${conversationId}/threads`, {
@@ -617,11 +608,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
 
   const loadThreadMessages = async (threadId: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) return;
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/api/chat/threads/${threadId}/messages`, {
@@ -642,11 +629,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
 
   const createThread = async (conversationId: string, name: string, type: string, participantIds: string[] = []) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) return;
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/api/chat/conversations/${conversationId}/threads`, {
@@ -709,11 +692,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
 
     try {
       setUploading(true);
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) return;
 
       // Upload files first if any
@@ -795,11 +774,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
 
   const handleReaction = async (messageId: string, emoji: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) {
         toast.error('No access token found');
         return;
@@ -869,11 +844,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
 
   const handleSaveEdit = async (messageId: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) {
         toast.error('No access token found');
         return;
@@ -935,11 +906,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
   // Read receipt handlers
   const markMessageAsRead = async (messageId: string) => {
     try {
-      const token = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('accessToken='))
-        ?.split('=')[1];
-
+      const token = await getAccessToken();
       if (!token) return;
 
       await markAsRead(messageId, token);
