@@ -11,7 +11,7 @@ import { ThemeProvider } from '../components/ThemeProvider';
 import { GlobalBrandingProvider } from "../contexts/GlobalBrandingContext";
 import { GlobalSearchProvider } from "../contexts/GlobalSearchContext";
 import { Toaster } from 'react-hot-toast';
-import GlobalChat from '../components/GlobalChat';
+import UnifiedGlobalChat from '../components/chat/UnifiedGlobalChat';
 import { ToastProvider } from 'shared/components/ToastProvider';
 import { ChatProvider } from '../contexts/ChatContext';
 import { GlobalTrashProvider } from '../contexts/GlobalTrashContext';
@@ -68,7 +68,7 @@ export default function RootLayout({
                           <ToastProvider>
                             <ErrorBoundaryWrapper>
                               {children}
-                              <GlobalChat />
+                              <UnifiedGlobalChat />
                               <Toaster position="top-right" />
                               <DevelopmentHelper />
                             </ErrorBoundaryWrapper>

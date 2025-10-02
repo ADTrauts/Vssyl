@@ -1,19 +1,20 @@
 import React from 'react';
-import { useFeature } from '../../hooks/useFeatureGating';
 import { useDashboard } from '../../contexts/DashboardContext';
-import EnhancedChatModule from './enterprise/EnhancedChatModule';
-import ChatModule from '../modules/ChatModule';
+import UnifiedChatModule from './UnifiedChatModule';
 
 interface ChatModuleWrapperProps {
   className?: string;
+  refreshTrigger?: number;
 }
 
 /**
- * Wrapper component that conditionally renders either the standard Chat module
- * or the enhanced enterprise Chat module based on feature access
+ * Wrapper component that renders the unified Chat module with context-aware features
+ * The unified module automatically switches between personal and enterprise features
+ * based on user permissions and dashboard context
  */
 export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
-  className = ''
+  className = '',
+  refreshTrigger
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -21,24 +22,12 @@ export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
   // Get business ID for enterprise feature checking
   const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
   
-  // Check if user has enterprise Chat features
-  const { hasAccess: hasEnterpriseFeatures } = useFeature('chat_e2e_encryption', businessId);
-  
-  // If user has enterprise features and is in a business context, use enhanced module
-  if (hasEnterpriseFeatures && businessId) {
-    return (
-      <EnhancedChatModule 
-        businessId={businessId}
-        className={className}
-      />
-    );
-  }
-  
-  // Otherwise, use standard Chat module
+  // Use unified chat module with context-aware features
   return (
-    <ChatModule 
-      businessId={businessId || ''}
+    <UnifiedChatModule 
+      businessId={businessId}
       className={className}
+      refreshTrigger={refreshTrigger}
     />
   );
 };

@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useDashboard } from '../../contexts/DashboardContext';
-import ChatContent from './ChatContent';
+import { ChatPageContent } from '../../components/chat/ChatPageContent';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -146,7 +146,7 @@ export default function ChatPage() {
         
         {/* Chat Content */}
         <div className="flex-1">
-          <ChatContent />
+          <ChatPageContent />
         </div>
       </div>
     </div>
