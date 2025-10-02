@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession, getSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Conversation, Message, Thread } from 'shared/types/chat';
 import { Button, Avatar, Badge, Spinner } from 'shared/components';
 import { 
@@ -120,6 +121,7 @@ UnifiedGlobalChatMessageItem.displayName = 'UnifiedGlobalChatMessageItem';
 export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatProps) {
   const { data: session, status } = useSession();
   const { currentDashboard, getDashboardType } = useDashboard();
+  const router = useRouter();
   
   // Get business ID for enterprise feature checking
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -132,6 +134,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   const [isMinimized, setIsMinimized] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [chatSize, setChatSize] = useState<'small' | 'medium' | 'large'>('small');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState<any[]>([]);
@@ -196,6 +199,16 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
 
   const isOwnMessage = (message: any): boolean => {
     return message.senderId === session?.user?.id || message.sender?.id === session?.user?.id;
+  };
+
+  const handleSizeChange = (newSize: 'small' | 'medium' | 'large') => {
+    if (newSize === 'large') {
+      // Redirect to chat page for large size
+      router.push('/chat');
+    } else {
+      setChatSize(newSize);
+      setIsMinimized(false);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -294,7 +307,10 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   return (
     <div className={`fixed bottom-0 right-12 z-50 ${className}`}>
       <div className={`bg-white border border-gray-200 rounded-t-lg shadow-xl transition-all duration-300 ${
-        isMinimized ? 'w-80 h-12' : isExpanded ? 'w-[600px] h-[600px]' : 'w-80 h-[500px]'
+        isMinimized ? 'w-80 h-12' : 
+        chatSize === 'small' ? 'w-80 h-[300px]' :
+        chatSize === 'medium' ? 'w-96 h-[400px]' :
+        'w-[600px] h-[500px]'
       }`}>
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-white rounded-t-lg">
@@ -327,6 +343,36 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                 {unreadCount}
               </Badge>
             )}
+            {/* Size controls */}
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSizeChange('small')}
+                className={`p-1 ${chatSize === 'small' ? 'bg-blue-100 text-blue-600' : ''}`}
+                title="Small"
+              >
+                <div className="w-3 h-3 border border-current rounded"></div>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSizeChange('medium')}
+                className={`p-1 ${chatSize === 'medium' ? 'bg-blue-100 text-blue-600' : ''}`}
+                title="Medium"
+              >
+                <div className="w-4 h-3 border border-current rounded"></div>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSizeChange('large')}
+                className={`p-1 ${chatSize === 'large' ? 'bg-blue-100 text-blue-600' : ''}`}
+                title="Large (Go to Chat Page)"
+              >
+                <div className="w-5 h-3 border border-current rounded"></div>
+              </Button>
+            </div>
             <Button
               variant="ghost"
               size="sm"

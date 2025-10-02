@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { toast } from 'react-hot-toast';
-import ChatSidebar from '../chat/ChatSidebar';
 import { ChatModuleWrapper } from './ChatModuleWrapper';
 
 interface ChatPageContentProps {
@@ -65,20 +64,12 @@ export function ChatPageContent({ className = '' }: ChatPageContentProps) {
   }, [navigateToDashboard, router]);
 
   return (
-    <div className={`flex h-screen bg-gray-50 ${className}`}>
-      {/* Chat Sidebar - Same for all users */}
-      <ChatSidebar 
-        onNewConversation={handleCreateConversation} 
-        onContextSwitch={handleContextSwitch}
+    <div className={`h-screen bg-gray-50 ${className}`}>
+      {/* Main Content - Context-aware module with built-in sidebar */}
+      <ChatModuleWrapper 
+        className="h-full" 
+        refreshTrigger={refreshTrigger}
       />
-      
-      {/* Main Content - Context-aware module */}
-      <div className="flex-1 overflow-hidden">
-        <ChatModuleWrapper 
-          className="h-full" 
-          refreshTrigger={refreshTrigger}
-        />
-      </div>
     </div>
   );
 }

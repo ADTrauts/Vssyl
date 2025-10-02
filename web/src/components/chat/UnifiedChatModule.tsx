@@ -1211,7 +1211,7 @@ export default function UnifiedChatModule({ businessId, className = '', refreshT
   }
 
   return (
-    <div className={`flex h-full bg-white rounded-lg border ${className}`}>
+    <div className={`flex h-full bg-white ${className}`}>
       {/* Sidebar */}
       <div className="w-80 border-r border-gray-200 flex flex-col">
         {/* Header */}
