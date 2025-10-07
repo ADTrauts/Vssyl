@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { moduleAIContextService } from '../services/ModuleAIContextService';
 
 const prisma = new PrismaClient();
 
@@ -753,26 +754,131 @@ export class CrossModuleContextEngine {
   /**
    * Get context for a specific module query
    */
-  async getModuleContext(userId: string, moduleName: string): Promise<any> {
+  async getModuleContext(userId: string, moduleId: string): Promise<any> {
     const fullContext = await this.getUserContext(userId);
     
+    // Try to use registry-based context fetching first
+    try {
+      // Get module registry entry
+      const registryEntry = await prisma.moduleAIContextRegistry.findUnique({
+        where: { moduleId },
+      });
+
+      if (registryEntry) {
+        // Use the primary context provider for this module
+        const contextProviders = registryEntry.contextProviders as any;
+        const primaryProvider = contextProviders[0]; // First provider is typically primary
+
+        if (primaryProvider) {
+          const contextData = await moduleAIContextService.fetchModuleContext(
+            moduleId,
+            primaryProvider.name,
+            userId
+          );
+
+          return {
+            fullContext,
+            moduleSpecific: contextData.data,
+            modulePurpose: registryEntry.purpose,
+            moduleCategory: registryEntry.category,
+            relevantInsights: fullContext.crossModuleInsights.filter(
+              (insight) => insight.modules.includes(moduleId)
+            ),
+            relevantPatterns: fullContext.patterns.filter(
+              (pattern) => pattern.modules.includes(moduleId)
+            ),
+          };
+        }
+      }
+    } catch (error) {
+      console.warn(`⚠️ Could not fetch from registry for ${moduleId}, falling back to hardcoded:`, error);
+    }
+
+    // Fallback to hardcoded modules for backwards compatibility
     const moduleData: Record<string, () => Promise<any>> = {
       drive: () => this.getDriveContext(userId),
       chat: () => this.getChatContext(userId),
       household: () => this.getHouseholdContext(userId),
-      business: () => this.getBusinessContext(userId)
+      business: () => this.getBusinessContext(userId),
     };
 
     return {
       fullContext,
-      moduleSpecific: await moduleData[moduleName]?.() || {},
+      moduleSpecific: (await moduleData[moduleId]?.()) || {},
       relevantInsights: fullContext.crossModuleInsights.filter(
-        insight => insight.modules.includes(moduleName)
+        (insight) => insight.modules.includes(moduleId)
       ),
       relevantPatterns: fullContext.patterns.filter(
-        pattern => pattern.modules.includes(moduleName)
-      )
+        (pattern) => pattern.modules.includes(moduleId)
+      ),
     };
+  }
+
+  /**
+   * NEW: Intelligently get context for an AI query
+   * Uses the registry to determine which modules are relevant, then fetches only from those
+   * This is MUCH faster than querying all modules!
+   */
+  async getContextForAIQuery(userId: string, query: string): Promise<any> {
+    try {
+      // Step 1: Analyze query to find relevant modules (FAST - database lookup)
+      const analysis = await moduleAIContextService.analyzeQuery(query, userId);
+
+      // Step 2: Get full user context (cached)
+      const fullContext = await this.getUserContext(userId);
+
+      // Step 3: Fetch context from only high-relevance modules (SLOW - API calls)
+      const highRelevanceModules = analysis.matchedModules.filter(
+        (m) => m.relevance === 'high'
+      );
+
+      const moduleContexts: Record<string, any> = {};
+
+      // Fetch in parallel for speed
+      await Promise.all(
+        highRelevanceModules.map(async (match) => {
+          try {
+            // Use the first suggested provider for this module
+            const provider = analysis.suggestedContextProviders.find(
+              (p) => p.moduleId === match.moduleId
+            );
+
+            if (provider) {
+              const context = await moduleAIContextService.fetchModuleContext(
+                match.moduleId,
+                provider.providerName,
+                userId
+              );
+
+              moduleContexts[match.moduleId] = {
+                ...context,
+                moduleName: match.moduleName,
+                relevance: match.relevance,
+                matchedKeywords: match.matchedKeywords,
+              };
+            }
+          } catch (error) {
+            console.warn(
+              `⚠️ Error fetching context for ${match.moduleName}:`,
+              error
+            );
+            // Continue with other modules even if one fails
+          }
+        })
+      );
+
+      return {
+        query,
+        analysis,
+        fullContext,
+        moduleContexts,
+        relevantModuleCount: highRelevanceModules.length,
+        timestamp: new Date(),
+      };
+    } catch (error) {
+      console.error('❌ Error getting context for AI query:', error);
+      throw error;
+    }
   }
 
   /**

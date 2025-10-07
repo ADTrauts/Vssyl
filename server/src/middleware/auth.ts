@@ -79,4 +79,24 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
     console.log('Auth Middleware - Token verification failed:', error);
     return res.status(403).json({ message: 'Invalid or expired token' });
   }
+}
+
+/**
+ * Middleware to require a specific role
+ * Must be used after authenticateJWT
+ */
+export function requireRole(role: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    if (user.role !== role) {
+      return res.status(403).json({ message: `Access denied. ${role} role required.` });
+    }
+    
+    next();
+  };
 } 

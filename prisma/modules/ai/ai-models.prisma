@@ -170,6 +170,12 @@ model AILearningEvent {
   eventType       String   // correction, reinforcement, pattern_recognition, preference_update
   context         String   // Module or situation context
   
+  // Module tracking (NEW: track which module this learning came from)
+  sourceModule    String?  // Module ID: "drive", "taskpro", "chat", etc.
+  sourceModuleVersion String? // Module version: "1.0.0"
+  moduleActive    Boolean  @default(true) // Is module still installed by user?
+  moduleSpecificData Json? // Module can provide extra context for learning
+  
   // Learning data
   oldBehavior     String?  // Previous AI behavior/response
   newBehavior     String   // Updated AI behavior/response
@@ -191,6 +197,8 @@ model AILearningEvent {
   
   @@index([userId])
   @@index([eventType])
+  @@index([sourceModule])    // NEW: Fast filtering by module
+  @@index([moduleActive])    // NEW: Fast filtering for active modules
   @@index([createdAt])
   @@map("ai_learning_events")
 }
@@ -203,6 +211,10 @@ model GlobalLearningEvent {
   userId          String   // Hashed user ID for privacy
   eventType       String   // Type of learning event
   context         String   // Module or situation context
+  
+  // Module tracking (NEW: track which module contributed to global learning)
+  sourceModule    String?  // Module ID that generated this event
+  moduleCategory  String?  // "productivity", "communication", "finance", etc.
   
   // Pattern data
   patternData     Json?    // Anonymized pattern data
@@ -221,6 +233,8 @@ model GlobalLearningEvent {
   @@index([userId])
   @@index([eventType])
   @@index([context])
+  @@index([sourceModule])    // NEW: Fast filtering by module
+  @@index([moduleCategory])  // NEW: Fast filtering by category
   @@index([createdAt])
   @@map("global_learning_events")
 }
@@ -234,6 +248,11 @@ model GlobalPattern {
   confidence      Float    // 0-1 confidence in the pattern
   strength        Float    // 0-1 how strong the pattern is
   modules         String[] // Which modules this pattern affects
+  
+  // Module attribution (NEW: track primary module for this pattern)
+  primaryModule   String?  // "drive", "chat", etc. - main module this pattern relates to
+  moduleCategory  String?  // "productivity", "communication" - category of primary module
+  
   userSegment     String   // all, business, personal, household, enterprise
   impact          String   // positive, neutral, negative
   recommendations String[]
@@ -248,6 +267,8 @@ model GlobalPattern {
   @@index([userSegment])
   @@index([impact])
   @@index([confidence])
+  @@index([primaryModule])    // NEW: Fast filtering by primary module
+  @@index([moduleCategory])   // NEW: Fast filtering by module category
   @@index([lastUpdated])
   @@map("global_patterns")
 }

@@ -237,6 +237,7 @@ model User {
   aiConversationHistories AIConversationHistory[]
   aiUsageTrackings AIUsageTracking[]
   aiLearningEvents AILearningEvent[]
+  aiContextCache UserAIContextCache? // NEW: User's AI context cache
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -1055,6 +1056,8 @@ model Module {
   developerRevenue DeveloperRevenue[]
   businessInstallations BusinessModuleInstallation[]
   businessSubscriptions BusinessModuleSubscription[]
+  aiContextRegistry ModuleAIContextRegistry? // NEW: AI context for this module
+  performanceMetrics ModuleAIPerformanceMetric[] // NEW: AI performance tracking
 
   @@index([developerId])
   @@index([businessId])
@@ -1072,6 +1075,10 @@ model ModuleInstallation {
   installedAt DateTime @default(now())
   configured Json?    // Module-specific configuration
   enabled   Boolean  @default(true)
+  
+  // NEW: Cache user-specific context for performance
+  cachedContext   Json?     // User's context data from this module
+  contextCachedAt DateTime? // When context was last cached
   
   @@unique([moduleId, userId])
   @@index([moduleId])
@@ -1497,6 +1504,12 @@ model AILearningEvent {
   eventType       String   // correction, reinforcement, pattern_recognition, preference_update
   context         String   // Module or situation context
   
+  // Module tracking (NEW: track which module this learning came from)
+  sourceModule    String?  // Module ID: "drive", "taskpro", "chat", etc.
+  sourceModuleVersion String? // Module version: "1.0.0"
+  moduleActive    Boolean  @default(true) // Is module still installed by user?
+  moduleSpecificData Json? // Module can provide extra context for learning
+  
   // Learning data
   oldBehavior     String?  // Previous AI behavior/response
   newBehavior     String   // Updated AI behavior/response
@@ -1518,6 +1531,8 @@ model AILearningEvent {
   
   @@index([userId])
   @@index([eventType])
+  @@index([sourceModule])    // NEW: Fast filtering by module
+  @@index([moduleActive])    // NEW: Fast filtering for active modules
   @@index([createdAt])
   @@map("ai_learning_events")
 }
@@ -1530,6 +1545,10 @@ model GlobalLearningEvent {
   userId          String   // Hashed user ID for privacy
   eventType       String   // Type of learning event
   context         String   // Module or situation context
+  
+  // Module tracking (NEW: track which module contributed to global learning)
+  sourceModule    String?  // Module ID that generated this event
+  moduleCategory  String?  // "productivity", "communication", "finance", etc.
   
   // Pattern data
   patternData     Json?    // Anonymized pattern data
@@ -1548,6 +1567,8 @@ model GlobalLearningEvent {
   @@index([userId])
   @@index([eventType])
   @@index([context])
+  @@index([sourceModule])    // NEW: Fast filtering by module
+  @@index([moduleCategory])  // NEW: Fast filtering by category
   @@index([createdAt])
   @@map("global_learning_events")
 }
@@ -1561,6 +1582,11 @@ model GlobalPattern {
   confidence      Float    // 0-1 confidence in the pattern
   strength        Float    // 0-1 how strong the pattern is
   modules         String[] // Which modules this pattern affects
+  
+  // Module attribution (NEW: track primary module for this pattern)
+  primaryModule   String?  // "drive", "chat", etc. - main module this pattern relates to
+  moduleCategory  String?  // "productivity", "communication" - category of primary module
+  
   userSegment     String   // all, business, personal, household, enterprise
   impact          String   // positive, neutral, negative
   recommendations String[]
@@ -1575,6 +1601,8 @@ model GlobalPattern {
   @@index([userSegment])
   @@index([impact])
   @@index([confidence])
+  @@index([primaryModule])    // NEW: Fast filtering by primary module
+  @@index([moduleCategory])   // NEW: Fast filtering by module category
   @@index([lastUpdated])
   @@map("global_patterns")
 }
@@ -1615,6 +1643,128 @@ model SystemConfiguration {
   updatedAt               DateTime @default(now())
   
   @@map("system_configuration")
+}
+
+// ===== MODULE AI CONTEXT REGISTRY =====
+
+// Central registry of all module AI contexts
+model ModuleAIContextRegistry {
+  id              String   @id @default(uuid())
+  moduleId        String   @unique
+  moduleName      String
+  
+  // Module purpose and category (for fast filtering and display)
+  purpose         String   // "File storage and management"
+  category        String   // "productivity", "communication", "finance", etc.
+  
+  // Semantic rules for AI matching (INDEXED for ultra-fast keyword search)
+  keywords        String[] // ["file", "upload", "download", "document", "pdf"]
+  patterns        String[] // ["upload * to drive", "show my files", "find files from *"]
+  concepts        String[] // ["storage", "documents", "sharing", "collaboration"]
+  
+  // Entities this module manages
+  // Example: [{ name: "file", pluralName: "files", description: "A digital file" }]
+  entities        Json
+  
+  // Available actions users can take
+  // Example: [{ name: "upload", description: "Upload file", permissions: ["drive:write"] }]
+  actions         Json
+  
+  // Context providers - endpoints the AI calls to get live data
+  // Example: [{ name: "recentFiles", endpoint: "/api/modules/:id/ai/context/recent", cacheDuration: 900000 }]
+  contextProviders Json
+  
+  // Queryable data - structured queries the AI can make
+  // Example: [{ dataType: "fileCount", endpoint: "/api/modules/:id/ai/count", parameters: {...} }]
+  queryableData   Json?
+  
+  // Relationships to other modules (for cross-module insights)
+  // Example: [{ module: "chat", type: "integrates", description: "Files shared in chat" }]
+  relationships   Json?
+  
+  // Full AI context definition from manifest (for reference and debugging)
+  fullAIContext   Json
+  
+  // Metadata
+  version         String   @default("1.0.0")
+  lastUpdated     DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  
+  // Relationships
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  // Performance-critical indexes
+  @@index([keywords])      // Fast keyword search for AI query matching
+  @@index([category])      // Fast category filtering
+  @@index([moduleName])    // Fast name lookup
+  @@map("module_ai_context_registry")
+}
+
+// User-specific AI context cache for performance optimization
+model UserAIContextCache {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  
+  // Cached context from all installed modules
+  // Stored as complete UserContext object from CrossModuleContextEngine
+  cachedContext   Json
+  
+  // Cache metadata
+  lastUpdated     DateTime @default(now())
+  expiresAt       DateTime // Auto-refresh after this time (typically 15 minutes)
+  version         String   @default("1.0.0")
+  
+  // Cache statistics
+  hitCount        Int      @default(0) // How many times this cache was used
+  missCount       Int      @default(0) // How many times cache expired
+  
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([expiresAt])      // Fast expiration checking
+  @@map("user_ai_context_cache")
+}
+
+// Module AI performance metrics for monitoring and analytics
+model ModuleAIPerformanceMetric {
+  id              String   @id @default(uuid())
+  moduleId        String
+  date            DateTime @default(now())
+  
+  // Query metrics
+  totalQueries    Int      @default(0)     // Total AI queries involving this module
+  successfulQueries Int    @default(0)     // Successful context fetches
+  failedQueries   Int      @default(0)     // Failed context fetches
+  averageLatency  Float    @default(0)     // Average response time in ms
+  
+  // Context metrics
+  contextFetchCount Int    @default(0)     // How many times context was fetched
+  contextFetchErrors Int   @default(0)     // Context fetch errors
+  averageContextSize Float @default(0)     // Average context payload size in KB
+  cacheHitRate    Float    @default(0)     // % of queries using cached context
+  
+  // User satisfaction metrics
+  positiveRatings Int      @default(0)     // User thumbs up on AI responses
+  negativeRatings Int      @default(0)     // User thumbs down on AI responses
+  averageRating   Float    @default(0)     // Average rating (0-10)
+  
+  // Cost tracking
+  estimatedCost   Float    @default(0)     // Estimated AI API costs for this module
+  tokenCount      Int      @default(0)     // Total tokens used
+  
+  // AI learning contribution
+  learningEventsGenerated Int @default(0)  // Learning events from this module
+  patternsContributed Int     @default(0)  // Global patterns this module contributed to
+  
+  // Relationships
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  
+  @@unique([moduleId, date])
+  @@index([moduleId])
+  @@index([date])
+  @@map("module_ai_performance_metrics")
 }
 
 // ===== ADVANCED AI FEATURES =====

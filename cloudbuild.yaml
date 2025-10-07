@@ -47,11 +47,39 @@ steps:
     id: 'build-web'
     waitFor: ['pull-cache']
 
-  # Step 3: Push images in parallel
+  # Step 3: Run database migrations (NEW)
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🔄 Running Prisma migrations..."
+        
+        # Install dependencies
+        apt-get update && apt-get install -y curl
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        apt-get install -y nodejs
+        
+        # Install pnpm
+        npm install -g pnpm
+        
+        # Install dependencies and run migration
+        cd /workspace
+        pnpm install
+        
+        # Run Prisma migration
+        export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
+        pnpm exec prisma migrate deploy
+        
+        echo "✅ Migrations completed successfully"
+    id: 'run-migrations'
+    waitFor: ['build-server']
+
+  # Step 4: Push images in parallel
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID']
     id: 'push-server'
-    waitFor: ['build-server']
+    waitFor: ['run-migrations']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:latest']
@@ -68,7 +96,7 @@ steps:
     id: 'push-web-latest'
     waitFor: ['build-web']
 
-  # Step 4: Deploy services in parallel
+  # Step 5: Deploy server (after migrations)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
@@ -103,8 +131,9 @@ steps:
       - '--set-secrets'
       - 'OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest']
+    waitFor: ['push-server', 'push-server-latest', 'run-migrations']  # Wait for migrations!
 
+  # Step 6: Deploy web (in parallel with server)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:

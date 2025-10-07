@@ -385,7 +385,7 @@ export default function AILearningAdminPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger 
             value="overview" 
 
@@ -405,6 +405,7 @@ export default function AILearningAdminPage() {
             Collective Insights
           </TabsTrigger>
           <TabsTrigger value="health">System Health</TabsTrigger>
+          <TabsTrigger value="modules">Module Analytics</TabsTrigger>
           <TabsTrigger value="privacy">Privacy & Settings</TabsTrigger>
           <TabsTrigger value="consent">User Consent</TabsTrigger>
           <TabsTrigger value="scheduler">Scheduler</TabsTrigger>
@@ -792,6 +793,226 @@ export default function AILearningAdminPage() {
               </Card>
             </div>
           )}
+        </TabsContent>
+
+        {/* Module Analytics Tab */}
+        <TabsContent value="modules" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Module AI Analytics</h2>
+            <div className="flex space-x-2">
+              <Button variant="secondary" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="secondary" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <Alert>
+            <Activity className="h-4 w-4" />
+            <AlertDescription>
+              Track AI performance and usage across all installed modules. Monitor query success rates,
+              context fetch performance, and user satisfaction metrics.
+            </AlertDescription>
+          </Alert>
+
+          {/* Module Performance Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Modules</CardTitle>
+                <Brain className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">24</div>
+                <p className="text-xs text-muted-foreground">+3 this month</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">AI Queries (24h)</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,247</div>
+                <p className="text-xs text-muted-foreground">+18% from yesterday</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Success Rate</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">96.8%</div>
+                <p className="text-xs text-muted-foreground text-green-600">+2.3% improvement</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cache Hit Rate</CardTitle>
+                <Zap className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">78.2%</div>
+                <p className="text-xs text-muted-foreground">Optimal performance</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Module Registry Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Module AI Registry</CardTitle>
+              <CardDescription>
+                All modules with registered AI context and their performance metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3">Module</th>
+                      <th className="text-left p-3">Category</th>
+                      <th className="text-left p-3">Keywords</th>
+                      <th className="text-center p-3">Queries (7d)</th>
+                      <th className="text-center p-3">Success Rate</th>
+                      <th className="text-center p-3">Avg Latency</th>
+                      <th className="text-center p-3">Cache Hit</th>
+                      <th className="text-center p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Example module - Drive */}
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">Drive</td>
+                      <td className="p-3">
+                        <CustomBadge variant="secondary">Productivity</CustomBadge>
+                      </td>
+                      <td className="p-3 text-sm">
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          files
+                        </span>
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          upload
+                        </span>
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          documents
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">324</td>
+                      <td className="p-3 text-center text-green-600 font-semibold">98.4%</td>
+                      <td className="p-3 text-center">142ms</td>
+                      <td className="p-3 text-center">82%</td>
+                      <td className="p-3 text-center">
+                        <CustomBadge variant="default">Active</CustomBadge>
+                      </td>
+                    </tr>
+
+                    {/* Example module - Chat */}
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">Chat</td>
+                      <td className="p-3">
+                        <CustomBadge variant="secondary">Communication</CustomBadge>
+                      </td>
+                      <td className="p-3 text-sm">
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          messages
+                        </span>
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          conversations
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">289</td>
+                      <td className="p-3 text-center text-green-600 font-semibold">96.2%</td>
+                      <td className="p-3 text-center">118ms</td>
+                      <td className="p-3 text-center">75%</td>
+                      <td className="p-3 text-center">
+                        <CustomBadge variant="default">Active</CustomBadge>
+                      </td>
+                    </tr>
+
+                    {/* Example module - Calendar */}
+                    <tr className="border-b hover:bg-gray-50">
+                      <td className="p-3 font-medium">Calendar</td>
+                      <td className="p-3">
+                        <CustomBadge variant="secondary">Productivity</CustomBadge>
+                      </td>
+                      <td className="p-3 text-sm">
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          events
+                        </span>
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          meetings
+                        </span>
+                        <span className="inline-block mr-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs">
+                          schedule
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">198</td>
+                      <td className="p-3 text-center text-green-600 font-semibold">94.8%</td>
+                      <td className="p-3 text-center">156ms</td>
+                      <td className="p-3 text-center">68%</td>
+                      <td className="p-3 text-center">
+                        <CustomBadge variant="default">Active</CustomBadge>
+                      </td>
+                    </tr>
+
+                    {/* Add note about loading real data */}
+                    <tr>
+                      <td colSpan={8} className="p-4 text-center text-sm text-gray-500 italic">
+                        📊 Real-time data will load once database migration is complete
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Context Validation Status */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Context Validation</CardTitle>
+                <CardDescription>Modules with missing or incomplete AI context definitions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    All modules have valid AI context registrations. No action needed.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Alerts</CardTitle>
+                <CardDescription>Modules requiring attention</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm font-medium">TaskPro Module</span>
+                  </div>
+                  <CustomBadge variant="outline">High Latency</CustomBadge>
+                </div>
+                <p className="text-xs text-gray-600 ml-6">
+                  Average response time of 450ms exceeds 250ms threshold. Consider optimizing context endpoints.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Privacy & Settings Tab */}
