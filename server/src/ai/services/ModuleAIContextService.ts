@@ -14,7 +14,7 @@
  * after running: npx prisma migrate dev --name add_module_ai_context_registry
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import axios from 'axios';
 import type {
   ModuleAIContext,
@@ -454,7 +454,7 @@ export class ModuleAIContextService {
     await prisma.moduleInstallation.updateMany({
       where: { userId },
       data: {
-        cachedContext: null,
+        cachedContext: Prisma.JsonNull,
         contextCachedAt: null,
       },
     });
@@ -469,7 +469,7 @@ export class ModuleAIContextService {
     await prisma.moduleInstallation.updateMany({
       where: { moduleId },
       data: {
-        cachedContext: null,
+        cachedContext: Prisma.JsonNull,
         contextCachedAt: null,
       },
     });
