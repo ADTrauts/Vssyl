@@ -92,11 +92,20 @@ steps:
         cd /workspace
         pnpm install
         
+        # Install tsx (modern TypeScript runner) if not available
+        pnpm add -D tsx || true
+        
         # Run module registration
         export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
-        npx ts-node scripts/register-built-in-modules.ts
+        pnpm exec tsx scripts/register-built-in-modules.ts
         
-        echo "✅ Module registration completed successfully"
+        # Check if registration actually succeeded
+        if [ $? -eq 0 ]; then
+          echo "✅ Module registration completed successfully"
+        else
+          echo "❌ Module registration failed!"
+          exit 1
+        fi
     id: 'register-modules'
     waitFor: ['run-migrations']
 
