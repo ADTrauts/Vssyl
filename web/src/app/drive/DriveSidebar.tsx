@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useDashboard } from '../../contexts/DashboardContext';
-import FolderTree from '../components/drive/FolderTree';
+import FolderTree from '../../components/drive/FolderTree';
 
 interface DriveSidebarProps {
   onNewFolder: () => void;
@@ -390,7 +390,7 @@ export default function DriveSidebar({
       });
     } else {
       // Expand drive
-      setExpandedDrives(prev => new Set([...prev, driveId]));
+      setExpandedDrives(prev => new Set([...Array.from(prev), driveId]));
       if (!folderTrees[driveId]) {
         await loadRootFolders(driveId);
       }
@@ -526,7 +526,7 @@ export default function DriveSidebar({
                   <FolderTree
                     folders={folderTrees[drive.id] || []}
                     onFolderSelect={handleFolderSelect}
-                    onFolderExpand={(folderId) => handleFolderExpand(drive.id, folderId)}
+                    onFolderExpand={(folderId: string) => handleFolderExpand(drive.id, folderId)}
                     selectedFolderId={selectedFolderId}
                   />
                 </div>
