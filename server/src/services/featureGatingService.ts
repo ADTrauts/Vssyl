@@ -124,6 +124,29 @@ export class FeatureGatingService {
       category: 'business',
       description: 'Dedicated customer success and technical support',
     },
+
+    // ===== DRIVE ENTERPRISE FEATURES =====
+    'drive_advanced_sharing': {
+      name: 'Advanced File Sharing',
+      requiredTier: 'business_basic',
+      module: 'drive',
+      category: 'business',
+      description: 'Advanced file sharing with granular permissions and collaboration features',
+    },
+    'drive_dlp': {
+      name: 'Data Loss Prevention',
+      requiredTier: 'business_advanced',
+      module: 'drive',
+      category: 'business',
+      description: 'Data classification, DLP policies, and compliance features',
+    },
+    'drive_audit_logs': {
+      name: 'Drive Audit Logs',
+      requiredTier: 'business_advanced',
+      module: 'drive',
+      category: 'business',
+      description: 'Comprehensive audit trails and compliance reporting for drive activities',
+    },
   };
 
   /**

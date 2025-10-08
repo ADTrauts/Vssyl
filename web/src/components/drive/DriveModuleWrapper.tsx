@@ -1,5 +1,7 @@
 import React from 'react';
+import { useFeature } from '../../hooks/useFeatureGating';
 import { useDashboard } from '../../contexts/DashboardContext';
+import EnhancedDriveModule from './enterprise/EnhancedDriveModule';
 import DriveModule from '../modules/DriveModule';
 
 interface DriveModuleWrapperProps {
@@ -18,11 +20,24 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
   
-  // Get business ID for context
+  // Get business ID for enterprise feature checking
   const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
   
-  // For now, always use standard Drive module to avoid feature gating issues
-  // TODO: Add enterprise feature checking back when module system is properly set up
+  // Check if user has enterprise Drive features
+  const { hasAccess: hasEnterpriseFeatures } = useFeature('drive_advanced_sharing', businessId);
+  
+  // If user has enterprise features and is in a business context, use enhanced module
+  if (hasEnterpriseFeatures && businessId) {
+    return (
+      <EnhancedDriveModule 
+        businessId={businessId}
+        className={className}
+        refreshTrigger={refreshTrigger}
+      />
+    );
+  }
+  
+  // Otherwise, use standard Drive module
   return (
     <DriveModule 
       businessId={businessId || ''}
