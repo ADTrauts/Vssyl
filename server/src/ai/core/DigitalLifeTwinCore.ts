@@ -5,8 +5,7 @@ import { DecisionEngine } from './DecisionEngine';
 import { AdvancedLearningEngine } from '../learning/AdvancedLearningEngine';
 import { ActionExecutor } from './ActionExecutor';
 import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
-
-const prisma = new PrismaClient();
+import { prisma as sharedPrisma } from '../../lib/prisma';
 
 export interface DigitalLifeTwinResponse {
   response: string;
@@ -22,6 +21,16 @@ export interface DigitalLifeTwinResponse {
     patternMatches: string[];
     processingTime: number;
     provider: string;
+    smartContext?: {
+      queryAnalysis: {
+        relevantModules: Array<{ name: string; relevance: string }>;
+        contextProvidersFetched: string[];
+      };
+      performanceGain: {
+        modulesAnalyzed: number;
+        totalModulesAvailable: number;
+      };
+    };
   };
 }
 
@@ -71,7 +80,7 @@ export class DigitalLifeTwinCore {
   private smartPatternEngine: SmartPatternEngine;
 
   constructor(contextEngine?: CrossModuleContextEngine, prismaClient?: PrismaClient) {
-    const prisma = prismaClient || new PrismaClient();
+    const prisma = prismaClient || sharedPrisma;
     
     this.contextEngine = contextEngine || new CrossModuleContextEngine();
     
@@ -104,13 +113,26 @@ export class DigitalLifeTwinCore {
         throw new Error('Invalid query: missing required fields');
       }
 
-      // 1. Get comprehensive user context (with fallback)
+      // 1. 🚀 NEW: Get SMART context - only fetches relevant modules based on query
       let userContext: UserContext;
+      let smartContext: any;
       try {
-        userContext = await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+        // Use the NEW intelligent context fetching system
+        smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query);
+        
+        // Convert smart context to UserContext format for backward compatibility
+        userContext = smartContext?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+        
+        console.log(`✨ Smart Context: Analyzed query and fetched from ${smartContext?.relevantModuleCount || 0} relevant modules (instead of all)`);
       } catch (error) {
-        console.warn('Error getting user context:', error);
-        userContext = this.createFallbackUserContext(query.userId);
+        console.warn('Error getting smart context, falling back to full context:', error);
+        // Fallback to old method if smart context fails
+        try {
+          userContext = await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+        } catch (fallbackError) {
+          console.warn('Error getting user context:', fallbackError);
+          userContext = this.createFallbackUserContext(query.userId);
+        }
       }
       
       // 2. Get user's personality profile (with fallback)
@@ -235,7 +257,21 @@ export class DigitalLifeTwinCore {
           modulesFocused: response.modulesFocused || [],
           patternMatches: response.patternMatches || [],
           processingTime,
-          provider: response.provider || 'hybrid'
+          provider: response.provider || 'hybrid',
+          // NEW: Smart context metadata
+          smartContext: smartContext ? {
+            queryAnalysis: {
+              relevantModules: smartContext.analysis.matchedModules.map((m: any) => ({
+                name: m.moduleName,
+                relevance: m.relevance
+              })),
+              contextProvidersFetched: smartContext.analysis.suggestedContextProviders.map((p: any) => p.providerName)
+            },
+            performanceGain: {
+              modulesAnalyzed: smartContext.relevantModuleCount,
+              totalModulesAvailable: smartContext.analysis.matchedModules.length
+            }
+          } : undefined
         }
       };
     } catch (error) {

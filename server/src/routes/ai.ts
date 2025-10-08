@@ -3,9 +3,9 @@ import { DigitalLifeTwinService, AIRequest } from '../ai/core/DigitalLifeTwinSer
 import { PersonalityEngine } from '../ai/core/PersonalityEngine';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 const personalityEngine = new PersonalityEngine(prisma);
 

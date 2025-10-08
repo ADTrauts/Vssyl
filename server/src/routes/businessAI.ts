@@ -2,9 +2,9 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { BusinessAIDigitalTwinService } from '../ai/enterprise/BusinessAIDigitalTwinService';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const businessAIService = new BusinessAIDigitalTwinService(prisma);
 
 console.log('BusinessAI routes loaded');

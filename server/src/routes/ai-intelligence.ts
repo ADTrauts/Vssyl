@@ -3,9 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import AdvancedLearningEngine from '../ai/learning/AdvancedLearningEngine';
 import PredictiveIntelligenceEngine from '../ai/intelligence/PredictiveIntelligenceEngine';
 import IntelligentRecommendationsEngine from '../ai/intelligence/IntelligentRecommendationsEngine';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const learningEngine = new AdvancedLearningEngine(prisma);
 const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
 const recommendationsEngine = new IntelligentRecommendationsEngine(prisma);

@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { moduleAIContextService } from '../services/ModuleAIContextService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export interface UserContext {
   userId: string;

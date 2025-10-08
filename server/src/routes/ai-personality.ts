@@ -1,9 +1,9 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 
 /**
  * Get user's personality profile

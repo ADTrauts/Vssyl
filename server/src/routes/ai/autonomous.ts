@@ -6,9 +6,9 @@ import { AutonomyManager } from '../../ai/autonomy/AutonomyManager';
 import { ActionTemplates } from '../../ai/actions/ActionTemplates';
 import { DigitalLifeTwinCore } from '../../ai/core/DigitalLifeTwinCore';
 import { CrossModuleContextEngine } from '../../ai/context/CrossModuleContextEngine';
+import { prisma } from '../../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 
 // Initialize AI components
 const contextEngine = new CrossModuleContextEngine();

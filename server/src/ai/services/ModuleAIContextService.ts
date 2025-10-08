@@ -22,8 +22,7 @@ import type {
   AIQueryAnalysis,
   ModuleContextResponse,
 } from '../../../../shared/src/types/module-ai-context';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../lib/prisma';
 
 export class ModuleAIContextService {
   /**

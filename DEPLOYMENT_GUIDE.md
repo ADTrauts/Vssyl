@@ -33,6 +33,7 @@ git push origin main
 # Cloud Build will automatically:
 # ✅ Build Docker images
 # ✅ Run Prisma migrations (NEW!)
+# ✅ Register built-in modules (NEW!)
 # ✅ Deploy to Cloud Run
 ```
 
@@ -44,13 +45,14 @@ graph TD
     B --> C[Pull Cache]
     C --> D[Build Server & Web Images]
     D --> E[🆕 Run Prisma Migrations]
-    E --> F{Migration Success?}
-    F -->|Yes| G[Push Images]
-    F -->|No| H[Deployment Fails]
-    G --> I[Deploy Server]
-    G --> J[Deploy Web]
-    I --> K[✅ Deployment Complete]
-    J --> K
+    E --> F[🤖 Register Built-in Modules]
+    F --> G{Success?}
+    G -->|Yes| H[Push Images]
+    G -->|No| I[Deployment Fails]
+    H --> J[Deploy Server]
+    H --> K[Deploy Web]
+    J --> L[✅ Deployment Complete]
+    K --> L
 ```
 
 ---
@@ -132,32 +134,18 @@ npx prisma migrate deploy
 
 ## 📈 Post-Deployment Steps
 
-### 1. **Register Built-in Modules**
+### 1. **✅ Built-in Modules Registered Automatically**
 
-Create a script to register your existing modules (Drive, Chat, Calendar, etc.):
+Cloud Build now automatically registers these built-in modules on every deployment:
+- ✅ Drive
+- ✅ Chat
+- ✅ Calendar
+- ✅ Household
+- ✅ Business
 
-```typescript
-// Example: scripts/register-built-in-modules.ts
-import { moduleAIContextService } from '../server/src/ai/services/ModuleAIContextService';
+**No manual action needed!** The registration script runs as part of the deployment pipeline.
 
-// Register Drive module
-await moduleAIContextService.registerModuleContext('drive', 'Drive', {
-  purpose: 'File storage and document management',
-  category: 'productivity',
-  keywords: ['files', 'upload', 'download', 'document', 'storage'],
-  patterns: ['show my files', 'upload * to drive'],
-  concepts: ['storage', 'documents', 'sharing'],
-  entities: [{ name: 'file', pluralName: 'files', description: 'A digital file' }],
-  actions: [{ name: 'upload', description: 'Upload file', permissions: ['drive:write'] }],
-  contextProviders: [{
-    name: 'recentFiles',
-    endpoint: '/api/modules/:id/ai/context/recent',
-    cacheDuration: 900000
-  }]
-});
-
-// Repeat for Chat, Calendar, Tasks, etc...
-```
+**Location:** `scripts/register-built-in-modules.ts`
 
 ### 2. **Monitor Performance**
 

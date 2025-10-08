@@ -2,9 +2,9 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
 import { SmartPatternEngine } from '../ai/intelligence/SmartPatternEngine';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const smartPatternEngine = new SmartPatternEngine(prisma);
 
 /**

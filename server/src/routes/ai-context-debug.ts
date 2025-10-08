@@ -1,9 +1,9 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 
 // JWT Authentication middleware
 function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction) {

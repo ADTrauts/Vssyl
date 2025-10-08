@@ -14,10 +14,9 @@ import { Router, Request, Response } from 'express';
 import { authenticateJWT, requireRole } from '../middleware/auth';
 import { moduleAIContextService } from '../ai/services/ModuleAIContextService';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router: Router = Router();
-const prisma = new PrismaClient();
 
 // ============================================================================
 // MODULE DEVELOPER ENDPOINTS

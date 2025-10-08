@@ -12,6 +12,12 @@ import {
   searchUsersForChat,
   getChatAnalytics
 } from '../controllers/chatController';
+import {
+  getRecentConversationsContext,
+  getUnreadMessagesContext,
+  getConversationHistory
+} from '../controllers/chatAIContextController';
+import { authenticateJWT } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 
@@ -39,5 +45,10 @@ router.get('/users/search', searchUsersForChat);
 
 // Analytics routes
 router.get('/analytics', getChatAnalytics);
+
+// AI Context Provider Endpoints
+router.get('/ai/context/recent', authenticateJWT, getRecentConversationsContext);
+router.get('/ai/context/unread', authenticateJWT, getUnreadMessagesContext);
+router.get('/ai/query/history', authenticateJWT, getConversationHistory);
 
 export default router; 

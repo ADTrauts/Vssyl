@@ -4,9 +4,9 @@ import AutonomyManager from '../ai/autonomy/AutonomyManager';
 import ApprovalManager from '../ai/approval/ApprovalManager';
 import ActionTemplates from '../ai/actions/ActionTemplates';
 import { authenticateJWT } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const autonomyManager = new AutonomyManager(prisma);
 const approvalManager = new ApprovalManager(prisma);
 const actionTemplates = new ActionTemplates(prisma);

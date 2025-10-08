@@ -75,11 +75,36 @@ steps:
     id: 'run-migrations'
     waitFor: ['build-server']
 
+  # Step 3b: Register built-in modules
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🤖 Registering built-in modules..."
+        
+        # Dependencies are already installed from previous step
+        apt-get update && apt-get install -y curl
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        apt-get install -y nodejs
+        npm install -g pnpm
+        
+        cd /workspace
+        pnpm install
+        
+        # Run module registration
+        export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
+        npx ts-node scripts/register-built-in-modules.ts
+        
+        echo "✅ Module registration completed successfully"
+    id: 'register-modules'
+    waitFor: ['run-migrations']
+
   # Step 4: Push images in parallel
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID']
     id: 'push-server'
-    waitFor: ['run-migrations']
+    waitFor: ['register-modules']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:latest']
@@ -131,7 +156,7 @@ steps:
       - '--set-secrets'
       - 'OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest', 'run-migrations']  # Wait for migrations!
+    waitFor: ['push-server', 'push-server-latest', 'register-modules']  # Wait for migrations and module registration!
 
   # Step 6: Deploy web (in parallel with server)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'

@@ -1,9 +1,9 @@
 import * as express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { CentralizedLearningEngine } from '../ai/learning/CentralizedLearningEngine';
+import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
-const prisma = new PrismaClient();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
 
 import { authenticateJWT } from '../middleware/auth';

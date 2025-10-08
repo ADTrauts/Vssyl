@@ -14,6 +14,12 @@ import {
   checkConflicts,
   getFreeBusy
 } from '../controllers/calendarController';
+import {
+  getUpcomingEventsContext,
+  getTodayScheduleContext,
+  checkAvailability
+} from '../controllers/calendarAIContextController';
+import { authenticateJWT } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 
@@ -75,6 +81,11 @@ router.get('/rsvp', async (req, res) => {
     res.status(500).json({ error: 'Failed to handle RSVP' });
   }
 });
+
+// AI Context Provider Endpoints
+router.get('/ai/context/upcoming', authenticateJWT, getUpcomingEventsContext);
+router.get('/ai/context/today', authenticateJWT, getTodayScheduleContext);
+router.get('/ai/query/availability', authenticateJWT, checkAvailability);
 
 export default router;
 
