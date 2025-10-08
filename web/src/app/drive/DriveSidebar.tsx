@@ -502,22 +502,21 @@ export default function DriveSidebar({
                   <drive.icon style={{ width: 20, height: 20 }} />
                   <span>{drive.name}</span>
                 </div>
-                {hasFolders && (
-                  <button
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      color: colorScheme.text,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                    onClick={(e) => handleDriveExpandClick(drive, e)}
-                  >
-                    {isExpanded ? '▼' : '▶'}
-                  </button>
-                )}
+                {/* Always show expand button - folders are loaded on first expand */}
+                <button
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '4px',
+                    cursor: 'pointer',
+                    color: colorScheme.text,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  onClick={(e) => handleDriveExpandClick(drive, e)}
+                >
+                  {isExpanded ? '▼' : '▶'}
+                </button>
               </div>
               
               {/* Folder Tree */}
