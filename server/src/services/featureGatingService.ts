@@ -161,14 +161,23 @@ export class FeatureGatingService {
     }
 
     // Get user's subscription
-    const subscription = await prisma.subscription.findFirst({
-      where: businessId
-        ? { businessId, status: 'active' }
-        : { userId, status: 'active' },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const userTier = subscription?.tier || 'free';
+    let subscription = null;
+    let userTier = 'free';
+    
+    try {
+      subscription = await prisma.subscription.findFirst({
+        where: businessId
+          ? { businessId, status: 'active' }
+          : { userId, status: 'active' },
+        orderBy: { createdAt: 'desc' },
+      });
+      
+      userTier = subscription?.tier || 'free';
+    } catch (dbError) {
+      console.error('Database error in feature gating:', dbError);
+      // If database query fails, default to free tier
+      userTier = 'free';
+    }
     const hasTierAccess = this.compareTiers(userTier, feature.requiredTier);
 
     if (!hasTierAccess) {
@@ -180,17 +189,23 @@ export class FeatureGatingService {
 
     // Check usage limits if applicable
     if (feature.usageLimit && feature.usageMetric) {
-      const usageInfo = await this.getUsageInfo(userId, feature.usageMetric, feature.usageLimit, businessId);
-      
-      if (usageInfo.currentUsage >= usageInfo.limit) {
-        return {
-          hasAccess: false,
-          reason: `Usage limit exceeded for ${feature.name}`,
-          usageInfo,
-        };
-      }
+      try {
+        const usageInfo = await this.getUsageInfo(userId, feature.usageMetric, feature.usageLimit, businessId);
+        
+        if (usageInfo.currentUsage >= usageInfo.limit) {
+          return {
+            hasAccess: false,
+            reason: `Usage limit exceeded for ${feature.name}`,
+            usageInfo,
+          };
+        }
 
-      return { hasAccess: true, usageInfo };
+        return { hasAccess: true, usageInfo };
+      } catch (usageError) {
+        console.error('Usage check error in feature gating:', usageError);
+        // If usage check fails, allow access (fail open)
+        return { hasAccess: true };
+      }
     }
 
     return { hasAccess: true };
