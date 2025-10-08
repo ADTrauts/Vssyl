@@ -118,7 +118,8 @@ export async function listFiles(req: Request, res: Response) {
       url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${file.url}`
     }));
     
-    res.json({ files: filesWithFullUrls });
+    // Return array directly to match folders API format
+    res.json(filesWithFullUrls);
   } catch (err) {
     console.error('Error in listFiles:', err);
     res.status(500).json({ message: 'Failed to fetch files' });
