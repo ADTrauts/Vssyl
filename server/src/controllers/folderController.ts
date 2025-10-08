@@ -67,7 +67,14 @@ export async function listFolders(req: Request, res: Response) {
     query += ` ORDER BY f."order" ASC, f."createdAt" DESC`;
     
     const folders = await prisma.$queryRawUnsafe(query, ...params);
-    res.json(folders);
+    
+    // Convert BigInt to Number for JSON serialization
+    const serializedFolders = (folders as any[]).map(folder => ({
+      ...folder,
+      hasChildren: Number(folder.hasChildren)
+    }));
+    
+    res.json(serializedFolders);
   } catch (err) {
     console.error('Error in listFolders:', err);
     res.status(500).json({ message: 'Failed to fetch folders' });
