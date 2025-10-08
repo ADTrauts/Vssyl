@@ -126,8 +126,12 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       const filesData = await filesResponse.json();
       const foldersData = await foldersResponse.json();
       
+      // API returns arrays directly, not wrapped in objects
+      const files = Array.isArray(filesData) ? filesData : (filesData.files || []);
+      const folders = Array.isArray(foldersData) ? foldersData : (foldersData.folders || []);
+      
       // Map files to DriveItem format with enterprise metadata
-      const mappedFiles = (filesData.files || []).map((file: any) => ({
+      const mappedFiles = files.map((file: any) => ({
         id: file.id,
         name: file.name,
         type: 'file' as const,
@@ -146,7 +150,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       }));
 
       // Map folders to DriveItem format with enterprise metadata
-      const mappedFolders = (foldersData.folders || []).map((folder: any) => ({
+      const mappedFolders = folders.map((folder: any) => ({
         id: folder.id,
         name: folder.name,
         type: 'folder' as const,
@@ -461,14 +465,14 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
   const filteredItems = items
     .filter(item => {
       // Search filter
-      if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
+    if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
       
       // Classification filter (enterprise)
-      if (classificationFilter && item.classification !== classificationFilter) {
-        return false;
-      }
+    if (classificationFilter && item.classification !== classificationFilter) {
+      return false;
+    }
       
       // File type filter
       if (fileTypeFilter && item.type === 'file') {
@@ -479,7 +483,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
         if (fileTypeFilter === 'spreadsheets' && !mimeType.includes('excel') && !mimeType.includes('spreadsheet')) return false;
       }
       
-      return true;
+    return true;
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -505,7 +509,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       }
       
       return sortOrder === 'asc' ? comparison : -comparison;
-    });
+  });
 
   if (loading) {
     return (
@@ -520,22 +524,22 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       {/* Header - Only show when at root level */}
       {!currentFolder && breadcrumbs.length === 0 && (
         <div className="flex items-center justify-between mb-6">
-          <div>
+        <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               {currentDashboard ? `${currentDashboard.name} Drive` : 'Enterprise Drive'}
               <span className="ml-3 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full border border-purple-200">Enterprise</span>
             </h1>
-            <p className="text-gray-600">
+          <p className="text-gray-600">
               Advanced file management with enterprise features
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
+          </p>
+        </div>
+        <div className="flex items-center space-x-3">
             <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
-              <Folder className="w-4 h-4 mr-2" />
-              New Folder
-            </Button>
+            <Folder className="w-4 h-4 mr-2" />
+            New Folder
+          </Button>
             <Button size="sm" onClick={handleFileUpload}>
-              <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-4 h-4 mr-2" />
               Upload Files
             </Button>
           </div>

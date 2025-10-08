@@ -102,8 +102,12 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       const filesData = await filesResponse.json();
       const foldersData = await foldersResponse.json();
       
+      // API returns arrays directly, not wrapped in objects
+      const files = Array.isArray(filesData) ? filesData : (filesData.files || []);
+      const folders = Array.isArray(foldersData) ? foldersData : (foldersData.folders || []);
+      
       // Map files to DriveItem format
-      const mappedFiles = (filesData.files || []).map((file: any) => ({
+      const mappedFiles = files.map((file: any) => ({
         id: file.id,
         name: file.name,
         type: 'file' as const,
@@ -117,7 +121,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       }));
 
       // Map folders to DriveItem format
-      const mappedFolders = (foldersData.folders || []).map((folder: any) => ({
+      const mappedFolders = folders.map((folder: any) => ({
         id: folder.id,
         name: folder.name,
         type: 'folder' as const,
@@ -242,7 +246,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       console.error('Error creating folder:', error);
       toast.error('Failed to create folder. Please try again.');
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
   };
 
@@ -456,18 +460,18 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
                 ? 'Shared file storage and collaboration' 
                 : 'Your personal file storage'}
             </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
-              <Folder className="w-4 h-4 mr-2" />
-              New Folder
-            </Button>
-            <Button size="sm" onClick={handleFileUpload}>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Files
-            </Button>
-          </div>
         </div>
+        <div className="flex items-center space-x-3">
+            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+            <Folder className="w-4 h-4 mr-2" />
+            New Folder
+          </Button>
+            <Button size="sm" onClick={handleFileUpload}>
+            <Upload className="w-4 h-4 mr-2" />
+              Upload Files
+          </Button>
+        </div>
+      </div>
       )}
 
       {/* Storage Usage - Only show at root level */}
@@ -528,16 +532,16 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       {/* Search, Sort, and View Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3 flex-1">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search files and folders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search files and folders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
           
           {/* File Type Filter */}
           <select
