@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Permission, PermissionSet, Position, EmployeePosition } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 // ============================================================================
 // INTERFACES
@@ -36,8 +37,6 @@ interface CustomPermission {
   grantedBy: string;
   expiresAt?: Date;
 }
-
-const prisma = new PrismaClient();
 
 export interface CreatePermissionData {
   moduleId: string;

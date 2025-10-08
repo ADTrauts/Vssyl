@@ -6,8 +6,7 @@ import jwt from 'jsonwebtoken';
 import { getOrCreateChatFilesFolder } from '../services/driveService';
 import { NotificationService } from '../services/notificationService';
 import { storageService } from '../services/storageService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;

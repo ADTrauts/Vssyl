@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import { SubscriptionService } from '../services/subscriptionService';
 import { ModuleSubscriptionService } from '../services/moduleSubscriptionService';
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 const subscriptionService = new SubscriptionService();
 const moduleSubscriptionService = new ModuleSubscriptionService();
 

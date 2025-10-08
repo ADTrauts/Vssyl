@@ -72,6 +72,7 @@ export interface LifeTwinQuery {
 }
 
 export class DigitalLifeTwinCore {
+  private prisma: PrismaClient;
   private contextEngine: CrossModuleContextEngine;
   private personalityEngine: PersonalityEngine;
   private decisionEngine: DecisionEngine;
@@ -80,16 +81,16 @@ export class DigitalLifeTwinCore {
   private smartPatternEngine: SmartPatternEngine;
 
   constructor(contextEngine?: CrossModuleContextEngine, prismaClient?: PrismaClient) {
-    const prisma = prismaClient || sharedPrisma;
+    this.prisma = prismaClient || sharedPrisma;
     
     this.contextEngine = contextEngine || new CrossModuleContextEngine();
     
     try {
-      this.personalityEngine = new PersonalityEngine(prisma);
-      this.decisionEngine = new DecisionEngine(prisma);
-      this.learningEngine = new AdvancedLearningEngine(prisma);
-      this.actionExecutor = new ActionExecutor(prisma);
-      this.smartPatternEngine = new SmartPatternEngine(prisma);
+      this.personalityEngine = new PersonalityEngine(this.prisma);
+      this.decisionEngine = new DecisionEngine(this.prisma);
+      this.learningEngine = new AdvancedLearningEngine(this.prisma);
+      this.actionExecutor = new ActionExecutor(this.prisma);
+      this.smartPatternEngine = new SmartPatternEngine(this.prisma);
     } catch (error) {
       console.error('Error initializing DigitalLifeTwinCore engines:', error);
       // Initialize with minimal functionality if engines fail
@@ -812,7 +813,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   }
 
   private async getAutonomySettings(userId: string): Promise<any> {
-    const settings = await prisma.aIAutonomySettings.findUnique({
+    const settings = await this.prisma.aIAutonomySettings.findUnique({
       where: { userId }
     });
     

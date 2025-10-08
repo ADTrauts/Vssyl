@@ -3,8 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { sendBusinessInvitationEmail } from '../services/emailService';
 import { NotificationService } from '../services/notificationService';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // Helper function to get organization info from memberships
 const getOrganizationInfo = (user: any) => {

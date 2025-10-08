@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 // Initialize Stripe with default API version from SDK types
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {}) : null;
 

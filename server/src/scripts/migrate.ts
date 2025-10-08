@@ -6,9 +6,7 @@
  */
 
 import { execSync } from 'child_process';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 async function runMigrations() {
   try {

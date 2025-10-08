@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { EmployeePosition, Position, User, Business } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export interface CustomPermission {
   id: string;

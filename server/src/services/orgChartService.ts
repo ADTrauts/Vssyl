@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Business, OrganizationalTier, Department, Position } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export interface PermissionData {
   moduleId: string;

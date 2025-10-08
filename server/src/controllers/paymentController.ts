@@ -2,8 +2,7 @@ import { Request, Response } from 'express';
 import { StripeService } from '../services/stripeService';
 import { PrismaClient } from '@prisma/client';
 import { isStripeConfigured, getStripeClient } from '../config/stripe';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {

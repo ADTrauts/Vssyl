@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { DeveloperPortalService } from '../services/developerPortalService';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export const getDeveloperStats = async (req: Request, res: Response) => {
   try {
