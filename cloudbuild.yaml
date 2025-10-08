@@ -75,29 +75,20 @@ steps:
     id: 'run-migrations'
     waitFor: ['build-server']
 
-  # Step 3b: Register built-in modules
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
+  # Step 3b: Register built-in modules using the server Docker image
+  - name: 'gcr.io/$PROJECT_ID/vssyl-server:latest'
+    entrypoint: 'sh'
     args:
       - '-c'
       - |
         echo "🤖 Registering built-in modules..."
         
-        # Dependencies are already installed from previous step
-        apt-get update && apt-get install -y curl
-        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-        apt-get install -y nodejs
-        npm install -g pnpm
-        
-        cd /workspace
-        pnpm install
-        
-        # Install tsx (modern TypeScript runner) if not available
-        pnpm add -D tsx || true
-        
-        # Run module registration
+        # Set database URL
         export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
-        pnpm exec tsx scripts/register-built-in-modules.ts
+        
+        # Run module registration using tsx (which is already in the Docker image)
+        cd /app
+        npx tsx scripts/register-built-in-modules.ts
         
         # Check if registration actually succeeded
         if [ $? -eq 0 ]; then
@@ -107,7 +98,7 @@ steps:
           exit 1
         fi
     id: 'register-modules'
-    waitFor: ['run-migrations']
+    waitFor: ['build-server']
 
   # Step 4: Push images in parallel
   - name: 'gcr.io/cloud-builders/docker'
