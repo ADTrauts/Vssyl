@@ -35,7 +35,7 @@ const FolderTree: React.FC<FolderTreeProps> = ({
   const handleFolderClick = useCallback(async (folder: FolderNode) => {
     // If folder has children and isn't expanded, expand it
     if (folder.hasChildren && !expandedFolders.has(folder.id)) {
-      setExpandedFolders(prev => new Set([...prev, folder.id]));
+      setExpandedFolders(prev => new Set([...Array.from(prev), folder.id]));
       await onFolderExpand(folder.id);
     }
     // Always select the folder
@@ -54,7 +54,7 @@ const FolderTree: React.FC<FolderTreeProps> = ({
       });
     } else {
       // Expand
-      setExpandedFolders(prev => new Set([...prev, folder.id]));
+      setExpandedFolders(prev => new Set([...Array.from(prev), folder.id]));
       await onFolderExpand(folder.id);
     }
   }, [expandedFolders, onFolderExpand]);
