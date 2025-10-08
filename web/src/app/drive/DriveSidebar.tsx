@@ -265,7 +265,7 @@ export default function DriveSidebar({
   // API functions for folder management
   const loadRootFolders = useCallback(async (driveId: string) => {
     try {
-      const response = await fetch(`/api/drive/folders?driveId=${driveId}&parentId=null`);
+      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=null`);
       if (!response.ok) throw new Error('Failed to load folders');
       const folders = await response.json();
       
@@ -292,7 +292,7 @@ export default function DriveSidebar({
 
   const loadSubfolders = useCallback(async (driveId: string, folderId: string) => {
     try {
-      const response = await fetch(`/api/drive/folders?driveId=${driveId}&parentId=${folderId}`);
+      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=${folderId}`);
       if (!response.ok) throw new Error('Failed to load subfolders');
       const folders = await response.json();
       
