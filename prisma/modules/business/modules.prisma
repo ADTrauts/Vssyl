@@ -41,6 +41,8 @@ model Module {
   developerRevenue DeveloperRevenue[]
   businessInstallations BusinessModuleInstallation[]
   businessSubscriptions BusinessModuleSubscription[]
+  aiContextRegistry ModuleAIContextRegistry?
+  aiPerformanceMetrics ModuleAIPerformanceMetric[]
 
   @@index([developerId])
   @@index([businessId])
