@@ -23,8 +23,9 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   // Get business ID for enterprise feature checking
   const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
   
-  // Check if user has enterprise Drive features
-  const { hasAccess: hasEnterpriseFeatures } = useFeature('drive_advanced_sharing', businessId);
+  // Temporarily disable feature checking to stop 500 errors and infinite loops
+  // TODO: Fix database issue in feature gating service
+  const hasEnterpriseFeatures = false; // Temporarily disabled
   
   // If user has enterprise features and is in a business context, use enhanced module
   if (hasEnterpriseFeatures && businessId) {
