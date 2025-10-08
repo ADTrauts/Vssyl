@@ -531,7 +531,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
   }
 
   return (
-    <div className={`space-y-6 p-6 ${className}`}>
+    <div className={`space-y-6 p-6 overflow-auto ${className}`}>
       {/* Header - Only show when at root level */}
       {!currentFolder && breadcrumbs.length === 0 && (
         <div className="flex items-center justify-between mb-6">

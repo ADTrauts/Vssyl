@@ -450,7 +450,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
   return (
     <div 
-      className={`relative space-y-6 p-6 ${className} ${isDragging ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
+      className={`relative space-y-6 p-6 overflow-auto ${className} ${isDragging ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
