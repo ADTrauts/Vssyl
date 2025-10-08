@@ -1076,6 +1076,10 @@ model ModuleInstallation {
   configured Json?    // Module-specific configuration
   enabled   Boolean  @default(true)
   
+  // AI context caching
+  cachedContext    Json?     // Cached AI context data
+  contextCachedAt  DateTime? // When context was last cached
+  
   @@unique([moduleId, userId])
   @@index([moduleId])
   @@index([userId])
