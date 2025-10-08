@@ -67,7 +67,7 @@ export async function listFolders(req: Request, res: Response) {
     query += ` ORDER BY f."order" ASC, f."createdAt" DESC`;
     
     const folders = await prisma.$queryRawUnsafe(query, ...params);
-    res.json({ folders });
+    res.json(folders);
   } catch (err) {
     console.error('Error in listFolders:', err);
     res.status(500).json({ message: 'Failed to fetch folders' });
