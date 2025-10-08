@@ -106,6 +106,10 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       const files = Array.isArray(filesData) ? filesData : (filesData.files || []);
       const folders = Array.isArray(foldersData) ? foldersData : (foldersData.folders || []);
       
+      console.log('📁 Drive Debug - Raw API Data:', { filesData, foldersData });
+      console.log('📁 Drive Debug - Parsed Data:', { files, folders });
+      console.log('📁 Drive Debug - Counts:', { fileCount: files.length, folderCount: folders.length });
+      
       // Map files to DriveItem format
       const mappedFiles = files.map((file: any) => ({
         id: file.id,
@@ -133,7 +137,14 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       }));
 
       // Combine files and folders
-      setItems([...mappedFolders, ...mappedFiles]);
+      const combinedItems = [...mappedFolders, ...mappedFiles];
+      console.log('📁 Drive Debug - Final Items:', { 
+        totalItems: combinedItems.length, 
+        folders: mappedFolders.length, 
+        files: mappedFiles.length,
+        items: combinedItems 
+      });
+      setItems(combinedItems);
 
       // Calculate storage usage
       const totalSize = mappedFiles.reduce((sum: number, file: any) => sum + (file.size || 0), 0);
@@ -381,7 +392,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
   const filteredItems = items
     .filter(item => {
       // Search filter
-      if (!item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       
       // File type filter
       if (fileTypeFilter && item.type === 'file') {
@@ -419,6 +430,15 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       
       return sortOrder === 'asc' ? comparison : -comparison;
     });
+
+  console.log('📁 Drive Debug - Rendering:', { 
+    itemsCount: items.length, 
+    filteredCount: filteredItems.length,
+    loading,
+    error,
+    searchQuery,
+    fileTypeFilter 
+  });
 
   if (loading) {
     return (

@@ -130,6 +130,10 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       const files = Array.isArray(filesData) ? filesData : (filesData.files || []);
       const folders = Array.isArray(foldersData) ? foldersData : (foldersData.folders || []);
       
+      console.log('🏢 Enterprise Drive Debug - Raw API Data:', { filesData, foldersData });
+      console.log('🏢 Enterprise Drive Debug - Parsed Data:', { files, folders });
+      console.log('🏢 Enterprise Drive Debug - Counts:', { fileCount: files.length, folderCount: folders.length });
+      
       // Map files to DriveItem format with enterprise metadata
       const mappedFiles = files.map((file: any) => ({
         id: file.id,
@@ -166,7 +170,14 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       }));
 
       // Combine files and folders
-      setItems([...mappedFolders, ...mappedFiles]);
+      const combinedItems = [...mappedFolders, ...mappedFiles];
+      console.log('🏢 Enterprise Drive Debug - Final Items:', { 
+        totalItems: combinedItems.length, 
+        folders: mappedFolders.length, 
+        files: mappedFiles.length,
+        items: combinedItems 
+      });
+      setItems(combinedItems);
 
       // Calculate storage usage
       const totalSize = mappedFiles.reduce((sum: number, file: any) => sum + (file.size || 0), 0);
