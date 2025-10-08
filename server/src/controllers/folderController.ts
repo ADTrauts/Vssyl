@@ -24,39 +24,47 @@ export async function listFolders(req: Request, res: Response) {
       where.starred = false;
     }
     
-    // Use raw SQL to include order field in sorting
-    let query = `SELECT * FROM "folders" WHERE "userId" = $1`;
+    // Use raw SQL to include order field in sorting and hasChildren count
+    let query = `
+      SELECT f.*, 
+             (SELECT COUNT(*) FROM "folders" f2 
+              WHERE f2."parentId" = f.id 
+              AND f2."userId" = f."userId" 
+              AND f2."trashedAt" IS NULL) as "hasChildren"
+      FROM "folders" f 
+      WHERE f."userId" = $1
+    `;
     const params = [userId];
     let paramIndex = 2;
     
     // Dashboard context filtering
     if (dashboardId) {
-      query += ` AND "dashboardId" = $${paramIndex}`;
+      query += ` AND f."dashboardId" = $${paramIndex}`;
       params.push(dashboardId);
       paramIndex++;
       console.log('Dashboard context requested for folders:', dashboardId);
     } else {
-      query += ` AND "dashboardId" IS NULL`;
+      query += ` AND f."dashboardId" IS NULL`;
     }
     
     if (parentId) {
-      query += ` AND "parentId" = $${paramIndex}`;
+      query += ` AND f."parentId" = $${paramIndex}`;
       params.push(parentId);
       paramIndex++;
     } else {
-      query += ` AND "parentId" IS NULL`;
+      query += ` AND f."parentId" IS NULL`;
     }
     
     if (starred === 'true') {
-      query += ` AND "starred" = true`;
+      query += ` AND f."starred" = true`;
     } else if (starred === 'false') {
-      query += ` AND "starred" = false`;
+      query += ` AND f."starred" = false`;
     }
     
     // Exclude trashed folders
-    query += ` AND "trashedAt" IS NULL`;
+    query += ` AND f."trashedAt" IS NULL`;
     
-    query += ` ORDER BY "order" ASC, "createdAt" DESC`;
+    query += ` ORDER BY f."order" ASC, f."createdAt" DESC`;
     
     const folders = await prisma.$queryRawUnsafe(query, ...params);
     res.json({ folders });

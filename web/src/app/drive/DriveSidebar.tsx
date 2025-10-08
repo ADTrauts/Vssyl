@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   HomeIcon, 
   FolderIcon, 
@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useDashboard } from '../../contexts/DashboardContext';
+import FolderTree from '../components/drive/FolderTree';
 
 interface DriveSidebarProps {
   onNewFolder: () => void;
@@ -21,6 +22,20 @@ interface DriveSidebarProps {
   onFolderUpload: () => void;
   onTrashDrop?: () => void;
   onContextSwitch?: (dashboardId: string) => void;
+  onFolderSelect?: (folder: any) => void;
+  selectedFolderId?: string;
+}
+
+interface FolderNode {
+  id: string;
+  name: string;
+  parentId: string | null;
+  children: FolderNode[];
+  isExpanded: boolean;
+  level: number;
+  path: string;
+  hasChildren: boolean;
+  isLoading: boolean;
 }
 
 interface ContextDrive {
@@ -192,11 +207,17 @@ export default function DriveSidebar({
   onFileUpload, 
   onFolderUpload, 
   onTrashDrop,
-  onContextSwitch 
+  onContextSwitch,
+  onFolderSelect,
+  selectedFolderId
 }: DriveSidebarProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  
+  // Folder tree state
+  const [folderTrees, setFolderTrees] = useState<Record<string, FolderNode[]>>({});
+  const [expandedDrives, setExpandedDrives] = useState<Set<string>>(new Set());
   
   // Get dashboard context
   const { 
@@ -241,6 +262,141 @@ export default function DriveSidebar({
 
   const contextDrives = generateContextDrives();
 
+  // API functions for folder management
+  const loadRootFolders = useCallback(async (driveId: string) => {
+    try {
+      const response = await fetch(`/api/drive/folders?driveId=${driveId}&parentId=null`);
+      if (!response.ok) throw new Error('Failed to load folders');
+      const folders = await response.json();
+      
+      const folderNodes: FolderNode[] = folders.map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        parentId: folder.parentId,
+        children: [],
+        isExpanded: false,
+        level: 0,
+        path: folder.name,
+        hasChildren: folder.hasChildren || false,
+        isLoading: false
+      }));
+
+      setFolderTrees(prev => ({
+        ...prev,
+        [driveId]: folderNodes
+      }));
+    } catch (error) {
+      console.error('Failed to load root folders:', error);
+    }
+  }, []);
+
+  const loadSubfolders = useCallback(async (driveId: string, folderId: string) => {
+    try {
+      const response = await fetch(`/api/drive/folders?driveId=${driveId}&parentId=${folderId}`);
+      if (!response.ok) throw new Error('Failed to load subfolders');
+      const folders = await response.json();
+      
+      const subfolderNodes: FolderNode[] = folders.map((folder: any) => ({
+        id: folder.id,
+        name: folder.name,
+        parentId: folder.parentId,
+        children: [],
+        isExpanded: false,
+        level: 1, // Will be adjusted based on parent level
+        path: folder.name,
+        hasChildren: folder.hasChildren || false,
+        isLoading: false
+      }));
+
+      // Update the folder tree to include subfolders
+      setFolderTrees(prev => {
+        const currentTree = prev[driveId] || [];
+        const updateTree = (nodes: FolderNode[]): FolderNode[] => {
+          return nodes.map(node => {
+            if (node.id === folderId) {
+              return {
+                ...node,
+                children: subfolderNodes.map(child => ({
+                  ...child,
+                  level: node.level + 1,
+                  path: `${node.path}/${child.name}`
+                })),
+                hasChildren: subfolderNodes.length > 0,
+                isLoading: false
+              };
+            }
+            if (node.children.length > 0) {
+              return {
+                ...node,
+                children: updateTree(node.children)
+              };
+            }
+            return node;
+          });
+        };
+        
+        return {
+          ...prev,
+          [driveId]: updateTree(currentTree)
+        };
+      });
+    } catch (error) {
+      console.error('Failed to load subfolders:', error);
+    }
+  }, []);
+
+  const handleFolderExpand = useCallback(async (driveId: string, folderId: string) => {
+    // Set loading state
+    setFolderTrees(prev => {
+      const currentTree = prev[driveId] || [];
+      const updateTree = (nodes: FolderNode[]): FolderNode[] => {
+        return nodes.map(node => {
+          if (node.id === folderId) {
+            return { ...node, isLoading: true };
+          }
+          if (node.children.length > 0) {
+            return {
+              ...node,
+              children: updateTree(node.children)
+            };
+          }
+          return node;
+        });
+      };
+      
+      return {
+        ...prev,
+        [driveId]: updateTree(currentTree)
+      };
+    });
+
+    // Load subfolders
+    await loadSubfolders(driveId, folderId);
+  }, [loadSubfolders]);
+
+  const handleFolderSelect = useCallback((folder: FolderNode) => {
+    if (onFolderSelect) {
+      onFolderSelect(folder);
+    }
+  }, [onFolderSelect]);
+
+  const handleDriveExpand = useCallback(async (driveId: string) => {
+    if (expandedDrives.has(driveId)) {
+      // Collapse drive
+      setExpandedDrives(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(driveId);
+        return newSet;
+      });
+    } else {
+      // Expand drive
+      setExpandedDrives(prev => new Set([...prev, driveId]));
+      if (!folderTrees[driveId]) {
+        await loadRootFolders(driveId);
+      }
+    }
+  }, [expandedDrives, folderTrees, loadRootFolders]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
@@ -273,6 +429,11 @@ export default function DriveSidebar({
     if (onContextSwitch) {
       onContextSwitch(drive.dashboardId);
     }
+  };
+
+  const handleDriveExpandClick = (drive: ContextDrive, event: React.MouseEvent) => {
+    event.stopPropagation();
+    handleDriveExpand(drive.id);
   };
 
   return (
@@ -317,22 +478,59 @@ export default function DriveSidebar({
         <h3 style={styles.sectionHeader}>Your Drives</h3>
         {contextDrives.map((drive) => {
           const colorScheme = getContextColor(drive.type, drive.active);
+          const isExpanded = expandedDrives.has(drive.id);
+          const hasFolders = folderTrees[drive.id] && folderTrees[drive.id].length > 0;
+          
           return (
-            <div
-              key={drive.id}
-              style={{
-                ...styles.driveItem,
-                background: colorScheme.bg,
-                color: colorScheme.text,
-                fontWeight: drive.active ? 600 : 500,
-                borderLeft: drive.active ? `3px solid ${colorScheme.border}` : 'none',
-              }}
-              onClick={(e) => handleDriveClick(drive, e)}
-              onMouseEnter={e => !drive.active && (e.currentTarget.style.backgroundColor = '#f3f4f6')}
-              onMouseLeave={e => !drive.active && (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              <drive.icon style={{ width: 20, height: 20 }} />
-              <span>{drive.name}</span>
+            <div key={drive.id}>
+              <div
+                style={{
+                  ...styles.driveItem,
+                  background: colorScheme.bg,
+                  color: colorScheme.text,
+                  fontWeight: drive.active ? 600 : 500,
+                  borderLeft: drive.active ? `3px solid ${colorScheme.border}` : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+                onClick={(e) => handleDriveClick(drive, e)}
+                onMouseEnter={e => !drive.active && (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                onMouseLeave={e => !drive.active && (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                  <drive.icon style={{ width: 20, height: 20 }} />
+                  <span>{drive.name}</span>
+                </div>
+                {hasFolders && (
+                  <button
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px',
+                      cursor: 'pointer',
+                      color: colorScheme.text,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    onClick={(e) => handleDriveExpandClick(drive, e)}
+                  >
+                    {isExpanded ? '▼' : '▶'}
+                  </button>
+                )}
+              </div>
+              
+              {/* Folder Tree */}
+              {isExpanded && hasFolders && (
+                <div style={{ marginLeft: 16, marginTop: 4 }}>
+                  <FolderTree
+                    folders={folderTrees[drive.id] || []}
+                    onFolderSelect={handleFolderSelect}
+                    onFolderExpand={(folderId) => handleFolderExpand(drive.id, folderId)}
+                    selectedFolderId={selectedFolderId}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

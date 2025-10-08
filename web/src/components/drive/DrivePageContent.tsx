@@ -16,6 +16,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
   const { currentDashboard, navigateToDashboard } = useDashboard();
   const router = useRouter();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedFolder, setSelectedFolder] = useState<any>(null);
 
   // File upload handler
   const handleFileUpload = useCallback(() => {
@@ -93,6 +94,13 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
     router.push(`/drive?dashboard=${dashboardId}`);
   }, [navigateToDashboard, router]);
 
+  // Folder selection handler
+  const handleFolderSelect = useCallback((folder: any) => {
+    setSelectedFolder(folder);
+    // TODO: Update main content to show folder contents
+    console.log('Selected folder:', folder);
+  }, []);
+
   return (
     <div className={`flex h-screen bg-gray-50 ${className}`}>
       {/* Drive Sidebar - Same for all users */}
@@ -101,6 +109,8 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
         onFileUpload={handleFileUpload} 
         onFolderUpload={handleFileUpload}
         onContextSwitch={handleContextSwitch}
+        onFolderSelect={handleFolderSelect}
+        selectedFolderId={selectedFolder?.id}
       />
       
       {/* Main Content - Context-aware module */}
