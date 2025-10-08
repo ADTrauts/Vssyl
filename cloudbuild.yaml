@@ -86,9 +86,9 @@ steps:
         # Set database URL
         export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
         
-        # Run module registration using tsx (which is already in the Docker image)
+        # Run module registration using compiled JavaScript (no npm needed!)
         cd /app
-        npx tsx scripts/register-built-in-modules.ts
+        node scripts/scripts/register-built-in-modules.js
         
         # Check if registration actually succeeded
         if [ $? -eq 0 ]; then
