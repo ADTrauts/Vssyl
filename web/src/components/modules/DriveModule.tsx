@@ -51,6 +51,10 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size' | 'type'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
+  const [isDragging, setIsDragging] = useState(false);
 
   // Load real data from API - memoized to prevent infinite loops
   const loadFilesAndFolders = useCallback(async () => {
@@ -123,6 +127,10 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
       // Combine files and folders
       setItems([...mappedFolders, ...mappedFiles]);
+
+      // Calculate storage usage
+      const totalSize = mappedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+      setStorageUsage(prev => ({ ...prev, used: totalSize }));
 
     } catch (err) {
       console.error('Error loading drive content:', err);
@@ -244,23 +252,22 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
   const getFileIcon = (item: DriveItem) => {
     if (item.type === 'folder') {
-      return <Folder className="w-8 h-8 text-blue-500" />;
+      return <div className="text-4xl">📁</div>;
     }
 
-    if (item.mimeType?.includes('pdf')) {
-      return <File className="w-8 h-8 text-red-500" />;
-    }
-    if (item.mimeType?.includes('word') || item.mimeType?.includes('document')) {
-      return <File className="w-8 h-8 text-blue-500" />;
-    }
-    if (item.mimeType?.includes('excel') || item.mimeType?.includes('spreadsheet')) {
-      return <File className="w-8 h-8 text-green-500" />;
-    }
-    if (item.mimeType?.includes('image')) {
-      return <File className="w-8 h-8 text-purple-500" />;
-    }
+    // Enhanced file type icons
+    const mimeType = item.mimeType || '';
+    if (mimeType.includes('pdf')) return <div className="text-4xl">📄</div>;
+    if (mimeType.includes('word') || mimeType.includes('document')) return <div className="text-4xl">📝</div>;
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return <div className="text-4xl">📊</div>;
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return <div className="text-4xl">📈</div>;
+    if (mimeType.startsWith('image/')) return <div className="text-4xl">🖼️</div>;
+    if (mimeType.startsWith('video/')) return <div className="text-4xl">🎥</div>;
+    if (mimeType.startsWith('audio/')) return <div className="text-4xl">🎵</div>;
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return <div className="text-4xl">📦</div>;
+    if (mimeType.includes('text')) return <div className="text-4xl">📋</div>;
 
-    return <File className="w-8 h-8 text-gray-500" />;
+    return <div className="text-4xl">📄</div>;
   };
 
   const handleItemClick = (item: DriveItem) => {
@@ -301,9 +308,84 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
     toast.success('Star status updated');
   };
 
-  const filteredItems = items.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0 || !session?.accessToken) return;
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        if (currentDashboard?.id) formData.append('dashboardId', currentDashboard.id);
+        if (currentFolder) formData.append('folderId', currentFolder);
+
+        const response = await fetch('/api/drive/files', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.accessToken}` },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          toast.error(`Failed to upload ${file.name}`);
+        } else {
+          toast.success(`Uploaded ${file.name}`);
+        }
+      }
+      
+      // Refresh file list
+      loadFilesAndFolders();
+    } catch (error) {
+      console.error('Drop upload failed:', error);
+      toast.error('Failed to upload files');
+    }
+  }, [session, currentDashboard, currentFolder, loadFilesAndFolders]);
+
+  // Filter and sort items
+  const filteredItems = items
+    .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      // Folders always first
+      if (a.type === 'folder' && b.type === 'file') return -1;
+      if (a.type === 'file' && b.type === 'folder') return 1;
+      
+      // Then sort by selected criteria
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime();
+          break;
+        case 'size':
+          comparison = (a.size || 0) - (b.size || 0);
+          break;
+        case 'type':
+          comparison = (a.mimeType || '').localeCompare(b.mimeType || '');
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
@@ -314,8 +396,77 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
   }
 
   return (
-    <div className={`space-y-6 p-6 ${className}`}>
-      {/* Breadcrumbs */}
+    <div 
+      className={`relative space-y-6 p-6 ${className} ${isDragging ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-90">
+          <div className="text-center">
+            <Upload className="w-16 h-16 text-blue-600 mx-auto mb-4" />
+            <p className="text-xl font-medium text-blue-900">Drop files to upload</p>
+            <p className="text-sm text-blue-700 mt-2">
+              {currentFolder ? `Upload to current folder` : `Upload to ${currentDashboard?.name || 'My Drive'}`}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Header - Only show when at root level */}
+      {!currentFolder && breadcrumbs.length === 0 && (
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {currentDashboard ? `${currentDashboard.name} Drive` : 'My Drive'}
+            </h1>
+            <p className="text-gray-600">
+              {currentDashboard 
+                ? 'Shared file storage and collaboration' 
+                : 'Your personal file storage'}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+              <Folder className="w-4 h-4 mr-2" />
+              New Folder
+            </Button>
+            <Button size="sm" onClick={handleFileUpload}>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Files
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Storage Usage - Only show at root level */}
+      {!currentFolder && breadcrumbs.length === 0 && (
+        <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Download className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Storage</span>
+            </div>
+            <span className="text-sm text-gray-600">
+              {formatFileSize(storageUsage.used)} / {formatFileSize(storageUsage.total)}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min((storageUsage.used / storageUsage.total) * 100, 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>{((storageUsage.used / storageUsage.total) * 100).toFixed(1)}% used</span>
+            <span>{formatFileSize(storageUsage.total - storageUsage.used)} available</span>
+          </div>
+        </div>
+      )}
+
+      {/* Breadcrumbs - Show when navigating folders */}
       {breadcrumbs.length > 0 && (
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <button
@@ -345,18 +496,41 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
         </div>
       )}
 
-      {/* Search and View Controls */}
+      {/* Search, Sort, and View Controls */}
       <div className="flex items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search files and folders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex items-center space-x-3 flex-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search files and folders..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          {/* Sort Options */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size' | 'type')}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="name">Name</option>
+            <option value="date">Date Modified</option>
+            <option value="size">Size</option>
+            <option value="type">Type</option>
+          </select>
+          
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            title={`Sort ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
         </div>
+        
         <div className="flex items-center space-x-2">
           <Button
             variant={viewMode === 'grid' ? 'primary' : 'secondary'}
@@ -381,12 +555,50 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className={`cursor-pointer hover:shadow-md transition-shadow ${
+              className={`group relative cursor-pointer hover:shadow-md transition-shadow rounded-lg ${
                 selectedItems.has(item.id) ? 'ring-2 ring-blue-500' : ''
               }`}
               onClick={() => handleItemClick(item)}
             >
               <Card className="p-4">
+                {/* Quick Actions - Show on hover */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center space-x-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStar(item.id);
+                    }}
+                    className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50"
+                    title={item.starred ? 'Unstar' : 'Star'}
+                  >
+                    <Star className={`w-4 h-4 ${item.starred ? 'text-yellow-500 fill-current' : 'text-gray-400'}`} />
+                  </button>
+                  {item.type === 'file' && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShare(item.id);
+                        }}
+                        className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50"
+                        title="Share"
+                      >
+                        <Share className="w-4 h-4 text-gray-400" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(item.thumbnail || '#', '_blank');
+                        }}
+                        className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4 text-gray-400" />
+                      </button>
+                    </>
+                  )}
+                </div>
+                
                 <div className="text-center">
                   <div className="flex justify-center mb-2">
                     {getFileIcon(item)}
@@ -402,6 +614,9 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
                   <p className="text-xs text-gray-500 mt-1">
                     {formatDate(item.modifiedAt)}
                   </p>
+                  {item.starred && (
+                    <Star className="w-3 h-3 text-yellow-500 fill-current mx-auto mt-1" />
+                  )}
                 </div>
               </Card>
             </div>

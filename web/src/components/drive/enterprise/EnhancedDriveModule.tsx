@@ -80,6 +80,10 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
   const [classificationFilter, setClassificationFilter] = useState<string>('');
   const [showEnterprisePanel, setShowEnterprisePanel] = useState(false);
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size' | 'type'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
+  const [isDragging, setIsDragging] = useState(false);
 
   // Load files with enterprise data
   const loadEnhancedFiles = useCallback(async () => {
@@ -158,6 +162,10 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
 
       // Combine files and folders
       setItems([...mappedFolders, ...mappedFiles]);
+
+      // Calculate storage usage
+      const totalSize = mappedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+      setStorageUsage(prev => ({ ...prev, used: totalSize }));
 
       // Record feature usage for analytics
       recordUsage('drive_advanced_features');
@@ -310,6 +318,42 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const getFileIcon = (item: DriveItem) => {
+    if (item.type === 'folder') {
+      return <div className="text-4xl">📁</div>;
+    }
+
+    // Enhanced file type icons
+    const mimeType = item.mimeType || '';
+    if (mimeType.includes('pdf')) return <div className="text-4xl">📄</div>;
+    if (mimeType.includes('word') || mimeType.includes('document')) return <div className="text-4xl">📝</div>;
+    if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return <div className="text-4xl">📊</div>;
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return <div className="text-4xl">📈</div>;
+    if (mimeType.startsWith('image/')) return <div className="text-4xl">🖼️</div>;
+    if (mimeType.startsWith('video/')) return <div className="text-4xl">🎥</div>;
+    if (mimeType.startsWith('audio/')) return <div className="text-4xl">🎵</div>;
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return <div className="text-4xl">📦</div>;
+    if (mimeType.includes('text')) return <div className="text-4xl">📋</div>;
+
+    return <div className="text-4xl">📄</div>;
+  };
+
   const getClassificationBadge = (classification?: string) => {
     if (!classification) return null;
     
@@ -331,15 +375,41 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
     );
   };
 
-  const filteredItems = items.filter(item => {
-    if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (classificationFilter && item.classification !== classificationFilter) {
-      return false;
-    }
-    return true;
-  });
+  const filteredItems = items
+    .filter(item => {
+      if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      if (classificationFilter && item.classification !== classificationFilter) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      // Folders always first
+      if (a.type === 'folder' && b.type === 'file') return -1;
+      if (a.type === 'file' && b.type === 'folder') return 1;
+      
+      // Then sort by selected criteria
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime();
+          break;
+        case 'size':
+          comparison = (a.size || 0) - (b.size || 0);
+          break;
+        case 'type':
+          comparison = (a.mimeType || '').localeCompare(b.mimeType || '');
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
 
   if (loading) {
     return (
@@ -351,6 +421,56 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
 
   return (
     <div className={`space-y-6 p-6 ${className}`}>
+      {/* Header - Only show when at root level */}
+      {!currentFolder && breadcrumbs.length === 0 && (
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+              {currentDashboard ? `${currentDashboard.name} Drive` : 'Enterprise Drive'}
+              <Badge variant="purple" className="ml-3">Enterprise</Badge>
+            </h1>
+            <p className="text-gray-600">
+              Advanced file management with enterprise features
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+              <Folder className="w-4 h-4 mr-2" />
+              New Folder
+            </Button>
+            <Button size="sm" onClick={handleFileUpload}>
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Files
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Storage Usage - Only show at root level */}
+      {!currentFolder && breadcrumbs.length === 0 && (
+        <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <Download className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-gray-700">Enterprise Storage</span>
+            </div>
+            <span className="text-sm text-gray-600">
+              {formatFileSize(storageUsage.used)} / {formatFileSize(storageUsage.total)}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min((storageUsage.used / storageUsage.total) * 100, 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>{((storageUsage.used / storageUsage.total) * 100).toFixed(1)}% used</span>
+            <span>{formatFileSize(storageUsage.total - storageUsage.used)} available</span>
+          </div>
+        </div>
+      )}
+
       {/* Bulk Actions Bar - Shows when items are selected */}
       {selectedItems.size > 0 && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-4 animate-in slide-in-from-top">
@@ -482,7 +602,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
         </Card>
       )}
 
-      {/* Enhanced Search and Filters */}
+      {/* Enhanced Search, Sort, and Filters */}
       <div className="flex items-center justify-between space-x-4">
         <div className="flex items-center space-x-3 flex-1">
           <div className="relative flex-1 max-w-md">
@@ -495,11 +615,31 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
             />
           </div>
           
+          {/* Sort Options */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size' | 'type')}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="name">Name</option>
+            <option value="date">Date Modified</option>
+            <option value="size">Size</option>
+            <option value="type">Type</option>
+          </select>
+          
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            title={`Sort ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`}
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
+          </button>
+          
           <FeatureGate feature="drive_dlp" businessId={businessId}>
             <select
               value={classificationFilter}
               onChange={(e) => setClassificationFilter(e.target.value)}
-              className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">All Classifications</option>
               <option value="public">Public</option>

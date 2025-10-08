@@ -1,5 +1,4 @@
 import { Request, Response, RequestHandler } from 'express';
-import { PrismaClient } from '@prisma/client';
 import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import jwt from 'jsonwebtoken';
