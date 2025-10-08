@@ -54,7 +54,10 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
   // Load real data from API - memoized to prevent infinite loops
   const loadFilesAndFolders = useCallback(async () => {
-    if (!session?.accessToken) return;
+    if (!session?.accessToken) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
