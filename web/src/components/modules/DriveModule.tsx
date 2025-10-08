@@ -55,6 +55,9 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
   const [isDragging, setIsDragging] = useState(false);
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: DriveItem } | null>(null);
+  const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
 
   // Load real data from API - memoized to prevent infinite loops
   const loadFilesAndFolders = useCallback(async () => {
@@ -151,6 +154,15 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       loadFilesAndFolders();
     }
   }, [refreshTrigger, loadFilesAndFolders]);
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    if (contextMenu) {
+      document.addEventListener('click', handleClick);
+      return () => document.removeEventListener('click', handleClick);
+    }
+  }, [contextMenu]);
 
   // File upload handler
   const handleFileUpload = () => {
@@ -274,11 +286,9 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
     if (item.type === 'folder') {
       setCurrentFolder(item.id);
       setBreadcrumbs(prev => [...prev, { id: item.id, name: item.name }]);
-      // In a real app, this would load the folder contents
-      toast.success(`Opened folder: ${item.name}`);
     } else {
-      // In a real app, this would open/preview the file
-      toast.success(`Opening file: ${item.name}`);
+      // Open preview panel for files
+      setPreviewFile(item);
     }
   };
 
@@ -306,6 +316,11 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       item.id === itemId ? { ...item, starred: !item.starred } : item
     ));
     toast.success('Star status updated');
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, item: DriveItem) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, item });
   };
 
   // Drag and drop handlers
@@ -360,7 +375,21 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
   // Filter and sort items
   const filteredItems = items
-    .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(item => {
+      // Search filter
+      if (!item.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      
+      // File type filter
+      if (fileTypeFilter && item.type === 'file') {
+        const mimeType = item.mimeType || '';
+        if (fileTypeFilter === 'documents' && !mimeType.includes('pdf') && !mimeType.includes('word') && !mimeType.includes('document')) return false;
+        if (fileTypeFilter === 'images' && !mimeType.startsWith('image/')) return false;
+        if (fileTypeFilter === 'videos' && !mimeType.startsWith('video/')) return false;
+        if (fileTypeFilter === 'spreadsheets' && !mimeType.includes('excel') && !mimeType.includes('spreadsheet')) return false;
+      }
+      
+      return true;
+    })
     .sort((a, b) => {
       let comparison = 0;
       
@@ -510,6 +539,19 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
             />
           </div>
           
+          {/* File Type Filter */}
+          <select
+            value={fileTypeFilter}
+            onChange={(e) => setFileTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="documents">📝 Documents</option>
+            <option value="spreadsheets">📊 Spreadsheets</option>
+            <option value="images">🖼️ Images</option>
+            <option value="videos">🎥 Videos</option>
+          </select>
+          
           {/* Sort Options */}
           <select
             value={sortBy}
@@ -559,6 +601,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
                 selectedItems.has(item.id) ? 'ring-2 ring-blue-500' : ''
               }`}
               onClick={() => handleItemClick(item)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
             >
               <Card className="p-4">
                 {/* Quick Actions - Show on hover */}
@@ -631,6 +674,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
                 selectedItems.has(item.id) ? 'bg-blue-50 ring-2 ring-blue-500' : ''
               }`}
               onClick={() => handleItemClick(item)}
+              onContextMenu={(e) => handleContextMenu(e, item)}
             >
               <Card className="p-4">
                 <div className="flex items-center space-x-4">
@@ -713,6 +757,129 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* File Preview Panel */}
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={() => setPreviewFile(null)}>
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Preview Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                {getFileIcon(previewFile)}
+                <div>
+                  <h3 className="font-medium text-gray-900">{previewFile.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {formatFileSize(previewFile.size || 0)} • Modified {formatDate(previewFile.modifiedAt)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => window.open(previewFile.thumbnail || '#', '_blank')}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            {/* Preview Content */}
+            <div className="p-6 overflow-auto max-h-[calc(90vh-80px)]">
+              {previewFile.mimeType?.startsWith('image/') ? (
+                <img src={previewFile.thumbnail || previewFile.name} alt={previewFile.name} className="max-w-full mx-auto" />
+              ) : previewFile.mimeType?.includes('pdf') ? (
+                <iframe src={previewFile.thumbnail || '#'} className="w-full h-[600px] border-0" title={previewFile.name} />
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">{getFileIcon(previewFile)}</div>
+                  <p className="text-gray-600 mb-4">Preview not available for this file type</p>
+                  <Button onClick={() => window.open(previewFile.thumbnail || '#', '_blank')}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download to View
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-48"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2"
+            onClick={() => {
+              if (contextMenu.item.type === 'folder') {
+                handleItemClick(contextMenu.item);
+              } else {
+                setPreviewFile(contextMenu.item);
+              }
+              setContextMenu(null);
+            }}
+          >
+            <Eye className="w-4 h-4" />
+            <span>{contextMenu.item.type === 'folder' ? 'Open' : 'Preview'}</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2"
+            onClick={() => {
+              handleStar(contextMenu.item.id);
+              setContextMenu(null);
+            }}
+          >
+            <Star className="w-4 h-4" />
+            <span>{contextMenu.item.starred ? 'Unstar' : 'Star'}</span>
+          </button>
+          {contextMenu.item.type === 'file' && (
+            <>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2"
+                onClick={() => {
+                  handleShare(contextMenu.item.id);
+                  setContextMenu(null);
+                }}
+              >
+                <Share className="w-4 h-4" />
+                <span>Share</span>
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2"
+                onClick={() => {
+                  window.open(contextMenu.item.thumbnail || '#', '_blank');
+                  setContextMenu(null);
+                }}
+              >
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+            </>
+          )}
+          <div className="border-t border-gray-200 my-1"></div>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2"
+            onClick={() => {
+              handleDelete(contextMenu.item.id);
+              setContextMenu(null);
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Delete</span>
+          </button>
         </div>
       )}
     </div>

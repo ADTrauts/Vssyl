@@ -84,6 +84,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
   const [isDragging, setIsDragging] = useState(false);
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
 
   // Load files with enterprise data
   const loadEnhancedFiles = useCallback(async () => {
@@ -377,12 +378,25 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
 
   const filteredItems = items
     .filter(item => {
+      // Search filter
       if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
+      
+      // Classification filter (enterprise)
       if (classificationFilter && item.classification !== classificationFilter) {
         return false;
       }
+      
+      // File type filter
+      if (fileTypeFilter && item.type === 'file') {
+        const mimeType = item.mimeType || '';
+        if (fileTypeFilter === 'documents' && !mimeType.includes('pdf') && !mimeType.includes('word') && !mimeType.includes('document')) return false;
+        if (fileTypeFilter === 'images' && !mimeType.startsWith('image/')) return false;
+        if (fileTypeFilter === 'videos' && !mimeType.startsWith('video/')) return false;
+        if (fileTypeFilter === 'spreadsheets' && !mimeType.includes('excel') && !mimeType.includes('spreadsheet')) return false;
+      }
+      
       return true;
     })
     .sort((a, b) => {
@@ -614,6 +628,19 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
               className="pl-10"
             />
           </div>
+          
+          {/* File Type Filter */}
+          <select
+            value={fileTypeFilter}
+            onChange={(e) => setFileTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="">All Types</option>
+            <option value="documents">📝 Documents</option>
+            <option value="spreadsheets">📊 Spreadsheets</option>
+            <option value="images">🖼️ Images</option>
+            <option value="videos">🎥 Videos</option>
+          </select>
           
           {/* Sort Options */}
           <select
