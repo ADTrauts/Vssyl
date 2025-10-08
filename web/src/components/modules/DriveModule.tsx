@@ -132,7 +132,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       setItems([...mappedFolders, ...mappedFiles]);
 
       // Calculate storage usage
-      const totalSize = mappedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+      const totalSize = mappedFiles.reduce((sum: number, file: any) => sum + (file.size || 0), 0);
       setStorageUsage(prev => ({ ...prev, used: totalSize }));
 
     } catch (err) {

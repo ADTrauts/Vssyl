@@ -165,7 +165,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
       setItems([...mappedFolders, ...mappedFiles]);
 
       // Calculate storage usage
-      const totalSize = mappedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+      const totalSize = mappedFiles.reduce((sum: number, file: any) => sum + (file.size || 0), 0);
       setStorageUsage(prev => ({ ...prev, used: totalSize }));
 
       // Record feature usage for analytics
@@ -319,6 +319,88 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
     }
   };
 
+  // File upload handler
+  const handleFileUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      const files = target.files;
+      if (!files || !session?.accessToken) return;
+
+      try {
+        setLoading(true);
+        
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append('file', file);
+          if (businessId) formData.append('dashboardId', businessId);
+          if (currentFolder) formData.append('folderId', currentFolder);
+
+          const response = await fetch('/api/drive/files', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.accessToken}` },
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.status}`);
+          }
+        }
+
+        // Refresh content
+        await loadEnhancedFiles();
+        toast.success('Files uploaded successfully');
+      } catch (error) {
+        console.error('Upload failed:', error);
+        toast.error('Failed to upload files. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    input.click();
+  };
+
+  // Folder creation handler
+  const handleCreateFolder = async () => {
+    if (!session?.accessToken) return;
+
+    const name = prompt('Enter folder name:');
+    if (!name) return;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/drive/folders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify({ 
+          name,
+          dashboardId: businessId || null,
+          parentId: currentFolder || null
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create folder');
+      }
+
+      // Refresh content
+      await loadEnhancedFiles();
+      toast.success('Folder created successfully');
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast.error('Failed to create folder. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -441,7 +523,7 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
               {currentDashboard ? `${currentDashboard.name} Drive` : 'Enterprise Drive'}
-              <Badge variant="purple" className="ml-3">Enterprise</Badge>
+              <span className="ml-3 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full border border-purple-200">Enterprise</span>
             </h1>
             <p className="text-gray-600">
               Advanced file management with enterprise features
