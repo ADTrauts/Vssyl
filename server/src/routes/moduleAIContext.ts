@@ -434,26 +434,36 @@ router.post(
               'recent (files?|documents?)',
             ],
             concepts: ['file management', 'cloud storage', 'document organization', 'sharing', 'collaboration'],
-            entities: ['File', 'Folder', 'Drive', 'Storage'],
-            actions: ['create folder', 'upload file', 'download file', 'share file', 'move file', 'delete file', 'rename', 'organize'],
+            entities: [
+              { name: 'File', pluralName: 'Files', description: 'A file stored in the drive' },
+              { name: 'Folder', pluralName: 'Folders', description: 'A folder for organizing files' },
+              { name: 'Drive', pluralName: 'Drives', description: 'Cloud storage space' },
+            ],
+            actions: [
+              { name: 'create_folder', description: 'Create a new folder', permissions: ['drive:write'] },
+              { name: 'upload_file', description: 'Upload a file to drive', permissions: ['drive:write'] },
+              { name: 'download_file', description: 'Download a file from drive', permissions: ['drive:read'] },
+              { name: 'share_file', description: 'Share a file with others', permissions: ['drive:write', 'drive:share'] },
+              { name: 'delete_file', description: 'Delete a file or folder', permissions: ['drive:delete'] },
+            ],
             contextProviders: [
               {
                 name: 'recent_files',
                 description: 'Get user\'s recently accessed or modified files',
                 endpoint: '/api/drive/ai/context/recent',
-                cacheMinutes: 5,
+                cacheDuration: 300000, // 5 minutes in milliseconds
               },
               {
                 name: 'storage_overview',
                 description: 'Get storage usage and quota information',
                 endpoint: '/api/drive/ai/context/storage',
-                cacheMinutes: 15,
+                cacheDuration: 900000, // 15 minutes
               },
               {
                 name: 'file_count',
                 description: 'Query file and folder counts',
                 endpoint: '/api/drive/ai/query/count',
-                cacheMinutes: 10,
+                cacheDuration: 600000, // 10 minutes
               },
             ],
           }
@@ -474,26 +484,34 @@ router.post(
               'contact',
             ],
             concepts: ['messaging', 'communication', 'conversations', 'real-time chat'],
-            entities: ['Message', 'Conversation', 'Chat'],
-            actions: ['send message', 'read messages', 'start conversation', 'reply'],
+            entities: [
+              { name: 'Message', pluralName: 'Messages', description: 'A chat message' },
+              { name: 'Conversation', pluralName: 'Conversations', description: 'A chat conversation thread' },
+              { name: 'Chat', pluralName: 'Chats', description: 'Real-time messaging system' },
+            ],
+            actions: [
+              { name: 'send_message', description: 'Send a message to a user', permissions: ['chat:write'] },
+              { name: 'read_messages', description: 'Read chat messages', permissions: ['chat:read'] },
+              { name: 'start_conversation', description: 'Start a new conversation', permissions: ['chat:write'] },
+            ],
             contextProviders: [
               {
                 name: 'recent_conversations',
                 description: 'Get user\'s recent chat conversations',
                 endpoint: '/api/chat/ai/context/recent',
-                cacheMinutes: 2,
+                cacheDuration: 120000, // 2 minutes
               },
               {
                 name: 'unread_messages',
                 description: 'Get count and preview of unread messages',
                 endpoint: '/api/chat/ai/context/unread',
-                cacheMinutes: 1,
+                cacheDuration: 60000, // 1 minute
               },
               {
                 name: 'conversation_history',
                 description: 'Query conversation history with a specific user',
                 endpoint: '/api/chat/ai/query/history',
-                cacheMinutes: 5,
+                cacheDuration: 300000, // 5 minutes
               },
             ],
           }
@@ -518,26 +536,35 @@ router.post(
               'this week',
             ],
             concepts: ['time management', 'scheduling', 'event planning', 'availability'],
-            entities: ['Event', 'Calendar', 'Meeting', 'Appointment'],
-            actions: ['create event', 'schedule meeting', 'check availability', 'cancel event', 'update event'],
+            entities: [
+              { name: 'Event', pluralName: 'Events', description: 'A calendar event' },
+              { name: 'Meeting', pluralName: 'Meetings', description: 'A scheduled meeting' },
+              { name: 'Appointment', pluralName: 'Appointments', description: 'A scheduled appointment' },
+            ],
+            actions: [
+              { name: 'create_event', description: 'Create a calendar event', permissions: ['calendar:write'] },
+              { name: 'schedule_meeting', description: 'Schedule a meeting', permissions: ['calendar:write'] },
+              { name: 'check_availability', description: 'Check user availability', permissions: ['calendar:read'] },
+              { name: 'cancel_event', description: 'Cancel an event', permissions: ['calendar:write'] },
+            ],
             contextProviders: [
               {
                 name: 'upcoming_events',
                 description: 'Get user\'s upcoming calendar events',
                 endpoint: '/api/calendar/ai/context/upcoming',
-                cacheMinutes: 5,
+                cacheDuration: 300000, // 5 minutes
               },
               {
                 name: 'today_events',
                 description: 'Get events scheduled for today',
                 endpoint: '/api/calendar/ai/context/today',
-                cacheMinutes: 15,
+                cacheDuration: 900000, // 15 minutes
               },
               {
                 name: 'availability',
                 description: 'Check user availability for a given time period',
                 endpoint: '/api/calendar/ai/query/availability',
-                cacheMinutes: 10,
+                cacheDuration: 600000, // 10 minutes
               },
             ],
           }
