@@ -59,6 +59,12 @@ async function handler(req: NextRequest) {
 
     // Add body and duplex option for non-GET/HEAD requests
     if (req.method !== 'GET' && req.method !== 'HEAD') {
+      // For multipart/form-data (file uploads), we need to handle this differently
+      if (headers.get('content-type')?.includes('multipart/form-data')) {
+        // Remove content-type header to let fetch set it with boundary
+        headers.delete('content-type');
+        fetchOptions.headers = headers;
+      }
       fetchOptions.body = req.body;
       fetchOptions.duplex = 'half'; // Required for Node.js 18+ when sending body
     }

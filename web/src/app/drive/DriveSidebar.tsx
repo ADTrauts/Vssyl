@@ -13,6 +13,7 @@ import {
   AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useDashboard } from '../../contexts/DashboardContext';
 import FolderTree from '../../components/drive/FolderTree';
 
@@ -262,10 +263,23 @@ export default function DriveSidebar({
 
   const contextDrives = generateContextDrives();
 
+  // Get session for authentication
+  const { data: session } = useSession();
+
   // API functions for folder management
   const loadRootFolders = useCallback(async (driveId: string) => {
     try {
-      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=null`);
+      if (!session?.accessToken) {
+        console.error('No session token available for folder loading');
+        return;
+      }
+      
+      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=null`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error('Failed to load folders');
       const folders = await response.json();
       
@@ -288,11 +302,21 @@ export default function DriveSidebar({
     } catch (error) {
       console.error('Failed to load root folders:', error);
     }
-  }, []);
+  }, [session?.accessToken]);
 
   const loadSubfolders = useCallback(async (driveId: string, folderId: string) => {
     try {
-      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=${folderId}`);
+      if (!session?.accessToken) {
+        console.error('No session token available for subfolder loading');
+        return;
+      }
+      
+      const response = await fetch(`/api/drive/folders?dashboardId=${driveId}&parentId=${folderId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) throw new Error('Failed to load subfolders');
       const folders = await response.json();
       
@@ -343,7 +367,7 @@ export default function DriveSidebar({
     } catch (error) {
       console.error('Failed to load subfolders:', error);
     }
-  }, []);
+  }, [session?.accessToken]);
 
   const handleFolderExpand = useCallback(async (driveId: string, folderId: string) => {
     // Set loading state
