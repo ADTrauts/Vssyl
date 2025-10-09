@@ -270,7 +270,15 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
       // TODO: Replace with real API calls when moderation backend is implemented
       setModerationRules([]);
       setViolations([]);
-      setStats({ totalViolations: 0, pendingReview: 0, resolvedToday: 0, averageReviewTime: 0 });
+      setStats({ 
+        totalViolations: 0, 
+        pendingReview: 0, 
+        criticalViolations: 0, 
+        autoActioned: 0,
+        topViolatedRules: [],
+        violationsByUser: [],
+        violationTrend: []
+      });
       
       // Record usage
       await recordUsage('chat_content_moderation', 1);
