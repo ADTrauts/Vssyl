@@ -26,11 +26,24 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   // Check if user has enterprise Drive features
   const { hasAccess: hasEnterpriseFeatures } = useFeature('drive_advanced_sharing', businessId);
   
+  // TEMPORARY: Force enhanced module for testing (remove this in production)
+  const forceEnhanced = true; // Set to false to disable
+  
+  console.log('🔍 Drive Module Selection Debug:', {
+    hasEnterpriseFeatures,
+    businessId,
+    currentDashboard: currentDashboard?.id,
+    dashboardType,
+    forceEnhanced,
+    willUseEnhanced: (hasEnterpriseFeatures && businessId) || forceEnhanced
+  });
+  
   // If user has enterprise features and is in a business context, use enhanced module
-  if (hasEnterpriseFeatures && businessId) {
+  // TEMPORARY: Also use enhanced if forceEnhanced is true
+  if ((hasEnterpriseFeatures && businessId) || forceEnhanced) {
     return (
       <EnhancedDriveModule 
-        businessId={businessId}
+        businessId={businessId || currentDashboard?.id || 'temp-business-id'}
         className={className}
         refreshTrigger={refreshTrigger}
       />
