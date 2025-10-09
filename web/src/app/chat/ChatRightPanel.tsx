@@ -139,11 +139,34 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
       setThreads([]);
       return;
     }
+    
+    let isMounted = true;
+    
     setLoadingThreads(true);
+    setThreadsError(null);
+    
     loadThreads(panelState.activeConversationId)
-      .then(setThreads)
-      .catch(() => setThreadsError('Failed to load threads'))
-      .finally(() => setLoadingThreads(false));
+      .then((fetchedThreads) => {
+        if (isMounted) {
+          setThreads(fetchedThreads);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error('Failed to load threads:', err);
+          setThreadsError('Failed to load threads');
+          setThreads([]); // Set empty array to prevent retry loop
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingThreads(false);
+        }
+      });
+    
+    return () => {
+      isMounted = false;
+    };
   }, [panelState.activeConversationId, loadThreads]);
 
   // Helper function to generate avatar URL for a user

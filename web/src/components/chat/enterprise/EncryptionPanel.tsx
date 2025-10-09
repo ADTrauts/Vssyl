@@ -233,8 +233,9 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
         complianceScore: 94.2
       };
 
-      setEncryptionKeys(mockKeys);
-      setEncryptionPolicies(mockPolicies);
+      // TODO: Replace with real API calls when encryption backend is implemented
+      setEncryptionKeys([]);
+      setEncryptionPolicies([]);
       setStats(mockStats);
       
       // Record usage

@@ -403,13 +403,13 @@ class ChatAPI {
     };
 
     console.log('Sending message request:', {
-      url: `/conversations/${conversationId}/messages`,
+      url: `/api/chat/conversations/${conversationId}/messages`,
       method: 'POST',
       headers,
       body: requestBody
     });
 
-    const response = await fetch(`/conversations/${conversationId}/messages`, {
+    const response = await fetch(`/api/chat/conversations/${conversationId}/messages`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
@@ -437,7 +437,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/messages/${messageId}`, {
+    const response = await fetch(`/api/chat/messages/${messageId}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify({ content }),
@@ -458,7 +458,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/messages/${messageId}`, {
+    const response = await fetch(`/api/chat/messages/${messageId}`, {
       method: 'DELETE',
       headers,
     });
@@ -477,7 +477,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch('/conversations', {
+    const response = await fetch('/api/chat/conversations', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -505,7 +505,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/conversations/${conversationId}/threads`, {
+    const response = await fetch(`/api/chat/conversations/${conversationId}/threads`, {
       method: 'GET',
       headers,
     });
@@ -527,7 +527,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/conversations/${conversationId}/threads`, {
+    const response = await fetch(`/api/chat/conversations/${conversationId}/threads`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -558,13 +558,13 @@ class ChatAPI {
 
     const requestBody = { emoji };
     console.log('Adding reaction request:', {
-      url: `/messages/${messageId}/reactions`,
+      url: `/api/chat/messages/${messageId}/reactions`,
       method: 'POST',
       headers,
       body: requestBody
     });
 
-    const response = await fetch(`/messages/${messageId}/reactions`, {
+    const response = await fetch(`/api/chat/messages/${messageId}/reactions`, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
@@ -589,7 +589,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/messages/${messageId}/reactions/${emoji}`, {
+    const response = await fetch(`/api/chat/messages/${messageId}/reactions/${emoji}`, {
       method: 'DELETE',
       headers,
     });
@@ -606,7 +606,7 @@ class ChatAPI {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`/messages/${messageId}/read`, {
+    const response = await fetch(`/api/chat/messages/${messageId}/read`, {
       method: 'POST',
       headers,
     });

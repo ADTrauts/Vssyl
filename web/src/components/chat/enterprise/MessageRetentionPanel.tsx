@@ -224,9 +224,10 @@ export const MessageRetentionPanel: React.FC<MessageRetentionPanelProps> = ({
         }
       ];
 
-      setRetentionPolicies(mockPolicies);
-      setMessageArchives(mockArchives);
-      setLegalHolds(mockHolds);
+      // TODO: Replace with real API calls when retention backend is implemented
+      setRetentionPolicies([]);
+      setMessageArchives([]);
+      setLegalHolds([]);
       
       // Record usage
       await recordUsage('chat_message_retention', 1);

@@ -267,9 +267,10 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
         })).reverse()
       };
 
-      setModerationRules(mockRules);
-      setViolations(mockViolations);
-      setStats(mockStats);
+      // TODO: Replace with real API calls when moderation backend is implemented
+      setModerationRules([]);
+      setViolations([]);
+      setStats({ totalViolations: 0, pendingReview: 0, resolvedToday: 0, averageReviewTime: 0 });
       
       // Record usage
       await recordUsage('chat_content_moderation', 1);
