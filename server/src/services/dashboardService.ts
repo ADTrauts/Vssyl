@@ -172,20 +172,12 @@ export async function createDashboard(userId: string, data: { name: string; layo
       householdId: data.householdId,
     },
   });
-  // Create default widgets: chat and drive
-  await prisma.widget.create({
-    data: {
-      dashboardId: dashboard.id,
-      type: 'chat',
-    },
-  });
-  await prisma.widget.create({
-    data: {
-      dashboardId: dashboard.id,
-      type: 'drive',
-    },
-  });
-  // Return the dashboard with widgets included
+  
+  // NOTE: No longer auto-creating default widgets
+  // Frontend DashboardBuildOutModal will prompt user to select modules
+  // This allows for customizable dashboard creation experience
+  
+  // Return the dashboard with empty widgets array
   return prisma.dashboard.findUnique({
     where: { id: dashboard.id },
     include: { widgets: true },
