@@ -656,7 +656,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   useEffect(() => {
     if (typeof window !== 'undefined' && hasShownBuildOut.size > 0) {
       try {
-        localStorage.setItem('dashboard-setup-completed', JSON.stringify([...hasShownBuildOut]));
+        localStorage.setItem('dashboard-setup-completed', JSON.stringify(Array.from(hasShownBuildOut)));
       } catch (err) {
         console.warn('Failed to persist dashboard setup state:', err);
       }
@@ -756,7 +756,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
       setShowBuildOutModal(true);
       
       // Mark this dashboard as having shown the modal
-      setHasShownBuildOut(prev => new Set([...prev, currentDashboard.id]));
+      setHasShownBuildOut(prev => new Set([...Array.from(prev), currentDashboard.id]));
     }
   }, [currentDashboard, loading, showBuildOutModal, hasShownBuildOut]);
 
@@ -919,7 +919,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     setShowBuildOutModal(false);
     
     // Mark this dashboard as having shown the modal
-    setHasShownBuildOut(prev => new Set([...prev, pendingDashboard.id]));
+    setHasShownBuildOut(prev => new Set([...Array.from(prev), pendingDashboard.id]));
     
     try {
       // Add selected modules as widgets to the dashboard
@@ -953,7 +953,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     setShowBuildOutModal(false);
     if (pendingDashboard) {
       // Mark this dashboard as having shown the modal (user chose to skip)
-      setHasShownBuildOut(prev => new Set([...prev, pendingDashboard.id]));
+      setHasShownBuildOut(prev => new Set([...Array.from(prev), pendingDashboard.id]));
       
       // Navigate to dashboard without widgets if user cancels
       router.push(`/dashboard/${pendingDashboard.id}`);
