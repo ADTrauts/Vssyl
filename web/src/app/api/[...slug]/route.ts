@@ -54,7 +54,7 @@ async function handler(req: NextRequest) {
     const fetchOptions: RequestInit & { duplex?: string } = {
       method: req.method,
       headers: headers,
-      redirect: 'manual',
+      redirect: 'manual'
     };
 
     // Add body and duplex option for non-GET/HEAD requests

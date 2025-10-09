@@ -530,6 +530,26 @@ export default function EnhancedDriveModule({ businessId, className = '', refres
     );
   }
 
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Enterprise Drive Error</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="space-y-2">
+            <Button onClick={loadEnhancedFiles} variant="primary">
+              Try Again
+            </Button>
+            <Button onClick={() => window.location.reload()} variant="secondary">
+              Refresh Page
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`space-y-6 p-6 overflow-auto ${className}`}>
       {/* Header - Only show when at root level */}

@@ -66,24 +66,26 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       return;
     }
     
+    const contextId = businessId || currentDashboard?.id;
+    const parentId = currentFolder;
+    
+    // Build API URLs with context and folder
+    const filesParams = new URLSearchParams();
+    if (contextId) filesParams.append('dashboardId', contextId);
+    if (parentId) filesParams.append('folderId', parentId);
+    
+    const foldersParams = new URLSearchParams();
+    if (contextId) foldersParams.append('dashboardId', contextId);
+    if (parentId) foldersParams.append('parentId', parentId);
+
+    const filesUrl = `/api/drive/files?${filesParams}`;
+    const foldersUrl = `/api/drive/folders?${foldersParams}`;
+
     try {
       setLoading(true);
       setError(null);
-      
-      const contextId = businessId || currentDashboard?.id;
-      const parentId = currentFolder;
-      
-      // Build API URLs with context and folder
-      const filesParams = new URLSearchParams();
-      if (contextId) filesParams.append('dashboardId', contextId);
-      if (parentId) filesParams.append('folderId', parentId);
-      
-      const foldersParams = new URLSearchParams();
-      if (contextId) foldersParams.append('dashboardId', contextId);
-      if (parentId) foldersParams.append('parentId', parentId);
 
-      const filesUrl = `/api/drive/files?${filesParams}`;
-      const foldersUrl = `/api/drive/folders?${foldersParams}`;
+      console.log('📁 Drive Debug - API URLs:', { filesUrl, foldersUrl });
 
       // Fetch files and folders with context and folder filtering
       const [filesResponse, foldersResponse] = await Promise.all([
@@ -152,7 +154,18 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
 
     } catch (err) {
       console.error('Error loading drive content:', err);
-      setError('Failed to load drive content. Please try again.');
+      console.error('Error details:', {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        session: !!session,
+        hasToken: !!session?.accessToken,
+        businessId,
+        currentDashboard: currentDashboard?.id,
+        currentFolder,
+        filesUrl,
+        foldersUrl
+      });
+      setError(`Failed to load drive content: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setItems([]);
     } finally {
       setLoading(false);
@@ -437,13 +450,46 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
     loading,
     error,
     searchQuery,
-    fileTypeFilter 
+    fileTypeFilter,
+    session: !!session,
+    hasToken: !!session?.accessToken,
+    businessId,
+    currentDashboard: currentDashboard?.id,
+    currentFolder,
+    filesUrl: `/api/drive/files?${new URLSearchParams({
+      dashboardId: businessId || currentDashboard?.id || '',
+      folderId: currentFolder || ''
+    })}`,
+    foldersUrl: `/api/drive/folders?${new URLSearchParams({
+      dashboardId: businessId || currentDashboard?.id || '',
+      parentId: currentFolder || ''
+    })}`
   });
 
   if (loading) {
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <Spinner size={32} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <div className="text-center max-w-md">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Drive Error</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="space-y-2">
+            <Button onClick={loadFilesAndFolders} variant="primary">
+              Try Again
+            </Button>
+            <Button onClick={() => window.location.reload()} variant="secondary">
+              Refresh Page
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
