@@ -27,6 +27,11 @@ import { ChatPanelState, Conversation, Message, Thread, ConversationParticipant 
 import { getConversation, getMessages, createMessage } from '../../api/chat';
 import { Avatar, Badge, Button } from 'shared/components';
 import { useChat } from '../../contexts/ChatContext';
+import { useModuleFeatures } from '../../hooks/useFeatureGating';
+import { useDashboard } from '../../contexts/DashboardContext';
+import MessageRetentionPanel from '../../components/chat/enterprise/MessageRetentionPanel';
+import ContentModerationPanel from '../../components/chat/enterprise/ContentModerationPanel';
+import EncryptionPanel from '../../components/chat/enterprise/EncryptionPanel';
 
 interface ChatRightPanelProps {
   panelState: ChatPanelState;
@@ -36,14 +41,21 @@ interface ChatRightPanelProps {
 
 export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadSelect }: ChatRightPanelProps) {
   const { data: session } = useSession();
+  const { currentDashboard, getDashboardType } = useDashboard();
+  const { loadThreads } = useChat();
+  
+  // Enterprise feature gating
+  const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
+  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  const { hasBusiness: hasEnterprise } = useModuleFeatures('chat', businessId);
+  
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'participants' | 'files' | 'threads'>('participants');
+  const [activeTab, setActiveTab] = useState<'participants' | 'files' | 'threads' | 'enterprise'>('participants');
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const { loadThreads } = useChat();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
   const [threadsError, setThreadsError] = useState<string | null>(null);
@@ -418,6 +430,20 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
           <MessageSquare className="w-4 h-4 inline mr-2" />
           Threads
         </button>
+        {/* Enterprise tab - Only visible for enterprise users */}
+        {hasEnterprise && (
+          <button
+            onClick={() => setActiveTab('enterprise')}
+            className={`flex-1 px-4 py-2 text-sm font-medium ${
+              activeTab === 'enterprise'
+                ? 'text-purple-600 border-b-2 border-purple-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Shield className="w-4 h-4 inline mr-2" />
+            Enterprise
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -525,6 +551,60 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
                     </div>
                   ))
                 )}
+              </div>
+            )}
+
+            {/* Enterprise Tab - Only visible for enterprise users */}
+            {activeTab === 'enterprise' && hasEnterprise && (
+              <div className="p-4 space-y-4">
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                    <span>Enterprise Features</span>
+                  </h3>
+                  
+                  {/* Enterprise Panels */}
+                  <div className="space-y-4">
+                    {/* Message Retention */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <details className="group">
+                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                          <span className="font-medium text-sm">Message Retention</span>
+                          <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
+                        </summary>
+                        <div className="p-3 bg-white">
+                          <MessageRetentionPanel />
+                        </div>
+                      </details>
+                    </div>
+                    
+                    {/* Content Moderation */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <details className="group">
+                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                          <span className="font-medium text-sm">Content Moderation</span>
+                          <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
+                        </summary>
+                        <div className="p-3 bg-white">
+                          <ContentModerationPanel />
+                        </div>
+                      </details>
+                    </div>
+                    
+                    {/* Encryption */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <details className="group">
+                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                          <span className="font-medium text-sm">Encryption Settings</span>
+                          <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
+                        </summary>
+                        <div className="p-3 bg-white">
+                          <EncryptionPanel />
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </>

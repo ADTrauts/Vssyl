@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useFeatureGating, useModuleFeatures } from '../../hooks/useFeatureGating';
 import { useDashboard } from '../../contexts/DashboardContext';
+import { useChat } from '../../contexts/ChatContext';
 import { toast } from 'react-hot-toast';
 
 interface UnifiedGlobalChatProps {
@@ -130,65 +131,32 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   // Check enterprise features
   const { hasBusiness: hasEnterprise } = useModuleFeatures('chat', businessId);
   
-  // State management
+  // Use shared ChatContext for data - THIS IS KEY FOR REAL-TIME SYNC!
+  const {
+    conversations,
+    activeConversation,
+    messages,
+    unreadCount,
+    isConnected,
+    isLoading,
+    setActiveConversation: setActiveConversationInContext,
+    sendMessage: sendMessageViaContext,
+    replyToMessage,
+    setReplyToMessage,
+  } = useChat();
+  
+  // UI state (local only)
   const [isMinimized, setIsMinimized] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [chatSize, setChatSize] = useState<'small' | 'medium' | 'large'>('small');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConversation, setActiveConversation] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(true); // Set to true by default for now
-  const [isLoading, setIsLoading] = useState(false);
-  const [replyToMessage, setReplyToMessage] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Initialize with fallback data
-  useEffect(() => {
-    if (conversations.length === 0) {
-      const fallbackConversations = [
-        {
-          id: '1',
-          name: 'General Chat',
-          type: 'channel',
-          unreadCount: 0,
-          lastMessage: 'Welcome to the global chat!',
-          lastMessageTime: new Date().toISOString(),
-          members: []
-        }
-      ];
-      setConversations(fallbackConversations);
-      setActiveConversation(fallbackConversations[0]);
-    }
-  }, [conversations.length]);
-
-  // Initialize with fallback messages
-  useEffect(() => {
-    if (activeConversation && messages.length === 0) {
-      const fallbackMessages = [
-        {
-          id: '1',
-          content: 'Welcome to the global chat! You can send messages here.',
-          sender: {
-            id: 'system',
-            name: 'System',
-            role: 'System'
-          },
-          timestamp: new Date().toISOString(),
-          type: 'system'
-        }
-      ];
-      setMessages(fallbackMessages);
-    }
-  }, [activeConversation, messages.length]);
 
   const formatTime = (timestamp: string): string => {
     return new Date(timestamp).toLocaleTimeString('en-US', {
@@ -215,47 +183,10 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     if (!newMessage.trim() || !activeConversation) return;
 
     try {
-      // Get access token from session using NextAuth
-      const session = await getSession();
-      if (!session?.accessToken) {
-        throw new Error('No access token found');
-      }
-
-      // Call real API to send message
-      const response = await fetch('/api/chat/messages', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          conversationId: activeConversation.id,
-          content: newMessage.trim(),
-          type: 'TEXT'
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to send message');
-      }
-
-      // Add message to local state
-      const newMessageData = {
-        id: data.message.id,
-        content: data.message.content,
-        sender: data.message.sender,
-        createdAt: data.message.createdAt,
-        encrypted: hasEnterprise && data.message.encrypted
-      };
-
-      setMessages(prev => [...prev, newMessageData]);
+      // Use ChatContext sendMessage - this automatically updates both global and main chat!
+      await sendMessageViaContext(newMessage.trim());
       setNewMessage('');
+      toast.success('Message sent');
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error('Failed to send message');
@@ -275,11 +206,14 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
 
   const handleDeleteMessage = async (messageId: string) => {
     // Handle message deletion logic here
+    // TODO: Implement trash integration similar to main chat
     console.log('Deleting message:', messageId);
+    toast('Message deletion coming soon', { icon: 'ℹ️' });
   };
 
   const handleConversationSelect = (conversation: any) => {
-    setActiveConversation(conversation);
+    // Use ChatContext to set active conversation - syncs with main chat!
+    setActiveConversationInContext(conversation);
   };
 
   const filteredConversations = conversations.filter(conv =>

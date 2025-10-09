@@ -18,6 +18,8 @@ import { getDataClassifications } from '../../api/retention';
 import type { DataClassification } from '../../api/retention';
 import ClassificationModal from '../../components/ClassificationModal';
 import { enforceGovernancePolicies } from '../../api/governance';
+import { useModuleFeatures } from '../../hooks/useFeatureGating';
+import { useDashboard } from '../../contexts/DashboardContext';
 import { toast } from 'react-hot-toast';
 
 // Test if emoji packages are working
@@ -55,7 +57,8 @@ const MessageItem = React.memo(({
   hasUserReacted,
   replyingTo,
   onDeleteMessage,
-  accessToken
+  accessToken,
+  hasEnterprise
 }: {
   message: Message;
   isOwnMessage: boolean;
@@ -75,6 +78,7 @@ const MessageItem = React.memo(({
   replyingTo: Message | null;
   onDeleteMessage: (message: Message) => void;
   accessToken: string;
+  hasEnterprise: boolean;
 }) => {
   const isReplyingTo = replyingTo && replyingTo.id === message.id;
   const { handleTrashDrop } = useTrashDrop();
@@ -85,10 +89,11 @@ const MessageItem = React.memo(({
   const [showClassificationModal, setShowClassificationModal] = useState(false);
   const messageRef = useRef<HTMLDivElement>(null);
 
-  // Load classification for this message
+  // Load classification for this message (Enterprise feature only)
   useEffect(() => {
     const loadClassification = async () => {
-      if (!accessToken) return;
+      // Only load classification for enterprise users
+      if (!accessToken || !hasEnterprise) return;
       
       try {
         setLoadingClassification(true);
@@ -111,7 +116,7 @@ const MessageItem = React.memo(({
     };
 
     loadClassification();
-  }, [message.id, accessToken]);
+  }, [message.id, accessToken, hasEnterprise]);
 
   // Handle context menu
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -200,8 +205,8 @@ const MessageItem = React.memo(({
             
             <p className="text-sm">{message.content}</p>
             
-            {/* Classification Badge */}
-            {classification && (
+            {/* Classification Badge (Enterprise only) */}
+            {hasEnterprise && classification && (
               <div className="mt-2">
                 <ClassificationBadge
                   sensitivity={classification.sensitivity}
@@ -334,16 +339,19 @@ const MessageItem = React.memo(({
             <Reply className="w-4 h-4" />
             <span>Reply</span>
           </button>
-          <button
-            onClick={() => {
-              setShowClassificationModal(true);
-              setShowContextMenu(false);
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2"
-          >
-            <Shield className="w-4 h-4" />
-            <span>Classify</span>
-          </button>
+          {/* Classify option - Enterprise only */}
+          {hasEnterprise && (
+            <button
+              onClick={() => {
+                setShowClassificationModal(true);
+                setShowContextMenu(false);
+              }}
+              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Classify</span>
+            </button>
+          )}
           <button
             onClick={() => {
               onDeleteMessage(message);
@@ -357,19 +365,21 @@ const MessageItem = React.memo(({
         </div>
       )}
 
-      {/* Classification Modal */}
-      <ClassificationModal
-        isOpen={showClassificationModal}
-        onClose={() => setShowClassificationModal(false)}
-        resourceType="message"
-        resourceId={message.id}
-        content={message.content}
-        currentClassification={classification || undefined}
-        onClassify={(newClassification) => {
-          setClassification(newClassification);
-          setShowClassificationModal(false);
-        }}
-      />
+      {/* Classification Modal (Enterprise only) */}
+      {hasEnterprise && (
+        <ClassificationModal
+          isOpen={showClassificationModal}
+          onClose={() => setShowClassificationModal(false)}
+          resourceType="message"
+          resourceId={message.id}
+          content={message.content}
+          currentClassification={classification || undefined}
+          onClassify={(newClassification) => {
+            setClassification(newClassification);
+            setShowClassificationModal(false);
+          }}
+        />
+      )}
     </div>
   );
 });
@@ -378,6 +388,7 @@ MessageItem.displayName = 'MessageItem';
 
 export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRightPanel }: ChatMainPanelProps) {
   const { data: session } = useSession();
+  const { currentDashboard, getDashboardType } = useDashboard();
   const {
     activeConversation,
     messages,
@@ -399,6 +410,11 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   } = useChat();
   
   const { trashItem } = useGlobalTrash();
+  
+  // Enterprise feature gating
+  const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
+  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  const { hasBusiness: hasEnterprise } = useModuleFeatures('chat', businessId);
   
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -889,6 +905,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
                 replyingTo={replyToMessage}
                 onDeleteMessage={handleDeleteMessage}
                 accessToken={session?.accessToken || ''}
+                hasEnterprise={hasEnterprise}
               />
             ))
           }
@@ -1065,6 +1082,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
               replyingTo={replyToMessage}
               onDeleteMessage={handleDeleteMessage}
               accessToken={session?.accessToken || ''}
+              hasEnterprise={hasEnterprise}
             />
           ))
         }

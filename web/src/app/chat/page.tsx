@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useDashboard } from '../../contexts/DashboardContext';
-import { ChatPageContent } from '../../components/chat/ChatPageContent';
+import ChatContent from './ChatContent';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -118,37 +118,8 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Main Chat Content - Full Width */}
-      <div className="flex-1 flex flex-col">
-        {/* Enhanced Dashboard Context Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-semibold text-gray-900">Chat</h1>
-                <span className="text-gray-400">•</span>
-                <span className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
-                  {currentDashboard.name} Context
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => console.log('New chat functionality')}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Chat</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Chat Content */}
-        <div className="flex-1">
-          <ChatPageContent />
-        </div>
-      </div>
+      {/* Use panel-based system with 94+ features including classification, governance, teams */}
+      <ChatContent />
     </div>
   );
 } 

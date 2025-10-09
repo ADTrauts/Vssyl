@@ -11,6 +11,7 @@ import { ChatUser } from 'shared/types/chat';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useChat } from '../../contexts/ChatContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
+import { useModuleFeatures } from '../../hooks/useFeatureGating';
 import { toast } from 'react-hot-toast';
 
 interface ChatLeftPanelProps {
@@ -37,9 +38,15 @@ export default function ChatLeftPanel({
   onTeamToggle
 }: ChatLeftPanelProps) {
   const { data: session } = useSession();
-  const { currentDashboardId } = useDashboard();
+  const { currentDashboard, getDashboardType, currentDashboardId } = useDashboard();
   const { conversations, setActiveConversation, createConversation: createConversationFromContext } = useChat();
   const { trashItem } = useGlobalTrash();
+  
+  // Enterprise feature gating
+  const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
+  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  const { hasBusiness: hasEnterprise } = useModuleFeatures('chat', businessId);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
