@@ -277,7 +277,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
         autoActioned: 0,
         topViolatedRules: [],
         violationsByUser: [],
-        violationTrend: []
+        trendsData: []
       });
       
       // Record usage
