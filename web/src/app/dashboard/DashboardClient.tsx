@@ -636,9 +636,32 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const [showBuildOutModal, setShowBuildOutModal] = useState(false);
   const [pendingDashboard, setPendingDashboard] = useState<Dashboard | null>(null);
   const [showModuleManagement, setShowModuleManagement] = useState(false);
+  const [hasShownBuildOut, setHasShownBuildOut] = useState<Set<string>>(() => {
+    // Load from localStorage on initialization
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('dashboard-setup-completed');
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
 
   // Get dashboard ID from URL params or props
   const activeDashboardId = (params?.id as string) || dashboardId;
+
+  // Persist setup-completed state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && hasShownBuildOut.size > 0) {
+      try {
+        localStorage.setItem('dashboard-setup-completed', JSON.stringify([...hasShownBuildOut]));
+      } catch (err) {
+        console.warn('Failed to persist dashboard setup state:', err);
+      }
+    }
+  }, [hasShownBuildOut]);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -717,6 +740,25 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
       })
       .finally(() => setLoading(false));
   }, [isHydrated, session?.accessToken, activeDashboardId, router]);
+
+  // Auto-prompt module selection for new empty dashboards
+  useEffect(() => {
+    if (!currentDashboard || loading) return;
+    
+    // Check if dashboard is empty (no widgets) and we haven't shown the modal for this dashboard yet
+    const isEmpty = !currentDashboard.widgets || currentDashboard.widgets.length === 0;
+    const notShownYet = !hasShownBuildOut.has(currentDashboard.id);
+    const notAlreadyShowing = !showBuildOutModal;
+    
+    if (isEmpty && notShownYet && notAlreadyShowing) {
+      // Dashboard was just created or is empty - prompt for module selection
+      setPendingDashboard(currentDashboard);
+      setShowBuildOutModal(true);
+      
+      // Mark this dashboard as having shown the modal
+      setHasShownBuildOut(prev => new Set([...prev, currentDashboard.id]));
+    }
+  }, [currentDashboard, loading, showBuildOutModal, hasShownBuildOut]);
 
   const handleCreate = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -876,6 +918,9 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     
     setShowBuildOutModal(false);
     
+    // Mark this dashboard as having shown the modal
+    setHasShownBuildOut(prev => new Set([...prev, pendingDashboard.id]));
+    
     try {
       // Add selected modules as widgets to the dashboard
       const widgetPromises = selectedModuleIds.map(moduleId => 
@@ -907,6 +952,9 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const handleBuildOutClose = () => {
     setShowBuildOutModal(false);
     if (pendingDashboard) {
+      // Mark this dashboard as having shown the modal (user chose to skip)
+      setHasShownBuildOut(prev => new Set([...prev, pendingDashboard.id]));
+      
       // Navigate to dashboard without widgets if user cancels
       router.push(`/dashboard/${pendingDashboard.id}`);
       setPendingDashboard(null);
