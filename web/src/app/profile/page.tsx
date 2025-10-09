@@ -27,7 +27,7 @@ export default function Profile() {
       const accessToken = getAccessToken(session);
       if (accessToken) {
         try {
-          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
           const res = await fetch(API_BASE_URL + '/profile', {
             headers: { Authorization: `Bearer ${accessToken}` }
           });

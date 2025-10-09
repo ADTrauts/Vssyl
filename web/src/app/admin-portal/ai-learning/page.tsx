@@ -164,7 +164,7 @@ interface SchedulerStatus {
 
 export default function AILearningAdminPage() {
   // API base URL with fallback
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl.com/api';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
   
   const [activeTab, setActiveTab] = useState('overview');
   const [healthMetrics, setHealthMetrics] = useState<SystemHealthMetrics | null>(null);
