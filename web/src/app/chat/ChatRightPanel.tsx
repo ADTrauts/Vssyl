@@ -41,7 +41,7 @@ interface ChatRightPanelProps {
 
 export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadSelect }: ChatRightPanelProps) {
   const { data: session } = useSession();
-  const { currentDashboard, getDashboardType } = useDashboard();
+  const { currentDashboard, getDashboardType, currentDashboardId } = useDashboard();
   const { loadThreads } = useChat();
   
   // Enterprise feature gating
@@ -59,6 +59,17 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loadingThreads, setLoadingThreads] = useState(false);
   const [threadsError, setThreadsError] = useState<string | null>(null);
+
+  // Reset panel state when dashboard context changes
+  useEffect(() => {
+    setConversation(null);
+    setMessages([]);
+    setThreadMessages([]);
+    setThreads([]);
+    setError(null);
+    setThreadsError(null);
+    setActiveTab('participants');
+  }, [currentDashboardId]);
 
   // Fetch conversation details
   useEffect(() => {
@@ -167,7 +178,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
     return () => {
       isMounted = false;
     };
-  }, [panelState.activeConversationId, loadThreads]);
+  }, [panelState.activeConversationId, loadThreads, currentDashboardId]);
 
   // Helper function to generate avatar URL for a user
   const getUserAvatar = (name: string) => {

@@ -14,8 +14,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // ============================================================================
 // BUILT-IN MODULE AI CONTEXTS
