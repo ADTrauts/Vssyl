@@ -1,3 +1,8 @@
+-- Drop existing tables if they have wrong schema (safe since they're likely empty)
+DROP TABLE IF EXISTS "module_ai_performance_metrics" CASCADE;
+DROP TABLE IF EXISTS "user_ai_context_cache" CASCADE;
+DROP TABLE IF EXISTS "module_ai_context_registry" CASCADE;
+
 -- Add module tracking fields to AILearningEvent
 ALTER TABLE "ai_learning_events" ADD COLUMN IF NOT EXISTS "sourceModule" TEXT;
 ALTER TABLE "ai_learning_events" ADD COLUMN IF NOT EXISTS "sourceModuleVersion" TEXT;
@@ -25,24 +30,24 @@ CREATE INDEX IF NOT EXISTS "global_patterns_primaryModule_idx" ON "global_patter
 CREATE INDEX IF NOT EXISTS "global_patterns_moduleCategory_idx" ON "global_patterns"("moduleCategory");
 
 -- Create ModuleAIContextRegistry table
-CREATE TABLE IF NOT EXISTS "module_ai_context_registry" (
+CREATE TABLE "module_ai_context_registry" (
     "id" TEXT NOT NULL,
     "moduleId" TEXT NOT NULL,
     "moduleName" TEXT NOT NULL,
-    "moduleVersion" TEXT NOT NULL,
     "purpose" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "keywords" TEXT[],
     "patterns" TEXT[],
     "concepts" TEXT[],
-    "entities" JSONB,
-    "actions" JSONB,
-    "contextProviders" JSONB,
+    "entities" JSONB NOT NULL,
+    "actions" JSONB NOT NULL,
+    "contextProviders" JSONB NOT NULL,
+    "queryableData" JSONB,
     "relationships" JSONB,
     "fullAIContext" JSONB NOT NULL,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "registeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "lastUpdatedAt" TIMESTAMP(3) NOT NULL,
+    "version" TEXT NOT NULL DEFAULT '1.0.0',
+    "lastUpdated" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "module_ai_context_registry_pkey" PRIMARY KEY ("id")
 );
@@ -52,18 +57,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS "module_ai_context_registry_moduleId_key" ON "
 CREATE INDEX IF NOT EXISTS "module_ai_context_registry_category_idx" ON "module_ai_context_registry"("category");
 CREATE INDEX IF NOT EXISTS "module_ai_context_registry_keywords_idx" ON "module_ai_context_registry" USING GIN ("keywords");
 CREATE INDEX IF NOT EXISTS "module_ai_context_registry_patterns_idx" ON "module_ai_context_registry" USING GIN ("patterns");
-CREATE INDEX IF NOT EXISTS "module_ai_context_registry_isActive_idx" ON "module_ai_context_registry"("isActive");
+CREATE INDEX IF NOT EXISTS "module_ai_context_registry_moduleName_idx" ON "module_ai_context_registry"("moduleName");
 
 -- Create UserAIContextCache table
-CREATE TABLE IF NOT EXISTS "user_ai_context_cache" (
+CREATE TABLE "user_ai_context_cache" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "contextData" JSONB NOT NULL,
-    "moduleContexts" JSONB NOT NULL,
-    "lastRefreshed" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "cachedContext" JSONB NOT NULL,
+    "lastUpdated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiresAt" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "version" TEXT NOT NULL DEFAULT '1.0.0',
+    "hitCount" INTEGER NOT NULL DEFAULT 0,
+    "missCount" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "user_ai_context_cache_pkey" PRIMARY KEY ("id")
 );
@@ -73,24 +78,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS "user_ai_context_cache_userId_key" ON "user_ai
 CREATE INDEX IF NOT EXISTS "user_ai_context_cache_expiresAt_idx" ON "user_ai_context_cache"("expiresAt");
 
 -- Create ModuleAIPerformanceMetric table
-CREATE TABLE IF NOT EXISTS "module_ai_performance_metrics" (
+CREATE TABLE "module_ai_performance_metrics" (
     "id" TEXT NOT NULL,
     "moduleId" TEXT NOT NULL,
-    "queryCount" INTEGER NOT NULL DEFAULT 0,
-    "successCount" INTEGER NOT NULL DEFAULT 0,
-    "failureCount" INTEGER NOT NULL DEFAULT 0,
-    "averageConfidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "averageResponseTime" INTEGER NOT NULL DEFAULT 0,
-    "lastQueried" TIMESTAMP(3),
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "totalQueries" INTEGER NOT NULL DEFAULT 0,
+    "successfulQueries" INTEGER NOT NULL DEFAULT 0,
+    "failedQueries" INTEGER NOT NULL DEFAULT 0,
+    "averageLatency" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "contextFetchCount" INTEGER NOT NULL DEFAULT 0,
+    "contextFetchErrors" INTEGER NOT NULL DEFAULT 0,
+    "averageContextSize" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "cacheHitRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "positiveRatings" INTEGER NOT NULL DEFAULT 0,
+    "negativeRatings" INTEGER NOT NULL DEFAULT 0,
+    "averageRating" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "estimatedCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "tokenCount" INTEGER NOT NULL DEFAULT 0,
+    "learningEventsGenerated" INTEGER NOT NULL DEFAULT 0,
+    "patternsContributed" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "module_ai_performance_metrics_pkey" PRIMARY KEY ("id")
 );
 
 -- Create unique constraint and indexes for performance metrics
-CREATE UNIQUE INDEX IF NOT EXISTS "module_ai_performance_metrics_moduleId_key" ON "module_ai_performance_metrics"("moduleId");
-CREATE INDEX IF NOT EXISTS "module_ai_performance_metrics_lastQueried_idx" ON "module_ai_performance_metrics"("lastQueried");
+CREATE UNIQUE INDEX IF NOT EXISTS "module_ai_performance_metrics_moduleId_date_key" ON "module_ai_performance_metrics"("moduleId", "date");
+CREATE INDEX IF NOT EXISTS "module_ai_performance_metrics_moduleId_idx" ON "module_ai_performance_metrics"("moduleId");
+CREATE INDEX IF NOT EXISTS "module_ai_performance_metrics_date_idx" ON "module_ai_performance_metrics"("date");
 
 -- Add cached context fields to ModuleInstallation
 ALTER TABLE "module_installations" ADD COLUMN IF NOT EXISTS "cachedContext" JSONB;
