@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Conversation, Message, MessageReaction, Thread } from 'shared/types/chat';
 import { chatAPI } from '../api/chat';
 import { uploadFile } from '../api/drive';
+import { useDashboard } from './DashboardContext';
 
 interface ChatContextType {
   // State
@@ -44,6 +45,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
+  const { currentDashboardId } = useDashboard();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -63,7 +65,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await chatAPI.getConversations(session.accessToken);
+      // Pass dashboardId to filter conversations by context
+      const response = await chatAPI.getConversations(session.accessToken, currentDashboardId || undefined);
       const conversationsData = Array.isArray(response) ? response : [];
       setConversations(conversationsData);
       
@@ -82,7 +85,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.accessToken, session?.user?.id]);
+  }, [session?.accessToken, session?.user?.id, currentDashboardId]);
 
   // Load messages for active conversation
   const loadMessages = useCallback(async (conversationId: string) => {
@@ -180,7 +183,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         type,
         participantIds,
         session.accessToken,
-        name
+        name,
+        currentDashboardId || undefined
       );
       
       setConversations(prev => [newConversation, ...prev]);
@@ -189,7 +193,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to create conversation:', error);
       throw error;
     }
-  }, [session?.accessToken]);
+  }, [session?.accessToken, currentDashboardId]);
 
   // Upload file
   const uploadFileToChat = useCallback(async (file: File): Promise<string> => {
