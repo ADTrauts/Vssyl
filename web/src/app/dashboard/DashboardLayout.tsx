@@ -910,7 +910,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </aside>
-        <main className="flex-1 overflow-y-auto h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" style={{ 
+        <main className="flex-1 overflow-hidden h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" style={{ 
           padding: 0, 
           paddingRight: shouldShowSidebar ? 40 : 0,
           marginLeft: 0,
