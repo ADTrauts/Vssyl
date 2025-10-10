@@ -164,10 +164,10 @@ export default function ChatContent() {
   }
 
   return (
-    <div className="flex h-screen" style={{ width: 'calc(100vw - 40px)', minHeight: 0 }}>
+    <div className="flex h-screen overflow-hidden" style={{ width: 'calc(100vw - 40px)', minHeight: 0 }}>
       {/* Left Panel - Conversation List */}
       <div 
-        className={`bg-white border-r border-gray-200 transition-all duration-300 ${panelState.leftPanelCollapsed ? 'w-16' : 'w-[260px]'}`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${panelState.leftPanelCollapsed ? 'w-16' : 'w-[260px]'}`}
         style={{ width: panelState.leftPanelCollapsed ? '64px' : '260px', minWidth: panelState.leftPanelCollapsed ? '64px' : '260px', maxWidth: panelState.leftPanelCollapsed ? '64px' : '260px' }}
       >
         <ChatLeftPanel
@@ -181,7 +181,7 @@ export default function ChatContent() {
       </div>
 
       {/* Main Panel - Active Conversation */}
-      <div className="flex-1 min-w-0 flex flex-col bg-gray-50">
+      <div className="flex-1 min-w-0 flex flex-col bg-gray-50 overflow-hidden">
         <ChatMainPanel
           panelState={panelState}
           onThreadSelect={updateActiveThread}
@@ -205,7 +205,7 @@ export default function ChatContent() {
         </div>
       ) : (
         <div 
-          className="bg-white border-l border-gray-200 transition-all duration-300 w-[320px] relative"
+          className="bg-white border-l border-gray-200 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
           style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
         >
           <button

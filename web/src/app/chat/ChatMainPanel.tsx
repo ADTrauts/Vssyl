@@ -867,7 +867,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   if (panelState.activeThreadId) {
     const thread = threads.find(t => t.id === panelState.activeThreadId);
     return (
-      <div className="flex flex-col h-full max-h-screen">
+      <div className="flex flex-col h-full">
         {/* Thread Header */}
         <div className="flex items-center p-4 border-b bg-white flex-shrink-0">
           <button onClick={() => onThreadSelect(null)} className="mr-2 p-1 rounded hover:bg-gray-100" title="Back to conversation">
@@ -1047,7 +1047,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
 
   // UI: If no thread is selected, show main conversation messages only
   return (
-    <div className="flex flex-col h-full max-h-screen">
+    <div className="flex flex-col h-full">
       {/* Main Conversation Header */}
       <div className="flex items-center p-4 border-b bg-white flex-shrink-0">
         <div className="flex-1 font-semibold text-lg">{activeConversation?.name || 'Conversation'}</div>
@@ -1088,7 +1088,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         }
         <div ref={messagesEndRef} />
       </div>
-      {/* Main Conversation Input */}
+      {/* Main Conversation Input - Fixed at bottom */}
       <div className="p-4 border-t bg-white flex-shrink-0">
         {/* Reply Indicator */}
         {replyToMessage && (
