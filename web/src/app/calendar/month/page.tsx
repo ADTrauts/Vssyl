@@ -214,161 +214,259 @@ function MonthInner() {
     <div className="flex h-full">
       <CalendarListSidebar />
       <div className="flex-1 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold">Calendar — Month</h1>
-            <div className="ml-2 grid grid-cols-4 gap-2 text-xs">
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/day">Day</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/week">Week</a>
-              <a className="px-2 py-1 border rounded text-center bg-gray-100" href="/calendar/month">Month</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/year">Year</a>
+        {/* Modern Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 shadow-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-1">Calendar — Month</h1>
+              <p className="text-blue-100">Manage your schedule and never miss an event</p>
             </div>
-            <div className="flex items-center gap-1">
-              <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1))}>{'<'}</button>
-              <button className="px-2 py-1 border rounded" onClick={() => setViewDate(new Date())}>Today</button>
-              <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1))}>{'>'}</button>
-              <div className="ml-2 text-sm text-gray-600">{viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
+            <div className="flex items-center space-x-4">
+              {/* View Switcher */}
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 flex space-x-1">
+                <a 
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  href="/calendar/day"
+                >
+                  Day
+                </a>
+                <a 
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  href="/calendar/week"
+                >
+                  Week
+                </a>
+                <a 
+                  className="px-3 py-2 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm" 
+                  href="/calendar/month"
+                >
+                  Month
+                </a>
+                <a 
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  href="/calendar/year"
+                >
+                  Year
+                </a>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => setShowDrawer(true)} 
+                  className="bg-white text-blue-600 px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
+                >
+                  <span>New Event</span>
+                </button>
+                <button 
+                  onClick={async () => {
+                    try {
+                      const start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+                      const end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0, 23, 59, 59);
+                      
+                      // Get events for export
+                      const selectedIds = Array.from(visibleCalendarIds);
+                      const resp = selectedIds.length > 0
+                        ? await calendarAPI.listEvents({ start: start.toISOString(), end: end.toISOString(), contexts: contextFilter, calendarIds: selectedIds })
+                        : await calendarAPI.listEvents({ start: start.toISOString(), end: end.toISOString(), contexts: contextFilter });
+                      
+                      if (resp?.success && resp.data.length > 0) {
+                        // Create ICS content
+                        let icsContent = 'BEGIN:VCALENDAR\r\n';
+                        icsContent += 'VERSION:2.0\r\n';
+                        icsContent += 'PRODID:-//Vssyl//Calendar//EN\r\n';
+                        icsContent += 'CALSCALE:GREGORIAN\r\n';
+                        icsContent += 'METHOD:PUBLISH\r\n';
+                        
+                        resp.data.forEach(event => {
+                          icsContent += 'BEGIN:VEVENT\r\n';
+                          icsContent += `UID:${event.id}\r\n`;
+                          icsContent += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
+                          icsContent += `DTSTART:${event.allDay ? new Date(event.startAt).toISOString().slice(0, 8) : new Date(event.startAt).toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
+                          icsContent += `DTEND:${event.allDay ? new Date(event.endAt).toISOString().slice(0, 8) : new Date(event.endAt).toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
+                          if (event.allDay) {
+                            icsContent += 'X-MICROSOFT-CDO-ALLDAYEVENT:TRUE\r\n';
+                          }
+                          icsContent += `SUMMARY:${event.title.replace(/\r?\n/g, '\\n')}\r\n`;
+                          if (event.description) {
+                            icsContent += `DESCRIPTION:${event.description.replace(/\r?\n/g, '\\n')}\r\n`;
+                          }
+                          if (event.location) {
+                            icsContent += `LOCATION:${event.location.replace(/\r?\n/g, '\\n')}\r\n`;
+                          }
+                          if (event.recurrenceRule) {
+                            icsContent += `RRULE:${event.recurrenceRule}\r\n`;
+                          }
+                          icsContent += 'END:VEVENT\r\n';
+                        });
+                        
+                        icsContent += 'END:VCALENDAR\r\n';
+                        
+                        // Download file
+                        const blob = new Blob([icsContent], { type: 'text/calendar' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `calendar-${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}.ics`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } else {
+                        alert('No events to export for this month.');
+                      }
+                    } catch (error) {
+                      console.error('Error exporting ICS:', error);
+                      alert('Error exporting calendar. Please try again.');
+                    }
+                  }}
+                  className="bg-white/20 text-white px-4 py-2.5 rounded-lg font-medium shadow-lg hover:bg-white/30 transform hover:scale-105 transition-all flex items-center space-x-2"
+                  title="Export month events to ICS file"
+                >
+                  <span>📅</span>
+                  <span>Export ICS</span>
+                </button>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowDrawer(true)} className="px-3 py-1 border rounded">New Event</button>
-            <button 
-              onClick={async () => {
-                try {
-                  const start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-                  const end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0, 23, 59, 59);
-                  
-                  // Get events for export
-                  const selectedIds = Array.from(visibleCalendarIds);
-                  const resp = selectedIds.length > 0
-                    ? await calendarAPI.listEvents({ start: start.toISOString(), end: end.toISOString(), contexts: contextFilter, calendarIds: selectedIds })
-                    : await calendarAPI.listEvents({ start: start.toISOString(), end: end.toISOString(), contexts: contextFilter });
-                  
-                  if (resp?.success && resp.data.length > 0) {
-                    // Create ICS content
-                    let icsContent = 'BEGIN:VCALENDAR\r\n';
-                    icsContent += 'VERSION:2.0\r\n';
-                    icsContent += 'PRODID:-//Vssyl//Calendar//EN\r\n';
-                    icsContent += 'CALSCALE:GREGORIAN\r\n';
-                    icsContent += 'METHOD:PUBLISH\r\n';
-                    
-                    resp.data.forEach(event => {
-                      icsContent += 'BEGIN:VEVENT\r\n';
-                      icsContent += `UID:${event.id}\r\n`;
-                      icsContent += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
-                      icsContent += `DTSTART:${event.allDay ? new Date(event.startAt).toISOString().slice(0, 8) : new Date(event.startAt).toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
-                      icsContent += `DTEND:${event.allDay ? new Date(event.endAt).toISOString().slice(0, 8) : new Date(event.endAt).toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
-                      if (event.allDay) {
-                        icsContent += 'X-MICROSOFT-CDO-ALLDAYEVENT:TRUE\r\n';
-                      }
-                      icsContent += `SUMMARY:${event.title.replace(/\r?\n/g, '\\n')}\r\n`;
-                      if (event.description) {
-                        icsContent += `DESCRIPTION:${event.description.replace(/\r?\n/g, '\\n')}\r\n`;
-                      }
-                      if (event.location) {
-                        icsContent += `LOCATION:${event.location.replace(/\r?\n/g, '\\n')}\r\n`;
-                      }
-                      if (event.recurrenceRule) {
-                        icsContent += `RRULE:${event.recurrenceRule}\r\n`;
-                      }
-                      icsContent += 'END:VEVENT\r\n';
-                    });
-                    
-                    icsContent += 'END:VCALENDAR\r\n';
-                    
-                    // Download file
-                    const blob = new Blob([icsContent], { type: 'text/calendar' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `calendar-${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}.ics`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                  } else {
-                    alert('No events to export for this month.');
+        </div>
+
+        {/* Navigation Controls */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <button 
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" 
+                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1))}
+                >
+                  <span className="text-gray-600 font-medium">{'<'}</span>
+                </button>
+                <button 
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" 
+                  onClick={() => setViewDate(new Date())}
+                >
+                  Today
+                </button>
+                <button 
+                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" 
+                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1))}
+                >
+                  <span className="text-gray-600 font-medium">{'>'}</span>
+                </button>
+              </div>
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold">
+                {viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
+              {currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}
+            </div>
+          </div>
+        </div>
+        {/* Modern Search and Filters */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+          <div className="flex items-center gap-4 mb-4">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <input
+                className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                placeholder="Search events..."
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter' && searchText.trim()) {
+                    const start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+                    const end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 23, 59, 59);
+                    const resp = await calendarAPI.searchEvents({ text: searchText.trim(), start: start.toISOString(), end: end.toISOString(), contexts: contextFilter });
+                    if ((resp as any)?.success) setEvents((resp as any).data);
                   }
-                } catch (error) {
-                  console.error('Error exporting ICS:', error);
-                  alert('Error exporting calendar. Please try again.');
-                }
-              }}
-              className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200"
-              title="Export month events to ICS file"
-            >
-              📅 Export ICS
-            </button>
-            <div className="text-sm text-gray-500">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 mb-2">
-          <input
-            className="px-2 py-1 border rounded text-sm"
-            placeholder="Search events"
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            onKeyDown={async (e) => {
-              if (e.key === 'Enter' && searchText.trim()) {
-                const start = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-                const end = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 23, 59, 59);
-                const resp = await calendarAPI.searchEvents({ text: searchText.trim(), start: start.toISOString(), end: end.toISOString(), contexts: contextFilter });
-                if ((resp as any)?.success) setEvents((resp as any).data);
-              }
-            }}
-          />
-          <label className="text-xs flex items-center gap-1 ml-2">
-            <input type="checkbox" checked={myEventsOnly} onChange={(e) => setMyEventsOnly(e.target.checked)} />
-            My events
-          </label>
-        </div>
-        
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-3 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600">Calendar:</span>
-            <select 
-              value={selectedCalendarFilter} 
-              onChange={(e) => setSelectedCalendarFilter(e.target.value)}
-              className="px-2 py-1 border rounded text-xs"
-            >
-              <option value="all">All calendars</option>
-              {calendars.map(cal => (
-                <option key={cal.id} value={cal.id}>{cal.name}</option>
-              ))}
-            </select>
+                }}
+              />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* My Events Toggle */}
+            <label className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={myEventsOnly} 
+                onChange={(e) => setMyEventsOnly(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">My events only</span>
+            </label>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600">Attendee:</span>
-            <select 
-              value={selectedAttendeeFilter} 
-              onChange={(e) => setSelectedAttendeeFilter(e.target.value)}
-              className="px-2 py-1 border rounded text-xs"
-            >
-              <option value="all">All attendees</option>
-              <option value="me">Me only</option>
-              <option value="others">Others only</option>
-            </select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <span className="text-gray-600">Status:</span>
-            <select 
-              value={selectedStatusFilter} 
-              onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="px-2 py-1 border rounded text-xs"
-            >
-              <option value="all">All statuses</option>
-              <option value="accepted">Accepted</option>
-              <option value="declined">Declined</option>
-              <option value="tentative">Tentative</option>
-              <option value="needs_action">Needs action</option>
-            </select>
+          {/* Filter Row */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Calendar:</span>
+              <select 
+                value={selectedCalendarFilter} 
+                onChange={(e) => setSelectedCalendarFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All calendars</option>
+                {calendars.map(cal => (
+                  <option key={cal.id} value={cal.id}>{cal.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Attendee:</span>
+              <select 
+                value={selectedAttendeeFilter} 
+                onChange={(e) => setSelectedAttendeeFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All attendees</option>
+                <option value="me">Me only</option>
+                <option value="others">Others only</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-gray-600 font-medium">Status:</span>
+              <select 
+                value={selectedStatusFilter} 
+                onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All statuses</option>
+                <option value="accepted">Accepted</option>
+                <option value="declined">Declined</option>
+                <option value="tentative">Tentative</option>
+                <option value="needs_action">Needs action</option>
+              </select>
+            </div>
           </div>
         </div>
-        {loading && <div>Loading…</div>}
-        {error && <div className="text-red-600">{error}</div>}
+        {loading && (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <span className="text-gray-600 font-medium">Loading calendar events...</span>
+            </div>
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 text-red-500">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-red-700 font-medium">{error}</span>
+            </div>
+          </div>
+        )}
         {!loading && (
           <MonthGrid 
             viewDate={viewDate} 
@@ -539,18 +637,22 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
   };
 
   return (
-    <div className="w-full" onMouseUp={handleMouseUp}>
+    <div className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" onMouseUp={handleMouseUp}>
       {/* Day of week header */}
-      <div className="grid grid-cols-7 gap-2 mb-2 text-xs font-medium text-gray-500">
+      <div className="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
         {dayNames.map(n => (
-          <div key={n} className="px-2">{n}</div>
+          <div key={n} className="px-4 py-3 text-center text-sm font-semibold text-gray-600 border-r border-gray-200 last:border-r-0">
+            {n}
+          </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7">
         {cells.map((cell) => (
           <button
             key={cell.idx}
-            className={`relative text-left border rounded p-2 min-h-[100px] text-xs w-full ${cell.inCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'} ${cell.isToday ? 'ring-2 ring-blue-500' : ''} ${isDragging && dragStartIdx !== null && dragEndIdx !== null && cell.idx >= Math.min(dragStartIdx, dragEndIdx) && cell.idx <= Math.max(dragStartIdx, dragEndIdx) ? 'ring-1 ring-blue-400 bg-blue-50' : ''}`}
+            className={`relative text-left border-r border-b border-gray-200 last:border-r-0 p-3 min-h-[120px] text-xs w-full transition-all duration-200 hover:bg-gray-50 ${cell.inCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'} ${cell.isToday ? 'bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-300' : ''} ${isDragging && dragStartIdx !== null && dragEndIdx !== null && cell.idx >= Math.min(dragStartIdx, dragEndIdx) && cell.idx <= Math.max(dragStartIdx, dragEndIdx) ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
             onClick={() => {
               if (!cell.date) return;
               const start = new Date(cell.date);
@@ -561,9 +663,11 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
             onMouseDown={() => { setDragStartIdx(cell.idx); setDragEndIdx(cell.idx); }}
             onMouseEnter={() => { if (dragStartIdx !== null) setDragEndIdx(cell.idx); }}
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span />
-              <span className={`text-[11px] ${cell.isToday ? 'font-bold text-blue-600' : ''}`}>{cell.inCurrentMonth ? cell.dayNum : ''}</span>
+              <span className={`text-sm font-medium ${cell.isToday ? 'bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold' : 'text-gray-700'}`}>
+                {cell.inCurrentMonth ? cell.dayNum : ''}
+              </span>
             </div>
             <div className="space-y-1">
                {(cell.date ? (eventsByDay.get(cell.date.toISOString().slice(0,10)) || []) : []).filter(ev => {
@@ -581,10 +685,11 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
                 return (
                   <div
                     key={ev.id}
-                    className="flex items-center gap-1 truncate w-full hover:bg-gray-50 rounded cursor-move"
+                    className="flex items-center gap-2 truncate w-full hover:shadow-md rounded-lg cursor-move transition-all duration-200 transform hover:scale-[1.02] bg-white border-l-4 shadow-sm hover:shadow-lg"
                     style={{
                       marginLeft: overlapPosition * 8,
-                      maxWidth: `calc(100% - ${overlapPosition * 8}px)`
+                      maxWidth: `calc(100% - ${overlapPosition * 8}px)`,
+                      borderLeftColor: color
                     }}
                     onClick={(e) => { e.stopPropagation(); onEventClick(ev); }}
                     draggable
@@ -600,22 +705,22 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
                     onDragEnd={(e) => { e.currentTarget.removeAttribute('data-dragging'); }}
                     title="Drag to move. Shift+Drag to resize start date. Alt+Drag to resize end date."
                   >
-                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                    
-                    {/* Continuation chevrons for multi-day events */}
-                    {isMultiDay && !isStartOfSpan && (
-                      <span className="text-gray-400 mr-1">‹</span>
-                    )}
-                    
-                    <span className="truncate">{ev.title}</span>
-                    
-                    {isMultiDay && !isEndOfSpan && (
-                      <span className="text-gray-400 ml-1">›</span>
-                    )}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {/* Continuation chevrons for multi-day events */}
+                      {isMultiDay && !isStartOfSpan && (
+                        <span className="text-gray-400 text-xs font-bold">‹</span>
+                      )}
+                      
+                      <span className="truncate text-sm font-medium text-gray-800">{ev.title}</span>
+                      
+                      {isMultiDay && !isEndOfSpan && (
+                        <span className="text-gray-400 text-xs font-bold">›</span>
+                      )}
+                    </div>
                     
                     {/* Time for non-all-day events */}
                     {!ev.allDay && (
-                      <span className="text-gray-500 ml-1">
+                      <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
                         {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
