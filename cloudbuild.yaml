@@ -132,7 +132,7 @@ steps:
       - '--set-secrets'
       - 'OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
-    waitFor: ['push-server', 'push-server-latest', 'register-modules']  # Wait for migrations and module registration!
+    waitFor: ['push-server', 'push-server-latest']  # Module registration happens on server startup
 
   # Step 6: Deploy web (in parallel with server)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
