@@ -46,10 +46,10 @@ export class ModuleRegistrySyncService {
     };
 
     try {
-      // Step 1: Get all active modules from database
+      // Step 1: Get all approved modules from database
       const modules = await this.prisma.module.findMany({
         where: {
-          status: 'ACTIVE',
+          status: 'APPROVED',
         },
         select: {
           id: true,
@@ -154,9 +154,9 @@ export class ModuleRegistrySyncService {
         return { action: 'skipped', reason: 'module_not_found' };
       }
 
-      if (module.status !== 'ACTIVE') {
-        console.log(`   ⚠️  Module '${module.name}' is not active (status: ${module.status})`);
-        return { action: 'skipped', reason: 'module_not_active' };
+      if (module.status !== 'APPROVED') {
+        console.log(`   ⚠️  Module '${module.name}' is not approved (status: ${module.status})`);
+        return { action: 'skipped', reason: 'module_not_approved' };
       }
 
       // Extract AI context from module manifest
@@ -208,17 +208,17 @@ export class ModuleRegistrySyncService {
         select: { moduleId: true },
       });
 
-      // Get all active module IDs
-      const activeModules = await this.prisma.module.findMany({
-        where: { status: 'ACTIVE' },
+      // Get all approved module IDs
+      const approvedModules = await this.prisma.module.findMany({
+        where: { status: 'APPROVED' },
         select: { id: true },
       });
 
-      const activeModuleIds = new Set(activeModules.map(m => m.id));
+      const approvedModuleIds = new Set(approvedModules.map(m => m.id));
 
       // Find orphaned entries
       const orphanedEntries = registryEntries.filter(
-        entry => !activeModuleIds.has(entry.moduleId)
+        entry => !approvedModuleIds.has(entry.moduleId)
       );
 
       if (orphanedEntries.length === 0) {
@@ -254,19 +254,19 @@ export class ModuleRegistrySyncService {
     lastSync?: Date;
   }> {
     try {
-      const [totalModules, registeredModules, registryEntries, activeModuleIds] = await Promise.all([
-        this.prisma.module.count({ where: { status: 'ACTIVE' } }),
+      const [totalModules, registeredModules, registryEntries, approvedModules] = await Promise.all([
+        this.prisma.module.count({ where: { status: 'APPROVED' } }),
         this.prisma.moduleAIContextRegistry.count(),
         this.prisma.moduleAIContextRegistry.findMany({ select: { moduleId: true } }),
         this.prisma.module.findMany({
-          where: { status: 'ACTIVE' },
+          where: { status: 'APPROVED' },
           select: { id: true },
         }),
       ]);
 
-      const activeIds = new Set(activeModuleIds.map(m => m.id));
+      const approvedIds = new Set(approvedModules.map(m => m.id));
       const orphanedEntries = registryEntries.filter(
-        entry => !activeIds.has(entry.moduleId)
+        entry => !approvedIds.has(entry.moduleId)
       ).length;
 
       const unregisteredModules = totalModules - registeredModules + orphanedEntries;
