@@ -211,11 +211,13 @@ function MonthInner() {
   }, [session]);
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-screen overflow-hidden">
       <CalendarListSidebar />
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto">
         {/* Modern Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 shadow-lg mb-6">
+        <div className="bg-gradient-to-r from-info-blue to-secondary-purple rounded-2xl p-6 shadow-lg mb-6" style={{
+          background: 'linear-gradient(135deg, var(--info-blue) 0%, var(--secondary-purple) 100%)'
+        }}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-1">Calendar — Month</h1>
@@ -254,7 +256,8 @@ function MonthInner() {
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={() => setShowDrawer(true)} 
-                  className="bg-white text-blue-600 px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
+                  className="bg-white px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
+                  style={{ color: 'var(--primary-green)' }}
                 >
                   <span>New Event</span>
                 </button>
@@ -343,7 +346,12 @@ function MonthInner() {
                   <span className="text-gray-600 font-medium">{'<'}</span>
                 </button>
                 <button 
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium" 
+                  className="px-4 py-2 rounded-lg text-white transition-colors font-medium" 
+                  style={{ 
+                    backgroundColor: 'var(--primary-green)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-red)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-green)'}
                   onClick={() => setViewDate(new Date())}
                 >
                   Today
@@ -355,7 +363,9 @@ function MonthInner() {
                   <span className="text-gray-600 font-medium">{'>'}</span>
                 </button>
               </div>
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold">
+              <div className="text-white px-4 py-2 rounded-lg font-semibold" style={{
+                background: 'linear-gradient(135deg, var(--info-blue) 0%, var(--secondary-purple) 100%)'
+              }}>
                 {viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
               </div>
             </div>
