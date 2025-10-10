@@ -808,7 +808,7 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
       }
     });
 
-    // If approved, update module status
+    // If approved, update module status and sync AI context
     if (action === 'approve') {
       await prisma.module.update({
         where: { id: submission.moduleId },
@@ -816,6 +816,17 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
           status: 'APPROVED'
         }
       });
+
+      // Sync module AI context to registry (non-blocking)
+      try {
+        const { moduleRegistrySyncService } = await import('../services/ModuleRegistrySyncService');
+        await moduleRegistrySyncService.syncModule(submission.moduleId);
+        console.log(`✅ Module AI context synced for: ${submission.module.name}`);
+      } catch (syncError) {
+        // Log error but don't fail the approval
+        console.error(`⚠️  Failed to sync AI context for module ${submission.module.name}:`, syncError);
+        console.error('   Module is approved, but AI context may need manual sync');
+      }
     }
 
     res.json({ 

@@ -75,34 +75,12 @@ steps:
     id: 'run-migrations'
     waitFor: ['build-server']
 
-  # Step 3b: Register built-in modules using the server Docker image
-  # Note: This step may fail during build due to database connectivity
-  # Module registration will be run post-deployment via Cloud Run job
-  - name: 'gcr.io/$PROJECT_ID/vssyl-server:latest'
-    entrypoint: 'sh'
-    args:
-      - '-c'
-      - |
-        echo "🤖 Registering built-in modules..."
-        echo "⚠️  Note: This may fail during build due to database connectivity"
-        echo "   Module registration will complete after deployment"
-        
-        # Set database URL
-        export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
-        
-        # Try to run module registration (non-critical, can fail)
-        cd /app
-        node server/dist/scripts/register-built-in-modules.js || echo "⚠️  Skipped - will run after deployment"
-        
-        echo "✅ Build step completed (module registration will run post-deployment)"
-    id: 'register-modules'
-    waitFor: ['build-server']
-
   # Step 4: Push images in parallel
+  # Note: Module registration happens automatically on server startup (see server/src/startup/)
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:$BUILD_ID']
     id: 'push-server'
-    waitFor: ['register-modules']
+    waitFor: ['run-migrations']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/$PROJECT_ID/vssyl-server:latest']

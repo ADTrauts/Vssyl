@@ -44,6 +44,7 @@ import {
 } from './services/emailService';
 import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService } from './services/chatSocketService';
+import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
 import cron from 'node-cron';
 import { dispatchDueReminders } from './services/reminderService';
 import type { JwtPayload } from 'jsonwebtoken';
@@ -569,8 +570,16 @@ initializeChatSocketService(httpServer);
 // Create HTTP server and initialize WebSocket service
 const server = httpServer.listen(port, () => {
   console.log(`About to listen on port ${port}`);
-}).on('listening', () => {
+}).on('listening', async () => {
   console.log(`Server listening on port ${port}`);
+  
+  // Register built-in modules if registry is empty (non-blocking)
+  try {
+    await registerBuiltInModulesOnStartup();
+  } catch (e) {
+    console.error('Module registration startup failed (non-critical):', e);
+  }
+  
   // Run reminder dispatcher every minute (MVP)
   try {
     cron.schedule('* * * * *', async () => {

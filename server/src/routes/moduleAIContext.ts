@@ -618,5 +618,72 @@ router.post(
   }
 );
 
+/**
+ * Sync all modules with the registry (admin only, called by cron)
+ * POST /api/admin/modules/ai/sync
+ * 
+ * This endpoint is called nightly by Cloud Scheduler to keep the registry
+ * synchronized with module updates. Can also be triggered manually by admins.
+ */
+router.post(
+  '/admin/modules/ai/sync',
+  authenticateJWT,
+  requireRole('ADMIN'),
+  async (req: Request, res: Response) => {
+    try {
+      console.log('🔄 Admin/Cron triggered module registry sync');
+
+      const { moduleRegistrySyncService } = await import('../services/ModuleRegistrySyncService');
+      
+      const result = await moduleRegistrySyncService.syncAllModules();
+
+      res.json({
+        success: result.success,
+        message: result.success 
+          ? 'Module registry sync completed successfully'
+          : 'Module registry sync completed with errors',
+        summary: {
+          added: result.added,
+          updated: result.updated,
+          removed: result.removed,
+          errors: result.errors,
+        },
+        details: result.details,
+      });
+    } catch (error: any) {
+      console.error('Error in module registry sync:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+/**
+ * Get module registry sync status (admin only)
+ * GET /api/admin/modules/ai/sync/status
+ * 
+ * Returns statistics about the current state of the registry
+ * and when it was last synchronized.
+ */
+router.get(
+  '/admin/modules/ai/sync/status',
+  authenticateJWT,
+  requireRole('ADMIN'),
+  async (req: Request, res: Response) => {
+    try {
+      const { moduleRegistrySyncService } = await import('../services/ModuleRegistrySyncService');
+      
+      const status = await moduleRegistrySyncService.getSyncStatus();
+
+      res.json({
+        success: true,
+        status,
+      });
+    } catch (error: any) {
+      console.error('Error getting sync status:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 export default router;
 
