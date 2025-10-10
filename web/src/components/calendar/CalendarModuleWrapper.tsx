@@ -6,6 +6,7 @@ import CalendarModule from '../modules/CalendarModule';
 
 interface CalendarModuleWrapperProps {
   className?: string;
+  refreshTrigger?: number;
 }
 
 /**
@@ -13,7 +14,8 @@ interface CalendarModuleWrapperProps {
  * or the enhanced enterprise Calendar module based on feature access
  */
 export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
-  className = ''
+  className = '',
+  refreshTrigger
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -30,6 +32,7 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
       <EnhancedCalendarModule 
         businessId={businessId}
         className={className}
+        refreshTrigger={refreshTrigger}
       />
     );
   }
@@ -39,6 +42,7 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
     <CalendarModule 
       businessId={businessId || ''}
       className={className}
+      refreshTrigger={refreshTrigger}
     />
   );
 };
