@@ -82,7 +82,8 @@ export default function CalendarListSidebar() {
     run();
   }, [overlayMode, contextQuery, currentDashboard, getDashboardDisplayName]);
 
-  const totalEvents = calendars.reduce((acc, cal) => acc + (cal.eventCount || 0), 0);
+  // Event counts will be added in future update
+  const totalEvents = calendars.length;
 
   return (
     <aside className="w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-column overflow-y-auto">
@@ -148,7 +149,7 @@ export default function CalendarListSidebar() {
             </div>
             <div className="flex-1 text-left">
               <div className="font-bold text-gray-900 dark:text-gray-100">All Calendars</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{totalEvents} events</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{totalEvents} calendar{totalEvents !== 1 ? 's' : ''}</div>
             </div>
             <ChevronRightIcon className="w-5 h-5 text-gray-400" />
           </div>
@@ -215,7 +216,7 @@ export default function CalendarListSidebar() {
                       {cal.name}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {cal.eventCount || 0} events
+                      {cal.isPrimary ? 'Primary' : 'Calendar'}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
