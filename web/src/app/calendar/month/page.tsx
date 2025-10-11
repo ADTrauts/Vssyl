@@ -239,8 +239,9 @@ function MonthInner() {
                   Week
                 </a>
                 <a 
-                  className="px-3 py-2 rounded-md text-sm font-medium bg-white text-blue-600 shadow-sm" 
+                  className="px-3 py-2 rounded-md text-sm font-medium bg-white shadow-sm" 
                   href="/calendar/month"
+                  style={{ color: 'var(--primary-green)' }}
                 >
                   Month
                 </a>
@@ -380,7 +381,10 @@ function MonthInner() {
             {/* Search Bar */}
             <div className="flex-1 relative">
               <input
-                className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                style={{ 
+                  '--tw-ring-color': 'var(--primary-green)' 
+                } as React.CSSProperties}
                 placeholder="Search events..."
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
@@ -419,7 +423,10 @@ function MonthInner() {
               <select 
                 value={selectedCalendarFilter} 
                 onChange={(e) => setSelectedCalendarFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                style={{ 
+                  '--tw-ring-color': 'var(--primary-green)' 
+                } as React.CSSProperties}
               >
                 <option value="all">All calendars</option>
                 {calendars.map(cal => (
@@ -433,7 +440,10 @@ function MonthInner() {
               <select 
                 value={selectedAttendeeFilter} 
                 onChange={(e) => setSelectedAttendeeFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                style={{ 
+                  '--tw-ring-color': 'var(--primary-green)' 
+                } as React.CSSProperties}
               >
                 <option value="all">All attendees</option>
                 <option value="me">Me only</option>
@@ -446,7 +456,10 @@ function MonthInner() {
               <select 
                 value={selectedStatusFilter} 
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                style={{ 
+                  '--tw-ring-color': 'var(--primary-green)' 
+                } as React.CSSProperties}
               >
                 <option value="all">All statuses</option>
                 <option value="accepted">Accepted</option>
@@ -662,7 +675,13 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
         {cells.map((cell) => (
           <button
             key={cell.idx}
-            className={`relative text-left border-r border-b border-gray-200 last:border-r-0 p-3 min-h-[120px] text-xs w-full transition-all duration-200 hover:bg-gray-50 ${cell.inCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'} ${cell.isToday ? 'bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-300' : ''} ${isDragging && dragStartIdx !== null && dragEndIdx !== null && cell.idx >= Math.min(dragStartIdx, dragEndIdx) && cell.idx <= Math.max(dragStartIdx, dragEndIdx) ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+            className={`relative text-left border-r border-b border-gray-200 last:border-r-0 p-3 min-h-[120px] text-xs w-full transition-all duration-200 hover:bg-gray-50 ${cell.inCurrentMonth ? 'bg-white' : 'bg-gray-50 text-gray-400'} ${cell.isToday ? 'ring-1' : ''} ${isDragging && dragStartIdx !== null && dragEndIdx !== null && cell.idx >= Math.min(dragStartIdx, dragEndIdx) && cell.idx <= Math.max(dragStartIdx, dragEndIdx) ? 'ring-2 bg-blue-50' : ''}`}
+            style={cell.isToday ? {
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+              '--tw-ring-color': 'var(--primary-green)'
+            } as React.CSSProperties : isDragging && dragStartIdx !== null && dragEndIdx !== null && cell.idx >= Math.min(dragStartIdx, dragEndIdx) && cell.idx <= Math.max(dragStartIdx, dragEndIdx) ? {
+              '--tw-ring-color': 'var(--info-blue)'
+            } as React.CSSProperties : undefined}
             onClick={() => {
               if (!cell.date) return;
               const start = new Date(cell.date);
@@ -675,7 +694,10 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
           >
             <div className="flex items-center justify-between mb-2">
               <span />
-              <span className={`text-sm font-medium ${cell.isToday ? 'bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold' : 'text-gray-700'}`}>
+              <span 
+                className={`text-sm font-medium ${cell.isToday ? 'text-white rounded-full w-6 h-6 flex items-center justify-center font-bold' : 'text-gray-700'}`}
+                style={cell.isToday ? { backgroundColor: 'var(--primary-green)' } : undefined}
+              >
                 {cell.inCurrentMonth ? cell.dayNum : ''}
               </span>
             </div>

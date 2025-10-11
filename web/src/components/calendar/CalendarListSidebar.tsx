@@ -5,6 +5,14 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import { useCalendarContext } from '../../contexts/CalendarContext';
 import { Dashboard } from 'shared/types/dashboard';
 import { DashboardWidget } from 'shared/types/dashboard';
+import { 
+  CalendarIcon, 
+  ClockIcon, 
+  ShareIcon, 
+  BellIcon,
+  PlusIcon,
+  ChevronRightIcon
+} from '@heroicons/react/24/outline';
 
 interface ExtendedDashboard extends Dashboard {
   business?: { id: string };
@@ -21,6 +29,7 @@ export default function CalendarListSidebar() {
   const { visibleCalendarIds, toggleCalendarVisibility, overlayMode, setOverlayMode, setCalendars: setCalCtx } = useCalendarContext();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [loading, setLoading] = useState(false);
+  const [masterCalendarActive, setMasterCalendarActive] = useState(true);
 
   const contextQuery = useMemo(() => {
     if (!currentDashboard) return {} as ContextQuery;
@@ -73,107 +82,213 @@ export default function CalendarListSidebar() {
     run();
   }, [overlayMode, contextQuery, currentDashboard, getDashboardDisplayName]);
 
+  const totalEvents = calendars.reduce((acc, cal) => acc + (cal.eventCount || 0), 0);
+
   return (
-    <aside className="w-64 shrink-0 border-r p-3">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-medium">Calendars</div>
-        <select
-          value={overlayMode}
-          onChange={e => setOverlayMode(e.target.value as 'ALL_TABS' | 'CURRENT_TAB')}
-          className="text-sm border rounded px-2 py-1"
-        >
-          <option value="ALL_TABS">All Tabs</option>
-          <option value="CURRENT_TAB">Current Tab</option>
-        </select>
-      </div>
-      {loading && <div className="text-sm text-gray-500">Loading…</div>}
-      <div className="flex items-center gap-2 mb-3">
+    <aside className="w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-column overflow-y-auto">
+      {/* Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Vssyl</h2>
+          <select
+            value={overlayMode}
+            onChange={e => setOverlayMode(e.target.value as 'ALL_TABS' | 'CURRENT_TAB')}
+            className="text-xs border rounded px-2 py-1 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+          >
+            <option value="ALL_TABS">All Tabs</option>
+            <option value="CURRENT_TAB">Current Tab</option>
+          </select>
+        </div>
+
+        {/* New Event Button - Chunky style like Drive */}
         <button
-          className="px-2 py-1 border rounded text-xs"
-          onClick={async () => {
-            const name = prompt('Calendar name');
-            if (!name) return;
-            const extendedDashboard = currentDashboard as ExtendedDashboard;
-            const body: { name: string; contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string } = currentDashboard
-              ? { name, contextType: getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD', contextId: extendedDashboard.business?.id || extendedDashboard.household?.id || currentDashboard.id }
-              : { name, contextType: 'PERSONAL', contextId: '' };
-            const resp = await calendarAPI.createCalendar(body);
-            if (resp?.success) {
-              setCalendars([resp.data, ...calendars]);
-              setCalCtx([resp.data, ...calendars]);
-            }
+          onClick={() => {
+            window.location.href = '/calendar/month';
+          }}
+          className="w-full h-12 rounded-lg font-semibold text-sm flex items-center justify-center space-x-2 transition-all hover:shadow-lg"
+          style={{
+            backgroundColor: 'var(--primary-green)',
+            color: 'white'
           }}
         >
-          + New
+          <PlusIcon className="w-5 h-5" />
+          <span>New Event</span>
         </button>
       </div>
-      {!loading && (
-        <ul className="space-y-1">
-          {calendars.map(c => (
-            <li key={c.id} className="flex items-center justify-between gap-2 group">
-              <button
-                onClick={() => toggleCalendarVisibility(c.id)}
-                className={`text-left flex-1 truncate ${visibleCalendarIds.has(c.id) ? '' : 'opacity-40'}`}
-                title={c.name}
-              >
-                <span className="inline-block w-3 h-3 rounded-full mr-2 align-middle" style={{ backgroundColor: c.color || '#3b82f6' }} />
-                <span className="align-middle">{c.name}</span>
-              </button>
-              <input
-                type="color"
-                value={c.color || '#3b82f6'}
-                onChange={async (e) => {
-                  const newColor = e.target.value;
-                  const updated = await calendarAPI.updateCalendar(c.id, { color: newColor });
-                  if (updated?.success) {
-                    // local refresh
-                    setCalendars(calendars.map(cal => cal.id === c.id ? { ...cal, color: newColor } : cal));
-                  }
-                }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 p-0 border-0 bg-transparent cursor-pointer"
-                title="Edit color"
-              />
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                <button
-                  className="text-[11px] text-gray-500 hover:text-gray-700"
-                  onClick={async () => {
-                    const name = prompt('Rename calendar', c.name);
-                    if (!name || name === c.name) return;
-                    const resp = await calendarAPI.updateCalendar(c.id, { name });
-                    if (resp?.success) {
-                      setCalendars(calendars.map(cal => cal.id === c.id ? { ...cal, name } : cal));
-                      setCalCtx(calendars.map(cal => cal.id === c.id ? { ...cal, name } : cal));
-                    }
-                  }}
-                >Rename</button>
-                {!c.isSystem && c.isDeletable !== false && (
-                  <button
-                    className="text-[11px] text-red-600 hover:text-red-700"
-                    onClick={async () => {
-                      if (!confirm('Delete this calendar?')) return;
-                      const resp = await calendarAPI.deleteCalendar(c.id);
-                      if (resp?.success) {
-                        const next = calendars.filter(cal => cal.id !== c.id);
-                        setCalendars(next);
-                        setCalCtx(next);
-                      }
-                    }}
-                  >Delete</button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!loading && calendars.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard && !currentDashboard.widgets?.some((w: DashboardWidget) => w.type === 'calendar') && (
-        <div className="text-xs text-gray-500 p-2 border rounded">
-          Calendar module is not enabled for this tab.
-          <div>
-            <a href={`/dashboard/${currentDashboard.id}`} className="underline">Add module</a>
+
+      {/* Master Calendar Section */}
+      <div className="mb-6">
+        <button
+          onClick={() => {
+            setMasterCalendarActive(!masterCalendarActive);
+            // Toggle all calendars
+            calendars.forEach(cal => {
+              if (masterCalendarActive && visibleCalendarIds.has(cal.id)) {
+                toggleCalendarVisibility(cal.id);
+              } else if (!masterCalendarActive && !visibleCalendarIds.has(cal.id)) {
+                toggleCalendarVisibility(cal.id);
+              }
+            });
+          }}
+          className={`w-full p-4 rounded-xl transition-all duration-200 ${
+            masterCalendarActive 
+              ? 'bg-white dark:bg-gray-800 shadow-md ring-2' 
+              : 'bg-white dark:bg-gray-800 hover:shadow-sm'
+          }`}
+          style={masterCalendarActive ? {
+            '--tw-ring-color': 'var(--primary-green)'
+          } as React.CSSProperties : undefined}
+        >
+          <div className="flex items-center space-x-3">
+            <div 
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: 'var(--primary-green)' }}
+            >
+              <CalendarIcon className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <div className="font-bold text-gray-900 dark:text-gray-100">All Calendars</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{totalEvents} events</div>
+            </div>
+            <ChevronRightIcon className="w-5 h-5 text-gray-400" />
           </div>
+        </button>
+      </div>
+
+      {/* YOUR CALENDARS Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Your Calendars
+          </h3>
+          <button
+            onClick={async () => {
+              const name = prompt('Calendar name');
+              if (!name) return;
+              const extendedDashboard = currentDashboard as ExtendedDashboard;
+              const body: { name: string; contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string } = currentDashboard
+                ? { name, contextType: getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD', contextId: extendedDashboard.business?.id || extendedDashboard.household?.id || currentDashboard.id }
+                : { name, contextType: 'PERSONAL', contextId: '' };
+              const resp = await calendarAPI.createCalendar(body);
+              if (resp?.success) {
+                setCalendars([resp.data, ...calendars]);
+                setCalCtx([resp.data, ...calendars]);
+              }
+            }}
+            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium"
+          >
+            + New
+          </button>
         </div>
-      )}
+
+        {loading && (
+          <div className="text-sm text-gray-500 dark:text-gray-400 p-4 text-center">Loading…</div>
+        )}
+
+        {!loading && calendars.length > 0 && (
+          <div className="space-y-2">
+            {calendars.map(cal => (
+              <button
+                key={cal.id}
+                onClick={() => toggleCalendarVisibility(cal.id)}
+                className={`w-full p-3 rounded-lg transition-all duration-200 group ${
+                  visibleCalendarIds.has(cal.id)
+                    ? 'bg-white dark:bg-gray-800 shadow-sm ring-1'
+                    : 'bg-white dark:bg-gray-800 opacity-50 hover:opacity-100'
+                }`}
+                style={visibleCalendarIds.has(cal.id) ? {
+                  '--tw-ring-color': cal.color || 'var(--info-blue)',
+                  borderLeft: `4px solid ${cal.color || '#3b82f6'}`
+                } as React.CSSProperties : {
+                  borderLeft: `4px solid ${cal.color || '#3b82f6'}`
+                } as React.CSSProperties}
+              >
+                <div className="flex items-center space-x-3">
+                  <div 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                    style={{ backgroundColor: cal.color || '#3b82f6' }}
+                  >
+                    {cal.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="font-semibold text-gray-900 dark:text-gray-100 truncate text-sm">
+                      {cal.name}
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {cal.eventCount || 0} events
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <input
+                      type="color"
+                      value={cal.color || '#3b82f6'}
+                      onChange={async (e) => {
+                        e.stopPropagation();
+                        const newColor = e.target.value;
+                        const updated = await calendarAPI.updateCalendar(cal.id, { color: newColor });
+                        if (updated?.success) {
+                          setCalendars(calendars.map(c => c.id === cal.id ? { ...c, color: newColor } : c));
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-6 h-6 p-0 border-0 bg-transparent cursor-pointer rounded"
+                      title="Edit color"
+                    />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!loading && calendars.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard && !currentDashboard.widgets?.some((w: DashboardWidget) => w.type === 'calendar') && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+            Calendar module is not enabled for this tab.
+            <div className="mt-2">
+              <a href={`/dashboard/${currentDashboard.id}`} className="underline hover:text-gray-700 dark:hover:text-gray-200">
+                Add module
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* QUICK ACCESS Section */}
+      <div className="mb-6">
+        <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          Quick Access
+        </h3>
+        <div className="space-y-1">
+          <button
+            onClick={() => {
+              const today = new Date();
+              window.location.href = `/calendar/month?y=${today.getFullYear()}&m=${today.getMonth() + 1}`;
+            }}
+            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+          >
+            <ClockIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span className="text-gray-700 dark:text-gray-300">Today's Events</span>
+          </button>
+          <button
+            onClick={() => {
+              window.location.href = '/calendar/month';
+            }}
+            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+          >
+            <BellIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span className="text-gray-700 dark:text-gray-300">Upcoming</span>
+          </button>
+          <button
+            onClick={() => {
+              window.location.href = '/calendar/month';
+            }}
+            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+          >
+            <ShareIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <span className="text-gray-700 dark:text-gray-300">Shared Calendars</span>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }
-
