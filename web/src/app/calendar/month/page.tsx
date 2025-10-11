@@ -215,38 +215,36 @@ function MonthInner() {
       <CalendarListSidebar />
       <div className="flex-1 p-4 overflow-y-auto">
         {/* Modern Header */}
-        <div className="bg-gradient-to-r from-info-blue to-secondary-purple rounded-2xl p-6 shadow-lg mb-6" style={{
-          background: 'linear-gradient(135deg, var(--info-blue) 0%, var(--secondary-purple) 100%)'
-        }}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-1">Calendar — Month</h1>
-              <p className="text-blue-100">Manage your schedule and never miss an event</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-0.5">Calendar — Month</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Manage your schedule and never miss an event</p>
             </div>
             <div className="flex items-center space-x-4">
               {/* View Switcher */}
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 flex space-x-1">
+              <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex space-x-1">
                 <a 
-                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/day"
                 >
                   Day
                 </a>
                 <a 
-                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/week"
                 >
                   Week
                 </a>
                 <a 
-                  className="px-3 py-2 rounded-md text-sm font-medium bg-white shadow-sm" 
+                  className="px-3 py-1.5 rounded-md text-sm font-medium text-white shadow-sm" 
                   href="/calendar/month"
-                  style={{ color: 'var(--primary-green)' }}
+                  style={{ backgroundColor: 'var(--primary-green)' }}
                 >
                   Month
                 </a>
                 <a 
-                  className="px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:bg-white/30 text-white" 
+                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/year"
                 >
                   Year
@@ -257,8 +255,8 @@ function MonthInner() {
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={() => setShowDrawer(true)} 
-                  className="bg-white px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
-                  style={{ color: 'var(--primary-green)' }}
+                  className="px-4 py-1.5 rounded-lg font-medium text-white shadow-sm hover:shadow-md transition-all text-sm"
+                  style={{ backgroundColor: 'var(--primary-green)' }}
                 >
                   <span>New Event</span>
                 </button>
@@ -324,7 +322,7 @@ function MonthInner() {
                       alert('Error exporting calendar. Please try again.');
                     }
                   }}
-                  className="bg-white/20 text-white px-4 py-2.5 rounded-lg font-medium shadow-lg hover:bg-white/30 transform hover:scale-105 transition-all flex items-center space-x-2"
+                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center space-x-2 text-sm"
                   title="Export month events to ICS file"
                 >
                   <span>📅</span>
@@ -336,7 +334,7 @@ function MonthInner() {
         </div>
 
         {/* Navigation Controls */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
@@ -364,9 +362,7 @@ function MonthInner() {
                   <span className="text-gray-600 font-medium">{'>'}</span>
                 </button>
               </div>
-              <div className="text-white px-4 py-2 rounded-lg font-semibold" style={{
-                background: 'linear-gradient(135deg, var(--info-blue) 0%, var(--secondary-purple) 100%)'
-              }}>
+              <div className="text-gray-900 dark:text-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm bg-gray-100 dark:bg-gray-700">
                 {viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
               </div>
             </div>
@@ -376,12 +372,12 @@ function MonthInner() {
           </div>
         </div>
         {/* Modern Search and Filters */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
           <div className="flex items-center gap-4 mb-4">
             {/* Search Bar */}
             <div className="flex-1 relative">
               <input
-                className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                className="w-full px-3 py-2 pl-10 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 text-gray-900 dark:text-gray-100"
                 style={{ 
                   '--tw-ring-color': 'var(--primary-green)' 
                 } as React.CSSProperties}
@@ -405,7 +401,7 @@ function MonthInner() {
             </div>
             
             {/* My Events Toggle */}
-            <label className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+            <label className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer">
               <input 
                 type="checkbox" 
                 checked={myEventsOnly} 

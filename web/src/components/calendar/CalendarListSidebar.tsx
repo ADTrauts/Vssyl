@@ -86,7 +86,7 @@ export default function CalendarListSidebar() {
   const totalEvents = calendars.length;
 
   return (
-    <aside className="w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-column overflow-y-auto">
+    <aside className="w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-col overflow-y-auto">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-4">
