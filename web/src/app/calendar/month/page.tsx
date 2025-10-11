@@ -214,37 +214,69 @@ function MonthInner() {
     <div className="flex h-screen overflow-hidden">
       <CalendarListSidebar />
       <div className="flex-1 p-4 overflow-y-auto">
-        {/* Modern Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-0.5">Calendar — Month</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Manage your schedule and never miss an event</p>
+        {/* Ultra-Compact Header */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-200 dark:border-gray-700 mb-3">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Title + Navigation */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Calendar — Month</h1>
+              
+              {/* Navigation Controls */}
+              <div className="flex items-center space-x-2">
+                <button 
+                  className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
+                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1))}
+                >
+                  <span className="text-gray-600 dark:text-gray-400 font-medium text-sm">{'<'}</span>
+                </button>
+                <button 
+                  className="px-3 py-1.5 rounded-lg text-white transition-colors font-medium text-sm" 
+                  style={{ 
+                    backgroundColor: 'var(--primary-green)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-red)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-green)'}
+                  onClick={() => setViewDate(new Date())}
+                >
+                  Today
+                </button>
+                <button 
+                  className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" 
+                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1))}
+                >
+                  <span className="text-gray-600 dark:text-gray-400 font-medium text-sm">{'>'}</span>
+                </button>
+                <div className="text-gray-900 dark:text-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm bg-gray-100 dark:bg-gray-700">
+                  {viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+
+            {/* Right: View Switcher + Actions */}
+            <div className="flex items-center space-x-3">
               {/* View Switcher */}
               <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex space-x-1">
                 <a 
-                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
+                  className="px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/day"
                 >
                   Day
                 </a>
                 <a 
-                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
+                  className="px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/week"
                 >
                   Week
                 </a>
                 <a 
-                  className="px-3 py-1.5 rounded-md text-sm font-medium text-white shadow-sm" 
+                  className="px-2 py-1 rounded-md text-xs font-medium text-white shadow-sm" 
                   href="/calendar/month"
                   style={{ backgroundColor: 'var(--primary-green)' }}
                 >
                   Month
                 </a>
                 <a 
-                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
+                  className="px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300" 
                   href="/calendar/year"
                 >
                   Year
@@ -255,7 +287,7 @@ function MonthInner() {
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={() => setShowDrawer(true)} 
-                  className="px-4 py-1.5 rounded-lg font-medium text-white shadow-sm hover:shadow-md transition-all text-sm"
+                  className="px-3 py-1.5 rounded-lg font-medium text-white shadow-sm hover:shadow-md transition-all text-xs"
                   style={{ backgroundColor: 'var(--primary-green)' }}
                 >
                   <span>New Event</span>
@@ -322,52 +354,13 @@ function MonthInner() {
                       alert('Error exporting calendar. Please try again.');
                     }
                   }}
-                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center space-x-2 text-sm"
+                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1.5 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center space-x-1 text-xs"
                   title="Export month events to ICS file"
                 >
                   <span>📅</span>
-                  <span>Export ICS</span>
+                  <span>Export</span>
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <button 
-                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" 
-                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()-1, 1))}
-                >
-                  <span className="text-gray-600 font-medium">{'<'}</span>
-                </button>
-                <button 
-                  className="px-4 py-2 rounded-lg text-white transition-colors font-medium" 
-                  style={{ 
-                    backgroundColor: 'var(--primary-green)'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-red)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-green)'}
-                  onClick={() => setViewDate(new Date())}
-                >
-                  Today
-                </button>
-                <button 
-                  className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors" 
-                  onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth()+1, 1))}
-                >
-                  <span className="text-gray-600 font-medium">{'>'}</span>
-                </button>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 px-3 py-1.5 rounded-lg font-semibold text-sm bg-gray-100 dark:bg-gray-700">
-                {viewDate.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
-              </div>
-            </div>
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
-              {currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}
             </div>
           </div>
         </div>
