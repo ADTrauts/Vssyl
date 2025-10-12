@@ -456,13 +456,13 @@ export class BusinessFrontPageService {
       },
       update: {
         hiddenWidgets: data.hiddenWidgets,
-        customLayout: data.widgetPositions as any
+        widgetPositions: data.widgetPositions as any
       },
       create: {
         userId,
         businessId,
         hiddenWidgets: data.hiddenWidgets,
-        customLayout: data.widgetPositions as any
+        widgetPositions: data.widgetPositions as any
       }
     });
 
