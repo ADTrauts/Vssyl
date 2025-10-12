@@ -26,7 +26,8 @@ import {
   Target,
   Briefcase,
   User,
-  CreditCard
+  CreditCard,
+  Layout
 } from 'lucide-react';
 
 interface Business {
@@ -374,44 +375,7 @@ export default function BusinessAdminPage() {
             </div>
           </Card>
 
-          {/* Business Branding */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-pink-100 rounded-lg">
-                  <Palette className="w-6 h-6 text-pink-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Business Branding</h3>
-                  <p className="text-sm text-gray-600">Logo, colors, and visual identity</p>
-                </div>
-              </div>
-              {setupStatus.branding ? (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-orange-500" />
-              )}
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Visual Identity</span>
-                <Badge color={setupStatus.branding ? "green" : "yellow"}>
-                  {setupStatus.branding ? "Configured" : "Default"}
-                </Badge>
-              </div>
-              
-              <Button 
-                variant="primary" 
-                className="w-full"
-                onClick={() => router.push(`/business/${businessId}/branding`)}
-              >
-                <Palette className="w-4 h-4 mr-2" />
-                {setupStatus.branding ? "Update Branding" : "Set Up Branding"}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </Card>
+          {/* OLD DUPLICATE REMOVED - Now using unified "Business Branding & Front Page" card below */}
 
           {/* Module Management */}
           <Card className="p-6">
@@ -445,6 +409,39 @@ export default function BusinessAdminPage() {
               >
                 <Package className="w-4 h-4 mr-2" />
                 Manage Modules
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </Card>
+
+          {/* Business Branding & Front Page */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Palette className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Business Branding</h3>
+                  <p className="text-sm text-gray-600">Global branding & front page configuration</p>
+                </div>
+              </div>
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">Single Source of Truth</span>
+                <Badge color="blue">Unified</Badge>
+              </div>
+              
+              <Button 
+                variant="primary" 
+                className="w-full"
+                onClick={() => router.push(`/business/${businessId}/branding`)}
+              >
+                <Palette className="w-4 h-4 mr-2" />
+                Configure Branding
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>

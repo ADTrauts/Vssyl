@@ -103,6 +103,9 @@ model User {
   permissionManagementRights PermissionManagementRights[]
   grantedPermissionManagementRights PermissionManagementRights[] @relation("PermissionManagementRightsGrantedBy")
   permissionChanges PermissionChange[]
+  
+  // Business Front Page Customization
+  frontPageCustomizations UserFrontPageCustomization[]
 
   @@map("users")
   @@index([userNumber])

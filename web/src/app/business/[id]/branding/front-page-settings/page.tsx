@@ -15,39 +15,34 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
-// Import our unified branding components
-import GlobalBrandingEditor from '@/components/business/GlobalBrandingEditor';
+// Import our new components
 import FrontPageLayoutDesigner from '@/components/business/FrontPageLayoutDesigner';
 import FrontPageWidgetEditor from '@/components/business/FrontPageWidgetEditor';
 import FrontPageContentEditor from '@/components/business/FrontPageContentEditor';
+import FrontPageThemeCustomizer from '@/components/business/FrontPageThemeCustomizer';
 import FrontPagePreview from '@/components/business/FrontPagePreview';
-
-interface Business {
-  id: string;
-  name: string;
-  logo?: string;
-  branding?: {
-    logo?: string;
-    logoUrl?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-    accentColor?: string;
-    backgroundColor?: string;
-    textColor?: string;
-    fontFamily?: string;
-    customCSS?: string;
-  };
-}
 
 interface FrontPageConfig {
   id: string;
   businessId: string;
   layout: any;
   theme: any;
+  showAIAssistant: boolean;
+  showCompanyStats: boolean;
+  showPersonalStats: boolean;
+  showRecentActivity: boolean;
+  showQuickActions: boolean;
+  showAnnouncements: boolean;
+  showUpcomingEvents: boolean;
+  showTeamHighlights: boolean;
+  showMetrics: boolean;
+  showTasks: boolean;
   welcomeMessage?: string;
   heroImage?: string;
   companyAnnouncements?: any[];
+  quickLinks?: any[];
   allowUserCustomization: boolean;
+  userCustomizableWidgets?: string[];
 }
 
 interface Widget {
@@ -62,129 +57,105 @@ interface Widget {
   visibility?: any;
 }
 
-export default function UnifiedBrandingPage() {
+export default function FrontPageSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
-
   const businessId = params.id as string;
 
+  const [config, setConfig] = useState<FrontPageConfig | null>(null);
+  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [orgChartData, setOrgChartData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<'global' | 'layout' | 'content' | 'preview'>('global');
-  
-  // Global branding state
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [globalBranding, setGlobalBranding] = useState<any>({});
-  
-  // Front page state
-  const [config, setConfig] = useState<FrontPageConfig | null>(null);
-  const [widgets, setWidgets] = useState<Widget[]>([]);
-  const [orgChartData, setOrgChartData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'layout' | 'content' | 'theme' | 'preview'>('layout');
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
   const [isAddingWidget, setIsAddingWidget] = useState(false);
 
   useEffect(() => {
-    if (session?.accessToken) {
-      loadAllData();
+    if (businessId && session?.accessToken) {
+      loadConfig();
+      fetchOrgChartData();
     }
-  }, [session?.accessToken, businessId]);
+  }, [businessId, session?.accessToken]);
 
-  const loadAllData = async () => {
+  const loadConfig = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load business (for global branding)
-      const businessResponse = await fetch(`/api/business/${businessId}`, {
-        headers: { 'Authorization': `Bearer ${session?.accessToken}` }
+      const response = await fetch(`/api/business-front/${businessId}/config`, {
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`
+        }
       });
-      if (businessResponse.ok) {
-        const businessData = await businessResponse.json();
-        setBusiness(businessData);
-        setGlobalBranding(businessData.branding || {});
+
+      if (!response.ok) {
+        throw new Error('Failed to load configuration');
       }
 
-      // Load front page config
-      const configResponse = await fetch(`/api/business-front/${businessId}/config`, {
-        headers: { 'Authorization': `Bearer ${session?.accessToken}` }
-      });
-      if (configResponse.ok) {
-        const data = await configResponse.json();
-        setConfig(data.config || data);
-        setWidgets(data.widgets || []);
-      }
-
-      // Load org chart data
-      const orgChartResponse = await fetch(`/api/org-chart/${businessId}`, {
-        headers: { 'Authorization': `Bearer ${session?.accessToken}` }
-      });
-      if (orgChartResponse.ok) {
-        const data = await orgChartResponse.json();
-        const rolesSet = new Set(data.positions?.map((p: any) => p.role).filter(Boolean));
-        const tiersSet = new Set(data.tiers?.map((t: any) => t.name));
-        setOrgChartData({
-          roles: Array.from(rolesSet),
-          tiers: Array.from(tiersSet),
-          positions: data.positions?.map((p: any) => ({ id: p.id, name: p.title })) || [],
-          departments: data.departments || [],
-        });
-      }
+      const data = await response.json();
+      setConfig(data.config || data);
+      setWidgets(data.widgets || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load branding data');
+      setError(err instanceof Error ? err.message : 'Failed to load configuration');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveAll = async () => {
+  const fetchOrgChartData = async () => {
+    try {
+      const response = await fetch(`/api/org-chart/${businessId}`, {
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Extract roles, tiers, positions, departments
+        setOrgChartData({
+          roles: [...new Set(data.positions?.map((p: any) => p.role).filter(Boolean))],
+          tiers: [...new Set(data.tiers?.map((t: any) => t.name))],
+          positions: data.positions?.map((p: any) => ({ id: p.id, name: p.title })) || [],
+          departments: data.departments || [],
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch org chart data:', err);
+    }
+  };
+
+  const handleSaveConfig = async () => {
+    if (!config) return;
+
     try {
       setSaving(true);
       setError(null);
       setSuccess(false);
 
-      // Save global branding to Business.branding
-      const brandingResponse = await fetch(`/api/business/${businessId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${session?.accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ branding: globalBranding })
-      });
-
-      if (!brandingResponse.ok) {
-        throw new Error('Failed to save global branding');
-      }
-
-      // Save front page config
-      const configResponse = await fetch(`/api/business-front/${businessId}/config`, {
+      const response = await fetch(`/api/business-front/${businessId}/config`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session?.accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...config,
-          // Front page theme inherits from global by default, but can be overridden
-          theme: config?.theme || {},
-        })
+        body: JSON.stringify(config)
       });
 
-      if (!configResponse.ok) {
-        throw new Error('Failed to save front page configuration');
+      if (!response.ok) {
+        throw new Error('Failed to save configuration');
       }
 
+      const updatedConfig = await response.json();
+      setConfig(updatedConfig.config || updatedConfig);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-      
-      // Reload to get fresh data
-      await loadAllData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save branding');
+      setError(err instanceof Error ? err.message : 'Failed to save configuration');
     } finally {
       setSaving(false);
     }
@@ -250,6 +221,34 @@ export default function UnifiedBrandingPage() {
     }
   };
 
+  const handleReset = async () => {
+    if (!confirm('Are you sure you want to reset to default configuration? This will delete all customizations.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Delete current config
+      await fetch(`/api/business-front/${businessId}/config`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session?.accessToken}`
+        }
+      });
+
+      // Reload to get new default
+      await loadConfig();
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset configuration');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -258,11 +257,21 @@ export default function UnifiedBrandingPage() {
     );
   }
 
-  if (error && !business) {
+  if (error && !config) {
     return (
       <div className="container mx-auto p-6">
-        <Alert type="error" title="Error Loading Branding">
+        <Alert type="error" title="Error Loading Settings">
           {error}
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert type="error" title="Configuration Not Found">
+          Unable to load front page configuration.
         </Alert>
       </div>
     );
@@ -284,33 +293,33 @@ export default function UnifiedBrandingPage() {
                 Back to Admin
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Business Branding</h1>
-                <p className="text-sm text-gray-600">Configure global branding and front page settings</p>
+                <h1 className="text-2xl font-bold text-gray-900">Business Front Page Settings</h1>
+                <p className="text-sm text-gray-600">Configure how employees see their business front page</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <Button
-                variant="secondary"
-                onClick={loadAllData}
-                disabled={loading}
+                variant="outline"
+                onClick={handleReset}
+                disabled={saving}
               >
-                <RotateCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset to Default
               </Button>
               <Button
                 variant="primary"
-                onClick={handleSaveAll}
+                onClick={handleSaveConfig}
                 disabled={saving}
               >
                 {saving ? (
                   <>
-                    <span className="mr-2"><Spinner size={16} /></span>
+                    <Spinner size={16} className="mr-2" />
                     Saving...
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    Save All Changes
+                    Save Changes
                   </>
                 )}
               </Button>
@@ -329,40 +338,13 @@ export default function UnifiedBrandingPage() {
         )}
         {success && (
           <Alert type="success" title="Success" className="mb-6">
-            Branding saved successfully!
+            Settings saved successfully!
           </Alert>
         )}
-
-        {/* Info Banner */}
-        <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
-          <div className="flex items-start space-x-3">
-            <Palette className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-blue-900">Single Source of Truth</h3>
-              <p className="text-sm text-blue-800 mt-1">
-                <strong>Global Branding</strong> applies everywhere (dashboards, emails, reports). 
-                <strong> Front Page</strong> sections inherit global branding by default, but can be customized.
-              </p>
-            </div>
-          </div>
-        </Card>
 
         {/* Tabs */}
         <div className="mb-6">
           <div className="flex space-x-2 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('global')}
-              className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
-                activeTab === 'global'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Palette className="w-4 h-4" />
-                <span>Global Branding</span>
-              </div>
-            </button>
             <button
               onClick={() => setActiveTab('layout')}
               className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
@@ -373,7 +355,7 @@ export default function UnifiedBrandingPage() {
             >
               <div className="flex items-center space-x-2">
                 <Layout className="w-4 h-4" />
-                <span>Front Page Layout</span>
+                <span>Layout & Widgets</span>
               </div>
             </button>
             <button
@@ -386,7 +368,20 @@ export default function UnifiedBrandingPage() {
             >
               <div className="flex items-center space-x-2">
                 <MessageSquare className="w-4 h-4" />
-                <span>Front Page Content</span>
+                <span>Content</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('theme')}
+              className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
+                activeTab === 'theme'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <Palette className="w-4 h-4" />
+                <span>Theme</span>
               </div>
             </button>
             <button
@@ -406,62 +401,50 @@ export default function UnifiedBrandingPage() {
         </div>
 
         {/* Tab Content */}
-        {business && config && (
-          <div>
-            {activeTab === 'global' && (
-              <GlobalBrandingEditor
-                branding={globalBranding}
-                onChange={setGlobalBranding}
-              />
-            )}
+        <div>
+          {activeTab === 'layout' && (
+            <FrontPageLayoutDesigner
+              widgets={widgets}
+              onChange={setWidgets}
+              onEditWidget={(widget) => {
+                setEditingWidget(widget);
+                setIsAddingWidget(false);
+              }}
+              onDeleteWidget={handleDeleteWidget}
+              onAddWidget={() => {
+                setIsAddingWidget(true);
+                setEditingWidget(null);
+              }}
+            />
+          )}
 
-            {activeTab === 'layout' && (
-              <FrontPageLayoutDesigner
-                widgets={widgets}
-                onChange={setWidgets}
-                onEditWidget={(widget) => {
-                  setEditingWidget(widget);
-                  setIsAddingWidget(false);
-                }}
-                onDeleteWidget={handleDeleteWidget}
-                onAddWidget={() => {
-                  setIsAddingWidget(true);
-                  setEditingWidget(null);
-                }}
-              />
-            )}
+          {activeTab === 'content' && (
+            <FrontPageContentEditor
+              content={{
+                welcomeMessage: config.welcomeMessage,
+                heroImage: config.heroImage,
+                companyAnnouncements: config.companyAnnouncements || [],
+              }}
+              onChange={(content) => setConfig({ ...config, ...content })}
+            />
+          )}
 
-            {activeTab === 'content' && (
-              <FrontPageContentEditor
-                content={{
-                  welcomeMessage: config.welcomeMessage,
-                  heroImage: config.heroImage,
-                  companyAnnouncements: config.companyAnnouncements || [],
-                }}
-                onChange={(content) => setConfig({ ...config, ...content })}
-              />
-            )}
+          {activeTab === 'theme' && (
+            <FrontPageThemeCustomizer
+              theme={config.theme || {}}
+              onChange={(theme) => setConfig({ ...config, theme })}
+            />
+          )}
 
-            {activeTab === 'preview' && (
-              <FrontPagePreview
-                widgets={widgets}
-                theme={{
-                  // Front page inherits from global branding
-                  primaryColor: config.theme?.primaryColor || globalBranding.primaryColor,
-                  secondaryColor: config.theme?.secondaryColor || globalBranding.secondaryColor,
-                  accentColor: config.theme?.accentColor || globalBranding.accentColor,
-                  backgroundColor: config.theme?.backgroundColor || globalBranding.backgroundColor,
-                  textColor: config.theme?.textColor || globalBranding.textColor,
-                  headingFont: config.theme?.headingFont || globalBranding.fontFamily,
-                  borderRadius: config.theme?.borderRadius,
-                  cardStyle: config.theme?.cardStyle,
-                }}
-                welcomeMessage={config.welcomeMessage}
-                heroImage={config.heroImage}
-              />
-            )}
-          </div>
-        )}
+          {activeTab === 'preview' && (
+            <FrontPagePreview
+              widgets={widgets}
+              theme={config.theme || {}}
+              welcomeMessage={config.welcomeMessage}
+              heroImage={config.heroImage}
+            />
+          )}
+        </div>
       </div>
 
       {/* Widget Editor Modal */}

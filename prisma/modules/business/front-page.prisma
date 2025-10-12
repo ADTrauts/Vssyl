@@ -1,0 +1,107 @@
+// ============================================================================
+// BUSINESS FRONT PAGE CONFIGURATION MODELS
+// ============================================================================
+
+model BusinessFrontPageConfig {
+  id          String   @id @default(uuid())
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String   @unique
+  
+  // Layout Configuration
+  layout      Json?    // Grid layout settings, widget positions, sizes
+  theme       Json?    // Colors, fonts, spacing overrides specific to front page
+  
+  // Feature Toggles - Control which sections appear
+  showAIAssistant       Boolean @default(true)
+  showCompanyStats      Boolean @default(true)
+  showPersonalStats     Boolean @default(true)
+  showRecentActivity    Boolean @default(true)
+  showQuickActions      Boolean @default(true)
+  showAnnouncements     Boolean @default(true)
+  showUpcomingEvents    Boolean @default(true)
+  showTeamHighlights    Boolean @default(false)
+  showMetrics           Boolean @default(true)
+  showTasks             Boolean @default(true)
+  
+  // Content Customization
+  welcomeMessage   String? // Custom welcome message (supports markdown)
+  heroImage        String? // Hero banner image URL
+  companyAnnouncements Json? // Array of announcement objects
+  quickLinks       Json? // Array of quick link objects
+  
+  // User Customization Settings
+  allowUserCustomization Boolean @default(false) // Can employees customize their view?
+  userCustomizableWidgets Json? // Array of widget IDs that users can move/hide
+  
+  // Widgets
+  widgets     BusinessFrontWidget[]
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?  // User ID who created the config
+  updatedBy   String?  // User ID who last updated
+  
+  @@map("business_front_page_configs")
+}
+
+model BusinessFrontWidget {
+  id          String   @id @default(uuid())
+  config      BusinessFrontPageConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  configId    String
+  
+  // Widget Identification
+  widgetType  String   // 'ai-assistant', 'company-stats', 'personal-stats', 'announcements', 'quick-actions', 'calendar', 'recent-activity', 'team-highlights', 'tasks', 'metrics', 'custom'
+  title       String   // Display title
+  description String?  // Optional description
+  
+  // Layout
+  position    Json     // { x: number, y: number, width: number, height: number }
+  visible     Boolean  @default(true)
+  order       Int      @default(0)
+  
+  // Widget-Specific Settings
+  settings    Json?    // Widget-specific configuration (chart types, data sources, refresh rates, etc.)
+  
+  // Permission Integration (Using Org Chart System)
+  requiredPermission String?  // References existing Permission (format: "moduleId.featureId.action")
+  visibleToRoles     Json?    // Array of BusinessRole enum values ['ADMIN', 'MANAGER', 'EMPLOYEE']
+  visibleToTiers     Json?    // Array of OrganizationalTier IDs
+  visibleToPositions Json?    // Array of Position IDs
+  visibleToDepartments Json?  // Array of Department IDs
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([configId])
+  @@index([widgetType])
+  @@index([visible])
+  @@map("business_front_widgets")
+}
+
+model UserFrontPageCustomization {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  businessId  String
+  
+  // User Customizations (only if allowed by business)
+  hiddenWidgets Json? // Array of widget IDs the user has hidden
+  widgetPositions Json? // Custom widget positions if user customization is allowed
+  customSettings Json? // User-specific preferences (theme overrides, refresh rates, etc.)
+  
+  // Preferences
+  preferredView String @default("default") // 'default', 'compact', 'expanded'
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@map("user_front_page_customizations")
+}
+

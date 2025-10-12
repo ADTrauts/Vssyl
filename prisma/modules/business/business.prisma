@@ -49,6 +49,9 @@ model Business {
   // Enterprise AI Digital Twin
   aiDigitalTwin   BusinessAIDigitalTwin?
   aiSettings      Json? // Business-wide AI preferences and configuration
+  // Business Front Page Configuration
+  frontPageConfig BusinessFrontPageConfig?
+  userFrontPageCustomizations UserFrontPageCustomization[]
 
   @@index([ein])
   @@map("businesses")

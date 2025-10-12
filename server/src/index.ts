@@ -87,6 +87,7 @@ import profilePhotosRouter from './routes/profilePhotos';
 import adminSetupRouter from './routes/admin-setup';
 import contentReportsRouter from './routes/contentReports';
 import moduleAIContextRouter from './routes/moduleAIContext';
+import businessFrontPageRouter from './routes/businessFrontPage';
 import { authenticateJWT } from './middleware/auth';
 
 
@@ -446,6 +447,7 @@ app.use('/api/drive', driveRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
+app.use('/api/business-front', businessFrontPageRouter);
 app.use('/api/educational', authenticateJWT, educationalRouter);
 app.use('/api/household', authenticateJWT, householdRouter);
 app.use('/api/sso', ssoRouter);
