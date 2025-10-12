@@ -108,7 +108,7 @@ export default function UnifiedBrandingPage() {
         setGlobalBranding(businessData.branding || {});
       }
 
-      // Load front page config
+      // Load front page config (or create default if doesn't exist)
       const configResponse = await fetch(`/api/business-front/${businessId}/config`, {
         headers: { 'Authorization': `Bearer ${session?.accessToken}` }
       });
@@ -116,6 +116,19 @@ export default function UnifiedBrandingPage() {
         const data = await configResponse.json();
         setConfig(data.config || data);
         setWidgets(data.widgets || []);
+      } else {
+        // If config doesn't exist, create a default one
+        setConfig({
+          id: '',
+          businessId: businessId,
+          layout: {},
+          theme: {},
+          welcomeMessage: '',
+          heroImage: '',
+          companyAnnouncements: [],
+          allowUserCustomization: false
+        } as any);
+        setWidgets([]);
       }
 
       // Load org chart data
@@ -406,7 +419,7 @@ export default function UnifiedBrandingPage() {
         </div>
 
         {/* Tab Content */}
-        {business && config && (
+        {business && (
           <div>
             {activeTab === 'global' && (
               <GlobalBrandingEditor
@@ -416,49 +429,67 @@ export default function UnifiedBrandingPage() {
             )}
 
             {activeTab === 'layout' && (
-              <FrontPageLayoutDesigner
-                widgets={widgets}
-                onChange={setWidgets}
-                onEditWidget={(widget) => {
-                  setEditingWidget(widget);
-                  setIsAddingWidget(false);
-                }}
-                onDeleteWidget={handleDeleteWidget}
-                onAddWidget={() => {
-                  setIsAddingWidget(true);
-                  setEditingWidget(null);
-                }}
-              />
+              config ? (
+                <FrontPageLayoutDesigner
+                  widgets={widgets}
+                  onChange={setWidgets}
+                  onEditWidget={(widget) => {
+                    setEditingWidget(widget);
+                    setIsAddingWidget(false);
+                  }}
+                  onDeleteWidget={handleDeleteWidget}
+                  onAddWidget={() => {
+                    setIsAddingWidget(true);
+                    setEditingWidget(null);
+                  }}
+                />
+              ) : (
+                <Card className="p-8 text-center">
+                  <p className="text-gray-600">Save your global branding first to configure the front page layout.</p>
+                </Card>
+              )
             )}
 
             {activeTab === 'content' && (
-              <FrontPageContentEditor
-                content={{
-                  welcomeMessage: config.welcomeMessage,
-                  heroImage: config.heroImage,
-                  companyAnnouncements: config.companyAnnouncements || [],
-                }}
-                onChange={(content) => setConfig({ ...config, ...content })}
-              />
+              config ? (
+                <FrontPageContentEditor
+                  content={{
+                    welcomeMessage: config.welcomeMessage,
+                    heroImage: config.heroImage,
+                    companyAnnouncements: config.companyAnnouncements || [],
+                  }}
+                  onChange={(content) => setConfig({ ...config, ...content })}
+                />
+              ) : (
+                <Card className="p-8 text-center">
+                  <p className="text-gray-600">Save your global branding first to configure front page content.</p>
+                </Card>
+              )
             )}
 
             {activeTab === 'preview' && (
-              <FrontPagePreview
-                widgets={widgets}
-                theme={{
-                  // Front page inherits from global branding
-                  primaryColor: config.theme?.primaryColor || globalBranding.primaryColor,
-                  secondaryColor: config.theme?.secondaryColor || globalBranding.secondaryColor,
-                  accentColor: config.theme?.accentColor || globalBranding.accentColor,
-                  backgroundColor: config.theme?.backgroundColor || globalBranding.backgroundColor,
-                  textColor: config.theme?.textColor || globalBranding.textColor,
-                  headingFont: config.theme?.headingFont || globalBranding.fontFamily,
-                  borderRadius: config.theme?.borderRadius,
-                  cardStyle: config.theme?.cardStyle,
-                }}
-                welcomeMessage={config.welcomeMessage}
-                heroImage={config.heroImage}
-              />
+              config ? (
+                <FrontPagePreview
+                  widgets={widgets}
+                  theme={{
+                    // Front page inherits from global branding
+                    primaryColor: config.theme?.primaryColor || globalBranding.primaryColor,
+                    secondaryColor: config.theme?.secondaryColor || globalBranding.secondaryColor,
+                    accentColor: config.theme?.accentColor || globalBranding.accentColor,
+                    backgroundColor: config.theme?.backgroundColor || globalBranding.backgroundColor,
+                    textColor: config.theme?.textColor || globalBranding.textColor,
+                    headingFont: config.theme?.headingFont || globalBranding.fontFamily,
+                    borderRadius: config.theme?.borderRadius,
+                    cardStyle: config.theme?.cardStyle,
+                  }}
+                  welcomeMessage={config.welcomeMessage}
+                  heroImage={config.heroImage}
+                />
+              ) : (
+                <Card className="p-8 text-center">
+                  <p className="text-gray-600">Save your global branding first to see the preview.</p>
+                </Card>
+              )
             )}
           </div>
         )}
