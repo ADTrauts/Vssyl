@@ -396,56 +396,59 @@ export default function BusinessSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Business Settings</h1>
-          <p className="text-gray-600 mt-2">
-            Configure your business profile, branding, and preferences
-          </p>
-          {!canManage && (
-            <div className="mt-2 flex items-center text-amber-600">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              <span className="text-sm">You have read-only access to these settings</span>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 p-6 space-y-6 bg-white border-b">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Business Settings</h1>
+            <p className="text-gray-600 mt-2">
+              Configure your business profile, branding, and preferences
+            </p>
+            {!canManage && (
+              <div className="mt-2 flex items-center text-amber-600">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                <span className="text-sm">You have read-only access to these settings</span>
+              </div>
+            )}
+          </div>
+          {saving && (
+            <div className="flex items-center space-x-2 text-blue-600">
+              <Spinner size={16} />
+              <span>Saving...</span>
             </div>
           )}
         </div>
-        {saving && (
-          <div className="flex items-center space-x-2 text-blue-600">
-            <Spinner size={16} />
-            <span>Saving...</span>
-          </div>
-        )}
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    isActive
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.name}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.name}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <div className="space-y-6">
+      {/* Tab Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="space-y-6">
         {/* Profile Settings */}
         {activeTab === 'profile' && (
           <Card className="p-6">
@@ -1021,6 +1024,7 @@ export default function BusinessSettingsPage() {
             )}
           </Card>
         )}
+        </div>
       </div>
 
       {/* Logo Upload Modal */}

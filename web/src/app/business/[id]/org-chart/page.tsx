@@ -125,50 +125,52 @@ export default function OrgChartPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb Navigation */}
-      <div className="mb-6">
-        <Breadcrumbs
-          items={[
-            {
-              label: 'Admin',
-              onClick: () => router.push(`/business/${businessId}`),
-            },
-            {
-              label: businessName || 'Business',
-              onClick: () => router.push(`/business/${businessId}`),
-            },
-            {
-              label: 'Org Chart & Permissions',
-              active: true,
-            },
-          ]}
-        />
-      </div>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Organization Chart & Permissions</h1>
-            <p className="text-gray-600 mt-2">
-              Manage your organizational structure, permissions, and employee assignments
-            </p>
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+      {/* Header Section - Fixed */}
+      <div className="flex-shrink-0 bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <Breadcrumbs
+              items={[
+                {
+                  label: 'Admin',
+                  onClick: () => router.push(`/business/${businessId}`),
+                },
+                {
+                  label: businessName || 'Business',
+                  onClick: () => router.push(`/business/${businessId}`),
+                },
+                {
+                  label: 'Org Chart & Permissions',
+                  active: true,
+                },
+              ]}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => router.push(`/business/${businessId}`)}
-              className="flex items-center space-x-2"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-              <span>Back to Workspace</span>
-            </Button>
-          </div>
-        </div>
 
-        {/* Welcome Message for New Businesses */}
-        {!hasOrgChart && (
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Organization Chart & Permissions</h1>
+              <p className="text-gray-600 mt-2">
+                Manage your organizational structure, permissions, and employee assignments
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => router.push(`/business/${businessId}`)}
+                className="flex items-center space-x-2"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                <span>Back to Workspace</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Welcome Message for New Businesses */}
+          {!hasOrgChart && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-start">
               <div className="flex-shrink-0">
@@ -199,52 +201,56 @@ export default function OrgChartPage() {
           </div>
         )}
 
-        {/* Tab Navigation */}
-        {hasOrgChart && (
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {[
-                { 
-                  id: 'org-chart', 
-                  label: 'Organization Chart', 
-                  icon: <Building2 className="w-4 h-4" />,
-                  description: 'Visual org chart builder and management'
-                },
-                { 
-                  id: 'permissions', 
-                  label: 'Permissions', 
-                  icon: <Shield className="w-4 h-4" />,
-                  description: 'Manage access control and roles'
-                },
-                { 
-                  id: 'employees', 
-                  label: 'Employees', 
-                  icon: <Users className="w-4 h-4" />,
-                  description: 'Assign and manage team members'
-                }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as ActiveTab)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    {tab.icon}
-                    <span>{tab.label}</span>
-                  </div>
-                </button>
-              ))}
-            </nav>
-          </div>
-        )}
+          {/* Tab Navigation */}
+          {hasOrgChart && (
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                {[
+                  { 
+                    id: 'org-chart', 
+                    label: 'Organization Chart', 
+                    icon: <Building2 className="w-4 h-4" />,
+                    description: 'Visual org chart builder and management'
+                  },
+                  { 
+                    id: 'permissions', 
+                    label: 'Permissions', 
+                    icon: <Shield className="w-4 h-4" />,
+                    description: 'Manage access control and roles'
+                  },
+                  { 
+                    id: 'employees', 
+                    label: 'Employees', 
+                    icon: <Users className="w-4 h-4" />,
+                    description: 'Assign and manage team members'
+                  }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as ActiveTab)}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Tab Content */}
-      {!hasOrgChart ? (
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 py-6">
+          {/* Tab Content */}
+          {!hasOrgChart ? (
         <div className="text-center py-12">
           <div className="max-w-md mx-auto">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -289,8 +295,10 @@ export default function OrgChartPage() {
               onUpdate={handleOrgChartUpdate}
             />
           )}
+          </div>
+        )}
         </div>
-      )}
+      </div>
 
       {/* Create Org Chart Modal */}
       <CreateOrgChartModal

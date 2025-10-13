@@ -242,136 +242,120 @@ export default function BusinessProfilePage() {
   const businessDashboardId = business.dashboards?.[0]?.id;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* TEST: This should show if the new version is loading */}
-      <div style={{ background: 'red', color: 'white', padding: '10px', marginBottom: '10px' }}>
-        🔴 NEW VERSION LOADED - If you see this, the updated profile page is working!
-      </div>
-      {/* Breadcrumb Navigation */}
-      <div className="mb-6">
-        <Breadcrumbs
-          items={[
-            {
-              label: 'Workspace',
-              onClick: () => router.push(`/business/${businessId}/workspace`),
-            },
-            {
-              label: business.name,
-              onClick: () => router.push(`/business/${businessId}/workspace`),
-            },
-            {
-              label: 'Profile',
-              active: true,
-            },
-          ]}
-        />
-      </div>
-
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <Avatar
-              src={business.logo}
-              alt={business.name}
-              size={64}
-              nameOrEmail={business.name}
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+      {/* Header Section - Fixed */}
+      <div className="flex-shrink-0 bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <Breadcrumbs
+              items={[
+                {
+                  label: 'Workspace',
+                  onClick: () => router.push(`/business/${businessId}/workspace`),
+                },
+                {
+                  label: business.name,
+                  onClick: () => router.push(`/business/${businessId}/workspace`),
+                },
+                {
+                  label: 'Profile',
+                  active: true,
+                },
+              ]}
             />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold text-gray-900">{business.name}</h1>
-                <button
-                  className="text-blue-600 text-sm hover:underline focus:outline-none"
-                  onClick={() => setFollowersModalOpen(true)}
-                  type="button"
-                >
-                  {followersCount} follower{followersCount === 1 ? '' : 's'}
-                </button>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge color={business.einVerified ? 'green' : 'yellow'}>
-                  {business.einVerified ? 'Verified' : 'Unverified'}
-                </Badge>
-                <span className="text-gray-500">EIN: {business.ein}</span>
+          </div>
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <Avatar
+                src={business.logo}
+                alt={business.name}
+                size={64}
+                nameOrEmail={business.name}
+              />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-gray-900">{business.name}</h1>
+                  <button
+                    className="text-blue-600 text-sm hover:underline focus:outline-none"
+                    onClick={() => setFollowersModalOpen(true)}
+                    type="button"
+                  >
+                    {followersCount} follower{followersCount === 1 ? '' : 's'}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge color={business.einVerified ? 'green' : 'yellow'}>
+                    {business.einVerified ? 'Verified' : 'Unverified'}
+                  </Badge>
+                  <span className="text-gray-500">EIN: {business.ein}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {!isMember && session?.user?.id && (
-              isFollowing ? (
-                <Button
-                  variant="secondary"
-                  onClick={handleUnfollow}
-                  disabled={followLoading}
-                >
-                  Unfollow
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={handleFollow}
-                  disabled={followLoading}
-                >
-                  Follow
-                </Button>
-              )
-            )}
-            <Button
-              variant="secondary"
-              onClick={() => router.push(`/business/${businessId}/workspace`)}
-              className="flex items-center space-x-2"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-              <span>Back to Workspace</span>
-            </Button>
-          </div>
-        </div>
-        {/* Followers Modal */}
-        <Modal open={followersModalOpen} onClose={() => setFollowersModalOpen(false)} title="Followers">
-          <div className="max-h-96 overflow-y-auto divide-y">
-            {followers.length === 0 ? (
-              <div className="py-8 text-center text-gray-500">No followers yet.</div>
-            ) : (
-              followers.map(f => (
-                <div key={f.id} className="flex items-center gap-3 py-3">
-                  <Avatar nameOrEmail={f.name || f.email} size={32} />
-                  <div>
-                    <div className="font-medium text-gray-900">{f.name || f.email}</div>
-                    <div className="text-xs text-gray-500">{f.email}</div>
-                    <div className="text-xs text-gray-400">Followed {new Date(f.followedAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </Modal>
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { id: 'profile', label: 'Profile', icon: '🏢' },
-              { id: 'members', label: 'Members', icon: '👥' },
-              { id: 'analytics', label: 'Analytics', icon: '📊' },
-              { id: 'org-chart', label: 'Org Chart', icon: '👥' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+            <div className="flex items-center gap-2">
+              {!isMember && session?.user?.id && (
+                isFollowing ? (
+                  <Button
+                    variant="secondary"
+                    onClick={handleUnfollow}
+                    disabled={followLoading}
+                  >
+                    Unfollow
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={handleFollow}
+                    disabled={followLoading}
+                  >
+                    Follow
+                  </Button>
+                )
+              )}
+              <Button
+                variant="secondary"
+                onClick={() => router.push(`/business/${businessId}/workspace`)}
+                className="flex items-center space-x-2"
               >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                <span>Back to Workspace</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'profile', label: 'Profile', icon: '🏢' },
+                { id: 'members', label: 'Members', icon: '👥' },
+                { id: 'analytics', label: 'Analytics', icon: '📊' },
+                { id: 'org-chart', label: 'Org Chart', icon: '👥' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="mr-2">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
       </div>
 
-      {/* Welcome Message for New Businesses */}
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 py-6">
+          {/* Welcome Message for New Businesses */}
       {isNewBusiness && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-start">
@@ -451,7 +435,29 @@ export default function BusinessProfilePage() {
             </Button>
           </div>
         )}
+        </div>
       </div>
+      </div>
+
+      {/* Followers Modal */}
+      <Modal open={followersModalOpen} onClose={() => setFollowersModalOpen(false)} title="Followers">
+        <div className="max-h-96 overflow-y-auto divide-y">
+          {followers.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">No followers yet.</div>
+          ) : (
+            followers.map(f => (
+              <div key={f.id} className="flex items-center gap-3 py-3">
+                <Avatar nameOrEmail={f.name || f.email} size={32} />
+                <div>
+                  <div className="font-medium text-gray-900">{f.name || f.email}</div>
+                  <div className="text-xs text-gray-500">{f.email}</div>
+                  <div className="text-xs text-gray-400">Followed {new Date(f.followedAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Modal>
 
       {/* Setup Modal for New Businesses */}
       <DashboardBuildOutModal

@@ -282,9 +282,9 @@ export default function UnifiedBrandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b flex-shrink-0">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -332,8 +332,9 @@ export default function UnifiedBrandingPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-6">
+      {/* Main Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-6 py-6">
         {/* Alerts */}
         {error && (
           <Alert type="error" title="Error" className="mb-6">
@@ -493,6 +494,7 @@ export default function UnifiedBrandingPage() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Widget Editor Modal */}
