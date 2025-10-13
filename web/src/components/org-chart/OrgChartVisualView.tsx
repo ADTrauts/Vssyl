@@ -53,8 +53,11 @@ export function OrgChartVisualView({
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [draggingNode, setDraggingNode] = useState<string | null>(null);
+  const [dropTargetNode, setDropTargetNode] = useState<string | null>(null);
+  const [isReorganizing, setIsReorganizing] = useState(false);
 
   useEffect(() => {
     if (orgChartData?.positions) {
@@ -137,6 +140,87 @@ export function OrgChartVisualView({
     return { minX, maxX, minY, maxY };
   };
 
+  // Reorganization functions
+  const toggleReorganizeMode = () => {
+    setIsReorganizing(!isReorganizing);
+    setDraggingNode(null);
+    setDropTargetNode(null);
+  };
+
+  const handleNodeDragStart = (e: React.MouseEvent, nodeId: string) => {
+    if (!isReorganizing) return;
+    e.stopPropagation();
+    setDraggingNode(nodeId);
+  };
+
+  const handleNodeDragOver = (e: React.MouseEvent, nodeId: string) => {
+    if (!isReorganizing || !draggingNode) return;
+    e.stopPropagation();
+    
+    // Don't allow dropping on self or descendants
+    if (nodeId === draggingNode || isDescendant(draggingNode, nodeId)) {
+      setDropTargetNode(null);
+      return;
+    }
+    
+    setDropTargetNode(nodeId);
+  };
+
+  const handleNodeDrop = async (e: React.MouseEvent, newManagerId: string) => {
+    if (!isReorganizing || !draggingNode || !dropTargetNode) return;
+    e.stopPropagation();
+
+    try {
+      await updateReportingRelationship(draggingNode, newManagerId);
+      setDraggingNode(null);
+      setDropTargetNode(null);
+      onUpdate(); // Refresh the tree
+    } catch (error) {
+      console.error('Failed to update reporting relationship:', error);
+      alert('Failed to update reporting relationship');
+    }
+  };
+
+  const isDescendant = (ancestorId: string, descendantId: string): boolean => {
+    const findNode = (node: TreeNode, targetId: string): TreeNode | null => {
+      if (node.position.id === targetId) return node;
+      for (const child of node.children) {
+        const found = findNode(child, targetId);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    if (!treeData) return false;
+    const ancestorNode = findNode(treeData, ancestorId);
+    if (!ancestorNode) return false;
+
+    const checkDescendants = (node: TreeNode): boolean => {
+      if (node.position.id === descendantId) return true;
+      return node.children.some(checkDescendants);
+    };
+
+    return checkDescendants(ancestorNode);
+  };
+
+  const updateReportingRelationship = async (positionId: string, newManagerId: string) => {
+    // This will call the API to update the position's reportsToId
+    // The actual API endpoint will be added shortly
+    const response = await fetch(`/api/org-chart/positions/${positionId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reportsToId: newManagerId
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update reporting relationship');
+    }
+  };
+
   // Render tree connections
   const renderConnections = (node: TreeNode): JSX.Element[] => {
     const lines: JSX.Element[] = [];
@@ -177,28 +261,49 @@ export function OrgChartVisualView({
     const nodes: JSX.Element[] = [];
     const isSelected = selectedNode === node.position.id;
     const isHovered = hoveredNode === node.position.id;
+    const isDragSource = draggingNode === node.position.id;
+    const isDropTarget = dropTargetNode === node.position.id;
     const employeeCount = node.position.employeePositions?.length || 0;
+
+    // Determine stroke color based on state
+    let strokeColor = '#e2e8f0';
+    let strokeWidth = '2';
+    if (isDropTarget) {
+      strokeColor = '#22c55e';
+      strokeWidth = '3';
+    } else if (isSelected) {
+      strokeColor = '#3b82f6';
+      strokeWidth = '3';
+    } else if (isHovered) {
+      strokeColor = '#60a5fa';
+    }
 
     nodes.push(
       <g
         key={node.position.id}
         transform={`translate(${node.x}, ${node.y})`}
-        onClick={() => setSelectedNode(node.position.id)}
+        onClick={() => !isReorganizing && setSelectedNode(node.position.id)}
         onMouseEnter={() => setHoveredNode(node.position.id)}
         onMouseLeave={() => setHoveredNode(null)}
-        className="cursor-pointer transition-all duration-200"
+        onMouseDown={(e) => handleNodeDragStart(e, node.position.id)}
+        onMouseMove={(e) => handleNodeDragOver(e, node.position.id)}
+        onMouseUp={(e) => isDropTarget && handleNodeDrop(e, node.position.id)}
+        className={`transition-all duration-200 ${isReorganizing ? 'cursor-move' : 'cursor-pointer'}`}
+        style={{
+          opacity: isDragSource ? 0.5 : 1
+        }}
       >
         {/* Node background */}
         <rect
           width={NODE_WIDTH}
           height={NODE_HEIGHT}
           rx="8"
-          fill="white"
-          stroke={isSelected ? '#3b82f6' : isHovered ? '#60a5fa' : '#e2e8f0'}
-          strokeWidth={isSelected ? '3' : '2'}
+          fill={isDropTarget ? '#f0fdf4' : 'white'}
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
           className="transition-all duration-200"
           style={{
-            filter: isHovered ? 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))' : 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))'
+            filter: isHovered || isDropTarget ? 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))' : 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05))'
           }}
         />
 
@@ -303,12 +408,14 @@ export function OrgChartVisualView({
 
   // Pan controls
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    if (!isReorganizing) {
+      setIsPanning(true);
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
+    if (isPanning && !isReorganizing) {
       setPan({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -317,7 +424,7 @@ export function OrgChartVisualView({
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
+    setIsPanning(false);
   };
 
   // Export as SVG
@@ -388,9 +495,24 @@ export function OrgChartVisualView({
               <Maximize2 className="w-4 h-4" />
               <span>Reset View</span>
             </Button>
+            <div className="h-6 w-px bg-gray-300" />
+            <Button
+              variant={isReorganizing ? "primary" : "secondary"}
+              size="sm"
+              onClick={toggleReorganizeMode}
+              className="flex items-center space-x-1"
+            >
+              <Edit className="w-4 h-4" />
+              <span>{isReorganizing ? 'Done Reorganizing' : 'Reorganize'}</span>
+            </Button>
           </div>
 
           <div className="flex items-center space-x-4">
+            {isReorganizing && (
+              <div className="text-sm text-blue-600 font-medium">
+                Drag positions to reorganize reporting relationships
+              </div>
+            )}
             <div className="text-sm text-gray-600">
               <span className="font-medium">{positions.length}</span> positions
             </div>
@@ -411,7 +533,9 @@ export function OrgChartVisualView({
       <Card className="p-0 overflow-hidden">
         <div
           ref={containerRef}
-          className={`w-full h-[600px] bg-gray-50 overflow-hidden ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          className={`w-full h-[600px] bg-gray-50 overflow-hidden ${
+            isReorganizing ? 'cursor-default' : isPanning ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -423,7 +547,7 @@ export function OrgChartVisualView({
             viewBox={`${bounds.minX - 100} ${bounds.minY - 100} ${viewBoxWidth} ${viewBoxHeight}`}
             style={{
               transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-              transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+              transition: isPanning ? 'none' : 'transform 0.1s ease-out'
             }}
           >
             {/* Render connections first (behind nodes) */}
@@ -461,7 +585,13 @@ export function OrgChartVisualView({
             ))}
           </div>
           <div className="text-xs text-gray-500">
-            Click nodes to select • Hover to edit • Drag to pan
+            {isReorganizing ? (
+              <span className="text-blue-600 font-medium">
+                Click and drag positions to new managers • Green highlight shows valid drop target
+              </span>
+            ) : (
+              'Click nodes to select • Hover to edit • Drag canvas to pan'
+            )}
           </div>
         </div>
       </Card>
