@@ -9,15 +9,16 @@ import {
   createDefaultOrgChart,
   OrgChartStructure 
 } from '@/api/orgChart';
-import { ChevronRight, Users, Settings, Shield, UserPlus, Building2 } from 'lucide-react';
+import { ChevronRight, Users, Settings, Shield, UserPlus, Building2, Network } from 'lucide-react';
 import { OrgChartBuilder } from '../../../../components/org-chart/OrgChartBuilder';
 import { PermissionManager } from '../../../../components/org-chart/PermissionManager';
 import { EmployeeManager } from '../../../../components/org-chart/EmployeeManager';
 import { CreateOrgChartModal } from '../../../../components/org-chart/CreateOrgChartModal';
+import { OrgChartVisualView } from '../../../../components/org-chart/OrgChartVisualView';
 import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { businessAPI } from '@/api/business';
 
-type ActiveTab = 'org-chart' | 'permissions' | 'employees';
+type ActiveTab = 'org-chart' | 'visual' | 'permissions' | 'employees';
 
 export default function OrgChartPage() {
   const params = useParams();
@@ -210,7 +211,13 @@ export default function OrgChartPage() {
                     id: 'org-chart', 
                     label: 'Organization Chart', 
                     icon: <Building2 className="w-4 h-4" />,
-                    description: 'Visual org chart builder and management'
+                    description: 'Manage org structure and positions'
+                  },
+                  { 
+                    id: 'visual', 
+                    label: 'Visual Chart', 
+                    icon: <Network className="w-4 h-4" />,
+                    description: 'Interactive hierarchical tree view'
                   },
                   { 
                     id: 'permissions', 
@@ -275,6 +282,14 @@ export default function OrgChartPage() {
           {activeTab === 'org-chart' && (
             <OrgChartBuilder
               orgChartData={orgChartData}
+              businessId={businessId}
+              onUpdate={handleOrgChartUpdate}
+            />
+          )}
+
+          {activeTab === 'visual' && orgChartData && (
+            <OrgChartVisualView
+              orgChartData={orgChartData as any}
               businessId={businessId}
               onUpdate={handleOrgChartUpdate}
             />
