@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useDashboard } from '../../contexts/DashboardContext';
 import { Card, Button, Spinner, Alert } from 'shared/components';
 import { 
   LayoutDashboard, 
@@ -24,6 +26,8 @@ import AIWidget from '../widgets/AIWidget';
 import ChatModuleWrapper from '../chat/ChatModuleWrapper';
 import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
+import DriveSidebar from '../../app/drive/DriveSidebar';
+import CalendarListSidebar from '../calendar/CalendarListSidebar';
 
 interface Business {
   id: string;
@@ -499,6 +503,74 @@ function BusinessMembersWidget() {
 
 export default function BusinessWorkspaceContent({ business, currentModule, businessDashboardId }: BusinessWorkspaceContentProps) {
   const { data: session } = useSession();
+  const { currentDashboard, navigateToDashboard } = useDashboard();
+  const router = useRouter();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [selectedFolder, setSelectedFolder] = useState<any>(null);
+
+  // File upload handler for Drive
+  const handleFileUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.onchange = async (e) => {
+      const target = e.target as HTMLInputElement;
+      const files = target.files;
+      if (!files || !session?.accessToken) return;
+
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append('file', file);
+          if (businessDashboardId) formData.append('dashboardId', businessDashboardId);
+
+          await fetch('/api/drive/files', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.accessToken}` },
+            body: formData,
+          });
+        }
+        
+        setRefreshTrigger(prev => prev + 1);
+      } catch (error) {
+        console.error('Upload failed:', error);
+      }
+    };
+    input.click();
+  }, [session, businessDashboardId]);
+
+  // Folder creation handler for Drive
+  const handleCreateFolder = useCallback(async () => {
+    if (!session?.accessToken) return;
+
+    const name = prompt('Enter folder name:');
+    if (!name) return;
+
+    try {
+      await fetch('/api/drive/folders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify({ 
+          name,
+          dashboardId: businessDashboardId || null,
+          parentId: null
+        }),
+      });
+      
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to create folder');
+    }
+  }, [session, businessDashboardId]);
+
+  const handleContextSwitch = useCallback(async (dashboardId: string) => {
+    await navigateToDashboard(dashboardId);
+    router.push(`/business/${business.id}/workspace?module=drive`);
+  }, [navigateToDashboard, router, business.id]);
 
   const renderModuleContent = () => {
     switch (currentModule) {
@@ -506,21 +578,37 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
         return <BusinessDashboardWidget />;
       case 'drive':
         return (
-          <DriveModuleWrapper 
-            className="h-full"
-          />
+          <div className="flex h-full">
+            <DriveSidebar
+              onNewFolder={handleCreateFolder}
+              onFileUpload={handleFileUpload}
+              onFolderUpload={handleFileUpload}
+              onContextSwitch={handleContextSwitch}
+              onFolderSelect={setSelectedFolder}
+              selectedFolderId={selectedFolder?.id}
+            />
+            <DriveModuleWrapper 
+              className="flex-1"
+              refreshTrigger={refreshTrigger}
+            />
+          </div>
         );
       case 'chat':
         return (
           <ChatModuleWrapper 
             className="h-full"
+            refreshTrigger={refreshTrigger}
           />
         );
       case 'calendar':
         return (
-          <CalendarModuleWrapper 
-            className="h-full"
-          />
+          <div className="flex h-full">
+            <CalendarListSidebar />
+            <CalendarModuleWrapper 
+              className="flex-1"
+              refreshTrigger={refreshTrigger}
+            />
+          </div>
         );
       case 'analytics':
         return <BusinessAnalyticsWidget />;
