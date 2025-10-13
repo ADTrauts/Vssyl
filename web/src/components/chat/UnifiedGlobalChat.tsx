@@ -151,6 +151,12 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   const [chatSize, setChatSize] = useState<'small' | 'medium' | 'large'>('small');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Context toggle state (Personal vs Work)
+  const [activeContext, setActiveContext] = useState<'personal' | 'work'>('personal');
+  
+  // Detect if user has work connection
+  const hasWorkConnection = conversations.some(conv => (conv as any).businessId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -216,13 +222,23 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     setActiveConversationInContext(conversation);
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.participants?.some((p: any) => 
-      p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
+  // Filter conversations by context (Personal vs Work) AND search query
+  const filteredConversations = conversations.filter(conv => {
+    // First filter by context
+    const convBusinessId = (conv as any).businessId;
+    const matchesContext = activeContext === 'personal' 
+      ? !convBusinessId  // Personal: no businessId
+      : !!convBusinessId; // Work: has businessId
+    
+    if (!matchesContext) return false;
+    
+    // Then filter by search query
+    return conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conv.participants?.some((p: any) => 
+        p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+  });
 
   if (status === 'loading') {
     return (
@@ -323,13 +339,44 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
           <div className="flex h-[calc(100%-60px)]">
             {/* Left Panel - Conversations */}
             <div className="w-64 border-r border-gray-200 flex flex-col">
+              {/* Context Toggle (Personal/Work) - Only show if user has work connection */}
+              {hasWorkConnection && (
+                <div className="p-2 border-b border-gray-200 bg-gray-50">
+                  <div className="flex rounded-lg bg-white border border-gray-200 p-0.5">
+                    <button
+                      onClick={() => setActiveContext('personal')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                        activeContext === 'personal'
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Personal
+                    </button>
+                    <button
+                      onClick={() => setActiveContext('work')}
+                      className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                        activeContext === 'work'
+                          ? 'bg-blue-500 text-white'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Work
+                      {hasEnterprise && activeContext === 'work' && (
+                        <Shield className="w-3 h-3 inline ml-1" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               {/* Search */}
               <div className="p-3 border-b border-gray-200">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
-                    placeholder="Search conversations..."
+                    placeholder={`Search ${activeContext} conversations...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -339,30 +386,51 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
 
               {/* Conversations */}
               <div className="flex-1 overflow-y-auto">
-                {filteredConversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => handleConversationSelect(conversation)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      activeConversation?.id === conversation.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar 
-                        size={32} 
-                        nameOrEmail={conversation.name || conversation.participants[0]?.user.name || 'Chat'}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {conversation.name || 'Direct Message'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {conversation.participants?.length || 0} participant{(conversation.participants?.length || 0) !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
+                {filteredConversations.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">
+                      No {activeContext} conversations yet
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  filteredConversations.map((conversation) => {
+                    const isWorkConversation = !!(conversation as any).businessId;
+                    
+                    return (
+                      <div
+                        key={conversation.id}
+                        onClick={() => handleConversationSelect(conversation)}
+                        className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                          activeConversation?.id === conversation.id ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Avatar 
+                            size={32} 
+                            nameOrEmail={conversation.name || conversation.participants[0]?.user.name || 'Chat'}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {conversation.name || 'Direct Message'}
+                              </p>
+                              {/* Enterprise indicators for work conversations */}
+                              {isWorkConversation && hasEnterprise && (
+                                <div className="flex items-center space-x-0.5" title="Enterprise Chat">
+                                  <Shield className="w-3 h-3 text-purple-500" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {conversation.participants?.length || 0} participant{(conversation.participants?.length || 0) !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 

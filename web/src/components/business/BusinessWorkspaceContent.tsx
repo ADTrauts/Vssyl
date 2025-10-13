@@ -20,6 +20,11 @@ import ChatWidget from '../widgets/ChatWidget';
 import DriveWidget from '../widgets/DriveWidget';
 import AIWidget from '../widgets/AIWidget';
 
+// Import module wrappers for full-page modules
+import ChatModuleWrapper from '../chat/ChatModuleWrapper';
+import DriveModuleWrapper from '../drive/DriveModuleWrapper';
+import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
+
 interface Business {
   id: string;
   name: string;
@@ -500,24 +505,22 @@ export default function BusinessWorkspaceContent({ business, currentModule }: Bu
         return <BusinessDashboardWidget />;
       case 'drive':
         return (
-          <DriveWidget
-            id="business-drive"
-            dashboardId={business.id}
-            dashboardType="business"
-            dashboardName={business.name}
+          <DriveModuleWrapper 
+            className="h-full"
           />
         );
       case 'chat':
         return (
-          <ChatWidget
-            id="business-chat"
-            dashboardId={business.id}
-            dashboardType="business"
-            dashboardName={business.name}
+          <ChatModuleWrapper 
+            className="h-full"
           />
         );
       case 'calendar':
-        return <BusinessCalendarWidget />;
+        return (
+          <CalendarModuleWrapper 
+            className="h-full"
+          />
+        );
       case 'analytics':
         return <BusinessAnalyticsWidget />;
       case 'members':
