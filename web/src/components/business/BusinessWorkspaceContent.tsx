@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useDashboard } from '../../contexts/DashboardContext';
+import { CalendarProvider } from '../../contexts/CalendarContext';
 import { Card, Button, Spinner, Alert } from 'shared/components';
 import { 
   LayoutDashboard, 
@@ -602,13 +603,15 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
         );
       case 'calendar':
         return (
-          <div className="flex h-full">
-            <CalendarListSidebar />
-            <CalendarModuleWrapper 
-              className="flex-1"
-              refreshTrigger={refreshTrigger}
-            />
-          </div>
+          <CalendarProvider>
+            <div className="flex h-full">
+              <CalendarListSidebar />
+              <CalendarModuleWrapper 
+                className="flex-1"
+                refreshTrigger={refreshTrigger}
+              />
+            </div>
+          </CalendarProvider>
         );
       case 'analytics':
         return <BusinessAnalyticsWidget />;
