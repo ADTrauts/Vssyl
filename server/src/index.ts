@@ -447,7 +447,7 @@ app.use('/api/drive', driveRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
-app.use('/api/business-front', businessFrontPageRouter);
+app.use('/api/business-front', authenticateJWT, businessFrontPageRouter);
 app.use('/api/educational', authenticateJWT, educationalRouter);
 app.use('/api/household', authenticateJWT, householdRouter);
 app.use('/api/sso', ssoRouter);
