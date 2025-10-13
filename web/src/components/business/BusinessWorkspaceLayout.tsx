@@ -639,6 +639,7 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
             <BusinessWorkspaceContent 
               business={business}
               currentModule={getCurrentModule()}
+              businessDashboardId={null}
             />
           </main>
 

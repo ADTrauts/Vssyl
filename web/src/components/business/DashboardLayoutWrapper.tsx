@@ -203,6 +203,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           <BusinessWorkspaceContent 
             business={business}
             currentModule={currentModule}
+            businessDashboardId={null}
           />
         </main>
 
