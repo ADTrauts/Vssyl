@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Megaphone, Clock } from 'lucide-react';
 import { WidgetProps, WidgetContainer, WidgetLoading, WidgetError, WidgetEmpty } from './WidgetRegistry';
 
@@ -14,39 +15,41 @@ interface Announcement {
 }
 
 export default function AnnouncementsWidget({ businessId, settings, theme }: WidgetProps) {
+  const { data: session } = useSession();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAnnouncements();
-  }, [businessId]);
+  }, [businessId, session?.accessToken]);
 
   const loadAnnouncements = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // TODO: Implement actual API call
-      setTimeout(() => {
-        setAnnouncements([
-          {
-            id: '1',
-            title: 'Welcome to the new Front Page!',
-            content: 'We\'ve redesigned the business front page with new features and improved navigation.',
-            priority: 'high',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: '2',
-            title: 'Team Meeting - Friday 2PM',
-            content: 'Don\'t forget our weekly all-hands meeting this Friday at 2PM in the main conference room.',
-            priority: 'medium',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-          },
-        ]);
-        setLoading(false);
-      }, 800);
+      // Fetch announcements from the front page config
+      const response = await fetch(`/api/business-front/${businessId}/config`, {
+        headers: { 'Authorization': `Bearer ${session?.accessToken}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load announcements');
+      }
+
+      const data = await response.json();
+      const config = data.config || data;
+      
+      // Filter active announcements (not expired)
+      const now = new Date();
+      const activeAnnouncements = (config.companyAnnouncements || []).filter((announcement: Announcement) => {
+        if (!announcement.expiresAt) return true;
+        return new Date(announcement.expiresAt) > now;
+      });
+
+      setAnnouncements(activeAnnouncements);
+      setLoading(false);
     } catch (err) {
       setError('Failed to load announcements');
       setLoading(false);

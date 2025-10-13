@@ -312,9 +312,7 @@ export class BusinessFrontPageService {
 
     // Get user's organizational context
     const userRoles = await this.getUserBusinessRoles(userId, businessId);
-    const allPositions = await this.orgChartService.getPositions(businessId);
-    // Filter positions for this user
-    const userPositions = allPositions.filter((pos: any) => pos.userId === userId);
+    const userPositions = await this.getUserPositions(userId, businessId);
     const userDepartments = await this.getUserDepartments(userId, businessId);
     const userTiers = await this.getUserTiers(userId, businessId);
 
@@ -502,14 +500,31 @@ export class BusinessFrontPageService {
   }
 
   /**
+   * Get user's positions through EmployeePosition assignments
+   */
+  private async getUserPositions(userId: string, businessId: string) {
+    const employeePositions = await prisma.employeePosition.findMany({
+      where: {
+        userId,
+        businessId,
+        active: true
+      },
+      include: {
+        position: true
+      }
+    });
+
+    return employeePositions.map(ep => ep.position);
+  }
+
+  /**
    * Get user's departments
    */
   private async getUserDepartments(userId: string, businessId: string) {
-    const allPositions = await this.orgChartService.getPositions(businessId);
-    const positions = allPositions.filter((pos: any) => pos.userId === userId);
+    const positions = await this.getUserPositions(userId, businessId);
     const departmentIds = positions
-      .filter((pos: any) => pos.departmentId)
-      .map((pos: any) => pos.departmentId as string);
+      .filter(pos => pos.departmentId)
+      .map(pos => pos.departmentId as string);
 
     if (departmentIds.length === 0) return [];
 
@@ -526,9 +541,8 @@ export class BusinessFrontPageService {
    * Get user's organizational tiers
    */
   private async getUserTiers(userId: string, businessId: string) {
-    const allPositions = await this.orgChartService.getPositions(businessId);
-    const positions = allPositions.filter((pos: any) => pos.userId === userId);
-    const tierIds = positions.map((pos: any) => pos.tierId);
+    const positions = await this.getUserPositions(userId, businessId);
+    const tierIds = positions.map(pos => pos.tierId);
 
     if (tierIds.length === 0) return [];
 
