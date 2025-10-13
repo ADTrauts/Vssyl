@@ -207,11 +207,11 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     try {
       if (editAction === 'create') {
         const data: CreatePositionData = {
-          name: positionForm.name,
+          title: positionForm.name,
           description: positionForm.description,
           tierId: positionForm.tierId,
           departmentId: positionForm.departmentId || undefined,
-          capacity: positionForm.capacity,
+          maxOccupants: positionForm.capacity,
           businessId,
           permissions: []
         };
@@ -699,6 +699,9 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Capacity
+                  <span className="text-xs font-normal text-gray-500 ml-2">
+                    (Number of employees that can be assigned to this position)
+                  </span>
                 </label>
                 <Input
                   type="number"

@@ -154,12 +154,15 @@ export interface CreateDepartmentData {
 
 export interface CreatePositionData {
   businessId: string;
-  name: string;
+  title: string;
   description?: string;
   tierId: string;
   departmentId?: string;
-  capacity: number;
-  permissions: PermissionData[];
+  reportsToId?: string;
+  maxOccupants?: number;
+  permissions?: PermissionData[];
+  assignedModules?: any;
+  customPermissions?: any;
 }
 
 export interface CreatePermissionData {
