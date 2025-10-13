@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useFeature } from '../../hooks/useFeatureGating';
 import { useDashboard } from '../../contexts/DashboardContext';
-import EnhancedCalendarModule from './enterprise/EnhancedCalendarModule';
 import CalendarModule from '../modules/CalendarModule';
+import CalendarListSidebar from './CalendarListSidebar';
+import { Spinner } from 'shared/components';
+
+// Lazy load enterprise module for better performance
+const EnhancedCalendarModule = lazy(() => import('./enterprise/EnhancedCalendarModule'));
 
 interface CalendarModuleWrapperProps {
   className?: string;
@@ -12,6 +16,9 @@ interface CalendarModuleWrapperProps {
 /**
  * Wrapper component that conditionally renders either the standard Calendar module
  * or the enhanced enterprise Calendar module based on feature access
+ * 
+ * Includes CalendarListSidebar for calendar management
+ * Includes lazy loading for enterprise module to optimize bundle size
  */
 export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   className = '',
@@ -29,21 +36,38 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   // If user has enterprise features and is in a business context, use enhanced module
   if (hasEnterpriseFeatures && businessId) {
     return (
-      <EnhancedCalendarModule 
-        businessId={businessId}
-        className={className}
-        refreshTrigger={refreshTrigger}
-      />
+      <div className={`flex h-full ${className}`}>
+        <CalendarListSidebar />
+        <Suspense 
+          fallback={
+            <div className="flex-1 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <Spinner size={32} />
+                <p className="mt-4 text-sm text-gray-600">Loading enterprise calendar...</p>
+              </div>
+            </div>
+          }
+        >
+          <EnhancedCalendarModule 
+            businessId={businessId}
+            className="flex-1"
+            refreshTrigger={refreshTrigger}
+          />
+        </Suspense>
+      </div>
     );
   }
   
   // Otherwise, use standard Calendar module
   return (
-    <CalendarModule 
-      businessId={businessId || ''}
-      className={className}
-      refreshTrigger={refreshTrigger}
-    />
+    <div className={`flex h-full ${className}`}>
+      <CalendarListSidebar />
+      <CalendarModule 
+        businessId={businessId || ''}
+        className="flex-1"
+        refreshTrigger={refreshTrigger}
+      />
+    </div>
   );
 };
 

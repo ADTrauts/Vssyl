@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useFeature } from '../../hooks/useFeatureGating';
 import { useDashboard } from '../../contexts/DashboardContext';
-import EnhancedChatModule from './enterprise/EnhancedChatModule';
 import ChatModule from '../modules/ChatModule';
+import { Spinner } from 'shared/components';
+
+// Lazy load enterprise module for better performance
+const EnhancedChatModule = lazy(() => import('./enterprise/EnhancedChatModule'));
 
 interface ChatModuleWrapperProps {
   className?: string;
@@ -14,6 +17,7 @@ interface ChatModuleWrapperProps {
  * or the enhanced enterprise Chat module based on feature access
  * 
  * Pattern matches DriveModuleWrapper and CalendarModuleWrapper for consistency
+ * Includes lazy loading for enterprise module to optimize bundle size
  */
 export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
   className = '',
@@ -29,23 +33,39 @@ export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
   // Using 'chat_message_retention' as the primary enterprise chat feature gate
   const { hasAccess: hasEnterpriseFeatures } = useFeature('chat_message_retention', businessId);
   
+  // Full-page layout with Chat (no separate sidebar - chat has integrated panels)
   // If user has enterprise features and is in a business context, use enhanced module
   if (hasEnterpriseFeatures && businessId) {
     return (
-      <EnhancedChatModule 
-        businessId={businessId}
-        className={className}
-      />
+      <div className={`h-full ${className}`}>
+        <Suspense 
+          fallback={
+            <div className="h-full flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <Spinner size={32} />
+                <p className="mt-4 text-sm text-gray-600">Loading enterprise chat...</p>
+              </div>
+            </div>
+          }
+        >
+          <EnhancedChatModule 
+            businessId={businessId}
+            className="h-full"
+          />
+        </Suspense>
+      </div>
     );
   }
   
   // Otherwise, use standard Chat module
   return (
-    <ChatModule 
-      businessId={businessId || ''}
-      className={className}
-      refreshTrigger={refreshTrigger}
-    />
+    <div className={`h-full ${className}`}>
+      <ChatModule 
+        businessId={businessId || ''}
+        className="h-full"
+        refreshTrigger={refreshTrigger}
+      />
+    </div>
   );
 };
 

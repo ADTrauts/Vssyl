@@ -45,12 +45,14 @@ export default function BusinessWorkspacePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { navigateToDashboard } = useDashboard();
   const businessId = params.id as string;
   
   // Get current module from URL params
   const currentModule = searchParams.get('module') || 'dashboard';
 
   const [business, setBusiness] = useState<Business | null>(null);
+  const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,12 +70,70 @@ export default function BusinessWorkspacePage() {
       const businessResponse = await businessAPI.getBusiness(businessId);
 
       if (businessResponse.success) {
-        setBusiness(businessResponse.data as unknown as Business);
+        const businessData = businessResponse.data as unknown as Business;
+        setBusiness(businessData);
+        
+        // Auto-create or get business dashboard
+        await ensureBusinessDashboard(businessData);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load business data');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Ensure business has a dashboard for context isolation
+  const ensureBusinessDashboard = async (businessData: Business) => {
+    if (!session?.accessToken) return;
+    
+    try {
+      // Check if business dashboard already exists
+      const dashboardsResponse = await fetch('/api/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+      
+      if (!dashboardsResponse.ok) {
+        throw new Error('Failed to load dashboards');
+      }
+      
+      const dashboards = await dashboardsResponse.json();
+      
+      // Find existing business dashboard
+      let businessDashboard = dashboards.find((d: any) => d.businessId === businessId);
+      
+      // If doesn't exist, create it
+      if (!businessDashboard) {
+        const createResponse = await fetch('/api/dashboard', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+          body: JSON.stringify({
+            name: `${businessData.name} Workspace`,
+            businessId: businessId,
+            layout: {},
+            preferences: {},
+          }),
+        });
+        
+        if (!createResponse.ok) {
+          throw new Error('Failed to create business dashboard');
+        }
+        
+        businessDashboard = await createResponse.json();
+      }
+      
+      // Set as current dashboard context
+      setBusinessDashboardId(businessDashboard.id);
+      navigateToDashboard(businessDashboard.id);
+      
+    } catch (err) {
+      console.error('Failed to ensure business dashboard:', err);
+      // Don't throw - we can still show business workspace without perfect context
     }
   };
 
@@ -98,6 +158,10 @@ export default function BusinessWorkspacePage() {
 
 
   return (
-    <BusinessWorkspaceContent business={business} currentModule={currentModule} />
+    <BusinessWorkspaceContent 
+      business={business} 
+      currentModule={currentModule}
+      businessDashboardId={businessDashboardId}
+    />
   );
 } 

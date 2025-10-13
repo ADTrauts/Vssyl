@@ -41,6 +41,7 @@ interface Business {
 interface BusinessWorkspaceContentProps {
   business: Business;
   currentModule: string;
+  businessDashboardId: string | null;
 }
 
 // Business-specific widgets
@@ -496,7 +497,7 @@ function BusinessMembersWidget() {
   );
 }
 
-export default function BusinessWorkspaceContent({ business, currentModule }: BusinessWorkspaceContentProps) {
+export default function BusinessWorkspaceContent({ business, currentModule, businessDashboardId }: BusinessWorkspaceContentProps) {
   const { data: session } = useSession();
 
   const renderModuleContent = () => {
