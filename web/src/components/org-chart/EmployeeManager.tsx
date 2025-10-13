@@ -28,8 +28,10 @@ import {
   CheckCircle,
   XCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Mail
 } from 'lucide-react';
+import { getBusinessMembers, inviteEmployee, type BusinessMember } from '@/api/member';
 
 interface OrgChartData {
   tiers: OrganizationalTier[];
@@ -71,14 +73,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     effectiveDate: new Date().toISOString().split('T')[0]
   });
 
-  // Mock user data - in a real app, this would come from an API
-  const [availableUsers, setAvailableUsers] = useState([
-    { id: 'user1', name: 'John Doe', email: 'john@example.com', avatar: null },
-    { id: 'user2', name: 'Jane Smith', email: 'jane@example.com', avatar: null },
-    { id: 'user3', name: 'Bob Johnson', email: 'bob@example.com', avatar: null },
-    { id: 'user4', name: 'Alice Brown', email: 'alice@example.com', avatar: null },
-    { id: 'user5', name: 'Charlie Wilson', email: 'charlie@example.com', avatar: null }
-  ]);
+  // Real business members
+  const [availableUsers, setAvailableUsers] = useState<Array<{ id: string; name: string; email: string; avatar: string | null }>>([]);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    name: '',
+    title: '',
+  });
 
   useEffect(() => {
     if (businessId && session?.accessToken) {
@@ -91,9 +93,10 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       setLoading(true);
       if (!session?.accessToken) return;
       
-      const [employeesRes, vacantRes] = await Promise.all([
+      const [employeesRes, vacantRes, membersRes] = await Promise.all([
         getBusinessEmployees(businessId, session.accessToken),
-        getVacantPositions(businessId, session.accessToken)
+        getVacantPositions(businessId, session.accessToken),
+        getBusinessMembers(businessId)
       ]);
 
       if (employeesRes.success) {
@@ -101,6 +104,19 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       }
       if (vacantRes.success) {
         setVacantPositions(vacantRes.data);
+      }
+      
+      // Set available users from business members
+      if (membersRes?.members) {
+        const users = membersRes.members
+          .filter((member: BusinessMember) => member.isActive)
+          .map((member: BusinessMember) => ({
+            id: member.user.id,
+            name: member.user.name || 'Unnamed User',
+            email: member.user.email,
+            avatar: null
+          }));
+        setAvailableUsers(users);
       }
     } catch (error) {
       console.error('Error loading employee data:', error);
@@ -223,6 +239,35 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     }
   };
 
+  const handleInviteEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await inviteEmployee(
+        businessId,
+        inviteForm.email,
+        'EMPLOYEE',
+        inviteForm.title || undefined,
+        undefined,
+        `Join our team!`
+      );
+      
+      // Refresh the employee list
+      await loadEmployeeData();
+      
+      // Close invite form and reset
+      setShowInviteForm(false);
+      setInviteForm({ email: '', name: '', title: '' });
+      
+      alert('Invitation sent successfully! The employee will appear in the list once they accept.');
+    } catch (error) {
+      console.error('Error inviting employee:', error);
+      alert('Failed to send invitation. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getPositionName = (positionId: string) => {
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     return position?.name || 'Unknown Position';
@@ -285,20 +330,29 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       {/* Current Employees */}
       <Card>
         <div className="p-6">
-          <div 
-            className="flex items-center justify-between cursor-pointer"
-            onClick={() => toggleSection('employees')}
-          >
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center space-x-3 cursor-pointer flex-1"
+              onClick={() => toggleSection('employees')}
+            >
               <Users className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-medium text-gray-900">Current Employees</h3>
               <Badge color="blue">{employees.filter(emp => emp.isActive).length}</Badge>
+              {expandedSections.has('employees') ? (
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              )}
             </div>
-            {expandedSections.has('employees') ? (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowInviteForm(true)}
+              className="flex items-center space-x-1"
+            >
+              <Mail className="w-4 h-4" />
+              <span>Invite New Employee</span>
+            </Button>
           </div>
 
           {expandedSections.has('employees') && (
@@ -630,6 +684,61 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
  </Button>
                 <Button type="submit" variant="primary" disabled={loading}>
                   {loading ? <Spinner size={16} /> : 'Transfer Employee'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Invite New Employee Modal */}
+      {showInviteForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Invite New Employee</h3>
+            <form onSubmit={handleInviteEmployee} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address *
+                </label>
+                <Input
+                  type="email"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  placeholder="employee@example.com"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  They'll receive an invitation to join your business
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Position Title (Optional)
+                </label>
+                <Input
+                  type="text"
+                  value={inviteForm.title}
+                  onChange={(e) => setInviteForm({ ...inviteForm, title: e.target.value })}
+                  placeholder="e.g., Software Engineer, Sales Manager"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  You can assign them to an org chart position after they accept
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button 
+                  variant="secondary" 
+                  onClick={() => {
+                    setShowInviteForm(false);
+                    setInviteForm({ email: '', name: '', title: '' });
+                  }} 
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" disabled={loading}>
+                  {loading ? <Spinner size={16} /> : 'Send Invitation'}
                 </Button>
               </div>
             </form>
