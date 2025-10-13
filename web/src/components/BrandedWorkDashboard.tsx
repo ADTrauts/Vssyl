@@ -200,31 +200,33 @@ export default function BrandedWorkDashboard({
 
   return (
     <BusinessBrandingProvider initialBranding={branding}>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <BrandedHeader
-          title={business.name}
-          subtitle={`Work Dashboard - ${workCredentials?.role || 'Employee'}`}
-        >
-          <div className="flex items-center space-x-3">
-            <Badge color="green">
-              {workCredentials?.role || 'Employee'}
-            </Badge>
-            <BrandedButton
-              onClick={handleLogoutWork}
-              variant="outline"
-              tone="onPrimary"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Exit Work</span>
-            </BrandedButton>
-          </div>
-        </BrandedHeader>
+      <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0">
+          <BrandedHeader
+            title={business.name}
+            subtitle={`Work Dashboard - ${workCredentials?.role || 'Employee'}`}
+          >
+            <div className="flex items-center space-x-3">
+              <Badge color="green">
+                {workCredentials?.role || 'Employee'}
+              </Badge>
+              <BrandedButton
+                onClick={handleLogoutWork}
+                variant="outline"
+                tone="onPrimary"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Exit Work</span>
+              </BrandedButton>
+            </div>
+          </BrandedHeader>
+        </div>
 
-        {/* Main Content - Enhanced UX */}
-        <main className="flex-1 p-8">
+        {/* Main Content - Scrollable */}
+        <main className="flex-1 overflow-y-auto p-8">
           {/* AI Assistant - Welcome & Daily Briefing */}
           <div className="max-w-4xl mx-auto mb-12">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
@@ -399,7 +401,7 @@ export default function BrandedWorkDashboard({
               </div>
             )}
           </main>
-        </div>
+      </div>
       </BusinessBrandingProvider>
     );
   } 
