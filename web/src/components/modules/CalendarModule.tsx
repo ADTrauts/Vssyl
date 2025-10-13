@@ -28,9 +28,10 @@ interface CalendarModuleProps {
   businessId: string;
   className?: string;
   refreshTrigger?: number;
+  dashboardId?: string | null;
 }
 
-export default function CalendarModule({ businessId, className = '', refreshTrigger }: CalendarModuleProps) {
+export default function CalendarModule({ businessId, dashboardId, className = '', refreshTrigger }: CalendarModuleProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const { currentDashboard, getDashboardType } = useDashboard();
@@ -47,10 +48,19 @@ export default function CalendarModule({ businessId, className = '', refreshTrig
   const [searchQuery, setSearchQuery] = useState('');
 
   // Get context information for filtering
+  // Priority: explicit dashboardId > businessId > currentDashboard context
   const contextType = currentDashboard ? getDashboardType(currentDashboard).toUpperCase() : 'PERSONAL';
-  const contextId = currentDashboard 
+  const contextId = dashboardId || businessId || (currentDashboard 
     ? ((currentDashboard as any).businessId || (currentDashboard as any).householdId || currentDashboard.id)
-    : '';
+    : '');
+    
+  console.log('📅 CalendarModule Context Resolution:', {
+    dashboardId,
+    businessId,
+    currentDashboardId: currentDashboard?.id,
+    resolvedContextId: contextId,
+    contextType
+  });
 
   // Load calendars for the current context
   const loadCalendars = useCallback(async () => {

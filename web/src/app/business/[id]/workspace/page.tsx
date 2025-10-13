@@ -129,7 +129,15 @@ export default function BusinessWorkspacePage() {
       
       // Set as current dashboard context
       setBusinessDashboardId(businessDashboard.id);
-      navigateToDashboard(businessDashboard.id);
+      console.log('🔍 Business Dashboard Created/Found:', {
+        dashboardId: businessDashboard.id,
+        businessId: businessId,
+        dashboardName: businessDashboard.name
+      });
+      
+      // NOTE: navigateToDashboard doesn't work for business routes
+      // The DashboardContext needs to be updated differently for business workspaces
+      // For now, modules should use businessDashboardId directly
       
     } catch (err) {
       console.error('Failed to ensure business dashboard:', err);

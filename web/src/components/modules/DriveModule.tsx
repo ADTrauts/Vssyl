@@ -38,9 +38,10 @@ interface DriveModuleProps {
   businessId: string;
   className?: string;
   refreshTrigger?: number;
+  dashboardId?: string | null;
 }
 
-export default function DriveModule({ businessId, className = '', refreshTrigger }: DriveModuleProps) {
+export default function DriveModule({ businessId, dashboardId, className = '', refreshTrigger }: DriveModuleProps) {
   const { data: session } = useSession();
   const { currentDashboard } = useDashboard();
   const [items, setItems] = useState<DriveItem[]>([]);
@@ -66,8 +67,16 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
       return;
     }
     
-    const contextId = businessId || currentDashboard?.id;
+    // Priority: explicit dashboardId > businessId > currentDashboard?.id
+    const contextId = dashboardId || businessId || currentDashboard?.id;
     const parentId = currentFolder;
+    
+    console.log('📁 DriveModule Context Resolution:', {
+      dashboardId,
+      businessId,
+      currentDashboardId: currentDashboard?.id,
+      resolvedContextId: contextId
+    });
     
     // Build API URLs with context and folder
     const filesParams = new URLSearchParams();
@@ -170,7 +179,7 @@ export default function DriveModule({ businessId, className = '', refreshTrigger
     } finally {
       setLoading(false);
     }
-  }, [session?.accessToken, businessId, currentDashboard?.id, currentFolder]);
+  }, [session?.accessToken, dashboardId, businessId, currentDashboard?.id, currentFolder]);
 
   useEffect(() => {
     loadFilesAndFolders();

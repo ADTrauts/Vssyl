@@ -10,6 +10,7 @@ const EnhancedDriveModule = lazy(() => import('./enterprise/EnhancedDriveModule'
 interface DriveModuleWrapperProps {
   className?: string;
   refreshTrigger?: number;
+  dashboardId?: string | null;
 }
 
 /**
@@ -21,13 +22,25 @@ interface DriveModuleWrapperProps {
  */
 export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   className = '',
-  refreshTrigger
+  refreshTrigger,
+  dashboardId
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
   
+  // Use explicit dashboardId if provided, otherwise fall back to current dashboard
+  const effectiveDashboardId = dashboardId || currentDashboard?.id;
+  
   // Get business ID for enterprise feature checking
-  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  const businessId = dashboardType === 'business' ? (dashboardId || currentDashboard?.id) : undefined;
+  
+  console.log('🚀 DriveModuleWrapper:', {
+    dashboardId,
+    effectiveDashboardId,
+    businessId,
+    dashboardType,
+    currentDashboardId: currentDashboard?.id
+  });
   
   // Check if user has enterprise Drive features
   const { hasAccess: hasEnterpriseFeatures } = useFeature('drive_advanced_sharing', businessId);
@@ -47,6 +60,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
       >
         <EnhancedDriveModule 
           businessId={businessId}
+          dashboardId={effectiveDashboardId}
           className={className}
           refreshTrigger={refreshTrigger}
         />
@@ -58,6 +72,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   return (
     <DriveModule 
       businessId={businessId || ''}
+      dashboardId={effectiveDashboardId}
       className={className}
       refreshTrigger={refreshTrigger}
     />

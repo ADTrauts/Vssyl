@@ -52,6 +52,7 @@ interface DriveItem {
 
 interface EnhancedDriveModuleProps {
   businessId: string;
+  dashboardId?: string;
   className?: string;
   refreshTrigger?: number;
 }

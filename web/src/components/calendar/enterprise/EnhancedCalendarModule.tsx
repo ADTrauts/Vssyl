@@ -38,6 +38,7 @@ import CalendarAnalyticsPanel from './CalendarAnalyticsPanel';
 
 interface EnhancedCalendarModuleProps {
   businessId: string;
+  dashboardId?: string;
   className?: string;
   refreshTrigger?: number;
 }

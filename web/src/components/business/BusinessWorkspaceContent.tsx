@@ -578,6 +578,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
       case 'dashboard':
         return <BusinessDashboardWidget />;
       case 'drive':
+        console.log('📁 Rendering Drive with businessDashboardId:', businessDashboardId);
         return (
           <div className="flex h-full">
             <DriveSidebar
@@ -591,6 +592,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
             <DriveModuleWrapper 
               className="flex-1"
               refreshTrigger={refreshTrigger}
+              dashboardId={businessDashboardId}
             />
           </div>
         );
@@ -602,6 +604,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
           />
         );
       case 'calendar':
+        console.log('📅 Rendering Calendar with businessDashboardId:', businessDashboardId);
         return (
           <CalendarProvider>
             <div className="flex h-full">
@@ -609,6 +612,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
               <CalendarModuleWrapper 
                 className="flex-1"
                 refreshTrigger={refreshTrigger}
+                dashboardId={businessDashboardId}
               />
             </div>
           </CalendarProvider>

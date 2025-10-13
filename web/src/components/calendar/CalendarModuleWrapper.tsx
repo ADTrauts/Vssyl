@@ -10,6 +10,7 @@ const EnhancedCalendarModule = lazy(() => import('./enterprise/EnhancedCalendarM
 interface CalendarModuleWrapperProps {
   className?: string;
   refreshTrigger?: number;
+  dashboardId?: string | null;
 }
 
 /**
@@ -21,13 +22,25 @@ interface CalendarModuleWrapperProps {
  */
 export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   className = '',
-  refreshTrigger
+  refreshTrigger,
+  dashboardId
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
   
+  // Use explicit dashboardId if provided, otherwise fall back to current dashboard
+  const effectiveDashboardId = dashboardId || currentDashboard?.id;
+  
   // Get business ID for enterprise feature checking
-  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  const businessId = dashboardType === 'business' ? (dashboardId || currentDashboard?.id) : undefined;
+  
+  console.log('📅 CalendarModuleWrapper:', {
+    dashboardId,
+    effectiveDashboardId,
+    businessId,
+    dashboardType,
+    currentDashboardId: currentDashboard?.id
+  });
   
   // Check if user has enterprise Calendar features
   const { hasAccess: hasEnterpriseFeatures } = useFeature('calendar_resource_booking', businessId);
@@ -47,6 +60,7 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
       >
         <EnhancedCalendarModule 
           businessId={businessId}
+          dashboardId={effectiveDashboardId}
           className={className}
           refreshTrigger={refreshTrigger}
         />
@@ -58,6 +72,7 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   return (
     <CalendarModule 
       businessId={businessId || ''}
+      dashboardId={effectiveDashboardId}
       className={className}
       refreshTrigger={refreshTrigger}
     />
