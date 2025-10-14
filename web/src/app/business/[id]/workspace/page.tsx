@@ -74,20 +74,31 @@ export default function BusinessWorkspacePage() {
         setBusiness(businessData);
         
         // Auto-create or get business dashboard
+        // IMPORTANT: Must complete BEFORE rendering modules!
         await ensureBusinessDashboard(businessData);
+        
+        // Only set loading false AFTER dashboard is ready
+        // This ensures businessDashboardId is set before modules render
+        setLoading(false);
+      } else {
+        setError('Failed to load business data');
+        setLoading(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load business data');
-    } finally {
       setLoading(false);
     }
   };
   
   // Ensure business has a dashboard for context isolation
   const ensureBusinessDashboard = async (businessData: Business) => {
-    if (!session?.accessToken) return;
+    if (!session?.accessToken) {
+      throw new Error('No session token available');
+    }
     
     try {
+      console.log('🔄 Fetching dashboards for user...');
+      
       // Check if business dashboard already exists
       const dashboardsResponse = await fetch('/api/dashboard', {
         headers: {
@@ -96,16 +107,21 @@ export default function BusinessWorkspacePage() {
       });
       
       if (!dashboardsResponse.ok) {
-        throw new Error('Failed to load dashboards');
+        throw new Error(`Failed to load dashboards: ${dashboardsResponse.status}`);
       }
       
       const dashboards = await dashboardsResponse.json();
+      console.log('📊 Total dashboards found:', dashboards.length);
       
       // Find existing business dashboard
       let businessDashboard = dashboards.find((d: any) => d.businessId === businessId);
       
-      // If doesn't exist, create it
-      if (!businessDashboard) {
+      if (businessDashboard) {
+        console.log('✅ Found existing business dashboard:', businessDashboard.id);
+      } else {
+        console.log('🆕 Creating new business dashboard...');
+        
+        // If doesn't exist, create it
         const createResponse = await fetch('/api/dashboard', {
           method: 'POST',
           headers: {
@@ -121,27 +137,27 @@ export default function BusinessWorkspacePage() {
         });
         
         if (!createResponse.ok) {
-          throw new Error('Failed to create business dashboard');
+          const errorText = await createResponse.text();
+          throw new Error(`Failed to create business dashboard: ${createResponse.status} - ${errorText}`);
         }
         
         businessDashboard = await createResponse.json();
+        console.log('✅ Created new business dashboard:', businessDashboard.id);
       }
       
       // Set as current dashboard context
       setBusinessDashboardId(businessDashboard.id);
-      console.log('🔍 Business Dashboard Created/Found:', {
+      console.log('🔍 Business Dashboard Ready:', {
         dashboardId: businessDashboard.id,
         businessId: businessId,
-        dashboardName: businessDashboard.name
+        dashboardName: businessDashboard.name,
+        timestamp: new Date().toISOString()
       });
       
-      // NOTE: navigateToDashboard doesn't work for business routes
-      // The DashboardContext needs to be updated differently for business workspaces
-      // For now, modules should use businessDashboardId directly
-      
     } catch (err) {
-      console.error('Failed to ensure business dashboard:', err);
-      // Don't throw - we can still show business workspace without perfect context
+      console.error('❌ Failed to ensure business dashboard:', err);
+      // Re-throw to prevent rendering without dashboard
+      throw err;
     }
   };
 
@@ -149,6 +165,7 @@ export default function BusinessWorkspacePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size={32} />
+        <p className="mt-4 text-sm text-gray-600">Setting up workspace...</p>
       </div>
     );
   }
@@ -163,7 +180,18 @@ export default function BusinessWorkspacePage() {
     );
   }
 
+  // Safety check: Don't render modules until dashboard is ready
+  if (!businessDashboardId) {
+    console.warn('⚠️ BusinessWorkspace rendering without dashboardId! This will show personal data!');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size={32} />
+        <p className="mt-4 text-sm text-gray-600">Initializing business workspace...</p>
+      </div>
+    );
+  }
 
+  console.log('✅ BusinessWorkspace rendering with dashboardId:', businessDashboardId);
 
   return (
     <BusinessWorkspaceContent 
