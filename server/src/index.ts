@@ -86,6 +86,7 @@ import aiContextDebugRouter from './routes/ai-context-debug';
 import profilePhotosRouter from './routes/profilePhotos';
 import adminSetupRouter from './routes/admin-setup';
 import contentReportsRouter from './routes/contentReports';
+import adminSeedModulesRouter from './routes/admin-seed-modules';
 import moduleAIContextRouter from './routes/moduleAIContext';
 import businessFrontPageRouter from './routes/businessFrontPage';
 import { authenticateJWT } from './middleware/auth';
@@ -490,6 +491,7 @@ app.use('/api/ai-context-debug', aiContextDebugRouter);
 app.use('/api/profile-photos', profilePhotosRouter);
 app.use('/api/admin-setup', adminSetupRouter);
 app.use('/api/content-reports', contentReportsRouter);
+app.use('/api/admin/seed', authenticateJWT, adminSeedModulesRouter);
 app.use('/api', moduleAIContextRouter);
 
 // Schedule cleanup jobs

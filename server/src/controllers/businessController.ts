@@ -138,16 +138,81 @@ export const createBusiness = async (req: Request, res: Response) => {
     // Auto-install core business modules (Drive, Chat, Calendar)
     // These are the foundational modules every business needs
     const coreModules = [
-      { moduleId: 'drive', name: 'Drive', category: 'productivity' },
-      { moduleId: 'chat', name: 'Chat', category: 'communication' },
-      { moduleId: 'calendar', name: 'Calendar', category: 'productivity' }
+      {
+        moduleId: 'drive',
+        name: 'Drive',
+        category: 'PRODUCTIVITY',
+        description: 'File management and storage system',
+        version: '1.0.0'
+      },
+      {
+        moduleId: 'chat',
+        name: 'Chat',
+        category: 'COMMUNICATION',
+        description: 'Real-time messaging and communication',
+        version: '1.0.0'
+      },
+      {
+        moduleId: 'calendar',
+        name: 'Calendar',
+        category: 'PRODUCTIVITY',
+        description: 'Calendar and scheduling system',
+        version: '1.0.0'
+      }
     ];
 
     try {
       console.log(`🔧 Auto-installing core modules for business: ${business.id}`);
       
-      for (const { moduleId, name, category } of coreModules) {
-        // Check if module already exists (shouldn't happen, but be safe)
+      for (const { moduleId, name, category, description, version } of coreModules) {
+        // STEP 1: Ensure Module record exists (create if needed)
+        let module = await prisma.module.findUnique({
+          where: { id: moduleId }
+        });
+
+        if (!module) {
+          console.log(`   📝 Creating Module record for ${name}...`);
+          module = await prisma.module.create({
+            data: {
+              id: moduleId,
+              name: name,
+              description: description,
+              version: version,
+              category: category as any,
+              tags: [moduleId, 'core', 'proprietary'],
+              icon: moduleId,
+              screenshots: [],
+              developerId: user.id,
+              manifest: {
+                name,
+                version,
+                description,
+                author: 'Vssyl',
+                license: 'proprietary',
+                entryPoint: `/${moduleId}`,
+                permissions: [`${moduleId}:read`, `${moduleId}:write`],
+                dependencies: [],
+                runtime: { apiVersion: '1.0' },
+                frontend: { entryUrl: `/${moduleId}` },
+                settings: {}
+              } as any,
+              dependencies: [],
+              permissions: [`${moduleId}:read`, `${moduleId}:write`],
+              status: 'APPROVED' as any,
+              pricingTier: 'free',
+              basePrice: 0,
+              enterprisePrice: 0,
+              isProprietary: true,
+              revenueSplit: 0,
+              downloads: 0,
+              rating: 5.0,
+              reviewCount: 0
+            }
+          });
+          console.log(`   ✅ Created Module record for ${name}`);
+        }
+
+        // STEP 2: Check if already installed for this business
         const existingInstallation = await prisma.businessModuleInstallation.findFirst({
           where: {
             businessId: business.id,
@@ -168,9 +233,9 @@ export const createBusiness = async (req: Request, res: Response) => {
               }
             }
           });
-          console.log(`✅ Installed core module: ${name} (${moduleId})`);
+          console.log(`   ✅ Installed core module: ${name} (${moduleId})`);
         } else {
-          console.log(`ℹ️  Core module already installed: ${name} (${moduleId})`);
+          console.log(`   ℹ️  Core module already installed: ${name} (${moduleId})`);
         }
       }
       
