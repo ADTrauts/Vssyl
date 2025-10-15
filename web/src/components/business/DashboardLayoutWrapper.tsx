@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import GlobalTrashBin from '../GlobalTrashBin';
 import { COLORS, getBrandColor } from 'shared/utils/brandColors';
+import { Spinner, Alert } from 'shared/components';
 import ClientOnlyWrapper from '../../app/ClientOnlyWrapper';
 import AvatarContextMenu from '../AvatarContextMenu';
 import GlobalHeaderTabs from '../GlobalHeaderTabs';
@@ -69,6 +70,11 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   
+  // Business dashboard state - CRITICAL for data isolation
+  const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  
   const { currentBranding, isBusinessContext, getSidebarStyles, getHeaderStyles } = useGlobalBranding();
   const { getFilteredModules } = usePositionAwareModules();
 
@@ -78,6 +84,86 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   };
 
   const modules = getAvailableModules();
+
+  // CRITICAL: Ensure business dashboard exists for proper data isolation
+  useEffect(() => {
+    async function ensureBusinessDashboard() {
+      if (!session?.accessToken || !business?.id) {
+        setDashboardLoading(false);
+        return;
+      }
+
+      try {
+        setDashboardLoading(true);
+        setDashboardError(null);
+
+        console.log('🔄 DashboardLayoutWrapper: Fetching dashboards for business:', business.id);
+
+        // Fetch all user's dashboards
+        const dashboardsResponse = await fetch('/api/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+        });
+
+        if (!dashboardsResponse.ok) {
+          throw new Error(`Failed to load dashboards: ${dashboardsResponse.status}`);
+        }
+
+        const allDashboards = await dashboardsResponse.json();
+        console.log('📊 DashboardLayoutWrapper: Total dashboards:', allDashboards.length);
+
+        // Find existing business dashboard
+        let businessDashboard = allDashboards.find((d: any) => d.businessId === business.id);
+
+        if (businessDashboard) {
+          console.log('✅ DashboardLayoutWrapper: Found existing business dashboard:', businessDashboard.id);
+        } else {
+          console.log('🆕 DashboardLayoutWrapper: Creating new business dashboard...');
+
+          // Create business dashboard
+          const createResponse = await fetch('/api/dashboard', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.accessToken}`,
+            },
+            body: JSON.stringify({
+              name: `${business.name} Workspace`,
+              businessId: business.id,
+              layout: {},
+              preferences: {},
+            }),
+          });
+
+          if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            throw new Error(`Failed to create business dashboard: ${createResponse.status} - ${errorText}`);
+          }
+
+          businessDashboard = await createResponse.json();
+          console.log('✅ DashboardLayoutWrapper: Created new business dashboard:', businessDashboard.id);
+        }
+
+        // Set the dashboard ID
+        setBusinessDashboardId(businessDashboard.id);
+        console.log('🎯 DashboardLayoutWrapper: Business Dashboard Ready:', {
+          dashboardId: businessDashboard.id,
+          businessId: business.id,
+          dashboardName: businessDashboard.name,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (err) {
+        console.error('❌ DashboardLayoutWrapper: Failed to ensure business dashboard:', err);
+        setDashboardError(err instanceof Error ? err.message : 'Failed to initialize business dashboard');
+      } finally {
+        setDashboardLoading(false);
+      }
+    }
+
+    ensureBusinessDashboard();
+  }, [session?.accessToken, business?.id, business?.name]);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 700);
@@ -200,11 +286,29 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           marginLeft: !sidebarCollapsed ? 0 : 0,
           transition: 'margin-left 0.2s ease-in-out, padding-right 0.2s ease-in-out',
         }}>
-          <BusinessWorkspaceContent 
-            business={business}
-            currentModule={currentModule}
-            businessDashboardId={null}
-          />
+          {dashboardLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+              <Spinner size={32} />
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Setting up workspace...</p>
+            </div>
+          ) : dashboardError ? (
+            <div style={{ padding: '1.5rem' }}>
+              <Alert type="error" title="Failed to Initialize Workspace">
+                {dashboardError}
+              </Alert>
+            </div>
+          ) : !businessDashboardId ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+              <Spinner size={32} />
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Initializing business workspace...</p>
+            </div>
+          ) : (
+            <BusinessWorkspaceContent 
+              business={business}
+              currentModule={currentModule}
+              businessDashboardId={businessDashboardId}
+            />
+          )}
         </main>
 
         {/* Right Quick-Access Sidebar */}

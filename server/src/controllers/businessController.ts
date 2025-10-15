@@ -135,6 +135,52 @@ export const createBusiness = async (req: Request, res: Response) => {
       console.error('Failed to auto-provision business calendar:', e);
     }
 
+    // Auto-install core business modules (Drive, Chat, Calendar)
+    // These are the foundational modules every business needs
+    const coreModules = [
+      { moduleId: 'drive', name: 'Drive', category: 'productivity' },
+      { moduleId: 'chat', name: 'Chat', category: 'communication' },
+      { moduleId: 'calendar', name: 'Calendar', category: 'productivity' }
+    ];
+
+    try {
+      console.log(`🔧 Auto-installing core modules for business: ${business.id}`);
+      
+      for (const { moduleId, name, category } of coreModules) {
+        // Check if module already exists (shouldn't happen, but be safe)
+        const existingInstallation = await prisma.businessModuleInstallation.findFirst({
+          where: {
+            businessId: business.id,
+            moduleId: moduleId
+          }
+        });
+
+        if (!existingInstallation) {
+          await prisma.businessModuleInstallation.create({
+            data: {
+              businessId: business.id,
+              moduleId: moduleId,
+              installedBy: user.id,
+              installedAt: new Date(),
+              enabled: true,
+              configured: {
+                permissions: ['view', 'create', 'edit', 'delete']
+              }
+            }
+          });
+          console.log(`✅ Installed core module: ${name} (${moduleId})`);
+        } else {
+          console.log(`ℹ️  Core module already installed: ${name} (${moduleId})`);
+        }
+      }
+      
+      console.log(`✅ Core modules installed for business: ${business.name}`);
+    } catch (moduleError) {
+      // Don't fail business creation if module installation fails
+      console.error('❌ Failed to auto-install core modules:', moduleError);
+      console.error('Business creation succeeded, but module installation failed. Admin can manually install modules.');
+    }
+
     res.status(201).json({ success: true, data: business });
   } catch (error) {
     handleError(res, error, 'Failed to create business');

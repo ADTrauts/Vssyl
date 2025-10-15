@@ -67,15 +67,23 @@ export default function DriveModule({ businessId, dashboardId, className = '', r
       return;
     }
     
-    // Priority: explicit dashboardId > businessId > currentDashboard?.id
-    const contextId = dashboardId || businessId || currentDashboard?.id;
+    // CRITICAL: ONLY use dashboardId - no fallback to businessId or currentDashboard
+    // BusinessId is NOT a dashboard ID and will cause data leakage
+    if (!dashboardId) {
+      console.error('❌ DriveModule: No dashboardId provided! Cannot load drive content.');
+      setError('Dashboard context not initialized. Please refresh the page.');
+      setLoading(false);
+      return;
+    }
+    
+    const contextId = dashboardId;
     const parentId = currentFolder;
     
     console.log('📁 DriveModule Context Resolution:', {
       dashboardId,
-      businessId,
-      currentDashboardId: currentDashboard?.id,
-      resolvedContextId: contextId
+      resolvedContextId: contextId,
+      businessId: businessId || '(not used - deprecated)',
+      currentDashboardId: currentDashboard?.id || '(not used - business routes ignored)'
     });
     
     // Build API URLs with context and folder

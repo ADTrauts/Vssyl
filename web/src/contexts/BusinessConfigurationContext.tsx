@@ -164,71 +164,18 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
         
         console.log('Transformed business modules:', businessModules);
         
-        // If no modules returned, use fallback
+        // If no modules returned, log a warning but don't use fallback
+        // The admin should install modules from the module management page
         if (businessModules.length === 0) {
-          console.log('No business modules found, using fallback modules');
-          businessModules = [
-            {
-              id: 'dashboard',
-              name: 'Dashboard',
-              description: 'Main business dashboard',
-              category: 'core',
-              status: 'enabled',
-              permissions: ['view'],
-              icon: 'dashboard'
-            },
-            {
-              id: 'members',
-              name: 'Members',
-              description: 'Team member management',
-              category: 'management',
-              status: 'enabled',
-              permissions: ['view', 'invite'],
-              icon: 'users'
-            },
-            {
-              id: 'analytics',
-              name: 'Analytics',
-              description: 'Business insights and reports',
-              category: 'business',
-              status: 'enabled',
-              permissions: ['view'],
-              icon: 'bar-chart'
-            }
-          ];
+          console.warn('⚠️  No business modules found for business:', businessId);
+          console.warn('This business may have been created before auto-installation was implemented.');
+          console.warn('Admin should visit Module Management to install core modules.');
         }
       } catch (moduleError) {
-        console.warn('Failed to load business modules, using fallback:', moduleError);
-        // Use fallback modules
-        businessModules = [
-          {
-            id: 'dashboard',
-            name: 'Dashboard',
-            description: 'Main business dashboard',
-            category: 'core',
-            status: 'enabled',
-            permissions: ['view'],
-            icon: 'dashboard'
-          },
-          {
-            id: 'members',
-            name: 'Members',
-            description: 'Team member management',
-            category: 'management',
-            status: 'enabled',
-            permissions: ['view', 'invite'],
-            icon: 'users'
-          },
-          {
-            id: 'analytics',
-            name: 'Analytics',
-            description: 'Business insights and reports',
-            category: 'business',
-            status: 'enabled',
-            permissions: ['view'],
-            icon: 'bar-chart'
-          }
-        ];
+        console.error('❌ Failed to load business modules:', moduleError);
+        // Set empty array - don't mask the issue with fallbacks
+        // The UI will show appropriate empty state
+        businessModules = [];
       }
       
       // Load org chart data
@@ -367,143 +314,8 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
       console.error('Failed to load business configuration:', err);
       setError(err instanceof Error ? err.message : 'Failed to load configuration');
       
-      // Fallback to mock data for development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Using fallback mock configuration for development');
-        const mockConfiguration: BusinessConfiguration = {
-          businessId,
-          name: 'Sample Business',
-          enabledModules: [
-            {
-              id: 'dashboard',
-              name: 'Dashboard',
-              description: 'Main business dashboard',
-              category: 'core',
-              status: 'enabled',
-              permissions: ['view'],
-              icon: 'dashboard'
-            },
-            {
-              id: 'drive',
-              name: 'Drive',
-              description: 'File management system',
-              category: 'productivity',
-              status: 'enabled',
-              permissions: ['view', 'upload', 'delete'],
-              icon: 'folder'
-            },
-            {
-              id: 'chat',
-              name: 'Chat',
-              description: 'Team communication',
-              category: 'communication',
-              status: 'enabled',
-              permissions: ['view', 'send'],
-              icon: 'message-square'
-            },
-            {
-              id: 'members',
-              name: 'Members',
-              description: 'Team member management',
-              category: 'management',
-              status: 'enabled',
-              permissions: ['view', 'invite'],
-              icon: 'users'
-            },
-            {
-              id: 'analytics',
-              name: 'Analytics',
-              description: 'Business insights and reports',
-              category: 'business',
-              status: 'disabled',
-              permissions: ['view'],
-              icon: 'bar-chart'
-            }
-          ],
-          modulePermissions: {
-            'dashboard': ['view'],
-            'drive': ['view', 'upload', 'delete'],
-            'chat': ['view', 'send'],
-            'members': ['view', 'invite'],
-            'analytics': ['view']
-          },
-          branding: {
-            primaryColor: '#3b82f6',
-            secondaryColor: '#1e40af',
-            accentColor: '#f59e0b',
-            fontFamily: 'Inter'
-          },
-          settings: {
-            allowModuleInstallation: true,
-            requireApproval: false,
-            autoSync: true
-          },
-          departments: [],
-          roles: [
-            {
-              id: 'admin',
-              name: 'Administrator',
-              description: 'Full business access',
-              permissions: ['*'],
-              level: 'company'
-            },
-            {
-              id: 'manager',
-              name: 'Manager',
-              description: 'Department management access',
-              permissions: ['view', 'upload', 'invite'],
-              level: 'department'
-            },
-            {
-              id: 'employee',
-              name: 'Employee',
-              description: 'Basic work access',
-              permissions: ['view', 'upload'],
-              level: 'individual'
-            }
-          ],
-          permissions: [
-            {
-              id: 'view',
-              name: 'View',
-              description: 'Can view module content',
-              moduleId: 'all'
-            },
-            {
-              id: 'upload',
-              name: 'Upload',
-              description: 'Can upload files and content',
-              moduleId: 'all'
-            },
-            {
-              id: 'delete',
-              name: 'Delete',
-              description: 'Can delete content',
-              moduleId: 'all'
-            },
-            {
-              id: 'invite',
-              name: 'Invite',
-              description: 'Can invite team members',
-              moduleId: 'members'
-            }
-          ],
-          // Mock org chart data
-          orgChart: {
-            tiers: [],
-            departments: [],
-            positions: [],
-            employeePositions: [],
-            permissions: [],
-            permissionSets: []
-          },
-          // Default position-based permissions
-          positionPermissions: {},
-          departmentModules: {},
-          tierPermissions: {}
-        };
-        setConfiguration(mockConfiguration);
-      }
+      // No fallback - let the error surface so admins know to install modules
+      // The UI should show appropriate error states and guide admins to module management
     } finally {
       setLoading(false);
     }

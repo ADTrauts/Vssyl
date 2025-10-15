@@ -10,6 +10,7 @@ const EnhancedChatModule = lazy(() => import('./enterprise/EnhancedChatModule'))
 interface ChatModuleWrapperProps {
   className?: string;
   refreshTrigger?: number;
+  dashboardId?: string | null;  // REQUIRED for proper data isolation
 }
 
 /**
@@ -21,17 +22,29 @@ interface ChatModuleWrapperProps {
  */
 export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
   className = '',
-  refreshTrigger
+  refreshTrigger,
+  dashboardId
 }) => {
   const { currentDashboard, getDashboardType } = useDashboard();
+  
+  // CRITICAL: Use dashboardId prop for data isolation
+  // Do NOT fall back to currentDashboard in business context (it's null there)
+  const effectiveDashboardId = dashboardId || currentDashboard?.id;
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
   
-  // Get business ID for enterprise feature checking
-  const businessId = dashboardType === 'business' ? currentDashboard?.id : undefined;
+  console.log('💬 ChatModuleWrapper:', {
+    dashboardId,
+    effectiveDashboardId,
+    dashboardType,
+    currentDashboardId: currentDashboard?.id
+  });
+  
+  // Get business ID for enterprise feature checking (NOT for data scoping!)
+  const businessId = dashboardType === 'business' ? dashboardId : undefined;
   
   // Check if user has enterprise Chat features
   // Using 'chat_message_retention' as the primary enterprise chat feature gate
-  const { hasAccess: hasEnterpriseFeatures } = useFeature('chat_message_retention', businessId);
+  const { hasAccess: hasEnterpriseFeatures } = useFeature('chat_message_retention', businessId || undefined);
   
   // Full-page layout with Chat (no separate sidebar - chat has integrated panels)
   // If user has enterprise features and is in a business context, use enhanced module
@@ -57,7 +70,9 @@ export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
     );
   }
   
-  // Otherwise, use standard Chat module
+  // TODO: Add dashboardId prop to ChatModule for proper data isolation
+  // Currently Chat is not scoped to dashboards - this needs to be implemented
+  // For now, continue using the existing businessId pattern
   return (
     <div className={`h-full ${className}`}>
       <ChatModule 

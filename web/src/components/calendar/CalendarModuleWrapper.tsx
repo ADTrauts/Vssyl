@@ -28,11 +28,12 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   const { currentDashboard, getDashboardType } = useDashboard();
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
   
-  // Use explicit dashboardId if provided, otherwise fall back to current dashboard
+  // CRITICAL: Use dashboardId prop for data isolation
+  // Do NOT fall back to currentDashboard in business context (it's null there)
   const effectiveDashboardId = dashboardId || currentDashboard?.id;
   
-  // Get business ID for enterprise feature checking
-  const businessId = dashboardType === 'business' ? (dashboardId || currentDashboard?.id) : undefined;
+  // Get business ID for enterprise feature checking (NOT for data scoping!)
+  const businessId = dashboardType === 'business' ? dashboardId : undefined;
   
   console.log('📅 CalendarModuleWrapper:', {
     dashboardId,
@@ -43,7 +44,7 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
   });
   
   // Check if user has enterprise Calendar features
-  const { hasAccess: hasEnterpriseFeatures } = useFeature('calendar_resource_booking', businessId);
+  const { hasAccess: hasEnterpriseFeatures } = useFeature('calendar_resource_booking', businessId || undefined);
   
   // If user has enterprise features and is in a business context, use enhanced module
   if (hasEnterpriseFeatures && businessId) {

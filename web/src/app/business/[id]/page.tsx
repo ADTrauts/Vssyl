@@ -386,7 +386,7 @@ export default function BusinessAdminPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Business Modules</h3>
-                  <p className="text-sm text-gray-600">Add tools and capabilities</p>
+                  <p className="text-sm text-gray-600">Install and manage tools</p>
                 </div>
               </div>
               {setupStatus.modules ? (
@@ -398,14 +398,14 @@ export default function BusinessAdminPage() {
             
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Installed Modules</span>
-                <Badge color="green">Active</Badge>
+                <span className="text-sm font-medium text-gray-700">Core Modules</span>
+                <Badge color="green">3 Installed</Badge>
               </div>
               
               <Button 
                 variant="primary" 
                 className="w-full"
-                onClick={() => router.push(`/business/${businessId}/profile?tab=analytics`)}
+                onClick={() => router.push(`/business/${businessId}/modules`)}
               >
                 <Package className="w-4 h-4 mr-2" />
                 Manage Modules

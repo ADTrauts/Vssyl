@@ -23,6 +23,7 @@ import GlobalTrashBin from '../GlobalTrashBin';
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from 'next/navigation';
 import { COLORS } from 'shared/styles/theme';
+import { Spinner, Alert } from 'shared/components';
 import ClientOnlyWrapper from '../../app/ClientOnlyWrapper';
 import { BusinessBrandingProvider } from '../../components/BusinessBranding';
 import AvatarContextMenu from '../AvatarContextMenu';
@@ -119,6 +120,11 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
   const { data: session } = useSession();
   const { configuration, loading: configLoading, getModulesForUser } = useBusinessConfiguration();
 
+  // Business dashboard state - CRITICAL for data isolation
+  const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+
   // Business branding - prefer configuration over business object
   const branding = configuration?.branding || business.branding || {};
   const primaryColor = branding.primaryColor || COLORS.infoBlue;
@@ -128,8 +134,10 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
   // Get modules for current user based on permissions
   const getAvailableModules = (): Module[] => {
     if (!configuration || !session?.user?.id) {
-      // Fallback to default modules
-      return BUSINESS_MODULES;
+      // Return empty array - no fallback
+      // If configuration fails to load, the error state will show appropriate message
+      console.warn('⚠️  No configuration or session available for module filtering');
+      return [];
     }
 
     // Use getModulesForUser to filter by position and department permissions
@@ -142,8 +150,89 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
       hidden: false
     }));
 
-    return modules.length > 0 ? modules : BUSINESS_MODULES;
+    // Return actual modules from API - no hardcoded fallback
+    return modules;
   };
+
+  // CRITICAL: Ensure business dashboard exists for proper data isolation
+  useEffect(() => {
+    async function ensureBusinessDashboard() {
+      if (!session?.accessToken || !business?.id) {
+        setDashboardLoading(false);
+        return;
+      }
+
+      try {
+        setDashboardLoading(true);
+        setDashboardError(null);
+
+        console.log('🔄 BusinessWorkspaceLayout: Fetching dashboards for business:', business.id);
+
+        // Fetch all user's dashboards
+        const dashboardsResponse = await fetch('/api/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+          },
+        });
+
+        if (!dashboardsResponse.ok) {
+          throw new Error(`Failed to load dashboards: ${dashboardsResponse.status}`);
+        }
+
+        const allDashboards = await dashboardsResponse.json();
+        console.log('📊 BusinessWorkspaceLayout: Total dashboards:', allDashboards.length);
+
+        // Find existing business dashboard
+        let businessDashboard = allDashboards.find((d: any) => d.businessId === business.id);
+
+        if (businessDashboard) {
+          console.log('✅ BusinessWorkspaceLayout: Found existing business dashboard:', businessDashboard.id);
+        } else {
+          console.log('🆕 BusinessWorkspaceLayout: Creating new business dashboard...');
+
+          // Create business dashboard
+          const createResponse = await fetch('/api/dashboard', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.accessToken}`,
+            },
+            body: JSON.stringify({
+              name: `${business.name} Workspace`,
+              businessId: business.id,
+              layout: {},
+              preferences: {},
+            }),
+          });
+
+          if (!createResponse.ok) {
+            const errorText = await createResponse.text();
+            throw new Error(`Failed to create business dashboard: ${createResponse.status} - ${errorText}`);
+          }
+
+          businessDashboard = await createResponse.json();
+          console.log('✅ BusinessWorkspaceLayout: Created new business dashboard:', businessDashboard.id);
+        }
+
+        // Set the dashboard ID
+        setBusinessDashboardId(businessDashboard.id);
+        console.log('🎯 BusinessWorkspaceLayout: Business Dashboard Ready:', {
+          dashboardId: businessDashboard.id,
+          businessId: business.id,
+          dashboardName: businessDashboard.name,
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (err) {
+        console.error('❌ BusinessWorkspaceLayout: Failed to ensure business dashboard:', err);
+        setDashboardError(err instanceof Error ? err.message : 'Failed to initialize business dashboard');
+      } finally {
+        setDashboardLoading(false);
+      }
+    }
+
+    ensureBusinessDashboard();
+  }, [session?.accessToken, business?.id, business?.name]);
 
   // Initialize client-side state after hydration
   useEffect(() => {
@@ -636,11 +725,29 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
             color: COLORS.neutralDark,
             padding: 0
           }}>
-            <BusinessWorkspaceContent 
-              business={business}
-              currentModule={getCurrentModule()}
-              businessDashboardId={null}
-            />
+            {dashboardLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Spinner size={32} />
+                <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: COLORS.neutralDark }}>Setting up workspace...</p>
+              </div>
+            ) : dashboardError ? (
+              <div style={{ padding: '1.5rem' }}>
+                <Alert type="error" title="Failed to Initialize Workspace">
+                  {dashboardError}
+                </Alert>
+              </div>
+            ) : !businessDashboardId ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Spinner size={32} />
+                <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: COLORS.neutralDark }}>Initializing business workspace...</p>
+              </div>
+            ) : (
+              <BusinessWorkspaceContent 
+                business={business}
+                currentModule={getCurrentModule()}
+                businessDashboardId={businessDashboardId}
+              />
+            )}
           </main>
 
           {/* Right Quick-Access Sidebar */}
