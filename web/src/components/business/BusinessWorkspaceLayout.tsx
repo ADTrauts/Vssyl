@@ -179,7 +179,17 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
           throw new Error(`Failed to load dashboards: ${dashboardsResponse.status}`);
         }
 
-        const allDashboards = await dashboardsResponse.json();
+        const dashboardsData = await dashboardsResponse.json();
+        console.log('📊 BusinessWorkspaceLayout: Dashboards data:', dashboardsData);
+        
+        // Extract all dashboards from the nested structure
+        const allDashboards = dashboardsData.dashboards ? [
+          ...(dashboardsData.dashboards.personal || []),
+          ...(dashboardsData.dashboards.business || []),
+          ...(dashboardsData.dashboards.educational || []),
+          ...(dashboardsData.dashboards.household || [])
+        ] : [];
+        
         console.log('📊 BusinessWorkspaceLayout: Total dashboards:', allDashboards.length);
 
         // Find existing business dashboard
