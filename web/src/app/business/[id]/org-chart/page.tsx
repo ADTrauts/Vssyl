@@ -24,7 +24,7 @@ export default function OrgChartPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
   const { loadOrgChart } = useBusinessConfiguration();
 
   const [orgChartData, setOrgChartData] = useState<OrgChartStructure | null>(null);

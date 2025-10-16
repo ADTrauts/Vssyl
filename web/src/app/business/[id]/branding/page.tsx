@@ -67,7 +67,7 @@ export default function UnifiedBrandingPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

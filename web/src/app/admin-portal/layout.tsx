@@ -71,7 +71,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     { id: 'test-api', label: 'Test API', icon: Code, path: '/admin-portal/test-api' },
   ];
 
-  const currentSection = pathname.split('/')[2] || 'dashboard';
+  const currentSection = pathname?.split('/')[2] || 'dashboard';
 
   return (
     <ImpersonationProvider>

@@ -9,7 +9,7 @@ import { ChevronRight } from 'lucide-react';
 export default function BusinessAIAdminPage() {
   const params = useParams();
   const router = useRouter();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   return (
     <div className="min-h-screen bg-gray-50">

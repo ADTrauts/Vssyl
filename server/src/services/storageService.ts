@@ -199,7 +199,7 @@ export class StorageService {
 
       // Upload the file
       await new Promise((resolve, reject) => {
-        stream.on('error', (error) => {
+        stream.on('error', (error: Error) => {
           console.error('❌ GCS upload stream error:', error);
           reject(error);
         });
@@ -251,7 +251,8 @@ export class StorageService {
     destinationPath: string
   ): Promise<UploadResult> {
     const fs = require('fs');
-    const fullPath = path.join(this.config.local!.uploadDir, path.basename(destinationPath));
+    const uploadDir = this.config.local?.uploadDir || path.join(__dirname, '../../uploads');
+    const fullPath = path.join(uploadDir, path.basename(destinationPath));
     
     // Ensure directory exists
     const dir = path.dirname(fullPath);
@@ -291,7 +292,8 @@ export class StorageService {
   private async deleteFromLocal(filePath: string): Promise<DeleteResult> {
     try {
       const fs = require('fs');
-      const fullPath = path.join(this.config.local!.uploadDir, path.basename(filePath));
+      const uploadDir = this.config.local?.uploadDir || path.join(__dirname, '../../uploads');
+      const fullPath = path.join(uploadDir, path.basename(filePath));
       
       if (fs.existsSync(fullPath)) {
         fs.unlinkSync(fullPath);
