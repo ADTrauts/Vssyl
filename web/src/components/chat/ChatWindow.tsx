@@ -16,6 +16,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useFeatureGating } from '../../hooks/useFeatureGating';
+import ChatFileUpload from '../../app/chat/ChatFileUpload';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -225,6 +226,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [activeTab, setActiveTab] = useState<'messages' | 'threads'>('messages');
   const [isMinimizedToBottom, setIsMinimizedToBottom] = useState(false);
   const [windowHeight, setWindowHeight] = useState(size?.height || 500);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isResizing = useRef(false);
@@ -243,6 +246,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       inputRef.current.focus();
     }
   }, [isMinimized]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showEmojiPicker && !(event.target as Element).closest('.emoji-picker')) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
 
   // Handle resize functionality
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -292,6 +307,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleReply = (message: Message) => {
     setReplyToMessage(message);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleFileSelect = (fileId: string, fileName: string) => {
+    // Add file reference to message
+    const fileMessage = `📎 ${fileName}`;
+    setNewMessage(prev => prev + (prev ? ' ' : '') + fileMessage);
+    setShowFileUpload(false);
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -361,7 +394,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 cursor-pointer"
         style={{
-          right: '20px', // Positioned on the right side
+          right: '52px', // Positioned on the right side + 32px to avoid sidebar
           bottom: '20px',
           width: size?.width || 400,
           height: '60px'
@@ -412,8 +445,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     <div
       className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 flex flex-col"
       style={{
-        right: sidebarWidth === 'thin' ? '80px' : '320px', // Left of sidebar
-        top: '84px', // Below the header (64px) + some margin
+        right: sidebarWidth === 'thin' ? '112px' : '352px', // Left of sidebar + 32px
+        bottom: '20px', // Positioned at bottom instead of top
         width: size?.width || 500,
         height: windowHeight,
         maxHeight: 'calc(100vh - 104px)' // Account for header + margins
@@ -558,6 +591,41 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       )}
       
+      {/* File Upload Modal */}
+      {showFileUpload && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Upload Files</h3>
+              <button
+                onClick={() => setShowFileUpload(false)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <ChatFileUpload onFileSelect={handleFileSelect} />
+          </div>
+        </div>
+      )}
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="emoji-picker absolute bottom-20 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
+          <div className="grid grid-cols-6 gap-1">
+            {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'].slice(0, 48).map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => handleEmojiSelect(emoji)}
+                className="p-2 hover:bg-gray-100 rounded text-lg transition-colors"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center space-x-2">
@@ -570,10 +638,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onKeyPress={handleKeyPress}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
-          <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+          <button 
+            onClick={() => setShowFileUpload(true)}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            title="Attach file"
+          >
             <Paperclip className="w-4 h-4 text-gray-600" />
           </button>
-          <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+          <button 
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            title="Add emoji"
+          >
             <Smile className="w-4 h-4 text-gray-600" />
           </button>
           <Button
