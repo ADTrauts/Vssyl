@@ -32,6 +32,7 @@ interface ChatWindowProps {
   onAddReaction: (messageId: string, emoji: string) => void;
   onRemoveReaction: (messageId: string, emoji: string) => void;
   isLoading?: boolean;
+  sidebarWidth?: 'thin' | 'expanded';
 }
 
 interface MessageItemProps {
@@ -216,7 +217,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onDeleteMessage,
   onAddReaction,
   onRemoveReaction,
-  isLoading = false
+  isLoading = false,
+  sidebarWidth = 'expanded'
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
@@ -359,9 +361,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 cursor-pointer"
         style={{
-          left: '320px',
+          right: '20px', // Positioned on the right side
           bottom: '20px',
-          width: size?.width || 600,
+          width: size?.width || 400,
           height: '60px'
         }}
         onClick={toggleMinimizeToBottom}
@@ -405,14 +407,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  // Full chat window
+  // Full chat window - positioned to the left of the sidebar
   return (
     <div
       className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 flex flex-col"
       style={{
-        left: '320px', // Next to sidebar
+        right: sidebarWidth === 'thin' ? '80px' : '320px', // Left of sidebar
         top: '20px',
-        width: size?.width || 600,
+        width: size?.width || 500,
         height: windowHeight,
         maxHeight: 'calc(100vh - 40px)' // Ensure it doesn't go off screen
       }}
