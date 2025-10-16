@@ -413,10 +413,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 flex flex-col"
       style={{
         right: sidebarWidth === 'thin' ? '80px' : '320px', // Left of sidebar
-        top: '20px',
+        top: '84px', // Below the header (64px) + some margin
         width: size?.width || 500,
         height: windowHeight,
-        maxHeight: 'calc(100vh - 40px)' // Ensure it doesn't go off screen
+        maxHeight: 'calc(100vh - 104px)' // Account for header + margins
       }}
     >
       {/* Header */}

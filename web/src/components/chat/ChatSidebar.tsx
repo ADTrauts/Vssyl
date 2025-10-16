@@ -189,7 +189,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   if (width === 'thin') {
     return (
-      <div className="fixed right-0 top-0 h-full bg-white border-l border-gray-200 z-30 w-16 transition-all duration-300">
+      <div className="fixed right-0 top-16 bg-white border-l border-gray-200 z-30 w-16 transition-all duration-300" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="p-2 space-y-2">
           <button
             onClick={onToggleSidebar}
@@ -214,8 +214,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   }
 
   return (
-    <div className="fixed right-0 top-0 h-full bg-white border-l border-gray-200 z-30 w-80 transition-all duration-300">
-      <div className="p-4 h-full flex flex-col">
+    <div className="fixed right-0 top-16 h-full bg-white border-l border-gray-200 z-30 w-80 transition-all duration-300">
+      <div className="p-4 h-full flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Messaging</h2>
