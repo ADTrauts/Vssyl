@@ -58,7 +58,7 @@ export default function BusinessProfilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
   const { updateModuleStatus, loadConfiguration, updateBranding } = useBusinessConfiguration();
 
   const [business, setBusiness] = useState<Business | null>(null);
@@ -77,8 +77,8 @@ export default function BusinessProfilePage() {
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
 
   // Check if this is a newly created business
-  const isNewBusiness = searchParams.get('new') === 'true';
-  const shouldShowSetup = searchParams.get('showSetup') === 'true';
+  const isNewBusiness = searchParams?.get('new') === 'true';
+  const shouldShowSetup = searchParams?.get('showSetup') === 'true';
 
   useEffect(() => {
     if (businessId && session?.accessToken) {

@@ -67,8 +67,8 @@ const MODULE_ICONS = {
   analytics: BarChart3,
 };
 
-function getSidebarKey(pathname: string) {
-  const module = pathname.split('/')[3] || 'dashboard';
+function getSidebarKey(pathname: string | null) {
+  const module = pathname?.split('/')[3] || 'dashboard';
   return `businessSidebarCollapsed:/${module}`;
 }
 
@@ -396,7 +396,7 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
 
   // Determine current tab based on pathname
   const getCurrentTab = () => {
-    const pathParts = pathname.split('/');
+    const pathParts = pathname?.split('/') || [];
     const lastPart = pathParts[pathParts.length - 1];
     
     // If we're on the main workspace page (no sub-path), show 'dashboard' as active

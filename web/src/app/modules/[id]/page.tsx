@@ -29,7 +29,7 @@ import {
 export default function ModuleDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const moduleId = params.id as string;
+  const moduleId = params?.id as string;
   
   const [module, setModule] = useState<ModuleDetails | null>(null);
   const [loading, setLoading] = useState(true);

@@ -8,8 +8,8 @@ import { BarChart3, Settings, ArrowLeft } from 'lucide-react';
 
 export default function ModuleDetailsPage() {
   const params = useParams();
-  const businessId = params.id as string;
-  const moduleId = params.moduleId as string;
+  const businessId = params?.id as string;
+  const moduleId = params?.moduleId as string;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

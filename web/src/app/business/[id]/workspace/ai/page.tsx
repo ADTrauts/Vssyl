@@ -6,7 +6,7 @@ import { BusinessAIControlCenter } from '@/components/business/ai/BusinessAICont
 
 export default function BusinessAIPage() {
   const params = useParams();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   return (
     <div className="min-h-screen bg-gray-50">

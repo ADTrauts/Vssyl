@@ -59,7 +59,7 @@ interface BusinessMessage {
 export default function WorkChatPage() {
   const params = useParams();
   const { data: session } = useSession();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   const [conversations, setConversations] = useState<BusinessConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);

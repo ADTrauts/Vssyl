@@ -10,7 +10,7 @@ import { useEffect } from 'react';
  */
 export default function BusinessWorkspaceDrivePage() {
   const params = useParams();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   useEffect(() => {
     // Redirect to main drive page with business dashboard context

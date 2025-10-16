@@ -40,7 +40,7 @@ export default function GlobalHeaderTabs() {
     const fetchBusinessBranding = async () => {
       try {
         if (!pathname || !session?.accessToken) return;
-        const segments = pathname.split('/').filter(Boolean);
+        const segments = pathname?.split('/').filter(Boolean) || [];
         if (segments[0] !== 'business' || !segments[1]) return;
         const businessId = segments[1];
         const res = await getBusiness(businessId, session.accessToken);

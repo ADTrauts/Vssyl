@@ -54,7 +54,7 @@ interface CalendarView {
 export default function WorkCalendarPage() {
   const params = useParams();
   const { data: session } = useSession();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   const [events, setEvents] = useState<BusinessEvent[]>([]);
   const [loading, setLoading] = useState(true);

@@ -46,10 +46,10 @@ export default function BusinessWorkspacePage() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { navigateToDashboard } = useDashboard();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
   
   // Get current module from URL params
-  const currentModule = searchParams.get('module') || 'dashboard';
+  const currentModule = searchParams?.get('module') || 'dashboard';
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);

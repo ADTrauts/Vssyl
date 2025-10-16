@@ -51,10 +51,10 @@ export default function DeveloperPortalPage() {
   const [modules, setModules] = useState<Array<{ id: string; name: string }>>([]);
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  let businessId = searchParams.get('businessId') || undefined as string | undefined;
+  let businessId = searchParams?.get('businessId') || undefined as string | undefined;
   if (!businessId && pathname?.startsWith('/business/')) {
     // Expect path like /business/{id}/workspace/developer-portal
-    const parts = pathname.split('/').filter(Boolean);
+    const parts = pathname?.split('/').filter(Boolean) || [];
     const businessIdx = parts.indexOf('business');
     if (businessIdx >= 0 && parts.length > businessIdx + 1) {
       businessId = parts[businessIdx + 1];

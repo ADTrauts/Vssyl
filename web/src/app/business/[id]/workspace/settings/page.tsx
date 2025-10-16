@@ -81,7 +81,7 @@ export default function BusinessSettingsPage() {
   const params = useParams();
   const { data: session } = useSession();
   const { hasPermission } = useBusinessConfiguration();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [business, setBusiness] = useState<Business | null>(null);

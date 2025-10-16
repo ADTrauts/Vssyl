@@ -109,8 +109,8 @@ const MODULE_ICONS = {
 };
 
 // Helper function to get sidebar key
-function getSidebarKey(pathname: string) {
-  const module = pathname.split('/')[1] || 'dashboard';
+function getSidebarKey(pathname: string | null) {
+  const module = pathname?.split('/')[1] || 'dashboard';
   return `sidebarCollapsed:/${module}`;
 }
 
@@ -217,7 +217,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     if (stored !== null) {
       setSidebarCollapsed(stored === 'true');
     } else {
-      setSidebarCollapsed(!pathname.startsWith('/dashboard'));
+      setSidebarCollapsed(!pathname?.startsWith('/dashboard'));
     }
   }, [pathname, hydrated]);
 
@@ -947,7 +947,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* All main module icons */}
           {modules.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
-            const isActive = pathname.startsWith(`/${module.id}`);
+            const isActive = pathname?.startsWith(`/${module.id}`) ?? false;
             return (
               <button
                 key={module.id}
@@ -977,10 +977,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           
           {/* Marketplace/Modules Icon */}
           <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname.startsWith('/modules') ? 'bg-gray-800' : 'hover:bg-gray-700'} ${pathname.startsWith('/modules') ? 'text-white' : 'text-gray-300'}`}
+            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/modules') ? 'bg-gray-800' : 'hover:bg-gray-700'} ${pathname?.startsWith('/modules') ? 'text-white' : 'text-gray-300'}`}
             style={{
-              background: pathname.startsWith('/modules') ? '#1f2937' : 'transparent',
-              color: pathname.startsWith('/modules') ? '#fff' : '#cbd5e1',
+              background: pathname?.startsWith('/modules') ? '#1f2937' : 'transparent',
+              color: pathname?.startsWith('/modules') ? '#fff' : '#cbd5e1',
               border: 'none',
               outline: 'none',
               cursor: 'pointer',

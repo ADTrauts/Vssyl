@@ -50,7 +50,7 @@ interface AnalyticsData {
 export default function WorkAnalyticsPage() {
   const params = useParams();
   const { data: session } = useSession();
-  const businessId = params.id as string;
+  const businessId = params?.id as string;
 
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
