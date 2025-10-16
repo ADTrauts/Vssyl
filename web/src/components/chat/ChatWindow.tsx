@@ -221,8 +221,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [activeTab, setActiveTab] = useState<'messages' | 'threads'>('messages');
+  const [isMinimizedToBottom, setIsMinimizedToBottom] = useState(false);
+  const [windowHeight, setWindowHeight] = useState(size?.height || 500);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isResizing = useRef(false);
 
   // Check enterprise features
   const { hasBusiness: hasEnterprise } = useFeatureGating('chat') as any;
@@ -238,6 +241,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       inputRef.current.focus();
     }
   }, [isMinimized]);
+
+  // Handle resize functionality
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      isResizing.current = true;
+      const startY = e.clientY;
+      const startHeight = windowHeight;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing.current) return;
+        const newHeight = startHeight + (e.clientY - startY);
+        const minHeight = 200;
+        const maxHeight = window.innerHeight - 100;
+        setWindowHeight(Math.max(minHeight, Math.min(maxHeight, newHeight)));
+      };
+
+      const handleMouseUp = () => {
+        isResizing.current = false;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+  };
+
+  // Toggle minimize to bottom
+  const toggleMinimizeToBottom = () => {
+    setIsMinimizedToBottom(!isMinimizedToBottom);
+  };
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -319,6 +353,58 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
+  // Minimized to bottom state
+  if (isMinimizedToBottom) {
+    return (
+      <div
+        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 cursor-pointer"
+        style={{
+          left: '320px',
+          bottom: '20px',
+          width: size?.width || 600,
+          height: '60px'
+        }}
+        onClick={toggleMinimizeToBottom}
+      >
+        <div className="flex items-center justify-between p-4 h-full">
+          <div className="flex items-center space-x-3">
+            <Avatar 
+              src={(otherParticipant as any)?.avatar || undefined} 
+              nameOrEmail={conversationName}
+              size={32}
+            />
+            <div>
+              <h3 className="font-medium text-gray-900">{conversationName}</h3>
+              <p className="text-sm text-gray-500">Click to expand</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleMinimizeToBottom();
+              }}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Expand"
+            >
+              <Minus className="w-4 h-4 text-gray-600 rotate-180" />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Full chat window
   return (
     <div
@@ -327,7 +413,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         left: '320px', // Next to sidebar
         top: '20px',
         width: size?.width || 600,
-        height: size?.height || 500
+        height: windowHeight,
+        maxHeight: 'calc(100vh - 40px)' // Ensure it doesn't go off screen
       }}
     >
       {/* Header */}
@@ -353,9 +440,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <div className="flex items-center space-x-2">
             <button 
-              onClick={onMinimize} 
+              onClick={toggleMinimizeToBottom} 
               className="p-1 hover:bg-gray-100 rounded transition-colors"
-              title="Minimize"
+              title="Minimize to bottom"
             >
               <Minus className="w-4 h-4 text-gray-600" />
             </button>
@@ -496,6 +583,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </Button>
         </div>
       </div>
+      
+      {/* Resize Handle */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize hover:bg-blue-200 transition-colors"
+        onMouseDown={handleMouseDown}
+        title="Drag to resize"
+      />
     </div>
   );
 };
