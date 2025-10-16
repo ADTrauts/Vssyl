@@ -25,6 +25,7 @@ import AIEnhancedSearchBar from '../../components/AIEnhancedSearchBar';
 import { Modal, DraggableWrapper } from 'shared/components';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
+import GlobalChat from '../../components/GlobalChat';
 
 // Add CSS styles for enhanced drag and drop UX
 const dragStyles = `
@@ -1310,6 +1311,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           isLoading={isLoadingSummary}
         />
       )}
+
+      {/* Legacy GlobalChat - For Feature Comparison Only */}
+      <div 
+        className="fixed bottom-24 left-4 z-40"
+        style={{ 
+          maxWidth: '380px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+        }}
+      >
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-t-lg px-3 py-2">
+          <div className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+            📦 Legacy GlobalChat (Feature Comparison View)
+          </div>
+        </div>
+        <GlobalChat />
+      </div>
     </div>
   );
 }

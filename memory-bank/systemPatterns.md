@@ -18,6 +18,7 @@ Update Rules for systemPatterns.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2025-10-16: Added Codebase Architecture Overview (complete application flow, context provider hierarchy, data flow patterns, module architecture, component organization, API structure, deployment architecture, key architectural decisions).**
 - **2025-09-22: Added Google Cloud Storage Integration patterns (storage abstraction layer, profile photo upload system, trash integration, uniform bucket access handling, Application Default Credentials, context-aware avatars).**
 - **2025-01-22: Added API Routing & Environment Variable Patterns (Next.js API route configuration, environment variable hierarchy, chat API path handling, browser cache management, WebSocket authentication patterns).**
 - **2025-09-19: Added Google Cloud Production Issues Resolution patterns (build system fixes, localhost URL replacement, environment variable standardization, database connection fixes, load balancer cleanup, architecture simplification).**
@@ -47,6 +48,311 @@ Update Rules for systemPatterns.md
 ---
 
 # System Architecture and Patterns
+
+## [2025-10-16] Codebase Architecture Overview ✅
+
+### **Application Flow Architecture**
+
+```
+User Request
+    ↓
+Landing Page (/) OR Login (/auth/login)
+    ↓
+Dashboard (/dashboard)
+    ├─ Personal Tabs (multiple dashboards)
+    ├─ Work Tab (business workspace)
+    │   ↓
+    │   Business Selection
+    │       ↓
+    │   BusinessWorkspaceLayout (/business/[id]/workspace)
+    │       ├─ Dashboard
+    │       ├─ Drive
+    │       ├─ Chat
+    │       ├─ Calendar
+    │       ├─ Members
+    │       ├─ Analytics
+    │       └─ AI Assistant
+    ├─ Education Tab
+    └─ Household Tab
+```
+
+### **Context Provider Hierarchy**
+
+The application uses a hierarchical context provider structure for global state management:
+
+```
+RootLayout (web/src/app/layout.tsx)
+├─ ThemeProvider
+├─ SessionProvider (NextAuth)
+├─ WorkAuthProvider
+│   └─ [Manages business authentication state]
+├─ DashboardProvider
+│   └─ [Dashboard state, tab switching, navigation]
+├─ GlobalBrandingProvider
+│   └─ [Business/household branding context]
+├─ GlobalSearchProvider
+│   └─ [Platform-wide search functionality]
+├─ ChatProvider
+│   └─ [Shared chat state for global + panel views]
+└─ GlobalTrashProvider
+    └─ [Unified trash management across modules]
+```
+
+**Key Providers:**
+- **DashboardProvider**: Central state for dashboard context, current dashboard ID, module navigation
+- **WorkAuthProvider**: Business authentication and authorization state
+- **ChatProvider**: Unified chat state shared between global floating chat and main chat panels
+- **GlobalBrandingProvider**: Dynamic branding based on business/household context
+
+### **Key Data Flow Patterns**
+
+#### **Dashboard Context Switching Pattern**
+
+```
+User creates new tab → DashboardContext
+    ↓
+Empty dashboard detected
+    ↓
+DashboardBuildOutModal (module selection)
+    ↓
+User selects modules (Quick Setup or Custom)
+    ↓
+Widgets created via API → Dashboard displays selected modules
+    ↓
+localStorage marks completion (prevents re-prompting)
+```
+
+**Implementation:**
+- `web/src/app/dashboard/DashboardClient.tsx` - Auto-modal trigger
+- `web/src/components/DashboardBuildOutModal.tsx` - Module selection UI
+- `server/src/services/dashboardService.ts` - Backend creates empty dashboards
+
+#### **Business Workspace Isolation Pattern**
+
+```
+Business selected → BusinessWorkspaceLayout
+    ↓
+Ensures business dashboard exists (or creates it)
+    ↓
+businessDashboardId set
+    ↓
+All modules scoped by businessDashboardId + businessId
+    ├─ Drive: files filtered by dashboardId + businessId
+    ├─ Chat: conversations filtered by dashboardId + businessId
+    ├─ Calendar: events scoped to business context
+    └─ Analytics: metrics scoped to business
+```
+
+**Critical Data Isolation:**
+- Each business has its own dashboard
+- All module data scoped by both `dashboardId` AND `businessId`
+- Prevents data leakage between personal and business contexts
+- Ensures proper multi-tenancy
+
+### **Module Architecture Patterns**
+
+#### **Standard Module Pattern**
+
+```
+/app/[module]/
+├─ layout.tsx           # Module-specific layout wrapper
+├─ page.tsx            # Main module page
+├─ [subpage]/          # Sub-routes (e.g., /drive/recent)
+│   └─ page.tsx
+└─ components/         # Module-specific components (optional)
+```
+
+**Examples:**
+- `/app/drive/` - Drive module with recent, shared, starred, trash sub-pages
+- `/app/chat/` - Chat module with conversation panels
+- `/app/calendar/` - Calendar module with day, week, month, year views
+
+#### **Business Module Pattern**
+
+```
+/app/business/[id]/workspace/[module]/
+├─ page.tsx            # Business-scoped module page
+└─ BusinessWorkspaceLayout wraps all pages
+```
+
+**Business Module Scoping:**
+- All business modules wrapped by `BusinessWorkspaceLayout`
+- Automatic business dashboard creation/retrieval
+- Position-aware module filtering based on org chart
+- Business branding applied to all pages
+
+### **Component Architecture**
+
+#### **Layout Components**
+
+1. **DashboardLayout** (`web/src/app/dashboard/DashboardLayout.tsx`)
+   - Primary layout for personal dashboards
+   - Manages sidebar, header, tabs, and main content
+   - Controls Work tab visibility (hides sidebars for full-width experience)
+
+2. **BusinessWorkspaceLayout** (`web/src/components/business/BusinessWorkspaceLayout.tsx`)
+   - Business-specific layout wrapper
+   - Ensures business dashboard exists
+   - Applies business branding
+   - Position-aware module filtering
+
+3. **GlobalHeaderTabs** (`web/src/components/GlobalHeaderTabs.tsx`)
+   - Shared header component for both personal and business
+   - Dynamic branding (Block on Block vs Business branding)
+   - Work tab activation on business routes
+
+#### **Module Components**
+
+**Drive Module Variants:**
+- `DriveModule.tsx` - Standard drive for personal/basic business
+- `EnhancedDriveModule.tsx` - Enterprise drive with bulk operations
+- Feature-gated based on subscription tier
+
+**Chat Components:**
+- `UnifiedGlobalChat.tsx` - Floating global chat (Facebook/LinkedIn style)
+- `ChatLeftPanel.tsx` - Conversation list
+- `ChatMainPanel.tsx` - Active conversation
+- `ChatRightPanel.tsx` - Thread details and enterprise features
+
+### **API Architecture**
+
+#### **Next.js API Proxy Pattern**
+
+```typescript
+// web/src/app/api/[...slug]/route.ts
+// Proxies all /api/* requests to backend
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     process.env.NEXT_PUBLIC_API_URL || 
+                     'https://vssyl-server-235369681725.us-central1.run.app';
+
+// Forward request to backend with authentication
+```
+
+**Benefits:**
+- Single API entry point
+- Automatic authentication header forwarding
+- Environment-based backend URL configuration
+- Simplified frontend API calls
+
+#### **Backend API Structure**
+
+```
+server/src/
+├─ routes/              # Express route definitions
+│   ├─ dashboard.ts
+│   ├─ business.ts
+│   ├─ drive.ts
+│   ├─ chat.ts
+│   └─ ...
+├─ controllers/         # Request handlers with business logic
+│   ├─ dashboardController.ts
+│   ├─ businessController.ts
+│   └─ ...
+├─ services/           # Pure business logic and data access
+│   ├─ dashboardService.ts
+│   ├─ businessService.ts
+│   └─ ...
+└─ middleware/         # Authentication, validation, etc.
+    ├─ auth.ts
+    └─ validateRequest.ts
+```
+
+**Layered Architecture:**
+- **Routes**: Define endpoints and HTTP methods
+- **Controllers**: Handle requests, validation, response formatting
+- **Services**: Pure business logic, database operations
+- **Middleware**: Cross-cutting concerns (auth, validation, logging)
+
+### **State Management Patterns**
+
+#### **Local State Pattern**
+- React `useState` for component-local state
+- `useRef` for mutable values that don't trigger re-renders
+- `useCallback` and `useMemo` for performance optimization
+
+#### **Global State Pattern**
+- Context API for cross-component state
+- Custom hooks for context consumption (e.g., `useDashboard`, `useBusinessConfiguration`)
+- localStorage for persistence (view preferences, sidebar state)
+
+#### **Server State Pattern**
+- NextAuth session for authentication state
+- API calls with React hooks
+- Optimistic updates with rollback on error
+
+### **File Organization**
+
+```
+web/src/
+├─ app/                    # Next.js App Router pages
+│   ├─ dashboard/         # Personal dashboard
+│   ├─ business/          # Business workspaces
+│   ├─ auth/              # Authentication pages
+│   └─ [module]/          # Module pages
+├─ components/            # Shared components
+│   ├─ business/          # Business-specific components
+│   ├─ chat/              # Chat components
+│   ├─ drive/             # Drive components
+│   └─ ...
+├─ contexts/              # React Context providers
+├─ hooks/                 # Custom React hooks
+├─ api/                   # API client functions
+└─ lib/                   # Utility functions
+
+server/src/
+├─ routes/                # API route definitions
+├─ controllers/           # Request handlers
+├─ services/              # Business logic
+├─ middleware/            # Express middleware
+├─ ai/                    # AI-related services
+└─ config/                # Configuration files
+
+shared/src/               # Shared code between web and server
+├─ components/            # Shared UI components
+├─ utils/                 # Shared utilities
+└─ types/                 # Shared TypeScript types
+```
+
+### **Deployment Architecture**
+
+```
+Google Cloud Platform
+├─ Cloud Run (vssyl-web)
+│   └─ Next.js Frontend (Port 3000)
+├─ Cloud Run (vssyl-server)
+│   └─ Express Backend (Port 5000)
+├─ Cloud SQL (PostgreSQL)
+│   └─ Production Database
+├─ Cloud Storage (vssyl-storage-472202)
+│   └─ File uploads, profile photos
+├─ Cloud Build
+│   └─ Automated CI/CD pipeline
+└─ Secret Manager
+    └─ Environment variables, API keys
+```
+
+**Request Flow:**
+1. User → `vssyl.com` (Cloud Run domain mapping)
+2. Next.js App Router handles route
+3. API calls → `/api/*` → Next.js API proxy
+4. Proxy forwards to `vssyl-server` with auth headers
+5. Express backend processes request
+6. Prisma queries Cloud SQL database
+7. Response flows back through proxy to client
+
+### **Key Architectural Decisions**
+
+1. **Monorepo Structure**: Single repository for web, server, and shared code
+2. **Next.js App Router**: Modern React framework with server components
+3. **API Proxy Pattern**: Frontend proxies to backend for simplified authentication
+4. **Context-Based State**: React Context API for global state management
+5. **Modular Prisma Schema**: Domain-driven database organization
+6. **Feature Gating**: Subscription-based feature access control
+7. **Multi-Tenancy**: Business/household data isolation with proper scoping
+8. **Serverless Deployment**: Cloud Run for automatic scaling
+
+---
 
 ## [2025-09-22] Google Cloud Storage Integration Patterns ✅
 
