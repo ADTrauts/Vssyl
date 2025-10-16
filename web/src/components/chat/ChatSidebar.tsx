@@ -1,190 +1,297 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button, Avatar, Badge } from 'shared/components';
-import { 
-  MessageSquare, 
-  Plus, 
-  Search, 
-  Hash,
-  Lock,
-  Users,
-  Settings
-} from 'lucide-react';
+import React from 'react';
+import { Conversation } from 'shared/types/chat';
+import { Avatar, Badge } from 'shared/components';
+import { Search, MessageSquare, Filter, ChevronLeft } from 'lucide-react';
 
 interface ChatSidebarProps {
-  onNewConversation: (type: 'DIRECT' | 'GROUP' | 'CHANNEL', participantIds: string[], name?: string) => void;
-  onContextSwitch: (dashboardId: string) => void;
+  conversations: Conversation[];
+  activeChat: Conversation | null;
+  onChatSelect: (conversation: Conversation) => void;
+  onToggleSidebar: () => void;
+  width: 'thin' | 'expanded';
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  activeTab: 'focused' | 'other';
+  onTabChange: (tab: 'focused' | 'other') => void;
 }
 
-function ChatSidebar({ onNewConversation, onContextSwitch }: ChatSidebarProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showNewConversationMenu, setShowNewConversationMenu] = useState(false);
+interface ChatSidebarItemProps {
+  conversation: Conversation;
+  isActive: boolean;
+  onClick: () => void;
+  isThinMode?: boolean;
+}
 
-  // Mock conversations for demonstration
-  const conversations = [
-    {
-      id: '1',
-      name: 'general',
-      type: 'channel' as const,
-      unreadCount: 3,
-      lastMessage: 'Great work on the Q4 report!',
-      lastMessageTime: '2024-01-15T10:30:00Z',
-      isPrivate: false
-    },
-    {
-      id: '2',
-      name: 'marketing-team',
-      type: 'channel' as const,
-      unreadCount: 0,
-      lastMessage: 'Campaign launch scheduled for next week',
-      lastMessageTime: '2024-01-15T09:15:00Z',
-      isPrivate: true
-    },
-    {
-      id: '3',
-      name: 'John Doe',
-      type: 'direct' as const,
-      unreadCount: 1,
-      lastMessage: 'Can you review the budget proposal?',
-      lastMessageTime: '2024-01-15T08:45:00Z',
-      isPrivate: false
+const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
+  conversation,
+  isActive,
+  onClick,
+  isThinMode = false
+}) => {
+  const getOtherParticipant = (conv: Conversation) => {
+    if (conv.type === 'DIRECT' && conv.participants.length === 2) {
+      return conv.participants.find(p => p.user.id !== conversation.id)?.user;
     }
-  ];
-
-  const filteredConversations = conversations.filter(conv =>
-    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleNewConversation = (type: 'DIRECT' | 'GROUP' | 'CHANNEL') => {
-    if (type === 'DIRECT') {
-      // For direct messages, we'd need to show a user picker
-      // For now, just create with empty participant list
-      onNewConversation(type, [], undefined);
-    } else {
-      // For groups and channels, prompt for name
-      const name = prompt(`Enter ${type.toLowerCase()} name:`);
-      if (name) {
-        onNewConversation(type, [], name);
-      }
-    }
-    setShowNewConversationMenu(false);
+    return null;
   };
 
-  return (
-    <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowNewConversationMenu(!showNewConversationMenu)}
-              className="p-2"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            
-            {/* New Conversation Menu */}
-            {showNewConversationMenu && (
-              <div className="absolute right-0 top-10 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-48">
-                <button
-                  onClick={() => handleNewConversation('DIRECT')}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>New Direct Message</span>
-                </button>
-                <button
-                  onClick={() => handleNewConversation('GROUP')}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>New Group</span>
-                </button>
-                <button
-                  onClick={() => handleNewConversation('CHANNEL')}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Hash className="w-4 h-4" />
-                  <span>New Channel</span>
-                </button>
-              </div>
-            )}
+  const getConversationName = (conv: Conversation) => {
+    if (conv.name) return conv.name;
+    if (conv.type === 'DIRECT' && conv.participants.length === 2) {
+      const otherParticipant = conv.participants.find(p => p.user.id !== conv.id);
+      return otherParticipant?.user.name || otherParticipant?.user.email || 'Unknown User';
+    }
+    return `Group Chat (${conv.participants.length} members)`;
+  };
+
+  const getLastMessage = (conv: Conversation) => {
+    return conv.messages?.[0] || null;
+  };
+
+  const hasUnreadMessages = (conv: Conversation) => {
+    return conv.messages?.some(msg => 
+      msg.senderId !== conv.id && 
+      !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+    ) || false;
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
+  const otherParticipant = getOtherParticipant(conversation);
+  const conversationName = getConversationName(conversation);
+  const lastMessage = getLastMessage(conversation);
+  const hasUnread = hasUnreadMessages(conversation);
+
+  if (isThinMode) {
+    return (
+      <button
+        onClick={onClick}
+        className={`w-12 h-12 rounded-full relative transition-all duration-200 ${
+          isActive ? 'ring-2 ring-blue-500 scale-110' : 'hover:scale-105'
+        }`}
+        title={conversationName}
+      >
+        <Avatar 
+          src={otherParticipant?.avatar} 
+          nameOrEmail={conversationName}
+          size={48}
+          className="w-full h-full"
+        />
+        {hasUnread && (
+          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+            {conversation.messages?.filter(msg => 
+              msg.senderId !== conversation.id && 
+              !msg.readReceipts?.some(receipt => receipt.userId === conversation.id)
+            ).length || 1}
           </div>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full p-3 rounded-lg transition-all duration-200 text-left ${
+        isActive 
+          ? 'bg-blue-50 border-l-4 border-blue-500' 
+          : 'hover:bg-gray-50'
+      }`}
+    >
+      <div className="flex items-center space-x-3">
+        <div className="relative">
+          <Avatar 
+            src={otherParticipant?.avatar} 
+            nameOrEmail={conversationName}
+            size={40}
+          />
+          {hasUnread && (
+            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+              {conversation.messages?.filter(msg => 
+                msg.senderId !== conversation.id && 
+                !msg.readReceipts?.some(receipt => receipt.userId === conversation.id)
+              ).length || 1}
+            </div>
+          )}
         </div>
         
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <h3 className={`text-sm font-medium truncate ${
+              isActive ? 'text-blue-900' : 'text-gray-900'
+            }`}>
+              {conversationName}
+            </h3>
+            {lastMessage && (
+              <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                {formatTime(lastMessage.createdAt)}
+              </span>
+            )}
+          </div>
+          
+          {lastMessage && (
+            <p className={`text-sm truncate mt-1 ${
+              hasUnread ? 'text-gray-900 font-medium' : 'text-gray-600'
+            }`}>
+              {lastMessage.content.length > 50 
+                ? `${lastMessage.content.substring(0, 50)}...`
+                : lastMessage.content
+              }
+            </p>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+};
+
+const ChatSidebar: React.FC<ChatSidebarProps> = ({
+  conversations,
+  activeChat,
+  onChatSelect,
+  onToggleSidebar,
+  width,
+  searchQuery,
+  onSearchChange,
+  activeTab,
+  onTabChange
+}) => {
+  const filteredConversations = conversations.filter(conversation => {
+    if (!searchQuery) return true;
+    
+    const conversationName = conversation.name || 
+      (conversation.type === 'DIRECT' && conversation.participants.length === 2
+        ? conversation.participants.find(p => p.user.id !== conversation.id)?.user.name ||
+          conversation.participants.find(p => p.user.id !== conversation.id)?.user.email ||
+          'Unknown User'
+        : `Group Chat (${conversation.participants.length} members)`);
+    
+    return conversationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      conversation.participants?.some(p => 
+        p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+  });
+
+  if (width === 'thin') {
+    return (
+      <div className="fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-30 w-16 transition-all duration-300">
+        <div className="p-2 space-y-2">
+          <button
+            onClick={onToggleSidebar}
+            className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+            title="Expand sidebar"
+          >
+            <MessageSquare className="w-5 h-5 text-gray-600" />
+          </button>
+          
+          {filteredConversations.map(conv => (
+            <ChatSidebarItem
+              key={conv.id}
+              conversation={conv}
+              isActive={activeChat?.id === conv.id}
+              onClick={() => onChatSelect(conv)}
+              isThinMode={true}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed left-0 top-0 h-full bg-white border-r border-gray-200 z-30 w-80 transition-all duration-300">
+      <div className="p-4 h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Messaging</h2>
+          <button
+            onClick={onToggleSidebar}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Collapse sidebar"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
         {/* Search */}
-        <div className="relative">
+        <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search conversations..."
+            placeholder="Search messages"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
+          <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <Filter className="w-4 h-4" />
+          </button>
         </div>
-      </div>
 
-      {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto">
-        {filteredConversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            className="p-3 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-4">
+          <button
+            onClick={() => onTabChange('focused')}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'focused'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
           >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {conversation.type === 'direct' ? (
-                  <Avatar size={32} nameOrEmail={conversation.name} />
-                ) : (
-                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                    {conversation.isPrivate ? (
-                      <Lock className="w-4 h-4 text-gray-600" />
-                    ) : (
-                      <Hash className="w-4 h-4 text-gray-600" />
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {conversation.type === 'direct' ? conversation.name : `#${conversation.name}`}
-                  </p>
-                  {conversation.unreadCount > 0 && (
-                    <Badge color="blue" className="text-xs">
-                      {conversation.unreadCount}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 truncate mt-1">
-                  {conversation.lastMessage}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {new Date(conversation.lastMessageTime).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            Focused
+          </button>
+          <button
+            onClick={() => onTabChange('other')}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${
+              activeTab === 'other'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Other
+          </button>
+        </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <Button variant="ghost" size="sm" className="w-full justify-start">
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
-        </Button>
+        {/* Conversations */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredConversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="text-sm text-gray-500">
+                {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredConversations.map(conv => (
+                <ChatSidebarItem
+                  key={conv.id}
+                  conversation={conv}
+                  isActive={activeChat?.id === conv.id}
+                  onClick={() => onChatSelect(conv)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default ChatSidebar;
