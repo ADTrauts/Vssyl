@@ -188,6 +188,7 @@ export class StorageService {
     try {
       const gcsFile = this.bucket.file(destinationPath);
       const stream = gcsFile.createWriteStream({
+        resumable: false, // Use simple upload instead of resumable for better reliability
         metadata: {
           contentType: file.mimetype,
           metadata: {
