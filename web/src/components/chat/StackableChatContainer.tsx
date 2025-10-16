@@ -76,7 +76,7 @@ const StackableChatContainer: React.FC = () => {
     setChatState(prev => ({
       ...prev,
       activeChat: null,
-      minimizedChats: [prev.activeChat, ...prev.minimizedChats]
+      minimizedChats: [prev.activeChat!, ...prev.minimizedChats]
     }));
 
     // Clear active conversation in context

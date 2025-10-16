@@ -98,14 +98,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {!isOwn && (
           <div className="flex items-center space-x-2 mb-1">
             <Avatar 
-              src={message.sender?.avatar} 
+              src={(message.sender as any)?.avatar || undefined} 
               nameOrEmail={message.sender?.name || message.sender?.email}
               size={24}
             />
             <span className="text-sm font-medium text-gray-900">
               {message.sender?.name || message.sender?.email}
             </span>
-            {hasEnterprise && message.encrypted && (
+            {hasEnterprise && (message as any).encrypted && (
               <Key className="w-3 h-3 text-green-500" />
             )}
           </div>
@@ -220,11 +220,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
+  const [activeTab, setActiveTab] = useState<'messages' | 'threads'>('messages');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Check enterprise features
-  const { hasBusiness: hasEnterprise } = useFeatureGating('chat');
+  const { hasBusiness: hasEnterprise } = useFeatureGating('chat') as any;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -255,7 +256,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleReply = (message: Message) => {
     setReplyToMessage(message);
-    setShowContextMenu(false);
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -298,7 +298,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         title={`Restore ${conversationName}`}
       >
         <Avatar 
-          src={otherParticipant?.avatar} 
+          src={(otherParticipant as any)?.avatar || undefined} 
           nameOrEmail={conversationName}
           size={40}
           className="w-10 h-10"
@@ -331,39 +331,70 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white rounded-t-lg">
-        <div className="flex items-center space-x-3">
-          <Avatar 
-            src={otherParticipant?.avatar} 
-            nameOrEmail={conversationName}
-            size={32}
-          />
-          <div>
-            <h3 className="font-medium text-gray-900">{conversationName}</h3>
-            <div className="flex items-center space-x-2">
-              <p className="text-sm text-gray-500">Online</p>
-              {hasEnterprise && (
-                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                  Enterprise
-                </span>
-              )}
+      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-3">
+            <Avatar 
+              src={(otherParticipant as any)?.avatar || undefined} 
+              nameOrEmail={conversationName}
+              size={32}
+            />
+            <div>
+              <h3 className="font-medium text-gray-900">{conversationName}</h3>
+              <div className="flex items-center space-x-2">
+                <p className="text-sm text-gray-500">Online</p>
+                {hasEnterprise && (
+                  <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                    Enterprise
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={onMinimize} 
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Minimize"
+            >
+              <Minus className="w-4 h-4 text-gray-600" />
+            </button>
+            <button 
+              onClick={onClose} 
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Close"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button 
-            onClick={onMinimize} 
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-            title="Minimize"
+        
+        {/* Tab Switcher */}
+        <div className="flex border-t border-gray-200">
+          <button
+            onClick={() => setActiveTab('messages')}
+            className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+              activeTab === 'messages'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
           >
-            <Minus className="w-4 h-4 text-gray-600" />
+            Messages
           </button>
-          <button 
-            onClick={onClose} 
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-            title="Close"
+          <button
+            onClick={() => setActiveTab('threads')}
+            className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
+              activeTab === 'threads'
+                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
           >
-            <X className="w-4 h-4 text-gray-600" />
+            Threads
+            {messages.filter(m => m.parentMessageId).length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
+                {messages.filter(m => m.parentMessageId).length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -374,11 +405,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="flex items-center justify-center h-full">
             <Spinner size={24} />
           </div>
-        ) : messages.length === 0 ? (
+        ) : activeTab === 'messages' && messages.filter(m => !m.parentMessageId).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Avatar 
-                src={otherParticipant?.avatar} 
+                src={(otherParticipant as any)?.avatar || undefined} 
                 nameOrEmail={conversationName}
                 size={48}
               />
@@ -386,20 +417,33 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
             <p className="text-gray-500">Start the conversation with {conversationName}</p>
           </div>
+        ) : activeTab === 'threads' && messages.filter(m => m.parentMessageId).length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Reply className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No threads yet</h3>
+            <p className="text-gray-500">Reply to a message to start a thread</p>
+          </div>
         ) : (
           <>
-            {messages.map(message => (
-              <MessageItem
-                key={message.id}
-                message={message}
-                isOwn={isOwnMessage(message)}
-                onReply={handleReply}
-                onDelete={onDeleteMessage}
-                onAddReaction={onAddReaction}
-                onRemoveReaction={onRemoveReaction}
-                hasEnterprise={hasEnterprise}
-              />
-            ))}
+            {messages
+              .filter(message => activeTab === 'messages' 
+                ? !message.parentMessageId 
+                : message.parentMessageId
+              )
+              .map(message => (
+                <MessageItem
+                  key={message.id}
+                  message={message}
+                  isOwn={isOwnMessage(message)}
+                  onReply={handleReply}
+                  onDelete={onDeleteMessage}
+                  onAddReaction={onAddReaction}
+                  onRemoveReaction={onRemoveReaction}
+                  hasEnterprise={hasEnterprise}
+                />
+              ))}
             <div ref={messagesEndRef} />
           </>
         )}

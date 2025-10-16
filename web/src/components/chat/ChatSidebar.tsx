@@ -86,7 +86,7 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
         title={conversationName}
       >
         <Avatar 
-          src={otherParticipant?.avatar} 
+          src={(otherParticipant as any)?.avatar || undefined} 
           nameOrEmail={conversationName}
           size={48}
           className="w-full h-full"
@@ -115,7 +115,7 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
       <div className="flex items-center space-x-3">
         <div className="relative">
           <Avatar 
-            src={otherParticipant?.avatar} 
+            src={(otherParticipant as any)?.avatar || undefined} 
             nameOrEmail={conversationName}
             size={40}
           />
