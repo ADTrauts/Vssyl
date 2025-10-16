@@ -162,7 +162,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     if (dashboardParam) return dashboardParam;
     
     // Then check if we're on a dashboard page
-    const segments = pathname?.split('/').filter(Boolean);
+    const segments = pathname?.split('/').filter(Boolean) || [];
     if (segments[0] === 'dashboard' && segments[1]) {
       return segments[1];
     }
