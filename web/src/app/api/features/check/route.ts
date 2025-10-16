@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const feature = searchParams.get('feature');
-    const businessId = searchParams.get('businessId');
+    const feature = searchParams?.get('feature');
+    const businessId = searchParams?.get('businessId');
 
     if (!feature) {
       return NextResponse.json({ error: 'Feature parameter is required' }, { status: 400 });

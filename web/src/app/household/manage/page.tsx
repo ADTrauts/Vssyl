@@ -20,7 +20,7 @@ export default function HouseholdManagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const dashboardId = searchParams.get('dashboard');
+  const dashboardId = searchParams?.get('dashboard');
 
   useEffect(() => {
     if (!session?.accessToken) {

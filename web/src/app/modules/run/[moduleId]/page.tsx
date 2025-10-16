@@ -22,8 +22,8 @@ export default function RunModulePage() {
       setLoading(true);
       setError(null);
       try {
-        const scopeParam = (searchParams.get('scope') as 'personal' | 'business') || 'personal';
-        const businessId = searchParams.get('businessId') || undefined;
+        const scopeParam = (searchParams?.get('scope') as 'personal' | 'business') || 'personal';
+        const businessId = searchParams?.get('businessId') || undefined;
         const cfg = await getModuleRuntime(moduleId, { scope: scopeParam, businessId });
         setConfig(cfg);
       } catch (err: any) {

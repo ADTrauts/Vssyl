@@ -110,7 +110,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
   // Auto-detect invite tokens from URL and accept
   useEffect(() => {
     if (!searchParams) return;
-    const urlToken = searchParams.get('invite') || searchParams.get('token') || searchParams.get('invitation');
+    const urlToken = searchParams?.get('invite') || searchParams?.get('token') || searchParams?.get('invitation');
     if (urlToken) {
       setJoinToken(urlToken);
       setShowJoinModal(true);

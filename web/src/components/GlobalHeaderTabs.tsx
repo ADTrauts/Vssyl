@@ -135,7 +135,7 @@ export default function GlobalHeaderTabs() {
   }
 
   // Detect business/workspace context and compute branding
-  const effectiveBusiness = isBusinessContext || isBusinessWorkspace;
+  const effectiveBusiness = !!(isBusinessContext || isBusinessWorkspace);
   const overrideBg = isBusinessWorkspace && configuration?.branding?.secondaryColor 
     ? configuration.branding.secondaryColor 
     : (isBusinessContext ? getHeaderStyles().backgroundColor : undefined);

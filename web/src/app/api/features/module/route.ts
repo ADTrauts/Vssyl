@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const module = searchParams.get('module');
-    const businessId = searchParams.get('businessId');
+    const module = searchParams?.get('module');
+    const businessId = searchParams?.get('businessId');
 
     if (!module) {
       return NextResponse.json({ error: 'Module parameter is required' }, { status: 400 });

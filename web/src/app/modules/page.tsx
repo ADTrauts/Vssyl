@@ -133,7 +133,7 @@ export default function ModulesPage() {
 
   // Get active tab from URL params
   useEffect(() => {
-    const tab = searchParams.get('tab') as TabType;
+    const tab = searchParams?.get('tab') as TabType;
     if (tab && ['installed', 'marketplace', 'submit', 'analytics'].includes(tab)) {
       setActiveTab(tab);
     }

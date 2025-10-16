@@ -134,7 +134,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
 
   // Get current module from pathname
   const getCurrentModule = (): string | null => {
-    const segments = pathname?.split('/').filter(Boolean);
+    const segments = pathname?.split('/').filter(Boolean) || [];
     if (segments.length === 0) return null;
     
     // Ignore business routes - they are completely separate
