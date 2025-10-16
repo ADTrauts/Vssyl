@@ -139,7 +139,11 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       fileSize: req.file?.size,
       mimeType: req.file?.mimetype,
       storageProvider: storageService.getProvider(),
-      userId: (req.user as any).id || (req.user as any).sub
+      isGCSConfigured: storageService.isGCSConfigured(),
+      userId: (req.user as any).id || (req.user as any).sub,
+      environment: process.env.NODE_ENV,
+      storageProviderEnv: process.env.STORAGE_PROVIDER,
+      fileStorageTypeEnv: process.env.FILE_STORAGE_TYPE
     });
 
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });

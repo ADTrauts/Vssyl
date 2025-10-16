@@ -69,6 +69,12 @@ export class StorageService {
   }
 
   private initializeStorage() {
+    console.log('🔧 Initializing storage service:', {
+      provider: this.config.provider,
+      gcsConfig: this.config.gcs,
+      localConfig: this.config.local
+    });
+
     if (this.config.provider === 'gcs' && this.config.gcs) {
       try {
         // Use Application Default Credentials (ADC) - no key file needed
@@ -78,13 +84,32 @@ export class StorageService {
           ...(this.config.gcs.keyFilename && { keyFilename: this.config.gcs.keyFilename }),
         });
         this.bucket = this.storage.bucket(this.config.gcs.bucketName);
-        console.log('✅ Google Cloud Storage initialized');
+        console.log('✅ Google Cloud Storage initialized:', {
+          projectId: this.config.gcs.projectId,
+          bucketName: this.config.gcs.bucketName,
+          hasKeyFile: !!this.config.gcs.keyFilename
+        });
       } catch (error) {
-        console.error('❌ Failed to initialize Google Cloud Storage:', error);
-        throw new Error('Google Cloud Storage initialization failed');
+        console.error('❌ Failed to initialize Google Cloud Storage, falling back to local storage:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          projectId: this.config.gcs.projectId,
+          bucketName: this.config.gcs.bucketName
+        });
+        
+        // Fall back to local storage
+        this.config.provider = 'local';
+        this.config.local = {
+          uploadDir: process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads'),
+        };
+        console.log('✅ Fallback to local storage initialized:', {
+          uploadDir: this.config.local.uploadDir
+        });
       }
     } else {
-      console.log('✅ Local storage initialized');
+      console.log('✅ Local storage initialized:', {
+        uploadDir: this.config.local?.uploadDir
+      });
     }
   }
 
@@ -152,46 +177,73 @@ export class StorageService {
       throw new Error('Google Cloud Storage bucket not initialized');
     }
 
-    const gcsFile = this.bucket.file(destinationPath);
-    const stream = gcsFile.createWriteStream({
-      metadata: {
-        contentType: file.mimetype,
+    console.log('📤 Uploading to GCS:', {
+      destinationPath,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      bucketName: this.config.gcs?.bucketName
+    });
+
+    try {
+      const gcsFile = this.bucket.file(destinationPath);
+      const stream = gcsFile.createWriteStream({
         metadata: {
-          originalName: file.originalname,
-          ...options.metadata,
+          contentType: file.mimetype,
+          metadata: {
+            originalName: file.originalname,
+            ...options.metadata,
+          },
         },
-      },
-    });
+      });
 
-    // Upload the file
-    await new Promise((resolve, reject) => {
-      stream.on('error', reject);
-      stream.on('finish', resolve);
-      stream.end(file.buffer);
-    });
+      // Upload the file
+      await new Promise((resolve, reject) => {
+        stream.on('error', (error) => {
+          console.error('❌ GCS upload stream error:', error);
+          reject(error);
+        });
+        stream.on('finish', () => {
+          console.log('✅ GCS upload stream finished');
+          resolve(undefined);
+        });
+        stream.end(file.buffer);
+      });
 
-    // Make public if requested
-    // Note: With uniform bucket-level access, individual objects cannot be made public
-    // The bucket itself needs to be configured for public access
-    if (options.makePublic) {
-      try {
-        await gcsFile.makePublic();
-      } catch (error: any) {
-        if (error.message.includes('uniform bucket-level access')) {
-          console.log('ℹ️  Bucket has uniform access - objects inherit bucket permissions');
-        } else {
-          throw error;
+      // Make public if requested
+      // Note: With uniform bucket-level access, individual objects cannot be made public
+      // The bucket itself needs to be configured for public access
+      if (options.makePublic) {
+        try {
+          await gcsFile.makePublic();
+          console.log('✅ File made public');
+        } catch (error: any) {
+          if (error.message.includes('uniform bucket-level access')) {
+            console.log('ℹ️  Bucket has uniform access - objects inherit bucket permissions');
+          } else {
+            console.error('❌ Error making file public:', error);
+            throw error;
+          }
         }
       }
+
+      const publicUrl = this.getPublicUrl(destinationPath);
+      console.log('✅ GCS upload successful:', { publicUrl, destinationPath });
+
+      return {
+        url: publicUrl,
+        path: destinationPath,
+        publicUrl: options.makePublic ? publicUrl : undefined,
+      };
+    } catch (error) {
+      console.error('❌ GCS upload failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        destinationPath,
+        fileName: file.originalname
+      });
+      throw error;
     }
-
-    const publicUrl = this.getPublicUrl(destinationPath);
-
-    return {
-      url: publicUrl,
-      path: destinationPath,
-      publicUrl: options.makePublic ? publicUrl : undefined,
-    };
   }
 
   private async uploadToLocal(
