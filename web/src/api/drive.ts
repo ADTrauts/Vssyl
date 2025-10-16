@@ -80,14 +80,35 @@ export async function uploadFile(token: string, file: globalThis.File, folderId?
   const formData = new FormData();
   formData.append('file', file);
   if (folderId) formData.append('folderId', folderId);
-  if (isChatFile) formData.append('isChatFile', 'true');
+  if (isChatFile) formData.append('chat', 'true');
+  
+  console.log('📤 Uploading file:', {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    folderId,
+    isChatFile,
+    hasToken: !!token
+  });
+  
   const res = await fetch('/api/drive/files', {
     method: 'POST',
     body: formData,
     headers: authHeaders(token),
   });
-  if (!res.ok) throw new Error('Failed to upload file');
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('❌ Upload failed:', {
+      status: res.status,
+      statusText: res.statusText,
+      error: errorText
+    });
+    throw new Error(`Failed to upload file: ${res.status} ${res.statusText}`);
+  }
+  
   const data = await res.json();
+  console.log('✅ Upload successful:', data);
   return data.file;
 }
 
