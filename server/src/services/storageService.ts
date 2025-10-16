@@ -125,7 +125,16 @@ export class StorageService {
     } = {}
   ): Promise<UploadResult> {
     if (this.config.provider === 'gcs' && this.bucket) {
-      return this.uploadToGCS(file, destinationPath, options);
+      try {
+        return await this.uploadToGCS(file, destinationPath, options);
+      } catch (error) {
+        console.error('⚠️  GCS upload failed, falling back to local storage:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          destinationPath
+        });
+        // Fall back to local storage on GCS failure
+        return this.uploadToLocal(file, destinationPath);
+      }
     } else {
       return this.uploadToLocal(file, destinationPath);
     }
