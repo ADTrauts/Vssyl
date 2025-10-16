@@ -390,9 +390,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             }`}
           >
             Threads
-            {messages.filter(m => m.parentMessageId).length > 0 && (
+            {messages.filter(m => (m as any).parentMessageId).length > 0 && (
               <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">
-                {messages.filter(m => m.parentMessageId).length}
+                {messages.filter(m => (m as any).parentMessageId).length}
               </span>
             )}
           </button>
@@ -405,7 +405,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="flex items-center justify-center h-full">
             <Spinner size={24} />
           </div>
-        ) : activeTab === 'messages' && messages.filter(m => !m.parentMessageId).length === 0 ? (
+        ) : activeTab === 'messages' && messages.filter(m => !(m as any).parentMessageId).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Avatar 
@@ -417,7 +417,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
             <p className="text-gray-500">Start the conversation with {conversationName}</p>
           </div>
-        ) : activeTab === 'threads' && messages.filter(m => m.parentMessageId).length === 0 ? (
+        ) : activeTab === 'threads' && messages.filter(m => (m as any).parentMessageId).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Reply className="w-8 h-8 text-gray-400" />
@@ -429,8 +429,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <>
             {messages
               .filter(message => activeTab === 'messages' 
-                ? !message.parentMessageId 
-                : message.parentMessageId
+                ? !(message as any).parentMessageId 
+                : (message as any).parentMessageId
               )
               .map(message => (
                 <MessageItem
