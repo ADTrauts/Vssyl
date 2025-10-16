@@ -51,30 +51,37 @@ async function handler(req: NextRequest) {
   }
 
   try {
-    const fetchOptions: RequestInit & { duplex?: string } = {
+    // Build fetch options
+    let fetchOptions: RequestInit & { duplex?: string } = {
       method: req.method,
       headers: headers,
       redirect: 'manual'
     };
 
-    // Add body and duplex option for non-GET/HEAD requests
+    // Handle request body for non-GET/HEAD requests
     if (req.method !== 'GET' && req.method !== 'HEAD') {
-      // For multipart/form-data (file uploads), we need to handle this differently
-      const contentType = headers.get('content-type');
+      const contentType = req.headers.get('content-type');
+      
       if (contentType?.includes('multipart/form-data')) {
-        // Remove content-type header to let fetch set it with boundary
-        headers.delete('content-type');
-        // Get the FormData from the request
-        const formData = await req.formData();
-        fetchOptions.body = formData as any;
-        fetchOptions.headers = headers;
-      } else {
+        // For file uploads with multipart/form-data:
+        // We need to pass the stream directly and preserve the boundary
+        // Don't modify the content-type header - it contains the boundary parameter
         fetchOptions.body = req.body;
-        fetchOptions.duplex = 'half'; // Required for Node.js 18+ when sending body
+        fetchOptions.duplex = 'half';
+      } else {
+        // For other POST/PUT/PATCH requests (JSON, form-urlencoded, etc.)
+        fetchOptions.body = req.body;
+        fetchOptions.duplex = 'half';
       }
     }
 
     const response = await fetch(url, fetchOptions);
+
+    console.log('API Proxy - Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      pathname
+    });
 
     // For file downloads, we need to preserve the content properly
     if (pathname.includes('/drive/files/') && req.method === 'GET') {
@@ -88,8 +95,25 @@ async function handler(req: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('API proxy error:', error);
-    return new NextResponse('Proxy error', { status: 500 });
+    console.error('API proxy error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      url,
+      method: req.method,
+      pathname
+    });
+    
+    return new NextResponse(
+      JSON.stringify({ 
+        error: 'Proxy error', 
+        message: error instanceof Error ? error.message : 'Unknown error',
+        path: pathname 
+      }), 
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }
 
