@@ -318,7 +318,7 @@ export const getDataClassifications = async (req: Request, res: Response) => {
     const { resourceType, sensitivity, page = 1, limit = 50 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: Record<string, unknown> = {};
+    const where: any = {};
     if (resourceType) where.resourceType = resourceType;
     if (sensitivity) where.sensitivity = sensitivity;
 
@@ -422,7 +422,7 @@ export const getBackupRecords = async (req: Request, res: Response) => {
     const { backupType, status, page = 1, limit = 50 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const where: Record<string, unknown> = {};
+    const where: any = {};
     if (backupType) where.backupType = backupType;
     if (status) where.status = status;
 
@@ -516,7 +516,7 @@ export const getClassificationRules = async (req: Request, res: Response) => {
 
     const { resourceType, isActive } = req.query;
 
-    const where: Record<string, unknown> = {};
+    const where: any = {};
     if (resourceType) where.resourceType = resourceType;
     if (isActive !== undefined) where.isActive = isActive === 'true';
 
