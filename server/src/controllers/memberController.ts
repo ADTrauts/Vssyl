@@ -775,7 +775,7 @@ export const updateEmployeeRole = async (req: Request, res: Response) => {
     }
 
     // Build update data object
-    const updateData: any = { role, title, department };
+    const updateData: Record<string, unknown> = { role, title, department };
     if (typeof canInvite === 'boolean') updateData.canInvite = canInvite;
     if (typeof canManage === 'boolean') updateData.canManage = canManage;
     if (typeof canBilling === 'boolean') updateData.canBilling = canBilling;

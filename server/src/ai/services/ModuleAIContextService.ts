@@ -225,7 +225,7 @@ export class ModuleAIContextService {
     moduleId: string,
     providerName: string,
     userId: string,
-    parameters?: Record<string, any>
+    parameters?: Record<string, unknown>
   ): Promise<ModuleContextResponse> {
     const startTime = Date.now();
 

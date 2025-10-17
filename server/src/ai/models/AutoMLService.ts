@@ -42,7 +42,7 @@ export interface AutoMLJob {
   results: {
     bestModel: string;
     bestScore: number;
-    bestHyperparameters: Record<string, any>;
+    bestHyperparameters: Record<string, unknown>;
     allModels: ModelTrial[];
     featureImportance: Record<string, number>;
     crossValidationScores: number[];
@@ -69,7 +69,7 @@ export interface ModelTrial {
   id: string;
   modelName: string;
   algorithm: string;
-  hyperparameters: Record<string, any>;
+  hyperparameters: Record<string, unknown>;
   features: string[];
   preprocessing: string[];
   featureEngineering: string[];
@@ -98,7 +98,7 @@ export interface FeatureEngineering {
   description: string;
   type: 'numerical' | 'categorical' | 'temporal' | 'text' | 'image';
   operation: 'scaling' | 'encoding' | 'imputation' | 'transformation' | 'selection' | 'extraction';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   appliedFeatures: string[];
   outputFeatures: string[];
   performance: {
@@ -119,7 +119,7 @@ export interface HyperparameterOptimization {
   maxTrials: number;
   currentTrial: number;
   bestScore: number;
-  bestHyperparameters: Record<string, any>;
+  bestHyperparameters: Record<string, unknown>;
   trials: HyperparameterTrial[];
   status: 'running' | 'completed' | 'failed';
   createdAt: Date;
@@ -129,7 +129,7 @@ export interface HyperparameterOptimization {
 
 export interface HyperparameterTrial {
   id: string;
-  hyperparameters: Record<string, any>;
+  hyperparameters: Record<string, unknown>;
   score: number;
   status: 'pending' | 'running' | 'completed' | 'failed';
   error?: string;
@@ -166,7 +166,7 @@ export interface ModelSelection {
 export interface ModelCandidate {
   id: string;
   algorithm: string;
-  hyperparameters: Record<string, any>;
+  hyperparameters: Record<string, unknown>;
   performance: {
     accuracy: number;
     precision: number;

@@ -134,7 +134,7 @@ export interface BusinessInsight {
     source: string;
     metrics: string[];
     timeRange: { start: Date; end: Date };
-    values: Record<string, any>;
+    values: Record<string, unknown>;
   };
   insights: string[];
   recommendations: string[];

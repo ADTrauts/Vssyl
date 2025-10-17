@@ -145,7 +145,7 @@ export interface InsightValidation {
   feedback: string;
   validator: string;
   validationDate: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ContinuousLearning {

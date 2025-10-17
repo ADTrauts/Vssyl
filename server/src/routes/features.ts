@@ -226,7 +226,7 @@ router.get('/user-summary', async (req: Request, res: Response) => {
 
     // Get user's features across all modules
     const modules = ['drive', 'chat', 'calendar', 'dashboard', 'ai', 'business'];
-    const moduleAccess: Record<string, any> = {};
+    const moduleAccess: Record<string, unknown> = {};
 
     for (const module of modules) {
       try {

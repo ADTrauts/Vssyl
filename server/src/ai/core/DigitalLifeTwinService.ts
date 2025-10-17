@@ -46,7 +46,7 @@ export interface AIAction {
   type: string;
   module: string;
   operation: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   requiresApproval: boolean;
   affectedUsers?: string[];
   reasoning: string;

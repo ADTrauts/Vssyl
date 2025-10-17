@@ -28,7 +28,7 @@ export interface DataPoint {
   id: string;
   streamId: string;
   timestamp: Date;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   metadata: {
     source: string;
     version: string;
@@ -55,7 +55,7 @@ export interface RealTimeMetric {
   lastValue: number;
   lastUpdate: Date;
   trend: 'increasing' | 'decreasing' | 'stable' | 'unknown';
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface RealTimeAlert {
@@ -73,7 +73,7 @@ export interface RealTimeAlert {
   acknowledgedAt?: Date;
   resolved: boolean;
   resolvedAt?: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface StreamProcessor {
@@ -90,8 +90,8 @@ export interface StreamProcessor {
       function: 'sum' | 'average' | 'min' | 'max' | 'count';
       groupBy?: string[];
     };
-    enrichment?: Record<string, any>;
-    validation?: Record<string, any>;
+    enrichment?: Record<string, unknown>;
+    validation?: Record<string, unknown>;
   };
   status: 'active' | 'paused' | 'error';
   performance: {
@@ -153,9 +153,9 @@ export interface DashboardWidget {
     chartType?: 'line' | 'bar' | 'pie' | 'scatter' | 'area' | 'heatmap';
     metrics?: string[];
     dimensions?: string[];
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
     refreshInterval?: number;
-    customConfig?: Record<string, any>;
+    customConfig?: Record<string, unknown>;
   };
   data?: any;
   lastUpdate: Date;
@@ -165,7 +165,7 @@ export interface StreamSubscription {
   id: string;
   userId: string;
   streamId: string;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   delivery: {
     method: 'websocket' | 'webhook' | 'email' | 'push';
     endpoint?: string;
@@ -489,7 +489,7 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
   /**
    * Add data point to stream
    */
-  async addDataPoint(streamId: string, data: Record<string, any>, metadata: {
+  async addDataPoint(streamId: string, data: Record<string, unknown>, metadata: {
     source: string;
     version: string;
     quality: number;
@@ -706,7 +706,7 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
    */
   async getDashboardData(dashboardId: string): Promise<{
     dashboard: AnalyticsDashboard;
-    widgetData: Record<string, any>;
+    widgetData: Record<string, unknown>;
   }> {
     try {
       const dashboard = this.dashboards.get(dashboardId);
@@ -715,7 +715,7 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       }
 
       // Collect data for each widget
-      const widgetData: Record<string, any> = {};
+      const widgetData: Record<string, unknown> = {};
       
       for (const widget of dashboard.widgets) {
         try {
@@ -808,7 +808,8 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
         intervals[intervalKey] = { sum: 0, count: 0 };
       }
       
-      intervals[intervalKey].sum += dp.data[metricKey] || 0;
+      const metricValue = typeof dp.data[metricKey] === 'number' ? dp.data[metricKey] : 0;
+      intervals[intervalKey].sum += metricValue;
       intervals[intervalKey].count += 1;
     });
 
@@ -977,14 +978,20 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
     const { aggregation, calculation } = metric;
     
     if (calculation.includes('AVG')) {
-      return dataPoint.data[Object.keys(dataPoint.data)[0]] || 0;
+      const firstKey = Object.keys(dataPoint.data)[0];
+      const value = dataPoint.data[firstKey];
+      return typeof value === 'number' ? value : 0;
     } else if (calculation.includes('COUNT')) {
       return 1;
     } else if (calculation.includes('SUM')) {
-      return dataPoint.data[Object.keys(dataPoint.data)[0]] || 0;
+      const firstKey = Object.keys(dataPoint.data)[0];
+      const value = dataPoint.data[firstKey];
+      return typeof value === 'number' ? value : 0;
     } else {
       // Default to first data value
-      return dataPoint.data[Object.keys(dataPoint.data)[0]] || 0;
+      const firstKey = Object.keys(dataPoint.data)[0];
+      const value = dataPoint.data[firstKey];
+      return typeof value === 'number' ? value : 0;
     }
   }
 

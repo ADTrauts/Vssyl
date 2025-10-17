@@ -11,7 +11,7 @@ interface TrashItemRequest {
   type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message';
   moduleId: string;
   moduleName: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export async function listTrashedItems(req: Request, res: Response) {

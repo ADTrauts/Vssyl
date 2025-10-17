@@ -5,7 +5,7 @@ export interface AuditLogEntry {
   action: string;
   details: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export class AuditService {
@@ -16,7 +16,7 @@ export class AuditService {
     userId: string,
     action: string,
     details: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) {
     try {
       await prisma.auditLog.create({

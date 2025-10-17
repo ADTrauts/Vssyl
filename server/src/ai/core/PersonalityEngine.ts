@@ -274,7 +274,7 @@ export class PersonalityEngine {
    * Analyze interaction for personality insights
    */
   private analyzeInteractionForInsights(interaction: any, userFeedback?: string): Record<string, unknown> {
-    const insights: any = {};
+    const insights: Record<string, unknown> = {};
     
     // Analyze response time preferences
     if (interaction.responseTime) {

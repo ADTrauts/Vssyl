@@ -149,7 +149,7 @@ export class DigitalLifeTwinCore {
       }
       
       // 3. Get smart pattern analysis and predictions
-      let smartAnalysis: any = { patterns: [], predictions: [], suggestions: [] };
+      let smartAnalysis: Record<string, unknown> = { patterns: [], predictions: [], suggestions: [] };
       try {
         smartAnalysis = await this.smartPatternEngine?.analyzeAndPredict(query.userId, {
           currentQuery: query.query,
@@ -161,7 +161,7 @@ export class DigitalLifeTwinCore {
       }
 
       // 4. Enhance query with semantic understanding
-      let semanticEnhancement: any = { 
+      let semanticEnhancement: Record<string, unknown> = { 
         originalQuery: query.query, 
         enhancedContext: query.query, 
         relatedQueries: [], 

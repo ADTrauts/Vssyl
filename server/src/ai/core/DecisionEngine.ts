@@ -16,7 +16,7 @@ export interface PossibleAction {
   type: string;
   module: string;
   operation: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   impact: ActionImpact;
   cost: ActionCost;
   risks: Risk[];

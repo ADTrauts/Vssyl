@@ -38,7 +38,7 @@ export interface WorkflowTrigger {
     eventType?: string;
     webhookUrl?: string;
     threshold?: number;
-    conditions?: Record<string, any>;
+    conditions?: Record<string, unknown>;
   };
   enabled: boolean;
   priority: number;
@@ -52,7 +52,7 @@ export interface WorkflowStep {
   order: number;
   config: {
     action?: string;
-    parameters?: Record<string, any>;
+    parameters?: Record<string, unknown>;
     aiModel?: string;
     decisionLogic?: string;
     loopCondition?: string;
@@ -137,7 +137,7 @@ export interface StepResult {
   output: any;
   error?: string;
   retryCount: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface RetryPolicy {
@@ -197,7 +197,7 @@ export interface DecisionRule {
   action: string;
   priority: number;
   enabled: boolean;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface DecisionInput {
@@ -313,7 +313,7 @@ export interface LearningImprovement {
   improvement: number; // percentage
   factors: string[];
   timestamp: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export class WorkflowAutomationService extends EventEmitter {

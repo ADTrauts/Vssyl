@@ -233,7 +233,7 @@ export async function listEventsInRange(req: Request, res: Response) {
     }
   }
 
-  const expanded: any[] = [];
+  const expanded: Array<Record<string, unknown>> = [];
   for (const ev of events) {
     // If this is a child exception or a normal one-off event, include as-is
     if (!ev.recurrenceRule) {

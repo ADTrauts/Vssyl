@@ -12,7 +12,7 @@ export interface ForecastingModel {
   dataSource: string;
   targetVariable: string;
   features: string[];
-  hyperparameters: Record<string, any>;
+  hyperparameters: Record<string, unknown>;
   performance: {
     mse: number;
     mae: number;
@@ -103,10 +103,10 @@ export interface Anomaly {
   severity: 'low' | 'medium' | 'high' | 'critical';
   type: 'point' | 'contextual' | 'collective';
   description: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   acknowledged: boolean;
   resolved: boolean;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -146,7 +146,7 @@ export interface PipelineStep {
   name: string;
   type: 'data_preparation' | 'feature_engineering' | 'model_training' | 'prediction' | 'evaluation' | 'deployment';
   order: number;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   dependencies: string[]; // Step IDs this step depends on
   timeout: number; // seconds
   retryCount: number;
@@ -189,7 +189,7 @@ export interface ExperimentModel {
   id: string;
   name: string;
   algorithm: string;
-  hyperparameters: Record<string, any>;
+  hyperparameters: Record<string, unknown>;
   performance: Record<string, number>;
   rank: number;
   status: 'pending' | 'running' | 'completed' | 'failed';
@@ -208,7 +208,7 @@ export interface IntelligenceInsight {
     source: string;
     variables: string[];
     timeRange: { start: Date; end: Date };
-    values: Record<string, any>;
+    values: Record<string, unknown>;
   };
   insights: string[];
   recommendations: string[];

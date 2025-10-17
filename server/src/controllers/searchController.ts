@@ -155,7 +155,7 @@ export const getSuggestions = async (req: Request, res: Response) => {
     }
 
     const searchQuery = query.trim();
-    const suggestions: any[] = [];
+    const suggestions: Array<Record<string, unknown>> = [];
 
     // Get recent search history (from user preferences or cache)
     // For now, we'll return some basic suggestions

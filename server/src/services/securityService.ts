@@ -61,7 +61,7 @@ export class SecurityService {
     const { page = 1, limit = 20, severity, eventType, resolved, timeRange } = filters;
     const skip = (page - 1) * limit;
 
-    const where: Record<string, any> = {};
+    const where: Record<string, unknown> = {};
     
     if (severity && severity !== 'all') {
       where.severity = severity;

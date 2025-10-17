@@ -30,7 +30,7 @@ export interface ApprovalResponse {
   userId: string;
   response: 'approve' | 'reject' | 'modify';
   reasoning?: string;
-  modifications?: any;
+  modifications?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -52,7 +52,7 @@ export interface RollbackPlan {
 export interface RollbackStep {
   module: string;
   operation: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   order: number;
 }
 
@@ -649,77 +649,77 @@ export class ActionExecutor {
   }
 
   // Specific operation implementations
-  private async organizeFiles(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async organizeFiles(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement file organization logic
     return { organized: true, count: parameters.fileCount || 0 };
   }
 
-  private async scheduleMessage(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async scheduleMessage(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement message scheduling
     return { scheduled: true, messageId: `msg_${Date.now()}` };
   }
 
-  private async respondToMessage(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async respondToMessage(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement automatic message response
     return { responded: true, responseId: `response_${Date.now()}` };
   }
 
-  private async assignHouseholdTask(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async assignHouseholdTask(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement household task assignment
     return { assigned: true, taskId: `task_${Date.now()}` };
   }
 
-  private async scheduleHouseholdEvent(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async scheduleHouseholdEvent(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement household event scheduling
     return { scheduled: true, eventId: `event_${Date.now()}` };
   }
 
-  private async notifyHouseholdMembers(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async notifyHouseholdMembers(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement household member notifications
     return { notified: true, memberCount: parameters.memberCount || 0 };
   }
 
-  private async manageHouseholdBudget(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async manageHouseholdBudget(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement household budget management
     return { updated: true, amount: parameters.amount || 0 };
   }
 
-  private async scheduleBusinessMeeting(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async scheduleBusinessMeeting(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement business meeting scheduling
     return { scheduled: true, meetingId: `meeting_${Date.now()}` };
   }
 
-  private async delegateBusinessTask(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async delegateBusinessTask(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement business task delegation
     return { delegated: true, taskId: `task_${Date.now()}` };
   }
 
-  private async generateBusinessReport(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async generateBusinessReport(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement business report generation
     return { generated: true, reportId: `report_${Date.now()}` };
   }
 
-  private async updateBusinessProject(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async updateBusinessProject(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement business project updates
     return { updated: true, projectId: parameters.projectId };
   }
 
-  private async updateDashboardLayout(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async updateDashboardLayout(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement dashboard layout updates
     return { updated: true, layoutId: `layout_${Date.now()}` };
   }
 
-  private async addDashboardModule(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async addDashboardModule(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement dashboard module addition
     return { added: true, moduleId: parameters.moduleId };
   }
 
-  private async sendNotification(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async sendNotification(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement notification sending
     return { sent: true, notificationId: `notif_${Date.now()}` };
   }
 
-  private async scheduleReminder(parameters: any, userContext: UserContext): Promise<unknown> {
+  private async scheduleReminder(parameters: Record<string, unknown>, userContext: UserContext): Promise<unknown> {
     // TODO: Implement reminder scheduling
     return { scheduled: true, reminderId: `reminder_${Date.now()}` };
   }

@@ -51,7 +51,7 @@ export const getPersonalAuditLogs = async (req: Request, res: Response) => {
     }
 
     // Build order by clause
-    const orderBy: any = {};
+    const orderBy: Record<string, unknown> = {};
     if (sortBy === 'action') {
       orderBy.action = sortOrder;
     } else if (sortBy === 'resourceType') {

@@ -8,7 +8,7 @@ export interface SSOProvider {
   type: 'saml' | 'oauth2' | 'ldap' | 'oidc';
   enabled: boolean;
   config: SSOConfig;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,7 +83,7 @@ export interface SSOSession {
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: Date;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   createdAt: Date;
   lastUsedAt: Date;
 }
@@ -96,7 +96,7 @@ export interface SSOUser {
   displayName?: string;
   externalId: string;
   providerId: string;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   groups?: string[];
   roles?: string[];
   isActive: boolean;
@@ -113,7 +113,7 @@ export interface SSOGroup {
   externalId: string;
   providerId: string;
   members: string[];
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }

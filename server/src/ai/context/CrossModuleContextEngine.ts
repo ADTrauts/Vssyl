@@ -940,7 +940,7 @@ export class CrossModuleContextEngine {
         (m) => m.relevance === 'high'
       );
 
-      const moduleContexts: Record<string, any> = {};
+      const moduleContexts: Record<string, unknown> = {};
 
       // Fetch in parallel for speed
       await Promise.all(

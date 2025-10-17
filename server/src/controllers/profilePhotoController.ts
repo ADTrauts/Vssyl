@@ -76,7 +76,7 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
     const photoUrl = uploadResult.url;
 
     // Update user record with the new photo URL
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (photoType === 'personal') {
       updateData.personalPhoto = photoUrl;
     } else {
@@ -161,7 +161,7 @@ export async function removeProfilePhoto(req: Request, res: Response) {
     }
 
     // Update user record to remove the photo URL
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (photoType === 'personal') {
       updateData.personalPhoto = null;
     } else {

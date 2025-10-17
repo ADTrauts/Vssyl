@@ -148,7 +148,7 @@ router.get(
         moduleId,
         providerName,
         userId,
-        parameters as Record<string, any>
+        parameters as Record<string, unknown>
       );
 
       res.json(context);

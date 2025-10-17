@@ -7,7 +7,7 @@ export interface AutonomousAction {
   id: string;
   userId: string;
   actionType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   context: AutonomousActionContext;
   status: 'pending' | 'executing' | 'completed' | 'failed' | 'awaiting_approval';
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -62,7 +62,7 @@ export class AutonomousActionExecutor {
   async executeAutonomousAction(
     userId: string,
     actionType: string,
-    parameters: Record<string, any>,
+    parameters: Record<string, unknown>,
     context: AutonomousActionContext
   ): Promise<ActionExecutionResult> {
     const startTime = Date.now();
@@ -71,13 +71,15 @@ export class AutonomousActionExecutor {
       // Create autonomy context for evaluation
       const autonomyContext: AutonomyContext = {
         userId,
-        actionType,
-        module: context.module,
-        urgency: this.mapPriorityToUrgency(context.confidence),
-        affectedUsers: parameters.affectedUsers || [userId],
-        financialImpact: parameters.financialImpact || 0,
-        timeCommitment: parameters.timeCommitment || 5,
-        dataSensitivity: parameters.dataSensitivity || 'internal'
+      actionType,
+      module: context.module,
+      urgency: this.mapPriorityToUrgency(context.confidence),
+      affectedUsers: Array.isArray(parameters.affectedUsers) ? parameters.affectedUsers : [userId],
+      financialImpact: typeof parameters.financialImpact === 'number' ? parameters.financialImpact : 0,
+      timeCommitment: typeof parameters.timeCommitment === 'number' ? parameters.timeCommitment : 5,
+      dataSensitivity: (typeof parameters.dataSensitivity === 'string' && ['internal', 'public', 'confidential', 'restricted'].includes(parameters.dataSensitivity))
+        ? parameters.dataSensitivity as 'internal' | 'public' | 'confidential' | 'restricted'
+        : 'internal'
       };
 
       // Evaluate if action can be executed autonomously
@@ -216,10 +218,10 @@ export class AutonomousActionExecutor {
     // This would integrate with calendar APIs
     const event = {
       id: `event_${Date.now()}`,
-      title,
-      startTime: new Date(startTime),
-      duration: duration || 60,
-      attendees: attendees || [],
+      title: typeof title === 'string' ? title : '',
+      startTime: startTime instanceof Date ? startTime : new Date(String(startTime)),
+      duration: typeof duration === 'number' ? duration : 60,
+      attendees: Array.isArray(attendees) ? attendees : [],
       createdBy: 'ai_assistant',
       userId: action.userId
     };
@@ -270,10 +272,10 @@ export class AutonomousActionExecutor {
     
     const task = {
       id: `task_${Date.now()}`,
-      title,
-      description: description || '',
-      priority: priority || 'medium',
-      dueDate: dueDate ? new Date(dueDate) : null,
+      title: typeof title === 'string' ? title : '',
+      description: typeof description === 'string' ? description : '',
+      priority: typeof priority === 'string' ? priority : 'medium',
+      dueDate: dueDate ? (dueDate instanceof Date ? dueDate : new Date(String(dueDate))) : null,
       status: 'pending',
       createdBy: 'ai_assistant',
       userId: action.userId,
@@ -359,7 +361,7 @@ export class AutonomousActionExecutor {
       id: `followup_${Date.now()}`,
       conversationId,
       type: followUpType,
-      scheduledFor: new Date(Date.now() + (delayDays || 7) * 24 * 60 * 60 * 1000),
+      scheduledFor: new Date(Date.now() + (typeof delayDays === 'number' ? delayDays : 7) * 24 * 60 * 60 * 1000),
       status: 'scheduled',
       userId: action.userId,
       createdAt: new Date()
