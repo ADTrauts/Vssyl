@@ -9,9 +9,26 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in the environment variables');
 }
 
+// JWT Payload interface
+interface JWTPayload {
+  sub: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
+// Calendar RSVP token payload
+interface CalendarRsvpPayload {
+  eventId: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
 export async function verifyToken(token: string) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, JWT_SECRET!) as JWTPayload;
     return {
       userId: decoded.sub,
       email: decoded.email,
@@ -181,7 +198,7 @@ export function createCalendarRsvpToken(eventId: string, email: string, expiresI
 
 export function verifyCalendarRsvpToken(token: string): { eventId: string; email: string } | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, JWT_SECRET!) as CalendarRsvpPayload;
     return { eventId: decoded.eventId, email: decoded.email };
   } catch {
     return null;

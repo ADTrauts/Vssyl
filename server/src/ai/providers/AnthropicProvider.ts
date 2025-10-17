@@ -32,7 +32,7 @@ export class AnthropicProvider {
   /**
    * Process AI request using Anthropic Claude
    */
-  async process(request: AIRequest, context: UserContext, data: any): Promise<AIResponse> {
+  async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
     const startTime = Date.now();
 
     try {
@@ -186,7 +186,7 @@ ANALYTICAL APPROACH:
   /**
    * Build user prompt optimized for analytical tasks
    */
-  private buildUserPrompt(request: AIRequest, data: any): string {
+  private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     return `ANALYTICAL REQUEST: ${request.query}
 
 AVAILABLE DATA FOR ANALYSIS:

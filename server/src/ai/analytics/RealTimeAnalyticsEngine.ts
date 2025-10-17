@@ -744,7 +744,7 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
   /**
    * Get widget data
    */
-  private async getWidgetData(widget: DashboardWidget): Promise<any> {
+  private async getWidgetData(widget: DashboardWidget): Promise<unknown> {
     try {
       const { dataSource, chartType, metrics, dimensions, filters } = widget.config;
 
@@ -873,7 +873,7 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
   /**
    * Apply processor logic
    */
-  private async applyProcessor(processor: StreamProcessor, dataPoint: DataPoint): Promise<any> {
+  private async applyProcessor(processor: StreamProcessor, dataPoint: DataPoint): Promise<unknown> {
     const { filter, transform, aggregation, enrichment, validation } = processor.config;
 
     let processedData = { ...dataPoint.data };

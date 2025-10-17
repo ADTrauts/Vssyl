@@ -36,7 +36,7 @@ export class OpenAIProvider {
   /**
    * Process AI request using OpenAI
    */
-  async process(request: AIRequest, context: UserContext, data: any): Promise<AIResponse> {
+  async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
     const startTime = Date.now();
 
     try {
@@ -193,7 +193,7 @@ GUIDELINES:
   /**
    * Build user prompt with request and available data
    */
-  private buildUserPrompt(request: AIRequest, data: any): string {
+  private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     return `USER REQUEST: ${request.query}
 
 AVAILABLE DATA:
@@ -232,7 +232,7 @@ Please process this request as my Digital Life Twin, understanding the full cont
   /**
    * Process with cost-optimized model selection
    */
-  async processWithOptimization(request: AIRequest, context: UserContext, data: any): Promise<AIResponse> {
+  async processWithOptimization(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
     // Use mini model for simple requests
     if (this.shouldUseMiniModel(request)) {
       const originalModel = this.config.model;

@@ -1,5 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 
+// Interface for conversation data used in semantic analysis
+interface ConversationData {
+  userQuery: string;
+  createdAt: Date | string;
+  confidence?: number;
+  timestamp?: Date;
+  conversationId?: string;
+  category?: string;
+  [key: string]: unknown;
+}
+
 export interface QueryEmbedding {
   id: string;
   userId: string;
@@ -8,7 +19,7 @@ export interface QueryEmbedding {
   category: string;
   confidence: number;
   timestamp: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface SimilarQuery {
@@ -17,7 +28,7 @@ export interface SimilarQuery {
   category: string;
   confidence: number;
   timestamp: Date;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 export interface SemanticInsight {
@@ -314,7 +325,7 @@ export class SemanticSimilarityEngine {
   /**
    * Helper methods for analysis
    */
-  private analyzeQueryCategories(conversations: any[]): Map<string, number> {
+  private analyzeQueryCategories(conversations: ConversationData[]): Map<string, number> {
     const categoryCount = new Map<string, number>();
     
     conversations.forEach(conversation => {
@@ -325,7 +336,7 @@ export class SemanticSimilarityEngine {
     return categoryCount;
   }
 
-  private analyzeTemporalPatterns(conversations: any[]): Map<number, number> {
+  private analyzeTemporalPatterns(conversations: ConversationData[]): Map<number, number> {
     const hourCount = new Map<number, number>();
     
     conversations.forEach(conversation => {
@@ -336,7 +347,7 @@ export class SemanticSimilarityEngine {
     return hourCount;
   }
 
-  private analyzeContextPatterns(conversations: any[]): Map<string, number> {
+  private analyzeContextPatterns(conversations: ConversationData[]): Map<string, number> {
     const contextCount = new Map<string, number>();
     
     conversations.forEach(conversation => {
@@ -381,7 +392,7 @@ export class SemanticSimilarityEngine {
     };
   }
 
-  private generateTemporalInsight(temporalPatterns: Map<number, number>, conversations: any[]): SemanticInsight | null {
+  private generateTemporalInsight(temporalPatterns: Map<number, number>, conversations: ConversationData[]): SemanticInsight | null {
     if (temporalPatterns.size === 0) return null;
 
     let peakHour = 0;
@@ -397,15 +408,18 @@ export class SemanticSimilarityEngine {
     if (peakCount / conversations.length < 0.15) return null; // Not significant enough
 
     const peakHourQueries = conversations
-      .filter(c => new Date(c.createdAt).getHours() === peakHour)
+      .filter(c => {
+        const date = c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt);
+        return date.getHours() === peakHour;
+      })
       .slice(0, 3)
       .map(c => ({
         query: c.userQuery,
         similarity: 1.0,
         category: this.categorizeQuery(c.userQuery),
-        confidence: c.confidence,
-        timestamp: c.createdAt,
-        metadata: { conversationId: c.id }
+        confidence: c.confidence || 0.5,
+        timestamp: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
+        metadata: { conversationId: c.conversationId || c.id }
       }));
 
     return {
@@ -417,7 +431,7 @@ export class SemanticSimilarityEngine {
     };
   }
 
-  private generateContextInsight(contextPatterns: Map<string, number>, conversations: any[]): SemanticInsight | null {
+  private generateContextInsight(contextPatterns: Map<string, number>, conversations: ConversationData[]): SemanticInsight | null {
     const dominantContext = this.getDominantContext(contextPatterns, conversations.length);
     if (!dominantContext) return null;
 
@@ -428,9 +442,9 @@ export class SemanticSimilarityEngine {
         query: c.userQuery,
         similarity: 1.0,
         category: this.categorizeQuery(c.userQuery),
-        confidence: c.confidence,
-        timestamp: c.createdAt,
-        metadata: { conversationId: c.id }
+        confidence: c.confidence || 0.5,
+        timestamp: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
+        metadata: { conversationId: c.conversationId }
       }));
 
     return {

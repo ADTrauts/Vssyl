@@ -3,6 +3,14 @@ import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import AdvancedLearningEngine from '../learning/AdvancedLearningEngine';
 import { PredictiveIntelligenceEngine } from './PredictiveIntelligenceEngine';
 
+export interface IntelligentRecommendationData {
+  sourceInsights?: string[];
+  correlations?: Array<{ factor: string; impact: number; confidence: number }>;
+  supportingEvidence?: Array<{ type: string; source: string; value: unknown }>;
+  relatedPatterns?: string[];
+  [key: string]: unknown;
+}
+
 export interface IntelligentRecommendation {
   id: string;
   userId: string;
@@ -20,21 +28,68 @@ export interface IntelligentRecommendation {
   timeToImplement: 'immediate' | 'short' | 'medium' | 'long';
   dependencies: string[];
   alternatives: string[];
-  data: any;
+  data: IntelligentRecommendationData;
   createdAt: Date;
   expiresAt: Date;
   status: 'pending' | 'accepted' | 'rejected' | 'implemented' | 'expired';
+}
+
+export interface UserContextData {
+  preferences?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+  recentActions?: Array<{ action: string; timestamp: Date }>;
+  userId?: string;
+  timestamp?: Date;
+  activeModules?: string[];
+  [key: string]: unknown;
+}
+
+export interface ActivityRecord {
+  timestamp?: Date;
+  createdAt?: Date;
+  module?: string;
+  action?: string;
+  interactionType?: string;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface PatternData {
+  type: string;
+  frequency: number;
+  confidence: number;
+  lastSeen?: Date;
+  [key: string]: unknown;
+}
+
+export interface PredictionData {
+  metric?: string;
+  predictedValue?: unknown;
+  confidence?: number;
+  timeframe?: string;
+  analysisType?: string;
+  probability?: number;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export interface ExternalFactorData {
+  source: string;
+  factor: string;
+  impact: number;
+  timestamp: Date;
+  [key: string]: unknown;
 }
 
 export interface RecommendationContext {
   userId: string;
   currentModule: string;
   currentTime: Date;
-  userContext: any;
-  recentActivity: any[];
-  patterns: any[];
-  predictions: any[];
-  externalFactors: any[];
+  userContext: UserContextData;
+  recentActivity: ActivityRecord[];
+  patterns: PatternData[];
+  predictions: PredictionData[];
+  externalFactors: ExternalFactorData[];
 }
 
 export interface RecommendationEngine {
@@ -183,10 +238,10 @@ export class IntelligentRecommendationsEngine {
       userId,
       currentModule: context?.currentModule || 'general',
       currentTime,
-      userContext,
+      userContext: userContext as unknown as UserContextData,
       recentActivity,
       patterns,
-      predictions,
+      predictions: predictions as unknown as PredictionData[],
       externalFactors
     };
   }
@@ -361,7 +416,8 @@ export class IntelligentRecommendationsEngine {
     const organizationPatterns = this.analyzeOrganizationPatterns(context.userContext);
     
     // Check for file organization
-    if (organizationPatterns.fileOrganization < 0.6) {
+    const fileOrgScore = typeof organizationPatterns.fileOrganization === 'number' ? organizationPatterns.fileOrganization : 0.5;
+    if (fileOrgScore < 0.6) {
       recommendations.push({
         id: `organization_files_${Date.now()}`,
         userId: context.userId,
@@ -372,7 +428,7 @@ export class IntelligentRecommendationsEngine {
         relevance: 0.9,
         title: 'Improve File Organization',
         description: 'Your files could be better organized for easier access',
-        reasoning: `File organization score is ${(organizationPatterns.fileOrganization * 100).toFixed(1)}%`,
+        reasoning: `File organization score is ${(fileOrgScore * 100).toFixed(1)}%`,
         suggestedActions: [
           'Create consistent folder structure',
           'Use descriptive file names',
@@ -395,7 +451,8 @@ export class IntelligentRecommendationsEngine {
     }
 
     // Check for information management
-    if (organizationPatterns.informationManagement < 0.5) {
+    const infoMgmtScore = typeof organizationPatterns.informationManagement === 'number' ? organizationPatterns.informationManagement : 0.5;
+    if (infoMgmtScore < 0.5) {
       recommendations.push({
         id: `organization_info_${Date.now()}`,
         userId: context.userId,
@@ -406,7 +463,7 @@ export class IntelligentRecommendationsEngine {
         relevance: 0.8,
         title: 'Enhance Information Management',
         description: 'Improve how you organize and access information',
-        reasoning: `Information management score is ${(organizationPatterns.informationManagement * 100).toFixed(1)}%`,
+        reasoning: `Information management score is ${(infoMgmtScore * 100).toFixed(1)}%`,
         suggestedActions: [
           'Create knowledge base',
           'Implement note-taking system',
@@ -693,7 +750,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze organization patterns
    */
-  private analyzeOrganizationPatterns(userContext: any): any {
+  private analyzeOrganizationPatterns(userContext: any): Record<string, unknown> {
     const patterns = {
       fileOrganization: 0.6,
       informationManagement: 0.5,
@@ -891,7 +948,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Get recommendation analytics for a user
    */
-  async getRecommendationAnalytics(userId: string): Promise<any> {
+  async getRecommendationAnalytics(userId: string): Promise<Record<string, unknown>> {
     const recommendations = await this.prisma.aILearningEvent.findMany({
       where: { 
         userId,

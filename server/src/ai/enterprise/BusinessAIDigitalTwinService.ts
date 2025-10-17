@@ -101,7 +101,7 @@ export class BusinessAIDigitalTwinService {
     businessId: string, 
     adminUserId: string,
     config?: Partial<BusinessAIConfig>
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       // Validate required parameters
       if (!adminUserId) {
@@ -339,7 +339,7 @@ export class BusinessAIDigitalTwinService {
   /**
    * Get centralized learning insights for business AI improvement
    */
-  async getCentralizedInsights(businessId: string): Promise<any> {
+  async getCentralizedInsights(businessId: string): Promise<Record<string, unknown>> {
     try {
       const businessAI = await this.getBusinessAI(businessId);
       if (!businessAI) {
@@ -396,7 +396,7 @@ export class BusinessAIDigitalTwinService {
   /**
    * Get industry-specific AI performance metrics
    */
-  private async getIndustryAIMetrics(industry: string | null): Promise<any> {
+  private async getIndustryAIMetrics(industry: string | null): Promise<Record<string, unknown>> {
     try {
       // Get all business AIs in the same industry
       const industryBusinesses = await this.prisma.business.findMany({

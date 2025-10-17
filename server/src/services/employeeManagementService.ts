@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { EmployeePosition, Position, User, Business } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
@@ -94,7 +94,7 @@ export class EmployeeManagementService {
         endDate: data.endDate,
         // TODO: Prisma JSON compatibility issue - using any temporarily
         // Need to research proper Prisma JSON field typing solutions
-        customPermissions: data.customPermissions as any,
+        customPermissions: data.customPermissions as unknown as Prisma.InputJsonValue,
         active: true,
       },
       include: {

@@ -1,5 +1,7 @@
 # Troubleshooting Guide - Vssyl Platform
 
+> **📚 Prevent These Errors:** See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) for comprehensive coding rules that prevent these recurring issues.
+
 ## Current Session Issues & Solutions (January 2025)
 
 ### **API Routing Issues - RESOLVED** ✅

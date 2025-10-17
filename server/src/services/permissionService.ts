@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Permission, PermissionSet, Position, EmployeePosition } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 // ============================================================================
 // INTERFACES
@@ -85,9 +86,8 @@ export class PermissionService {
         description: data.description,
         category: data.category,
         // TODO: Prisma JSON compatibility issue - using any temporarily
-        // Need to research proper Prisma JSON field typing solutions
-        dependencies: data.dependencies as any,
-        conflicts: data.conflicts as any,
+        dependencies: data.dependencies as Prisma.InputJsonValue,
+        conflicts: data.conflicts as Prisma.InputJsonValue,
       },
     });
   }
@@ -142,8 +142,7 @@ export class PermissionService {
         name: data.name,
         description: data.description,
         // TODO: Prisma JSON compatibility issue - using any temporarily
-        // Need to research proper Prisma JSON field typing solutions
-        permissions: data.permissions as any,
+        permissions: data.permissions as unknown as Prisma.InputJsonValue,
         category: data.category,
         template: data.template || false,
       },
@@ -184,7 +183,7 @@ export class PermissionService {
     // Handle JSON fields separately for Prisma compatibility
     // TODO: Prisma JSON compatibility issue - using any temporarily
     if (data.permissions) {
-      updateData.permissions = data.permissions as any;
+      updateData.permissions = data.permissions as unknown as Prisma.InputJsonValue;
     }
     
     return await prisma.permissionSet.update({
@@ -228,11 +227,15 @@ export class PermissionService {
       throw new Error('Source permission set not found');
     }
 
+    const permissionsData = Array.isArray(source.permissions)
+      ? source.permissions as unknown as PermissionData[]
+      : [];
+
     return await this.createPermissionSet({
       businessId,
       name: newName,
       description: `Copy of ${source.name}`,
-      permissions: source.permissions as any[],
+      permissions: permissionsData,
       category: source.category as 'basic' | 'advanced' | 'admin',
       template: false,
     });
@@ -276,12 +279,13 @@ export class PermissionService {
       
       // Check position-level permissions
       if (position.permissions) {
-        const posPermissions = position.permissions as any[];
-        const hasPosPermission = posPermissions.some(p => 
-          p.moduleId === moduleId && 
-          p.featureId === featureId && 
-          p.action === action
-        );
+        const posPermissions = Array.isArray(position.permissions) ? position.permissions : [];
+        const hasPosPermission = posPermissions.some((p: unknown) => {
+          const perm = p as Record<string, unknown>;
+          return perm.moduleId === moduleId && 
+                 perm.featureId === featureId && 
+                 perm.action === action;
+        });
         
         if (hasPosPermission) {
           return {
@@ -293,12 +297,13 @@ export class PermissionService {
 
       // Check tier-level permissions
       if (position.tier?.defaultPermissions) {
-        const tierPermissions = position.tier.defaultPermissions as any[];
-        const hasTierPermission = tierPermissions.some(p => 
-          p.moduleId === moduleId && 
-          p.featureId === featureId && 
-          p.action === action
-        );
+        const tierPermissions = Array.isArray(position.tier.defaultPermissions) ? position.tier.defaultPermissions : [];
+        const hasTierPermission = tierPermissions.some((p: unknown) => {
+          const perm = p as Record<string, unknown>;
+          return perm.moduleId === moduleId && 
+                 perm.featureId === featureId && 
+                 perm.action === action;
+        });
         
         if (hasTierPermission) {
           return {
@@ -310,12 +315,13 @@ export class PermissionService {
 
       // Check department-level permissions
       if (position.department?.departmentPermissions) {
-        const deptPermissions = position.department.departmentPermissions as any[];
-        const hasDeptPermission = deptPermissions.some(p => 
-          p.moduleId === moduleId && 
-          p.featureId === featureId && 
-          p.action === action
-        );
+        const deptPermissions = Array.isArray(position.department.departmentPermissions) ? position.department.departmentPermissions : [];
+        const hasDeptPermission = deptPermissions.some((p: unknown) => {
+          const perm = p as Record<string, unknown>;
+          return perm.moduleId === moduleId && 
+                 perm.featureId === featureId && 
+                 perm.action === action;
+        });
         
         if (hasDeptPermission) {
           return {

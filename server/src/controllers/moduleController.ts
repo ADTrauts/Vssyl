@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
-  return (req as any).user;
+  return (req as AuthenticatedRequest).user;
 };
 
 // Get all installed modules for the current user
@@ -116,7 +117,11 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { search, category, sortBy = 'downloads', sortOrder = 'desc', pricingTier } = req.query as any;
+    const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+    const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+    const sortBy = typeof req.query.sortBy === 'string' ? req.query.sortBy : 'downloads';
+    const sortOrder = typeof req.query.sortOrder === 'string' ? req.query.sortOrder : 'desc';
+    const pricingTier = typeof req.query.pricingTier === 'string' ? req.query.pricingTier : undefined;
     const scope = (req.query.scope as 'personal' | 'business') || 'personal';
     const businessId = req.query.businessId as string | undefined;
 

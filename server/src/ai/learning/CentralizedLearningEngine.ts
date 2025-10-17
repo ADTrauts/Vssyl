@@ -105,11 +105,11 @@ export class CentralizedLearningEngine {
       await this.prisma.globalLearningEvent.create({
         data: {
           userId: this.hashUserId(userId), // Hash for privacy
-          eventType: anonymizedData.eventType,
-          context: anonymizedData.context,
-          patternData: anonymizedData.patternData,
-          confidence: anonymizedData.confidence,
-          impact: anonymizedData.impact,
+          eventType: typeof anonymizedData.eventType === 'string' ? anonymizedData.eventType : 'unknown',
+          context: typeof anonymizedData.context === 'string' ? anonymizedData.context : JSON.stringify(anonymizedData.context),
+          patternData: anonymizedData.patternData as any,
+          confidence: typeof anonymizedData.confidence === 'number' ? anonymizedData.confidence : 0.5,
+          impact: typeof anonymizedData.impact === 'string' ? anonymizedData.impact : 'medium',
           frequency: 1,
           applied: false,
           validated: false
@@ -464,7 +464,7 @@ export class CentralizedLearningEngine {
     }
   }
 
-  private anonymizeEventData(eventData: any, userId: string): any {
+  private anonymizeEventData(eventData: any, userId: string): Record<string, unknown> {
     // Remove personally identifiable information
     const anonymized = { ...eventData };
     
@@ -498,7 +498,7 @@ export class CentralizedLearningEngine {
     }, 0).toString(16)}`;
   }
 
-  private generalizeLocation(location: any): any {
+  private generalizeLocation(location: any): Record<string, unknown> {
     // Generalize location to city level only
     if (location.city) {
       return { city: location.city, country: location.country };
@@ -519,7 +519,7 @@ export class CentralizedLearningEngine {
     return events;
   }
 
-  private analyzeBehavioralPatterns(events: any[]): GlobalPattern[] {
+  private analyzeBehavioralPatterns(events: Array<Record<string, unknown>>): GlobalPattern[] {
     // Implementation for behavioral pattern analysis
     const patterns: GlobalPattern[] = [];
     
@@ -560,14 +560,15 @@ export class CentralizedLearningEngine {
     return patterns;
   }
 
-  private analyzeTemporalPatterns(events: any[]): GlobalPattern[] {
+  private analyzeTemporalPatterns(events: Array<Record<string, unknown>>): GlobalPattern[] {
     // Implementation for temporal pattern analysis
     const patterns: GlobalPattern[] = [];
     
     // Analyze hourly patterns
     const hourlyActivity = new Map<number, number>();
     events.forEach(event => {
-      const hour = new Date(event.createdAt).getHours();
+      const createdAt = event.createdAt instanceof Date ? event.createdAt : new Date(String(event.createdAt || new Date()));
+      const hour = createdAt.getHours();
       hourlyActivity.set(hour, (hourlyActivity.get(hour) || 0) + 1);
     });
 
@@ -601,12 +602,12 @@ export class CentralizedLearningEngine {
     return patterns;
   }
 
-  private analyzePreferencePatterns(events: any[]): GlobalPattern[] {
+  private analyzePreferencePatterns(events: Array<Record<string, unknown>>): GlobalPattern[] {
     // Implementation for preference pattern analysis
     return [];
   }
 
-  private analyzeWorkflowPatterns(events: any[]): GlobalPattern[] {
+  private analyzeWorkflowPatterns(events: Array<Record<string, unknown>>): GlobalPattern[] {
     // Implementation for workflow pattern analysis
     return [];
   }
@@ -823,7 +824,7 @@ export class CentralizedLearningEngine {
     };
   }
 
-  private async logAuditEvent(eventType: string, data: any): Promise<void> {
+  private async logAuditEvent(eventType: string, data: Record<string, unknown>): Promise<void> {
     try {
       await this.prisma.auditLog.create({
         data: {

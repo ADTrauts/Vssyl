@@ -109,6 +109,98 @@ export interface LifeStateAnalysis {
   };
 }
 
+// Module data type interfaces for cross-module analysis
+export interface FileData {
+  id: string;
+  name: string;
+  folderId?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  [key: string]: unknown;
+}
+
+export interface FolderData {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  [key: string]: unknown;
+}
+
+export interface MessageData {
+  id: string;
+  createdAt: Date;
+  senderId?: string;
+  conversationId?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
+export interface TaskData {
+  id: string;
+  status: string;
+  category?: string;
+  createdAt?: Date;
+  completedAt?: Date;
+  [key: string]: unknown;
+}
+
+export interface ProjectData {
+  id: string;
+  status: string;
+  ownerId: string;
+  [key: string]: unknown;
+}
+
+export interface ScheduleData {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  [key: string]: unknown;
+}
+
+export interface NoteData {
+  id: string;
+  content: string;
+  createdAt: Date;
+  [key: string]: unknown;
+}
+
+export interface ActivityData {
+  id?: string;
+  module?: string;
+  action?: string;
+  timestamp?: Date | string;
+  createdAt?: Date;
+  [key: string]: unknown;
+}
+
+export interface MembershipData {
+  role: string;
+  [key: string]: unknown;
+}
+
+export interface ModuleContextData {
+  calendar?: {
+    events?: unknown[];
+    availability?: unknown;
+  };
+  chat?: {
+    conversations?: unknown[];
+    messages?: MessageData[];
+    frequency?: number;
+  };
+  drive?: {
+    files?: FileData[];
+    folders?: FolderData[];
+    activity?: unknown;
+  };
+  tasks?: {
+    pending?: TaskData[];
+    completed?: TaskData[];
+  };
+  [key: string]: unknown;
+}
+
 export class CrossModuleContextEngine {
   private contextCache: Map<string, UserContext> = new Map();
   private readonly CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -279,13 +371,13 @@ export class CrossModuleContextEngine {
     });
 
     // Mock task/schedule data for now - these models don't exist yet
-    const mockTasks: any[] = [];
-    const mockSchedules: any[] = [];
-    const mockNotes: any[] = [];
+    const mockTasks: TaskData[] = [];
+    const mockSchedules: ScheduleData[] = [];
+    const mockNotes: NoteData[] = [];
 
     return {
       totalTasks: mockTasks.length,
-      completedTasks: mockTasks.filter((t: any) => t.status === 'COMPLETED').length,
+      completedTasks: mockTasks.filter(t => t.status === 'COMPLETED').length,
       totalSchedules: mockSchedules.length,
       totalNotes: mockNotes.length,
       householdMemberships: householdMemberships.length,
@@ -305,13 +397,13 @@ export class CrossModuleContextEngine {
     });
 
     // Mock project data for now - this model doesn't exist yet
-    const mockProjects: any[] = [];
+    const mockProjects: ProjectData[] = [];
 
     return {
       totalProjects: mockProjects.length,
-      activeProjects: mockProjects.filter((p: any) => p.status === 'ACTIVE').length,
-      leadership: mockProjects.filter((p: any) => p.ownerId === userId).length,
-      collaboration: mockProjects.filter((p: any) => p.ownerId !== userId).length,
+      activeProjects: mockProjects.filter(p => p.status === 'ACTIVE').length,
+      leadership: mockProjects.filter(p => p.ownerId === userId).length,
+      collaboration: mockProjects.filter(p => p.ownerId !== userId).length,
       businesses: businesses.length,
       businessNetworkSize: businesses.length
     };
@@ -351,9 +443,9 @@ export class CrossModuleContextEngine {
       businesses: businesses.length,
       institutionMembers: institutionMembers.length,
       roles: [
-        ...householdMemberships.map((m: any) => m.role),
-        ...businesses.map((m: any) => m.role),
-        ...institutionMembers.map((m: any) => m.role)
+        ...householdMemberships.map((m: MembershipData) => m.role),
+        ...businesses.map((m: MembershipData) => m.role),
+        ...institutionMembers.map((m: MembershipData) => m.role)
       ]
     };
   }
@@ -361,7 +453,7 @@ export class CrossModuleContextEngine {
   /**
    * Identify user patterns across modules
    */
-  private async identifyUserPatterns(userId: string, moduleData: any): Promise<UserPattern[]> {
+  private async identifyUserPatterns(userId: string, moduleData: ModuleContextData): Promise<UserPattern[]> {
     const patterns: UserPattern[] = [];
 
     // Temporal patterns
@@ -382,20 +474,20 @@ export class CrossModuleContextEngine {
   /**
    * Analyze user relationships across modules
    */
-  private async analyzeUserRelationships(userId: string, moduleData: any): Promise<UserRelationship[]> {
+  private async analyzeUserRelationships(userId: string, moduleData: ModuleContextData): Promise<UserRelationship[]> {
     const relationships: UserRelationship[] = [];
 
     // Analyze chat relationships
-    if (moduleData.chatData?.recentActivity) {
-      const chatRelationships = this.extractChatRelationships(moduleData.chatData);
+    if (moduleData.chat) {
+      const chatData = moduleData.chat as Record<string, unknown>;
+      const chatRelationships = this.extractChatRelationships(chatData);
       relationships.push(...chatRelationships);
     }
 
-    // Analyze business relationships
-    if (moduleData.businessData) {
-      const businessRelationships = this.extractBusinessRelationships(moduleData.businessData);
-      relationships.push(...businessRelationships);
-    }
+    // Analyze business relationships (placeholder)
+    const businessData: Record<string, unknown> = {};
+    const businessRelationships = this.extractBusinessRelationships(businessData);
+    relationships.push(...businessRelationships);
 
     return relationships;
   }
@@ -403,7 +495,7 @@ export class CrossModuleContextEngine {
   /**
    * Generate cross-module insights
    */
-  private async generateCrossModuleInsights(userId: string, data: any): Promise<CrossModuleInsight[]> {
+  private async generateCrossModuleInsights(userId: string, data: ModuleContextData): Promise<CrossModuleInsight[]> {
     const insights: CrossModuleInsight[] = [];
 
     // Work-life balance insights
@@ -422,7 +514,7 @@ export class CrossModuleContextEngine {
   }
 
   // Helper methods for pattern analysis
-  private identifyTemporalPatterns(moduleData: any): UserPattern[] {
+  private identifyTemporalPatterns(moduleData: ModuleContextData): UserPattern[] {
     return [
       {
         id: 'peak_productivity_hours',
@@ -437,7 +529,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private identifyBehavioralPatterns(moduleData: any): UserPattern[] {
+  private identifyBehavioralPatterns(moduleData: ModuleContextData): UserPattern[] {
     return [
       {
         id: 'organization_style',
@@ -452,7 +544,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private identifyCommunicationPatterns(moduleData: any): UserPattern[] {
+  private identifyCommunicationPatterns(moduleData: ModuleContextData): UserPattern[] {
     return [
       {
         id: 'response_speed',
@@ -467,7 +559,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private identifyWorkflowPatterns(moduleData: any): UserPattern[] {
+  private identifyWorkflowPatterns(moduleData: ModuleContextData): UserPattern[] {
     return [
       {
         id: 'task_completion',
@@ -483,7 +575,7 @@ export class CrossModuleContextEngine {
   }
 
   // Generate specific insight types
-  private generateWorkLifeInsights(data: any): CrossModuleInsight[] {
+  private generateWorkLifeInsights(data: ModuleContextData): CrossModuleInsight[] {
     return [
       {
         id: 'work_life_balance_trend',
@@ -504,7 +596,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private generateProductivityInsights(data: any): CrossModuleInsight[] {
+  private generateProductivityInsights(data: ModuleContextData): CrossModuleInsight[] {
     return [
       {
         id: 'productivity_opportunity',
@@ -526,7 +618,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private generateRelationshipInsights(data: any): CrossModuleInsight[] {
+  private generateRelationshipInsights(data: ModuleContextData): CrossModuleInsight[] {
     return [
       {
         id: 'communication_pattern',
@@ -547,7 +639,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private generateOpportunityInsights(data: any): CrossModuleInsight[] {
+  private generateOpportunityInsights(data: ModuleContextData): CrossModuleInsight[] {
     return [
       {
         id: 'automation_opportunity',
@@ -570,7 +662,7 @@ export class CrossModuleContextEngine {
   }
 
   // Utility methods
-  private categorizeFiles(files: any[]): Record<string, number> {
+  private categorizeFiles(files: FileData[]): Record<string, number> {
     const categories: Record<string, number> = {};
     files.forEach(file => {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'other';
@@ -579,12 +671,12 @@ export class CrossModuleContextEngine {
     return categories;
   }
 
-  private calculateOrganizationScore(files: any[], folders: any[]): number {
+  private calculateOrganizationScore(files: FileData[], folders: FolderData[]): number {
     const filesInFolders = files.filter(f => f.folderId).length;
     return folders.length > 0 ? (filesInFolders / files.length) * 100 : 0;
   }
 
-  private calculateCommunicationFrequency(messages: any[]) {
+  private calculateCommunicationFrequency(messages: MessageData[]) {
     const daily = messages.filter(m => 
       new Date(m.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
     ).length;
@@ -596,21 +688,34 @@ export class CrossModuleContextEngine {
     return { daily, weekly };
   }
 
-  private analyzeResponsePatterns(messages: any[]) {
+  private analyzeResponsePatterns(messages: MessageData[]) {
     // Simplified response pattern analysis
+    if (messages.length === 0) {
+      return {
+        averageLength: 0,
+        responseTime: 'unknown',
+        formalityLevel: 0.5
+      };
+    }
+    
+    const totalLength = messages.reduce((acc, m) => {
+      const content = typeof m.content === 'string' ? m.content : '';
+      return acc + content.length;
+    }, 0);
+    
     return {
-      averageLength: messages.reduce((acc, m) => acc + m.content.length, 0) / messages.length,
+      averageLength: totalLength / messages.length,
       responseTime: 'within_hours', // Would need conversation threading for real calculation
       formalityLevel: 0.6 // Would analyze language patterns
     };
   }
 
-  private calculateProductivityScore(tasks: any[]): number {
+  private calculateProductivityScore(tasks: TaskData[]): number {
     const completed = tasks.filter(t => t.status === 'COMPLETED').length;
     return tasks.length > 0 ? (completed / tasks.length) * 100 : 0;
   }
 
-  private calculateHouseholdOrganization(tasks: any[], schedules: any[], notes: any[]): number {
+  private calculateHouseholdOrganization(tasks: TaskData[], schedules: ScheduleData[], notes: NoteData[]): number {
     // Simplified organization score based on categorization and completion
     const categorizedTasks = tasks.filter(t => t.category).length;
     const completedTasks = tasks.filter(t => t.status === 'COMPLETED').length;
@@ -619,25 +724,29 @@ export class CrossModuleContextEngine {
       ((categorizedTasks + completedTasks) / (tasks.length * 2)) * 100 : 0;
   }
 
-  private analyzeModuleUsage(activities: any[]): Record<string, number> {
+  private analyzeModuleUsage(activities: ActivityData[]): Record<string, number> {
     const usage: Record<string, number> = {};
     activities.forEach(activity => {
-      const module = activity.type.split('_')[0]; // Extract module from activity type
+      const activityType = typeof activity.action === 'string' ? activity.action : 'unknown';
+      const module = activityType.split('_')[0]; // Extract module from activity type
       usage[module] = (usage[module] || 0) + 1;
     });
     return usage;
   }
 
-  private analyzeTimePatterns(activities: any[]) {
+  private analyzeTimePatterns(activities: ActivityData[]) {
     const hourly = new Array(24).fill(0);
     activities.forEach(activity => {
-      const hour = new Date(activity.timestamp).getHours();
-      hourly[hour]++;
+      if (activity.timestamp) {
+        const timestamp = activity.timestamp instanceof Date ? activity.timestamp : new Date(activity.timestamp);
+        const hour = timestamp.getHours();
+        hourly[hour]++;
+      }
     });
     return { hourly };
   }
 
-  private extractChatRelationships(chatData: any): UserRelationship[] {
+  private extractChatRelationships(chatData: Record<string, unknown>): UserRelationship[] {
     // Simplified relationship extraction from chat data
     return [
       {
@@ -654,7 +763,7 @@ export class CrossModuleContextEngine {
     ];
   }
 
-  private extractBusinessRelationships(businessData: any): UserRelationship[] {
+  private extractBusinessRelationships(businessData: Record<string, unknown>): UserRelationship[] {
     return [
       {
         id: 'business_relationship_1',
@@ -724,9 +833,9 @@ export class CrossModuleContextEngine {
     };
   }
 
-  private determineFocus(activityData: any, patterns: UserPattern[]) {
-    const recentActivities = activityData.recentActivities || [];
-    const mostRecentActivity = recentActivities[0];
+  private determineFocus(activityData: Record<string, unknown>, patterns: UserPattern[]) {
+    const recentActivities = Array.isArray(activityData.recentActivities) ? activityData.recentActivities : [];
+    const mostRecentActivity = recentActivities.length > 0 ? recentActivities[0] : null;
     
     if (!mostRecentActivity) {
       return {
@@ -753,7 +862,7 @@ export class CrossModuleContextEngine {
   /**
    * Get context for a specific module query
    */
-  async getModuleContext(userId: string, moduleId: string): Promise<any> {
+  async getModuleContext(userId: string, moduleId: string): Promise<Record<string, unknown>> {
     const fullContext = await this.getUserContext(userId);
     
     // Try to use registry-based context fetching first
@@ -794,7 +903,7 @@ export class CrossModuleContextEngine {
     }
 
     // Fallback to hardcoded modules for backwards compatibility
-    const moduleData: Record<string, () => Promise<any>> = {
+    const moduleData: Record<string, () => Promise<ModuleContextData>> = {
       drive: () => this.getDriveContext(userId),
       chat: () => this.getChatContext(userId),
       household: () => this.getHouseholdContext(userId),
@@ -818,7 +927,7 @@ export class CrossModuleContextEngine {
    * Uses the registry to determine which modules are relevant, then fetches only from those
    * This is MUCH faster than querying all modules!
    */
-  async getContextForAIQuery(userId: string, query: string): Promise<any> {
+  async getContextForAIQuery(userId: string, query: string): Promise<Record<string, unknown>> {
     try {
       // Step 1: Analyze query to find relevant modules (FAST - database lookup)
       const analysis = await moduleAIContextService.analyzeQuery(query, userId);

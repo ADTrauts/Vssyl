@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
 export interface SSOProviderConfig {
@@ -73,8 +74,7 @@ export async function createSSOConfig(
       provider,
       name,
       // TODO: Prisma JSON compatibility issue - using any temporarily
-      // Need to research proper Prisma JSON field typing solutions
-      config: config as any,
+      config: config as Prisma.InputJsonValue,
       isActive: true
     }
   });
@@ -118,8 +118,7 @@ export async function updateSSOConfig(
   // Handle config separately for JSON compatibility
   if (data.config) {
     // TODO: Prisma JSON compatibility issue - using any temporarily
-    // Need to research proper Prisma JSON field typing solutions
-    updateData.config = data.config as any;
+    updateData.config = data.config as Prisma.InputJsonValue;
   }
   
   const result = await prisma.sSOConfig.update({
@@ -198,8 +197,7 @@ export async function getUserWorkCredentials(
   
   if (membership.job?.permissions) {
     // TODO: Prisma JSON compatibility issue - using any temporarily
-    // Need to research proper Prisma JSON field typing solutions
-    permissions = membership.job.permissions as any;
+    permissions = membership.job.permissions as unknown as string[];
   } else {
     // Default role-based permissions
     switch (membership.role) {

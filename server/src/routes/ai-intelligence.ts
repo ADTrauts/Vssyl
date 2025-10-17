@@ -318,8 +318,11 @@ router.get('/dashboard', authenticateJWT, async (req, res) => {
       },
       insights: {
         totalInsights: patterns.length + predictions.length + recommendations.length,
-        confidence: (learningAnalytics.confidence + predictiveAnalytics.averageConfidence) / 2,
-        learningProgress: learningAnalytics.learningProgress || 0.5
+        confidence: (
+          (typeof learningAnalytics.confidence === 'number' ? learningAnalytics.confidence : 0) +
+          (typeof predictiveAnalytics.averageConfidence === 'number' ? predictiveAnalytics.averageConfidence : 0)
+        ) / 2,
+        learningProgress: typeof learningAnalytics.learningProgress === 'number' ? learningAnalytics.learningProgress : 0.5
       }
     };
 

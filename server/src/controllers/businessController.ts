@@ -122,7 +122,7 @@ export const createBusiness = async (req: Request, res: Response) => {
       await prisma.calendar.create({
         data: {
           name: businessData.name,
-          contextType: 'BUSINESS' as any,
+          contextType: 'BUSINESS',
           contextId: business.id,
           isPrimary: true,
           isSystem: false,
@@ -563,12 +563,12 @@ export const acceptInvitation = async (req: Request, res: Response) => {
 
     // Ensure a primary business calendar exists for this business
     try {
-      const existingCal = await prisma.calendar.findFirst({ where: { contextType: 'BUSINESS' as any, contextId: invitation.businessId, isPrimary: true } });
+      const existingCal = await prisma.calendar.findFirst({ where: { contextType: 'BUSINESS', contextId: invitation.businessId, isPrimary: true } });
       if (!existingCal) {
         await prisma.calendar.create({
           data: {
             name: invitation.business.name,
-            contextType: 'BUSINESS' as any,
+            contextType: 'BUSINESS',
             contextId: invitation.businessId,
             isPrimary: true,
             isSystem: false,
@@ -1117,8 +1117,8 @@ export const getBusinessSetupStatus = async (req: Request, res: Response) => {
         }
       }),
       prisma.$transaction([
-        prisma.organizationalTier.count({ where: { businessId: id } }) as any,
-        prisma.position.count({ where: { businessId: id } }) as any
+        prisma.organizationalTier.count({ where: { businessId: id } }),
+        prisma.position.count({ where: { businessId: id } })
       ]),
       (prisma as any).businessModuleInstallation.count({ where: { businessId: id } }),
       prisma.businessMember.count({ where: { businessId: id, isActive: true } })

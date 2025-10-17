@@ -7,6 +7,14 @@ import { prisma } from '../lib/prisma';
 const router: express.Router = express.Router();
 const smartPatternEngine = new SmartPatternEngine(prisma);
 
+// Interface for AI interaction data used in pattern analysis
+interface AIInteraction {
+  createdAt: Date;
+  userQuery: string;
+  confidence: number;
+  [key: string]: unknown;
+}
+
 /**
  * Get user's smart pattern analysis and predictions
  */
@@ -187,7 +195,7 @@ router.get('/insights/:timeframe', authenticateJWT, async (req, res) => {
 /**
  * Helper functions for insights
  */
-function getMostActiveHour(interactions: any[]): number {
+function getMostActiveHour(interactions: AIInteraction[]): number {
   const hourCounts = new Array(24).fill(0);
   interactions.forEach(interaction => {
     const hour = new Date(interaction.createdAt).getHours();
@@ -196,7 +204,7 @@ function getMostActiveHour(interactions: any[]): number {
   return hourCounts.indexOf(Math.max(...hourCounts));
 }
 
-function getMostCommonQueryType(interactions: any[]): string {
+function getMostCommonQueryType(interactions: AIInteraction[]): string {
   const typeCounts = new Map<string, number>();
   
   interactions.forEach(interaction => {
@@ -224,7 +232,7 @@ function getMostCommonQueryType(interactions: any[]): string {
   return maxType;
 }
 
-function calculateProductivityScore(interactions: any[]): number {
+function calculateProductivityScore(interactions: AIInteraction[]): number {
   if (interactions.length === 0) return 0;
   
   // Simple productivity score based on:
@@ -240,7 +248,7 @@ function calculateProductivityScore(interactions: any[]): number {
   return Math.round((avgConfidence * 0.5 + engagementScore * 0.3 + diversityScore * 0.2) * 100);
 }
 
-function calculateInteractionTrend(interactions: any[]): 'increasing' | 'decreasing' | 'stable' {
+function calculateInteractionTrend(interactions: AIInteraction[]): 'increasing' | 'decreasing' | 'stable' {
   if (interactions.length < 4) return 'stable';
   
   const midpoint = Math.floor(interactions.length / 2);
@@ -255,7 +263,7 @@ function calculateInteractionTrend(interactions: any[]): 'increasing' | 'decreas
   return 'stable';
 }
 
-function calculateConfidenceTrend(interactions: any[]): 'increasing' | 'decreasing' | 'stable' {
+function calculateConfidenceTrend(interactions: AIInteraction[]): 'increasing' | 'decreasing' | 'stable' {
   if (interactions.length < 4) return 'stable';
   
   const midpoint = Math.floor(interactions.length / 2);

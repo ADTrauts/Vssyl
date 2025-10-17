@@ -359,7 +359,7 @@ export class LearningEngine {
   /**
    * Analyze user feedback for learning insights
    */
-  private analyzeFeedback(feedback: string, rating: number): any {
+  private analyzeFeedback(feedback: string, rating: number): Record<string, unknown> {
     const sentiment = this.analyzeFeedbackSentiment(feedback);
     const keywords = this.extractFeedbackKeywords(feedback);
     const categories = this.categorizeFeedback(feedback, rating);

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getChatSocketService } from './chatSocketService';
 import { PushNotificationService } from './pushNotificationService';
@@ -31,7 +32,7 @@ export class NotificationService {
           type: data.type,
           title: data.title,
           body: data.body,
-          data: data.data || {} as any, // TODO: Fix Prisma JSON field typing
+          data: (data.data || {}) as Prisma.InputJsonValue,
           userId: data.userId
         },
         include: {
@@ -116,7 +117,7 @@ export class NotificationService {
           type: n.type,
           title: n.title,
           body: n.body,
-          data: n.data || {} as any, // TODO: Fix Prisma JSON field typing
+          data: (n.data || {}) as Prisma.InputJsonValue,
           userId: n.userId
         }))
       });

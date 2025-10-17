@@ -181,12 +181,12 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
         orderBy: { createdAt: 'asc' }
       });
       const mainName = personalDash?.name || 'My Dashboard';
-      const existingCal = await prisma.calendar.findFirst({ where: { contextType: 'PERSONAL' as any, contextId: user.id, isPrimary: true } });
+      const existingCal = await prisma.calendar.findFirst({ where: { contextType: 'PERSONAL', contextId: user.id, isPrimary: true } });
       if (!existingCal) {
         await prisma.calendar.create({
           data: {
             name: mainName,
-            contextType: 'PERSONAL' as any,
+            contextType: 'PERSONAL',
             contextId: user.id,
             isPrimary: true,
             isSystem: true,

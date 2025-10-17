@@ -399,9 +399,12 @@ export class SSOIntegrationService extends EventEmitter {
 
       // Exchange code for access token
       const tokenResponse = await this.exchangeCodeForToken(code, config);
+      const accessToken = typeof tokenResponse === 'object' && tokenResponse !== null && 'access_token' in tokenResponse 
+        ? String((tokenResponse as Record<string, unknown>).access_token)
+        : '';
       
       // Get user info
-      const userInfo = await this.getUserInfo(tokenResponse.access_token, config.userInfoUrl);
+      const userInfo = await this.getUserInfo(accessToken, config.userInfoUrl);
       
       // Create or update user
       const user = await this.createOrUpdateSSOUser(providerId, userInfo, provider.config.common!);
@@ -697,7 +700,7 @@ export class SSOIntegrationService extends EventEmitter {
     return true;
   }
 
-  private async exchangeCodeForToken(code: string, config: any): Promise<any> {
+  private async exchangeCodeForToken(code: string, config: any): Promise<unknown> {
     // In a real implementation, this would make an HTTP request to exchange code for token
     // For now, we'll return mock data
     return {
@@ -707,7 +710,7 @@ export class SSOIntegrationService extends EventEmitter {
     };
   }
 
-  private async getUserInfo(accessToken: string, userInfoUrl: string): Promise<any> {
+  private async getUserInfo(accessToken: string, userInfoUrl: string): Promise<Record<string, unknown>> {
     // In a real implementation, this would make an HTTP request to get user info
     // For now, we'll return mock data
     return {

@@ -113,7 +113,7 @@ export class LocalProvider {
   /**
    * Handle financial data queries
    */
-  private handleFinancialQuery(query: string, data: any, context: UserContext): {
+  private handleFinancialQuery(query: string, data: Record<string, unknown>, context: UserContext): {
     message: string;
     confidence: number;
     reasoning: string;
@@ -147,7 +147,7 @@ export class LocalProvider {
   /**
    * Handle authentication/security queries
    */
-  private handleAuthQuery(query: string, data: any, context: UserContext): {
+  private handleAuthQuery(query: string, data: Record<string, unknown>, context: UserContext): {
     message: string;
     confidence: number;
     reasoning: string;
@@ -173,7 +173,7 @@ export class LocalProvider {
   /**
    * Handle private conversation queries
    */
-  private handlePrivateConversationQuery(query: string, data: any, context: UserContext): {
+  private handlePrivateConversationQuery(query: string, data: Record<string, unknown>, context: UserContext): {
     message: string;
     confidence: number;
     reasoning: string;
@@ -196,7 +196,7 @@ export class LocalProvider {
   /**
    * Handle medical/health data queries
    */
-  private handleMedicalQuery(query: string, data: any, context: UserContext): {
+  private handleMedicalQuery(query: string, data: Record<string, unknown>, context: UserContext): {
     message: string;
     confidence: number;
     reasoning: string;
@@ -211,7 +211,7 @@ export class LocalProvider {
   /**
    * Handle general sensitive queries
    */
-  private handleGeneralSensitiveQuery(query: string, data: any, context: UserContext): {
+  private handleGeneralSensitiveQuery(query: string, data: Record<string, unknown>, context: UserContext): {
     message: string;
     confidence: number;
     reasoning: string;
@@ -226,7 +226,7 @@ export class LocalProvider {
   /**
    * Check if data contains financial information
    */
-  private containsFinancialData(data: any): boolean {
+  private containsFinancialData(data: Record<string, unknown>): boolean {
     const dataStr = JSON.stringify(data).toLowerCase();
     return /bank|account|balance|credit|debit|money|payment|financial/.test(dataStr);
   }
@@ -234,7 +234,7 @@ export class LocalProvider {
   /**
    * Check if data contains authentication information
    */
-  private containsAuthData(data: any): boolean {
+  private containsAuthData(data: Record<string, unknown>): boolean {
     const dataStr = JSON.stringify(data).toLowerCase();
     return /password|pin|secret|token|key|auth|login|credential/.test(dataStr);
   }
@@ -242,7 +242,7 @@ export class LocalProvider {
   /**
    * Check if data contains private conversations
    */
-  private containsPrivateConversations(data: any): boolean {
+  private containsPrivateConversations(data: Record<string, unknown>): boolean {
     const dataStr = JSON.stringify(data).toLowerCase();
     return /private|confidential|personal|intimate|secret/.test(dataStr);
   }
@@ -250,7 +250,7 @@ export class LocalProvider {
   /**
    * Check if data contains medical information
    */
-  private containsMedicalData(data: any): boolean {
+  private containsMedicalData(data: Record<string, unknown>): boolean {
     const dataStr = JSON.stringify(data).toLowerCase();
     return /medical|health|doctor|prescription|diagnosis|symptom|treatment/.test(dataStr);
   }
@@ -268,7 +268,7 @@ export class LocalProvider {
   /**
    * Future: Process with local LLM
    */
-  async processWithLocalLLM(request: AIRequest, context: UserContext, data: any): Promise<any> {
+  async processWithLocalLLM(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<unknown> {
     // TODO: Implement Ollama or other local LLM processing
     throw new Error('Local LLM processing not yet implemented');
   }

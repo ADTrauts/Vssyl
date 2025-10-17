@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
+import { AuthenticatedRequest } from './auth';
 
 export interface SubscriptionTier {
   tier: 'free' | 'standard' | 'enterprise';
@@ -10,6 +11,18 @@ export interface ModuleAccess {
   moduleId: string;
   hasAccess: boolean;
   tier: 'free' | 'premium' | 'enterprise';
+}
+
+// Extend AuthenticatedRequest with subscription properties
+export interface SubscriptionRequest extends AuthenticatedRequest {
+  subscription?: any;
+  userTier?: string;
+  moduleAccess?: ModuleAccess;
+  usageInfo?: {
+    current: number;
+    limit: number;
+    percentage: number;
+  };
 }
 
 export class SubscriptionMiddleware {
@@ -24,7 +37,7 @@ export class SubscriptionMiddleware {
     feature: string
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as AuthenticatedRequest).user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -53,8 +66,8 @@ export class SubscriptionMiddleware {
       }
 
       // Add subscription info to request for downstream use
-      (req as any).subscription = subscription;
-      (req as any).userTier = userTier;
+      (req as SubscriptionRequest).subscription = subscription;
+      (req as SubscriptionRequest).userTier = userTier;
       
       next();
     } catch (error) {
@@ -73,7 +86,7 @@ export class SubscriptionMiddleware {
     moduleId: string
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as AuthenticatedRequest).user?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -108,11 +121,10 @@ export class SubscriptionMiddleware {
       }
 
       // Add module access info to request
-      (req as any).moduleAccess = {
+      (req as SubscriptionRequest).moduleAccess = {
         moduleId,
         hasAccess: true,
-        tier: module.pricingTier,
-        subscription: moduleSubscription,
+        tier: module.pricingTier as 'free' | 'premium' | 'enterprise',
       };
       
       next();

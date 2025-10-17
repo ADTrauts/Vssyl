@@ -225,8 +225,8 @@ export class PersonalityEngine {
     }
     
     // Add decision pattern if applicable
-    if (insights.decisionPattern) {
-      profile.decisionPatterns.push(insights.decisionPattern);
+    if (insights.decisionPattern && typeof insights.decisionPattern === 'object') {
+      profile.decisionPatterns.push(insights.decisionPattern as DecisionPattern);
       
       // Keep only last 100 decisions
       if (profile.decisionPatterns.length > 100) {
@@ -247,10 +247,10 @@ export class PersonalityEngine {
       id: `learning_${Date.now()}`,
       timestamp: new Date(),
       eventType: userFeedback ? 'correction' : 'pattern_recognition',
-      context: interaction.context || 'general',
-      newBehavior: insights.behaviorUpdate || 'interaction_processed',
+      context: typeof interaction.context === 'string' ? interaction.context : 'general',
+      newBehavior: typeof insights.behaviorUpdate === 'string' ? insights.behaviorUpdate : 'interaction_processed',
       userFeedback,
-      confidence: insights.confidence || 0.7
+      confidence: typeof insights.confidence === 'number' ? insights.confidence : 0.7
     };
     
     profile.learningHistory.push(learningEvent);
@@ -273,7 +273,7 @@ export class PersonalityEngine {
   /**
    * Analyze interaction for personality insights
    */
-  private analyzeInteractionForInsights(interaction: any, userFeedback?: string): any {
+  private analyzeInteractionForInsights(interaction: any, userFeedback?: string): Record<string, unknown> {
     const insights: any = {};
     
     // Analyze response time preferences

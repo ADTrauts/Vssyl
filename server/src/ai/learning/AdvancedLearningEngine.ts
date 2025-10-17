@@ -2,16 +2,31 @@ import { PrismaClient } from '@prisma/client';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { CentralizedLearningEngine } from './CentralizedLearningEngine';
 
+export interface LearningEventData {
+  action?: string;
+  context?: Record<string, unknown>;
+  feedback?: { rating: number; comment?: string };
+  correction?: { expected: unknown; actual: unknown };
+  [key: string]: unknown;
+}
+
 export interface LearningEvent {
   id: string;
   userId: string;
   eventType: 'interaction' | 'feedback' | 'correction' | 'pattern' | 'prediction';
   module: string;
-  data: any;
+  data: LearningEventData;
   confidence: number;
   impact: 'low' | 'medium' | 'high' | 'critical';
   timestamp: Date;
   processed: boolean;
+}
+
+export interface LearningPatternData {
+  occurrences?: Array<{ timestamp: Date; context: Record<string, unknown> }>;
+  triggers?: string[];
+  outcomes?: Array<{ result: string; success: boolean }>;
+  [key: string]: unknown;
 }
 
 export interface LearningPattern {
@@ -22,8 +37,15 @@ export interface LearningPattern {
   strength: number;
   frequency: number;
   lastObserved: Date;
-  data: any;
+  data: LearningPatternData;
   predictions: Prediction[];
+}
+
+export interface PredictionData {
+  basis?: string[];
+  factors?: Array<{ factor: string; weight: number }>;
+  alternatives?: Array<{ option: string; probability: number }>;
+  [key: string]: unknown;
 }
 
 export interface Prediction {
@@ -34,10 +56,18 @@ export interface Prediction {
   probability: number;
   timeframe: 'immediate' | 'short_term' | 'long_term';
   description: string;
-  data: any;
+  data: PredictionData;
   createdAt: Date;
   expiresAt: Date;
   validated: boolean;
+}
+
+export interface LearningInsightData {
+  beforeState?: Record<string, unknown>;
+  afterState?: Record<string, unknown>;
+  evidence?: Array<{ source: string; value: unknown }>;
+  impact?: { area: string; magnitude: number };
+  [key: string]: unknown;
 }
 
 export interface LearningInsight {
@@ -48,7 +78,7 @@ export interface LearningInsight {
   significance: number;
   description: string;
   recommendations: string[];
-  data: any;
+  data: LearningInsightData;
   createdAt: Date;
 }
 
@@ -652,15 +682,16 @@ export class AdvancedLearningEngine {
       if (pattern.data?.confidenceDistribution) {
         const avgConfidence = pattern.data.averageConfidence;
         
+        const avgConfidenceNum = typeof avgConfidence === 'number' ? avgConfidence : 0.5;
         predictions.push({
           id: `preference_${Date.now()}_${Math.random()}`,
           userId: event.userId,
           type: 'preference',
           confidence: pattern.confidence * 0.7,
-          probability: avgConfidence,
+          probability: avgConfidenceNum,
           timeframe: 'long_term',
-          description: `Expected confidence level: ${(avgConfidence * 100).toFixed(1)}%`,
-          data: { expectedConfidence: avgConfidence, pattern: pattern.id },
+          description: `Expected confidence level: ${(avgConfidenceNum * 100).toFixed(1)}%`,
+          data: { expectedConfidence: avgConfidenceNum, pattern: pattern.id },
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
           validated: false
@@ -681,22 +712,27 @@ export class AdvancedLearningEngine {
     const temporalPatterns = patterns.filter(p => p.patternType === 'temporal');
     
     for (const pattern of temporalPatterns) {
-      if (pattern.data?.peakHours) {
-        const peakHour = pattern.data.peakHours[0];
-        
-        predictions.push({
-          id: `schedule_${Date.now()}_${Math.random()}`,
-          userId: event.userId,
-          type: 'schedule',
-          confidence: pattern.confidence * 0.6,
-          probability: peakHour[1] / pattern.frequency,
-          timeframe: 'immediate',
-          description: `Peak activity expected at ${peakHour[0]}:00`,
-          data: { peakHour: peakHour[0], pattern: pattern.id },
-          createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-          validated: false
-        });
+      if (pattern.data?.peakHours && Array.isArray(pattern.data.peakHours)) {
+        const peakHours = pattern.data.peakHours as Array<[number, number]>;
+        if (peakHours.length > 0) {
+          const peakHour = peakHours[0];
+          const probability = typeof peakHour[1] === 'number' ? peakHour[1] / pattern.frequency : 0.5;
+          const hourValue = typeof peakHour[0] === 'number' ? peakHour[0] : 9;
+          
+          predictions.push({
+            id: `schedule_${Date.now()}_${Math.random()}`,
+            userId: event.userId,
+            type: 'schedule',
+            confidence: pattern.confidence * 0.6,
+            probability,
+            timeframe: 'immediate',
+            description: `Peak activity expected at ${hourValue}:00`,
+            data: { peakHour: hourValue, pattern: pattern.id },
+            createdAt: new Date(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            validated: false
+          });
+        }
       }
     }
 
@@ -714,15 +750,16 @@ export class AdvancedLearningEngine {
     
     for (const pattern of communicationPatterns) {
       if (pattern.data?.interactionFrequency) {
+        const frequency = typeof pattern.data.interactionFrequency === 'number' ? pattern.data.interactionFrequency : 0.5;
         predictions.push({
           id: `communication_${Date.now()}_${Math.random()}`,
           userId: event.userId,
           type: 'communication',
           confidence: pattern.confidence * 0.8,
-          probability: pattern.data.interactionFrequency,
+          probability: frequency,
           timeframe: 'short_term',
-          description: `Expected interaction frequency: ${(pattern.data.interactionFrequency * 100).toFixed(1)}%`,
-          data: { expectedFrequency: pattern.data.interactionFrequency, pattern: pattern.id },
+          description: `Expected interaction frequency: ${(frequency * 100).toFixed(1)}%`,
+          data: { expectedFrequency: frequency, pattern: pattern.id },
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
           validated: false
@@ -786,7 +823,8 @@ export class AdvancedLearningEngine {
     
     for (const pattern of behavioralPatterns) {
       const currentBehavior = event.context;
-      const expectedBehavior = pattern.data?.activeModules?.[0]?.[0];
+      const activeModules = Array.isArray(pattern.data?.activeModules) ? pattern.data.activeModules : [];
+      const expectedBehavior = activeModules.length > 0 && Array.isArray(activeModules[0]) ? activeModules[0][0] : null;
       
       if (expectedBehavior && currentBehavior !== expectedBehavior) {
         insights.push({
@@ -823,9 +861,9 @@ export class AdvancedLearningEngine {
     
     for (const pattern of preferencePatterns) {
       const currentConfidence = event.confidence;
-      const expectedConfidence = pattern.data?.averageConfidence;
+      const expectedConfidence = typeof pattern.data?.averageConfidence === 'number' ? pattern.data.averageConfidence : null;
       
-      if (expectedConfidence && Math.abs(currentConfidence - expectedConfidence) > 0.2) {
+      if (expectedConfidence !== null && Math.abs(currentConfidence - expectedConfidence) > 0.2) {
         insights.push({
           id: `preference_shift_${Date.now()}`,
           userId: event.userId,
@@ -929,12 +967,16 @@ export class AdvancedLearningEngine {
     // Analyze patterns for behavior modifications
     for (const pattern of patterns) {
       if (pattern.patternType === 'behavioral' && pattern.strength > 0.7) {
+        const activeModules = Array.isArray(pattern.data?.activeModules) ? pattern.data.activeModules : [];
+        const firstModule = activeModules.length > 0 && Array.isArray(activeModules[0]) ? activeModules[0][0] : 'general';
+        const moduleContext = typeof firstModule === 'string' ? firstModule : 'general';
+        
         modifications.push({
           behavior: 'module_preference',
-          context: pattern.data?.activeModules?.[0]?.[0] || 'general',
+          context: moduleContext,
           modification: 'increase',
           confidence: pattern.confidence,
-          reasoning: `Strong pattern detected for ${pattern.data?.activeModules?.[0]?.[0]} module usage`
+          reasoning: `Strong pattern detected for ${moduleContext} module usage`
         });
       }
     }
@@ -1033,13 +1075,14 @@ export class AdvancedLearningEngine {
    */
   private getExpectedValueFromPattern(pattern: LearningPattern, event: any): number | null {
     if (pattern.patternType === 'preference' && pattern.data?.averageConfidence) {
-      return pattern.data.averageConfidence;
+      return typeof pattern.data.averageConfidence === 'number' ? pattern.data.averageConfidence : null;
     }
     
     if (pattern.patternType === 'behavioral' && pattern.data?.actionTypes) {
       const actionType = event.patternData?.actionType;
-      if (actionType && pattern.data.actionTypes[actionType]) {
-        return pattern.data.actionTypes[actionType] / pattern.frequency;
+      const actionTypes = pattern.data.actionTypes as Record<string, number>;
+      if (actionType && typeof actionTypes[actionType] === 'number') {
+        return actionTypes[actionType] / pattern.frequency;
       }
     }
     
@@ -1064,7 +1107,7 @@ export class AdvancedLearningEngine {
   /**
    * Get learning analytics for a user
    */
-  async getLearningAnalytics(userId: string): Promise<any> {
+  async getLearningAnalytics(userId: string): Promise<Record<string, unknown>> {
     const events = await this.prisma.aILearningEvent.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },

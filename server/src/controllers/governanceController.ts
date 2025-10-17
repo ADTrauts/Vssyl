@@ -410,8 +410,29 @@ async function checkPolicyRule(rule: GovernancePolicyRule, context: any): Promis
   return true;
 }
 
+// Interface for policy action rules
+interface PolicyActionRule {
+  actions: {
+    type: string;
+    message: string;
+    classification?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// Interface for policy actions
+interface PolicyAction {
+  type: string;
+  policyId?: string;
+  resourceType?: string;
+  resourceId?: string;
+  rule?: PolicyActionRule;
+  [key: string]: unknown;
+}
+
 // Helper function to execute policy actions
-async function executePolicyActions(actions: any[], userId: string): Promise<any[]> {
+async function executePolicyActions(actions: PolicyAction[], userId: string): Promise<PolicyAction[]> {
   const executedActions = [];
 
   for (const action of actions) {
@@ -437,11 +458,13 @@ async function executePolicyActions(actions: any[], userId: string): Promise<any
 
         case 'auto_classify':
           // Auto-classify the resource
-          if (action.rule.actions.classification) {
+          if (action.rule && action.rule.actions.classification) {
+            const resourceType = action.resourceType || 'unknown';
+            const resourceId = action.resourceId || 'unknown';
             await prisma.dataClassification.create({
               data: {
-                resourceType: action.resourceType,
-                resourceId: action.resourceId,
+                resourceType,
+                resourceId,
                 sensitivity: action.rule.actions.classification,
                 classifiedBy: userId,
                 notes: `Auto-classified by governance policy: ${action.rule.actions.message}`

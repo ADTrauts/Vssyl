@@ -278,7 +278,7 @@ export const getPersonalAuditStats = async (req: Request, res: Response) => {
 };
 
 // Helper function to mask sensitive data
-const maskSensitiveData = (details: any): any => {
+const maskSensitiveData = (details: any): Record<string, unknown> => {
   if (!details) return details;
 
   const masked = { ...details };
@@ -307,8 +307,20 @@ const maskIPAddress = (ip: string): string => {
   return ip;
 };
 
+// Interface for audit log CSV export
+interface AuditLogData {
+  timestamp: Date | string;
+  action: string;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  details?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
 // Helper function to generate CSV
-const generateCSV = (auditLogs: any[]): string => {
+const generateCSV = (auditLogs: AuditLogData[]): string => {
   const headers = ['Timestamp', 'Action', 'Resource Type', 'Resource ID', 'IP Address', 'User Agent', 'Details'];
   
   const rows = auditLogs.map(log => [

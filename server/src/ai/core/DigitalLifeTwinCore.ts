@@ -34,12 +34,20 @@ export interface DigitalLifeTwinResponse {
   };
 }
 
+export interface LifeTwinActionData {
+  targetId?: string;
+  operation?: string;
+  parameters?: Record<string, unknown>;
+  context?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface LifeTwinAction {
   id: string;
   type: 'schedule' | 'communicate' | 'organize' | 'analyze' | 'create' | 'update' | 'delete';
   module: string;
   description: string;
-  data: any;
+  data: LifeTwinActionData;
   requiresApproval: boolean;
   approvalReason?: string;
   confidence: number;
@@ -93,12 +101,7 @@ export class DigitalLifeTwinCore {
       this.smartPatternEngine = new SmartPatternEngine(this.prisma);
     } catch (error) {
       console.error('Error initializing DigitalLifeTwinCore engines:', error);
-      // Initialize with minimal functionality if engines fail
-      this.personalityEngine = null as any;
-      this.decisionEngine = null as any;
-      this.learningEngine = null as any;
-      this.actionExecutor = null as any;
-      this.smartPatternEngine = null as any;
+      throw error; // Re-throw to prevent using uninitialized engines
     }
   }
 
@@ -359,10 +362,14 @@ export class DigitalLifeTwinCore {
       userId: query.userId
     });
     
+    const response = typeof aiResponse.response === 'string' ? aiResponse.response : String(aiResponse.response || '');
+    const confidence = typeof aiResponse.confidence === 'number' ? aiResponse.confidence : 0.5;
+    const reasoning = typeof aiResponse.reasoning === 'string' ? aiResponse.reasoning : "Generated based on your digital life patterns and personality";
+    
     return {
-      response: aiResponse.response,
-      confidence: aiResponse.confidence,
-      reasoning: aiResponse.reasoning || "Generated based on your digital life patterns and personality",
+      response,
+      confidence,
+      reasoning,
       modulesFocused: analysis.scope.modules,
       patternMatches: analysis.relevantPatterns.map((p: any) => p.id),
       provider
@@ -660,7 +667,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     return 'general';
   }
 
-  private determineQueryScope(query: string, userContext: UserContext): any {
+  private determineQueryScope(query: string, userContext: UserContext): { type: string; modules: string[] } {
     const modules = [];
     if (query.includes('drive') || query.includes('file') || query.includes('document')) modules.push('drive');
     if (query.includes('chat') || query.includes('message') || query.includes('conversation')) modules.push('chat');
@@ -754,7 +761,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     return sensitiveKeywords.some(keyword => query.toLowerCase().includes(keyword));
   }
 
-  private async callAIProvider(provider: string, prompt: string, options: any): Promise<any> {
+  private async callAIProvider(provider: string, prompt: string, options: any): Promise<Record<string, unknown>> {
     try {
       // Import AI providers
       const { OpenAIProvider } = await import('../providers/OpenAIProvider');
@@ -812,7 +819,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     }
   }
 
-  private async getAutonomySettings(userId: string): Promise<any> {
+  private async getAutonomySettings(userId: string): Promise<Record<string, unknown>> {
     const settings = await this.prisma.aIAutonomySettings.findUnique({
       where: { userId }
     });

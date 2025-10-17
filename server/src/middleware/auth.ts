@@ -9,9 +9,24 @@ export interface AuthenticatedUser {
   role: string;
 }
 
+// Extend Express Request type to include our custom properties
+// @ts-ignore - Express Request has any types in its definition
+export interface AuthenticatedRequest extends Request {
+  user?: AuthenticatedUser;
+}
+
+// JWT Payload interface
+interface JWTPayload {
+  sub: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
 // Helper function to safely get user properties
 export function getUserFromRequest(req: Request): AuthenticatedUser | null {
-  return (req as any).user || null;
+  return (req as AuthenticatedRequest).user || null;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -38,7 +53,7 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, JWT_SECRET!) as JWTPayload;
     console.log('Auth Middleware - Token decoded:', { 
       userId: decoded.sub,
       email: decoded.email,
@@ -72,7 +87,7 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
     }
     
     // Set full user data
-    (req as any).user = user;
+    (req as AuthenticatedRequest).user = user;
     
     next();
   } catch (error) {
@@ -87,7 +102,7 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
  */
 export function requireRole(role: string) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     
     if (!user) {
       return res.status(401).json({ message: 'Authentication required' });

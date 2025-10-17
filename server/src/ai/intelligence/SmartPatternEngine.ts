@@ -1,5 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { SemanticSimilarityEngine, SimilarQuery, SemanticInsight } from './SemanticSimilarityEngine';
+
+// Interface for interaction data used in pattern analysis
+interface InteractionData {
+  createdAt: Date;
+  userQuery: string;
+  confidence: number;
+  response?: string;
+  module?: string;
+  [key: string]: unknown;
+}
 
 export interface UserPattern {
   id: string;
@@ -9,7 +19,7 @@ export interface UserPattern {
   confidence: number;
   frequency: number;
   lastSeen: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface PatternPrediction {
@@ -18,7 +28,7 @@ export interface PatternPrediction {
   confidence: number;
   suggestedAction?: string;
   reasoning: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface SmartSuggestion {
@@ -121,7 +131,7 @@ export class SmartPatternEngine {
   /**
    * Find temporal patterns in user behavior
    */
-  private async findTemporalPatterns(userId: string, interactions: any[]): Promise<UserPattern[]> {
+  private async findTemporalPatterns(userId: string, interactions: InteractionData[]): Promise<UserPattern[]> {
     const patterns: UserPattern[] = [];
 
     // Analyze interaction times
@@ -185,7 +195,7 @@ export class SmartPatternEngine {
   /**
    * Find behavioral patterns in user interactions
    */
-  private async findBehavioralPatterns(userId: string, interactions: any[]): Promise<UserPattern[]> {
+  private async findBehavioralPatterns(userId: string, interactions: InteractionData[]): Promise<UserPattern[]> {
     const patterns: UserPattern[] = [];
 
     // Analyze query types and frequencies
@@ -250,7 +260,7 @@ export class SmartPatternEngine {
   /**
    * Find communication patterns
    */
-  private async findCommunicationPatterns(userId: string, interactions: any[]): Promise<UserPattern[]> {
+  private async findCommunicationPatterns(userId: string, interactions: InteractionData[]): Promise<UserPattern[]> {
     const patterns: UserPattern[] = [];
 
     // Analyze response lengths and formality
@@ -304,7 +314,7 @@ export class SmartPatternEngine {
   /**
    * Find decision-making patterns
    */
-  private async findDecisionPatterns(userId: string, interactions: any[]): Promise<UserPattern[]> {
+  private async findDecisionPatterns(userId: string, interactions: InteractionData[]): Promise<UserPattern[]> {
     const patterns: UserPattern[] = [];
 
     // Analyze decision-related queries
@@ -371,16 +381,17 @@ export class SmartPatternEngine {
     // Temporal predictions
     const temporalPatterns = patterns.filter(p => p.type === 'temporal');
     temporalPatterns.forEach(pattern => {
-      if (pattern.metadata.peakHour !== undefined) {
-        const timeDiff = Math.abs(currentHour - pattern.metadata.peakHour);
+      const peakHour = typeof pattern.metadata.peakHour === 'number' ? pattern.metadata.peakHour : null;
+      if (peakHour !== null && peakHour !== undefined) {
+        const timeDiff = Math.abs(currentHour - peakHour);
         if (timeDiff <= 1) { // Within 1 hour of peak
           predictions.push({
             type: 'temporal_activity',
             description: `Based on your patterns, you're typically most active around this time`,
             confidence: pattern.confidence * 0.8,
             suggestedAction: 'This might be a good time for focused AI assistance',
-            reasoning: `You usually interact most at ${pattern.metadata.peakHour}:00`,
-            metadata: { peakHour: pattern.metadata.peakHour, currentHour }
+            reasoning: `You usually interact most at ${peakHour}:00`,
+            metadata: { peakHour, currentHour }
           });
         }
       }
@@ -391,12 +402,13 @@ export class SmartPatternEngine {
     const dominantBehavior = behavioralPatterns.sort((a, b) => b.confidence - a.confidence)[0];
     
     if (dominantBehavior && dominantBehavior.confidence > 0.6) {
+      const category = typeof dominantBehavior.metadata.category === 'string' ? dominantBehavior.metadata.category : 'general';
       predictions.push({
         type: 'behavioral_suggestion',
-        description: `You often use AI for ${dominantBehavior.metadata.category}`,
+        description: `You often use AI for ${category}`,
         confidence: dominantBehavior.confidence,
-        suggestedAction: this.getSuggestedActionForCategory(dominantBehavior.metadata.category),
-        reasoning: `${dominantBehavior.metadata.percentage}% of your queries are about ${dominantBehavior.metadata.category}`,
+        suggestedAction: this.getSuggestedActionForCategory(category),
+        reasoning: `${dominantBehavior.metadata.percentage}% of your queries are about ${category}`,
         metadata: dominantBehavior.metadata
       });
     }
@@ -418,7 +430,7 @@ export class SmartPatternEngine {
     const behavioralPatterns = patterns.filter(p => p.type === 'behavioral');
     behavioralPatterns.forEach((pattern, index) => {
       if (pattern.confidence > 0.5) {
-        const category = pattern.metadata.category;
+        const category = typeof pattern.metadata.category === 'string' ? pattern.metadata.category : 'general';
         const suggestion = this.createSuggestionForCategory(category, pattern);
         if (suggestion) {
         suggestions.push({
@@ -605,7 +617,7 @@ export class SmartPatternEngine {
             }),
             newBehavior: `Pattern discovered: ${pattern.pattern}`,
             confidence: pattern.confidence,
-            patternData: pattern.metadata,
+            patternData: pattern.metadata as unknown as Prisma.InputJsonValue,
             frequency: pattern.frequency
           }
         });

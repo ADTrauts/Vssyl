@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 // Widget service stubs
@@ -9,8 +10,8 @@ export async function createWidget(userId: string, dashboardId: string, data: { 
     data: {
       dashboardId,
       type: data.type,
-      config: data.config as any, // TODO: Fix Prisma JSON field typing
-      position: data.position as any, // TODO: Fix Prisma JSON field typing
+      config: data.config as Prisma.InputJsonValue,
+      position: data.position as Prisma.InputJsonValue,
     },
   });
 }
@@ -23,8 +24,8 @@ export async function updateWidget(userId: string, widgetId: string, data: { typ
     where: { id: widgetId },
     data: {
       ...(data.type !== undefined ? { type: data.type } : {}),
-      ...(data.config !== undefined ? { config: data.config as any } : {}), // TODO: Fix Prisma JSON field typing
-      ...(data.position !== undefined ? { position: data.position as any } : {}), // TODO: Fix Prisma JSON field typing
+      ...(data.config !== undefined ? { config: data.config as Prisma.InputJsonValue } : {}),
+      ...(data.position !== undefined ? { position: data.position as Prisma.InputJsonValue } : {}),
     },
   });
 }

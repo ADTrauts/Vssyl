@@ -6,6 +6,15 @@ import { getOrCreateChatFilesFolder } from '../services/driveService';
 import { NotificationService } from '../services/notificationService';
 import { storageService } from '../services/storageService';
 import { prisma } from '../lib/prisma';
+import { AuthenticatedRequest } from '../middleware/auth';
+
+interface JWTPayload {
+  sub?: string;
+  id?: string;
+  email?: string;
+  iat?: number;
+  exp?: number;
+}
 
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;
@@ -49,14 +58,14 @@ export const multerUploadWithErrorHandling = (req: Request, res: Response, next:
   });
 };
 
-function hasUserId(user: any): user is { id: string } | { sub: string } {
-  return user && (typeof user.id === 'string' || typeof user.sub === 'string');
+function hasUserId(user: any): user is { id: string } {
+  return user && typeof user.id === 'string';
 }
 
 // List files with dashboard context support
 export async function listFiles(req: Request, res: Response) {
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const folderId = req.query.folderId as string;
     const starred = req.query.starred as string;
     const dashboardId = req.query.dashboardId as string; // NEW: Dashboard context filtering
@@ -110,10 +119,10 @@ export async function listFiles(req: Request, res: Response) {
     
     query += ` ORDER BY "order" ASC, "createdAt" DESC`;
     
-    const files = await prisma.$queryRawUnsafe(query, ...params);
+    const files = await prisma.$queryRawUnsafe(query, ...params) as Array<any>;
     
     // Add full URLs to all files
-    const filesWithFullUrls = (files as any[]).map(file => ({
+    const filesWithFullUrls = files.map((file: any) => ({
       ...file,
       url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${file.url}`
     }));
@@ -140,7 +149,7 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       mimeType: req.file?.mimetype,
       storageProvider: storageService.getProvider(),
       isGCSConfigured: storageService.isGCSConfigured(),
-      userId: (req.user as any).id || (req.user as any).sub,
+      userId: (req as AuthenticatedRequest).user?.id || '',
       environment: process.env.NODE_ENV,
       storageProviderEnv: process.env.STORAGE_PROVIDER,
       fileStorageTypeEnv: process.env.FILE_STORAGE_TYPE
@@ -151,7 +160,11 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       return res.status(400).json({ message: 'File name is required' });
     }
     
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
     let { folderId, chat, dashboardId } = req.body;
     
     // If this is a chat upload, always use the Chat Files folder
@@ -240,7 +253,7 @@ export async function getItemActivity(req: Request, res: Response) {
   }
   try {
     const { itemId } = req.params;
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
 
     // Check if the item is a folder the user owns
     const folder = await prisma.folder.findFirst({
@@ -295,12 +308,13 @@ export async function downloadFile(req: Request, res: Response) {
   if (req.query.token) {
     try {
       const decoded = jwt.verify(req.query.token as string, process.env.JWT_SECRET || '');
-      userId = (decoded as any).sub || (decoded as any).id;
+      const payload = decoded as JWTPayload;
+      userId = payload.sub || payload.id || '';
     } catch (error) {
       return res.sendStatus(401);
     }
   } else if (hasUserId(req.user)) {
-    userId = (req.user as any).id || (req.user as any).sub;
+    userId = req.user.id;
   } else {
     return res.sendStatus(401);
   }
@@ -343,7 +357,7 @@ export async function updateFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = req.user.id;
     const { id } = req.params;
     const { name, folderId } = req.body;
     if (!(await canWriteFile(userId, id))) return res.status(403).json({ message: 'Forbidden' });
@@ -387,7 +401,7 @@ export async function deleteFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = req.user.id;
     const { id } = req.params;
     if (!(await canWriteFile(userId, id))) return res.status(403).json({ message: 'Forbidden' });
     
@@ -429,7 +443,7 @@ export async function listFilePermissions(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const { id } = req.params; // file id
     // Only owner can list permissions
     const file = await prisma.file.findUnique({ where: { id } });
@@ -448,7 +462,10 @@ export async function grantFilePermission(req: Request, res: Response) {
     return;
   }
   try {
-    const ownerId = (req.user as any).id || (req.user as any).sub;
+    const ownerId = (req as AuthenticatedRequest).user?.id;
+    if (!ownerId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { id } = req.params; // file id
     const { userId, canRead, canWrite } = req.body;
     
@@ -510,7 +527,10 @@ export async function updateFilePermission(req: Request, res: Response) {
     return;
   }
   try {
-    const ownerId = (req.user as any).id || (req.user as any).sub;
+    const ownerId = (req as AuthenticatedRequest).user?.id;
+    if (!ownerId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { id, userId } = req.params; // file id, user id
     const { canRead, canWrite } = req.body;
     // Only owner can update permissions
@@ -534,7 +554,10 @@ export async function revokeFilePermission(req: Request, res: Response) {
     return;
   }
   try {
-    const ownerId = (req.user as any).id || (req.user as any).sub;
+    const ownerId = (req as AuthenticatedRequest).user?.id;
+    if (!ownerId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { id, userId } = req.params; // file id, user id
     
     // Only owner can revoke permissions
@@ -607,7 +630,7 @@ export async function listTrashedFiles(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const files = await prisma.file.findMany({
       where: { userId, trashedAt: { not: null } },
       orderBy: { trashedAt: 'desc' },
@@ -626,7 +649,7 @@ export async function restoreFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const { id } = req.params;
     const file = await prisma.file.updateMany({
       where: { id, userId, trashedAt: { not: null } },
@@ -646,7 +669,7 @@ export async function hardDeleteFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const { id } = req.params;
     
     // Get file details before deletion
@@ -708,7 +731,7 @@ export async function getSharedItems(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
 
     // Get files that have been shared with this user
     const sharedFiles = await prisma.file.findMany({
@@ -776,7 +799,7 @@ export async function reorderFiles(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const { folderId } = req.params;
     const { fileIds } = req.body; // Array of file IDs in new order
 
@@ -816,7 +839,7 @@ export async function moveFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id;
     const { id } = req.params;
     const { targetFolderId } = req.body;
 

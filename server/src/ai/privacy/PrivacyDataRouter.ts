@@ -6,10 +6,12 @@ export interface DataClassification {
   reasons: string[];
 }
 
+export type ClassifiableData = Record<string, unknown> | string | unknown[] | UserContext;
+
 export interface RoutingDecision {
   processor: 'local' | 'cloud' | 'hybrid';
-  localData: any;
-  cloudData: any;
+  localData: Record<string, unknown>;
+  cloudData: Record<string, unknown>;
   classification: DataClassification;
 }
 
@@ -18,7 +20,7 @@ export class PrivacyDataRouter {
   /**
    * Classify data based on sensitivity and privacy requirements
    */
-  classifyData(data: any): DataClassification {
+  classifyData(data: ClassifiableData): DataClassification {
     const sensitivePatterns = [
       // Financial data
       /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/, // Credit card numbers
@@ -75,7 +77,7 @@ export class PrivacyDataRouter {
   /**
    * Calculate sensitivity level based on patterns found
    */
-  private calculateSensitivity(data: any, patterns: RegExp[]): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateSensitivity(data: ClassifiableData, patterns: RegExp[]): 'low' | 'medium' | 'high' | 'critical' {
     const dataStr = JSON.stringify(data).toLowerCase();
     let matchCount = 0;
     let criticalMatch = false;
@@ -102,7 +104,7 @@ export class PrivacyDataRouter {
   /**
    * Determine processing type based on sensitivity
    */
-  private determineProcessingType(sensitivity: string, data: any): 'local_only' | 'cloud_safe' | 'hybrid' {
+  private determineProcessingType(sensitivity: string, data: ClassifiableData): 'local_only' | 'cloud_safe' | 'hybrid' {
     // Critical data must stay local
     if (sensitivity === 'critical') {
       return 'local_only';
@@ -125,7 +127,7 @@ export class PrivacyDataRouter {
   /**
    * Get reasons for classification decision
    */
-  private getClassificationReasons(data: any, patterns: RegExp[]): string[] {
+  private getClassificationReasons(data: ClassifiableData, patterns: RegExp[]): string[] {
     const dataStr = JSON.stringify(data).toLowerCase();
     const reasons: string[] = [];
 
@@ -209,7 +211,7 @@ export class PrivacyDataRouter {
   /**
    * Extract only sensitive data for local processing
    */
-  private extractSensitiveData(request: AIRequest, context: UserContext): any {
+  private extractSensitiveData(request: AIRequest, context: UserContext): Record<string, unknown> {
     return {
       userId: request.userId,
       sensitiveQuery: this.maskSensitiveContent(request.query),
@@ -222,7 +224,7 @@ export class PrivacyDataRouter {
   /**
    * Create safe context for cloud processing
    */
-  private createSafeContext(request: AIRequest, context: UserContext): any {
+  private createSafeContext(request: AIRequest, context: UserContext): Record<string, unknown> {
     return {
       userId: request.userId, // ID is okay
       query: this.sanitizeQuery(request.query),
@@ -261,15 +263,16 @@ export class PrivacyDataRouter {
   /**
    * Extract general (non-sensitive) preferences
    */
-  private extractGeneralPreferences(preferences: any[]): any {
+  private extractGeneralPreferences(preferences: Array<Record<string, unknown>>): Record<string, unknown> {
     if (!preferences) return {};
     
     return preferences
       .filter(pref => !this.isSensitivePreference(pref))
       .reduce((acc, pref) => {
-        acc[pref.key] = pref.value;
+        const key = typeof pref.key === 'string' ? pref.key : 'unknown';
+        acc[key] = pref.value;
         return acc;
-      }, {});
+      }, {} as Record<string, unknown>);
   }
 
   /**
@@ -288,7 +291,7 @@ export class PrivacyDataRouter {
   /**
    * Summarize activity without sensitive details
    */
-  private summarizeActivity(activities: any[]): any {
+  private summarizeActivity(activities: Array<Record<string, unknown>>): Record<string, unknown> {
     if (!activities || activities.length === 0) return {};
 
     return {
@@ -302,28 +305,34 @@ export class PrivacyDataRouter {
   /**
    * Get module usage patterns
    */
-  private getModuleUsagePattern(activities: any[]): any {
-    const moduleCount = activities.reduce((acc, activity) => {
-      const module = activity.module || 'unknown';
-      acc[module] = (acc[module] || 0) + 1;
-      return acc;
-    }, {});
-
+  private getModuleUsagePattern(activities: Array<Record<string, unknown>>): Record<string, number> {
+    const moduleCount: Record<string, number> = {};
+    
+    activities.forEach(activity => {
+      const module = typeof activity.module === 'string' ? activity.module : 'unknown';
+      moduleCount[module] = (moduleCount[module] || 0) + 1;
+    });
+    
     return moduleCount;
   }
 
   /**
    * Get time usage patterns
    */
-  private getTimePatterns(activities: any[]): any {
-    const hourCounts = activities.reduce((acc, activity) => {
-      const hour = new Date(activity.createdAt).getHours();
-      acc[hour] = (acc[hour] || 0) + 1;
-      return acc;
-    }, {});
-
+  private getTimePatterns(activities: Array<Record<string, unknown>>): Record<string, unknown> {
+    const hourCounts: Record<number, number> = {};
+    
+    activities.forEach(activity => {
+      const createdAt = activity.createdAt instanceof Date ? activity.createdAt : new Date(String(activity.createdAt || new Date()));
+      const hour = createdAt.getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    
     return {
-      peakHours: Object.keys(hourCounts).sort((a, b) => hourCounts[b] - hourCounts[a]).slice(0, 3),
+      peakHours: Object.entries(hourCounts)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 3)
+        .map(([hour]) => parseInt(hour)),
       totalHoursActive: Object.keys(hourCounts).length
     };
   }
@@ -331,12 +340,13 @@ export class PrivacyDataRouter {
   /**
    * Get collaboration level
    */
-  private getCollaborationLevel(activities: any[]): string {
-    const collaborativeActivities = activities.filter(activity => 
-      activity.action?.includes('share') || 
-      activity.action?.includes('invite') || 
-      activity.action?.includes('collaborate')
-    );
+  private getCollaborationLevel(activities: Array<Record<string, unknown>>): string {
+    const collaborativeActivities = activities.filter(activity => {
+      const action = typeof activity.action === 'string' ? activity.action : '';
+      return action.includes('share') || 
+             action.includes('invite') || 
+             action.includes('collaborate');
+    });
 
     const ratio = collaborativeActivities.length / activities.length;
     

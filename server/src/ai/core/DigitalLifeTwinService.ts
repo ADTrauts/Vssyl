@@ -300,13 +300,13 @@ export class DigitalLifeTwinService {
   }
 
   // Helper methods for context building
-  private async getUserPreferences(userId: string): Promise<any> {
+  private async getUserPreferences(userId: string): Promise<unknown[]> {
     return this.prisma.userPreference.findMany({
       where: { userId }
     });
   }
 
-  private async getAutonomySettings(userId: string): Promise<any> {
+  private async getAutonomySettings(userId: string): Promise<unknown | null> {
     return this.prisma.aIAutonomySettings.findUnique({
       where: { userId }
     });
@@ -322,7 +322,7 @@ export class DigitalLifeTwinService {
     return activities;
   }
 
-  private async getCurrentDashboardContext(userId: string): Promise<any> {
+  private async getCurrentDashboardContext(userId: string): Promise<unknown | null> {
     // Get current dashboard and its context
     return this.prisma.dashboard.findFirst({
       where: { userId },

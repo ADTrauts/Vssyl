@@ -210,7 +210,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute schedule event action
    */
-  private async executeScheduleEvent(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeScheduleEvent(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { title, startTime, duration, attendees } = action.parameters;
     
     // This would integrate with calendar APIs
@@ -238,7 +238,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute send message action
    */
-  private async executeSendMessage(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeSendMessage(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { recipient, message, channel } = action.parameters;
     
     // This would integrate with messaging APIs
@@ -265,7 +265,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute create task action
    */
-  private async executeCreateTask(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeCreateTask(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { title, description, priority, dueDate } = action.parameters;
     
     const task = {
@@ -293,7 +293,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute analyze data action
    */
-  private async executeAnalyzeData(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeAnalyzeData(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { dataSource, analysisType, parameters: analysisParams } = action.parameters;
     
     // This would perform actual data analysis
@@ -323,7 +323,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute organize files action
    */
-  private async executeOrganizeFiles(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeOrganizeFiles(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { source, organizationType, rules } = action.parameters;
     
     const organization = {
@@ -352,7 +352,7 @@ export class AutonomousActionExecutor {
   /**
    * Execute schedule followup action
    */
-  private async executeScheduleFollowup(action: AutonomousAction, template: ActionTemplate): Promise<any> {
+  private async executeScheduleFollowup(action: AutonomousAction, template: ActionTemplate): Promise<unknown> {
     const { conversationId, followUpType, delayDays } = action.parameters;
     
     const followUp = {

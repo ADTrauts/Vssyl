@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Business, OrganizationalTier, Department, Position } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
@@ -68,8 +68,8 @@ export class OrgChartService {
         description: data.description,
         // TODO: Prisma JSON compatibility issue - using any temporarily
         // Need to research proper Prisma JSON field typing solutions
-        defaultPermissions: data.defaultPermissions as any,
-        defaultModules: data.defaultModules as any,
+        defaultPermissions: data.defaultPermissions as unknown as Prisma.InputJsonValue,
+        defaultModules: data.defaultModules as unknown as Prisma.InputJsonValue,
       },
     });
   }
@@ -129,8 +129,8 @@ export class OrgChartService {
         parentDepartmentId: data.parentDepartmentId,
         headPositionId: data.headPositionId,
         // TODO: Prisma JSON compatibility issue - using any temporarily
-        departmentModules: data.departmentModules as any,
-        departmentPermissions: data.departmentPermissions as any,
+        departmentModules: data.departmentModules as unknown as Prisma.InputJsonValue,
+        departmentPermissions: data.departmentPermissions as unknown as Prisma.InputJsonValue,
       },
     });
   }
@@ -216,10 +216,10 @@ export class OrgChartService {
         departmentId: data.departmentId,
         reportsToId: data.reportsToId,
         // TODO: Prisma JSON compatibility issue - using any temporarily
-        permissions: data.permissions as any,
-        assignedModules: data.assignedModules as any,
+        permissions: data.permissions as unknown as Prisma.InputJsonValue,
+        assignedModules: data.assignedModules as unknown as Prisma.InputJsonValue,
         maxOccupants: data.maxOccupants || 1,
-        customPermissions: data.customPermissions as any,
+        customPermissions: data.customPermissions as unknown as Prisma.InputJsonValue,
       },
     });
   }

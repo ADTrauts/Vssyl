@@ -553,10 +553,11 @@ export class SecurityComplianceService {
     return totalActions > 0 ? (completeAudits / totalActions) * 100 : 100;
   }
 
-  private generatePrivacyRecommendations(data: any): string[] {
+  private generatePrivacyRecommendations(data: Record<string, unknown>): string[] {
     const recommendations: string[] = [];
     
-    if (data.userConsentLevel < 80) {
+    const userConsentLevel = typeof data.userConsentLevel === 'number' ? data.userConsentLevel : 100;
+    if (userConsentLevel < 80) {
       recommendations.push('Improve user consent collection and communication');
     }
     
@@ -568,7 +569,8 @@ export class SecurityComplianceService {
       recommendations.push('Implement data encryption for sensitive information');
     }
     
-    if (data.auditTrailCompleteness < 95) {
+    const auditTrailCompleteness = typeof data.auditTrailCompleteness === 'number' ? data.auditTrailCompleteness : 100;
+    if (auditTrailCompleteness < 95) {
       recommendations.push('Improve audit trail completeness and consistency');
     }
     

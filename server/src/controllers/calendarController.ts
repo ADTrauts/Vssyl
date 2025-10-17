@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { rrulestr } from 'rrule';
 import { getLocalYmd, zonedTimeToUtcFromDate } from '../utils/timezone';
@@ -8,8 +9,8 @@ import { sendCalendarInviteEmail, sendCalendarUpdateEmail, sendCalendarCancelEma
 import { createRsvpToken, validateRsvpToken } from '../utils/tokenUtils';
 
 function getUserId(req: Request): string | null {
-  const user = (req as any).user;
-  return user?.sub || user?.id || null;
+  const user = (req as AuthenticatedRequest).user;
+  return user?.id || null;
 }
 
 export async function listCalendars(req: Request, res: Response) {
@@ -19,17 +20,17 @@ export async function listCalendars(req: Request, res: Response) {
   // Optional filters: contextType, contextId
   const { contextType, contextId } = req.query as { contextType?: string; contextId?: string };
 
+  const where: any = {
+    OR: [
+      { members: { some: { userId } } },
+      { contextType: 'PERSONAL', contextId: userId },
+    ]
+  };
+  if (contextType) where.contextType = contextType;
+  if (contextId) where.contextId = contextId;
+  
   const calendars = await prisma.calendar.findMany({
-    where: {
-      AND: [
-        contextType ? { contextType } as any : {},
-        contextId ? { contextId } : {},
-      ],
-      OR: [
-        { members: { some: { userId } } },
-        { contextType: 'PERSONAL', contextId: userId },
-      ]
-    },
+    where,
     include: { members: { where: { userId } } }
   });
   res.json({ success: true, data: calendars });
@@ -111,7 +112,7 @@ export async function autoProvisionCalendar(req: Request, res: Response) {
           contextType === 'PERSONAL' ? { userId: contextId } : undefined,
           contextType === 'BUSINESS' ? { businessId: contextId } : undefined,
           contextType === 'HOUSEHOLD' ? { householdId: contextId } : undefined,
-        ].filter(Boolean) as any,
+        ].filter((item): item is NonNullable<typeof item> => item !== undefined),
       },
       include: { widgets: true }
     });
@@ -225,7 +226,7 @@ export async function listEventsInRange(req: Request, res: Response) {
   // Handle recurrence expansion with basic exceptions via child events
   // Child exceptions are modeled as events with parentEventId set to the series parent
   const exceptionKeySet = new Set<string>();
-  for (const child of events as any[]) {
+  for (const child of events) {
     if (child.parentEventId) {
       const key = `${child.parentEventId}|${new Date(child.startAt).toISOString()}`;
       exceptionKeySet.add(key);
@@ -233,7 +234,7 @@ export async function listEventsInRange(req: Request, res: Response) {
   }
 
   const expanded: any[] = [];
-  for (const ev of events as any[]) {
+  for (const ev of events) {
     // If this is a child exception or a normal one-off event, include as-is
     if (!ev.recurrenceRule) {
       expanded.push({ ...ev, occurrenceStartAt: ev.startAt, occurrenceEndAt: ev.endAt });
@@ -418,7 +419,7 @@ export async function checkConflicts(req: Request, res: Response) {
         endAt: true,
         allDay: true,
         timezone: true,
-        recurrenceRule: true as any, // Type assertion for Prisma compatibility
+        recurrenceRule: true,
       },
       orderBy: { startAt: 'asc' },
     });
@@ -746,7 +747,8 @@ export async function deleteEvent(req: Request, res: Response) {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.params;
-  const { editMode, occurrenceStartAt } = (req.query as any) as { editMode?: 'THIS'|'SERIES'; occurrenceStartAt?: string };
+  const editMode = req.query.editMode as 'THIS' | 'SERIES' | undefined;
+  const occurrenceStartAt = typeof req.query.occurrenceStartAt === 'string' ? req.query.occurrenceStartAt : undefined;
   const ev = await prisma.event.findUnique({ where: { id } });
   if (!ev) return res.status(404).json({ error: 'Not found' });
   const member = await prisma.calendarMember.findFirst({ where: { calendarId: ev.calendarId, userId, role: { in: ['OWNER', 'ADMIN', 'EDITOR'] } } });
@@ -956,7 +958,7 @@ export async function rsvpEventPublic(req: Request, res: Response) {
 export async function importIcsEvents(req: Request, res: Response) {
   try {
     const { calendarId, icsContent } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     
     if (!userId || !calendarId || !icsContent) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
@@ -1121,7 +1123,7 @@ export async function importIcsEvents(req: Request, res: Response) {
 export async function exportIcsEvents(req: Request, res: Response) {
   try {
     const { start, end, calendarIds, contexts } = req.query;
-    const userId = (req as any).user?.id;
+    const userId = (req as AuthenticatedRequest).user?.id;
     
     if (!userId || !start || !end) {
       return res.status(400).json({ success: false, message: 'Missing required parameters' });

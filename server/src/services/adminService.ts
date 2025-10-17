@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcrypt';
 import { SupportTicketEmailService } from './supportTicketEmailService';
@@ -1459,7 +1460,7 @@ export class AdminService {
         userAgent: eventData.userAgent,
         // TODO: Prisma JSON compatibility issue - using any temporarily
         // Need to research proper Prisma JSON field typing solutions
-        details: eventData.details as any
+        details: eventData.details as Prisma.InputJsonValue
       }
     });
   }
@@ -1472,7 +1473,7 @@ export class AdminService {
         metricValue: metricData.metricValue,
         // TODO: Prisma JSON compatibility issue - using any temporarily
         // Need to research proper Prisma JSON field typing solutions
-        metadata: metricData.metadata as any
+        metadata: metricData.metadata as Prisma.InputJsonValue
       }
     });
   }
@@ -2478,8 +2479,8 @@ export class AdminService {
         id: ticket.id,
         title: ticket.title,
         description: ticket.description,
-        status: ticket.status.toLowerCase() as any,
-        priority: ticket.priority.toLowerCase() as any,
+        status: ticket.status.toLowerCase() as 'open' | 'pending' | 'resolved' | 'closed',
+        priority: ticket.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'urgent',
         category: ticket.category,
         customer: {
           id: ticket.customer.id,
@@ -2880,7 +2881,7 @@ export class AdminService {
           title: ticketData.title,
           description: ticketData.description,
           status: 'OPEN',
-          priority: (ticketData.priority || 'MEDIUM').toUpperCase() as any,
+          priority: (ticketData.priority || 'MEDIUM').toUpperCase() as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT',
           category: ticketData.category || 'General',
           tags: ticketData.tags || [],
           customerId: ticketData.customerId || 'unknown',
@@ -2945,7 +2946,7 @@ export class AdminService {
           excerpt: articleData.content.substring(0, 200) + '...',
           category: articleData.category,
           tags: articleData.tags || [],
-          status: (articleData.status || 'DRAFT').toUpperCase() as any,
+          status: (articleData.status || 'DRAFT').toUpperCase() as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
           slug: articleData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
           authorId: adminId || 'unknown',
           views: 0,

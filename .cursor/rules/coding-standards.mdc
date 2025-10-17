@@ -1,0 +1,705 @@
+---
+description: Comprehensive coding standards and patterns for Vssyl to prevent recurring errors
+globs: 
+alwaysApply: true
+---
+
+# Vssyl Coding Standards & Patterns
+
+## 🚀 Google Cloud Production Infrastructure
+
+### Production URLs (DO NOT HARDCODE LOCALHOST)
+```typescript
+// ✅ ALWAYS use environment variables with production fallback
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     process.env.NEXT_PUBLIC_API_URL || 
+                     'https://vssyl-server-235369681725.us-central1.run.app';
+
+// ❌ NEVER hardcode localhost in production code
+const API_URL = 'http://localhost:5000'; // WRONG!
+```
+
+**Critical URLs:**
+- **Frontend**: `https://vssyl.com` (production)
+- **Backend**: `https://vssyl-server-235369681725.us-central1.run.app`
+- **WebSocket**: `wss://vssyl-server-235369681725.us-central1.run.app/socket.io/`
+
+### Cloud Build Configuration
+- **Machine Type**: `E2_HIGHCPU_8` (required for fast builds)
+- **Build Time**: ~7-10 minutes expected
+- **Region**: `us-central1`
+
+### Docker Configuration
+- **Multi-stage builds**: Required for production
+- **Prisma generation**: Must run BEFORE TypeScript compilation
+- **Node version**: 20.x (specified in engines)
+
+---
+
+## 🔧 Environment Variable Standards
+
+### Hierarchy (ALWAYS follow this order)
+```typescript
+// WebSocket connections
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 
+               process.env.NEXT_PUBLIC_API_BASE_URL || 
+               process.env.NEXT_PUBLIC_API_URL || 
+               'https://vssyl-server-235369681725.us-central1.run.app';
+
+// API connections
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 
+                     process.env.NEXT_PUBLIC_API_URL || 
+                     'https://vssyl-server-235369681725.us-central1.run.app';
+```
+
+### Required Environment Variables
+
+**Frontend (.env.local / production):**
+```bash
+NEXTAUTH_URL=https://vssyl.com
+NEXTAUTH_SECRET=<32+ char secret>
+NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app
+NEXT_PUBLIC_APP_URL=https://vssyl.com
+NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app
+```
+
+**Backend (.env / production):**
+```bash
+NODE_ENV=production
+DATABASE_URL=postgresql://user:pass@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20
+JWT_SECRET=<generated with openssl rand -base64 32>
+JWT_REFRESH_SECRET=<generated with openssl rand -base64 32>
+FRONTEND_URL=https://vssyl.com
+STORAGE_PROVIDER=gcs
+GOOGLE_CLOUD_PROJECT_ID=vssyl-472202
+GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202
+```
+
+### Rules
+1. **PRIMARY**: Always use `NEXT_PUBLIC_API_BASE_URL`
+2. **FALLBACK**: Always provide production URL as final fallback
+3. **NEVER**: Hardcode localhost URLs in code that might run in production
+4. **ALWAYS**: Use environment-specific `.env` files
+
+---
+
+## 🔒 Authentication Patterns
+
+### NextAuth.js (Frontend)
+```typescript
+// ✅ CORRECT: Get token in API routes
+import { getToken } from 'next-auth/jwt';
+
+const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+const accessToken = (token as any)?.accessToken;
+```
+
+### JWT (Backend)
+```typescript
+// ✅ CORRECT: Always check user existence
+const user = req.user;
+if (!user) {
+  return res.status(401).json({ error: 'User not authenticated' });
+}
+
+// Now safe to use user.id, user.email, etc.
+```
+
+### Security Rules
+1. **JWT_SECRET**: Must be 32+ characters (use `openssl rand -base64 32`)
+2. **Always validate**: Check `req.user` exists before accessing properties
+3. **Never log secrets**: Don't console.log tokens or passwords
+4. **Bcrypt passwords**: Always use bcrypt with salt rounds >= 10
+
+---
+
+## 🛣️ API Routing Patterns
+
+### Next.js API Proxy (MANDATORY PATTERN)
+```typescript
+// web/src/app/api/[...slug]/route.ts
+const backendUrl = process.env.BACKEND_URL || 
+                  process.env.NEXT_PUBLIC_API_BASE_URL || 
+                  'https://vssyl-server-235369681725.us-central1.run.app';
+
+// Forward ALL /api/* requests to backend
+const url = `${backendUrl}${pathname}${search}`;
+```
+
+### API Client Functions
+```typescript
+// ✅ CORRECT: Use relative paths (proxy adds /api prefix)
+const endpoint = `/conversations`;
+return apiCall(endpoint, { method: 'GET' }, token);
+
+// ❌ WRONG: Don't duplicate /api prefix
+const endpoint = `/api/chat/conversations`; // This creates /api/chat/api/chat/conversations!
+```
+
+### Critical Rules
+1. **NO DOUBLE PREFIXES**: API client functions use relative paths
+2. **PROXY HANDLES AUTH**: API proxy adds authentication headers automatically
+3. **USE NEXT.JS PROXY**: Don't bypass the `/api/[...slug]/route.ts` proxy
+4. **CONSISTENT PATTERN**: All API routes follow same structure
+
+### Common Errors to Avoid
+```typescript
+// ❌ WRONG: Double /api paths
+'/api/chat/conversations' when apiCall already adds '/api/chat'
+
+// ❌ WRONG: Bypassing proxy
+fetch('https://vssyl-server-235369681725.us-central1.run.app/api/...')
+
+// ✅ CORRECT: Let proxy handle it
+fetch('/api/conversations')
+```
+
+---
+
+## 📝 TypeScript Type Safety Standards
+
+### Zero `any` Types Policy
+```typescript
+// ❌ NEVER use any
+function processData(data: any) { }
+
+// ✅ Use specific types
+function processData(data: Record<string, unknown>) { }
+
+// ✅ Use interfaces
+interface Business {
+  id: string;
+  name: string;
+  members: BusinessMember[];
+}
+function processBusiness(data: Business) { }
+```
+
+### Express Router Typing
+```typescript
+// ✅ ALWAYS use explicit router typing
+import express from 'express';
+const router: express.Router = express.Router();
+
+// ❌ NEVER use implicit typing
+const router = express.Router(); // TypeScript can't infer properly
+```
+
+### Prisma JSON Types
+```typescript
+// ✅ CORRECT: Use Prisma.InputJsonValue for JSON fields
+import { Prisma } from '@prisma/client';
+
+const dashboard = await prisma.dashboard.create({
+  data: {
+    layout: data.layout as Prisma.InputJsonValue,
+    preferences: data.preferences as Prisma.InputJsonValue,
+  }
+});
+```
+
+### Type Guard Pattern
+```typescript
+// ✅ CORRECT: Use type guards for runtime checks
+function hasUserId(user: unknown): user is { id: string } {
+  return typeof user === 'object' && user !== null && 'id' in user;
+}
+
+if (!hasUserId(req.user)) {
+  return res.status(401).json({ error: 'Unauthorized' });
+}
+// Now TypeScript knows req.user.id exists
+```
+
+### Rules
+1. **ZERO any types**: Use `unknown`, `Record<string, unknown>`, or specific interfaces
+2. **Explicit router types**: Always type Express routers explicitly
+3. **Use type guards**: Runtime type checking for dynamic data
+4. **Prisma JSON**: Use `Prisma.InputJsonValue` for JSON fields
+
+---
+
+## 🗄️ Database & Prisma Configuration
+
+### Modular Schema Pattern
+```bash
+# ✅ CORRECT: Edit module files
+prisma/modules/auth/user.prisma
+prisma/modules/business/business.prisma
+prisma/modules/chat/conversations.prisma
+
+# ❌ NEVER: Edit generated schema directly
+prisma/schema.prisma  # This is AUTO-GENERATED!
+```
+
+### Build Commands (ALWAYS in this order)
+```bash
+# 1. Build schema from modules
+npm run prisma:build
+
+# 2. Generate Prisma client
+npm run prisma:generate
+
+# 3. Run migrations
+npm run prisma:migrate
+
+# OR use combined commands:
+npm run prisma:generate  # Does build + generate
+npm run prisma:migrate   # Does build + migrate
+```
+
+### Database Connection
+```typescript
+// ✅ CORRECT: Production connection string
+DATABASE_URL=postgresql://vssyl_user:ArthurGeorge116!@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20
+
+// Connection pool settings (REQUIRED for production)
+connection_limit=20    // Max connections
+pool_timeout=20        // Connection timeout in seconds
+connect_timeout=60     // Initial connection timeout
+```
+
+### Prisma Client Configuration
+```typescript
+// server/src/lib/prisma.ts
+const prismaConfig = {
+  log: process.env.NODE_ENV === 'development' 
+    ? ['query', 'info', 'warn', 'error'] 
+    : ['error'],
+  datasources: {
+    db: {
+      url: encodedUrl + '?connection_limit=20&pool_timeout=20&connect_timeout=60'
+    }
+  }
+};
+
+export const prisma = global.prisma || new PrismaClient(prismaConfig);
+```
+
+### Rules
+1. **NEVER edit `schema.prisma`**: Edit module files in `/prisma/modules/`
+2. **ALWAYS run `prisma:build`**: Before generating or migrating
+3. **USE connection pooling**: `connection_limit=20&pool_timeout=20` in production
+4. **ENCODE passwords**: Use `encodeURIComponent()` for special characters in DB URLs
+5. **SINGLETON pattern**: Use global.prisma to prevent multiple instances
+
+---
+
+## ☁️ Google Cloud Storage Configuration
+
+### Storage Service Pattern
+```typescript
+// ✅ CORRECT: Use storage service abstraction
+import { storageService } from '../services/storageService';
+
+const uploadResult = await storageService.uploadFile(file, destinationPath, {
+  makePublic: true,
+  metadata: { userId, originalName, folderId }
+});
+
+// ❌ WRONG: Direct file system access
+fs.writeFileSync(path.join(__dirname, 'uploads', filename), buffer);
+```
+
+### Provider Configuration
+```bash
+# Production (Google Cloud Storage)
+STORAGE_PROVIDER=gcs
+GOOGLE_CLOUD_PROJECT_ID=vssyl-472202
+GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202
+# No GOOGLE_CLOUD_KEY_FILE needed with Application Default Credentials
+
+# Local Development (File System)
+STORAGE_PROVIDER=local
+LOCAL_UPLOAD_DIR=./uploads
+```
+
+### Storage Service Methods
+```typescript
+// Upload file
+await storageService.uploadFile(file, 'path/to/file.jpg', options);
+
+// Delete file
+await storageService.deleteFile('path/to/file.jpg');
+
+// Get file URL
+const url = storageService.getFileUrl('path/to/file.jpg');
+
+// Check provider
+const provider = storageService.getProvider(); // 'gcs' or 'local'
+const isGCS = storageService.isGCSConfigured(); // boolean
+```
+
+### Rules
+1. **ALWAYS use storageService**: Never direct file system access in controllers
+2. **CHECK provider**: Use `getProvider()` to handle provider-specific logic
+3. **CREATE directories**: Ensure upload directories exist with `recursive: true`
+4. **GCS in production**: Always set `STORAGE_PROVIDER=gcs` for production
+5. **ADC authentication**: No key file needed when running on Cloud Run
+
+---
+
+## 🔄 Common Error Prevention
+
+### Browser Cache Issues
+```typescript
+// After deployment, users may see old code due to browser cache
+// Solution: Hard refresh instructions
+// Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
+
+// For debugging, log environment variables:
+console.log('API Config:', {
+  NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  fallback: 'https://vssyl-server-235369681725.us-central1.run.app'
+});
+```
+
+### WebSocket Authentication
+```typescript
+// ✅ WebSocket connections REQUIRE authentication
+// Expected behavior: Connection fails when user not logged in
+
+if (!token) {
+  console.log('WebSocket connection requires authentication');
+  return; // Don't attempt to connect
+}
+
+// Connect with valid token
+socket = io(wsUrl, {
+  auth: { token },
+  transports: ['websocket']
+});
+```
+
+### Double API Paths
+```typescript
+// Problem: Creating /api/chat/api/chat/conversations
+
+// ❌ WRONG: apiCall function already adds prefix
+const endpoint = '/api/chat/conversations';
+return apiCall(endpoint); // Creates /api/chat/api/chat/conversations!
+
+// ✅ CORRECT: Use relative path
+const endpoint = '/conversations';
+return apiCall(endpoint); // Creates /api/chat/conversations
+```
+
+---
+
+## 🏢 Multi-Tenant Data Isolation (CRITICAL SECURITY)
+
+### ALWAYS Scope Database Queries
+```typescript
+// ✅ CORRECT: Personal context - scope by dashboardId
+const files = await prisma.file.findMany({
+  where: {
+    dashboardId: dashboardId,
+    userId: userId,
+    trashedAt: null
+  }
+});
+
+// ✅ CORRECT: Business context - scope by dashboardId AND businessId
+const files = await prisma.file.findMany({
+  where: {
+    dashboardId: dashboardId,
+    businessId: businessId,
+    trashedAt: null
+  }
+});
+
+// ❌ WRONG: No scoping - data leakage vulnerability!
+const files = await prisma.file.findMany({
+  where: {
+    userId: userId,
+    trashedAt: null
+  }
+});
+```
+
+### Data Isolation Rules
+1. **Personal context**: MUST include `dashboardId` in all queries
+2. **Business context**: MUST include both `dashboardId` AND `businessId`
+3. **Household context**: MUST include both `dashboardId` AND `householdId`
+4. **NEVER query without context scoping**: Prevents data leakage between tenants
+5. **Test isolation**: Verify users cannot access other users' data
+
+### Context Switching Pattern
+```typescript
+// When user switches contexts, ALL queries must update
+const context = {
+  dashboardId: currentDashboard.id,
+  businessId: currentDashboard.businessId || null,
+  householdId: currentDashboard.householdId || null
+};
+
+// Pass context to all API calls
+const data = await fetchData(context);
+```
+
+---
+
+## 🛡️ Security & Input Validation (MANDATORY)
+
+### Input Validation
+```typescript
+// ✅ CORRECT: Validate all user input
+import { z } from 'zod';
+
+const userSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(1).max(100)
+});
+
+const validated = userSchema.parse(req.body);
+
+// ❌ WRONG: Using user input directly
+const user = await prisma.user.create({ data: req.body });
+```
+
+### SQL Injection Prevention
+```typescript
+// ✅ CORRECT: Use Prisma parameterized queries
+await prisma.user.findMany({
+  where: { email: userEmail }
+});
+
+// ❌ WRONG: Raw SQL with string interpolation
+await prisma.$queryRaw`SELECT * FROM users WHERE email = '${userEmail}'`;
+```
+
+### XSS Prevention
+```typescript
+// ✅ CORRECT: React automatically escapes
+<div>{userContent}</div>
+
+// ❌ WRONG: Using dangerouslySetInnerHTML without sanitization
+<div dangerouslySetInnerHTML={{ __html: userContent }} />
+
+// ⚠️ ACCEPTABLE: Only for trusted content with clear comment
+// SECURITY: This is a sanitized theme script, not user content
+<script dangerouslySetInnerHTML={{ __html: themeScript }} />
+```
+
+### Authentication Validation
+```typescript
+// ✅ CORRECT: Always validate req.user exists
+const user = req.user;
+if (!user) {
+  return res.status(401).json({ error: 'Authentication required' });
+}
+
+// ❌ WRONG: Accessing without check
+const userId = req.user.id; // Can crash if req.user is undefined
+```
+
+### Security Rules
+1. **Validate all input**: Use Zod, express-validator, or similar
+2. **Use Prisma queries**: Never raw SQL with user input
+3. **Escape output**: Let React handle escaping (no dangerouslySetInnerHTML)
+4. **Check authentication**: Always verify req.user exists
+5. **Sanitize file uploads**: Validate file types and sizes
+6. **Rate limit sensitive endpoints**: Login, registration, password reset
+7. **Use HTTPS**: All production traffic must be encrypted
+8. **Secure headers**: CSP, X-Frame-Options, X-Content-Type-Options
+
+---
+
+## 📊 Logging Standards
+
+### Production Logging Pattern
+```typescript
+// ✅ CORRECT: Use structured logging (to be implemented)
+import { logger } from '../lib/logger';
+
+logger.info('User action', { 
+  userId, 
+  action: 'file_upload',
+  metadata: { fileId, fileName }
+});
+
+logger.error('Operation failed', { 
+  error: error.message,
+  stack: error.stack,
+  context: { userId, operation }
+});
+
+// ⚠️ LEGACY: console.log acceptable in existing code
+console.log('Debug info'); // Will be migrated to logger
+
+// ❌ NEW CODE: Don't add new console.log statements
+console.log('New feature info'); // Use logger instead
+```
+
+### Logging Utility Structure
+```typescript
+// server/src/lib/logger.ts (to be created)
+export const logger = {
+  info: (message: string, meta?: Record<string, unknown>) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[INFO] ${message}`, meta);
+    }
+    // In production: send to logging service (Cloud Logging, Datadog, etc.)
+  },
+  
+  error: (message: string, meta?: Record<string, unknown>) => {
+    console.error(`[ERROR] ${message}`, meta);
+    // In production: send to error tracking service
+  },
+  
+  warn: (message: string, meta?: Record<string, unknown>) => {
+    console.warn(`[WARN] ${message}`, meta);
+  },
+  
+  debug: (message: string, meta?: Record<string, unknown>) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[DEBUG] ${message}`, meta);
+    }
+  }
+};
+```
+
+### Logging Rules
+1. **Production logging**: Use structured logging with logger utility
+2. **Development debugging**: console.log is acceptable for debugging
+3. **Error logging**: Always include context (userId, operation, error details)
+4. **Never log secrets**: Don't log tokens, passwords, API keys, or sensitive data
+5. **Structured data**: Use metadata objects for searchable logs
+6. **Log levels**: info (user actions), warn (recoverable issues), error (failures), debug (development only)
+
+### Migration Strategy
+- **Existing code**: Leave console.log as-is (688 instances)
+- **New code**: Use logger utility going forward
+- **Gradual migration**: Convert to logger when modifying files
+- **Production**: Logger integrates with Google Cloud Logging
+
+---
+
+## 📋 Development Workflow
+
+### Starting Development
+```bash
+# From project root (starts both frontend and backend)
+pnpm dev
+
+# Frontend runs on: http://localhost:3000
+# Backend runs on:  http://localhost:5000
+```
+
+### Before Committing
+```bash
+# 1. Run linter
+pnpm lint
+
+# 2. Check TypeScript
+pnpm type-check
+
+# 3. Build Prisma schema (if database changes)
+npm run prisma:build
+
+# 4. Generate Prisma client (if schema changed)
+npm run prisma:generate
+```
+
+### Deployment Checklist
+- [ ] All environment variables set in production
+- [ ] No localhost URLs in code
+- [ ] Database migrations run successfully
+- [ ] Storage provider set to `gcs`
+- [ ] Build completes in <15 minutes
+- [ ] All API routes return correct status codes (not 404)
+- [ ] WebSocket connections work when authenticated
+
+---
+
+## 🚨 Critical "DO NOT" Rules
+
+### ❌ NEVER Do These:
+1. **Hardcode localhost** in production code
+2. **Edit `prisma/schema.prisma`** directly (edit modules instead)
+3. **Use `any` types** (use proper TypeScript types)
+4. **Create double `/api` paths** (use relative paths in API clients)
+5. **Bypass Next.js API proxy** (always use `/api/*` routes)
+6. **Skip connection pooling** in production Prisma config
+7. **Use direct file system** access (use storageService)
+8. **Forget fallback URLs** in environment variable logic
+9. **Log sensitive data** (tokens, passwords, secrets)
+10. **Skip environment variable validation** at startup
+
+---
+
+## ✅ Always Do These:
+
+### Every New Feature
+1. **Read memory bank** files first
+2. **Follow TypeScript** standards (zero `any` types)
+3. **Use environment variables** with fallbacks
+4. **Test both** local and production configurations
+5. **Update documentation** in memory bank
+6. **Run linter** before committing
+7. **Check build** completes successfully
+8. **Verify API routes** return correct status codes
+
+### Every API Endpoint
+1. **Validate authentication** (check `req.user` exists)
+2. **Use environment variables** (no hardcoded URLs)
+3. **Return consistent** error responses
+4. **Log errors** with context
+5. **Handle edge cases** (missing data, invalid tokens)
+
+### Every Database Query
+1. **Use Prisma** (no raw SQL unless necessary)
+2. **Check connection** pooling settings
+3. **Handle errors** gracefully
+4. **Use transactions** for related operations
+5. **Encode special characters** in connection strings
+
+---
+
+## 🎯 Quick Reference
+
+### When You See This Error...
+
+**"404 Not Found" on API routes:**
+- Check environment variables are set
+- Verify fallback URLs are correct
+- Ensure no double `/api` paths
+
+**"Database connection failed":**
+- Check `DATABASE_URL` format
+- Verify connection pooling settings
+- Ensure IP address is correct (172.30.0.15)
+
+**"WebSocket connection failed":**
+- Check user is authenticated
+- Verify `NEXT_PUBLIC_WS_URL` is set
+- This is EXPECTED when not logged in
+
+**"Type 'any' is not allowed":**
+- Replace with specific interface
+- Use `Record<string, unknown>` for flexible objects
+- Use type guards for runtime checking
+
+**"Cannot find module 'prisma/schema.prisma'":**
+- Run `npm run prisma:build` first
+- Then run `npm run prisma:generate`
+- Check `/prisma/schema.prisma` exists
+
+---
+
+## 📚 Additional Resources
+
+- **Memory Bank**: `/memory-bank/` (comprehensive documentation)
+- **AI Coding Standards**: `/memory-bank/AI_CODING_STANDARDS.md`
+- **System Patterns**: `/memory-bank/systemPatterns.md`
+- **Troubleshooting**: `/memory-bank/troubleshooting.md`
+- **Tech Context**: `/memory-bank/techContext.md`
+- **Database Context**: `/memory-bank/databaseContext.md`
+
+---
+
+**Last Updated**: 2025-10-16  
+**Status**: ✅ Production-Ready Patterns  
+**Maintainer**: Development Team

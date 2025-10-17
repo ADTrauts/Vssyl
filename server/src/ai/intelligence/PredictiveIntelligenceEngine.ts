@@ -2,6 +2,14 @@ import { PrismaClient } from '@prisma/client';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import AdvancedLearningEngine from '../learning/AdvancedLearningEngine';
 
+export interface PredictiveAnalysisData {
+  predictions?: Array<{ metric: string; value: number; confidence: number }>;
+  trends?: Array<{ pattern: string; frequency: number; direction: 'increasing' | 'decreasing' | 'stable' }>;
+  correlations?: Array<{ factor1: string; factor2: string; strength: number }>;
+  modelMetadata?: { algorithm: string; accuracy: number; lastTrainedAt?: Date };
+  [key: string]: unknown;
+}
+
 export interface PredictiveAnalysis {
   id: string;
   userId: string;
@@ -11,9 +19,16 @@ export interface PredictiveAnalysis {
   timeframe: 'immediate' | 'short_term' | 'medium_term' | 'long_term';
   description: string;
   recommendations: PredictiveRecommendation[];
-  data: any;
+  data: PredictiveAnalysisData;
   createdAt: Date;
   expiresAt: Date;
+}
+
+export interface PredictiveRecommendationData {
+  sourceInsights?: string[];
+  correlations?: Array<{ factor: string; impact: number }>;
+  supportingEvidence?: Array<{ type: string; value: unknown }>;
+  [key: string]: unknown;
 }
 
 export interface PredictiveRecommendation {
@@ -26,7 +41,14 @@ export interface PredictiveRecommendation {
   suggestedActions: string[];
   expectedOutcome: string;
   riskLevel: 'low' | 'medium' | 'high';
-  data: any;
+  data: PredictiveRecommendationData;
+}
+
+export interface IntelligenceInsightData {
+  detectedPatterns?: string[];
+  anomalies?: Array<{ type: string; severity: number; description: string }>;
+  correlations?: Array<{ variables: string[]; strength: number }>;
+  [key: string]: unknown;
 }
 
 export interface IntelligenceInsight {
@@ -37,18 +59,51 @@ export interface IntelligenceInsight {
   significance: number;
   description: string;
   implications: string[];
-  data: any;
+  data: IntelligenceInsightData;
   createdAt: Date;
+}
+
+export interface ActivityRecord {
+  timestamp?: Date;
+  createdAt?: Date;
+  module?: string;
+  action?: string;
+  interactionType?: string;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+export interface UserPattern {
+  type: string;
+  frequency: number;
+  lastOccurrence: Date;
+  confidence: number;
+}
+
+export interface ExternalFactor {
+  source: string;
+  factor: string;
+  impact: number;
+  timestamp: Date;
+}
+
+export interface HistoricalDataPoint {
+  timestamp?: Date;
+  createdAt?: Date;
+  metric?: string;
+  value?: number;
+  context?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface PredictiveContext {
   userId: string;
   currentTime: Date;
   currentModule: string;
-  recentActivity: any[];
-  userPatterns: any[];
-  externalFactors: any[];
-  historicalData: any[];
+  recentActivity: ActivityRecord[];
+  userPatterns: UserPattern[];
+  externalFactors: ExternalFactor[];
+  historicalData: HistoricalDataPoint[];
 }
 
 export class PredictiveIntelligenceEngine {
@@ -134,7 +189,7 @@ export class PredictiveIntelligenceEngine {
       recentActivity,
       userPatterns: patterns,
       externalFactors,
-      historicalData
+      historicalData: historicalData as unknown as HistoricalDataPoint[]
     };
   }
 
@@ -703,7 +758,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze risk patterns
    */
-  private analyzeRiskPatterns(context: PredictiveContext): any {
+  private analyzeRiskPatterns(context: PredictiveContext): Record<string, unknown> {
     const riskPatterns = {
       scheduleConflicts: 0.3,
       communicationGaps: 0.2,
@@ -816,7 +871,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze opportunity patterns
    */
-  private analyzeOpportunityPatterns(context: PredictiveContext): any {
+  private analyzeOpportunityPatterns(context: PredictiveContext): Record<string, unknown> {
     const opportunityPatterns = {
       efficiencyGains: 0.6,
       collaborationOpportunities: 0.4,
@@ -1020,7 +1075,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Get predictive analytics for a user
    */
-  async getPredictiveAnalytics(userId: string): Promise<any> {
+  async getPredictiveAnalytics(userId: string): Promise<Record<string, unknown>> {
     const analyses = await this.generatePredictiveAnalysis(userId);
     
     return {
