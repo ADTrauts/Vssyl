@@ -135,13 +135,13 @@ export class DigitalLifeTwinCore {
 
       // 1. 🚀 NEW: Get SMART context - only fetches relevant modules based on query
       let userContext: UserContext;
-      let smartContext: any;
+      let smartContext: Record<string, unknown> | null = null;
       try {
         // Use the NEW intelligent context fetching system
         smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query);
         
         // Convert smart context to UserContext format for backward compatibility
-        userContext = smartContext?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+        userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
         
         console.log(`✨ Smart Context: Analyzed query and fetched from ${smartContext?.relevantModuleCount || 0} relevant modules (instead of all)`);
       } catch (error) {
@@ -281,15 +281,15 @@ export class DigitalLifeTwinCore {
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
-              relevantModules: smartContext.analysis.matchedModules.map((m: any) => ({
-                name: m.moduleName,
-                relevance: m.relevance
-              })),
-              contextProvidersFetched: smartContext.analysis.suggestedContextProviders.map((p: any) => p.providerName)
+              relevantModules: (smartContext as Record<string, any>).analysis?.matchedModules?.map((m: Record<string, unknown>) => ({
+                name: m.moduleName as string,
+                relevance: m.relevance as string
+              })) || [],
+              contextProvidersFetched: (smartContext as Record<string, any>).analysis?.suggestedContextProviders?.map((p: Record<string, unknown>) => p.providerName as string) || []
             },
             performanceGain: {
-              modulesAnalyzed: smartContext.relevantModuleCount,
-              totalModulesAvailable: smartContext.analysis.matchedModules.length
+              modulesAnalyzed: (smartContext as any).relevantModuleCount || 0,
+              totalModulesAvailable: (smartContext as any).analysis?.matchedModules?.length || 0
             }
           } : undefined
         }
@@ -319,7 +319,8 @@ export class DigitalLifeTwinCore {
   /**
    * Analyze query intent and context (enhanced with smart patterns and semantics)
    */
-  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: unknown, smartAnalysis?: unknown, semanticEnhancement?: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: any, smartAnalysis?: any, semanticEnhancement?: any) {
     const queryLower = query.query.toLowerCase();
     
     // Determine query type
@@ -333,12 +334,12 @@ export class DigitalLifeTwinCore {
     
     // Find relevant patterns
     const relevantPatterns = userContext.patterns.filter(pattern => 
-      this.isPatternRelevant(pattern, queryLower, queryType)
+      this.isPatternRelevant(pattern as unknown as Record<string, unknown>, queryLower, queryType)
     );
     
     // Find relevant relationships
     const relevantRelationships = userContext.relationships.filter(rel =>
-      this.isRelationshipRelevant(rel, queryLower, queryType)
+      this.isRelationshipRelevant(rel as unknown as Record<string, unknown>, queryLower, queryType)
     );
     
     return {
@@ -356,6 +357,7 @@ export class DigitalLifeTwinCore {
   /**
    * Generate response as Digital Life Twin (enhanced with smart insights and semantics)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateLifeTwinResponse(
     query: LifeTwinQuery, 
     userContext: UserContext, 
@@ -368,7 +370,7 @@ export class DigitalLifeTwinCore {
     const prompt = this.buildDigitalTwinPrompt(query, userContext, personality, analysis, smartAnalysis, semanticEnhancement);
     
     // Use appropriate AI provider based on complexity and privacy
-    const provider = this.selectAIProvider(analysis.complexity, query.query);
+    const provider = this.selectAIProvider((analysis as any)?.complexity || 'medium', query.query);
     
     // Generate response
     const aiResponse = await this.callAIProvider(provider, prompt, {
@@ -386,8 +388,8 @@ export class DigitalLifeTwinCore {
       response,
       confidence,
       reasoning,
-      modulesFocused: analysis.scope.modules,
-      patternMatches: analysis.relevantPatterns.map((p: any) => p.id),
+      modulesFocused: (analysis as any)?.scope?.modules || [],
+      patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
       provider
     };
   }
@@ -395,7 +397,8 @@ export class DigitalLifeTwinCore {
   /**
    * Build comprehensive prompt for Digital Life Twin (enhanced with smart patterns and semantics)
    */
-  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: unknown, analysis: unknown, smartAnalysis?: unknown, semanticEnhancement?: unknown): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: any, analysis: any, smartAnalysis?: any, semanticEnhancement?: any): string {
     const currentTime = new Date().toLocaleString();
     
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
@@ -423,14 +426,14 @@ KEY INSIGHTS:
 ${userContext.crossModuleInsights.slice(0, 3).map(i => `- ${i.title}: ${i.description}`).join('\n')}
 
 SMART PATTERN ANALYSIS:
-${smartAnalysis?.patterns?.slice(0, 3).map((p: any) => `- ${p.pattern} (${Math.round(p.confidence * 100)}% confidence)`).join('\n') || '- Learning your patterns...'}
+${(smartAnalysis as Record<string, any>)?.patterns?.slice(0, 3).map((p: Record<string, unknown>) => `- ${p.pattern} (${Math.round((p.confidence as number) * 100)}% confidence)`).join('\n') || '- Learning your patterns...'}
 
 INTELLIGENT PREDICTIONS:
-${smartAnalysis?.predictions?.slice(0, 2).map((pred: any) => `- ${pred.description} (${Math.round(pred.confidence * 100)}% confidence)`).join('\n') || '- Building predictive insights...'}
+${(smartAnalysis as Record<string, any>)?.predictions?.slice(0, 2).map((pred: Record<string, unknown>) => `- ${pred.description} (${Math.round((pred.confidence as number) * 100)}% confidence)`).join('\n') || '- Building predictive insights...'}
 
 SEMANTIC CONTEXT:
-${semanticEnhancement?.relatedQueries?.length > 0 ? 
-  `Similar past queries:\n${semanticEnhancement.relatedQueries.slice(0, 2).map((rq: any) => `- "${rq.query}" (${Math.round(rq.similarity * 100)}% similar)`).join('\n')}` : 
+${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ? 
+  `Similar past queries:\n${(semanticEnhancement as Record<string, any>).relatedQueries.slice(0, 2).map((rq: Record<string, unknown>) => `- "${rq.query}" (${Math.round((rq.similarity as number) * 100)}% similar)`).join('\n')}` : 
   '- Learning query patterns...'}
 - Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
 - Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
@@ -463,6 +466,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   /**
    * Identify cross-module connections and opportunities
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async identifyCrossModuleConnections(
     query: LifeTwinQuery, 
     userContext: UserContext, 
@@ -496,11 +500,11 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     }
     
     // Pattern-based connections
-    const relevantPatterns = userContext.patterns.filter(p => 
-      this.isPatternRelevant(p, query.query.toLowerCase(), 'action')
+    const relevantPatterns = userContext.patterns.filter((p: any) => 
+      this.isPatternRelevant(p as any, query.query.toLowerCase(), 'action')
     );
     
-    relevantPatterns.forEach(pattern => {
+    relevantPatterns.forEach((pattern: any) => {
       if (pattern.modules.length > 1) {
         connections.push({
           type: 'pattern',
@@ -519,6 +523,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   /**
    * Determine actions the Digital Life Twin should take
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async determineActions(
     query: LifeTwinQuery, 
     userContext: UserContext, 
@@ -565,8 +570,9 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   }
 
   // Action creation methods
-  private async createScheduleAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
-    if (autonomySettings.scheduling < 30) return null; // User prefers manual scheduling
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async createScheduleAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+    if (autonomySettings?.scheduling < 30) return null; // User prefers manual scheduling
     
     return {
       id: `schedule_${Date.now()}`,
@@ -588,7 +594,8 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createCommunicationAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async createCommunicationAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
     if (autonomySettings.communication < 40) return null;
     
     return {
@@ -610,7 +617,8 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createFileAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async createFileAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
     if (autonomySettings.fileManagement < 50) return null;
     
     return {
@@ -631,7 +639,8 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createTaskAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async createTaskAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
     if (autonomySettings.taskCreation < 40) return null;
     
     return {
@@ -653,7 +662,8 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createAnalysisAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async createAnalysisAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
     return {
       id: `analysis_${Date.now()}`,
       type: 'analyze',
@@ -708,6 +718,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     return actionWords.some(word => query.includes(word));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculateQueryComplexity(query: string, scope: any, patternCount: number): string {
     let complexity = 0;
     complexity += query.split(' ').length > 10 ? 2 : 1;
@@ -719,15 +730,19 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     return 'low';
   }
 
-  private isPatternRelevant(pattern: any, query: string, queryType: string): boolean {
-    return pattern.modules.some((module: string) => query.includes(module)) ||
-           pattern.type === queryType ||
-           query.includes(pattern.pattern.toLowerCase());
+  private isPatternRelevant(pattern: Record<string, unknown>, query: string, queryType: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const p = pattern as any;
+    return p.modules?.some((module: string) => query.includes(module)) ||
+           p.type === queryType ||
+           query.includes(p.pattern?.toLowerCase() || '');
   }
 
-  private isRelationshipRelevant(relationship: any, query: string, queryType: string): boolean {
-    return query.includes(relationship.name.toLowerCase()) ||
-           (queryType === 'communication' && relationship.modules.includes('chat'));
+  private isRelationshipRelevant(relationship: Record<string, unknown>, query: string, queryType: string): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = relationship as any;
+    return query.includes(r.name?.toLowerCase() || '') ||
+           (queryType === 'communication' && r.modules?.includes('chat'));
   }
 
   private extractRelevantInsights(userContext: UserContext, query: LifeTwinQuery): CrossModuleInsight[] {
@@ -741,6 +756,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
       .slice(0, 3);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculatePersonalityAlignment(response: any, personality: any): number {
     // Calculate how well the response aligns with user's personality
     // This is a simplified calculation - could be much more sophisticated
@@ -777,7 +793,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     return sensitiveKeywords.some(keyword => query.toLowerCase().includes(keyword));
   }
 
-  private async callAIProvider(provider: string, prompt: string, options: any): Promise<Record<string, unknown>> {
+  private async callAIProvider(provider: string, prompt: string, options: Record<string, unknown>): Promise<Record<string, unknown>> {
     try {
       // Import AI providers
       const { OpenAIProvider } = await import('../providers/OpenAIProvider');
@@ -807,15 +823,17 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
 
       // Call the appropriate provider
       let response;
+      const aiRequestTyped = aiRequest as any; // AI request structures are runtime-determined
+      const userContextTyped = userContext as any; // User context structures are runtime-determined
       if (provider === 'openai') {
         const openaiProvider = new OpenAIProvider();
-        response = await openaiProvider.process(aiRequest, userContext, {});
+        response = await openaiProvider.process(aiRequestTyped, userContextTyped, {});
       } else if (provider === 'anthropic') {
         const anthropicProvider = new AnthropicProvider();
-        response = await anthropicProvider.process(aiRequest, userContext, {});
+        response = await anthropicProvider.process(aiRequestTyped, userContextTyped, {});
       } else {
         const localProvider = new LocalProvider();
-        response = await localProvider.process(aiRequest, userContext, {});
+        response = await localProvider.process(aiRequestTyped, userContextTyped, {});
       }
 
       return {
