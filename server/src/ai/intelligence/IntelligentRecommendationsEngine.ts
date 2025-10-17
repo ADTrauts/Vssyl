@@ -697,6 +697,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze task patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTaskPatterns(activities: any[]): any {
     const patterns = {
       repetitiveTasks: 0,
@@ -723,6 +724,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze communication patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeCommunicationPatterns(activities: any[]): any {
     const patterns = {
       frequency: 0.5,
@@ -750,6 +752,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze organization patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeOrganizationPatterns(userContext: any): Record<string, unknown> {
     const patterns = {
       fileOrganization: 0.6,
@@ -774,6 +777,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze learning patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeLearningPatterns(activities: any[]): any {
     const patterns = {
       skillGaps: 2,
@@ -792,6 +796,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze wellness patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeWellnessPatterns(activities: any[]): any {
     const patterns = {
       workLifeBalance: 0.6,
@@ -822,6 +827,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze efficiency patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeEfficiencyPatterns(activities: any[]): any {
     const patterns = {
       automationPotential: 0.5,
@@ -843,6 +849,7 @@ export class IntelligentRecommendationsEngine {
   /**
    * Analyze time gaps
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTimeGaps(activities: any[]): number {
     if (activities.length < 2) return 0;
     

@@ -183,6 +183,7 @@ export class PrivacyDataRouter {
   /**
    * Split data between local and cloud processing
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private splitData(request: AIRequest, context: UserContext, classification: DataClassification): {
     localData: any;
     cloudData: any;
@@ -263,21 +264,33 @@ export class PrivacyDataRouter {
   /**
    * Extract general (non-sensitive) preferences
    */
-  private extractGeneralPreferences(preferences: Array<Record<string, unknown>>): Record<string, unknown> {
-    if (!preferences) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private extractGeneralPreferences(preferences: any): Record<string, unknown> {
+    if (!preferences || typeof preferences !== 'object') return {};
     
-    return preferences
-      .filter(pref => !this.isSensitivePreference(pref))
-      .reduce((acc, pref) => {
-        const key = typeof pref.key === 'string' ? pref.key : 'unknown';
-        acc[key] = pref.value;
+    // Handle both object and array formats
+    if (Array.isArray(preferences)) {
+      return preferences
+        .filter((pref: any) => !this.isSensitivePreference(pref))
+        .reduce((acc: any, pref: any) => {
+          acc[pref.key] = pref.value;
+          return acc;
+        }, {});
+    }
+    
+    // For object format, return as-is after filtering sensitive keys
+    return Object.entries(preferences)
+      .filter(([key]) => !this.isSensitivePreference({ key }))
+      .reduce((acc: any, [key, value]) => {
+        acc[key] = value;
         return acc;
-      }, {} as Record<string, unknown>);
+      }, {});
   }
 
   /**
    * Check if a preference is sensitive
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private isSensitivePreference(preference: any): boolean {
     const sensitiveKeys = [
       'password', 'pin', 'secret', 'private', 'financial', 
@@ -291,14 +304,17 @@ export class PrivacyDataRouter {
   /**
    * Summarize activity without sensitive details
    */
-  private summarizeActivity(activities: Array<Record<string, unknown>>): Record<string, unknown> {
-    if (!activities || activities.length === 0) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private summarizeActivity(activities: any): Record<string, unknown> {
+    if (!activities || !Array.isArray(activities) || activities.length === 0) return {};
 
+    const activitiesTyped = activities as Record<string, unknown>[];
+    
     return {
-      totalActivities: activities.length,
-      modules: this.getModuleUsagePattern(activities),
-      timePatterns: this.getTimePatterns(activities),
-      collaborationLevel: this.getCollaborationLevel(activities)
+      totalActivities: activitiesTyped.length,
+      modules: this.getModuleUsagePattern(activitiesTyped),
+      timePatterns: this.getTimePatterns(activitiesTyped),
+      collaborationLevel: this.getCollaborationLevel(activitiesTyped)
     };
   }
 

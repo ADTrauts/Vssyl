@@ -90,6 +90,7 @@ export class CentralizedLearningEngine {
   /**
    * Process learning events from individual users and aggregate patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async processGlobalLearningEvent(userId: string, eventData: any): Promise<void> {
     try {
       // Check user consent for collective learning
@@ -318,6 +319,7 @@ export class CentralizedLearningEngine {
     } = {}
   ): Promise<GlobalPattern[]> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let whereClause: any = {};
 
       if (filters.patternType) {
@@ -366,6 +368,7 @@ export class CentralizedLearningEngine {
     } = {}
   ): Promise<CollectiveInsight[]> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let whereClause: any = {};
 
       if (filters.type) {
@@ -464,6 +467,7 @@ export class CentralizedLearningEngine {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private anonymizeEventData(eventData: any, userId: string): Record<string, unknown> {
     // Remove personally identifiable information
     const anonymized = { ...eventData };
@@ -480,7 +484,7 @@ export class CentralizedLearningEngine {
     
     // Remove specific names or identifiers
     if (anonymized.people) {
-      anonymized.people = anonymized.people.map((p: any) => ({
+      anonymized.people = anonymized.people.map((p: Record<string, unknown>) => ({
         role: p.role,
         relationship: p.relationship,
         // Remove name and specific identifiers
@@ -498,6 +502,7 @@ export class CentralizedLearningEngine {
     }, 0).toString(16)}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private generalizeLocation(location: any): Record<string, unknown> {
     // Generalize location to city level only
     if (location.city) {

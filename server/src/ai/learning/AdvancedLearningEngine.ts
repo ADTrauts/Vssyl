@@ -212,6 +212,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze an event for behavioral patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async analyzeEventForPatterns(event: any): Promise<LearningPattern[]> {
     const patterns: LearningPattern[] = [];
     
@@ -264,6 +265,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze temporal patterns in user behavior
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTemporalPatterns(events: any[]): LearningPattern[] {
     const patterns: LearningPattern[] = [];
     
@@ -320,6 +322,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze behavioral patterns in user actions
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeBehavioralPatterns(events: any[]): LearningPattern[] {
     const patterns: LearningPattern[] = [];
     
@@ -379,6 +382,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze preference patterns in user choices
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzePreferencePatterns(events: any[]): LearningPattern[] {
     const patterns: LearningPattern[] = [];
     
@@ -436,6 +440,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze communication patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeCommunicationPatterns(events: any[]): LearningPattern[] {
     const patterns: LearningPattern[] = [];
     
@@ -467,6 +472,7 @@ export class AdvancedLearningEngine {
   /**
    * Update personality based on learning event
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async updatePersonalityFromEvent(event: any): Promise<PersonalityAdjustment[]> {
     const adjustments: PersonalityAdjustment[] = [];
     
@@ -522,6 +528,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze how an event impacts personality traits
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTraitImpact(event: any, personalityData: any): Record<string, number> {
     const adjustments: Record<string, number> = {};
     
@@ -592,6 +599,7 @@ export class AdvancedLearningEngine {
   /**
    * Generate predictions based on learning event
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generatePredictionsFromEvent(event: any): Promise<Prediction[]> {
     const predictions: Prediction[] = [];
     
@@ -637,6 +645,7 @@ export class AdvancedLearningEngine {
   /**
    * Predict user actions based on patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictActions(event: any, patterns: LearningPattern[]): Prediction[] {
     const predictions: Prediction[] = [];
     
@@ -672,6 +681,7 @@ export class AdvancedLearningEngine {
   /**
    * Predict user preferences based on patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictPreferences(event: any, patterns: LearningPattern[]): Prediction[] {
     const predictions: Prediction[] = [];
     
@@ -705,6 +715,7 @@ export class AdvancedLearningEngine {
   /**
    * Predict user schedule based on temporal patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictSchedule(event: any, patterns: LearningPattern[]): Prediction[] {
     const predictions: Prediction[] = [];
     
@@ -742,6 +753,7 @@ export class AdvancedLearningEngine {
   /**
    * Predict communication patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictCommunication(event: any, patterns: LearningPattern[]): Prediction[] {
     const predictions: Prediction[] = [];
     
@@ -773,6 +785,7 @@ export class AdvancedLearningEngine {
   /**
    * Create insights from learning event and patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async createInsightsFromEvent(event: any, patterns: LearningPattern[]): Promise<LearningInsight[]> {
     const insights: LearningInsight[] = [];
     
@@ -815,6 +828,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze behavior changes
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeBehaviorChanges(event: any, patterns: LearningPattern[]): LearningInsight[] {
     const insights: LearningInsight[] = [];
     
@@ -854,6 +868,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze preference shifts
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzePreferenceShifts(event: any, patterns: LearningPattern[]): LearningInsight[] {
     const insights: LearningInsight[] = [];
     
@@ -891,6 +906,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze pattern emergence
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzePatternEmergence(event: any, patterns: LearningPattern[]): LearningInsight[] {
     const insights: LearningInsight[] = [];
     
@@ -925,6 +941,7 @@ export class AdvancedLearningEngine {
   /**
    * Analyze anomalies
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeAnomalies(event: any, patterns: LearningPattern[]): LearningInsight[] {
     const insights: LearningInsight[] = [];
     
@@ -961,6 +978,7 @@ export class AdvancedLearningEngine {
   /**
    * Generate behavior modifications
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateBehaviorModifications(event: any, patterns: LearningPattern[]): Promise<BehaviorModification[]> {
     const modifications: BehaviorModification[] = [];
     
@@ -987,6 +1005,7 @@ export class AdvancedLearningEngine {
   /**
    * Generate recommendations based on learning
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateRecommendations(event: any, insights: LearningInsight[]): Promise<string[]> {
     const recommendations: string[] = [];
     
@@ -1073,6 +1092,7 @@ export class AdvancedLearningEngine {
   /**
    * Get expected value from pattern
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getExpectedValueFromPattern(pattern: LearningPattern, event: any): number | null {
     if (pattern.patternType === 'preference' && pattern.data?.averageConfidence) {
       return typeof pattern.data.averageConfidence === 'number' ? pattern.data.averageConfidence : null;
@@ -1092,6 +1112,7 @@ export class AdvancedLearningEngine {
   /**
    * Get actual value from event
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getActualValueFromEvent(event: any, pattern: LearningPattern): number | null {
     if (pattern.patternType === 'preference') {
       return event.confidence;
@@ -1193,6 +1214,7 @@ export class AdvancedLearningEngine {
   /**
    * Get event type distribution
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getEventTypeDistribution(events: any[]): Record<string, number> {
     const distribution: Record<string, number> = {};
     events.forEach(event => {
@@ -1204,6 +1226,7 @@ export class AdvancedLearningEngine {
   /**
    * Calculate average confidence
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculateAverageConfidence(events: any[]): number {
     if (events.length === 0) return 0;
     return events.reduce((sum, event) => sum + event.confidence, 0) / events.length;
@@ -1212,6 +1235,7 @@ export class AdvancedLearningEngine {
   /**
    * Calculate learning progress
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculateLearningProgress(events: any[], patterns: LearningPattern[]): number {
     const recentEvents = events.slice(0, 10);
     const recentConfidence = this.calculateAverageConfidence(recentEvents);

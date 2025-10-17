@@ -58,7 +58,7 @@ export interface DecisionConstraint {
   type: 'time' | 'budget' | 'permission' | 'resource' | 'ethical' | 'policy';
   description: string;
   isHard: boolean; // Hard constraint (must comply) vs soft constraint (prefer to comply)
-  value?: any;
+  value?: unknown;
 }
 
 export interface Stakeholder {
@@ -192,6 +192,7 @@ export class DecisionEngine {
   /**
    * Score action based on user's personality
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private scoreByPersonality(action: PossibleAction, personality: any): number {
     let score = 0;
 
@@ -229,6 +230,7 @@ export class DecisionEngine {
   /**
    * Score action based on user preferences
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private scoreByPreferences(action: PossibleAction, preferences: any): number {
     let score = 0;
 
@@ -280,6 +282,7 @@ export class DecisionEngine {
   /**
    * Score based on risk tolerance
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private scoreByRiskTolerance(action: PossibleAction, personality: any): number {
     const riskTolerance = personality.traits?.riskTolerance || 50;
     const actionRisk = action.risks.reduce((acc, risk) => acc + (risk.probability * risk.severity), 0);
@@ -305,9 +308,9 @@ export class DecisionEngine {
 
         switch (constraint.type) {
           case 'time':
-            return action.cost.timeRequired <= (constraint.value || Infinity);
+            return action.cost.timeRequired <= (typeof constraint.value === 'number' ? constraint.value : Infinity);
           case 'budget':
-            return action.impact.financialImpact <= (constraint.value || Infinity);
+            return action.impact.financialImpact <= (typeof constraint.value === 'number' ? constraint.value : Infinity);
           case 'permission':
             return this.hasRequiredPermissions(action, constraint);
           default:
@@ -320,6 +323,7 @@ export class DecisionEngine {
   /**
    * Select the best action from viable options
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private selectBestAction(actions: PossibleAction[], context: DecisionContext, personality: any): PossibleAction {
     if (actions.length === 0) {
       throw new Error('No viable actions available');
@@ -366,6 +370,7 @@ export class DecisionEngine {
   /**
    * Determine if approval is required based on autonomy settings
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private requiresApproval(action: PossibleAction, context: DecisionContext, autonomySettings: any): boolean {
     if (!autonomySettings) return true;
 
@@ -412,6 +417,7 @@ export class DecisionEngine {
   /**
    * Generate reasoning for the decision
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private generateReasoning(action: PossibleAction, context: DecisionContext, personality: any): string {
     const reasons = [];
 
@@ -431,6 +437,7 @@ export class DecisionEngine {
   /**
    * Calculate confidence in the decision
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculateConfidence(action: PossibleAction, context: DecisionContext, history: any[]): number {
     let confidence = 0.7; // Base confidence
 

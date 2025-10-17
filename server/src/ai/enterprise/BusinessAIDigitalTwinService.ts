@@ -3,6 +3,15 @@ import { DigitalLifeTwinService } from '../core/DigitalLifeTwinService';
 import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine';
 
 // Types and Interfaces
+export interface BusinessActivityItem {
+  id: string;
+  type: string;
+  timestamp: Date | string;
+  userId?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
 export interface BusinessAIConfig {
   businessId: string;
   name: string;
@@ -49,7 +58,7 @@ export interface BusinessAIRestrictions {
 
 export interface EmployeeWorkContext {
   currentModule: string;
-  recentActivity: any[];
+  recentActivity: BusinessActivityItem[];
   userRole: string;
   departmentId?: string;
   activeProjects: string[];
@@ -445,6 +454,7 @@ export class BusinessAIDigitalTwinService {
   /**
    * Generate AI improvement recommendations based on centralized insights
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private generateBusinessAIRecommendations(
     globalPatterns: any[],
     collectiveInsights: any[],
@@ -500,6 +510,7 @@ export class BusinessAIDigitalTwinService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async validateEmployeeAccess(businessId: string, userId: string, businessAI: any): Promise<void> {
     // Check if user is active business member
     const member = await this.prisma.businessMember.findFirst({
@@ -565,6 +576,7 @@ export class BusinessAIDigitalTwinService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async processWithBusinessIntelligence(
     businessAI: any,
     query: string,
@@ -647,6 +659,7 @@ export class BusinessAIDigitalTwinService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async generateLearningEvents(
     businessAI: any,
     userId: string,
@@ -687,6 +700,7 @@ export class BusinessAIDigitalTwinService {
   /**
    * Feed business AI insights to centralized learning system
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async feedToCentralizedLearning(
     businessAI: any, 
     learningEvent: any, 
@@ -749,6 +763,7 @@ export class BusinessAIDigitalTwinService {
   /**
    * Anonymize business address for privacy
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private anonymizeLocation(address: any): string {
     if (!address) return 'unknown';
     
@@ -811,6 +826,7 @@ export class BusinessAIDigitalTwinService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private generateDefaultConfig(business: any): BusinessAIConfig {
     return {
       businessId: business.id,
@@ -874,6 +890,7 @@ export class BusinessAIDigitalTwinService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private calculateAnalyticsSummary(metrics: any[], interactions: any[], learningEvents: any[]) {
     // Calculate summary statistics
     const totalInteractions = metrics.reduce((sum, m) => sum + m.totalInteractions, 0);

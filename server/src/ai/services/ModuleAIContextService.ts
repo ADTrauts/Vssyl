@@ -145,7 +145,7 @@ export class ModuleAIContextService {
 
       // Score each module based on keyword/pattern matching
       const matchedModules = registryEntries
-        .map((entry: any) => {
+        .map((entry: Record<string, any>) => {
           let score = 0;
           const matchedKeywords: string[] = [];
           const matchedPatterns: string[] = [];
@@ -192,14 +192,14 @@ export class ModuleAIContextService {
             contextProviders: entry.contextProviders as any,
           };
         })
-        .filter((match: any) => match.score > 0) // Only include modules with some match
-        .sort((a: any, b: any) => b.score - a.score); // Sort by score descending
+        .filter((match: Record<string, any>) => match.score > 0) // Only include modules with some match
+        .sort((a: Record<string, any>, b: Record<string, any>) => (b.score as number) - (a.score as number)); // Sort by score descending
 
       // Get suggested context providers for high-relevance matches
       const suggestedContextProviders = matchedModules
-        .filter((m: any) => m.relevance === 'high' || m.relevance === 'medium')
-        .flatMap((m: any) =>
-          (m.contextProviders as any[]).map((provider: any) => ({
+        .filter((m: Record<string, any>) => m.relevance === 'high' || m.relevance === 'medium')
+        .flatMap((m: Record<string, any>) =>
+          ((m.contextProviders as any[]) || []).map((provider: Record<string, any>) => ({
             moduleId: m.moduleId,
             providerName: provider.name,
             endpoint: provider.endpoint.replace(':id', m.moduleId),
@@ -208,8 +208,19 @@ export class ModuleAIContextService {
 
       return {
         query,
-        matchedModules: matchedModules.map(({ contextProviders, score, ...rest }: any) => rest),
-        suggestedContextProviders,
+        matchedModules: matchedModules.map(({ contextProviders, score, ...rest }: Record<string, any>) => rest) as Array<{
+          moduleId: string;
+          moduleName: string;
+          confidence: number;
+          matchedKeywords: string[];
+          matchedPatterns: string[];
+          relevance: 'high' | 'medium' | 'low';
+        }>,
+        suggestedContextProviders: suggestedContextProviders as Array<{
+          moduleId: string;
+          providerName: string;
+          endpoint: string;
+        }>,
       };
     } catch (error) {
       console.error('❌ Error analyzing query:', error);
@@ -240,7 +251,7 @@ export class ModuleAIContextService {
       }
 
       const contextProviders = registry.contextProviders as any;
-      const provider = contextProviders.find((p: any) => p.name === providerName);
+      const provider = contextProviders.find((p: Record<string, any>) => p.name === providerName);
 
       if (!provider) {
         throw new Error(`Context provider ${providerName} not found for module ${moduleId}`);
@@ -312,8 +323,9 @@ export class ModuleAIContextService {
         cached: false,
         latency,
       };
-    } catch (error: any) {
-      console.error(`❌ Error fetching module context:`, error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error(`❌ Error fetching module context:`, err.message);
 
       // Track failure
       await this.trackPerformanceMetric(moduleId, {
@@ -428,9 +440,9 @@ export class ModuleAIContextService {
     });
 
     // Calculate aggregates
-    const totalQueries = metrics.reduce((sum: number, m: any) => sum + m.totalQueries, 0);
-    const successfulQueries = metrics.reduce((sum: number, m: any) => sum + m.successfulQueries, 0);
-    const totalLatency = metrics.reduce((sum: number, m: any) => sum + (m.averageLatency * m.totalQueries), 0);
+    const totalQueries = metrics.reduce((sum: number, m: Record<string, any>) => sum + m.totalQueries, 0);
+    const successfulQueries = metrics.reduce((sum: number, m: Record<string, any>) => sum + m.successfulQueries, 0);
+    const totalLatency = metrics.reduce((sum: number, m: Record<string, any>) => sum + (m.averageLatency * m.totalQueries), 0);
 
     return {
       moduleId,

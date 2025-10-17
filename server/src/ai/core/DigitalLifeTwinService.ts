@@ -14,7 +14,7 @@ export interface AIRequest {
   id: string;
   userId: string;
   query: string;
-  context: any;
+  context: Record<string, unknown>;
   timestamp: Date;
   priority: 'low' | 'medium' | 'high';
 }
@@ -54,12 +54,12 @@ export interface AIAction {
 
 export interface UserContext {
   userId: string;
-  personality: any;
-  preferences: any;
-  autonomySettings: any;
+  personality: unknown;
+  preferences: unknown;
+  autonomySettings: unknown;
   currentModule?: string;
-  dashboardContext?: any;
-  recentActivity: any[];
+  dashboardContext?: Record<string, unknown>;
+  recentActivity: unknown[];
 }
 
 export class DigitalLifeTwinService {
@@ -107,14 +107,14 @@ export class DigitalLifeTwinService {
       currentModule?: string;
       dashboardType?: string;
       dashboardName?: string;
-      recentActivity?: any[];
+      recentActivity?: unknown[];
       urgency?: 'low' | 'medium' | 'high';
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
-      context,
+      context: context as any, // Context structure is runtime-determined
       conversationHistory: [] // Could be populated from recent AI conversations
     };
 
@@ -193,7 +193,7 @@ export class DigitalLifeTwinService {
       personality,
       preferences,
       autonomySettings,
-      dashboardContext,
+      dashboardContext: dashboardContext as Record<string, unknown> | undefined,
       recentActivity
     };
   }
@@ -201,6 +201,7 @@ export class DigitalLifeTwinService {
   /**
    * Process request using local AI (for sensitive data)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async processLocally(
     request: AIRequest, 
     context: UserContext, 
@@ -212,6 +213,7 @@ export class DigitalLifeTwinService {
   /**
    * Process request using cloud AI (for general data)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async processInCloud(
     request: AIRequest, 
     context: UserContext, 
@@ -230,6 +232,7 @@ export class DigitalLifeTwinService {
   /**
    * Process request using hybrid approach
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async processHybrid(
     request: AIRequest, 
     context: UserContext, 

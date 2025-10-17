@@ -153,8 +153,8 @@ export interface AIDecision {
   executionId: string;
   stepId: string;
   decisionType: 'classification' | 'regression' | 'recommendation' | 'anomaly_detection' | 'optimization';
-  input: any;
-  output: any;
+  input: unknown;
+  output: unknown;
   confidence: number;
   reasoning: string;
   alternatives: Record<string, unknown>[];
@@ -1128,6 +1128,7 @@ export class WorkflowAutomationService extends EventEmitter {
     const parameters = step.config.parameters || {};
 
     // Mock AI decision - in real implementation, this would call actual AI models
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let output: any;
     let confidence: number;
 

@@ -376,6 +376,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze activity patterns for need prediction
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeActivityPatterns(activities: any[]): any {
     const patterns = {
       moduleUsage: new Map<string, number>(),
@@ -409,6 +410,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict immediate needs (next few hours)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictImmediateNeeds(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const needs: PredictiveRecommendation[] = [];
     const currentHour = context.currentTime.getHours();
@@ -466,6 +468,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict short-term needs (next few days)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictShortTermNeeds(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const needs: PredictiveRecommendation[] = [];
     
@@ -500,6 +503,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict long-term needs (next few weeks)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictLongTermNeeds(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const needs: PredictiveRecommendation[] = [];
     
@@ -530,6 +534,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze temporal patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTemporalPatterns(patterns: any[]): any {
     const temporalPatterns = {
       hourlyDistribution: new Map<number, number>(),
@@ -567,6 +572,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict daily schedule
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictDailySchedule(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const predictions: PredictiveRecommendation[] = [];
     
@@ -595,6 +601,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict weekly schedule
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictWeeklySchedule(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const predictions: PredictiveRecommendation[] = [];
     
@@ -629,6 +636,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Predict monthly schedule
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private predictMonthlySchedule(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const predictions: PredictiveRecommendation[] = [];
     
@@ -657,6 +665,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze preference patterns
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzePreferencePatterns(patterns: any[]): any {
     const preferencePatterns = {
       communicationStyle: 'professional',
@@ -680,6 +689,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Forecast communication preferences
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private forecastCommunicationPreferences(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const forecasts: PredictiveRecommendation[] = [];
     
@@ -706,6 +716,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Forecast work preferences
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private forecastWorkPreferences(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const forecasts: PredictiveRecommendation[] = [];
     
@@ -732,6 +743,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Forecast personal preferences
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private forecastPersonalPreferences(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const forecasts: PredictiveRecommendation[] = [];
     
@@ -787,6 +799,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Assess schedule risks
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private assessScheduleRisks(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const risks: PredictiveRecommendation[] = [];
     
@@ -815,6 +828,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Assess communication risks
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private assessCommunicationRisks(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const risks: PredictiveRecommendation[] = [];
     
@@ -843,6 +857,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Assess work-life balance risks
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private assessWorkLifeBalanceRisks(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const risks: PredictiveRecommendation[] = [];
     
@@ -900,6 +915,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Detect efficiency opportunities
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private detectEfficiencyOpportunities(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const opportunities: PredictiveRecommendation[] = [];
     
@@ -928,6 +944,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Detect collaboration opportunities
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private detectCollaborationOpportunities(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const opportunities: PredictiveRecommendation[] = [];
     
@@ -956,6 +973,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Detect learning opportunities
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private detectLearningOpportunities(context: PredictiveContext, patterns: any): PredictiveRecommendation[] {
     const opportunities: PredictiveRecommendation[] = [];
     
@@ -1026,6 +1044,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze time gaps in activity
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeTimeGaps(activities: any[]): number {
     if (activities.length < 2) return 0;
     
@@ -1045,6 +1064,7 @@ export class PredictiveIntelligenceEngine {
   /**
    * Analyze repetitive tasks
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private analyzeRepetitiveTasks(activities: any[]): number {
     const taskTypes = new Map<string, number>();
     
