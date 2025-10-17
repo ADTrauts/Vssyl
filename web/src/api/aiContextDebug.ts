@@ -46,7 +46,7 @@ export interface AIAutonomySettings {
 export interface Activity {
   id: string;
   type: string;
-  details: any;
+  details: Record<string, unknown>;
   timestamp: string;
 }
 

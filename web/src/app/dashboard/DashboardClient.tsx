@@ -93,6 +93,7 @@ function WidgetContent({
     return 'personal';
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getDashboardDisplayName = (dashboard: any): string => {
     if (dashboard?.business) return dashboard.business.name || dashboard.name;
     if (dashboard?.institution) return dashboard.institution.name || dashboard.name;
@@ -336,6 +337,7 @@ function DashboardContent({
   widgetError,
   onShowModuleManagement,
   router
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: DashboardContentProps & { router: any }) {
   const { isHydrated } = useHydration();
   const { data: session } = useSession();

@@ -22,6 +22,14 @@ import FrontPageWidgetEditor from '@/components/business/FrontPageWidgetEditor';
 import FrontPageContentEditor from '@/components/business/FrontPageContentEditor';
 import FrontPagePreview from '@/components/business/FrontPagePreview';
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: Date;
+}
+
 interface Business {
   id: string;
   name: string;
@@ -42,11 +50,11 @@ interface Business {
 interface FrontPageConfig {
   id: string;
   businessId: string;
-  layout: any;
-  theme: any;
+  layout: Record<string, unknown>;
+  theme: Record<string, unknown>;
   welcomeMessage?: string;
   heroImage?: string;
-  companyAnnouncements?: any[];
+  companyAnnouncements?: Announcement[];
   allowUserCustomization: boolean;
 }
 
@@ -58,8 +66,8 @@ interface Widget {
   position: { x: number; y: number; width: number; height: number };
   visible: boolean;
   order: number;
-  settings?: any;
-  visibility?: any;
+  settings?: Record<string, unknown>;
+  visibility?: Record<string, unknown>;
 }
 
 export default function UnifiedBrandingPage() {
@@ -137,12 +145,12 @@ export default function UnifiedBrandingPage() {
       });
       if (orgChartResponse.ok) {
         const data = await orgChartResponse.json();
-        const rolesSet = new Set(data.positions?.map((p: any) => p.role).filter(Boolean));
-        const tiersSet = new Set(data.tiers?.map((t: any) => t.name));
+        const rolesSet = new Set(data.positions?.map((p: Record<string, unknown>) => p.role as string).filter(Boolean));
+        const tiersSet = new Set(data.tiers?.map((t: Record<string, unknown>) => t.name as string));
         setOrgChartData({
           roles: Array.from(rolesSet),
           tiers: Array.from(tiersSet),
-          positions: data.positions?.map((p: any) => ({ id: p.id, name: p.title })) || [],
+          positions: data.positions?.map((p: Record<string, unknown>) => ({ id: p.id as string, name: p.title as string })) || [],
           departments: data.departments || [],
         });
       }
@@ -239,8 +247,9 @@ export default function UnifiedBrandingPage() {
 
       setEditingWidget(null);
       setIsAddingWidget(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError((err as Error).message);
     }
   };
 
@@ -258,8 +267,9 @@ export default function UnifiedBrandingPage() {
       if (!response.ok) throw new Error('Failed to delete widget');
 
       setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError((err as Error).message);
     }
   };
 
@@ -457,9 +467,9 @@ export default function UnifiedBrandingPage() {
                   content={{
                     welcomeMessage: config.welcomeMessage,
                     heroImage: config.heroImage,
-                    companyAnnouncements: config.companyAnnouncements || [],
+                    companyAnnouncements: (config.companyAnnouncements as any) || [],
                   }}
-                  onChange={(content) => setConfig({ ...config, ...content })}
+                  onChange={(content) => setConfig({ ...config, ...content } as FrontPageConfig)}
                 />
               ) : (
                 <Card className="p-8 text-center">
@@ -480,8 +490,8 @@ export default function UnifiedBrandingPage() {
                     backgroundColor: config.theme?.backgroundColor || globalBranding.backgroundColor,
                     textColor: config.theme?.textColor || globalBranding.textColor,
                     headingFont: config.theme?.headingFont || globalBranding.fontFamily,
-                    borderRadius: config.theme?.borderRadius,
-                    cardStyle: config.theme?.cardStyle,
+                    borderRadius: (config.theme?.borderRadius as string) || undefined,
+                    cardStyle: (config.theme?.cardStyle as 'flat' | 'shadow' | 'bordered') || undefined,
                   }}
                   welcomeMessage={config.welcomeMessage}
                   heroImage={config.heroImage}
@@ -502,7 +512,7 @@ export default function UnifiedBrandingPage() {
         <FrontPageWidgetEditor
           widget={editingWidget}
           orgChartData={orgChartData}
-          onSave={handleSaveWidget}
+                  onSave={(widget: any) => void handleSaveWidget(widget)}
           onClose={() => {
             setEditingWidget(null);
             setIsAddingWidget(false);
