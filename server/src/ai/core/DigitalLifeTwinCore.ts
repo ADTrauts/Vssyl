@@ -66,17 +66,33 @@ export interface CrossModuleConnection {
   suggestedAction?: string;
 }
 
+export interface RecentActivityItem {
+  id: string;
+  type: string;
+  timestamp: Date | string;
+  module?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export interface ConversationHistoryItem {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: Date | string;
+  [key: string]: unknown;
+}
+
 export interface LifeTwinQuery {
   query: string;
   context: {
     currentModule?: string;
     dashboardType?: string;
     dashboardName?: string;
-    recentActivity?: any[];
+    recentActivity?: RecentActivityItem[];
     urgency?: 'low' | 'medium' | 'high';
   };
   userId: string;
-  conversationHistory?: any[];
+  conversationHistory?: ConversationHistoryItem[];
 }
 
 export class DigitalLifeTwinCore {
@@ -303,7 +319,7 @@ export class DigitalLifeTwinCore {
   /**
    * Analyze query intent and context (enhanced with smart patterns and semantics)
    */
-  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: any, smartAnalysis?: any, semanticEnhancement?: any) {
+  private async analyzeQuery(query: LifeTwinQuery, userContext: UserContext, personality: unknown, smartAnalysis?: unknown, semanticEnhancement?: unknown) {
     const queryLower = query.query.toLowerCase();
     
     // Determine query type
@@ -379,7 +395,7 @@ export class DigitalLifeTwinCore {
   /**
    * Build comprehensive prompt for Digital Life Twin (enhanced with smart patterns and semantics)
    */
-  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: any, analysis: any, smartAnalysis?: any, semanticEnhancement?: any): string {
+  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: unknown, analysis: unknown, smartAnalysis?: unknown, semanticEnhancement?: unknown): string {
     const currentTime = new Date().toLocaleString();
     
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
@@ -549,7 +565,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
   }
 
   // Action creation methods
-  private async createScheduleAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+  private async createScheduleAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
     if (autonomySettings.scheduling < 30) return null; // User prefers manual scheduling
     
     return {
@@ -572,7 +588,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createCommunicationAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+  private async createCommunicationAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
     if (autonomySettings.communication < 40) return null;
     
     return {
@@ -594,7 +610,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createFileAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+  private async createFileAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
     if (autonomySettings.fileManagement < 50) return null;
     
     return {
@@ -615,7 +631,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createTaskAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+  private async createTaskAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
     if (autonomySettings.taskCreation < 40) return null;
     
     return {
@@ -637,7 +653,7 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
     };
   }
 
-  private async createAnalysisAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: any): Promise<LifeTwinAction | null> {
+  private async createAnalysisAction(query: LifeTwinQuery, userContext: UserContext, autonomySettings: unknown): Promise<LifeTwinAction | null> {
     return {
       id: `analysis_${Date.now()}`,
       type: 'analyze',

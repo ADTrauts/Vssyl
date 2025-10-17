@@ -36,7 +36,7 @@ export interface Widget {
   position: WidgetPosition;
   visible: boolean;
   order: number;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   visibility?: {
     requiredPermission?: string;
     visibleToRoles?: string[];

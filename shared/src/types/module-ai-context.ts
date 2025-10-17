@@ -29,7 +29,7 @@ export interface ModuleContextProvider {
   endpoint: string;
   cacheDuration: number; // milliseconds
   description?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface ModuleQueryableData {
   dataType: string;
   endpoint: string;
   description: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 /**
@@ -112,11 +112,11 @@ export interface UserAIContextCacheEntry {
 export interface UserContext {
   userId: string;
   installedModules: string[];
-  moduleContexts: Record<string, any>;
-  personalAI?: any;
-  businessAI?: any;
-  preferences?: any;
-  recentActivity?: any;
+  moduleContexts: Record<string, unknown>;
+  personalAI?: unknown;
+  businessAI?: unknown;
+  preferences?: unknown;
+  recentActivity?: unknown;
 }
 
 /**
@@ -202,7 +202,7 @@ export interface AIQueryAnalysis {
 export interface ModuleContextResponse {
   moduleId: string;
   providerName: string;
-  data: any;
+  data: unknown;
   timestamp: Date;
   cached: boolean;
   latency: number;
@@ -221,7 +221,7 @@ export interface AILearningEventWithModule {
   sourceModule?: string;
   sourceModuleVersion?: string;
   moduleActive: boolean;
-  moduleSpecificData?: any;
+  moduleSpecificData?: unknown;
   
   // Learning data
   oldBehavior?: string;
@@ -230,7 +230,7 @@ export interface AILearningEventWithModule {
   confidence: number;
   
   // Pattern recognition
-  patternData?: any;
+  patternData?: unknown;
   frequency: number;
   
   // Application

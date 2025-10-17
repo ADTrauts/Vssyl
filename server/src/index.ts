@@ -108,7 +108,8 @@ function createUserResponse(user: User) {
 }
 
 // Helper to wrap async route handlers for Express
-export function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => Promise<any>): RequestHandler {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function asyncHandler(fn: (...args: any[]) => Promise<any>): RequestHandler {
   return function (req, res, next) {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

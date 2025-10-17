@@ -162,7 +162,7 @@ export default function ApprovalManager() {
   };
 
   const getActionIcon = (actionType: string) => {
-    const iconMap: Record<string, any> = {
+    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
       'schedule_meeting': Calendar,
       'send_message': MessageSquare,
       'organize_files': FileText,

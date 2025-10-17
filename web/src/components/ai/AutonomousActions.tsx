@@ -29,17 +29,18 @@ interface AutonomousAction {
   confidence: number;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   estimatedTime: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   status?: 'pending' | 'executing' | 'completed' | 'failed' | 'awaiting_approval';
-  createdAt?: Date;
-  result?: any;
+  createdAt?: Date | string;
+  result?: unknown;
   error?: string;
+  success?: boolean;
 }
 
 interface PendingApproval {
   id: string;
   actionType: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   reason: string;
   createdAt: Date;
   confidence: number;
@@ -50,7 +51,7 @@ export default function AutonomousActions() {
   const { data: session } = useSession();
   const [suggestions, setSuggestions] = useState<AutonomousAction[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
-  const [actionHistory, setActionHistory] = useState<any[]>([]);
+  const [actionHistory, setActionHistory] = useState<AutonomousAction[]>([]);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'suggestions' | 'pending' | 'history'>('suggestions');
@@ -435,7 +436,7 @@ export default function AutonomousActions() {
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}
                         </div>
                         <div className="flex items-center gap-1">
                           <Brain className="w-3 h-3" />

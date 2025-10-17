@@ -30,13 +30,13 @@ export interface Widget {
 }
 export interface CreateWidgetRequest {
     type: string;
-    config?: any;
-    position?: any;
+    config?: WidgetConfig;
+    position?: WidgetPosition;
 }
 export interface UpdateWidgetRequest {
     type?: string;
-    config?: any;
-    position?: any;
+    config?: WidgetConfig;
+    position?: WidgetPosition;
 }
 export interface WidgetResponse {
     widget: Widget;

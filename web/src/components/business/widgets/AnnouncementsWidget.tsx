@@ -105,9 +105,9 @@ export default function AnnouncementsWidget({ businessId, settings, theme }: Wid
 
   return (
     <WidgetContainer
-      title={settings?.title || 'Announcements'}
+      title={(settings?.title as string) || 'Announcements'}
       icon="📢"
-      description={settings?.description}
+      description={(settings?.description as string) || undefined}
       theme={theme}
     >
       <div className="space-y-3 max-h-[400px] overflow-y-auto">

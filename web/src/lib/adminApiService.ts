@@ -524,11 +524,11 @@ class AdminApiService {
   // UTILITY METHODS
   // ============================================================================
 
-  async exportData(endpoint: string, params: Record<string, any> = {}) {
+  async exportData(endpoint: string, params: Record<string, unknown> = {}) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
-        searchParams.append(key, value.toString());
+        searchParams.append(key, String(value));
       }
     });
 

@@ -24,7 +24,7 @@ export interface Widget {
   position: { x: number; y: number; width: number; height: number };
   visible: boolean;
   order: number;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   visibility?: WidgetVisibility;
 }
 

@@ -9,7 +9,7 @@ I am Cursor, an expert software engineer with a unique characteristic: my memory
 
 ## Memory Bank Structure
 
-The Memory Bank consists of required core files and optional context files, all in Markdown format. Files build upon each other in a clear hierarchy:
+The Memory Bank has evolved into a sophisticated documentation system with 57+ files organized into categories. Files build upon each other in a clear hierarchy:
 
 \```mermaid
 flowchart TD
@@ -17,57 +17,152 @@ flowchart TD
     PB --> SP[systemPatterns.md]
     PB --> TC[techContext.md]
     
-    PC --> AC[activeContext.md]
-    SP --> AC
-    TC --> AC
+    PC --> MPC[Module Product Contexts]
+    SP --> ARCH[Architecture Docs]
+    TC --> DB[databaseContext.md]
+    
+    MPC --> AC[activeContext.md]
+    ARCH --> AC
+    DB --> AC
     
     AC --> P[progress.md]
+    
+    PS[Project Summaries] -.historical context.-> AC
+    STRAT[Strategic Planning] -.future direction.-> AC
 \```
 
-### Core Files (Required)
-1. `projectbrief.md`
-   - Foundation document that shapes all other files
-   - Created at project start if it doesn't exist
+### Core Foundation Files (Required - Read First)
+These are the primary files that provide essential project context:
+
+1. **`projectbrief.md`** - Foundation document that shapes all other files
    - Defines core requirements and goals
    - Source of truth for project scope
 
-2. `productContext.md`
-   - Why this project exists
-   - Problems it solves
-   - How it should work
-   - User experience goals
+2. **`productContext.md`** - Main product vision
+   - Why this project exists and problems it solves
+   - How it should work and user experience goals
 
-3. `activeContext.md`
-   - Current work focus
-   - Recent changes
-   - Next steps
+3. **`activeContext.md`** ⚡ - Current work focus
+   - Recent changes and next steps
    - Active decisions and considerations
+   - **READ THIS FIRST** in every session
 
-4. `systemPatterns.md`
-   - System architecture
-   - Key technical decisions
-   - Design patterns in use
-   - Component relationships
+4. **`progress.md`** ⚡ - Status and completion tracking
+   - What works and what's left to build
+   - Current status and known issues
+   - **ALWAYS CHECK** for latest status
 
-5. `techContext.md`
-   - Technologies used
-   - Development setup
-   - Technical constraints
-   - Dependencies
+5. **`systemPatterns.md`** - Architecture overview
+   - System architecture and key technical decisions
+   - Design patterns in use and component relationships
 
-6. `progress.md`
-   - What works
-   - What's left to build
-   - Current status
-   - Known issues
+6. **`techContext.md`** - Technology stack
+   - Technologies used and development setup
+   - Technical constraints and dependencies
 
-### Additional Context
-Create additional files/folders within memory-bank/ when they help organize:
-- Complex feature documentation
-- Integration specifications
-- API documentation
-- Testing strategies
-- Deployment procedures
+### Module Product Contexts (Feature-Specific)
+Each major module/feature has its own product context file following the `*ProductContext.md` naming pattern:
+
+- `calendarProductContext.md` - Calendar module features and architecture
+- `chatProductContext.md` - Chat system design and functionality
+- `driveProductContext.md` - File storage and management
+- `adminProductContext.md` - Admin portal capabilities
+- `analyticsProductContext.md` - Analytics and reporting
+- `dashboardProductContext.md` - Dashboard system
+- `marketplaceProductContext.md` - Module marketplace
+- `settingsProductContext.md` - User and system settings
+- And more...
+
+**Read when:** Working on a specific module or feature
+
+### Project Summaries (Historical Context)
+Documentation of major milestones and completed work:
+
+- `phase*-completion-summary.md` - Major phase completions
+- `AI_IMPLEMENTATION_SUMMARY.md` - AI system implementation details
+- `TYPE_SAFETY_PROJECT_SUMMARY.md` - TypeScript migration summary
+- `ORG_CHART_PHASE1_SUMMARY.md` - Org chart implementation
+- `CHAT_SESSION_SUMMARY_*.md` - Important session summaries
+
+**Read when:** Need context on past decisions or completed features
+
+### Architecture & Technical Documentation
+Deep technical documentation for system design:
+
+- `designPatterns.md` - Code patterns and conventions
+- `databaseContext.md` - Database schema and relationships
+- `apiDocumentation.md` - API structure and endpoints
+- `troubleshooting.md` - Common issues and solutions
+- `lintingAndCodeQuality.md` - Code quality standards
+- `testingStrategy.md` - Testing approaches
+
+**Read when:** Making architectural decisions or debugging
+
+### Specialized Contexts (Domain-Specific)
+Domain-specific documentation for particular concerns:
+
+- `deployment.md` - Deployment processes and cloud infrastructure
+- `securityComplianceSystem.md` - Security and compliance requirements
+- `compliance.md` - Regulatory compliance details
+- `permissionsModel.md` - Permission and access control
+- `org-chart-permission-system.md` - Org chart permissions
+- `googleCloudMigration.md` - GCP migration details
+- `contributorGuide.md` - Contribution guidelines
+
+**Read when:** Working in these specific domains
+
+### Strategic Planning (Future Direction)
+Long-term planning and vision documents:
+
+- `roadmap.md` - Product roadmap and future features
+- `futureIdeas.md` - Ideas and potential enhancements
+- `enterpriseModuleStrategy.md` - Enterprise feature planning
+- `pricing-system-simplification.md` - Pricing strategy
+
+**Read when:** Planning features or making strategic decisions
+
+## How to Read the Memory Bank
+
+### Starting a New Session
+1. **Always read** `activeContext.md` and `progress.md` first
+2. **Scan** `projectbrief.md` and `productContext.md` for overall context
+3. **Read specific contexts** based on the task at hand
+
+### Working on a Specific Module
+1. Read the module's `*ProductContext.md` file
+2. Check `progress.md` for module status
+3. Review relevant architecture docs (`designPatterns.md`, `apiDocumentation.md`)
+4. Check `databaseContext.md` if database changes are involved
+
+### Making Architectural Decisions
+1. Review `systemPatterns.md` and `designPatterns.md`
+2. Check `roadmap.md` for strategic direction
+3. Review relevant summary files for past decisions
+4. Consult `techContext.md` for technical constraints
+
+### Debugging or Troubleshooting
+1. Check `troubleshooting.md` for known issues
+2. Review module-specific product context
+3. Check `deployment.md` if production-related
+4. Review `databaseContext.md` for data issues
+
+### File Creation Patterns
+**Create Module Product Context** when:
+- Adding a new major feature/module
+- Name pattern: `[moduleName]ProductContext.md`
+
+**Create Summary File** when:
+- Completing a major phase or project
+- Name pattern: `[PHASE_NAME]_SUMMARY.md` or `[feature]_SUMMARY.md`
+
+**Create Specialized Context** when:
+- Domain requires significant documentation (e.g., deployment, testing)
+- Name pattern: `[domain]Context.md` or `[domain].md`
+
+**DON'T create:**
+- Temporary or one-off documentation files
+- Duplicate information already covered elsewhere
+- Files that should be code comments instead
 
 ## Core Workflows
 

@@ -63,9 +63,9 @@ export default function AIAssistantWidget({ businessId, userId, settings, theme 
 
   return (
     <WidgetContainer
-      title={settings?.title || 'AI Assistant'}
+      title={(settings?.title as string) || 'AI Assistant'}
       icon="🤖"
-      description={settings?.description}
+      description={(settings?.description as string) || undefined}
       theme={theme}
       className="h-full"
     >

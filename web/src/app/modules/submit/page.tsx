@@ -29,7 +29,13 @@ interface ModuleSubmission {
     dependencies: string[];
     entryPoint: string;
     frontend?: { entryUrl: string };
-    settings: Record<string, any>;
+    settings: Record<string, {
+      type: 'string' | 'number' | 'boolean' | 'select';
+      default: unknown;
+      description: string;
+      required?: boolean;
+      options?: string[];
+    }>;
   };
   readme: string;
   license: string;

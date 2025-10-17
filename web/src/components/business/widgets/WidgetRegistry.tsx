@@ -9,7 +9,7 @@ import React from 'react';
 export interface WidgetProps {
   businessId: string;
   userId?: string;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   theme?: {
     primaryColor?: string;
     secondaryColor?: string;
@@ -24,7 +24,7 @@ export interface WidgetRegistration {
   description: string;
   icon: string;
   component: React.ComponentType<WidgetProps>;
-  defaultSettings?: Record<string, any>;
+  defaultSettings?: Record<string, unknown>;
   requiredPermissions?: string[];
 }
 

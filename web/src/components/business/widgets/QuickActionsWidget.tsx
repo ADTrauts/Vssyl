@@ -65,13 +65,13 @@ export default function QuickActionsWidget({ businessId, settings, theme }: Widg
 
   return (
     <WidgetContainer
-      title={settings?.title || 'Quick Actions'}
+      title={(settings?.title as string) || 'Quick Actions'}
       icon="⚡"
-      description={settings?.description || 'Common shortcuts for daily tasks'}
+      description={((settings?.description as string) || 'Common shortcuts for daily tasks')}
       theme={theme}
     >
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {actions.map((action: QuickAction) => {
+        {(actions as QuickAction[]).map((action: QuickAction) => {
           const Icon = action.icon;
           return (
             <button

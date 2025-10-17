@@ -1624,7 +1624,7 @@ export class AdminService {
     action: 'approve' | 'reject',
     reviewNotes?: string,
     adminId?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       const submission = await prisma.moduleSubmission.findUnique({
         where: { id: submissionId },
@@ -1718,7 +1718,7 @@ export class AdminService {
     submissionIds: string[],
     action: 'approve' | 'reject',
     adminId?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       const results = await Promise.all(
         submissionIds.map(submissionId =>
@@ -1736,7 +1736,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleAnalytics(): Promise<any> {
+  static async getModuleAnalytics(): Promise<unknown> {
     try {
       const [
         categoryStats,
@@ -1798,7 +1798,7 @@ export class AdminService {
     }
   }
 
-  static async getDeveloperStats(): Promise<any> {
+  static async getDeveloperStats(): Promise<unknown> {
     try {
       const developers = await prisma.user.findMany({
         where: {
@@ -1883,7 +1883,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleRevenue(moduleId: string): Promise<any> {
+  static async getModuleRevenue(moduleId: string): Promise<unknown> {
     try {
       const revenue = await prisma.moduleSubscription.aggregate({
         where: {
@@ -3079,7 +3079,7 @@ export class AdminService {
     }
   }
 
-  static async getScalabilityMetrics(): Promise<any> {
+  static async getScalabilityMetrics(): Promise<unknown> {
     try {
       return {
         autoScaling: {
@@ -3181,7 +3181,7 @@ export class AdminService {
     }
   }
 
-  static async updateOptimizationRecommendation(recommendationId: string, action: string, adminId?: string): Promise<any> {
+  static async updateOptimizationRecommendation(recommendationId: string, action: string, adminId?: string): Promise<unknown> {
     try {
       const recommendation = {
         id: recommendationId,
@@ -3277,7 +3277,7 @@ export class AdminService {
     }
   }
 
-  static async updatePerformanceAlert(alertId: string, action: string, adminId?: string): Promise<any> {
+  static async updatePerformanceAlert(alertId: string, action: string, adminId?: string): Promise<unknown> {
     try {
       const alert = {
         id: alertId,
@@ -3306,7 +3306,7 @@ export class AdminService {
     }
   }
 
-  static async getPerformanceAnalytics(): Promise<any> {
+  static async getPerformanceAnalytics(): Promise<unknown> {
     try {
       return {
         trends: {

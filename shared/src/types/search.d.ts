@@ -15,7 +15,7 @@ export interface SearchResult {
     moduleName: string;
     url: string;
     type: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     permissions: Permission[];
     lastModified: Date;
     relevanceScore?: number;

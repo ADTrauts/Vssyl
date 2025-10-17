@@ -90,9 +90,9 @@ export default function PersonalStatsWidget({ businessId, userId, settings, them
 
   return (
     <WidgetContainer
-      title={settings?.title || 'Your Statistics'}
+      title={(settings?.title as string) || 'Your Statistics'}
       icon="👤"
-      description={settings?.description || 'Your personal performance metrics'}
+      description={((settings?.description as string) || 'Your personal performance metrics')}
       theme={theme}
     >
       <div className="space-y-4">

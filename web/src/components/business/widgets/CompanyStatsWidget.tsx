@@ -94,9 +94,9 @@ export default function CompanyStatsWidget({ businessId, settings, theme }: Widg
 
   return (
     <WidgetContainer
-      title={settings?.title || 'Company Statistics'}
+      title={(settings?.title as string) || 'Company Statistics'}
       icon="📊"
-      description={settings?.description}
+      description={(settings?.description as string) || undefined}
       theme={theme}
     >
       <div className="grid grid-cols-2 gap-4">
