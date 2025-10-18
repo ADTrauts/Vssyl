@@ -87,7 +87,8 @@ export default function EnhancedCalendarModule({ businessId, className = '', ref
       if (response?.success && response.data) {
         setCalendars(response.data);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('🏢 Enterprise Calendar - Failed to load calendars:', err);
       setError('Failed to load calendars');
     }
@@ -141,7 +142,7 @@ export default function EnhancedCalendarModule({ businessId, className = '', ref
         setEvents(response.data);
         
         // Calculate enterprise stats from real data
-        const pending = response.data.filter((e: any) => e.approvalStatus === 'pending').length;
+        const pending = response.data.filter((e: Record<string, any>) => e.approvalStatus === 'pending').length;
         setPendingApprovals(pending);
       }
       
@@ -149,7 +150,8 @@ export default function EnhancedCalendarModule({ businessId, className = '', ref
       if (hasEnterprise) {
         await recordUsage('calendar_enterprise_view');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error('🏢 Enterprise Calendar - Failed to load events:', err);
       setError('Failed to load calendar events');
       toast.error('Failed to load calendar events');
@@ -182,7 +184,7 @@ export default function EnhancedCalendarModule({ businessId, className = '', ref
       try {
         await chatSocket.connect(session.accessToken as string);
         
-        const handler = (payload: any) => {
+        const handler = (payload: Record<string, any>) => {
           if (!payload || payload.type !== 'event') return;
           
           setEvents(prev => {
@@ -206,7 +208,7 @@ export default function EnhancedCalendarModule({ businessId, className = '', ref
           
           // Update enterprise stats
           setEvents(current => {
-            const pending = current.filter((e: any) => e.approvalStatus === 'pending').length;
+            const pending = current.filter((e: Record<string, any>) => e.approvalStatus === 'pending').length;
             setPendingApprovals(pending);
             return current;
           });

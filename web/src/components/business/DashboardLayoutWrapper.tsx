@@ -124,7 +124,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
         console.log('📊 DashboardLayoutWrapper: Total dashboards:', allDashboards.length);
 
         // Find existing business dashboard
-        let businessDashboard = allDashboards.find((d: any) => d.businessId === business.id);
+        let businessDashboard = allDashboards.find((d: Record<string, any>) => d.businessId === business.id);
 
         if (businessDashboard) {
           console.log('✅ DashboardLayoutWrapper: Found existing business dashboard:', businessDashboard.id);

@@ -67,12 +67,12 @@ export async function getRecentConversationsContext(req: Request, res: Response)
     
     // Format for AI consumption
     const context = {
-      recentConversations: recentConversations.map((conv: any) => ({
+      recentConversations: recentConversations.map((conv: Record<string, any>) => ({
         id: conv.id,
         name: conv.name || 'Unnamed Conversation',
         type: conv.type,
         participantCount: conv.participants.length,
-        participants: conv.participants.map((p: any) => ({
+        participants: conv.participants.map((p: Record<string, any>) => ({
           id: p.user.id,
           name: p.user.name,
           email: p.user.email
@@ -86,8 +86,8 @@ export async function getRecentConversationsContext(req: Request, res: Response)
       })),
       summary: {
         totalActiveConversations: recentConversations.length,
-        hasDirectMessages: recentConversations.some((c: any) => c.type === 'DIRECT'),
-        hasGroupChats: recentConversations.some((c: any) => c.type === 'GROUP'),
+        hasDirectMessages: recentConversations.some((c: Record<string, any>) => c.type === 'DIRECT'),
+        hasGroupChats: recentConversations.some((c: Record<string, any>) => c.type === 'GROUP'),
         mostRecentActivity: recentConversations[0]?.updatedAt.toISOString()
       }
     };
@@ -178,8 +178,8 @@ export async function getUnreadMessagesContext(req: Request, res: Response) {
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
     
     let totalUnread = 0;
-    conversationsWithMessages.forEach((conv: any) => {
-      const recentMessages = conv.messages.filter((msg: any) => msg.createdAt > oneDayAgo);
+    conversationsWithMessages.forEach((conv: Record<string, any>) => {
+      const recentMessages = conv.messages.filter((msg: Record<string, any>) => msg.createdAt > oneDayAgo);
       totalUnread += recentMessages.length;
     });
     
@@ -188,8 +188,8 @@ export async function getUnreadMessagesContext(req: Request, res: Response) {
       unreadMessages: {
         total: totalUnread,
         conversationCount: conversationsWithMessages.length,
-        preview: conversationsWithMessages.slice(0, 5).map((conv: any) => {
-          const recentMessages = conv.messages.filter((msg: any) => msg.createdAt > oneDayAgo);
+        preview: conversationsWithMessages.slice(0, 5).map((conv: Record<string, any>) => {
+          const recentMessages = conv.messages.filter((msg: Record<string, any>) => msg.createdAt > oneDayAgo);
           return {
             conversationId: conv.id,
             conversationName: conv.name || 'Unnamed Conversation',
@@ -291,7 +291,7 @@ export async function getConversationHistory(req: Request, res: Response) {
     
     res.json({
       success: true,
-      messages: messages.reverse().map((msg: any) => ({
+      messages: messages.reverse().map((msg: Record<string, any>) => ({
         id: msg.id,
         content: msg.content,
         sender: {

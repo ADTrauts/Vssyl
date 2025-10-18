@@ -54,6 +54,7 @@ export const getUserNotifications = async (req: Request, res: Response) => {
     const { page = 1, limit = 20, status, type, businessId } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId };
 
     if (status) where.status = status;
@@ -207,6 +208,7 @@ export const getNotificationStats = async (req: Request, res: Response) => {
     const userId = user.id;
     const { businessId } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId };
     if (businessId) where.businessId = businessId;
 
@@ -241,6 +243,7 @@ export const getGroupedNotifications = async (req: Request, res: Response) => {
     const userId = user.id;
     const { businessId } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId };
     if (businessId) where.businessId = businessId;
 
@@ -251,7 +254,7 @@ export const getGroupedNotifications = async (req: Request, res: Response) => {
     });
 
     // Group notifications by type
-    const grouped = notifications.reduce((acc: any, notification: any) => {
+    const grouped = notifications.reduce((acc: Record<string, any>, notification: Record<string, any>) => {
       if (!acc[notification.type]) {
         acc[notification.type] = [];
       }
@@ -277,6 +280,7 @@ export const getNotificationGroup = async (req: Request, res: Response) => {
     const userId = user.id;
     const { businessId } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId, type: groupType };
     if (businessId) where.businessId = businessId;
 
@@ -303,6 +307,7 @@ export const markGroupAsRead = async (req: Request, res: Response) => {
     const userId = user.id;
     const { businessId } = req.body;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId, type: groupType, read: false };
     if (businessId) where.businessId = businessId;
 
@@ -334,6 +339,7 @@ export const getNotificationDigest = async (req: Request, res: Response) => {
     const since = new Date();
     since.setDate(since.getDate() - periodDays);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId, createdAt: { gte: since } };
     if (businessId) where.businessId = businessId;
 
@@ -361,6 +367,7 @@ export const getSmartFilters = async (req: Request, res: Response) => {
     const userId = user.id;
     const { businessId } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId };
     if (businessId) where.businessId = businessId;
 

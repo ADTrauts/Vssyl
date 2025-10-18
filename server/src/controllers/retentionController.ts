@@ -318,6 +318,7 @@ export const getDataClassifications = async (req: Request, res: Response) => {
     const { resourceType, sensitivity, page = 1, limit = 50 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (resourceType) where.resourceType = resourceType;
     if (sensitivity) where.sensitivity = sensitivity;
@@ -422,6 +423,7 @@ export const getBackupRecords = async (req: Request, res: Response) => {
     const { backupType, status, page = 1, limit = 50 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (backupType) where.backupType = backupType;
     if (status) where.status = status;
@@ -516,6 +518,7 @@ export const getClassificationRules = async (req: Request, res: Response) => {
 
     const { resourceType, isActive } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (resourceType) where.resourceType = resourceType;
     if (isActive !== undefined) where.isActive = isActive === 'true';

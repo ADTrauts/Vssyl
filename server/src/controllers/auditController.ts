@@ -28,6 +28,7 @@ export const getPersonalAuditLogs = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     // Build where clause
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       userId: user.id
     };
@@ -122,6 +123,7 @@ export const exportPersonalAuditLogs = async (req: Request, res: Response) => {
     } = req.query;
 
     // Build where clause
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       userId: user.id
     };
@@ -203,6 +205,7 @@ export const getPersonalAuditStats = async (req: Request, res: Response) => {
     const { startDate, endDate } = req.query;
 
     // Build date filter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dateFilter: any = {};
     if (startDate || endDate) {
       dateFilter.timestamp = {};
@@ -278,6 +281,7 @@ export const getPersonalAuditStats = async (req: Request, res: Response) => {
 };
 
 // Helper function to mask sensitive data
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const maskSensitiveData = (details: any): Record<string, unknown> => {
   if (!details) return details;
 

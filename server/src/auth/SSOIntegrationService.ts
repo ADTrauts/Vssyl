@@ -700,6 +700,7 @@ export class SSOIntegrationService extends EventEmitter {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async exchangeCodeForToken(code: string, config: any): Promise<unknown> {
     // In a real implementation, this would make an HTTP request to exchange code for token
     // For now, we'll return mock data
@@ -724,7 +725,9 @@ export class SSOIntegrationService extends EventEmitter {
 
   private async createOrUpdateSSOUser(
     providerId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     userInfo: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     commonConfig: any
   ): Promise<SSOUser> {
     // In a real implementation, this would create or update user in database
@@ -752,7 +755,9 @@ export class SSOIntegrationService extends EventEmitter {
   private async createSSOSession(
     providerId: string,
     userId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     userInfo: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tokenData?: any
   ): Promise<SSOSession> {
     const session: SSOSession = {

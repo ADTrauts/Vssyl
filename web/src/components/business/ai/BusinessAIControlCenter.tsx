@@ -47,9 +47,9 @@ interface BusinessAIAnalytics {
     totalInteractions: number;
     lastInteractionAt: string | null;
   };
-  metrics: any[];
-  recentInteractions: any[];
-  learningEvents: any[];
+  metrics: Record<string, unknown>[];
+  recentInteractions: Record<string, unknown>[];
+  learningEvents: Record<string, unknown>[];
   summary: {
     totalInteractions: number;
     averageConfidence: number;

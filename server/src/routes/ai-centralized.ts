@@ -78,6 +78,7 @@ router.get('/patterns', async (req, res) => {
   try {
     const { patternType, userSegment, impact, minConfidence } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filters: any = {};
     if (patternType) filters.patternType = patternType as string;
     if (userSegment) filters.userSegment = userSegment as string;
@@ -108,6 +109,7 @@ router.get('/insights', async (req, res) => {
   try {
     const { type, impact, actionable } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filters: any = {};
     if (type) filters.type = type as string;
     if (impact) filters.impact = impact as string;
@@ -244,18 +246,18 @@ router.get('/analytics/summary', authenticateJWT, requireAdmin, async (req, res)
     const summary = {
       patterns: {
         total: patterns.length,
-        byType: patterns.reduce((acc: any, p) => {
+        byType: patterns.reduce((acc: Record<string, any>, p: Record<string, any>) => {
           acc[p.patternType] = (acc[p.patternType] || 0) + 1;
           return acc;
         }, {}),
-        byImpact: patterns.reduce((acc: any, p) => {
+        byImpact: patterns.reduce((acc: Record<string, any>, p: Record<string, any>) => {
           acc[p.impact] = (acc[p.impact] || 0) + 1;
           return acc;
         }, {})
       },
       insights: {
         total: insights.length,
-        byType: insights.reduce((acc: any, i) => {
+        byType: insights.reduce((acc: Record<string, any>, i: Record<string, any>) => {
           acc[i.type] = (acc[i.type] || 0) + 1;
           return acc;
         }, {}),
@@ -287,6 +289,7 @@ router.get('/audit/logs', authenticateJWT, requireAdmin, async (req, res) => {
   try {
     const { limit = 100, offset = 0, action, resource } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let whereClause: any = { resource: 'ai_learning' };
     
     if (action) {
@@ -1954,6 +1957,7 @@ router.get('/analytics/streams/:streamId/data', async (req, res) => {
     const analyticsEngine = new RealTimeAnalyticsEngine(prisma);
     
     // Parse date filters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.startTime) {
       parsedFilters.startTime = new Date(filters.startTime as string);
@@ -2298,6 +2302,7 @@ router.get('/predictive/forecasting-models/:modelId/forecasts', async (req, res)
     const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
     
     // Parse date filters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.startDate) {
       parsedFilters.startDate = new Date(filters.startDate as string);
@@ -2416,6 +2421,7 @@ router.get('/predictive/anomaly-models/:modelId/anomalies', async (req, res) => 
     const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
     
     // Parse filters
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.startDate) {
       parsedFilters.startDate = new Date(filters.startDate as string);
@@ -2539,6 +2545,7 @@ router.get('/predictive/insights', async (req, res) => {
     const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
     
     const filters = req.query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.limit) {
       parsedFilters.limit = parseInt(filters.limit as string);
@@ -2648,6 +2655,7 @@ router.get('/business/insights', async (req, res) => {
     const businessEngine = new BusinessIntelligenceEngine(prisma);
     
     const filters = req.query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.limit) {
       parsedFilters.limit = parseInt(filters.limit as string);
@@ -2758,6 +2766,7 @@ router.get('/ai-insights/insights', async (req, res) => {
     const aiInsightsEngine = new AIPoweredInsightsEngine(prisma);
     
     const filters = req.query;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parsedFilters: any = { ...filters };
     if (filters.limit) {
       parsedFilters.limit = parseInt(filters.limit as string);

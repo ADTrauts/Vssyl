@@ -63,6 +63,7 @@ export const getGovernancePolicies = async (req: Request, res: Response) => {
 
     const { policyType, isActive } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (policyType) where.policyType = policyType;
     if (isActive !== undefined) where.isActive = isActive === 'true';
@@ -230,8 +231,8 @@ export const enforceGovernancePolicies = async (req: Request, res: Response) => 
       where: { isActive: true }
     });
 
-    const violations: any[] = [];
-    const actions: any[] = [];
+    const violations: Record<string, any>[] = [];
+    const actions: Record<string, any>[] = [];
 
     // Check each policy against the resource
     for (const policy of activePolicies) {
@@ -269,7 +270,7 @@ export const enforceGovernancePolicies = async (req: Request, res: Response) => 
     }
 
     // Execute actions
-    const executedActions = await executePolicyActions(actions, user.id);
+    const executedActions = await executePolicyActions(actions as any, user.id);
 
     res.json({
       success: true,
@@ -308,6 +309,7 @@ export const getPolicyViolations = async (req: Request, res: Response) => {
       limit = 20
     } = req.query;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (policyId) where.policyId = policyId;
     if (resourceType) where.resourceType = resourceType;

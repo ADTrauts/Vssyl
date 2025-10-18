@@ -20,7 +20,7 @@ interface Widget {
   position: { x: number; y: number; width: number; height: number };
   visible: boolean;
   order: number;
-  settings?: any;
+  settings?: Record<string, unknown>;
   visibility?: {
     requiredPermission?: string;
     visibleToRoles?: string[];
@@ -33,10 +33,10 @@ interface Widget {
 interface FrontPageConfig {
   id: string;
   businessId: string;
-  theme?: any;
+  theme?: Record<string, unknown>;
   welcomeMessage?: string;
   heroImage?: string;
-  companyAnnouncements?: any[];
+  companyAnnouncements?: Record<string, unknown>[];
   allowUserCustomization: boolean;
 }
 
@@ -44,7 +44,7 @@ interface Business {
   id: string;
   name: string;
   logo?: string;
-  branding?: any;
+  branding?: Record<string, unknown>;
 }
 
 interface BusinessFrontPageProps {
@@ -178,13 +178,13 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
   const branding = {
     id: business.id,
     name: business.name,
-    logo: globalBranding.logoUrl || globalBranding.logo || business.logo,
+    logo: (globalBranding.logoUrl as string) || (globalBranding.logo as string) || business.logo,
     // Front page theme can override global branding, but defaults to global
-    primaryColor: config.theme?.primaryColor || globalBranding.primaryColor || '#3B82F6',
-    secondaryColor: config.theme?.secondaryColor || globalBranding.secondaryColor || '#8B5CF6',
-    accentColor: config.theme?.accentColor || globalBranding.accentColor || '#10B981',
-    fontFamily: config.theme?.headingFont || globalBranding.fontFamily || 'Inter',
-    customCSS: globalBranding.customCSS || '',
+    primaryColor: (config.theme?.primaryColor || globalBranding.primaryColor || '#3B82F6') as any,
+    secondaryColor: (config.theme?.secondaryColor || globalBranding.secondaryColor || '#8B5CF6') as any,
+    accentColor: (config.theme?.accentColor || globalBranding.accentColor || '#10B981') as any,
+    fontFamily: (config.theme?.headingFont || globalBranding.fontFamily || 'Inter') as any,
+    customCSS: (globalBranding.customCSS as string) || '',
   };
 
   // Apply theme to visible widgets based on user customization
@@ -209,9 +209,9 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
       <div 
         className="min-h-screen"
         style={{
-          backgroundColor: config.theme?.backgroundColor || '#F9FAFB',
-          color: config.theme?.textColor || '#1F2937',
-          fontFamily: config.theme?.bodyFont || 'Inter',
+          backgroundColor: (config.theme?.backgroundColor as string) || '#F9FAFB',
+          color: (config.theme?.textColor as string) || '#1F2937',
+          fontFamily: (config.theme?.bodyFont as string) || 'Inter',
         }}
       >
         {/* Header */}
@@ -240,8 +240,8 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
                   <h2 
                     className="text-2xl font-bold mb-2"
                     style={{ 
-                      fontFamily: config.theme?.headingFont || 'Inter',
-                      color: config.theme?.primaryColor || '#3B82F6',
+                      fontFamily: (config.theme?.headingFont as string) || 'Inter',
+                      color: (config.theme?.primaryColor as string) || '#3B82F6',
                     }}
                   >
                     Welcome Back!
@@ -256,7 +256,7 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
               <div className="mb-8">
                 <h3 className="text-xl font-semibold mb-4">Announcements</h3>
                 <div className="space-y-3">
-                  {config.companyAnnouncements.map((announcement: any) => (
+                  {config.companyAnnouncements.map((announcement: Record<string, any>) => (
                     <Card key={announcement.id} className="p-4 border-l-4 border-blue-500">
                       <div className="flex items-start justify-between">
                         <div>
@@ -290,10 +290,10 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
                         description: widget.description,
                       }}
                       theme={{
-                        primaryColor: config.theme?.primaryColor || branding.primaryColor,
-                        secondaryColor: config.theme?.secondaryColor || branding.secondaryColor,
-                        accentColor: config.theme?.accentColor || branding.accentColor,
-                        fontFamily: config.theme?.headingFont || branding.fontFamily,
+                        primaryColor: (config.theme?.primaryColor as string) || (branding.primaryColor as any),
+                        secondaryColor: (config.theme?.secondaryColor as string) || (branding.secondaryColor as any),
+                        accentColor: (config.theme?.accentColor as string) || (branding.accentColor as any),
+                        fontFamily: (config.theme?.headingFont as string) || (branding.fontFamily as any),
                       }}
                     />
                   </div>

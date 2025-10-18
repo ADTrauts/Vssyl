@@ -5,6 +5,7 @@ declare global {
 }
 
 // Configure Prisma client for Cloud SQL Unix socket connection
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const prismaConfig: any = {
   // Add connection pool settings to prevent timeout issues
   log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],

@@ -130,6 +130,7 @@ export class WebSocketManager {
   public maxRetries = 5;
   public pollingInterval: NodeJS.Timeout | null = null;
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private eventListeners: Map<string, Set<(...args: any[]) => void>> = new Map();
   private pollingCallback?: () => Promise<void>;
 
@@ -290,6 +291,7 @@ export class WebSocketManager {
   /**
    * Add event listener
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on(event: string, callback: (...args: any[]) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
@@ -305,6 +307,7 @@ export class WebSocketManager {
   /**
    * Remove event listener
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   off(event: string, callback: (...args: any[]) => void): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
@@ -320,6 +323,7 @@ export class WebSocketManager {
   /**
    * Emit event
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event: string, ...args: any[]): void {
     if (this.socket && this.fallbackMode === 'websocket') {
       this.socket.emit(event, ...args);

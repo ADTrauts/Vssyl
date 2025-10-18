@@ -45,7 +45,7 @@ export const getInstalledModules = async (req: Request, res: Response) => {
         },
       });
 
-      const modules = installations.map((installation: any) => ({
+      const modules = installations.map((installation: Record<string, any>) => ({
         id: installation.module.id,
         name: installation.module.name,
         description: installation.module.description,
@@ -125,6 +125,7 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
     const scope = (req.query.scope as 'personal' | 'business') || 'personal';
     const businessId = req.query.businessId as string | undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       status: 'APPROVED'
     };
@@ -146,6 +147,7 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
       whereClause.pricingTier = pricingTier;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orderBy: any = {};
     if (sortBy === 'rating') {
       orderBy.rating = sortOrder;
@@ -1063,6 +1065,7 @@ export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const manifest: any = (module as any).manifest || {};
     const runtime = manifest.runtime || {};
     const frontend = manifest.frontend || {};

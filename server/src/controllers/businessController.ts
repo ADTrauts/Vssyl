@@ -10,7 +10,7 @@ interface CreateBusinessRequest {
   industry?: string;
   size?: string;
   website?: string;
-  address?: any;
+  address?: Record<string, unknown>;
   phone?: string;
   email?: string;
   description?: string;
@@ -21,11 +21,11 @@ interface UpdateBusinessRequest {
   industry?: string;
   size?: string;
   website?: string;
-  address?: any;
+  address?: Record<string, unknown>;
   phone?: string;
   email?: string;
   description?: string;
-  branding?: any;
+  branding?: Record<string, unknown>;
 }
 
 interface InviteMemberRequest {
@@ -56,7 +56,8 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error as Error;
   console.error('Business Controller Error:', error);
   res.status(500).json({ success: false, error: message });
 };
@@ -100,7 +101,7 @@ export const createBusiness = async (req: Request, res: Response) => {
             name: `${businessData.name} Dashboard`
           }
         }
-      },
+      } as any,
       include: {
         members: {
           include: {
@@ -623,7 +624,7 @@ export const updateBusiness = async (req: Request, res: Response) => {
     // Update business
     const business = await prisma.business.update({
       where: { id },
-      data: updateData,
+      data: updateData as any,
       include: {
         members: {
           where: {
@@ -1141,6 +1142,7 @@ export const getBusinessSetupStatus = async (req: Request, res: Response) => {
 };
 
 // Helper function to generate activity descriptions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getActivityDescription = (activity: any): string => {
   const { type, details } = activity;
   

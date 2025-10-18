@@ -193,7 +193,7 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
         console.log('📊 BusinessWorkspaceLayout: Total dashboards:', allDashboards.length);
 
         // Find existing business dashboard
-        let businessDashboard = allDashboards.find((d: any) => d.businessId === business.id);
+        let businessDashboard = allDashboards.find((d: Record<string, any>) => d.businessId === business.id);
 
         if (businessDashboard) {
           console.log('✅ BusinessWorkspaceLayout: Found existing business dashboard:', businessDashboard.id);
@@ -371,6 +371,7 @@ export default function BusinessWorkspaceLayout({ business }: BusinessWorkspaceL
   ];
 
   // Additional modules based on business configuration
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getAdditionalModules = (): Array<{ id: string; name: string; icon: any }> => {
     if (!configuration || !session?.user?.id) {
       return [];

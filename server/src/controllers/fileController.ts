@@ -50,6 +50,7 @@ export const multerUpload = upload.single('file') as RequestHandler;
 
 // Add error handling wrapper for multer
 export const multerUploadWithErrorHandling = (req: Request, res: Response, next: Function) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   multerUpload(req, res, (err: any) => {
     if (err) {
       return res.status(400).json({ message: 'File upload error: ' + err.message });
@@ -58,6 +59,7 @@ export const multerUploadWithErrorHandling = (req: Request, res: Response, next:
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
   return user && typeof user.id === 'string';
 }
@@ -70,6 +72,7 @@ export async function listFiles(req: Request, res: Response) {
     const starred = req.query.starred as string;
     const dashboardId = req.query.dashboardId as string; // NEW: Dashboard context filtering
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { userId };
     
     if (folderId) {
@@ -122,7 +125,7 @@ export async function listFiles(req: Request, res: Response) {
     const files = await prisma.$queryRawUnsafe(query, ...params) as Array<any>;
     
     // Add full URLs to all files
-    const filesWithFullUrls = files.map((file: any) => ({
+    const filesWithFullUrls = files.map((file: Record<string, any>) => ({
       ...file,
       url: `${process.env.BACKEND_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}${file.url}`
     }));

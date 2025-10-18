@@ -40,8 +40,10 @@ const UnifiedGlobalChatMessageItem = React.memo(({
   formatTime,
   hasEnterprise
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: any;
   isOwn: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onReply: (message: any) => void;
   onDelete: (messageId: string) => void;
   formatTime: (timestamp: string) => string;
@@ -171,6 +173,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isOwnMessage = (message: any): boolean => {
     return message.senderId === session?.user?.id || message.sender?.id === session?.user?.id;
   };
@@ -206,6 +209,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleReply = (message: any) => {
     setReplyToMessage(message);
   };
@@ -217,6 +221,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     toast('Message deletion coming soon', { icon: 'ℹ️' });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleConversationSelect = (conversation: any) => {
     // Use ChatContext to set active conversation - syncs with main chat!
     setActiveConversationInContext(conversation);
@@ -234,7 +239,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     
     // Then filter by search query
     return conv.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      conv.participants?.some((p: any) => 
+      conv.participants?.some((p: Record<string, any>) => 
         p.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
       );

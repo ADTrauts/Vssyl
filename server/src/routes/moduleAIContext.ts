@@ -67,9 +67,10 @@ router.post(
         message: 'Module AI context registered successfully',
         registry: registered,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error registering module AI context:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -94,9 +95,10 @@ router.get(
       }
 
       res.json(registry);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting module AI context:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -124,9 +126,10 @@ router.post(
       const analysis = await moduleAIContextService.analyzeQuery(query, userId);
 
       res.json(analysis);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error analyzing query:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -152,9 +155,10 @@ router.get(
       );
 
       res.json(context);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error fetching module context:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -176,9 +180,10 @@ router.delete(
         success: true,
         message: 'AI context cache cleared successfully',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error clearing context cache:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -201,9 +206,10 @@ router.delete(
         success: true,
         message: `Cache invalidated for module: ${moduleId}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error invalidating module cache:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -238,9 +244,10 @@ router.get(
       });
 
       res.json(registries);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting module registries:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -261,9 +268,10 @@ router.get(
       const analytics = await moduleAIContextService.getModuleAnalytics(moduleId, days);
 
       res.json(analytics);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting module analytics:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -302,7 +310,7 @@ router.get(
       });
 
       // Group by module and calculate aggregates
-      const modulePerformance = metrics.reduce((acc: any, metric: any) => {
+      const modulePerformance = metrics.reduce((acc: Record<string, any>, metric: Record<string, any>) => {
         const moduleId = metric.moduleId;
         if (!acc[moduleId]) {
           acc[moduleId] = {
@@ -331,7 +339,7 @@ router.get(
       }, {});
 
       // Calculate averages
-      Object.values(modulePerformance).forEach((module: any) => {
+      Object.values(modulePerformance).forEach((module: Record<string, any>) => {
         module.averageLatency =
           module.totals.queryCount > 0
             ? module.totals.totalLatency / module.totals.queryCount
@@ -347,9 +355,10 @@ router.get(
         endDate: new Date(),
         modules: Object.values(modulePerformance),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting module performance:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -369,9 +378,10 @@ router.get(
       const modules = await moduleAIContextService.getModulesByCategory(category);
 
       res.json(modules);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting modules by category:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -395,9 +405,10 @@ router.post(
       const modules = await moduleAIContextService.searchByKeywords(keywords);
 
       res.json(modules);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error searching modules by keywords:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -590,12 +601,13 @@ router.post(
           });
 
           console.log(`✅ Registered: ${moduleId}`);
-        } catch (error: any) {
-          console.error(`❌ Error registering ${moduleId}:`, error.message);
+        } catch (error: unknown) {
+          const err = error as Error;
+          console.error(`❌ Error registering ${moduleId}:`, err.message);
           results.push({
             moduleId,
             success: false,
-            error: error.message,
+            error: err.message,
           });
         }
       }
@@ -611,9 +623,10 @@ router.post(
         results,
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error in manual module registration:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -650,9 +663,10 @@ router.post(
         },
         details: result.details,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error in module registry sync:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );
@@ -678,9 +692,10 @@ router.get(
         success: true,
         status,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Error getting sync status:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: err.message });
     }
   }
 );

@@ -43,6 +43,7 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to get organization info
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getOrganizationInfo = (user: any) => {
   if (user.businesses && user.businesses.length > 0) {
     const membership = user.businesses[0];
@@ -66,7 +67,8 @@ const getOrganizationInfo = (user: any) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error as Error;
   console.error('Chat Controller Error:', error);
   res.status(500).json({ success: false, error: message });
 };
@@ -219,6 +221,7 @@ export const getConversations = async (req: Request, res: Response) => {
     const { dashboardId } = req.query;
 
     // Base query for conversations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       participants: {
         some: {
@@ -439,6 +442,7 @@ export const getMessages = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {
       conversationId,
       deletedAt: null
@@ -878,7 +882,7 @@ export const addReaction = async (req: Request, res: Response) => {
     });
 
     let action: 'added' | 'removed';
-    let reactionData: any = null;
+    let reactionData: Record<string, any> | null = null;
 
     if (existingReaction) {
       // Remove existing reaction (toggle)
@@ -1213,7 +1217,8 @@ export const getChatAnalytics = async (req: Request, res: Response) => {
     }
 
     // Build date filter
-    const dateFilter: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dateFilter: any = {};
     if (startDate || endDate) {
       dateFilter.createdAt = {};
       if (startDate) dateFilter.createdAt.gte = new Date(startDate as string);
@@ -1297,6 +1302,7 @@ export const getChatAnalytics = async (req: Request, res: Response) => {
 
 // Helper function to get message activity by day
 async function getMessageActivityByDay(userId: string, startDate?: string, endDate?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dateFilter: any = {};
   if (startDate || endDate) {
     dateFilter.createdAt = {};
@@ -1335,6 +1341,7 @@ async function getMessageActivityByDay(userId: string, startDate?: string, endDa
 
 // Helper function to get top reactors
 async function getTopReactors(userId: string, startDate?: string, endDate?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dateFilter: any = {};
   if (startDate || endDate) {
     dateFilter.createdAt = {};
@@ -1364,6 +1371,7 @@ async function getTopReactors(userId: string, startDate?: string, endDate?: stri
   });
 
   // Group by user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userReactions: Record<string, { user: any; count: number }> = {};
   reactions.forEach(reaction => {
     const userId = reaction.user.id;
@@ -1380,6 +1388,7 @@ async function getTopReactors(userId: string, startDate?: string, endDate?: stri
 
 // Helper function to get response time statistics
 async function getResponseTimeStats(userId: string, startDate?: string, endDate?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dateFilter: any = {};
   if (startDate || endDate) {
     dateFilter.createdAt = {};

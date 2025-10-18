@@ -34,7 +34,7 @@ export async function getUpcomingEventsContext(req: Request, res: Response) {
       select: { id: true }
     });
     
-    const calendarIds = userCalendars.map((c: any) => c.id);
+    const calendarIds = userCalendars.map((c: Record<string, any>) => c.id);
     
     // Get events for the next 7 days
     const now = new Date();
@@ -58,7 +58,7 @@ export async function getUpcomingEventsContext(req: Request, res: Response) {
     
     // Group events by day
     const eventsByDay = new Map<string, any[]>();
-    upcomingEvents.forEach((event: any) => {
+    upcomingEvents.forEach((event: Record<string, any>) => {
       const dayKey = event.startAt.toISOString().split('T')[0];
       if (!eventsByDay.has(dayKey)) {
         eventsByDay.set(dayKey, []);
@@ -68,7 +68,7 @@ export async function getUpcomingEventsContext(req: Request, res: Response) {
     
     // Format for AI consumption
     const context = {
-      upcomingEvents: upcomingEvents.map((event: any) => ({
+      upcomingEvents: upcomingEvents.map((event: Record<string, any>) => ({
         id: event.id,
         title: event.title,
         description: event.description || null,
@@ -142,7 +142,7 @@ export async function getTodayScheduleContext(req: Request, res: Response) {
       select: { id: true }
     });
     
-    const calendarIds = userCalendars.map((c: any) => c.id);
+    const calendarIds = userCalendars.map((c: Record<string, any>) => c.id);
     
     // Get today's date range (midnight to midnight)
     const today = new Date();
@@ -180,17 +180,17 @@ export async function getTodayScheduleContext(req: Request, res: Response) {
     
     // Calculate free time blocks
     const timedEvents = todaysEvents
-      .filter((e: any) => !e.allDay)
-      .sort((a: any, b: any) => a.startAt.getTime() - b.startAt.getTime());
+      .filter((e: Record<string, any>) => !e.allDay)
+      .sort((a: Record<string, any>, b: Record<string, any>) => (a.startAt as Date).getTime() - (b.startAt as Date).getTime());
     
     const now = new Date();
-    const currentOrNextEvent = timedEvents.find((e: any) => e.endAt > now);
+    const currentOrNextEvent = timedEvents.find((e: Record<string, any>) => (e.endAt as Date) > now);
     
     // Format for AI consumption
     const context = {
       todaySchedule: {
         date: today.toISOString().split('T')[0],
-        events: todaysEvents.map((event: any) => ({
+        events: todaysEvents.map((event: Record<string, any>) => ({
           id: event.id,
           title: event.title,
           startTime: event.startAt.toISOString(),
@@ -202,12 +202,12 @@ export async function getTodayScheduleContext(req: Request, res: Response) {
                   event.startAt <= now && event.endAt > now ? 'in-progress' : 
                   'upcoming'
         })),
-        allDayEvents: todaysEvents.filter((e: any) => e.allDay).map((e: any) => e.title)
+        allDayEvents: todaysEvents.filter((e: Record<string, any>) => e.allDay).map((e: Record<string, any>) => e.title)
       },
       summary: {
         totalEvents: todaysEvents.length,
         timedEvents: timedEvents.length,
-        allDayEvents: todaysEvents.filter((e: any) => e.allDay).length,
+        allDayEvents: todaysEvents.filter((e: Record<string, any>) => e.allDay).length,
         currentEvent: currentOrNextEvent && currentOrNextEvent.startAt <= now ? {
           title: currentOrNextEvent.title,
           endsAt: currentOrNextEvent.endAt.toISOString()
@@ -287,7 +287,7 @@ export async function checkAvailability(req: Request, res: Response) {
       select: { id: true }
     });
     
-    const calendarIds = userCalendars.map((c: any) => c.id);
+    const calendarIds = userCalendars.map((c: Record<string, any>) => c.id);
     
     // Check for conflicting events
     const conflictingEvents = await prisma.event.findMany({
@@ -328,7 +328,7 @@ export async function checkAvailability(req: Request, res: Response) {
     res.json({
       success: true,
       available: isAvailable,
-      conflicts: conflictingEvents.map((event: any) => ({
+      conflicts: conflictingEvents.map((event: Record<string, any>) => ({
         id: event.id,
         title: event.title,
         startTime: event.startAt.toISOString(),

@@ -20,6 +20,7 @@ export async function listCalendars(req: Request, res: Response) {
   // Optional filters: contextType, contextId
   const { contextType, contextId } = req.query as { contextType?: string; contextId?: string };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
     OR: [
       { members: { some: { userId } } },
@@ -166,6 +167,7 @@ export async function listEventsInRange(req: Request, res: Response) {
     });
     calendarIdList = allowed.map(c => c.id);
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereCalendar: any = { OR: [{ members: { some: { userId } } }, { contextType: 'PERSONAL', contextId: userId }] };
     
     if (contextFilters.length > 0) {
@@ -293,7 +295,8 @@ export async function searchEvents(req: Request, res: Response) {
     }
     
     // Build search query
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {
       OR: [
         { title: { contains: text as string, mode: 'insensitive' } },
         { description: { contains: text as string, mode: 'insensitive' } },
@@ -395,7 +398,8 @@ export async function checkConflicts(req: Request, res: Response) {
     const calendarIdArray = Array.isArray(calendarIds) ? calendarIds : calendarIds ? [calendarIds] : [];
     
     // Build conflict query
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {
       startAt: { lt: endDate },
       endAt: { gt: startDate },
     };
@@ -487,9 +491,9 @@ export async function createEvent(req: Request, res: Response) {
   }
 
   // Determine default reminders if none provided
-  let remindersData: any = undefined;
+  let remindersData: Record<string, any> | undefined = undefined;
   if (Array.isArray(reminders) && reminders.length > 0) {
-    remindersData = { create: reminders.map((r: any) => ({ method: r.method || 'APP', minutesBefore: r.minutesBefore ?? 10 })) };
+    remindersData = { create: reminders.map((r: Record<string, any>) => ({ method: r.method || 'APP', minutesBefore: r.minutesBefore ?? 10 })) };
   } else {
     // Use calendar default for timed events; 9:00 AM local for all-day
     if (cal) {
@@ -522,7 +526,7 @@ export async function createEvent(req: Request, res: Response) {
       recurrenceEndAt: recurrenceEndAt ? new Date(recurrenceEndAt) : null,
       createdById: userId,
       attendees: attendees && Array.isArray(attendees)
-        ? { create: attendees.map((a: any) => ({ userId: a.userId, email: a.email, response: a.response || 'NEEDS_ACTION' })) }
+        ? { create: attendees.map((a: Record<string, any>) => ({ userId: a.userId, email: a.email, response: a.response || 'NEEDS_ACTION' })) }
         : { create: [] },
       reminders: remindersData
     } as any),
@@ -551,7 +555,7 @@ export async function createEvent(req: Request, res: Response) {
   }
   // Send email invites (MVP): email-only attendees
   try {
-    const attendeeEmails = (attendees || []).map((a: any) => a.email).filter(Boolean);
+    const attendeeEmails = (attendees || []).map((a: Record<string, any>) => a.email).filter(Boolean);
     if (attendeeEmails.length > 0) {
       // Build richer ICS with organizer/attendees/rrule
       const dtStart = new Date(event.startAt).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
@@ -676,7 +680,7 @@ export async function updateEvent(req: Request, res: Response) {
     await prisma.eventAttendee.deleteMany({ where: { eventId: id } });
     if (data.attendees.length > 0) {
       await prisma.eventAttendee.createMany({
-        data: data.attendees.map((a: any) => ({ eventId: id, userId: a.userId || null, email: a.email || null, response: a.response || 'NEEDS_ACTION' }))
+        data: data.attendees.map((a: Record<string, any>) => ({ eventId: id, userId: a.userId || null, email: a.email || null, response: a.response || 'NEEDS_ACTION' }))
       });
     }
   }
@@ -985,7 +989,7 @@ export async function importIcsEvents(req: Request, res: Response) {
     // Parse ICS content
     const lines = icsContent.split('\n');
     const events = [];
-    let currentEvent: any = {};
+    let currentEvent: Record<string, any> = {};
     let inEvent = false;
     
     for (const line of lines) {
@@ -1130,7 +1134,8 @@ export async function exportIcsEvents(req: Request, res: Response) {
     }
     
     // Build query
-    const where: any = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const where: any = {
       startAt: { gte: new Date(start as string) },
       endAt: { lte: new Date(end as string) }
     };
