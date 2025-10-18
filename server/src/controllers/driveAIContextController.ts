@@ -56,7 +56,7 @@ export async function getRecentFilesContext(req: Request, res: Response) {
     
     // Format for AI consumption
     const context = {
-      recentFiles: recentFiles.map((file: any) => ({
+      recentFiles: recentFiles.map((file: Record<string, any>) => ({
         id: file.id,
         name: file.name,
         type: file.type,

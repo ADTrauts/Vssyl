@@ -14,7 +14,8 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error as Error;
   console.error('Search Controller Error:', error);
   res.status(500).json({ success: false, error: message });
 };

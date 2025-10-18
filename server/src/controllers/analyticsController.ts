@@ -152,22 +152,28 @@ export const getPersonalAnalytics = async (req: Request, res: Response) => {
 };
 
 // Helper function to generate activity descriptions
-const getActivityDescription = (activity: any): string => {
+interface ActivityRecord {
+  type: string;
+  details?: unknown; // Prisma JsonValue
+}
+
+const getActivityDescription = (activity: ActivityRecord): string => {
   const { type, details } = activity;
+  const detailsObj = details as Record<string, unknown> | undefined;
   
   switch (type) {
     case 'file_created':
-      return `Created ${details?.fileName || 'a file'}`;
+      return `Created ${detailsObj?.fileName || 'a file'}`;
     case 'file_edited':
-      return `Edited ${details?.fileName || 'a file'}`;
+      return `Edited ${detailsObj?.fileName || 'a file'}`;
     case 'file_shared':
-      return `Shared ${details?.fileName || 'a file'}`;
+      return `Shared ${detailsObj?.fileName || 'a file'}`;
     case 'message_sent':
-      return `Sent message in ${details?.conversationName || 'a conversation'}`;
+      return `Sent message in ${detailsObj?.conversationName || 'a conversation'}`;
     case 'module_accessed':
-      return `Accessed ${details?.moduleName || 'a module'}`;
+      return `Accessed ${detailsObj?.moduleName || 'a module'}`;
     case 'connection_made':
-      return `Connected with ${details?.userName || 'a user'}`;
+      return `Connected with ${detailsObj?.userName || 'a user'}`;
     default:
       return 'Performed an action';
   }

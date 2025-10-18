@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 
-function hasUserId(user: any): user is { id: string } | { sub: string } {
-  return user && (typeof user.id === 'string' || typeof user.sub === 'string');
+function hasUserId(user: unknown): user is { id: string } | { sub: string } {
+  return typeof user === 'object' && user !== null && 
+    ('id' in user && typeof (user as Record<string, unknown>).id === 'string' ||
+     'sub' in user && typeof (user as Record<string, unknown>).sub === 'string');
 }
 
 interface TrashItemRequest {

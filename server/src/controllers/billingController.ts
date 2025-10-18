@@ -333,7 +333,7 @@ export const getUsage = async (req: Request, res: Response) => {
     // Get module subscription usage
     const moduleSubscriptions = await moduleSubscriptionService.getUserModuleSubscriptions(userId);
     const moduleUsage = await Promise.all(
-      moduleSubscriptions.map(async (sub: any) => {
+      moduleSubscriptions.map(async (sub: Record<string, any>) => {
         const usage = await moduleSubscriptionService.getModuleSubscriptionUsage(sub.id);
         return {
           moduleId: sub.moduleId,

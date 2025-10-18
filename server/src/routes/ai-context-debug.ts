@@ -313,8 +313,8 @@ router.post('/validate', authenticateJWT, requireAdmin, async (req, res) => {
     });
 
     // Overall validation status
-    const failedChecks = validationResults.checks.filter((check: any) => check.status === 'FAIL').length;
-    const warningChecks = validationResults.checks.filter((check: any) => check.status === 'WARN').length;
+    const failedChecks = validationResults.checks.filter((check: Record<string, any>) => check.status === 'FAIL').length;
+    const warningChecks = validationResults.checks.filter((check: Record<string, any>) => check.status === 'WARN').length;
     
     validationResults.overallStatus = failedChecks > 0 ? 'FAIL' : warningChecks > 0 ? 'WARN' : 'PASS';
 

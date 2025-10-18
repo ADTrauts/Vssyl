@@ -6,7 +6,32 @@ import { NotificationService } from '../services/notificationService';
 import { prisma } from '../lib/prisma';
 
 // Helper function to get organization info from memberships
-const getOrganizationInfo = (user: any) => {
+interface UserWithBusiness {
+  businesses?: Array<{
+    business: {
+      id: string;
+      name: string;
+      logo?: string;
+    };
+    role: string;
+  }>;
+  institutionMembers?: Array<{
+    institution: {
+      id: string;
+      name: string;
+    };
+    role: string;
+  }>;
+  households?: Array<{
+    household: {
+      id: string;
+      name: string;
+    };
+    role: string;
+  }>;
+}
+
+const getOrganizationInfo = (user: UserWithBusiness) => {
   // Check for business membership first
   if (user.businesses && user.businesses.length > 0) {
     const businessMembership = user.businesses[0];
@@ -387,6 +412,7 @@ export const getConnections = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       OR: [
         { senderId: currentUserId },
