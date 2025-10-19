@@ -15,9 +15,12 @@ import {
   XCircle,
   RefreshCw,
   Download,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
+import { ApplicationLogsViewer } from '../../../components/admin/ApplicationLogsViewer';
+import { LogFilters } from '../../../api/logs';
 
 interface SecurityEvent {
   id: string;
@@ -54,6 +57,7 @@ interface ComplianceStatus {
 }
 
 export default function SecurityPage() {
+  const [activeTab, setActiveTab] = useState<'security' | 'logs'>('security');
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [securityMetrics, setSecurityMetrics] = useState<SecurityMetrics | null>(null);
   const [complianceStatus, setComplianceStatus] = useState<ComplianceStatus | null>(null);
@@ -64,6 +68,11 @@ export default function SecurityPage() {
     severity: 'all',
     status: 'all',
     timeRange: '24h'
+  });
+  const [logFilters, setLogFilters] = useState<LogFilters>({
+    level: undefined,
+    service: undefined,
+    startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Last 24 hours
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
 
@@ -229,6 +238,34 @@ export default function SecurityPage() {
             <span className="text-sm font-medium">Refresh</span>
           </button>
         </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'security'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Shield className="w-5 h-5 inline-block mr-2" />
+            Security Events
+          </button>
+          <button
+            onClick={() => setActiveTab('logs')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'logs'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <FileText className="w-5 h-5 inline-block mr-2" />
+            Application Logs
+          </button>
+        </nav>
       </div>
 
       {/* Error Alert */}
@@ -500,6 +537,104 @@ export default function SecurityPage() {
           </div>
         </div>
       </Card>
+
+      {/* Tab Content */}
+      {activeTab === 'security' && (
+        <>
+          {/* Security Events */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Security Events</h3>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Filters:</span>
+                <select
+                  value={filters.severity}
+                  onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="all">All severities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+                <select
+                  value={filters.timeRange}
+                  onChange={(e) => setFilters({ ...filters, timeRange: e.target.value })}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="1h">Last hour</option>
+                  <option value="24h">Last 24 hours</option>
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {securityEvents.length === 0 ? (
+                <div className="text-center py-8">
+                  <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No security events found.</p>
+                </div>
+              ) : (
+                securityEvents.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${getSeverityColor(event.severity)}`}>
+                        {getSeverityIcon(event.severity)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{event.eventType}</p>
+                        <p className="text-sm text-gray-600">
+                          {event.userEmail || event.adminEmail} • {event.ipAddress} • {new Date(event.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        event.resolved 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {event.resolved ? 'Resolved' : 'Active'}
+                      </span>
+                      {!event.resolved && (
+                        <button
+                          onClick={() => resolveEvent(event.id)}
+                          className="px-ul-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          Resolve
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </>
+      )}
+
+      {activeTab === 'logs' && (
+        <ApplicationLogsViewer
+          filters={logFilters}
+          onFilterChange={setLogFilters}
+          autoRefresh={autoRefresh}
+          onLogClick={(log) => {
+            console.log('Log clicked:', log);
+          }}
+        />
+      )}
     </div>
   );
 } 

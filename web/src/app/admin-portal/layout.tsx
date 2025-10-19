@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { redirect } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Shield, LayoutDashboard, Users, BarChart3, CreditCard, Code, Lock, Settings, Activity, LogOut, User, Eye, Home, DollarSign, Package, UserCheck, Key, Bug, Brain, MessageSquare, Search } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, BarChart3, CreditCard, Code, Lock, Settings, Activity, LogOut, User, Eye, Home, DollarSign, Package, UserCheck, Key, Bug, Brain, MessageSquare, Search, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
@@ -58,6 +58,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },
     { id: 'developers', label: 'Developer Management', icon: Code, path: '/admin-portal/developers' },
     { id: 'security', label: 'Security & Compliance', icon: Lock, path: '/admin-portal/security' },
+    { id: 'system-logs', label: 'System Logs', icon: FileText, path: '/admin-portal/system-logs' },
     { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
     { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
     { id: 'business-intelligence', label: 'Business Intelligence', icon: Brain, path: '/admin-portal/business-intelligence' },

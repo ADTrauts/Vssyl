@@ -167,7 +167,8 @@ export async function listEventsInRange(req: Request, res: Response) {
     });
     calendarIdList = allowed.map(c => c.id);
   } else {
-    const whereCalendar: Record<string, unknown> = { OR: [{ members: { some: { userId } } }, { contextType: 'PERSONAL', contextId: userId }] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const whereCalendar: any = { OR: [{ members: { some: { userId } } }, { contextType: 'PERSONAL', contextId: userId }] };
     
     if (contextFilters.length > 0) {
       // Handle dashboard IDs - look up the dashboard to determine context type
