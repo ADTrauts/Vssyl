@@ -217,6 +217,73 @@ if (!hasUserId(req.user)) {
 3. **Use type guards**: Runtime type checking for dynamic data
 4. **Prisma JSON**: Use `Prisma.InputJsonValue` for JSON fields
 
+### When `any` IS Acceptable (With `eslint-disable`)
+
+Only use `any` for genuinely dynamic data with proper documentation:
+
+```typescript
+// ✅ ACCEPTABLE: AI/ML runtime data (structure varies by module)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+private async analyzeEventForPatterns(event: any): Promise<Pattern[]> {
+  // Event structure is runtime-determined by active modules
+}
+
+// ✅ ACCEPTABLE: Dynamic Prisma query builders
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const where: any = { userId };
+if (startDate) where.createdAt = { gte: startDate };
+
+// ✅ ACCEPTABLE: WebSocket event handlers (inherently dynamic)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+on(event: string, callback: (...args: any[]) => void): void {
+  // Each event type has different data structure
+}
+
+// ✅ ACCEPTABLE: Third-party API responses (structure varies by provider)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async processOAuth2Token(code: string): Promise<{ email: string; attributes: any }> {
+  // Different SSO providers return different attributes
+}
+```
+
+### Decision Tree: Should I Use `any`?
+
+```
+Do I know what this type is?
+├─ YES → ❌ Don't use any! Use specific type, interface, or unknown
+└─ NO → Is the structure determined at runtime?
+    ├─ YES → Is it genuinely dynamic (AI data, events, third-party APIs)?
+    │   ├─ YES → ✅ Use any with eslint-disable comment
+    │   └─ NO → ❌ Create a union type or use unknown
+    └─ NO → ❌ Don't use any! Type it properly
+```
+
+### Examples: Unacceptable vs Acceptable
+
+```typescript
+// ❌ UNACCEPTABLE: Helper function - type is known
+const getOrganizationInfo = (user: any) => { ... }
+// FIX: Create interface
+interface UserWithBusiness { businesses?: Array<...>; }
+const getOrganizationInfo = (user: UserWithBusiness) => { ... }
+
+// ❌ UNACCEPTABLE: Array with known type
+recentFiles.map((file: any) => ({ id: file.id }))
+// FIX: Use proper type
+recentFiles.map((file: Record<string, any>) => ({ id: file.id }))
+
+// ❌ UNACCEPTABLE: Variable that should infer
+let result: any = await prisma.user.findUnique({ ... });
+// FIX: Let TypeScript infer
+let result = await prisma.user.findUnique({ ... });
+
+// ✅ ACCEPTABLE: AI learning data (truly dynamic)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+private processLearningEvent(event: any): void {
+  // Event structure varies by module and runtime configuration
+}
+```
+
 ---
 
 ## 🗄️ Database & Prisma Configuration
