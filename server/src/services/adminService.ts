@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcrypt';
 import { SupportTicketEmailService } from './supportTicketEmailService';
 import { SecurityService } from './securityService';
+import { logger } from '../lib/logger';
 
 // ============================================================================
 // INTERFACES
@@ -398,7 +399,13 @@ export class AdminService {
 
   static async updateUserStatus(userId: string, status: string, adminId: string, reason?: string) {
     // Note: User model doesn't have a status field, so we'll log this action instead
-    console.log(`Admin ${adminId} attempted to update user ${userId} status to ${status}. Reason: ${reason || 'No reason provided'}`);
+    await logger.info('Admin attempted to update user status', {
+      operation: 'admin_update_user_status',
+      adminId,
+      userId,
+      status,
+      reason: reason || 'No reason provided'
+    });
     
     // For now, return the user without status update since the field doesn't exist
     const user = await prisma.user.findUnique({
@@ -418,7 +425,11 @@ export class AdminService {
       data: { password: hashedPassword }
     });
 
-    console.log(`Admin ${adminId} reset password for user ${userId}`);
+    await logger.logSecurityEvent('password_reset_by_admin', 'medium', {
+      operation: 'admin_reset_user_password',
+      adminId,
+      userId
+    });
 
     return { message: 'Password reset successfully' };
   }
@@ -504,7 +515,13 @@ export class AdminService {
         totalPages: Math.ceil(total / limit)
       };
     } catch (error) {
-      console.error('Error getting reported content:', error);
+      await logger.error('Failed to get reported content', {
+        operation: 'admin_get_reported_content',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -545,7 +562,13 @@ export class AdminService {
         updatedAt: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error updating report status:', error);
+      await logger.error('Failed to update report status', {
+        operation: 'admin_update_report_status',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -582,7 +605,13 @@ export class AdminService {
 
       return report;
     } catch (error) {
-      console.error('Error creating content report:', error);
+      await logger.error('Failed to create content report', {
+        operation: 'admin_create_content_report',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -608,7 +637,13 @@ export class AdminService {
         resolved: resolvedReports
       };
     } catch (error) {
-      console.error('Error getting moderation stats:', error);
+      await logger.error('Failed to get moderation statistics', {
+        operation: 'admin_get_moderation_stats',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -760,7 +795,13 @@ export class AdminService {
         }
       };
     } catch (error) {
-      console.error('Error getting analytics:', error);
+      await logger.error('Failed to get analytics', {
+        operation: 'admin_get_analytics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -778,7 +819,13 @@ export class AdminService {
         return JSON.stringify(analyticsData, null, 2);
       }
     } catch (error) {
-      console.error('Error exporting analytics:', error);
+      await logger.error('Failed to export analytics', {
+        operation: 'admin_export_analytics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -824,7 +871,13 @@ export class AdminService {
         }))
       };
     } catch (error) {
-      console.error('Error getting real-time metrics:', error);
+      await logger.error('Failed to get real-time metrics', {
+        operation: 'admin_get_realtime_metrics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1084,7 +1137,13 @@ export class AdminService {
         return JSON.stringify(events, null, 2);
       }
     } catch (error) {
-      console.error('Error exporting security report:', error);
+      await logger.error('Failed to export security report', {
+        operation: 'admin_export_security_report',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1143,7 +1202,13 @@ export class AdminService {
         }
       ];
     } catch (error) {
-      console.error('Error getting moderation rules:', error);
+      await logger.error('Failed to get moderation rules', {
+        operation: 'admin_get_moderation_rules',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1175,7 +1240,13 @@ export class AdminService {
         results: results
       };
     } catch (error) {
-      console.error('Error performing bulk moderation action:', error);
+      await logger.error('Failed to perform bulk moderation action', {
+        operation: 'admin_bulk_moderate',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1189,7 +1260,13 @@ export class AdminService {
       const { SystemMonitoringService } = await import('./systemMonitoringService');
       return await SystemMonitoringService.getSystemHealth();
     } catch (error) {
-      console.error('Error getting system health:', error);
+      await logger.error('Failed to get system health', {
+        operation: 'admin_get_system_health',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       // Fallback to basic metrics
       return {
         cpu: 0,
@@ -1230,7 +1307,11 @@ export class AdminService {
       }
     });
 
-    console.log(`Admin ${adminId} updated system configuration: ${configKey}`);
+    await logger.info('Admin updated system configuration', {
+      operation: 'admin_update_system_config',
+      adminId,
+      configKey
+    });
 
     return config;
   }
@@ -1244,7 +1325,13 @@ export class AdminService {
       const { SystemMonitoringService } = await import('./systemMonitoringService');
       return await SystemMonitoringService.getBackupStatus();
     } catch (error) {
-      console.error('Error getting backup status:', error);
+      await logger.error('Failed to get backup status', {
+        operation: 'admin_get_backup_status',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       // Fallback to basic status
       return {
         lastBackup: new Date().toISOString(),
@@ -1259,7 +1346,10 @@ export class AdminService {
   static async createBackup(adminId: string) {
     try {
       // Mock backup creation - in a real implementation, this would create an actual backup
-      console.log(`Admin ${adminId} initiated backup creation`);
+      await logger.info('Admin initiated backup creation', {
+      operation: 'admin_create_backup',
+      adminId
+    });
       
       // Log the backup action
       await this.logSecurityEvent({
@@ -1278,7 +1368,13 @@ export class AdminService {
         message: 'Backup created successfully'
       };
     } catch (error) {
-      console.error('Error creating backup:', error);
+      await logger.error('Failed to create backup', {
+        operation: 'admin_create_backup',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1288,7 +1384,13 @@ export class AdminService {
       const { SystemMonitoringService } = await import('./systemMonitoringService');
       return await SystemMonitoringService.getMaintenanceMode();
     } catch (error) {
-      console.error('Error getting maintenance mode:', error);
+      await logger.error('Failed to get maintenance mode', {
+        operation: 'admin_get_maintenance_mode',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       // Fallback to basic status
       return {
         enabled: false,
@@ -1323,7 +1425,13 @@ export class AdminService {
         updatedAt: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error setting maintenance mode:', error);
+      await logger.error('Failed to set maintenance mode', {
+        operation: 'admin_set_maintenance_mode',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -1529,7 +1637,13 @@ export class AdminService {
 
       return submissions;
     } catch (error) {
-      console.error('Error getting module submissions:', error);
+      await logger.error('Failed to get module submissions', {
+        operation: 'admin_get_module_submissions',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get module submissions');
     }
   }
@@ -1614,7 +1728,13 @@ export class AdminService {
         topCategory: topCategory[0]?.category || 'N/A'
       };
     } catch (error) {
-      console.error('Error getting module stats:', error);
+      await logger.error('Failed to get module statistics', {
+        operation: 'admin_get_module_stats',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get module stats');
     }
   }
@@ -1709,7 +1829,13 @@ export class AdminService {
 
       return updatedSubmission;
     } catch (error) {
-      console.error('Error reviewing module submission:', error);
+      await logger.error('Failed to review module submission', {
+        operation: 'admin_review_module_submission',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to review module submission');
     }
   }
@@ -1731,7 +1857,13 @@ export class AdminService {
         results
       };
     } catch (error) {
-      console.error('Error performing bulk module action:', error);
+      await logger.error('Failed to perform bulk module action', {
+        operation: 'admin_bulk_module_action',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to perform bulk module action');
     }
   }
@@ -1793,7 +1925,13 @@ export class AdminService {
         ratingStats
       };
     } catch (error) {
-      console.error('Error getting module analytics:', error);
+      await logger.error('Failed to get module analytics', {
+        operation: 'admin_get_module_analytics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get module analytics');
     }
   }
@@ -1836,7 +1974,13 @@ export class AdminService {
           : 0
       }));
     } catch (error) {
-      console.error('Error getting developer stats:', error);
+      await logger.error('Failed to get developer statistics', {
+        operation: 'admin_get_developer_stats',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get developer stats');
     }
   }
@@ -1878,7 +2022,13 @@ export class AdminService {
 
       return module;
     } catch (error) {
-      console.error('Error updating module status:', error);
+      await logger.error('Failed to update module status', {
+        operation: 'admin_update_module_status',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update module status');
     }
   }
@@ -1907,7 +2057,13 @@ export class AdminService {
         activeSubscriptions: revenue._count.id
       };
     } catch (error) {
-      console.error('Error getting module revenue:', error);
+      await logger.error('Failed to get module revenue', {
+        operation: 'admin_get_module_revenue',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get module revenue');
     }
   }
@@ -1950,7 +2106,13 @@ export class AdminService {
 
       return csvContent;
     } catch (error) {
-      console.error('Error exporting module data:', error);
+      await logger.error('Failed to export module data', {
+        operation: 'admin_export_module_data',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to export module data');
     }
   }
@@ -1992,7 +2154,13 @@ export class AdminService {
         competitiveAnalysis
       };
     } catch (error) {
-      console.error('Error getting business intelligence data:', error);
+      await logger.error('Failed to get business intelligence data', {
+        operation: 'admin_get_business_intelligence',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get business intelligence data');
     }
   }
@@ -2021,7 +2189,13 @@ export class AdminService {
 
       return csvContent;
     } catch (error) {
-      console.error('Error exporting business intelligence data:', error);
+      await logger.error('Failed to export business intelligence data', {
+        operation: 'admin_export_business_intelligence',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to export business intelligence data');
     }
   }
@@ -2501,7 +2675,13 @@ export class AdminService {
         attachments: ticket.attachments.map(att => att.filename)
       }));
     } catch (error) {
-      console.error('Error getting support tickets:', error);
+      await logger.error('Failed to get support tickets', {
+        operation: 'admin_get_support_tickets',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get support tickets');
     }
   }
@@ -2677,7 +2857,13 @@ export class AdminService {
 
       return ticket;
     } catch (error) {
-      console.error('Error updating support ticket:', error);
+      await logger.error('Failed to update support ticket', {
+        operation: 'admin_update_support_ticket',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update support ticket');
     }
   }
@@ -2932,7 +3118,13 @@ export class AdminService {
 
       return ticket;
     } catch (error) {
-      console.error('Error creating support ticket:', error);
+      await logger.error('Failed to create support ticket', {
+        operation: 'admin_create_support_ticket',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to create support ticket');
     }
   }
