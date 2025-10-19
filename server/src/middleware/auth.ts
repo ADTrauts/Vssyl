@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Define the authenticated user interface that matches what we set in the middleware
 export interface AuthenticatedUser {
@@ -39,22 +40,29 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
-  console.log('Auth Middleware - Headers:', { 
+  await logger.debug('Authentication attempt', { 
+    operation: 'auth_attempt',
     hasAuthHeader: !!authHeader,
-    authHeaderValue: authHeader,
     tokenLength: token?.length,
     method: req.method,
-    path: req.path
+    path: req.path,
+    ipAddress: req.ip
   });
 
   if (!token) {
-    console.log('Auth Middleware - No token provided');
+    await logger.logSecurityEvent('auth_no_token', 'low', {
+      operation: 'auth_missing_token',
+      method: req.method,
+      path: req.path,
+      ipAddress: req.ip
+    });
     return res.status(401).json({ message: 'Access token required' });
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET!) as JWTPayload;
-    console.log('Auth Middleware - Token decoded:', { 
+    await logger.debug('JWT token decoded successfully', { 
+      operation: 'auth_token_decoded',
       userId: decoded.sub,
       email: decoded.email,
       role: decoded.role
@@ -91,7 +99,16 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
     
     next();
   } catch (error) {
-    console.log('Auth Middleware - Token verification failed:', error);
+    await logger.logSecurityEvent('auth_token_verification_failed', 'medium', {
+      operation: 'auth_token_verify_failed',
+      method: req.method,
+      path: req.path,
+      ipAddress: req.ip,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     return res.status(403).json({ message: 'Invalid or expired token' });
   }
 }

@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AdminService } from '../services/adminService';
+import { logger } from '../lib/logger';
 
 const router: express.Router = express.Router();
 
@@ -31,7 +32,13 @@ router.get('/test', authenticateJWT, requireAdmin, async (req: Request, res: Res
       }
     });
   } catch (error) {
-    console.error('Error in test endpoint:', error);
+    await logger.error('Admin test endpoint failed', {
+      operation: 'admin_test',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Test endpoint failed' });
   }
 });
@@ -67,7 +74,13 @@ router.get('/dashboard/stats', authenticateJWT, requireAdmin, async (req: Reques
       }
     });
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
+    await logger.error('Failed to fetch dashboard statistics', {
+      operation: 'admin_dashboard_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
   }
 });
@@ -85,7 +98,13 @@ router.get('/dashboard/activity', authenticateJWT, requireAdmin, async (req: Req
       data: recentActivity
     });
   } catch (error) {
-    console.error('Error fetching recent activity:', error);
+    await logger.error('Failed to fetch recent activity', {
+      operation: 'admin_recent_activity',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch recent activity' });
   }
 });
@@ -167,7 +186,14 @@ router.post('/users/:userId/impersonate', authenticateJWT, requireAdmin, async (
       }
     });
   } catch (error) {
-    console.error('Error starting impersonation:', error);
+    await logger.error('Failed to start user impersonation', {
+      operation: 'admin_impersonate_start',
+      userId: req.params.userId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to start impersonation' });
   }
 });
@@ -232,7 +258,13 @@ router.post('/impersonation/end', authenticateJWT, requireAdmin, async (req: Req
       }
     });
   } catch (error) {
-    console.error('Error ending impersonation:', error);
+    await logger.error('Failed to end user impersonation', {
+      operation: 'admin_impersonate_end',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to end impersonation' });
   }
 });
@@ -272,7 +304,13 @@ router.get('/impersonation/current', authenticateJWT, requireAdmin, async (req: 
       }
     });
   } catch (error) {
-    console.error('Error getting current impersonation:', error);
+    await logger.error('Failed to get current impersonation session', {
+      operation: 'admin_impersonate_get_current',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get current impersonation' });
   }
 });
@@ -310,7 +348,13 @@ router.get('/impersonation/history', authenticateJWT, requireAdmin, async (req: 
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error getting impersonation history:', error);
+    await logger.error('Failed to get impersonation history', {
+      operation: 'admin_impersonate_history',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get impersonation history' });
   }
 });
@@ -367,7 +411,14 @@ router.get('/users', authenticateJWT, requireAdmin, async (req: Request, res: Re
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    await logger.error('Failed to fetch users list', {
+      operation: 'admin_get_users',
+      filters: req.query,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -394,7 +445,14 @@ router.get('/users/:userId', authenticateJWT, requireAdmin, async (req: Request,
 
     res.json(user);
   } catch (error) {
-    console.error('Error fetching user details:', error);
+    await logger.error('Failed to fetch user details', {
+      operation: 'admin_get_user_details',
+      userId: req.params.userId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch user details' });
   }
 });
@@ -411,7 +469,13 @@ router.patch('/users/:userId/status', authenticateJWT, requireAdmin, async (req:
     }
 
     // Note: User model doesn't have a status field, so we'll just log the action
-    console.log(`Admin ${adminUser.id} attempted to update user ${userId} status to ${status}. Reason: ${reason || 'No reason provided'}`);
+    await logger.info('Admin attempted to update user status', {
+      operation: 'admin_update_user_status',
+      adminId: adminUser.id,
+      userId,
+      status,
+      reason: reason || 'No reason provided'
+    });
 
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -423,7 +487,14 @@ router.patch('/users/:userId/status', authenticateJWT, requireAdmin, async (req:
 
     res.json(user);
   } catch (error) {
-    console.error('Error updating user status:', error);
+    await logger.error('Failed to update user status', {
+      operation: 'admin_update_user_status',
+      userId: req.params.userId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update user status' });
   }
 });
@@ -440,11 +511,22 @@ router.post('/users/:userId/reset-password', authenticateJWT, requireAdmin, asyn
 
     // In a real implementation, you would hash the password and send it via email
     // For now, we'll just log the action
-    console.log(`Admin ${adminUser.id} reset password for user ${userId}`);
+    await logger.logSecurityEvent('password_reset_initiated', 'medium', {
+      operation: 'admin_reset_user_password',
+      adminId: adminUser.id,
+      userId
+    });
 
     res.json({ message: 'Password reset initiated' });
   } catch (error) {
-    console.error('Error resetting user password:', error);
+    await logger.error('Failed to reset user password', {
+      operation: 'admin_reset_user_password',
+      userId: req.params.userId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to reset user password' });
   }
 });
@@ -485,7 +567,14 @@ router.get('/moderation/reported', authenticateJWT, requireAdmin, async (req: Re
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching reported content:', error);
+    await logger.error('Failed to fetch reported content', {
+      operation: 'admin_get_reported_content_paginated',
+      filters: req.query,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch reported content' });
   }
 });
@@ -511,11 +600,25 @@ router.patch('/moderation/reports/:reportId', authenticateJWT, requireAdmin, asy
       }
     });
 
-    console.log(`Admin ${adminUser.id} updated report ${reportId} status to ${status}. Action: ${action}. Reason: ${reason || 'No reason provided'}`);
+    await logger.info('Admin updated content report', {
+      operation: 'admin_update_report',
+      adminId: adminUser.id,
+      reportId,
+      status,
+      action,
+      reason: reason || 'No reason provided'
+    });
 
     res.json(report);
   } catch (error) {
-    console.error('Error updating report:', error);
+    await logger.error('Failed to update content report', {
+      operation: 'admin_update_report',
+      reportId: req.params.reportId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update report' });
   }
 });
@@ -540,7 +643,13 @@ router.get('/analytics/system', authenticateJWT, requireAdmin, async (req: Reque
 
     res.json(metrics);
   } catch (error) {
-    console.error('Error fetching system metrics:', error);
+    await logger.error('Failed to fetch system metrics', {
+      operation: 'admin_get_system_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch system metrics' });
   }
 });
@@ -563,7 +672,13 @@ router.get('/analytics/users', authenticateJWT, requireAdmin, async (req: Reques
 
     res.json(userStats);
   } catch (error) {
-    console.error('Error fetching user analytics:', error);
+    await logger.error('Failed to fetch user analytics', {
+      operation: 'admin_get_user_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch user analytics' });
   }
 });
@@ -575,7 +690,13 @@ router.get('/analytics', authenticateJWT, requireAdmin, async (req: Request, res
     const analyticsData = await AdminService.getAnalytics(filters);
     res.json(analyticsData);
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    await logger.error('Failed to fetch analytics', {
+      operation: 'admin_get_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch analytics data' });
   }
 });
@@ -596,7 +717,13 @@ router.post('/analytics/export', authenticateJWT, requireAdmin, async (req: Requ
     
     res.send(exportData);
   } catch (error) {
-    console.error('Error exporting analytics:', error);
+    await logger.error('Failed to export analytics', {
+      operation: 'admin_export_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export analytics data' });
   }
 });
@@ -606,7 +733,13 @@ router.get('/analytics/realtime', authenticateJWT, requireAdmin, async (req: Req
     const realtimeData = await AdminService.getRealTimeMetrics();
     res.json(realtimeData);
   } catch (error) {
-    console.error('Error fetching real-time metrics:', error);
+    await logger.error('Failed to fetch real-time metrics', {
+      operation: 'admin_get_realtime_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch real-time metrics' });
   }
 });
@@ -617,7 +750,13 @@ router.post('/analytics/custom-report', authenticateJWT, requireAdmin, async (re
     const customReport = await AdminService.generateCustomReport(reportConfig);
     res.json(customReport);
   } catch (error) {
-    console.error('Error generating custom report:', error);
+    await logger.error('Failed to generate custom report', {
+      operation: 'admin_generate_custom_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to generate custom report' });
   }
 });
@@ -657,7 +796,13 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
+    await logger.error('Failed to fetch subscriptions', {
+      operation: 'admin_get_subscriptions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch subscriptions' });
   }
 });
@@ -673,7 +818,13 @@ router.get('/billing/payments', authenticateJWT, requireAdmin, async (req: Reque
     });
     res.json(result);
   } catch (error) {
-    console.error('Error fetching payments:', error);
+    await logger.error('Failed to fetch payments', {
+      operation: 'admin_get_payments',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch payments' });
   }
 });
@@ -720,7 +871,13 @@ router.get('/billing/payouts', authenticateJWT, requireAdmin, async (req: Reques
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching developer payouts:', error);
+    await logger.error('Failed to fetch developer payouts', {
+      operation: 'admin_get_developer_payouts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch developer payouts' });
   }
 });
@@ -756,7 +913,13 @@ router.get('/security/events', authenticateJWT, requireAdmin, async (req: Reques
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching security events:', error);
+    await logger.error('Failed to fetch security events', {
+      operation: 'admin_get_security_events',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch security events' });
   }
 });
@@ -788,7 +951,13 @@ router.get('/security/audit-logs', authenticateJWT, requireAdmin, async (req: Re
       totalPages: Math.ceil(total / Number(limit))
     });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    await logger.error('Failed to fetch audit logs', {
+      operation: 'admin_get_audit_logs',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch audit logs' });
   }
 });
@@ -800,7 +969,13 @@ router.get('/security/events', authenticateJWT, requireAdmin, async (req: Reques
     const securityEvents = await AdminService.getSecurityEvents(filters);
     res.json(securityEvents);
   } catch (error) {
-    console.error('Error fetching security events:', error);
+    await logger.error('Failed to fetch security events', {
+      operation: 'admin_get_security_events',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch security events' });
   }
 });
@@ -810,7 +985,13 @@ router.get('/security/metrics', authenticateJWT, requireAdmin, async (req: Reque
     const securityMetrics = await AdminService.getSecurityMetrics();
     res.json(securityMetrics);
   } catch (error) {
-    console.error('Error fetching security metrics:', error);
+    await logger.error('Failed to fetch security metrics', {
+      operation: 'admin_get_security_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch security metrics' });
   }
 });
@@ -820,7 +1001,13 @@ router.get('/security/compliance', authenticateJWT, requireAdmin, async (req: Re
     const complianceStatus = await AdminService.getComplianceStatus();
     res.json(complianceStatus);
   } catch (error) {
-    console.error('Error fetching compliance status:', error);
+    await logger.error('Failed to fetch compliance status', {
+      operation: 'admin_get_compliance_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch compliance status' });
   }
 });
@@ -837,7 +1024,14 @@ router.post('/security/events/:eventId/resolve', authenticateJWT, requireAdmin, 
     const result = await AdminService.resolveSecurityEvent(eventId, adminUser.id);
     res.json(result);
   } catch (error) {
-    console.error('Error resolving security event:', error);
+    await logger.error('Failed to resolve security event', {
+      operation: 'admin_resolve_security_event',
+      eventId: req.params.eventId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to resolve security event' });
   }
 });
@@ -858,7 +1052,13 @@ router.post('/security/export', authenticateJWT, requireAdmin, async (req: Reque
     
     res.send(exportData);
   } catch (error) {
-    console.error('Error exporting security report:', error);
+    await logger.error('Failed to export security report', {
+      operation: 'admin_export_security_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export security report' });
   }
 });
@@ -884,7 +1084,13 @@ router.get('/system/health', authenticateJWT, requireAdmin, async (req: Request,
 
     res.json(systemHealth);
   } catch (error) {
-    console.error('Error fetching system health:', error);
+    await logger.error('Failed to fetch system health', {
+      operation: 'admin_get_system_health',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch system health' });
   }
 });
@@ -898,7 +1104,13 @@ router.get('/system/config', authenticateJWT, requireAdmin, async (req: Request,
 
     res.json(configs);
   } catch (error) {
-    console.error('Error fetching system config:', error);
+    await logger.error('Failed to fetch system configuration', {
+      operation: 'admin_get_system_config',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch system configuration' });
   }
 });
@@ -930,11 +1142,22 @@ router.patch('/system/config/:configKey', authenticateJWT, requireAdmin, async (
       }
     });
 
-    console.log(`Admin ${adminUser.id} updated system configuration: ${configKey}`);
+    await logger.info('Admin updated system configuration', {
+      operation: 'admin_update_system_config',
+      adminId: adminUser.id,
+      configKey
+    });
 
     res.json(config);
   } catch (error) {
-    console.error('Error updating system config:', error);
+    await logger.error('Failed to update system configuration', {
+      operation: 'admin_update_system_config',
+      configKey: req.params.configKey,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update system configuration' });
   }
 });
@@ -945,7 +1168,13 @@ router.get('/moderation/stats', authenticateJWT, requireAdmin, async (req: Reque
     const stats = await AdminService.getModerationStats();
     res.json(stats);
   } catch (error) {
-    console.error('Error fetching moderation stats:', error);
+    await logger.error('Failed to fetch moderation statistics', {
+      operation: 'admin_get_moderation_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch moderation stats' });
   }
 });
@@ -955,7 +1184,13 @@ router.get('/moderation/rules', authenticateJWT, requireAdmin, async (req: Reque
     const rules = await AdminService.getModerationRules();
     res.json(rules);
   } catch (error) {
-    console.error('Error fetching moderation rules:', error);
+    await logger.error('Failed to fetch moderation rules', {
+      operation: 'admin_get_moderation_rules',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch moderation rules' });
   }
 });
@@ -972,7 +1207,13 @@ router.post('/moderation/bulk-action', authenticateJWT, requireAdmin, async (req
     const result = await AdminService.bulkModerationAction(reportIds, action, adminUser.id);
     res.json(result);
   } catch (error) {
-    console.error('Error performing bulk moderation action:', error);
+    await logger.error('Failed to perform bulk moderation action', {
+      operation: 'admin_bulk_moderate',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to perform bulk moderation action' });
   }
 });
@@ -983,7 +1224,13 @@ router.post('/moderation/reports', authenticateJWT, requireAdmin, async (req: Re
     const reports = await AdminService.getReportedContent(filters);
     res.json(reports);
   } catch (error) {
-    console.error('Error fetching reported content:', error);
+    await logger.error('Failed to fetch reported content', {
+      operation: 'admin_get_reported_content',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch reported content' });
   }
 });
@@ -1001,7 +1248,14 @@ router.put('/moderation/reports/:reportId', authenticateJWT, requireAdmin, async
     const result = await AdminService.updateReportStatus(reportId, status, action, reason, adminUser.id);
     res.json(result);
   } catch (error) {
-    console.error('Error updating report status:', error);
+    await logger.error('Failed to update report status', {
+      operation: 'admin_update_report_status',
+      reportId: req.params.reportId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update report status' });
   }
 });
@@ -1012,7 +1266,13 @@ router.get('/system/backup', authenticateJWT, requireAdmin, async (req: Request,
     const backupStatus = await AdminService.getBackupStatus();
     res.json(backupStatus);
   } catch (error) {
-    console.error('Error fetching backup status:', error);
+    await logger.error('Failed to fetch backup status', {
+      operation: 'admin_get_backup_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch backup status' });
   }
 });
@@ -1028,7 +1288,13 @@ router.post('/system/backup', authenticateJWT, requireAdmin, async (req: Request
     const result = await AdminService.createBackup(adminUser.id);
     res.json(result);
   } catch (error) {
-    console.error('Error creating backup:', error);
+    await logger.error('Failed to create backup', {
+      operation: 'admin_create_backup',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create backup' });
   }
 });
@@ -1038,7 +1304,13 @@ router.get('/system/maintenance', authenticateJWT, requireAdmin, async (req: Req
     const maintenanceMode = await AdminService.getMaintenanceMode();
     res.json(maintenanceMode);
   } catch (error) {
-    console.error('Error fetching maintenance mode:', error);
+    await logger.error('Failed to fetch maintenance mode', {
+      operation: 'admin_get_maintenance_mode',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to fetch maintenance mode' });
   }
 });
@@ -1055,7 +1327,13 @@ router.post('/system/maintenance', authenticateJWT, requireAdmin, async (req: Re
     const result = await AdminService.setMaintenanceMode(enabled, message, adminUser.id);
     res.json(result);
   } catch (error) {
-    console.error('Error setting maintenance mode:', error);
+    await logger.error('Failed to set maintenance mode', {
+      operation: 'admin_set_maintenance_mode',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to set maintenance mode' });
   }
 });
@@ -1084,7 +1362,13 @@ router.get('/modules/submissions', authenticateJWT, requireAdmin, async (req: Re
       data: submissions
     });
   } catch (error) {
-    console.error('Error getting module submissions:', error);
+    await logger.error('Failed to get module submissions', {
+      operation: 'admin_get_module_submissions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get module submissions' });
   }
 });
@@ -1106,7 +1390,13 @@ router.get('/modules/stats', authenticateJWT, requireAdmin, async (req: Request,
       data: stats
     });
   } catch (error) {
-    console.error('Error getting module stats:', error);
+    await logger.error('Failed to get module statistics', {
+      operation: 'admin_get_module_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get module stats' });
   }
 });
@@ -1135,7 +1425,14 @@ router.post('/modules/submissions/:submissionId/review', authenticateJWT, requir
       data: result
     });
   } catch (error) {
-    console.error('Error reviewing module submission:', error);
+    await logger.error('Failed to review module submission', {
+      operation: 'admin_review_module_submission',
+      submissionId: req.params.submissionId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to review module submission' });
   }
 });
@@ -1162,7 +1459,13 @@ router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: R
       data: result
     });
   } catch (error) {
-    console.error('Error performing bulk module action:', error);
+    await logger.error('Failed to perform bulk module action', {
+      operation: 'admin_bulk_module_action',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to perform bulk module action' });
   }
 });
@@ -1184,7 +1487,13 @@ router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Requ
       data: analytics
     });
   } catch (error) {
-    console.error('Error getting module analytics:', error);
+    await logger.error('Failed to get module analytics', {
+      operation: 'admin_get_module_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get module analytics' });
   }
 });
@@ -1206,7 +1515,13 @@ router.get('/modules/developers/stats', authenticateJWT, requireAdmin, async (re
       data: stats
     });
   } catch (error) {
-    console.error('Error getting developer stats:', error);
+    await logger.error('Failed to get developer statistics', {
+      operation: 'admin_get_developer_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get developer stats' });
   }
 });
@@ -1230,7 +1545,14 @@ router.patch('/modules/:moduleId/status', authenticateJWT, requireAdmin, async (
       data: result
     });
   } catch (error) {
-    console.error('Error updating module status:', error);
+    await logger.error('Failed to update module status', {
+      operation: 'admin_update_module_status',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update module status' });
   }
 });
@@ -1253,7 +1575,14 @@ router.get('/modules/:moduleId/revenue', authenticateJWT, requireAdmin, async (r
       data: revenue
     });
   } catch (error) {
-    console.error('Error getting module revenue:', error);
+    await logger.error('Failed to get module revenue', {
+      operation: 'admin_get_module_revenue',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get module revenue' });
   }
 });
@@ -1520,7 +1849,13 @@ router.post('/business-intelligence/custom-report', authenticateJWT, requireAdmi
       data: report
     });
   } catch (error) {
-    console.error('Error generating custom report:', error);
+    await logger.error('Failed to generate custom report', {
+      operation: 'admin_generate_custom_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to generate custom report' });
   }
 });
