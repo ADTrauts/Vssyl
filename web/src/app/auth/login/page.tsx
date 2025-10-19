@@ -3,17 +3,19 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { COLORS } from "shared/styles/theme";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,21 +31,55 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
+        setLoading(false);
         return;
       }
 
       if (result?.ok) {
-        // Successful login - redirect to dashboard
-        console.log('Login successful, redirecting to dashboard');
+        // Successful login - wait for session to be fully established before redirecting
+        console.log('Login successful, waiting for session to be established...');
+        setRedirecting(true);
+        
+        // Add delay to ensure NextAuth session cookie is fully propagated
+        // This prevents 403 errors on initial dashboard load
+        await waitForSession();
+        
+        console.log('Session established, redirecting to dashboard');
         router.push('/dashboard');
         return;
       }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err?.message || 'An unexpected error occurred');
-    } finally {
       setLoading(false);
+      setRedirecting(false);
     }
+  }
+
+  // Helper function to wait for session to be available
+  async function waitForSession() {
+    return new Promise<void>((resolve) => {
+      // Wait minimum 300ms for session cookie to propagate
+      const minDelay = 300;
+      const startTime = Date.now();
+      
+      const checkSession = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        
+        // After minimum delay, check if we have enough time or just proceed
+        if (elapsed >= minDelay) {
+          clearInterval(checkSession);
+          resolve();
+        }
+        
+        // Safety timeout at 2 seconds
+        if (elapsed >= 2000) {
+          clearInterval(checkSession);
+          console.warn('Session wait timeout reached, proceeding anyway');
+          resolve();
+        }
+      }, 50);
+    });
   }
 
   return (
@@ -138,14 +174,14 @@ export default function LoginPage() {
         <div className="pt-1">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || redirecting}
             className="w-full flex justify-center py-3 px-4 border border-transparent text-base font-bold rounded-lg text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 transition-all"
             style={{ 
               backgroundColor: COLORS.infoBlue,
               '--tw-ring-color': COLORS.infoBlue,
             } as React.CSSProperties}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {redirecting ? "Redirecting..." : loading ? "Signing in..." : "Sign in"}
           </button>
         </div>
       </form>

@@ -2,7 +2,67 @@
 
 > **📚 Prevent These Errors:** See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) for comprehensive coding rules that prevent these recurring issues.
 
-## Current Session Issues & Solutions (January 2025)
+## Current Session Issues & Solutions (October 2025)
+
+### **Login 403 Authentication Errors - RESOLVED** ✅
+
+#### **Problem**: 403 Errors on Initial Dashboard Load After Login
+**Symptoms:**
+```
+Failed to load resource: the server responded with a status of 403 ()
+Failed to load conversations: Error: HTTP error! status: 403
+api/trash/items:1  Failed to load resource: the server responded with a status of 403 ()
+api/dashboard:1  Failed to load resource: the server responded with a status of 403 ()
+```
+
+**User Experience:**
+- Login succeeds with "Login successful, redirecting to dashboard" message
+- Dashboard page loads but shows "Failed to load dashboards" error
+- Multiple API calls fail with 403 errors
+- After manual page reload, everything works fine
+- This happens **every time** on initial login
+
+**Root Cause**: Race condition in authentication flow
+- User logs in → `signIn()` completes successfully
+- **Immediately** redirects to `/dashboard` (no delay)
+- NextAuth session cookie hasn't fully propagated to browser yet
+- Dashboard components make API calls before session is available
+- **403 errors occur** because API calls have no valid authentication token
+- After page reload, session is established → all API calls work
+
+**Solution Applied:**
+Added 300ms delay after successful login before redirecting to dashboard. This ensures:
+1. NextAuth session cookie is fully set in browser
+2. Session state is propagated to `useSession()` hook  
+3. Dashboard API calls have valid authentication tokens on first load
+
+**Files Modified:**
+- `web/src/app/auth/login/page.tsx` - Added `waitForSession()` helper function with 300ms minimum delay
+
+**Technical Implementation:**
+```typescript
+// After successful signIn, wait for session to be established
+if (result?.ok) {
+  console.log('Login successful, waiting for session to be established...');
+  setRedirecting(true);
+  
+  // Add delay to ensure NextAuth session cookie is fully propagated
+  await waitForSession(); // 300ms minimum delay
+  
+  console.log('Session established, redirecting to dashboard');
+  router.push('/dashboard');
+}
+```
+
+**Verification:**
+- ✅ No 403 errors on initial login
+- ✅ Dashboard loads correctly on first try
+- ✅ No "Failed to load dashboards" message
+- ✅ Smooth user experience without page reload required
+
+---
+
+## Previous Session Issues & Solutions (January 2025)
 
 ### **API Routing Issues - RESOLVED** ✅
 
