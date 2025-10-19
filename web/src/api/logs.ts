@@ -1,5 +1,5 @@
 // Frontend API utilities for log management
-import { apiCall } from '../lib/apiUtils';
+import { authenticatedApiCall } from '../lib/apiUtils';
 
 export interface LogEntry {
   id: string;
@@ -74,7 +74,7 @@ export const logsApi = {
       }
     });
 
-    const response = await apiCall(`/admin/logs?${queryParams.toString()}`, {
+    const response = await authenticatedApiCall(`/admin/logs?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -124,7 +124,7 @@ export const logsApi = {
       }
     });
 
-    const response = await apiCall(`/admin/logs/analytics?${queryParams.toString()}`, {
+    const response = await authenticatedApiCall(`/admin/logs/analytics?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -140,7 +140,7 @@ export const logsApi = {
 
   // Get log alerts
   async getLogAlerts(token: string): Promise<LogAlert[]> {
-    const response = await apiCall('/admin/logs/alerts', {
+    const response = await authenticatedApiCall('/admin/logs/alerts', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -156,7 +156,7 @@ export const logsApi = {
 
   // Create log alert
   async createLogAlert(alertData: Omit<LogAlert, 'id' | 'createdAt' | 'updatedAt'>, token: string): Promise<LogAlert> {
-    const response = await apiCall('/admin/logs/alerts', {
+    const response = await authenticatedApiCall('/admin/logs/alerts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ export const logsApi = {
 
   // Update log alert
   async updateLogAlert(alertId: string, updateData: Partial<Omit<LogAlert, 'id' | 'createdAt'>>, token: string): Promise<LogAlert> {
-    const response = await apiCall(`/admin/logs/alerts/${alertId}`, {
+    const response = await authenticatedApiCall(`/admin/logs/alerts/${alertId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ export const logsApi = {
 
   // Delete log alert
   async deleteLogAlert(alertId: string, token: string): Promise<void> {
-    const response = await apiCall(`/admin/logs/alerts/${alertId}`, {
+    const response = await authenticatedApiCall(`/admin/logs/alerts/${alertId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -214,7 +214,7 @@ export const logsApi = {
       }
     });
 
-    const response = await apiCall(`/admin/logs/stream?${queryParams.toString()}`, {
+    const response = await authenticatedApiCall(`/admin/logs/stream?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -230,7 +230,7 @@ export const logsApi = {
 
   // Cleanup old logs
   async cleanupOldLogs(daysToKeep: number, token: string): Promise<{ deletedCount: number }> {
-    const response = await apiCall('/admin/logs/cleanup', {
+    const response = await authenticatedApiCall('/admin/logs/cleanup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -254,7 +254,7 @@ export const logsApi = {
     enabled: boolean;
     autoCleanup: boolean;
   }> {
-    const response = await apiCall('/admin/logs/retention', {
+    const response = await authenticatedApiCall('/admin/logs/retention', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -276,7 +276,7 @@ export const logsApi = {
     enabled?: boolean;
     autoCleanup?: boolean;
   }, token: string): Promise<void> {
-    const response = await apiCall('/admin/logs/retention', {
+    const response = await authenticatedApiCall('/admin/logs/retention', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
