@@ -1,14 +1,7 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { logger } from '../lib/logger';
 import { logService } from '../services/logService';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
+import { AuthenticatedRequest } from '../middleware/auth';
 
 interface LogFilters {
   level?: 'debug' | 'info' | 'warn' | 'error';

@@ -74,18 +74,12 @@ export const logsApi = {
       }
     });
 
-    const response = await authenticatedApiCall(`/admin/logs?${queryParams.toString()}`, {
+    return authenticatedApiCall<LogResult>(`/admin/logs?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Export logs
@@ -124,39 +118,27 @@ export const logsApi = {
       }
     });
 
-    const response = await authenticatedApiCall(`/admin/logs/analytics?${queryParams.toString()}`, {
+    return authenticatedApiCall<LogAnalytics>(`/admin/logs/analytics?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Get log alerts
   async getLogAlerts(token: string): Promise<LogAlert[]> {
-    const response = await authenticatedApiCall('/admin/logs/alerts', {
+    return authenticatedApiCall<LogAlert[]>('/admin/logs/alerts', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Create log alert
   async createLogAlert(alertData: Omit<LogAlert, 'id' | 'createdAt' | 'updatedAt'>, token: string): Promise<LogAlert> {
-    const response = await authenticatedApiCall('/admin/logs/alerts', {
+    return authenticatedApiCall<LogAlert>('/admin/logs/alerts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -164,17 +146,11 @@ export const logsApi = {
       },
       body: JSON.stringify(alertData),
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Update log alert
   async updateLogAlert(alertId: string, updateData: Partial<Omit<LogAlert, 'id' | 'createdAt'>>, token: string): Promise<LogAlert> {
-    const response = await authenticatedApiCall(`/admin/logs/alerts/${alertId}`, {
+    return authenticatedApiCall<LogAlert>(`/admin/logs/alerts/${alertId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -182,26 +158,16 @@ export const logsApi = {
       },
       body: JSON.stringify(updateData),
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Delete log alert
   async deleteLogAlert(alertId: string, token: string): Promise<void> {
-    const response = await authenticatedApiCall(`/admin/logs/alerts/${alertId}`, {
+    return authenticatedApiCall<void>(`/admin/logs/alerts/${alertId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
   },
 
   // Get log stream (for real-time updates)
@@ -214,23 +180,17 @@ export const logsApi = {
       }
     });
 
-    const response = await authenticatedApiCall(`/admin/logs/stream?${queryParams.toString()}`, {
+    return authenticatedApiCall<{ logs: LogEntry[]; timestamp: string }>(`/admin/logs/stream?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Cleanup old logs
   async cleanupOldLogs(daysToKeep: number, token: string): Promise<{ deletedCount: number }> {
-    const response = await authenticatedApiCall('/admin/logs/cleanup', {
+    return authenticatedApiCall<{ deletedCount: number }>('/admin/logs/cleanup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -238,12 +198,6 @@ export const logsApi = {
       },
       body: JSON.stringify({ daysToKeep }),
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Get retention settings
@@ -254,18 +208,18 @@ export const logsApi = {
     enabled: boolean;
     autoCleanup: boolean;
   }> {
-    const response = await authenticatedApiCall('/admin/logs/retention', {
+    return authenticatedApiCall<{
+      defaultRetentionDays: number;
+      errorRetentionDays: number;
+      auditRetentionDays: number;
+      enabled: boolean;
+      autoCleanup: boolean;
+    }>('/admin/logs/retention', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    return response.data;
   },
 
   // Update retention settings
@@ -276,7 +230,7 @@ export const logsApi = {
     enabled?: boolean;
     autoCleanup?: boolean;
   }, token: string): Promise<void> {
-    const response = await authenticatedApiCall('/admin/logs/retention', {
+    return authenticatedApiCall<void>('/admin/logs/retention', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -284,9 +238,5 @@ export const logsApi = {
       },
       body: JSON.stringify(settings),
     }, token);
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
   }
 };

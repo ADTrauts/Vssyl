@@ -1,12 +1,11 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateJWT } from '../middleware/auth';
 import { logController } from '../controllers/logController';
-import { adminApiService } from '../services/adminService';
 
 const router: express.Router = express.Router();
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(authenticateJWT);
 
 // Client log collection endpoint (for frontend logs)
 router.post('/client', logController.collectClientLog);

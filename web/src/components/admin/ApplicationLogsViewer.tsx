@@ -152,7 +152,7 @@ export function ApplicationLogsViewer({
   if (loading && logs.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Spinner size="lg" />
+        <Spinner size={48} />
         <span className="ml-2 text-gray-600">Loading application logs...</span>
       </div>
     );
@@ -172,23 +172,23 @@ export function ApplicationLogsViewer({
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="flex-1"
             />
-            <Button onClick={handleSearch} variant="outline" size="sm">
+            <Button onClick={handleSearch} variant="secondary" size="sm">
               Search
             </Button>
           </div>
           <Button
             onClick={() => setShowFilters(!showFilters)}
-            variant="outline"
+            variant="secondary"
             size="sm"
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </Button>
-          <Button onClick={handleExport} variant="outline" size="sm">
+          <Button onClick={handleExport} variant="secondary" size="sm">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button onClick={loadLogs} variant="outline" size="sm">
+          <Button onClick={loadLogs} variant="secondary" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -333,15 +333,15 @@ export function ApplicationLogsViewer({
                     {truncateMessage(log.message)}
                   </p>
                   <div className="flex items-center space-x-4 text-xs text-gray-500">
-                    {log.metadata?.operation && (
-                      <span>Operation: {log.metadata.operation}</span>
-                    )}
-                    {log.metadata?.userId && (
+                    {log.metadata?.operation ? (
+                      <span>Operation: {log.metadata.operation as string}</span>
+                    ) : null}
+                    {log.metadata?.userId ? (
                       <span className="flex items-center space-x-1">
                         <User className="w-3 h-3" />
-                        <span>{log.metadata.userId}</span>
+                        <span>{log.metadata.userId as string}</span>
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex-shrink-0">
@@ -364,10 +364,10 @@ export function ApplicationLogsViewer({
 
       {/* Log Details Modal */}
       <Modal
-        isOpen={selectedLog !== null}
+        open={selectedLog !== null}
         onClose={() => setSelectedLog(null)}
         title="Log Details"
-        size="lg"
+        size="large"
       >
         {selectedLog && (
           <div className="space-y-4">

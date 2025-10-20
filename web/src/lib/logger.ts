@@ -148,8 +148,7 @@ class Logger {
       component,
       error: {
         message: error.message,
-        stack: error.stack,
-        name: error.name
+        stack: error.stack
       },
       ...metadata
     });
