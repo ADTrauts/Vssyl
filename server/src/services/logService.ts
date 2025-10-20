@@ -1,4 +1,6 @@
+import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { Prisma } from '@prisma/client';
 
 interface LogEntry {
   id: string;
@@ -8,6 +10,10 @@ interface LogEntry {
   timestamp: string;
   service: 'vssyl-server' | 'vssyl-web';
   environment: string;
+  operation?: string;
+  userId?: string;
+  businessId?: string;
+  module?: string;
 }
 
 interface LogFilters {
@@ -71,199 +77,153 @@ interface RetentionSettings {
 }
 
 class LogService {
-  private logs: LogEntry[] = [];
-  private alerts: LogAlert[] = [];
-  private retentionSettings: RetentionSettings = {
-    defaultRetentionDays: 30,
-    errorRetentionDays: 90,
-    auditRetentionDays: 365,
-    enabled: true,
-    autoCleanup: true
-  };
-
   constructor() {
-    // Initialize with some mock data for development
-    this.initializeMockData();
+    // Set up periodic cleanup (runs daily)
+    this.initializeAutoCleanup();
+  }
+
+  private async initializeAutoCleanup(): Promise<void> {
+    // Get or create retention policy
+    const policy = await this.getOrCreateRetentionPolicy();
     
-    // Set up periodic cleanup if auto-cleanup is enabled
-    if (this.retentionSettings.autoCleanup) {
-      setInterval(() => {
-        this.cleanupOldLogs(this.retentionSettings.defaultRetentionDays);
+    if (policy.autoCleanup) {
+      setInterval(async () => {
+        await this.cleanupOldLogs(policy.defaultRetentionDays);
       }, 24 * 60 * 60 * 1000); // Run daily
     }
   }
 
-  private initializeMockData(): void {
-    // Add some mock logs for demonstration
-    const now = new Date();
-    const mockLogs: LogEntry[] = [
-      {
-        id: '1',
-        level: 'info',
-        message: 'User logged in successfully',
-        metadata: {
-          userId: 'user123',
-          operation: 'user_login',
-          ipAddress: '192.168.1.100'
-        },
-        timestamp: new Date(now.getTime() - 300000).toISOString(), // 5 minutes ago
-        service: 'vssyl-server',
-        environment: 'production'
-      },
-      {
-        id: '2',
-        level: 'error',
-        message: 'Database connection failed',
-        metadata: {
-          operation: 'database_connection',
-          error: {
-            message: 'Connection timeout',
-            code: 'TIMEOUT'
-          }
-        },
-        timestamp: new Date(now.getTime() - 600000).toISOString(), // 10 minutes ago
-        service: 'vssyl-server',
-        environment: 'production'
-      },
-      {
-        id: '3',
-        level: 'warn',
-        message: 'Slow database query detected',
-        metadata: {
-          operation: 'database_query',
-          duration: 3200,
-          query: 'SELECT * FROM users WHERE...'
-        },
-        timestamp: new Date(now.getTime() - 900000).toISOString(), // 15 minutes ago
-        service: 'vssyl-server',
-        environment: 'production'
-      },
-      {
-        id: '4',
-        level: 'info',
-        message: 'File uploaded successfully',
-        metadata: {
-          userId: 'user456',
-          operation: 'file_upload',
-          fileName: 'document.pdf',
-          fileSize: 2048000
-        },
-        timestamp: new Date(now.getTime() - 1200000).toISOString(), // 20 minutes ago
-        service: 'vssyl-server',
-        environment: 'production'
-      },
-      {
-        id: '5',
-        level: 'error',
-        message: 'Component error in Dashboard',
-        metadata: {
-          operation: 'component_error',
-          component: 'Dashboard',
-          error: {
-            message: 'Cannot read property of undefined',
-            stack: 'TypeError: Cannot read property...'
-          }
-        },
-        timestamp: new Date(now.getTime() - 1500000).toISOString(), // 25 minutes ago
-        service: 'vssyl-web',
-        environment: 'production'
-      }
-    ];
-
-    this.logs = mockLogs;
+  private async getOrCreateRetentionPolicy() {
+    let policy = await prisma.logRetentionPolicy.findFirst();
+    
+    if (!policy) {
+      policy = await prisma.logRetentionPolicy.create({
+        data: {
+          defaultRetentionDays: 30,
+          errorRetentionDays: 90,
+          auditRetentionDays: 365,
+          enabled: true,
+          autoCleanup: true
+        }
+      });
+    }
+    
+    return policy;
   }
 
   async storeClientLog(logEntry: Omit<LogEntry, 'id'>): Promise<void> {
-    const entry: LogEntry = {
-      ...logEntry,
-      id: `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    };
+    try {
+      await prisma.log.create({
+        data: {
+          level: logEntry.level,
+          message: logEntry.message,
+          service: logEntry.service === 'vssyl-server' ? 'vssyl_server' : 'vssyl_web',
+          operation: logEntry.operation,
+          userId: logEntry.userId,
+          businessId: logEntry.businessId,
+          module: logEntry.module,
+          metadata: logEntry.metadata as Prisma.InputJsonValue,
+          environment: logEntry.environment,
+          timestamp: new Date(logEntry.timestamp)
+        }
+      });
 
-    this.logs.unshift(entry); // Add to beginning for newest first
-
-    // In production, this would also store to Google Cloud Logging
-    await logger.info('Client log stored', {
-      operation: 'store_client_log',
-      logId: entry.id,
-      level: entry.level,
-      service: entry.service
-    });
+      await logger.info('Client log stored', {
+        operation: 'store_client_log',
+        level: logEntry.level,
+        service: logEntry.service
+      });
+    } catch (error) {
+      console.error('Error storing client log:', error);
+      // Don't throw - logging should not break the main flow
+    }
   }
 
   async getLogs(filters: LogFilters): Promise<LogResult> {
-    let filteredLogs = [...this.logs];
+    try {
+      const where: Prisma.LogWhereInput = {};
 
-    // Apply filters
-    if (filters.level) {
-      filteredLogs = filteredLogs.filter(log => log.level === filters.level);
+      if (filters.level) {
+        where.level = filters.level;
+      }
+
+      if (filters.service) {
+        where.service = filters.service === 'vssyl-server' ? 'vssyl_server' : 'vssyl_web';
+      }
+
+      if (filters.operation) {
+        where.operation = filters.operation;
+      }
+
+      if (filters.userId) {
+        where.userId = filters.userId;
+      }
+
+      if (filters.businessId) {
+        where.businessId = filters.businessId;
+      }
+
+      if (filters.module) {
+        where.module = filters.module;
+      }
+
+      if (filters.startDate || filters.endDate) {
+        where.timestamp = {};
+        if (filters.startDate) {
+          where.timestamp.gte = new Date(filters.startDate);
+        }
+        if (filters.endDate) {
+          where.timestamp.lte = new Date(filters.endDate);
+        }
+      }
+
+      if (filters.search) {
+        where.OR = [
+          { message: { contains: filters.search, mode: 'insensitive' } },
+          { operation: { contains: filters.search, mode: 'insensitive' } }
+        ];
+      }
+
+      const limit = filters.limit || 100;
+      const offset = filters.offset || 0;
+
+      const [logs, total] = await Promise.all([
+        prisma.log.findMany({
+          where,
+          take: limit,
+          skip: offset,
+          orderBy: { timestamp: 'desc' }
+        }),
+        prisma.log.count({ where })
+      ]);
+
+      const entries: LogEntry[] = logs.map(log => ({
+        id: log.id,
+        level: log.level,
+        message: log.message,
+        metadata: log.metadata as Record<string, unknown>,
+        timestamp: log.timestamp.toISOString(),
+        service: log.service === 'vssyl_server' ? 'vssyl-server' : 'vssyl-web',
+        environment: log.environment,
+        operation: log.operation || undefined,
+        userId: log.userId || undefined,
+        businessId: log.businessId || undefined,
+        module: log.module || undefined
+      }));
+
+      return {
+        entries,
+        total,
+        hasMore: offset + limit < total
+      };
+    } catch (error) {
+      console.error('Error getting logs:', error);
+      throw error;
     }
-
-    if (filters.service) {
-      filteredLogs = filteredLogs.filter(log => log.service === filters.service);
-    }
-
-    if (filters.operation) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.metadata?.operation === filters.operation
-      );
-    }
-
-    if (filters.userId) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.metadata?.userId === filters.userId
-      );
-    }
-
-    if (filters.businessId) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.metadata?.businessId === filters.businessId
-      );
-    }
-
-    if (filters.module) {
-      filteredLogs = filteredLogs.filter(log => 
-        log.metadata?.module === filters.module
-      );
-    }
-
-    if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
-      filteredLogs = filteredLogs.filter(log => 
-        new Date(log.timestamp) >= startDate
-      );
-    }
-
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      filteredLogs = filteredLogs.filter(log => 
-        new Date(log.timestamp) <= endDate
-      );
-    }
-
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredLogs = filteredLogs.filter(log => 
-        log.message.toLowerCase().includes(searchLower) ||
-        JSON.stringify(log.metadata).toLowerCase().includes(searchLower)
-      );
-    }
-
-    const total = filteredLogs.length;
-    const limit = filters.limit || 100;
-    const offset = filters.offset || 0;
-    
-    const paginatedLogs = filteredLogs.slice(offset, offset + limit);
-    const hasMore = offset + limit < total;
-
-    return {
-      entries: paginatedLogs,
-      total,
-      hasMore
-    };
   }
 
   async exportLogs(filters: LogFilters, format: string): Promise<string | LogEntry[]> {
-    const result = await this.getLogs({ ...filters, limit: 10000 }); // Get up to 10k logs for export
+    const result = await this.getLogs({ ...filters, limit: 10000 });
 
     if (format === 'csv') {
       const headers = ['Timestamp', 'Level', 'Service', 'Message', 'Operation', 'User ID', 'Business ID', 'Module'];
@@ -272,10 +232,10 @@ class LogService {
         log.level,
         log.service,
         log.message,
-        log.metadata?.operation || '',
-        log.metadata?.userId || '',
-        log.metadata?.businessId || '',
-        log.metadata?.module || ''
+        log.operation || '',
+        log.userId || '',
+        log.businessId || '',
+        log.module || ''
       ]);
 
       const csvContent = [headers, ...rows]
@@ -289,180 +249,330 @@ class LogService {
   }
 
   async getLogAnalytics(filters: LogFilters): Promise<LogAnalytics> {
-    const result = await this.getLogs({ ...filters, limit: 10000 });
-    const logs = result.entries;
+    try {
+      const where: Prisma.LogWhereInput = {};
 
-    const totalLogs = logs.length;
-    const errorLogs = logs.filter(log => log.level === 'error').length;
-    const errorRate = totalLogs > 0 ? (errorLogs / totalLogs) * 100 : 0;
-
-    // Logs by level
-    const logsByLevel = logs.reduce((acc, log) => {
-      acc[log.level] = (acc[log.level] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Logs by service
-    const logsByService = logs.reduce((acc, log) => {
-      acc[log.service] = (acc[log.service] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Logs by operation
-    const logsByOperation = logs.reduce((acc, log) => {
-      const operation = log.metadata?.operation as string || 'unknown';
-      acc[operation] = (acc[operation] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Top errors
-    const errorMessages = logs
-      .filter(log => log.level === 'error')
-      .map(log => log.message);
-    
-    const errorCounts = errorMessages.reduce((acc, message) => {
-      acc[message] = (acc[message] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const topErrors = Object.entries(errorCounts)
-      .map(([message, count]) => ({ message, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    // Performance metrics
-    const performanceLogs = logs.filter(log => 
-      log.metadata?.duration && typeof log.metadata.duration === 'number'
-    );
-
-    const averageResponseTime = performanceLogs.length > 0
-      ? performanceLogs.reduce((sum, log) => sum + (log.metadata?.duration as number), 0) / performanceLogs.length
-      : 0;
-
-    const operationDurations = performanceLogs.reduce((acc, log) => {
-      const operation = log.metadata?.operation as string || 'unknown';
-      if (!acc[operation]) {
-        acc[operation] = [];
+      if (filters.startDate || filters.endDate) {
+        where.timestamp = {};
+        if (filters.startDate) {
+          where.timestamp.gte = new Date(filters.startDate);
+        }
+        if (filters.endDate) {
+          where.timestamp.lte = new Date(filters.endDate);
+        }
       }
-      acc[operation].push(log.metadata?.duration as number);
-      return acc;
-    }, {} as Record<string, number[]>);
 
-    const slowestOperations = Object.entries(operationDurations)
-      .map(([operation, durations]) => ({
-        operation,
-        avgDuration: durations.reduce((sum, duration) => sum + duration, 0) / durations.length
-      }))
-      .sort((a, b) => b.avgDuration - a.avgDuration)
-      .slice(0, 10);
-
-    return {
-      totalLogs,
-      errorRate,
-      logsByLevel,
-      logsByService,
-      logsByOperation,
-      topErrors,
-      performanceMetrics: {
-        averageResponseTime,
-        slowestOperations
+      if (filters.businessId) {
+        where.businessId = filters.businessId;
       }
-    };
+
+      // Get total logs
+      const totalLogs = await prisma.log.count({ where });
+
+      // Get error logs
+      const errorLogs = await prisma.log.count({
+        where: { ...where, level: 'error' }
+      });
+
+      const errorRate = totalLogs > 0 ? (errorLogs / totalLogs) * 100 : 0;
+
+      // Logs by level
+      const logsByLevelData = await prisma.log.groupBy({
+        by: ['level'],
+        where,
+        _count: { level: true }
+      });
+
+      const logsByLevel = logsByLevelData.reduce((acc, item) => {
+        acc[item.level] = item._count.level;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Logs by service
+      const logsByServiceData = await prisma.log.groupBy({
+        by: ['service'],
+        where,
+        _count: { service: true }
+      });
+
+      const logsByService = logsByServiceData.reduce((acc, item) => {
+        const serviceName = item.service === 'vssyl_server' ? 'vssyl-server' : 'vssyl-web';
+        acc[serviceName] = item._count.service;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Logs by operation
+      const logsByOperationData = await prisma.log.groupBy({
+        by: ['operation'],
+        where: { ...where, operation: { not: null } },
+        _count: { operation: true },
+        orderBy: { _count: { operation: 'desc' } },
+        take: 10
+      });
+
+      const logsByOperation = logsByOperationData.reduce((acc, item) => {
+        if (item.operation) {
+          acc[item.operation] = item._count.operation;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Top errors
+      const topErrorsData = await prisma.log.groupBy({
+        by: ['message'],
+        where: { ...where, level: 'error' },
+        _count: { message: true },
+        orderBy: { _count: { message: 'desc' } },
+        take: 10
+      });
+
+      const topErrors = topErrorsData.map(item => ({
+        message: item.message,
+        count: item._count.message
+      }));
+
+      // Performance metrics
+      const performanceLogs = await prisma.log.findMany({
+        where: {
+          ...where,
+          duration: { not: null }
+        },
+        select: {
+          operation: true,
+          duration: true
+        }
+      });
+
+      const averageResponseTime = performanceLogs.length > 0
+        ? performanceLogs.reduce((sum, log) => sum + (log.duration || 0), 0) / performanceLogs.length
+        : 0;
+
+      const operationDurations = performanceLogs.reduce((acc, log) => {
+        const operation = log.operation || 'unknown';
+        if (!acc[operation]) {
+          acc[operation] = [];
+        }
+        if (log.duration) {
+          acc[operation].push(log.duration);
+        }
+        return acc;
+      }, {} as Record<string, number[]>);
+
+      const slowestOperations = Object.entries(operationDurations)
+        .map(([operation, durations]) => ({
+          operation,
+          avgDuration: durations.reduce((sum, duration) => sum + duration, 0) / durations.length
+        }))
+        .sort((a, b) => b.avgDuration - a.avgDuration)
+        .slice(0, 10);
+
+      return {
+        totalLogs,
+        errorRate,
+        logsByLevel,
+        logsByService,
+        logsByOperation,
+        topErrors,
+        performanceMetrics: {
+          averageResponseTime,
+          slowestOperations
+        }
+      };
+    } catch (error) {
+      console.error('Error getting log analytics:', error);
+      throw error;
+    }
   }
 
   async getLogAlerts(): Promise<LogAlert[]> {
-    return this.alerts;
+    try {
+      const alerts = await prisma.logAlert.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+
+      return alerts.map(alert => ({
+        id: alert.id,
+        name: alert.name,
+        description: alert.description || '',
+        conditions: alert.conditions as LogAlert['conditions'],
+        actions: alert.actions as LogAlert['actions'],
+        enabled: alert.enabled,
+        createdAt: alert.createdAt.toISOString(),
+        updatedAt: alert.updatedAt.toISOString()
+      }));
+    } catch (error) {
+      console.error('Error getting log alerts:', error);
+      throw error;
+    }
   }
 
   async createLogAlert(alertData: Omit<LogAlert, 'id' | 'createdAt' | 'updatedAt'>): Promise<LogAlert> {
-    const alert: LogAlert = {
-      ...alertData,
-      id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      const alert = await prisma.logAlert.create({
+        data: {
+          name: alertData.name,
+          description: alertData.description,
+          conditions: alertData.conditions as Prisma.InputJsonValue,
+          actions: alertData.actions as Prisma.InputJsonValue,
+          enabled: alertData.enabled
+        }
+      });
 
-    this.alerts.push(alert);
+      await logger.info('Log alert created', {
+        operation: 'create_log_alert',
+        alertId: alert.id,
+        alertName: alert.name
+      });
 
-    await logger.info('Log alert created', {
-      operation: 'create_log_alert',
-      alertId: alert.id,
-      alertName: alert.name
-    });
-
-    return alert;
+      return {
+        id: alert.id,
+        name: alert.name,
+        description: alert.description || '',
+        conditions: alert.conditions as LogAlert['conditions'],
+        actions: alert.actions as LogAlert['actions'],
+        enabled: alert.enabled,
+        createdAt: alert.createdAt.toISOString(),
+        updatedAt: alert.updatedAt.toISOString()
+      };
+    } catch (error) {
+      console.error('Error creating log alert:', error);
+      throw error;
+    }
   }
 
   async updateLogAlert(alertId: string, updateData: Partial<Omit<LogAlert, 'id' | 'createdAt'>>): Promise<LogAlert> {
-    const alertIndex = this.alerts.findIndex(alert => alert.id === alertId);
-    
-    if (alertIndex === -1) {
-      throw new Error('Log alert not found');
+    try {
+      const data: Prisma.LogAlertUpdateInput = {};
+      
+      if (updateData.name) data.name = updateData.name;
+      if (updateData.description !== undefined) data.description = updateData.description;
+      if (updateData.conditions) data.conditions = updateData.conditions as Prisma.InputJsonValue;
+      if (updateData.actions) data.actions = updateData.actions as Prisma.InputJsonValue;
+      if (updateData.enabled !== undefined) data.enabled = updateData.enabled;
+
+      const alert = await prisma.logAlert.update({
+        where: { id: alertId },
+        data
+      });
+
+      await logger.info('Log alert updated', {
+        operation: 'update_log_alert',
+        alertId: alertId
+      });
+
+      return {
+        id: alert.id,
+        name: alert.name,
+        description: alert.description || '',
+        conditions: alert.conditions as LogAlert['conditions'],
+        actions: alert.actions as LogAlert['actions'],
+        enabled: alert.enabled,
+        createdAt: alert.createdAt.toISOString(),
+        updatedAt: alert.updatedAt.toISOString()
+      };
+    } catch (error) {
+      console.error('Error updating log alert:', error);
+      throw error;
     }
-
-    this.alerts[alertIndex] = {
-      ...this.alerts[alertIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    };
-
-    await logger.info('Log alert updated', {
-      operation: 'update_log_alert',
-      alertId: alertId
-    });
-
-    return this.alerts[alertIndex];
   }
 
   async deleteLogAlert(alertId: string): Promise<void> {
-    const alertIndex = this.alerts.findIndex(alert => alert.id === alertId);
-    
-    if (alertIndex === -1) {
-      throw new Error('Log alert not found');
+    try {
+      await prisma.logAlert.delete({
+        where: { id: alertId }
+      });
+
+      await logger.info('Log alert deleted', {
+        operation: 'delete_log_alert',
+        alertId: alertId
+      });
+    } catch (error) {
+      console.error('Error deleting log alert:', error);
+      throw error;
     }
-
-    this.alerts.splice(alertIndex, 1);
-
-    await logger.info('Log alert deleted', {
-      operation: 'delete_log_alert',
-      alertId: alertId
-    });
   }
 
   async cleanupOldLogs(daysToKeep: number): Promise<{ deletedCount: number }> {
-    const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
-    const initialCount = this.logs.length;
+    try {
+      const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
 
-    this.logs = this.logs.filter(log => new Date(log.timestamp) > cutoffDate);
-    
-    const deletedCount = initialCount - this.logs.length;
+      const result = await prisma.log.deleteMany({
+        where: {
+          timestamp: {
+            lt: cutoffDate
+          }
+        }
+      });
 
-    await logger.info('Log cleanup completed', {
-      operation: 'cleanup_old_logs',
-      daysToKeep,
-      deletedCount,
-      remainingCount: this.logs.length
-    });
+      await logger.info('Log cleanup completed', {
+        operation: 'cleanup_old_logs',
+        daysToKeep,
+        deletedCount: result.count
+      });
 
-    return { deletedCount };
+      // Update retention policy last cleanup date
+      await prisma.logRetentionPolicy.updateMany({
+        data: {
+          lastCleanup: new Date()
+        }
+      });
+
+      return { deletedCount: result.count };
+    } catch (error) {
+      console.error('Error cleaning up old logs:', error);
+      throw error;
+    }
   }
 
   async getRetentionSettings(): Promise<RetentionSettings> {
-    return this.retentionSettings;
+    try {
+      const policy = await this.getOrCreateRetentionPolicy();
+
+      return {
+        defaultRetentionDays: policy.defaultRetentionDays,
+        errorRetentionDays: policy.errorRetentionDays,
+        auditRetentionDays: policy.auditRetentionDays,
+        enabled: policy.enabled,
+        autoCleanup: policy.autoCleanup
+      };
+    } catch (error) {
+      console.error('Error getting retention settings:', error);
+      throw error;
+    }
   }
 
   async updateRetentionSettings(settings: Partial<RetentionSettings>): Promise<RetentionSettings> {
-    this.retentionSettings = {
-      ...this.retentionSettings,
-      ...settings
-    };
+    try {
+      const policy = await this.getOrCreateRetentionPolicy();
 
-    await logger.info('Retention settings updated', {
-      operation: 'update_retention_settings',
-      settings: this.retentionSettings
-    });
+      const data: Prisma.LogRetentionPolicyUpdateInput = {};
+      if (settings.defaultRetentionDays !== undefined) data.defaultRetentionDays = settings.defaultRetentionDays;
+      if (settings.errorRetentionDays !== undefined) data.errorRetentionDays = settings.errorRetentionDays;
+      if (settings.auditRetentionDays !== undefined) data.auditRetentionDays = settings.auditRetentionDays;
+      if (settings.enabled !== undefined) data.enabled = settings.enabled;
+      if (settings.autoCleanup !== undefined) data.autoCleanup = settings.autoCleanup;
 
-    return this.retentionSettings;
+      const updatedPolicy = await prisma.logRetentionPolicy.update({
+        where: { id: policy.id },
+        data
+      });
+
+      await logger.info('Retention settings updated', {
+        operation: 'update_retention_settings',
+        settings: updatedPolicy
+      });
+
+      return {
+        defaultRetentionDays: updatedPolicy.defaultRetentionDays,
+        errorRetentionDays: updatedPolicy.errorRetentionDays,
+        auditRetentionDays: updatedPolicy.auditRetentionDays,
+        enabled: updatedPolicy.enabled,
+        autoCleanup: updatedPolicy.autoCleanup
+      };
+    } catch (error) {
+      console.error('Error updating retention settings:', error);
+      throw error;
+    }
   }
 }
 

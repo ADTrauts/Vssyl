@@ -1,5 +1,9 @@
 // Enhanced structured logging utility for production monitoring
 // Integrates with Google Cloud Logging for centralized log management
+// Also stores logs in PostgreSQL database for long-term analysis
+
+import { prisma } from './prisma';
+import { Prisma } from '@prisma/client';
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -66,6 +70,34 @@ class Logger {
     }
   }
 
+  private async logToDatabase(entry: LogEntry): Promise<void> {
+    try {
+      // Store log in database for long-term analysis
+      await prisma.log.create({
+        data: {
+          level: entry.level,
+          message: entry.message,
+          service: 'vssyl_server',
+          operation: entry.metadata?.operation as string | undefined,
+          userId: entry.metadata?.userId as string | undefined,
+          businessId: entry.metadata?.businessId as string | undefined,
+          module: entry.metadata?.module as string | undefined,
+          metadata: entry.metadata as Prisma.InputJsonValue,
+          ipAddress: entry.metadata?.ipAddress as string | undefined,
+          userAgent: entry.metadata?.userAgent as string | undefined,
+          requestId: entry.metadata?.requestId as string | undefined,
+          duration: entry.metadata?.duration as number | undefined,
+          errorStack: entry.metadata?.error?.stack as string | undefined,
+          environment: entry.environment,
+          timestamp: new Date(entry.timestamp)
+        }
+      });
+    } catch (error) {
+      // Don't throw - logging to database should not break the application
+      console.error('Failed to log to database:', error);
+    }
+  }
+
   private async logToGoogleCloud(entry: LogEntry): Promise<void> {
     if (!this.isProduction) return;
 
@@ -86,14 +118,18 @@ class Logger {
   private async log(level: LogLevel, message: string, metadata?: LogMetadata): Promise<void> {
     const entry = this.formatLog(level, message, metadata);
 
-    // Always log to console in development
-    if (this.isDevelopment) {
-      this.logToConsole(entry);
-      return;
-    }
+    // Always log to console
+    this.logToConsole(entry);
 
-    // In production, log to both console (captured by Cloud Logging) and direct integration
-    await this.logToGoogleCloud(entry);
+    // Store in database (async, non-blocking)
+    this.logToDatabase(entry).catch(err => {
+      console.error('Database logging failed:', err);
+    });
+
+    // In production, also send to Google Cloud Logging
+    if (this.isProduction) {
+      await this.logToGoogleCloud(entry);
+    }
   }
 
   // Public logging methods

@@ -1,0 +1,75 @@
+// Application Logging System
+// Stores system and application logs for monitoring and debugging
+
+model Log {
+  id          String   @id @default(uuid())
+  level       LogLevel @default(info)
+  message     String   @db.Text
+  service     LogService
+  operation   String?  @db.VarChar(255)
+  userId      String?
+  businessId  String?
+  module      String?  @db.VarChar(100)
+  metadata    Json?
+  ipAddress   String?  @db.VarChar(50)
+  userAgent   String?  @db.Text
+  requestId   String?  @db.VarChar(100)
+  duration    Int?     // Request duration in milliseconds
+  statusCode  Int?     // HTTP status code
+  errorStack  String?  @db.Text
+  environment String   @default("production") @db.VarChar(50)
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Indexes for common queries
+  @@index([level, timestamp])
+  @@index([service, timestamp])
+  @@index([operation, timestamp])
+  @@index([userId, timestamp])
+  @@index([businessId, timestamp])
+  @@index([module, timestamp])
+  @@index([timestamp])
+  @@map("logs")
+}
+
+model LogAlert {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  conditions  Json     // { level?: string[], operation?: string[], message?: string }
+  actions     Json     // { email?: string[], webhook?: string, threshold?: number }
+  enabled     Boolean  @default(true)
+  lastTriggered DateTime?
+  triggerCount Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("log_alerts")
+}
+
+model LogRetentionPolicy {
+  id                    String   @id @default(uuid())
+  defaultRetentionDays  Int      @default(30)
+  errorRetentionDays    Int      @default(90)
+  auditRetentionDays    Int      @default(365)
+  enabled               Boolean  @default(true)
+  autoCleanup           Boolean  @default(true)
+  lastCleanup           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("log_retention_policies")
+}
+
+enum LogLevel {
+  debug
+  info
+  warn
+  error
+}
+
+enum LogService {
+  vssyl_server
+  vssyl_web
+}
+
