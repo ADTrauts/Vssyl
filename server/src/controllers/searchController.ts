@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
+import { logger } from '../lib/logger';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
@@ -14,9 +15,15 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+const handleError = async (res: Response, error: unknown, message: string = 'Internal server error') => {
   const err = error as Error;
-  console.error('Search Controller Error:', error);
+  await logger.error('Search controller error', {
+    operation: 'search_controller_error',
+    error: {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    }
+  });
   res.status(500).json({ success: false, error: message });
 };
 
@@ -89,55 +96,91 @@ const searchProviders: SearchProvider[] = [
 // Refactored global search using provider registry
 export const globalSearch = async (req: Request, res: Response) => {
   try {
-    console.log('🔍 Global Search Debug - Request received:', {
-      method: req.method,
-      url: req.url,
-      headers: req.headers,
-      body: req.body
+    await logger.debug('Global search request received', {
+      operation: 'search_global_request',
+      context: {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body
+      }
     });
 
     const user = getUserFromRequest(req);
-    console.log('🔍 Global Search Debug - User extracted:', user);
+    await logger.debug('Global search user extracted', {
+      operation: 'search_user_extracted',
+      userId: user?.id
+    });
     
     if (!user) {
-      console.log('🔍 Global Search Debug - No user found, returning 401');
+      await logger.debug('Global search no user found', {
+        operation: 'search_no_user'
+      });
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
     const { query, filters }: { query: string; filters?: SearchFilters } = req.body;
-    console.log('🔍 Global Search Debug - Query and filters:', { query, filters });
+    await logger.debug('Global search query and filters', {
+      operation: 'search_query_filters',
+      query,
+      filters
+    });
 
     if (!query || typeof query !== 'string' || query.trim().length < 2) {
-      console.log('🔍 Global Search Debug - Invalid query, returning 400');
+      await logger.debug('Global search invalid query', {
+        operation: 'search_invalid_query'
+      });
       return res.status(400).json({ success: false, error: 'Query must be at least 2 characters' });
     }
 
     const searchQuery = query.trim();
     let results: SearchResult[] = [];
 
-    console.log('🔍 Global Search Debug - Starting search with query:', searchQuery);
+    await logger.debug('Global search starting', {
+      operation: 'search_start',
+      query: searchQuery
+    });
 
     // Use provider registry for modular search
     for (const provider of searchProviders) {
-      console.log(`🔍 Global Search Debug - Searching provider: ${provider.moduleId}`);
+      await logger.debug('Global search provider search', {
+        operation: 'search_provider',
+        providerId: provider.moduleId
+      });
       if (!filters?.moduleId || filters.moduleId === provider.moduleId) {
         const providerResults = await provider.search(searchQuery, user.id, filters);
-        console.log(`🔍 Global Search Debug - Provider ${provider.moduleId} returned ${providerResults.length} results:`, providerResults);
+        await logger.debug('Global search provider results', {
+          operation: 'search_provider_results',
+          providerId: provider.moduleId,
+          resultCount: providerResults.length
+        });
         results.push(...providerResults);
       }
     }
 
-    console.log('🔍 Global Search Debug - Total results before sorting:', results.length);
+    await logger.debug('Global search results before sorting', {
+      operation: 'search_results_pre_sort',
+      count: results.length
+    });
 
     // Sort results by relevance score
     results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
 
-    console.log('🔍 Global Search Debug - Final results:', results);
+    await logger.debug('Global search final results', {
+      operation: 'search_final_results',
+      count: results.length
+    });
 
     res.json({ success: true, results });
   } catch (error) {
-    console.error('🔍 Global Search Debug - Error occurred:', error);
-    handleError(res, error, 'Failed to perform global search');
+    await logger.error('Global search error', {
+      operation: 'search_global_error',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    await handleError(res, error, 'Failed to perform global search');
   }
 };
 
@@ -169,17 +212,23 @@ export const getSuggestions = async (req: Request, res: Response) => {
 
     res.json({ success: true, suggestions });
   } catch (error) {
-    handleError(res, error, 'Failed to get suggestions');
+    await handleError(res, error, 'Failed to get suggestions');
   }
 };
 
 // Search in Drive module
 async function searchDrive(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  console.log('🔍 Drive Search Debug - Starting searchDrive with:', { query, userId, filters });
+  await logger.debug('Drive search starting', {
+    operation: 'search_drive_start',
+    query,
+    userId
+  });
   const results: SearchResult[] = [];
 
   // Search files - simplified query to match our working test
-  console.log('🔍 Drive Search Debug - Searching files...');
+  await logger.debug('Drive search files', {
+    operation: 'search_drive_files'
+  });
   const files = await prisma.file.findMany({
     where: {
       AND: [
@@ -198,7 +247,10 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
     take: 10,
   });
 
-  console.log('🔍 Drive Search Debug - Files found:', files.length, files);
+  await logger.debug('Drive search files found', {
+    operation: 'search_drive_files_found',
+    count: files.length
+  });
 
   for (const file of files) {
     const relevanceScore = calculateRelevanceScore(file.name, query);
@@ -222,7 +274,9 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
   }
 
   // Search folders - simplified query to match our working test
-  console.log('🔍 Drive Search Debug - Searching folders...');
+  await logger.debug('Drive search folders', {
+    operation: 'search_drive_folders'
+  });
   const folders = await prisma.folder.findMany({
     where: {
       AND: [
@@ -234,7 +288,10 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
     take: 5,
   });
 
-  console.log('🔍 Drive Search Debug - Folders found:', folders.length, folders);
+  await logger.debug('Drive search folders found', {
+    operation: 'search_drive_folders_found',
+    count: folders.length
+  });
 
   for (const folder of folders) {
     const relevanceScore = calculateRelevanceScore(folder.name, query);
@@ -255,17 +312,26 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
     });
   }
 
-  console.log('🔍 Drive Search Debug - Total results:', results.length, results);
+  await logger.debug('Drive search total results', {
+    operation: 'search_drive_total',
+    count: results.length
+  });
   return results;
 }
 
 // Search in Chat module
 async function searchChat(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  console.log('🔍 Chat Search Debug - Starting searchChat with:', { query, userId, filters });
+  await logger.debug('Chat search starting', {
+    operation: 'search_chat_start',
+    query,
+    userId
+  });
   const results: SearchResult[] = [];
 
   // Search messages
-  console.log('🔍 Chat Search Debug - Searching messages...');
+  await logger.debug('Chat search messages', {
+    operation: 'search_chat_messages'
+  });
   const messages = await prisma.message.findMany({
     where: {
       content: { contains: query, mode: 'insensitive' },
@@ -290,7 +356,10 @@ async function searchChat(query: string, userId: string, filters?: SearchFilters
     take: 10,
   });
 
-  console.log('🔍 Chat Search Debug - Messages found:', messages.length, messages.map(m => ({ content: m.content.substring(0, 30) + '...', sender: m.sender.name })));
+  await logger.debug('Chat search messages found', {
+    operation: 'search_chat_messages_found',
+    count: messages.length
+  });
 
   for (const message of messages) {
     const relevanceScore = calculateRelevanceScore(message.content, query);
@@ -314,7 +383,9 @@ async function searchChat(query: string, userId: string, filters?: SearchFilters
   }
 
   // Search conversations
-  console.log('🔍 Chat Search Debug - Searching conversations...');
+  await logger.debug('Chat search conversations', {
+    operation: 'search_chat_conversations'
+  });
   const conversations = await prisma.conversation.findMany({
     where: {
       OR: [
@@ -340,7 +411,10 @@ async function searchChat(query: string, userId: string, filters?: SearchFilters
     take: 5,
   });
 
-  console.log('🔍 Chat Search Debug - Conversations found:', conversations.length, conversations.map(c => ({ name: c.name, type: c.type })));
+  await logger.debug('Chat search conversations found', {
+    operation: 'search_chat_conversations_found',
+    count: conversations.length
+  });
 
   for (const conversation of conversations) {
     const relevanceScore = calculateRelevanceScore(conversation.name || '', query);
@@ -362,17 +436,26 @@ async function searchChat(query: string, userId: string, filters?: SearchFilters
     });
   }
 
-  console.log('🔍 Chat Search Debug - Total results:', results.length, results);
+  await logger.debug('Chat search total results', {
+    operation: 'search_chat_total',
+    count: results.length
+  });
   return results;
 }
 
 // Search in Dashboard module
 async function searchDashboard(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  console.log('🔍 Dashboard Search Debug - Starting searchDashboard with:', { query, userId, filters });
+  await logger.debug('Dashboard search starting', {
+    operation: 'search_dashboard_start',
+    query,
+    userId
+  });
   const results: SearchResult[] = [];
 
   // Search dashboards
-  console.log('🔍 Dashboard Search Debug - Searching dashboards...');
+  await logger.debug('Dashboard search dashboards', {
+    operation: 'search_dashboard_dashboards'
+  });
   const dashboards = await prisma.dashboard.findMany({
     where: {
       AND: [
@@ -383,7 +466,10 @@ async function searchDashboard(query: string, userId: string, filters?: SearchFi
     take: 5,
   });
 
-  console.log('🔍 Dashboard Search Debug - Dashboards found:', dashboards.length, dashboards.map(d => ({ name: d.name, id: d.id })));
+  await logger.debug('Dashboard search dashboards found', {
+    operation: 'search_dashboard_dashboards_found',
+    count: dashboards.length
+  });
 
   for (const dashboard of dashboards) {
     const relevanceScore = calculateRelevanceScore(dashboard.name, query);
@@ -404,7 +490,10 @@ async function searchDashboard(query: string, userId: string, filters?: SearchFi
     });
   }
 
-  console.log('🔍 Dashboard Search Debug - Total results:', results.length, results);
+  await logger.debug('Dashboard search total results', {
+    operation: 'search_dashboard_total',
+    count: results.length
+  });
   return results;
 }
 

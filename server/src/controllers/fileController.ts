@@ -7,6 +7,7 @@ import { NotificationService } from '../services/notificationService';
 import { storageService } from '../services/storageService';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
 
 interface JWTPayload {
   sub?: string;
@@ -98,7 +99,10 @@ export async function listFiles(req: Request, res: Response) {
       query += ` AND "dashboardId" = $${paramIndex}`;
       params.push(dashboardId);
       paramIndex++;
-      console.log('Dashboard context requested:', dashboardId);
+      await logger.debug('Dashboard context requested', {
+        operation: 'file_list_dashboard_context',
+        dashboardId
+      });
     } else {
       query += ` AND "dashboardId" IS NULL`;
     }
@@ -133,7 +137,13 @@ export async function listFiles(req: Request, res: Response) {
     // Return array directly to match folders API format
     res.json(filesWithFullUrls);
   } catch (err) {
-    console.error('Error in listFiles:', err);
+    await logger.error('Failed to list files', {
+      operation: 'file_list_files',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to fetch files' });
   }
 }
@@ -145,17 +155,20 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
   }
   
   try {
-    console.log('📁 File upload request received:', {
-      hasFile: !!req.file,
-      fileName: req.file?.originalname,
-      fileSize: req.file?.size,
-      mimeType: req.file?.mimetype,
-      storageProvider: storageService.getProvider(),
-      isGCSConfigured: storageService.isGCSConfigured(),
-      userId: (req as AuthenticatedRequest).user?.id || '',
-      environment: process.env.NODE_ENV,
-      storageProviderEnv: process.env.STORAGE_PROVIDER,
-      fileStorageTypeEnv: process.env.FILE_STORAGE_TYPE
+    await logger.info('File upload request received', {
+      operation: 'file_upload_request',
+      context: {
+        hasFile: !!req.file,
+        fileName: req.file?.originalname,
+        fileSize: req.file?.size,
+        mimeType: req.file?.mimetype,
+        storageProvider: storageService.getProvider(),
+        isGCSConfigured: storageService.isGCSConfigured(),
+        userId: (req as AuthenticatedRequest).user?.id || '',
+        environment: process.env.NODE_ENV,
+        storageProviderEnv: process.env.STORAGE_PROVIDER,
+        fileStorageTypeEnv: process.env.FILE_STORAGE_TYPE
+      }
     });
 
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -183,10 +196,13 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
     
     // Upload file using storage service
-    console.log('📤 Uploading file to storage:', {
-      filename: uniqueFilename,
-      provider: storageService.getProvider(),
-      isGCS: storageService.isGCSConfigured()
+    await logger.info('Uploading file to storage', {
+      operation: 'file_upload_to_storage',
+      context: {
+        filename: uniqueFilename,
+        provider: storageService.getProvider(),
+        isGCS: storageService.isGCSConfigured()
+      }
     });
     
     const uploadResult = await storageService.uploadFile(req.file, uniqueFilename, {
@@ -199,9 +215,12 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       },
     });
     
-    console.log('✅ File uploaded successfully:', {
-      url: uploadResult.url,
-      path: uploadResult.path
+    await logger.info('File uploaded successfully', {
+      operation: 'file_upload_success',
+      context: {
+        url: uploadResult.url,
+        path: uploadResult.path
+      }
     });
     
     // Create file record in database
@@ -235,12 +254,17 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
 
     res.status(201).json({ file: fileRecord });
   } catch (err) {
-    console.error('❌ Error in uploadFile:', {
-      error: err instanceof Error ? err.message : 'Unknown error',
-      stack: err instanceof Error ? err.stack : undefined,
-      fileName: req.file?.originalname,
-      fileSize: req.file?.size,
-      storageProvider: storageService.getProvider()
+    await logger.error('Failed to upload file', {
+      operation: 'file_upload',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      },
+      context: {
+        fileName: req.file?.originalname,
+        fileSize: req.file?.size,
+        storageProvider: storageService.getProvider()
+      }
     });
     res.status(500).json({ 
       message: 'Failed to upload file',
@@ -298,7 +322,13 @@ export async function getItemActivity(req: Request, res: Response) {
 
     res.json({ activities });
   } catch (err) {
-    console.error('Error in getItemActivity:', err);
+    await logger.error('Failed to get item activity', {
+      operation: 'file_get_item_activity',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to get item activity' });
   }
 }
@@ -513,7 +543,13 @@ export async function grantFilePermission(req: Request, res: Response) {
         senderId: ownerId
       });
     } catch (notificationError) {
-      console.error('Error creating file permission notification:', notificationError);
+      await logger.error('Failed to create file permission notification', {
+        operation: 'file_permission_notification',
+        error: {
+          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+          stack: notificationError instanceof Error ? notificationError.stack : undefined
+        }
+      });
       // Don't fail the permission grant if notification fails
     }
 
@@ -598,7 +634,13 @@ export async function revokeFilePermission(req: Request, res: Response) {
         senderId: ownerId
       });
     } catch (notificationError) {
-      console.error('Error creating file permission revocation notification:', notificationError);
+      await logger.error('Failed to create file permission revocation notification', {
+        operation: 'file_permission_revocation_notification',
+        error: {
+          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+          stack: notificationError instanceof Error ? notificationError.stack : undefined
+        }
+      });
       // Don't fail the permission revocation if notification fails
     }
     
@@ -640,7 +682,13 @@ export async function listTrashedFiles(req: Request, res: Response) {
     });
     res.json({ files });
   } catch (err) {
-    console.error('listTrashedFiles error:', err);
+    await logger.error('Failed to list trashed files', {
+      operation: 'file_list_trashed',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to list trashed files' });
   }
 }
@@ -688,7 +736,12 @@ export async function hardDeleteFile(req: Request, res: Response) {
     if (fileToDelete.path) {
       const deleteResult = await storageService.deleteFile(fileToDelete.path);
       if (!deleteResult.success) {
-        console.warn(`Failed to delete file from storage: ${deleteResult.error}`);
+        await logger.warn('Failed to delete file from storage', {
+          operation: 'file_storage_delete',
+          error: {
+            message: deleteResult.error || 'Unknown error'
+          }
+        });
         // Continue with database deletion even if storage deletion fails
       }
     }
@@ -704,7 +757,13 @@ export async function hardDeleteFile(req: Request, res: Response) {
     
     res.json({ deleted: true });
   } catch (err) {
-    console.error('Error in hardDeleteFile:', err);
+    await logger.error('Failed to hard delete file', {
+      operation: 'file_hard_delete',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to permanently delete file' });
   }
 } 
@@ -790,7 +849,13 @@ export async function getSharedItems(req: Request, res: Response) {
       folders: transformedFolders
     });
   } catch (err) {
-    console.error('Error in getSharedItems:', err);
+    await logger.error('Failed to get shared items', {
+      operation: 'file_get_shared_items',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to fetch shared items' });
   }
 }
@@ -830,7 +895,13 @@ export async function reorderFiles(req: Request, res: Response) {
 
     res.json({ success: true, message: 'Files reordered successfully' });
   } catch (err) {
-    console.error('Error in reorderFiles:', err);
+    await logger.error('Failed to reorder files', {
+      operation: 'file_reorder',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to reorder files' });
   }
 }
@@ -886,7 +957,13 @@ export async function moveFile(req: Request, res: Response) {
 
     res.json({ file: updatedFile, message: 'File moved successfully' });
   } catch (err) {
-    console.error('Error in moveFile:', err);
+    await logger.error('Failed to move file', {
+      operation: 'file_move',
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     res.status(500).json({ message: 'Failed to move file' });
   }
 } 

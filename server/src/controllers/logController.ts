@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import express, { Response } from 'express';
 import { logger } from '../lib/logger';
 import { logService } from '../services/logService';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -38,7 +38,7 @@ interface LogAlert {
 
 export const logController = {
   // Collect client logs from frontend
-  async collectClientLog(req: Request, res: Response): Promise<void> {
+  async collectClientLog(req: express.Request, res: Response): Promise<void> {
     try {
       const logEntry = req.body;
       
@@ -65,7 +65,7 @@ export const logController = {
   },
 
   // Get logs with filtering
-  async getLogs(req: Request, res: Response): Promise<void> {
+  async getLogs(req: express.Request, res: Response): Promise<void> {
     try {
       const filters: LogFilters = {
         level: req.query.level as LogFilters['level'],
@@ -105,7 +105,7 @@ export const logController = {
   },
 
   // Export logs
-  async exportLogs(req: Request, res: Response): Promise<void> {
+  async exportLogs(req: express.Request, res: Response): Promise<void> {
     try {
       const filters: LogFilters = {
         level: req.query.level as LogFilters['level'],
@@ -147,7 +147,7 @@ export const logController = {
   },
 
   // Get log analytics
-  async getLogAnalytics(req: Request, res: Response): Promise<void> {
+  async getLogAnalytics(req: express.Request, res: Response): Promise<void> {
     try {
       const filters: LogFilters = {
         startDate: req.query.startDate as string,
@@ -175,7 +175,7 @@ export const logController = {
   },
 
   // Get log alerts
-  async getLogAlerts(req: Request, res: Response): Promise<void> {
+  async getLogAlerts(req: express.Request, res: Response): Promise<void> {
     try {
       const alerts = await logService.getLogAlerts();
       
@@ -197,7 +197,7 @@ export const logController = {
   },
 
   // Create log alert
-  async createLogAlert(req: Request, res: Response): Promise<void> {
+  async createLogAlert(req: express.Request, res: Response): Promise<void> {
     try {
       const alertData: Omit<LogAlert, 'id' | 'createdAt' | 'updatedAt'> = req.body;
       
@@ -221,7 +221,7 @@ export const logController = {
   },
 
   // Update log alert
-  async updateLogAlert(req: Request, res: Response): Promise<void> {
+  async updateLogAlert(req: express.Request, res: Response): Promise<void> {
     try {
       const alertId = req.params.id;
       const updateData: Partial<Omit<LogAlert, 'id' | 'createdAt'>> = req.body;
@@ -247,7 +247,7 @@ export const logController = {
   },
 
   // Delete log alert
-  async deleteLogAlert(req: Request, res: Response): Promise<void> {
+  async deleteLogAlert(req: express.Request, res: Response): Promise<void> {
     try {
       const alertId = req.params.id;
       
@@ -272,7 +272,7 @@ export const logController = {
   },
 
   // Cleanup old logs
-  async cleanupOldLogs(req: Request, res: Response): Promise<void> {
+  async cleanupOldLogs(req: express.Request, res: Response): Promise<void> {
     try {
       const daysToKeep = parseInt(req.body.daysToKeep as string) || 30;
       
@@ -296,7 +296,7 @@ export const logController = {
   },
 
   // Get retention settings
-  async getRetentionSettings(req: Request, res: Response): Promise<void> {
+  async getRetentionSettings(req: express.Request, res: Response): Promise<void> {
     try {
       const settings = await logService.getRetentionSettings();
       
@@ -318,7 +318,7 @@ export const logController = {
   },
 
   // Update retention settings
-  async updateRetentionSettings(req: Request, res: Response): Promise<void> {
+  async updateRetentionSettings(req: express.Request, res: Response): Promise<void> {
     try {
       const settings = req.body;
       
@@ -342,7 +342,7 @@ export const logController = {
   },
 
   // Get log stream (for real-time updates)
-  async getLogStream(req: Request, res: Response): Promise<void> {
+  async getLogStream(req: express.Request, res: Response): Promise<void> {
     try {
       // This would typically be handled by WebSocket, but we can provide a polling endpoint
       const filters: LogFilters = {

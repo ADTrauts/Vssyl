@@ -7,6 +7,7 @@ import { getChatSocketService } from '../services/chatSocketService';
 import { AuditService } from '../services/auditService';
 import { sendCalendarInviteEmail, sendCalendarUpdateEmail, sendCalendarCancelEmail } from '../services/emailService';
 import { createRsvpToken, validateRsvpToken } from '../utils/tokenUtils';
+import { logger } from '../lib/logger';
 
 function getUserId(req: Request): string | null {
   const user = (req as AuthenticatedRequest).user;
@@ -379,7 +380,13 @@ export async function searchEvents(req: Request, res: Response) {
     res.json({ success: true, data: events });
     
   } catch (error) {
-    console.error('Error searching events:', error);
+    await logger.error('Failed to search events', {
+      operation: 'calendar_search_events',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
@@ -455,7 +462,13 @@ export async function checkConflicts(req: Request, res: Response) {
             }
           });
         } catch (error) {
-          console.error('Error parsing recurrence rule for conflict check:', error);
+          await logger.error('Failed to parse recurrence rule for conflict check', {
+            operation: 'calendar_parse_recurrence_conflict',
+            error: {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          });
           // Add original event if recurrence parsing fails
           expandedConflicts.push(event);
         }
@@ -467,7 +480,13 @@ export async function checkConflicts(req: Request, res: Response) {
     res.json({ success: true, data: expandedConflicts });
     
   } catch (error) {
-    console.error('Error checking conflicts:', error);
+    await logger.error('Failed to check calendar conflicts', {
+      operation: 'calendar_check_conflicts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
@@ -551,7 +570,13 @@ export async function createEvent(req: Request, res: Response) {
       socket.broadcastToUser(m.userId, 'calendar_event', payload);
     }
   } catch (e) {
-    console.error('Failed to broadcast calendar event creation:', e);
+    await logger.error('Failed to broadcast calendar event creation', {
+      operation: 'calendar_broadcast_create',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
   // Send email invites (MVP): email-only attendees
   try {
@@ -601,7 +626,13 @@ export async function createEvent(req: Request, res: Response) {
       }
     }
   } catch (e) {
-    console.error('Failed to send calendar invites:', e);
+    await logger.error('Failed to send calendar invites', {
+      operation: 'calendar_send_invites',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
 }
 
@@ -701,7 +732,13 @@ export async function updateEvent(req: Request, res: Response) {
       socket.broadcastToUser(m.userId, 'calendar_event', payload);
     }
   } catch (e) {
-    console.error('Failed to broadcast calendar event update:', e);
+    await logger.error('Failed to broadcast calendar event update', {
+      operation: 'calendar_broadcast_update',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
   // Email updates to email-only attendees (simple MVP)
   try {
@@ -743,7 +780,13 @@ export async function updateEvent(req: Request, res: Response) {
       }
     }
   } catch (e) {
-    console.error('Failed to send calendar update emails:', e);
+    await logger.error('Failed to send calendar update emails', {
+      operation: 'calendar_send_update_emails',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
 }
 
@@ -790,7 +833,13 @@ export async function deleteEvent(req: Request, res: Response) {
       });
       return res.json({ success: true });
     } catch (e) {
-      console.error('Failed to create canceled exception child:', e);
+      await logger.error('Failed to create canceled exception child', {
+        operation: 'calendar_create_canceled_exception',
+        error: {
+          message: e instanceof Error ? e.message : 'Unknown error',
+          stack: e instanceof Error ? e.stack : undefined
+        }
+      });
       return res.status(500).json({ error: 'Failed to skip occurrence' });
     }
   }
@@ -810,7 +859,13 @@ export async function deleteEvent(req: Request, res: Response) {
       socket.broadcastToUser(m.userId, 'calendar_event', payload);
     }
   } catch (e) {
-    console.error('Failed to broadcast calendar event delete:', e);
+    await logger.error('Failed to broadcast calendar event delete', {
+      operation: 'calendar_broadcast_delete',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
   // Email cancellation to email-only attendees
   try {
@@ -839,7 +894,13 @@ export async function deleteEvent(req: Request, res: Response) {
       }
     }
   } catch (e) {
-    console.error('Failed to send calendar cancellation emails:', e);
+    await logger.error('Failed to send calendar cancellation emails', {
+      operation: 'calendar_send_cancel_emails',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
 }
 
@@ -873,7 +934,13 @@ export async function rsvpEvent(req: Request, res: Response) {
       }
     }
   } catch (e) {
-    console.error('Failed to broadcast RSVP update:', e);
+    await logger.error('Failed to broadcast RSVP update', {
+      operation: 'calendar_broadcast_rsvp',
+      error: {
+        message: e instanceof Error ? e.message : 'Unknown error',
+        stack: e instanceof Error ? e.stack : undefined
+      }
+    });
   }
 }
 
@@ -954,7 +1021,13 @@ export async function rsvpEventPublic(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error processing public RSVP:', error);
+    await logger.error('Failed to process public RSVP', {
+      operation: 'calendar_process_public_rsvp',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
@@ -1095,7 +1168,13 @@ export async function importIcsEvents(req: Request, res: Response) {
         });
         
       } catch (error) {
-        console.error('Error creating event from ICS:', error);
+        await logger.error('Failed to create event from ICS', {
+          operation: 'calendar_create_from_ics',
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         // Continue with other events
       }
     }
@@ -1119,7 +1198,13 @@ export async function importIcsEvents(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error importing ICS events:', error);
+    await logger.error('Failed to import ICS events', {
+      operation: 'calendar_import_ics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
@@ -1297,7 +1382,13 @@ export async function exportIcsEvents(req: Request, res: Response) {
     res.send(icsContent);
     
   } catch (error) {
-    console.error('Error exporting ICS events:', error);
+    await logger.error('Failed to export ICS events', {
+      operation: 'calendar_export_ics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
@@ -1353,7 +1444,13 @@ export async function getFreeBusy(req: Request, res: Response) {
               });
             });
           } catch (error) {
-            console.error('Error parsing recurrence rule:', error);
+            await logger.error('Failed to parse recurrence rule', {
+              operation: 'calendar_parse_recurrence',
+              error: {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+              }
+            });
           }
         } else {
           busyTimes.push({
@@ -1407,7 +1504,13 @@ export async function getFreeBusy(req: Request, res: Response) {
                 });
               });
             } catch (error) {
-              console.error('Error parsing recurrence rule for attendee:', error);
+              await logger.error('Failed to parse recurrence rule for attendee', {
+                operation: 'calendar_parse_recurrence_attendee',
+                error: {
+                  message: error instanceof Error ? error.message : 'Unknown error',
+                  stack: error instanceof Error ? error.stack : undefined
+                }
+              });
             }
           } else {
             busyTimes.push({
@@ -1449,7 +1552,13 @@ export async function getFreeBusy(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error getting free-busy:', error);
+    await logger.error('Failed to get free-busy', {
+      operation: 'calendar_get_free_busy',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }

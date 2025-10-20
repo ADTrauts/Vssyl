@@ -12,6 +12,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
+import { logger } from '../lib/logger';
 
 export class ModuleRegistrySyncService {
   private prisma: PrismaClient;
@@ -32,9 +33,9 @@ export class ModuleRegistrySyncService {
     errors: number;
     details: Array<{ moduleId: string; action: string; status: string; error?: string }>;
   }> {
-    console.log('\n🔄 ============================================');
-    console.log('🔄 Module AI Context Registry - Full Sync');
-    console.log('🔄 ============================================\n');
+    await logger.info('Module AI Context Registry - Full Sync starting', {
+      operation: 'module_registry_sync_start'
+    });
 
     const results = {
       success: true,
@@ -59,7 +60,10 @@ export class ModuleRegistrySyncService {
         },
       });
 
-      console.log(`📦 Found ${modules.length} active modules to check\n`);
+      await logger.info('Found active modules to check', {
+        operation: 'module_registry_found_modules',
+        count: modules.length
+      });
 
       // Step 2: Sync each module
       for (const module of modules) {
@@ -89,7 +93,14 @@ export class ModuleRegistrySyncService {
             });
           }
         } catch (error) {
-          console.error(`   ❌ Error syncing ${module.name}:`, error);
+          await logger.error('Failed to sync module', {
+            operation: 'module_registry_sync_module_error',
+            moduleName: module.name,
+            error: {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          });
           results.errors++;
           results.success = false;
           results.details.push({
@@ -106,22 +117,34 @@ export class ModuleRegistrySyncService {
       results.removed = cleanupResult.removed;
 
       // Summary
-      console.log('\n📊 Sync Summary:');
-      console.log(`   ✅ Added: ${results.added}`);
-      console.log(`   🔄 Updated: ${results.updated}`);
-      console.log(`   🗑️  Removed: ${results.removed}`);
-      console.log(`   ❌ Errors: ${results.errors}`);
-      console.log('');
+      await logger.info('Module registry sync summary', {
+        operation: 'module_registry_sync_summary',
+        added: results.added,
+        updated: results.updated,
+        removed: results.removed,
+        errors: results.errors
+      });
 
       if (results.errors === 0) {
-        console.log('✅ Module registry sync completed successfully!\n');
+        await logger.info('Module registry sync completed successfully', {
+          operation: 'module_registry_sync_success'
+        });
       } else {
-        console.warn(`⚠️  Sync completed with ${results.errors} errors. Check logs for details.\n`);
+        await logger.warn('Sync completed with errors', {
+          operation: 'module_registry_sync_with_errors',
+          errorCount: results.errors
+        });
       }
 
       return results;
     } catch (error) {
-      console.error('❌ Fatal error during module sync:', error);
+      await logger.error('Fatal error during module sync', {
+        operation: 'module_registry_sync_fatal',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       results.success = false;
       results.errors++;
       return results;
@@ -150,20 +173,30 @@ export class ModuleRegistrySyncService {
       });
 
       if (!module) {
-        console.log(`   ⚠️  Module '${moduleId}' not found in database`);
+        await logger.warn('Module not found in database', {
+          operation: 'module_registry_module_not_found',
+          moduleId
+        });
         return { action: 'skipped', reason: 'module_not_found' };
       }
 
       if (module.status !== 'APPROVED') {
-        console.log(`   ⚠️  Module '${module.name}' is not approved (status: ${module.status})`);
+        await logger.warn('Module is not approved', {
+          operation: 'module_registry_not_approved',
+          moduleName: module.name,
+          status: module.status
+        });
         return { action: 'skipped', reason: 'module_not_approved' };
       }
 
       // Extract AI context from module manifest
-      const aiContext = this.extractAIContextFromManifest(module.manifest);
+      const aiContext = await this.extractAIContextFromManifest(module.manifest);
 
       if (!aiContext) {
-        console.log(`   ⚠️  Module '${module.name}' has no AI context in manifest`);
+        await logger.warn('Module has no AI context in manifest', {
+          operation: 'module_registry_no_ai_context',
+          moduleName: module.name
+        });
         return { action: 'skipped', reason: 'no_ai_context' };
       }
 
@@ -175,7 +208,10 @@ export class ModuleRegistrySyncService {
       if (!existing) {
         // Add to registry
         await this.addModuleToRegistry(module.id, module.name, module.version, aiContext);
-        console.log(`   ✅ Added ${module.name} to registry`);
+        await logger.info('Added module to registry', {
+          operation: 'module_registry_added',
+          moduleName: module.name
+        });
         return { action: 'added' };
       }
 
@@ -188,10 +224,20 @@ export class ModuleRegistrySyncService {
 
       // Update registry
       await this.updateModuleInRegistry(module.id, module.name, module.version, aiContext);
-      console.log(`   🔄 Updated ${module.name} in registry`);
+      await logger.info('Updated module in registry', {
+        operation: 'module_registry_updated',
+        moduleName: module.name
+      });
       return { action: 'updated' };
     } catch (error) {
-      console.error(`Error syncing module ${moduleId}:`, error);
+      await logger.error('Failed to sync module', {
+        operation: 'module_registry_sync_error',
+        moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -201,7 +247,9 @@ export class ModuleRegistrySyncService {
    */
   async cleanupOrphanedEntries(): Promise<{ removed: number }> {
     try {
-      console.log('🧹 Cleaning up orphaned registry entries...');
+      await logger.info('Cleaning up orphaned registry entries', {
+        operation: 'module_registry_cleanup_start'
+      });
 
       // Get all registry entries
       const registryEntries = await this.prisma.moduleAIContextRegistry.findMany({
@@ -222,7 +270,9 @@ export class ModuleRegistrySyncService {
       );
 
       if (orphanedEntries.length === 0) {
-        console.log('   ✅ No orphaned entries found');
+        await logger.info('No orphaned entries found', {
+          operation: 'module_registry_cleanup_none'
+        });
         return { removed: 0 };
       }
 
@@ -235,10 +285,19 @@ export class ModuleRegistrySyncService {
         },
       });
 
-      console.log(`   🗑️  Removed ${orphanedEntries.length} orphaned entries`);
+      await logger.info('Removed orphaned entries', {
+        operation: 'module_registry_cleanup_removed',
+        count: orphanedEntries.length
+      });
       return { removed: orphanedEntries.length };
     } catch (error) {
-      console.error('Error cleaning up orphaned entries:', error);
+      await logger.error('Failed to clean up orphaned entries', {
+        operation: 'module_registry_cleanup_error',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       return { removed: 0 };
     }
   }
@@ -285,7 +344,13 @@ export class ModuleRegistrySyncService {
         lastSync: lastUpdated?.lastUpdated,
       };
     } catch (error) {
-      console.error('Error getting sync status:', error);
+      await logger.error('Failed to get sync status', {
+        operation: 'module_registry_get_sync_status',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -297,7 +362,7 @@ export class ModuleRegistrySyncService {
   /**
    * Extract AI context from module manifest
    */
-  private extractAIContextFromManifest(manifest: any): ModuleAIContext | null {
+  private async extractAIContextFromManifest(manifest: any): Promise<ModuleAIContext | null> {
     try {
       // Check if manifest has aiContext field
       if (!manifest || typeof manifest !== 'object') {
@@ -312,13 +377,21 @@ export class ModuleRegistrySyncService {
 
       // Validate required fields
       if (!aiContext.purpose || !aiContext.category || !aiContext.keywords) {
-        console.warn('Invalid AI context: missing required fields (purpose, category, or keywords)');
+        await logger.warn('Invalid AI context: missing required fields', {
+          operation: 'module_registry_invalid_ai_context'
+        });
         return null;
       }
 
       return aiContext as ModuleAIContext;
     } catch (error) {
-      console.error('Error extracting AI context from manifest:', error);
+      await logger.error('Failed to extract AI context from manifest', {
+        operation: 'module_registry_extract_ai_context',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       return null;
     }
   }

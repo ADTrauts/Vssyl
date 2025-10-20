@@ -3,6 +3,7 @@ import { SubscriptionService } from '../services/subscriptionService';
 import { ModuleSubscriptionService } from '../services/moduleSubscriptionService';
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 const subscriptionService = new SubscriptionService();
 const moduleSubscriptionService = new ModuleSubscriptionService();
 
@@ -30,7 +31,13 @@ export const createSubscription = async (req: Request, res: Response) => {
 
     res.status(201).json({ subscription });
   } catch (error) {
-    console.error('Error creating subscription:', error);
+    await logger.error('Failed to create subscription', {
+      operation: 'billing_create_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create subscription' });
   }
 };
@@ -57,7 +64,13 @@ export const getSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription });
   } catch (error) {
-    console.error('Error getting subscription:', error);
+    await logger.error('Failed to get subscription', {
+      operation: 'billing_get_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get subscription' });
   }
 };
@@ -74,7 +87,13 @@ export const getUserSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription });
   } catch (error) {
-    console.error('Error getting user subscription:', error);
+    await logger.error('Failed to get user subscription', {
+      operation: 'billing_get_user_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get user subscription' });
   }
 };
@@ -108,7 +127,13 @@ export const updateSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: updatedSubscription });
   } catch (error) {
-    console.error('Error updating subscription:', error);
+    await logger.error('Failed to update subscription', {
+      operation: 'billing_update_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update subscription' });
   }
 };
@@ -136,7 +161,13 @@ export const cancelSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: cancelledSubscription });
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
+    await logger.error('Failed to cancel subscription', {
+      operation: 'billing_cancel_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 };
@@ -164,7 +195,13 @@ export const reactivateSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: reactivatedSubscription });
   } catch (error) {
-    console.error('Error reactivating subscription:', error);
+    await logger.error('Failed to reactivate subscription', {
+      operation: 'billing_reactivate_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to reactivate subscription' });
   }
 };
@@ -198,7 +235,13 @@ export const createModuleSubscription = async (req: Request, res: Response) => {
 
     res.status(201).json({ subscription });
   } catch (error) {
-    console.error('Error creating module subscription:', error);
+    await logger.error('Failed to create module subscription', {
+      operation: 'billing_create_module_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create module subscription' });
   }
 };
@@ -224,7 +267,13 @@ export const getModuleSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription });
   } catch (error) {
-    console.error('Error getting module subscription:', error);
+    await logger.error('Failed to get module subscription', {
+      operation: 'billing_get_module_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get module subscription' });
   }
 };
@@ -241,7 +290,13 @@ export const getUserModuleSubscriptions = async (req: Request, res: Response) =>
 
     res.json({ subscriptions });
   } catch (error) {
-    console.error('Error getting user module subscriptions:', error);
+    await logger.error('Failed to get user module subscriptions', {
+      operation: 'billing_get_user_module_subscriptions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get user module subscriptions' });
   }
 };
@@ -274,7 +329,13 @@ export const updateModuleSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: updatedSubscription });
   } catch (error) {
-    console.error('Error updating module subscription:', error);
+    await logger.error('Failed to update module subscription', {
+      operation: 'billing_update_module_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update module subscription' });
   }
 };
@@ -302,7 +363,13 @@ export const cancelModuleSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: cancelledSubscription });
   } catch (error) {
-    console.error('Error cancelling module subscription:', error);
+    await logger.error('Failed to cancel module subscription', {
+      operation: 'billing_cancel_module_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to cancel module subscription' });
   }
 };
@@ -352,7 +419,13 @@ export const getUsage = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error getting usage:', error);
+    await logger.error('Failed to get usage', {
+      operation: 'billing_get_usage',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get usage' });
   }
 };
@@ -384,7 +457,13 @@ export const recordUsage = async (req: Request, res: Response) => {
 
     res.status(201).json({ usageRecord });
   } catch (error) {
-    console.error('Error recording usage:', error);
+    await logger.error('Failed to record usage', {
+      operation: 'billing_record_usage',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to record usage' });
   }
 };
@@ -420,7 +499,13 @@ export const getInvoices = async (req: Request, res: Response) => {
 
     res.json({ invoices });
   } catch (error) {
-    console.error('Error getting invoices:', error);
+    await logger.error('Failed to get invoices', {
+      operation: 'billing_get_invoices',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get invoices' });
   }
 };
@@ -460,7 +545,13 @@ export const getInvoice = async (req: Request, res: Response) => {
 
     res.json({ invoice });
   } catch (error) {
-    console.error('Error getting invoice:', error);
+    await logger.error('Failed to get invoice', {
+      operation: 'billing_get_invoice',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get invoice' });
   }
 };
@@ -483,7 +574,13 @@ export const getDeveloperRevenue = async (req: Request, res: Response) => {
 
     res.json({ revenue });
   } catch (error) {
-    console.error('Error getting developer revenue:', error);
+    await logger.error('Failed to get developer revenue', {
+      operation: 'billing_get_developer_revenue',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get developer revenue' });
   }
 }; 

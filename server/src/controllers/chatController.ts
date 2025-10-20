@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationService } from '../services/notificationService';
+import { logger } from '../lib/logger';
 
 // Request type definitions
 interface CreateConversationRequest {
@@ -67,9 +68,15 @@ const getOrganizationInfo = (user: any) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+const handleError = async (res: Response, error: unknown, message: string = 'Internal server error') => {
   const err = error as Error;
-  console.error('Chat Controller Error:', error);
+  await logger.error('Chat controller error', {
+    operation: 'chat_controller_error',
+    error: {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    }
+  });
   res.status(500).json({ success: false, error: message });
 };
 
@@ -204,7 +211,13 @@ export const searchUsersForChat = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: sortedUsers });
   } catch (error) {
-    console.error('Error searching users for chat:', error);
+    await logger.error('Failed to search users for chat', {
+      operation: 'chat_search_users',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 };
@@ -275,7 +288,7 @@ export const getConversations = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: conversations });
   } catch (error) {
-    handleError(res, error, 'Failed to fetch conversations');
+    await handleError(res, error, 'Failed to fetch conversations');
   }
 };
 
@@ -334,7 +347,7 @@ export const getConversation = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: conversation });
   } catch (error) {
-    handleError(res, error, 'Failed to fetch conversation');
+    await handleError(res, error, 'Failed to fetch conversation');
   }
 };
 
@@ -411,7 +424,7 @@ export const createConversation = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: conversation });
   } catch (error) {
-    handleError(res, error, 'Failed to create conversation');
+    await handleError(res, error, 'Failed to create conversation');
   }
 };
 
@@ -552,7 +565,7 @@ export const getMessages = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    handleError(res, error, 'Failed to fetch messages');
+    await handleError(res, error, 'Failed to fetch messages');
   }
 };
 
@@ -810,13 +823,25 @@ export const createMessage = async (req: Request, res: Response) => {
         }
       }
     } catch (notificationError) {
-      console.error('Error creating chat notifications:', notificationError);
+      await logger.error('Failed to create chat notifications', {
+        operation: 'chat_create_notifications',
+        error: {
+          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+          stack: notificationError instanceof Error ? notificationError.stack : undefined
+        }
+      });
       // Don't fail the message creation if notifications fail
     }
 
     res.status(201).json({ success: true, data: messageWithFullUrls });
   } catch (error) {
-    console.error('Error creating message:', error);
+    await logger.error('Failed to create message', {
+      operation: 'chat_create_message',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, error: 'Failed to create message' });
   }
 };
@@ -933,7 +958,13 @@ export const addReaction = async (req: Request, res: Response) => {
         action
       });
     } catch (socketError) {
-      console.error('Failed to emit WebSocket event:', socketError);
+      await logger.error('Failed to emit WebSocket event', {
+        operation: 'chat_emit_websocket',
+        error: {
+          message: socketError instanceof Error ? socketError.message : 'Unknown error',
+          stack: socketError instanceof Error ? socketError.stack : undefined
+        }
+      });
       // Don't fail the request if WebSocket emission fails
     }
 
@@ -955,7 +986,13 @@ export const addReaction = async (req: Request, res: Response) => {
           senderId: user.id
         });
       } catch (notificationError) {
-        console.error('Error creating reaction notification:', notificationError);
+        await logger.error('Failed to create reaction notification', {
+          operation: 'chat_create_reaction_notification',
+          error: {
+            message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+            stack: notificationError instanceof Error ? notificationError.stack : undefined
+          }
+        });
         // Don't fail the reaction if notification fails
       }
     }
@@ -966,7 +1003,7 @@ export const addReaction = async (req: Request, res: Response) => {
       action 
     });
   } catch (error) {
-    handleError(res, error, 'Failed to add reaction');
+    await handleError(res, error, 'Failed to add reaction');
   }
 };
 
@@ -1041,7 +1078,7 @@ export const markAsRead = async (req: Request, res: Response) => {
       res.status(201).json({ success: true, data: receipt });
     }
   } catch (error) {
-    handleError(res, error, 'Failed to mark message as read');
+    await handleError(res, error, 'Failed to mark message as read');
   }
 };
 
@@ -1115,7 +1152,7 @@ export const getThreads = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: threads });
   } catch (error) {
-    handleError(res, error, 'Failed to fetch threads');
+    await handleError(res, error, 'Failed to fetch threads');
   }
 };
 
@@ -1194,7 +1231,7 @@ export const createThread = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: thread });
   } catch (error) {
-    handleError(res, error, 'Failed to create thread');
+    await handleError(res, error, 'Failed to create thread');
   }
 }; 
 
@@ -1295,7 +1332,13 @@ export const getChatAnalytics = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: analytics });
   } catch (error) {
-    console.error('Error getting chat analytics:', error);
+    await logger.error('Failed to get chat analytics', {
+      operation: 'chat_get_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ success: false, message: 'Failed to get chat analytics' });
   }
 };

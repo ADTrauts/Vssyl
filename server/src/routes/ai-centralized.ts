@@ -2,6 +2,7 @@ import * as express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { CentralizedLearningEngine } from '../ai/learning/CentralizedLearningEngine';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 const router: express.Router = express.Router();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
@@ -36,7 +37,13 @@ const requireAdmin = async (req: express.Request, res: express.Response, next: e
 
     next();
   } catch (error) {
-    console.error('Error checking admin status:', error);
+    await logger.error('Failed to check admin status', {
+      operation: 'ai_check_admin_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to verify admin status' });
   }
 };
@@ -62,7 +69,13 @@ router.post('/learning/event', authenticateJWT, async (req, res) => {
       message: 'Global learning event processed successfully'
     });
   } catch (error) {
-    console.error('Error processing global learning event:', error);
+    await logger.error('Failed to process global learning event', {
+      operation: 'ai_process_global_learning',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to process global learning event',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -93,7 +106,13 @@ router.get('/patterns', async (req, res) => {
       message: 'Global patterns retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting global patterns:', error);
+    await logger.error('Failed to get global patterns', {
+      operation: 'ai_get_global_patterns',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get global patterns',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -123,7 +142,13 @@ router.get('/insights', async (req, res) => {
       message: 'Collective insights retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting collective insights:', error);
+    await logger.error('Failed to get collective insights', {
+      operation: 'ai_get_collective_insights',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get collective insights',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -137,7 +162,9 @@ router.get('/insights', async (req, res) => {
  */
 router.get('/health', async (req, res) => {
   try {
-    console.log('Health endpoint called - no auth required');
+    await logger.debug('Health endpoint called', {
+      operation: 'ai_health_check'
+    });
     const healthMetrics = await centralizedLearning.getSystemHealthMetrics();
 
     res.json({
@@ -146,7 +173,13 @@ router.get('/health', async (req, res) => {
       message: 'System health metrics retrieved successfully - TESTING MODE'
     });
   } catch (error) {
-    console.error('Error getting system health metrics:', error);
+    await logger.error('Failed to get system health metrics', {
+      operation: 'ai_get_system_health',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get system health metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -168,7 +201,13 @@ router.get('/privacy/settings', async (req, res) => {
       message: 'Privacy settings retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting privacy settings:', error);
+    await logger.error('Failed to get privacy settings', {
+      operation: 'ai_get_privacy_settings',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get privacy settings',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -195,7 +234,13 @@ router.put('/privacy/settings', authenticateJWT, requireAdmin, async (req, res) 
       message: 'Privacy settings updated successfully'
     });
   } catch (error) {
-    console.error('Error updating privacy settings:', error);
+    await logger.error('Failed to update privacy settings', {
+      operation: 'ai_update_privacy_settings',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to update privacy settings',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -217,7 +262,13 @@ router.post('/patterns/analyze', authenticateJWT, requireAdmin, async (req, res)
       message: `Global pattern analysis completed. Found ${patterns.length} patterns.`
     });
   } catch (error) {
-    console.error('Error analyzing global patterns:', error);
+    await logger.error('Failed to analyze global patterns', {
+      operation: 'ai_analyze_global_patterns',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to analyze global patterns',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -273,7 +324,13 @@ router.get('/analytics/summary', authenticateJWT, requireAdmin, async (req, res)
       message: 'Analytics summary retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting analytics summary:', error);
+    await logger.error('Failed to get analytics summary', {
+      operation: 'ai_get_analytics_summary',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get analytics summary',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -319,7 +376,13 @@ router.get('/audit/logs', authenticateJWT, requireAdmin, async (req, res) => {
       message: 'Audit logs retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting audit logs:', error);
+    await logger.error('Failed to get audit logs', {
+      operation: 'ai_get_audit_logs',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get audit logs',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -374,7 +437,13 @@ router.get('/consent/stats', async (req, res) => {
       message: 'Consent statistics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting consent statistics:', error);
+    await logger.error('Failed to get consent statistics', {
+      operation: 'ai_get_consent_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get consent statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -412,7 +481,13 @@ router.get('/scheduler/status', async (req, res) => {
       message: 'Scheduler status retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting scheduler status:', error);
+    await logger.error('Failed to get scheduler status', {
+      operation: 'ai_get_scheduler_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get scheduler status',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -426,7 +501,9 @@ router.get('/scheduler/status', async (req, res) => {
  */
 router.post('/scheduler/trigger-analysis', async (req, res) => {
   try {
-    console.log('🔧 Manual pattern analysis triggered via API');
+    await logger.info('Manual pattern analysis triggered', {
+      operation: 'ai_manual_pattern_analysis'
+    });
     
     // Trigger pattern analysis
     await centralizedLearning.analyzeGlobalPatterns();
@@ -436,7 +513,13 @@ router.post('/scheduler/trigger-analysis', async (req, res) => {
       message: 'Pattern analysis triggered successfully'
     });
   } catch (error) {
-    console.error('Error triggering manual pattern analysis:', error);
+    await logger.error('Failed to trigger manual pattern analysis', {
+      operation: 'ai_manual_pattern_analysis',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to trigger pattern analysis',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -450,7 +533,9 @@ router.post('/scheduler/trigger-analysis', async (req, res) => {
  */
 router.post('/scheduler/trigger-insights', async (req, res) => {
   try {
-    console.log('🔧 Manual insight generation triggered via API');
+    await logger.info('Manual insight generation triggered', {
+      operation: 'ai_manual_insight_generation'
+    });
     
     // Get recent patterns and generate insights
     const recentPatterns = await prisma.globalPattern.findMany({
@@ -468,7 +553,14 @@ router.post('/scheduler/trigger-insights', async (req, res) => {
         await centralizedLearning.generateCollectiveInsight(pattern.id);
         insightsGenerated++;
       } catch (err) {
-        console.error(`Error generating insight for pattern ${pattern.id}:`, err);
+        await logger.error('Failed to generate insight for pattern', {
+          operation: 'ai_generate_pattern_insight',
+          patternId: pattern.id,
+          error: {
+            message: err instanceof Error ? err.message : 'Unknown error',
+            stack: err instanceof Error ? err.stack : undefined
+          }
+        });
       }
     }
     
@@ -477,7 +569,13 @@ router.post('/scheduler/trigger-insights', async (req, res) => {
       message: `Insight generation completed. Generated ${insightsGenerated} insights from ${recentPatterns.length} patterns.`
     });
   } catch (error) {
-    console.error('Error triggering manual insight generation:', error);
+    await logger.error('Failed to trigger manual insight generation', {
+      operation: 'ai_manual_insight_generation',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to trigger insight generation',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -491,7 +589,9 @@ router.post('/scheduler/trigger-insights', async (req, res) => {
  */
 router.get('/analytics/forecasts', async (req, res) => {
   try {
-    console.log('🔮 Generating trend forecasts via API...');
+    await logger.info('Generating trend forecasts', {
+      operation: 'ai_generate_trend_forecasts'
+    });
     
     const forecasts = await centralizedLearning.generateTrendForecasts();
     
@@ -501,7 +601,13 @@ router.get('/analytics/forecasts', async (req, res) => {
       message: `Generated ${forecasts.length} trend forecasts successfully`
     });
   } catch (error) {
-    console.error('Error generating trend forecasts:', error);
+    await logger.error('Failed to generate trend forecasts', {
+      operation: 'ai_generate_trend_forecasts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate trend forecasts',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -516,7 +622,10 @@ router.get('/analytics/forecasts', async (req, res) => {
 router.get('/analytics/impact/:insightId', async (req, res) => {
   try {
     const { insightId } = req.params;
-    console.log(`📊 Calculating impact analysis for insight: ${insightId}`);
+    await logger.info('Calculating impact analysis for insight', {
+      operation: 'ai_calculate_impact',
+      insightId
+    });
     
     const impactAnalysis = await centralizedLearning.calculateImpactAnalysis(insightId);
     
@@ -533,7 +642,13 @@ router.get('/analytics/impact/:insightId', async (req, res) => {
       message: 'Impact analysis calculated successfully'
     });
   } catch (error) {
-    console.error('Error calculating impact analysis:', error);
+    await logger.error('Failed to calculate impact analysis', {
+      operation: 'ai_calculate_impact_analysis',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to calculate impact analysis',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -548,7 +663,10 @@ router.get('/analytics/impact/:insightId', async (req, res) => {
 router.get('/analytics/predictions/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log(`🔮 Generating behavior predictions for user: ${userId}`);
+    await logger.info('Generating behavior predictions for user', {
+      operation: 'ai_generate_behavior_predictions',
+      userId
+    });
     
     const predictions = await centralizedLearning.predictUserBehavior(userId);
     
@@ -558,7 +676,13 @@ router.get('/analytics/predictions/:userId', async (req, res) => {
       message: `Generated ${predictions.length} behavior predictions successfully`
     });
   } catch (error) {
-    console.error('Error generating user behavior predictions:', error);
+    await logger.error('Failed to generate user behavior predictions', {
+      operation: 'ai_generate_behavior_predictions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate user behavior predictions',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -592,7 +716,13 @@ router.get('/performance/metrics', async (req, res) => {
       message: 'Performance metrics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting performance metrics:', error);
+    await logger.error('Failed to get AI performance metrics', {
+      operation: 'ai_get_performance_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get performance metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -626,7 +756,13 @@ router.get('/performance/health', async (req, res) => {
       message: 'System health status retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting system health:', error);
+    await logger.error('Failed to get AI system health', {
+      operation: 'ai_get_system_health',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get system health',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -695,7 +831,13 @@ router.get('/security/audit', async (req, res) => {
       message: 'Security audit log retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting security audit log:', error);
+    await logger.error('Failed to get security audit log', {
+      operation: 'ai_get_security_audit_log',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get security audit log',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -709,7 +851,9 @@ router.get('/security/audit', async (req, res) => {
  */
 router.post('/security/compliance/gdpr', async (req, res) => {
   try {
-    console.log('🔒 Performing GDPR compliance check...');
+    await logger.info('Performing GDPR compliance check', {
+      operation: 'ai_gdpr_compliance_check'
+    });
     
     // Mock GDPR compliance check for now
     // In production, this would use the actual SecurityComplianceService
@@ -729,7 +873,13 @@ router.post('/security/compliance/gdpr', async (req, res) => {
       message: 'GDPR compliance check completed successfully'
     });
   } catch (error) {
-    console.error('Error performing GDPR compliance check:', error);
+    await logger.error('Failed to perform GDPR compliance check', {
+      operation: 'ai_gdpr_compliance_check',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to perform GDPR compliance check',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -743,7 +893,9 @@ router.post('/security/compliance/gdpr', async (req, res) => {
  */
 router.get('/security/privacy/report', async (req, res) => {
   try {
-    console.log('🔒 Generating data privacy report...');
+    await logger.info('Generating data privacy report', {
+      operation: 'ai_generate_privacy_report'
+    });
     
     // Mock privacy report for now
     // In production, this would use the actual SecurityComplianceService
@@ -769,7 +921,13 @@ router.get('/security/privacy/report', async (req, res) => {
       message: 'Data privacy report generated successfully'
     });
   } catch (error) {
-    console.error('Error generating data privacy report:', error);
+    await logger.error('Failed to generate data privacy report', {
+      operation: 'ai_generate_privacy_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate data privacy report',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -795,7 +953,13 @@ router.post('/ab-testing/create', async (req, res) => {
       message: 'A/B test created successfully'
     });
   } catch (error) {
-    console.error('Error creating A/B test:', error);
+    await logger.error('Failed to create AI A/B test', {
+      operation: 'ai_create_ab_test',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create A/B test',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -821,7 +985,14 @@ router.get('/ab-testing/status/:testId', async (req, res) => {
       message: 'A/B test status retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting A/B test status:', error);
+    await logger.error('Failed to get A/B test status', {
+      operation: 'ai_get_ab_test_status',
+      testId: req.params.testId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get A/B test status',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -847,7 +1018,14 @@ router.post('/ab-testing/:testId/start', async (req, res) => {
       message: 'A/B test started successfully'
     });
   } catch (error) {
-    console.error('Error starting A/B test:', error);
+    await logger.error('Failed to start A/B test', {
+      operation: 'ai_start_ab_test',
+      testId: req.params.testId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to start A/B test',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -873,7 +1051,14 @@ router.post('/ab-testing/:testId/stop', async (req, res) => {
       message: 'A/B test stopped successfully'
     });
   } catch (error) {
-    console.error('Error stopping A/B test:', error);
+    await logger.error('Failed to stop A/B test', {
+      operation: 'ai_stop_ab_test',
+      testId: req.params.testId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to stop A/B test',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -902,7 +1087,13 @@ router.get('/notifications', async (req, res) => {
       message: 'Notifications retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting notifications:', error);
+    await logger.error('Failed to get notifications', {
+      operation: 'ai_get_notifications',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get notifications',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -935,7 +1126,14 @@ router.post('/notifications/:notificationId/read', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    await logger.error('Failed to mark notification as read', {
+      operation: 'ai_mark_notification_read',
+      notificationId: req.params.notificationId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to mark notification as read',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -970,7 +1168,13 @@ router.post('/notifications/send', async (req, res) => {
       message: `Sent ${notifications.length} notifications successfully`
     });
   } catch (error) {
-    console.error('Error sending notification:', error);
+    await logger.error('Failed to send notification', {
+      operation: 'ai_send_notification',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to send notification',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -995,7 +1199,13 @@ router.get('/notifications/stats', async (req, res) => {
       message: 'Notification statistics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting notification stats:', error);
+    await logger.error('Failed to get notification stats', {
+      operation: 'ai_get_notification_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get notification statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1020,7 +1230,13 @@ router.get('/sso/providers', async (req, res) => {
       message: 'SSO providers retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting SSO providers:', error);
+    await logger.error('Failed to get SSO providers', {
+      operation: 'ai_get_sso_providers',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get SSO providers',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1046,7 +1262,13 @@ router.post('/sso/providers', async (req, res) => {
       message: 'SSO provider created successfully'
     });
   } catch (error) {
-    console.error('Error creating SSO provider:', error);
+    await logger.error('Failed to create SSO provider', {
+      operation: 'ai_create_sso_provider',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create SSO provider',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1073,7 +1295,13 @@ router.post('/sso/oauth2/:providerId/initiate', async (req, res) => {
       message: 'OAuth 2.0 authentication initiated'
     });
   } catch (error) {
-    console.error('Error initiating OAuth 2.0:', error);
+    await logger.error('Failed to initiate OAuth 2.0', {
+      operation: 'ai_oauth_initiate',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to initiate OAuth 2.0',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1100,7 +1328,13 @@ router.post('/sso/oauth2/:providerId/callback', async (req, res) => {
       message: 'OAuth 2.0 authentication successful'
     });
   } catch (error) {
-    console.error('Error handling OAuth 2.0 callback:', error);
+    await logger.error('Failed to handle OAuth 2.0 callback', {
+      operation: 'ai_oauth_callback',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to handle OAuth 2.0 callback',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1125,7 +1359,13 @@ router.get('/security/compliance/frameworks', async (req, res) => {
       message: 'Compliance frameworks retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting compliance frameworks:', error);
+    await logger.error('Failed to get compliance frameworks', {
+      operation: 'ai_get_compliance_frameworks',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get compliance frameworks',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1150,7 +1390,13 @@ router.get('/security/compliance/status', async (req, res) => {
       message: 'Compliance status retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting compliance status:', error);
+    await logger.error('Failed to get compliance status', {
+      operation: 'ai_get_compliance_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get compliance status',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1176,7 +1422,13 @@ router.post('/security/incidents', async (req, res) => {
       message: 'Security incident created successfully'
     });
   } catch (error) {
-    console.error('Error creating security incident:', error);
+    await logger.error('Failed to create security incident', {
+      operation: 'ai_create_security_incident',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create security incident',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1202,7 +1454,13 @@ router.get('/security/incidents', async (req, res) => {
       message: 'Security incidents retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting security incidents:', error);
+    await logger.error('Failed to get security incidents', {
+      operation: 'ai_get_security_incidents',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get security incidents',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1228,7 +1486,13 @@ router.post('/security/audits', async (req, res) => {
       message: 'Security audit created successfully'
     });
   } catch (error) {
-    console.error('Error creating security audit:', error);
+    await logger.error('Failed to create security audit', {
+      operation: 'ai_create_security_audit',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create security audit',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1254,7 +1518,13 @@ router.post('/security/privacy/reports', async (req, res) => {
       message: 'Data privacy report created successfully'
     });
   } catch (error) {
-    console.error('Error creating data privacy report:', error);
+    await logger.error('Failed to create data privacy report', {
+      operation: 'ai_create_privacy_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create data privacy report',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1285,7 +1555,13 @@ router.get('/security/metrics', async (req, res) => {
       message: 'Security metrics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting security metrics:', error);
+    await logger.error('Failed to get security metrics', {
+      operation: 'ai_get_security_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get security metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1311,7 +1587,13 @@ router.get('/models', async (req, res) => {
       message: 'AI models retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AI models:', error);
+    await logger.error('Failed to get AI models', {
+      operation: 'ai_get_models',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AI models',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1344,7 +1626,13 @@ router.get('/models/:modelId', async (req, res) => {
       message: 'AI model retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AI model:', error);
+    await logger.error('Failed to get AI model', {
+      operation: 'ai_get_model',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AI model',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1370,7 +1658,13 @@ router.post('/models', async (req, res) => {
       message: 'AI model created successfully'
     });
   } catch (error) {
-    console.error('Error creating AI model:', error);
+    await logger.error('Failed to create AI model', {
+      operation: 'ai_create_model',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create AI model',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1396,7 +1690,13 @@ router.get('/models/:modelId/performance', async (req, res) => {
       message: 'Model performance summary retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting model performance summary:', error);
+    await logger.error('Failed to get model performance summary', {
+      operation: 'ai_get_model_performance',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get model performance summary',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1423,7 +1723,13 @@ router.post('/models/:modelId/explanations', async (req, res) => {
       message: 'Explainable AI insights generated successfully'
     });
   } catch (error) {
-    console.error('Error generating explainable AI:', error);
+    await logger.error('Failed to generate explainable AI', {
+      operation: 'ai_generate_explainable',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate explainable AI',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1449,7 +1755,13 @@ router.get('/automl/jobs', async (req, res) => {
       message: 'AutoML jobs retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AutoML jobs:', error);
+    await logger.error('Failed to get AutoML jobs', {
+      operation: 'ai_get_automl_jobs',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AutoML jobs',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1475,7 +1787,13 @@ router.post('/automl/jobs', async (req, res) => {
       message: 'AutoML job created successfully'
     });
   } catch (error) {
-    console.error('Error creating AutoML job:', error);
+    await logger.error('Failed to create AutoML job', {
+      operation: 'ai_create_automl_job',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create AutoML job',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1501,7 +1819,13 @@ router.post('/automl/jobs/:jobId/start', async (req, res) => {
       message: 'AutoML job started successfully'
     });
   } catch (error) {
-    console.error('Error starting AutoML job:', error);
+    await logger.error('Failed to start AutoML job', {
+      operation: 'ai_start_automl_job',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to start AutoML job',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1527,7 +1851,13 @@ router.get('/automl/jobs/:jobId/progress', async (req, res) => {
       message: 'AutoML job progress retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AutoML job progress:', error);
+    await logger.error('Failed to get AutoML job progress', {
+      operation: 'ai_get_automl_progress',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AutoML job progress',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1564,7 +1894,13 @@ router.get('/automl/recommendations', async (req, res) => {
       message: 'AutoML recommendations retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AutoML recommendations:', error);
+    await logger.error('Failed to get AutoML recommendations', {
+      operation: 'ai_get_automl_recommendations',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AutoML recommendations',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1590,7 +1926,13 @@ router.get('/workflows', async (req, res) => {
       message: 'Workflow definitions retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting workflow definitions:', error);
+    await logger.error('Failed to get workflow definitions', {
+      operation: 'ai_get_workflow_definitions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get workflow definitions',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1616,7 +1958,13 @@ router.post('/workflows', async (req, res) => {
       message: 'Workflow definition created successfully'
     });
   } catch (error) {
-    console.error('Error creating workflow definition:', error);
+    await logger.error('Failed to create workflow definition', {
+      operation: 'ai_create_workflow',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create workflow definition',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1643,7 +1991,13 @@ router.post('/workflows/:workflowId/execute', async (req, res) => {
       message: 'Workflow execution started successfully'
     });
   } catch (error) {
-    console.error('Error executing workflow:', error);
+    await logger.error('Failed to execute workflow', {
+      operation: 'ai_execute_workflow',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to execute workflow',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1669,7 +2023,13 @@ router.get('/workflows/executions', async (req, res) => {
       message: 'Workflow executions retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting workflow executions:', error);
+    await logger.error('Failed to get workflow executions', {
+      operation: 'ai_get_workflow_executions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get workflow executions',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1702,7 +2062,13 @@ router.get('/workflows/executions/:executionId', async (req, res) => {
       message: 'Workflow execution retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting workflow execution:', error);
+    await logger.error('Failed to get workflow execution', {
+      operation: 'ai_get_workflow_execution',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get workflow execution',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1728,7 +2094,13 @@ router.get('/decision-support', async (req, res) => {
       message: 'Decision support systems retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting decision support systems:', error);
+    await logger.error('Failed to get decision support systems', {
+      operation: 'ai_get_decision_support_systems',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get decision support systems',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1754,7 +2126,13 @@ router.post('/decision-support', async (req, res) => {
       message: 'Decision support system created successfully'
     });
   } catch (error) {
-    console.error('Error creating decision support system:', error);
+    await logger.error('Failed to create decision support system', {
+      operation: 'ai_create_decision_support',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create decision support system',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1780,7 +2158,13 @@ router.get('/predictive-maintenance', async (req, res) => {
       message: 'Predictive maintenance systems retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting predictive maintenance systems:', error);
+    await logger.error('Failed to get predictive maintenance systems', {
+      operation: 'ai_get_predictive_maintenance_systems',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get predictive maintenance systems',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1806,7 +2190,13 @@ router.post('/predictive-maintenance', async (req, res) => {
       message: 'Predictive maintenance system created successfully'
     });
   } catch (error) {
-    console.error('Error creating predictive maintenance system:', error);
+    await logger.error('Failed to create predictive maintenance system', {
+      operation: 'ai_create_predictive_maintenance',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create predictive maintenance system',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1832,7 +2222,13 @@ router.get('/continuous-learning', async (req, res) => {
       message: 'Continuous learning systems retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting continuous learning systems:', error);
+    await logger.error('Failed to get continuous learning systems', {
+      operation: 'ai_get_continuous_learning_systems',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get continuous learning systems',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1858,7 +2254,13 @@ router.post('/continuous-learning', async (req, res) => {
       message: 'Continuous learning system created successfully'
     });
   } catch (error) {
-    console.error('Error creating continuous learning system:', error);
+    await logger.error('Failed to create continuous learning system', {
+      operation: 'ai_create_continuous_learning',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create continuous learning system',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1884,7 +2286,13 @@ router.get('/analytics/streams', async (req, res) => {
       message: 'Data streams retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting data streams:', error);
+    await logger.error('Failed to get data streams', {
+      operation: 'ai_get_data_streams',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get data streams',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1910,7 +2318,13 @@ router.post('/analytics/streams', async (req, res) => {
       message: 'Data stream created successfully'
     });
   } catch (error) {
-    console.error('Error creating data stream:', error);
+    await logger.error('Failed to create data stream', {
+      operation: 'ai_create_data_stream',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create data stream',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1937,7 +2351,13 @@ router.post('/analytics/streams/:streamId/data', async (req, res) => {
       message: 'Data point added successfully'
     });
   } catch (error) {
-    console.error('Error adding data point:', error);
+    await logger.error('Failed to add data point', {
+      operation: 'ai_add_data_point',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to add data point',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1980,7 +2400,13 @@ router.get('/analytics/streams/:streamId/data', async (req, res) => {
       message: 'Data points retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting data points:', error);
+    await logger.error('Failed to get data points', {
+      operation: 'ai_get_data_points',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get data points',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2006,7 +2432,13 @@ router.get('/analytics/metrics', async (req, res) => {
       message: 'Real-time metrics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting real-time metrics:', error);
+    await logger.error('Failed to get real-time metrics', {
+      operation: 'ai_get_realtime_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get real-time metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2032,7 +2464,13 @@ router.post('/analytics/metrics', async (req, res) => {
       message: 'Real-time metric created successfully'
     });
   } catch (error) {
-    console.error('Error creating real-time metric:', error);
+    await logger.error('Failed to create real-time metric', {
+      operation: 'ai_create_realtime_metric',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create real-time metric',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2058,7 +2496,13 @@ router.get('/analytics/dashboards', async (req, res) => {
       message: 'Analytics dashboards retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting analytics dashboards:', error);
+    await logger.error('Failed to get analytics dashboards', {
+      operation: 'ai_get_analytics_dashboards',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get analytics dashboards',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2084,7 +2528,13 @@ router.post('/analytics/dashboards', async (req, res) => {
       message: 'Analytics dashboard created successfully'
     });
   } catch (error) {
-    console.error('Error creating analytics dashboard:', error);
+    await logger.error('Failed to create analytics dashboard', {
+      operation: 'ai_create_analytics_dashboard',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create analytics dashboard',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2110,7 +2560,13 @@ router.get('/analytics/dashboards/:dashboardId', async (req, res) => {
       message: 'Dashboard data retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting dashboard data:', error);
+    await logger.error('Failed to get dashboard data', {
+      operation: 'ai_get_dashboard_data',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get dashboard data',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2136,7 +2592,13 @@ router.get('/analytics/alerts', async (req, res) => {
       message: 'Real-time alerts retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting real-time alerts:', error);
+    await logger.error('Failed to get real-time alerts', {
+      operation: 'ai_get_realtime_alerts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get real-time alerts',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2170,7 +2632,13 @@ router.post('/analytics/alerts/:alertId/acknowledge', async (req, res) => {
       message: 'Alert acknowledged successfully'
     });
   } catch (error) {
-    console.error('Error acknowledging alert:', error);
+    await logger.error('Failed to acknowledge alert', {
+      operation: 'ai_acknowledge_alert',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to acknowledge alert',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2203,7 +2671,13 @@ router.post('/analytics/alerts/:alertId/resolve', async (req, res) => {
       message: 'Alert resolved successfully'
     });
   } catch (error) {
-    console.error('Error resolving alert:', error);
+    await logger.error('Failed to resolve alert', {
+      operation: 'ai_resolve_alert',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to resolve alert',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2229,7 +2703,13 @@ router.get('/predictive/forecasting-models', async (req, res) => {
       message: 'Forecasting models retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting forecasting models:', error);
+    await logger.error('Failed to get forecasting models', {
+      operation: 'ai_get_forecasting_models',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get forecasting models',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2255,7 +2735,13 @@ router.post('/predictive/forecasting-models', async (req, res) => {
       message: 'Forecasting model created successfully'
     });
   } catch (error) {
-    console.error('Error creating forecasting model:', error);
+    await logger.error('Failed to create forecasting model', {
+      operation: 'ai_create_forecasting_model',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create forecasting model',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2282,7 +2768,13 @@ router.post('/predictive/forecasting-models/:modelId/forecast', async (req, res)
       message: 'Forecast generated successfully'
     });
   } catch (error) {
-    console.error('Error generating forecast:', error);
+    await logger.error('Failed to generate forecast', {
+      operation: 'ai_generate_forecast',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate forecast',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2322,7 +2814,13 @@ router.get('/predictive/forecasting-models/:modelId/forecasts', async (req, res)
       message: 'Forecasts retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting forecasts:', error);
+    await logger.error('Failed to get forecasts', {
+      operation: 'ai_get_forecasts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get forecasts',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2348,7 +2846,13 @@ router.get('/predictive/anomaly-models', async (req, res) => {
       message: 'Anomaly detection models retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting anomaly detection models:', error);
+    await logger.error('Failed to get anomaly detection models', {
+      operation: 'ai_get_anomaly_models',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get anomaly detection models',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2374,7 +2878,13 @@ router.post('/predictive/anomaly-models', async (req, res) => {
       message: 'Anomaly detection model created successfully'
     });
   } catch (error) {
-    console.error('Error creating anomaly detection model:', error);
+    await logger.error('Failed to create anomaly detection model', {
+      operation: 'ai_create_anomaly_detection',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create anomaly detection model',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2401,7 +2911,13 @@ router.post('/predictive/anomaly-models/:modelId/detect', async (req, res) => {
       message: `Anomaly detection completed. Found ${anomalies.length} anomalies.`
     });
   } catch (error) {
-    console.error('Error detecting anomalies:', error);
+    await logger.error('Failed to detect anomalies', {
+      operation: 'ai_detect_anomalies',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to detect anomalies',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2441,7 +2957,13 @@ router.get('/predictive/anomaly-models/:modelId/anomalies', async (req, res) => 
       message: 'Anomalies retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting anomalies:', error);
+    await logger.error('Failed to get anomalies', {
+      operation: 'ai_get_anomalies',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get anomalies',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2467,7 +2989,13 @@ router.get('/predictive/pipelines', async (req, res) => {
       message: 'Predictive pipelines retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting predictive pipelines:', error);
+    await logger.error('Failed to get predictive pipelines', {
+      operation: 'ai_get_predictive_pipelines',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get predictive pipelines',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2493,7 +3021,13 @@ router.post('/predictive/pipelines', async (req, res) => {
       message: 'Predictive pipeline created successfully'
     });
   } catch (error) {
-    console.error('Error creating predictive pipeline:', error);
+    await logger.error('Failed to create predictive pipeline', {
+      operation: 'ai_create_predictive_pipeline',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create predictive pipeline',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2527,7 +3061,13 @@ router.post('/predictive/pipelines/:pipelineId/execute', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error executing pipeline:', error);
+    await logger.error('Failed to execute pipeline', {
+      operation: 'ai_execute_pipeline',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to execute pipeline',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2559,7 +3099,13 @@ router.get('/predictive/insights', async (req, res) => {
       message: 'Intelligence insights retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting intelligence insights:', error);
+    await logger.error('Failed to get intelligence insights', {
+      operation: 'ai_get_intelligence_insights',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get intelligence insights',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2585,7 +3131,13 @@ router.get('/business/metrics', async (req, res) => {
       message: 'Business metrics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting business metrics:', error);
+    await logger.error('Failed to get business metrics', {
+      operation: 'ai_get_business_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get business metrics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2611,7 +3163,13 @@ router.post('/business/metrics', async (req, res) => {
       message: 'Business metric created successfully'
     });
   } catch (error) {
-    console.error('Error creating business metric:', error);
+    await logger.error('Failed to create business metric', {
+      operation: 'ai_create_business_metric',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create business metric',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2637,7 +3195,13 @@ router.get('/business/dashboards', async (req, res) => {
       message: 'KPI dashboards retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting KPI dashboards:', error);
+    await logger.error('Failed to get KPI dashboards', {
+      operation: 'ai_get_kpi_dashboards',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get KPI dashboards',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2669,7 +3233,13 @@ router.get('/business/insights', async (req, res) => {
       message: 'Business insights retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting business insights:', error);
+    await logger.error('Failed to get business insights', {
+      operation: 'ai_get_business_insights',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get business insights',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2696,7 +3266,13 @@ router.post('/business/reports/:templateId/generate', async (req, res) => {
       message: 'Report generated successfully'
     });
   } catch (error) {
-    console.error('Error generating report:', error);
+    await logger.error('Failed to generate report', {
+      operation: 'ai_generate_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to generate report',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2722,7 +3298,13 @@ router.get('/ai-insights/patterns', async (req, res) => {
       message: 'Pattern discoveries retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting pattern discoveries:', error);
+    await logger.error('Failed to get pattern discoveries', {
+      operation: 'ai_get_pattern_discoveries',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get pattern discoveries',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2748,7 +3330,13 @@ router.post('/ai-insights/patterns/discover', async (req, res) => {
       message: 'Pattern discovery started successfully'
     });
   } catch (error) {
-    console.error('Error starting pattern discovery:', error);
+    await logger.error('Failed to start pattern discovery', {
+      operation: 'ai_start_pattern_discovery',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to start pattern discovery',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2780,7 +3368,13 @@ router.get('/ai-insights/insights', async (req, res) => {
       message: 'Intelligent insights retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting intelligent insights:', error);
+    await logger.error('Failed to get intelligent insights', {
+      operation: 'ai_get_intelligent_insights',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get intelligent insights',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2806,7 +3400,13 @@ router.get('/ai-insights/recommendations', async (req, res) => {
       message: 'AI recommendations retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting AI recommendations:', error);
+    await logger.error('Failed to get AI recommendations', {
+      operation: 'ai_get_recommendations',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get AI recommendations',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2832,7 +3432,13 @@ router.post('/ai-insights/recommendations', async (req, res) => {
       message: 'AI recommendation created successfully'
     });
   } catch (error) {
-    console.error('Error creating AI recommendation:', error);
+    await logger.error('Failed to create AI recommendation', {
+      operation: 'ai_create_recommendation',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to create AI recommendation',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2866,7 +3472,13 @@ router.put('/ai-insights/recommendations/:recommendationId/status', async (req, 
       message: 'Recommendation status updated successfully'
     });
   } catch (error) {
-    console.error('Error updating recommendation status:', error);
+    await logger.error('Failed to update recommendation status', {
+      operation: 'ai_update_recommendation_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to update recommendation status',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -2892,7 +3504,13 @@ router.get('/ai-insights/continuous-learning', async (req, res) => {
       message: 'Continuous learning systems retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting continuous learning systems:', error);
+    await logger.error('Failed to get continuous learning systems', {
+      operation: 'ai_get_continuous_learning_systems',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ 
       error: 'Failed to get continuous learning systems',
       details: error instanceof Error ? error.message : 'Unknown error'

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { sendBusinessInvitationEmail } from '../services/emailService';
 import { NotificationService } from '../services/notificationService';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Helper function to get organization info from memberships
 interface UserWithBusiness {
@@ -132,11 +133,17 @@ const bulkRemoveEmployeesSchema = z.object({
 
 export const searchUsers = async (req: Request, res: Response) => {
   try {
-    console.log('searchUsers called with query:', req.query);
+    await logger.debug('Search users called', {
+      operation: 'member_search_users_called',
+      query: req.query
+    });
     const { query, limit, offset } = searchUsersSchema.parse(req.query);
     const currentUserId = req.user?.id;
 
-    console.log('Current user ID:', currentUserId);
+    await logger.debug('Current user ID', {
+      operation: 'member_current_user',
+      userId: currentUserId
+    });
 
     if (!currentUserId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -158,7 +165,10 @@ export const searchUsers = async (req: Request, res: Response) => {
     //   ] 
     // });
 
-    console.log('Searching for users with query:', query);
+    await logger.debug('Searching for users', {
+      operation: 'member_searching_users',
+      query
+    });
     
     const users = await prisma.user.findMany({
       where: {
@@ -200,10 +210,16 @@ export const searchUsers = async (req: Request, res: Response) => {
       skip: offset,
     });
 
-    console.log('Found users:', users.length);
+    await logger.debug('Found users', {
+      operation: 'member_users_found',
+      count: users.length
+    });
 
     // Get relationships separately to avoid TypeScript issues
-    console.log('Fetching relationships for user:', currentUserId);
+    await logger.debug('Fetching relationships for user', {
+      operation: 'member_fetch_relationships',
+      userId: currentUserId
+    });
     
     const relationships = await prisma.relationship.findMany({
       where: {
@@ -218,7 +234,10 @@ export const searchUsers = async (req: Request, res: Response) => {
       },
     });
 
-    console.log('Found relationships:', relationships.length);
+    await logger.debug('Found relationships', {
+      operation: 'member_relationships_found',
+      count: relationships.length
+    });
 
 
 
@@ -251,7 +270,13 @@ export const searchUsers = async (req: Request, res: Response) => {
 
     res.json({ users: processedUsers });
   } catch (error) {
-    console.error('Error searching users:', error);
+    await logger.error('Failed to search users', {
+      operation: 'member_search_users',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     if (error instanceof Error) {
       res.status(500).json({ error: 'Internal server error', message: error.message, stack: error.stack });
     } else {
@@ -335,13 +360,25 @@ export const sendConnectionRequest = async (req: Request, res: Response) => {
         senderId: currentUserId
       });
     } catch (notificationError) {
-      console.error('Error creating connection request notification:', notificationError);
+      await logger.error('Failed to create connection request notification', {
+        operation: 'member_create_connection_notification',
+        error: {
+          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
+          stack: notificationError instanceof Error ? notificationError.stack : undefined
+        }
+      });
       // Don't fail the connection request if notification fails
     }
 
     res.json({ relationship });
   } catch (error) {
-    console.error('Error sending connection request:', error);
+    await logger.error('Failed to send connection request', {
+      operation: 'member_send_connection_request',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -398,7 +435,13 @@ export const updateConnectionRequest = async (req: Request, res: Response) => {
 
     res.json({ relationship: updatedRelationship });
   } catch (error) {
-    console.error('Error updating connection request:', error);
+    await logger.error('Failed to update connection request', {
+      operation: 'member_update_connection_request',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -493,7 +536,13 @@ export const getConnections = async (req: Request, res: Response) => {
 
     res.json({ connections });
   } catch (error) {
-    console.error('Error getting connections:', error);
+    await logger.error('Failed to get connections', {
+      operation: 'member_get_connections',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -553,7 +602,13 @@ export const getPendingRequests = async (req: Request, res: Response) => {
 
     res.json({ requests });
   } catch (error) {
-    console.error('Error getting pending requests:', error);
+    await logger.error('Failed to get pending requests', {
+      operation: 'member_get_pending_requests',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -613,7 +668,13 @@ export const getSentRequests = async (req: Request, res: Response) => {
 
     res.json({ requests });
   } catch (error) {
-    console.error('Error getting sent requests:', error);
+    await logger.error('Failed to get sent requests', {
+      operation: 'member_get_sent_requests',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -694,13 +755,25 @@ export const inviteEmployee = async (req: Request, res: Response) => {
         message
       );
     } catch (emailError) {
-      console.error('Error sending invitation email:', emailError);
+      await logger.error('Failed to send invitation email', {
+        operation: 'member_send_invitation_email',
+        error: {
+          message: emailError instanceof Error ? emailError.message : 'Unknown error',
+          stack: emailError instanceof Error ? emailError.stack : undefined
+        }
+      });
       // Don't fail the request if email fails, but log it
     }
 
     res.json({ invitation });
   } catch (error) {
-    console.error('Error inviting employee:', error);
+    await logger.error('Failed to invite employee', {
+      operation: 'member_invite_employee',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -767,7 +840,13 @@ export const getBusinessMembers = async (req: Request, res: Response) => {
 
     res.json({ members: membersWithConnections });
   } catch (error) {
-    console.error('Error getting business members:', error);
+    await logger.error('Failed to get business members', {
+      operation: 'member_get_business_members',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -818,7 +897,13 @@ export const updateEmployeeRole = async (req: Request, res: Response) => {
 
     res.json({ member: updatedMember });
   } catch (error) {
-    console.error('Error updating employee role:', error);
+    await logger.error('Failed to update employee role', {
+      operation: 'member_update_employee_role',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -865,7 +950,13 @@ export const removeEmployee = async (req: Request, res: Response) => {
 
     res.json({ message: 'Employee removed successfully', member: updatedMember });
   } catch (error) {
-    console.error('Error removing employee:', error);
+    await logger.error('Failed to remove employee', {
+      operation: 'member_remove_employee',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -898,7 +989,13 @@ export const getBusinessInvitations = async (req: Request, res: Response) => {
 
     res.json({ invitations });
   } catch (error) {
-    console.error('Error getting business invitations:', error);
+    await logger.error('Failed to get business invitations', {
+      operation: 'member_get_business_invitations',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -950,13 +1047,25 @@ export const resendInvitation = async (req: Request, res: Response) => {
         invitation.token
       );
     } catch (emailError) {
-      console.error('Error resending invitation email:', emailError);
+      await logger.error('Failed to resend invitation email', {
+        operation: 'member_resend_invitation_email',
+        error: {
+          message: emailError instanceof Error ? emailError.message : 'Unknown error',
+          stack: emailError instanceof Error ? emailError.stack : undefined
+        }
+      });
       // Don't fail the request if email fails, but log it
     }
 
     res.json({ message: 'Invitation resent successfully', invitation });
   } catch (error) {
-    console.error('Error resending invitation:', error);
+    await logger.error('Failed to resend invitation', {
+      operation: 'member_resend_invitation',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -994,7 +1103,13 @@ export const cancelInvitation = async (req: Request, res: Response) => {
 
     res.json({ message: 'Invitation cancelled successfully' });
   } catch (error) {
-    console.error('Error cancelling invitation:', error);
+    await logger.error('Failed to cancel invitation', {
+      operation: 'member_cancel_invitation',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -1024,7 +1139,13 @@ export const removeConnection = async (req: Request, res: Response) => {
     await prisma.relationship.delete({ where: { id: relationshipId } });
     res.json({ message: 'Connection removed successfully' });
   } catch (error) {
-    console.error('Error removing connection:', error);
+    await logger.error('Failed to remove connection', {
+      operation: 'member_remove_connection',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -1068,7 +1189,14 @@ export const bulkRemoveConnections = async (req: Request, res: Response) => {
 
         results.push({ id: relationshipId, success: true });
       } catch (error) {
-        console.error(`Error removing connection ${relationshipId}:`, error);
+        await logger.error('Failed to remove connection in bulk', {
+          operation: 'member_bulk_remove_connection',
+          relationshipId,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         results.push({ id: relationshipId, success: false, error: 'Internal error' });
       }
     }
@@ -1081,7 +1209,13 @@ export const bulkRemoveConnections = async (req: Request, res: Response) => {
       results,
     });
   } catch (error) {
-    console.error('Error in bulk remove connections:', error);
+    await logger.error('Failed in bulk remove connections', {
+      operation: 'member_bulk_remove_connections',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -1123,7 +1257,14 @@ export const bulkUpdateConnectionRequests = async (req: Request, res: Response) 
 
         results.push({ id: requestId, success: true });
       } catch (error) {
-        console.error(`Error updating request ${requestId}:`, error);
+        await logger.error('Failed to update request in bulk', {
+          operation: 'member_bulk_update_request',
+          requestId,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         results.push({ id: requestId, success: false, error: 'Internal error' });
       }
     }
@@ -1137,7 +1278,13 @@ export const bulkUpdateConnectionRequests = async (req: Request, res: Response) 
       results,
     });
   } catch (error) {
-    console.error('Error in bulk update connection requests:', error);
+    await logger.error('Failed in bulk update connection requests', {
+      operation: 'member_bulk_update_connection_requests',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }; 
@@ -1257,7 +1404,13 @@ export const bulkInviteEmployees = async (req: Request, res: Response) => {
             invitation.message
           );
         } catch (emailError) {
-          console.error('Failed to send invitation email:', emailError);
+          await logger.error('Failed to send bulk invitation email', {
+            operation: 'member_bulk_send_invitation_email',
+            error: {
+              message: emailError instanceof Error ? emailError.message : 'Unknown error',
+              stack: emailError instanceof Error ? emailError.stack : undefined
+            }
+          });
           // Don't fail the entire operation if email fails
         }
 
@@ -1267,7 +1420,14 @@ export const bulkInviteEmployees = async (req: Request, res: Response) => {
           invitation: newInvitation 
         });
       } catch (error) {
-        console.error(`Error inviting ${invitation.email}:`, error);
+        await logger.error('Failed to invite in bulk', {
+          operation: 'member_bulk_invite',
+          email: invitation.email,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         results.push({ 
           email: invitation.email, 
           success: false, 
@@ -1284,7 +1444,13 @@ export const bulkInviteEmployees = async (req: Request, res: Response) => {
       results,
     });
   } catch (error) {
-    console.error('Error in bulk invite employees:', error);
+    await logger.error('Failed in bulk invite employees', {
+      operation: 'member_bulk_invite_employees',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -1392,7 +1558,14 @@ export const bulkUpdateEmployeeRoles = async (req: Request, res: Response) => {
           member: updatedMember 
         });
       } catch (error) {
-        console.error(`Error updating member ${update.memberId}:`, error);
+        await logger.error('Failed to update member in bulk', {
+          operation: 'member_bulk_update_member',
+          memberId: update.memberId,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         results.push({ 
           memberId: update.memberId, 
           success: false, 
@@ -1409,7 +1582,13 @@ export const bulkUpdateEmployeeRoles = async (req: Request, res: Response) => {
       results,
     });
   } catch (error) {
-    console.error('Error in bulk update employee roles:', error);
+    await logger.error('Failed in bulk update employee roles', {
+      operation: 'member_bulk_update_employee_roles',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -1513,7 +1692,14 @@ export const bulkRemoveEmployees = async (req: Request, res: Response) => {
           success: true 
         });
       } catch (error) {
-        console.error(`Error removing member ${memberId}:`, error);
+        await logger.error('Failed to remove member in bulk', {
+          operation: 'member_bulk_remove_member',
+          memberId,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         results.push({ 
           memberId, 
           success: false, 
@@ -1530,7 +1716,13 @@ export const bulkRemoveEmployees = async (req: Request, res: Response) => {
       results,
     });
   } catch (error) {
-    console.error('Error in bulk remove employees:', error);
+    await logger.error('Failed in bulk remove employees', {
+      operation: 'member_bulk_remove_employees',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Internal server error' });
   }
 }; 
