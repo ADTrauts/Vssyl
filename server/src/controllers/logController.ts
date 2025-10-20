@@ -154,10 +154,7 @@ export const logController = {
 
       const analytics = await logService.getLogAnalytics(filters);
       
-      res.json({
-        success: true,
-        data: analytics
-      });
+      res.json(analytics);
     } catch (error) {
       await logger.error('Failed to get log analytics', {
         operation: 'get_log_analytics',
@@ -176,10 +173,7 @@ export const logController = {
     try {
       const alerts = await logService.getLogAlerts();
       
-      res.json({
-        success: true,
-        data: alerts
-      });
+      res.json(alerts);
     } catch (error) {
       await logger.error('Failed to get log alerts', {
         operation: 'get_log_alerts',
@@ -200,10 +194,7 @@ export const logController = {
       
       const alert = await logService.createLogAlert(alertData);
       
-      res.status(201).json({
-        success: true,
-        data: alert
-      });
+      res.status(201).json(alert);
     } catch (error) {
       await logger.error('Failed to create log alert', {
         operation: 'create_log_alert',
@@ -225,10 +216,7 @@ export const logController = {
       
       const alert = await logService.updateLogAlert(alertId, updateData);
       
-      res.json({
-        success: true,
-        data: alert
-      });
+      res.json(alert);
     } catch (error) {
       await logger.error('Failed to update log alert', {
         operation: 'update_log_alert',
@@ -275,10 +263,7 @@ export const logController = {
       
       const result = await logService.cleanupOldLogs(daysToKeep);
       
-      res.json({
-        success: true,
-        data: result
-      });
+      res.json(result);
     } catch (error) {
       await logger.error('Failed to cleanup old logs', {
         operation: 'cleanup_old_logs',
@@ -297,10 +282,7 @@ export const logController = {
     try {
       const settings = await logService.getRetentionSettings();
       
-      res.json({
-        success: true,
-        data: settings
-      });
+      res.json(settings);
     } catch (error) {
       await logger.error('Failed to get retention settings', {
         operation: 'get_retention_settings',
@@ -321,10 +303,7 @@ export const logController = {
       
       const updatedSettings = await logService.updateRetentionSettings(settings);
       
-      res.json({
-        success: true,
-        data: updatedSettings
-      });
+      res.json(updatedSettings);
     } catch (error) {
       await logger.error('Failed to update retention settings', {
         operation: 'update_retention_settings',
@@ -352,11 +331,8 @@ export const logController = {
       const recentLogs = await logService.getLogs(filters);
       
       res.json({
-        success: true,
-        data: {
-          logs: recentLogs.entries,
-          timestamp: new Date().toISOString()
-        }
+        logs: recentLogs.entries,
+        timestamp: new Date().toISOString()
       });
     } catch (error) {
       await logger.error('Failed to get log stream', {
