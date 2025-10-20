@@ -84,12 +84,9 @@ export const logController = {
       const logs = await logService.getLogs(filters);
       
       res.json({
-        success: true,
-        data: {
-          logs: logs.entries,
-          total: logs.total,
-          hasMore: logs.hasMore
-        }
+        logs: logs.entries,
+        total: logs.total,
+        hasMore: logs.hasMore
       });
     } catch (error) {
       await logger.error('Failed to get logs', {
