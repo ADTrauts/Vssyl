@@ -1,5 +1,7 @@
-import { Storage } from '@google-cloud/storage';
+import { Storage, Bucket } from '@google-cloud/storage';
 import path from 'path';
+import fs from 'fs';
+import { logger } from '../lib/logger';
 
 export interface StorageConfig {
   provider: 'local' | 'gcs';
@@ -28,7 +30,7 @@ export class StorageService {
   private static instance: StorageService;
   private config: StorageConfig;
   private storage?: Storage;
-  private bucket?: any;
+  private bucket?: Bucket;
 
   private constructor() {
     this.config = this.loadConfig();
@@ -68,11 +70,14 @@ export class StorageService {
     };
   }
 
-  private initializeStorage() {
-    console.log('🔧 Initializing storage service:', {
-      provider: this.config.provider,
-      gcsConfig: this.config.gcs,
-      localConfig: this.config.local
+  private async initializeStorage() {
+    await logger.info('Initializing storage service', {
+      operation: 'storage_service_init',
+      context: {
+        provider: this.config.provider,
+        gcsConfig: this.config.gcs,
+        localConfig: this.config.local
+      }
     });
 
     if (this.config.provider === 'gcs' && this.config.gcs) {
@@ -84,17 +89,23 @@ export class StorageService {
           ...(this.config.gcs.keyFilename && { keyFilename: this.config.gcs.keyFilename }),
         });
         this.bucket = this.storage.bucket(this.config.gcs.bucketName);
-        console.log('✅ Google Cloud Storage initialized:', {
-          projectId: this.config.gcs.projectId,
-          bucketName: this.config.gcs.bucketName,
-          hasKeyFile: !!this.config.gcs.keyFilename
+        await logger.info('Google Cloud Storage initialized', {
+          operation: 'storage_gcs_initialized',
+          context: {
+            projectId: this.config.gcs.projectId,
+            bucketName: this.config.gcs.bucketName,
+            hasKeyFile: !!this.config.gcs.keyFilename
+          }
         });
       } catch (error) {
-        console.error('❌ Failed to initialize Google Cloud Storage, falling back to local storage:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
+        await logger.error('Failed to initialize Google Cloud Storage, falling back to local', {
+          operation: 'storage_gcs_init_fallback',
           projectId: this.config.gcs.projectId,
-          bucketName: this.config.gcs.bucketName
+          bucketName: this.config.gcs.bucketName,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
         });
         
         // Fall back to local storage
@@ -102,13 +113,19 @@ export class StorageService {
         this.config.local = {
           uploadDir: process.env.LOCAL_UPLOAD_DIR || path.join(__dirname, '../../uploads'),
         };
-        console.log('✅ Fallback to local storage initialized:', {
-          uploadDir: this.config.local.uploadDir
+        await logger.info('Fallback to local storage initialized', {
+          operation: 'storage_local_fallback_init',
+          context: {
+            uploadDir: this.config.local.uploadDir
+          }
         });
       }
     } else {
-      console.log('✅ Local storage initialized:', {
-        uploadDir: this.config.local?.uploadDir
+      await logger.info('Local storage initialized', {
+        operation: 'storage_local_initialized',
+        context: {
+          uploadDir: this.config.local?.uploadDir
+        }
       });
     }
   }
@@ -128,9 +145,13 @@ export class StorageService {
       try {
         return await this.uploadToGCS(file, destinationPath, options);
       } catch (error) {
-        console.error('⚠️  GCS upload failed, falling back to local storage:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          destinationPath
+        await logger.error('GCS upload failed, falling back to local storage', {
+          operation: 'storage_gcs_upload_fallback',
+          destinationPath,
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
         });
         // Fall back to local storage on GCS failure
         return this.uploadToLocal(file, destinationPath);
@@ -172,7 +193,6 @@ export class StorageService {
       const [exists] = await file.exists();
       return exists;
     } else {
-      const fs = require('fs');
       return fs.existsSync(filePath);
     }
   }
@@ -186,12 +206,15 @@ export class StorageService {
       throw new Error('Google Cloud Storage bucket not initialized');
     }
 
-    console.log('📤 Uploading to GCS:', {
-      destinationPath,
-      fileName: file.originalname,
-      fileSize: file.size,
-      mimeType: file.mimetype,
-      bucketName: this.config.gcs?.bucketName
+    await logger.info('Uploading to GCS', {
+      operation: 'storage_gcs_upload',
+      context: {
+        destinationPath,
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+        bucketName: this.config.gcs?.bucketName
+      }
     });
 
     try {
@@ -210,11 +233,19 @@ export class StorageService {
       // Upload the file
       await new Promise((resolve, reject) => {
         stream.on('error', (error: Error) => {
-          console.error('❌ GCS upload stream error:', error);
+          await logger.error('GCS upload stream error', {
+            operation: 'storage_gcs_stream_error',
+            error: {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          });
           reject(error);
         });
         stream.on('finish', () => {
-          console.log('✅ GCS upload stream finished');
+          await logger.debug('GCS upload stream finished', {
+            operation: 'storage_gcs_stream_finished'
+          });
           resolve(undefined);
         });
         stream.end(file.buffer);
@@ -226,19 +257,33 @@ export class StorageService {
       if (options.makePublic) {
         try {
           await gcsFile.makePublic();
-          console.log('✅ File made public');
-        } catch (error: any) {
-          if (error.message.includes('uniform bucket-level access')) {
-            console.log('ℹ️  Bucket has uniform access - objects inherit bucket permissions');
+          await logger.debug('File made public', {
+            operation: 'storage_gcs_file_public'
+          });
+        } catch (error: unknown) {
+          if (error instanceof Error && error.message.includes('uniform bucket-level access')) {
+            await logger.debug('Bucket has uniform access', {
+              operation: 'storage_gcs_uniform_access'
+            });
           } else {
-            console.error('❌ Error making file public:', error);
+            await logger.error('Failed to make file public', {
+              operation: 'storage_gcs_make_public_error',
+              error: {
+                message: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined
+              }
+            });
             throw error;
           }
         }
       }
 
       const publicUrl = this.getPublicUrl(destinationPath);
-      console.log('✅ GCS upload successful:', { publicUrl, destinationPath });
+      await logger.info('GCS upload successful', {
+        operation: 'storage_gcs_upload_success',
+        publicUrl,
+        destinationPath
+      });
 
       return {
         url: publicUrl,
@@ -246,11 +291,14 @@ export class StorageService {
         publicUrl: options.makePublic ? publicUrl : undefined,
       };
     } catch (error) {
-      console.error('❌ GCS upload failed:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
+      await logger.error('GCS upload failed', {
+        operation: 'storage_gcs_upload_failed',
         destinationPath,
-        fileName: file.originalname
+        fileName: file.originalname,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
       });
       throw error;
     }
@@ -260,7 +308,6 @@ export class StorageService {
     file: Express.Multer.File,
     destinationPath: string
   ): Promise<UploadResult> {
-    const fs = require('fs');
     const uploadDir = this.config.local?.uploadDir || path.join(__dirname, '../../uploads');
     const fullPath = path.join(uploadDir, path.basename(destinationPath));
     
@@ -301,7 +348,6 @@ export class StorageService {
 
   private async deleteFromLocal(filePath: string): Promise<DeleteResult> {
     try {
-      const fs = require('fs');
       const uploadDir = this.config.local?.uploadDir || path.join(__dirname, '../../uploads');
       const fullPath = path.join(uploadDir, path.basename(filePath));
       

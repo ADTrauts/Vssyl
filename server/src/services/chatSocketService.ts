@@ -2,6 +2,7 @@ import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { prisma } from '../lib/prisma';
 import { verifyToken } from '../utils/tokenUtils';
+import { logger } from '../lib/logger';
 
 interface AuthenticatedSocket {
   userId: string;
@@ -37,8 +38,6 @@ interface AuthenticatedSocketData {
 interface SocketWithData extends Socket {
   data: AuthenticatedSocketData;
 }
-
-type AuthenticatedSocketType = SocketWithData;
 
 interface NotificationEvent {
   id: string;
@@ -91,13 +90,17 @@ export class ChatSocketService {
         const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
         
         if (!token) {
-          console.error('Socket auth failed: No token provided');
+          await logger.warn('Socket auth failed: No token provided', {
+            operation: 'socket_auth_no_token'
+          });
           return next(new Error('Authentication error: No token provided'));
         }
 
         const decoded = await verifyToken(token);
         if (!decoded) {
-          console.error('Socket auth failed: Invalid token');
+          await logger.warn('Socket auth failed: Invalid token', {
+            operation: 'socket_auth_invalid_token'
+          });
           return next(new Error('Authentication error: Invalid token'));
         }
 
@@ -108,7 +111,10 @@ export class ChatSocketService {
         });
 
         if (!user) {
-          console.error('Socket auth failed: User not found', decoded.userId);
+          await logger.warn('Socket auth failed: User not found', {
+            operation: 'socket_auth_user_not_found',
+            userId: decoded.userId
+          });
           return next(new Error('Authentication error: User not found'));
         }
 
@@ -120,7 +126,13 @@ export class ChatSocketService {
 
         next();
       } catch (error) {
-        console.error('Socket auth error:', error);
+        await logger.error('Socket auth error', {
+          operation: 'socket_auth_error',
+          error: {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          }
+        });
         next(new Error('Authentication error: ' + error));
       }
     });
@@ -130,7 +142,11 @@ export class ChatSocketService {
     this.io.on('connection', (socket) => {
       const user = socket.data.user as AuthenticatedSocket;
       
-      console.log(`User connected: ${user.userEmail} (${user.userId})`);
+      await logger.info('User connected to socket', {
+        operation: 'socket_user_connected',
+        userId: user.userId,
+        userEmail: user.userEmail
+      });
       
       // Store socket mappings
       this.userSockets.set(user.userId, socket.id);
@@ -211,20 +227,36 @@ export class ChatSocketService {
       // Join user to their personal room for direct messages
       socket.join(`user_${userId}`);
 
-      console.log(`User ${userId} joined ${conversations.length} conversations`);
+      await logger.info('User joined conversations', {
+        operation: 'socket_user_joined_conversations',
+        userId,
+        count: conversations.length
+      });
     } catch (error) {
-      console.error('Error joining user to conversations:', error);
+      await logger.error('Failed to join user to conversations', {
+        operation: 'socket_join_conversations_error',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
     }
   }
 
   private joinConversation(socket: SocketWithData, conversationId: string) {
     socket.join(`conversation_${conversationId}`);
-    console.log(`User joined conversation: ${conversationId}`);
+    await logger.debug('User joined conversation', {
+      operation: 'socket_join_conversation',
+      conversationId
+    });
   }
 
   private leaveConversation(socket: SocketWithData, conversationId: string) {
     socket.leave(`conversation_${conversationId}`);
-    console.log(`User left conversation: ${conversationId}`);
+    await logger.debug('User left conversation', {
+      operation: 'socket_leave_conversation',
+      conversationId
+    });
   }
 
   private handleTypingStart(socket: SocketWithData, data: TypingEvent) {
@@ -297,9 +329,18 @@ export class ChatSocketService {
         data: { lastMessageAt: new Date() }
       });
 
-      console.log(`Message broadcasted in conversation ${message.conversationId}`);
+      await logger.info('Message broadcasted in conversation', {
+        operation: 'socket_message_broadcasted',
+        conversationId: message.conversationId
+      });
     } catch (error) {
-      console.error('Error handling new message:', error);
+      await logger.error('Failed to handle new message', {
+        operation: 'socket_handle_new_message',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       socket.emit('error', { message: 'Failed to send message' });
     }
   }
@@ -353,7 +394,13 @@ export class ChatSocketService {
         });
       }
     } catch (error) {
-      console.error('Error handling message reaction:', error);
+      await logger.error('Failed to handle message reaction', {
+        operation: 'socket_handle_reaction',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       socket.emit('error', { message: 'Failed to add reaction' });
     }
   }
@@ -405,7 +452,13 @@ export class ChatSocketService {
         });
       }
     } catch (error) {
-      console.error('Error handling mark as read:', error);
+      await logger.error('Failed to handle mark as read', {
+        operation: 'socket_handle_mark_read',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       socket.emit('error', { message: 'Failed to mark as read' });
     }
   }
@@ -427,7 +480,11 @@ export class ChatSocketService {
     if (user) {
       this.userSockets.delete(user.userId);
       this.socketUsers.delete(socket.id);
-      console.log(`User disconnected: ${user.userEmail} (${user.userId})`);
+      await logger.info('User disconnected from socket', {
+        operation: 'socket_user_disconnected',
+        userId: user.userId,
+        userEmail: user.userEmail
+      });
 
       // Clean up typing status
       this.typingUsers.forEach((users, conversationId) => {

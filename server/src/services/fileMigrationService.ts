@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export interface DashboardFileSummary {
   fileCount: number;
@@ -22,7 +23,11 @@ export type FileHandlingAction =
  */
 export async function getDashboardFileSummary(userId: string, dashboardId: string): Promise<DashboardFileSummary> {
   try {
-    console.log(`Getting file summary for dashboard ${dashboardId} user ${userId}`);
+    await logger.debug('Getting file summary for dashboard', {
+      operation: 'file_migration_get_summary',
+      dashboardId,
+      userId
+    });
     
     // Get files for this dashboard (not trashed)
     const files = await prisma.file.findMany({
@@ -77,7 +82,13 @@ export async function getDashboardFileSummary(userId: string, dashboardId: strin
       topLevelItems: [...topLevelFolders, ...topLevelFiles]
     };
   } catch (error) {
-    console.error('Error getting dashboard file summary:', error);
+    await logger.error('Failed to get dashboard file summary', {
+      operation: 'file_migration_get_summary_error',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     throw new Error('Failed to get dashboard file summary');
   }
 }
@@ -91,7 +102,11 @@ export async function moveFilesToMainDrive(
   options: { createFolder: boolean; folderName?: string }
 ): Promise<{ movedFiles: number; movedFolders: number; createdFolderId?: string }> {
   try {
-    console.log(`Moving files from dashboard ${dashboardId} to main drive for user ${userId}`);
+    await logger.info('Moving files from dashboard to main drive', {
+      operation: 'file_migration_move_to_drive',
+      dashboardId,
+      userId
+    });
     
     // Get user's personal dashboard
     const personalDashboard = await prisma.dashboard.findFirst({
@@ -120,7 +135,10 @@ export async function moveFilesToMainDrive(
       });
       createdFolderId = labeledFolder.id;
       
-      console.log(`Created labeled folder: ${options.folderName}`);
+      await logger.info('Created labeled folder', {
+        operation: 'file_migration_folder_created',
+        folderName: options.folderName
+      });
       
       // Move all files to the labeled folder
       const fileUpdateResult = await prisma.file.updateMany({
@@ -197,7 +215,13 @@ export async function moveFilesToMainDrive(
       };
     }
   } catch (error) {
-    console.error('Error moving files to main drive:', error);
+    await logger.error('Failed to move files to main drive', {
+      operation: 'file_migration_move_to_drive_error',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     throw new Error('Failed to move files to main drive');
   }
 }
@@ -211,7 +235,11 @@ export async function moveFilesToTrash(
   options: { retentionDays?: number } = {}
 ): Promise<{ trashedFiles: number; trashedFolders: number }> {
   try {
-    console.log(`Moving files from dashboard ${dashboardId} to trash for user ${userId}`);
+    await logger.info('Moving files from dashboard to trash', {
+      operation: 'file_migration_move_to_trash',
+      dashboardId,
+      userId
+    });
     
     const now = new Date();
     
@@ -239,14 +267,24 @@ export async function moveFilesToTrash(
       }
     });
 
-    console.log(`Moved ${fileUpdateResult.count} files and ${folderUpdateResult.count} folders to trash`);
+    await logger.info('Moved files and folders to trash', {
+      operation: 'file_migration_trash_complete',
+      filesCount: fileUpdateResult.count,
+      foldersCount: folderUpdateResult.count
+    });
 
     return {
       trashedFiles: fileUpdateResult.count,
       trashedFolders: folderUpdateResult.count
     };
   } catch (error) {
-    console.error('Error moving files to trash:', error);
+    await logger.error('Failed to move files to trash', {
+      operation: 'file_migration_move_to_trash_error',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     throw new Error('Failed to move files to trash');
   }
 }
@@ -260,7 +298,12 @@ export async function createDashboardExport(
   format: 'zip' | 'tar' = 'zip'
 ): Promise<{ exportPath: string; exportSize: number; fileCount: number }> {
   try {
-    console.log(`Creating ${format} export for dashboard ${dashboardId} user ${userId}`);
+    await logger.info('Creating dashboard export', {
+      operation: 'file_migration_create_export',
+      format,
+      dashboardId,
+      userId
+    });
     
     // Get all files for this dashboard
     const files = await prisma.file.findMany({
@@ -286,7 +329,11 @@ export async function createDashboardExport(
       }
     });
 
-    console.log(`Found ${files.length} files and ${folders.length} folders for export`);
+    await logger.debug('Found files and folders for export', {
+      operation: 'file_migration_export_found',
+      filesCount: files.length,
+      foldersCount: folders.length
+    });
 
     // TODO: Implement actual ZIP/TAR creation
     // For now, we'll create a simple export manifest and return basic info
@@ -302,7 +349,11 @@ export async function createDashboardExport(
     // 5. Store in uploads directory or cloud storage
     // 6. Return download URL
 
-    console.log(`Export prepared: ${files.length} files, ${totalSize} bytes total`);
+    await logger.info('Export prepared', {
+      operation: 'file_migration_export_prepared',
+      filesCount: files.length,
+      totalSize
+    });
 
     return {
       exportPath,
@@ -310,7 +361,13 @@ export async function createDashboardExport(
       fileCount: files.length
     };
   } catch (error) {
-    console.error('Error creating dashboard export:', error);
+    await logger.error('Failed to create dashboard export', {
+      operation: 'file_migration_create_export_error',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     throw new Error('Failed to create dashboard export');
   }
 }

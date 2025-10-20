@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export interface PushSubscription {
   endpoint: string;
@@ -62,7 +63,9 @@ export class PushNotificationService {
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
     if (!vapidPublicKey || !vapidPrivateKey) {
-      console.warn('⚠️ VAPID keys not found. Push notifications will be disabled.');
+      await logger.warn('VAPID keys not found. Push notifications will be disabled.', {
+        operation: 'push_notification_vapid_missing'
+      });
       return;
     }
 
@@ -73,7 +76,9 @@ export class PushNotificationService {
     );
 
     this.isInitialized = true;
-    console.log('✅ Push notification service initialized');
+    await logger.info('Push notification service initialized', {
+      operation: 'push_notification_service_init'
+    });
   }
 
   /**
@@ -101,9 +106,18 @@ export class PushNotificationService {
         }
       });
 
-      console.log(`✅ Push subscription saved for user ${userId}`);
+      await logger.info('Push subscription saved for user', {
+        operation: 'push_notification_subscription_saved',
+        userId
+      });
     } catch (error) {
-      console.error('Error saving push subscription:', error);
+      await logger.error('Failed to save push subscription', {
+        operation: 'push_notification_save_subscription',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -120,9 +134,18 @@ export class PushNotificationService {
         }
       });
 
-      console.log(`✅ Push subscription removed for user ${userId}`);
+      await logger.info('Push subscription removed for user', {
+        operation: 'push_notification_subscription_removed',
+        userId
+      });
     } catch (error) {
-      console.error('Error removing push subscription:', error);
+      await logger.error('Failed to remove push subscription', {
+        operation: 'push_notification_remove_subscription',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
@@ -144,7 +167,13 @@ export class PushNotificationService {
         }
       }));
     } catch (error) {
-      console.error('Error getting user push subscriptions:', error);
+      await logger.error('Failed to get user push subscriptions', {
+        operation: 'push_notification_get_subscriptions',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       return [];
     }
   }
@@ -154,7 +183,9 @@ export class PushNotificationService {
    */
   async sendToUser(userId: string, payload: PushNotificationPayload): Promise<boolean> {
     if (!this.isInitialized) {
-      console.warn('Push notification service not initialized');
+      await logger.warn('Push notification service not initialized', {
+        operation: 'push_notification_not_initialized'
+      });
       return false;
     }
 
@@ -162,7 +193,10 @@ export class PushNotificationService {
       const subscriptions = await this.getUserSubscriptions(userId);
       
       if (subscriptions.length === 0) {
-        console.log(`No push subscriptions found for user ${userId}`);
+        await logger.debug('No push subscriptions found for user', {
+          operation: 'push_notification_no_subscriptions',
+          userId
+        });
         return false;
       }
 
@@ -175,19 +209,39 @@ export class PushNotificationService {
       const successCount = results.filter(result => result.status === 'fulfilled').length;
       const totalCount = results.length;
 
-      console.log(`📱 Push notification sent to ${successCount}/${totalCount} devices for user ${userId}`);
+      await logger.info('Push notification sent to user devices', {
+        operation: 'push_notification_sent',
+        userId,
+        successCount,
+        totalCount
+      });
 
       // Clean up failed subscriptions
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           const subscription = subscriptions[index];
-          this.removeSubscription(userId, subscription.endpoint).catch(console.error);
+          this.removeSubscription(userId, subscription.endpoint).catch(async (err) => {
+            await logger.error('Failed to remove invalid subscription', {
+              operation: 'push_notification_remove_invalid',
+              userId,
+              error: {
+                message: err instanceof Error ? err.message : 'Unknown error',
+                stack: err instanceof Error ? err.stack : undefined
+              }
+            });
+          });
         }
       });
 
       return successCount > 0;
     } catch (error) {
-      console.error('Error sending push notification to user:', error);
+      await logger.error('Failed to send push notification to user', {
+        operation: 'push_notification_send_to_user',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       return false;
     }
   }
@@ -197,7 +251,9 @@ export class PushNotificationService {
    */
   async sendToMultipleUsers(userIds: string[], payload: PushNotificationPayload): Promise<number> {
     if (!this.isInitialized) {
-      console.warn('Push notification service not initialized');
+      await logger.warn('Push notification service not initialized', {
+        operation: 'push_notification_not_initialized'
+      });
       return 0;
     }
 
@@ -210,10 +266,20 @@ export class PushNotificationService {
         result.status === 'fulfilled' && result.value === true
       ).length;
 
-      console.log(`📱 Push notification sent to ${successCount}/${userIds.length} users`);
+      await logger.info('Push notification sent to multiple users', {
+        operation: 'push_notification_sent_multiple',
+        successCount,
+        totalUsers: userIds.length
+      });
       return successCount;
     } catch (error) {
-      console.error('Error sending push notifications to multiple users:', error);
+      await logger.error('Failed to send push notifications to multiple users', {
+        operation: 'push_notification_send_to_multiple',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       return 0;
     }
   }
@@ -230,7 +296,13 @@ export class PushNotificationService {
 
       await webpush.sendNotification(subscription, pushPayload);
     } catch (error) {
-      console.error('Error sending push notification to subscription:', error);
+      await logger.error('Failed to send push notification to subscription', {
+        operation: 'push_notification_send_to_subscription',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw error;
     }
   }
