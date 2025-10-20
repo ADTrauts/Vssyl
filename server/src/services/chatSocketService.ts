@@ -142,7 +142,7 @@ export class ChatSocketService {
     this.io.on('connection', (socket) => {
       const user = socket.data.user as AuthenticatedSocket;
       
-      await logger.info('User connected to socket', {
+      logger.info('User connected to socket', {
         operation: 'socket_user_connected',
         userId: user.userId,
         userEmail: user.userEmail
@@ -245,7 +245,7 @@ export class ChatSocketService {
 
   private joinConversation(socket: SocketWithData, conversationId: string) {
     socket.join(`conversation_${conversationId}`);
-    await logger.debug('User joined conversation', {
+    logger.debug('User joined conversation', {
       operation: 'socket_join_conversation',
       conversationId
     });
@@ -253,7 +253,7 @@ export class ChatSocketService {
 
   private leaveConversation(socket: SocketWithData, conversationId: string) {
     socket.leave(`conversation_${conversationId}`);
-    await logger.debug('User left conversation', {
+    logger.debug('User left conversation', {
       operation: 'socket_leave_conversation',
       conversationId
     });
@@ -480,7 +480,7 @@ export class ChatSocketService {
     if (user) {
       this.userSockets.delete(user.userId);
       this.socketUsers.delete(socket.id);
-      await logger.info('User disconnected from socket', {
+      logger.info('User disconnected from socket', {
         operation: 'socket_user_disconnected',
         userId: user.userId,
         userEmail: user.userEmail

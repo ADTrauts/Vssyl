@@ -233,7 +233,7 @@ export class StorageService {
       // Upload the file
       await new Promise((resolve, reject) => {
         stream.on('error', (error: Error) => {
-          await logger.error('GCS upload stream error', {
+          logger.error('GCS upload stream error', {
             operation: 'storage_gcs_stream_error',
             error: {
               message: error instanceof Error ? error.message : 'Unknown error',
@@ -243,7 +243,7 @@ export class StorageService {
           reject(error);
         });
         stream.on('finish', () => {
-          await logger.debug('GCS upload stream finished', {
+          logger.debug('GCS upload stream finished', {
             operation: 'storage_gcs_stream_finished'
           });
           resolve(undefined);

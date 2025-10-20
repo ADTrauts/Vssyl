@@ -74,7 +74,7 @@ export const logsApi = {
       }
     });
 
-    return authenticatedApiCall<LogResult>(`/admin/logs?${queryParams.toString()}`, {
+    return authenticatedApiCall<LogResult>(`/api/admin/logs?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -118,7 +118,7 @@ export const logsApi = {
       }
     });
 
-    return authenticatedApiCall<LogAnalytics>(`/admin/logs/analytics?${queryParams.toString()}`, {
+    return authenticatedApiCall<LogAnalytics>(`/api/admin/logs/analytics?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -128,7 +128,7 @@ export const logsApi = {
 
   // Get log alerts
   async getLogAlerts(token: string): Promise<LogAlert[]> {
-    return authenticatedApiCall<LogAlert[]>('/admin/logs/alerts', {
+    return authenticatedApiCall<LogAlert[]>('/api/admin/logs/alerts', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -138,7 +138,7 @@ export const logsApi = {
 
   // Create log alert
   async createLogAlert(alertData: Omit<LogAlert, 'id' | 'createdAt' | 'updatedAt'>, token: string): Promise<LogAlert> {
-    return authenticatedApiCall<LogAlert>('/admin/logs/alerts', {
+    return authenticatedApiCall<LogAlert>('/api/admin/logs/alerts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ export const logsApi = {
 
   // Update log alert
   async updateLogAlert(alertId: string, updateData: Partial<Omit<LogAlert, 'id' | 'createdAt'>>, token: string): Promise<LogAlert> {
-    return authenticatedApiCall<LogAlert>(`/admin/logs/alerts/${alertId}`, {
+    return authenticatedApiCall<LogAlert>(`/api/admin/logs/alerts/${alertId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export const logsApi = {
 
   // Delete log alert
   async deleteLogAlert(alertId: string, token: string): Promise<void> {
-    return authenticatedApiCall<void>(`/admin/logs/alerts/${alertId}`, {
+    return authenticatedApiCall<void>(`/api/admin/logs/alerts/${alertId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -180,7 +180,7 @@ export const logsApi = {
       }
     });
 
-    return authenticatedApiCall<{ logs: LogEntry[]; timestamp: string }>(`/admin/logs/stream?${queryParams.toString()}`, {
+    return authenticatedApiCall<{ logs: LogEntry[]; timestamp: string }>(`/api/admin/logs/stream?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -190,7 +190,7 @@ export const logsApi = {
 
   // Cleanup old logs
   async cleanupOldLogs(daysToKeep: number, token: string): Promise<{ deletedCount: number }> {
-    return authenticatedApiCall<{ deletedCount: number }>('/admin/logs/cleanup', {
+    return authenticatedApiCall<{ deletedCount: number }>('/api/admin/logs/cleanup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ export const logsApi = {
       auditRetentionDays: number;
       enabled: boolean;
       autoCleanup: boolean;
-    }>('/admin/logs/retention', {
+    }>('/api/admin/logs/retention', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -230,7 +230,7 @@ export const logsApi = {
     enabled?: boolean;
     autoCleanup?: boolean;
   }, token: string): Promise<void> {
-    return authenticatedApiCall<void>('/admin/logs/retention', {
+    return authenticatedApiCall<void>('/api/admin/logs/retention', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

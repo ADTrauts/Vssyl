@@ -63,7 +63,7 @@ export class PushNotificationService {
     const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 
     if (!vapidPublicKey || !vapidPrivateKey) {
-      await logger.warn('VAPID keys not found. Push notifications will be disabled.', {
+      logger.warn('VAPID keys not found. Push notifications will be disabled.', {
         operation: 'push_notification_vapid_missing'
       });
       return;
@@ -76,7 +76,7 @@ export class PushNotificationService {
     );
 
     this.isInitialized = true;
-    await logger.info('Push notification service initialized', {
+    logger.info('Push notification service initialized', {
       operation: 'push_notification_service_init'
     });
   }
