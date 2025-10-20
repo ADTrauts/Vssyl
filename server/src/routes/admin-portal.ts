@@ -1355,7 +1355,11 @@ router.get('/modules/submissions', authenticateJWT, requireAdmin, async (req: Re
       dateRange: dateRange as string
     });
 
-    console.log(`Admin ${adminUser.id} retrieved module submissions with filters:`, req.query);
+    await logger.info('Admin retrieved module submissions', {
+      operation: 'admin_get_module_submissions',
+      adminId: adminUser.id,
+      filters: req.query
+    });
 
     res.json({
       success: true,
@@ -1383,7 +1387,10 @@ router.get('/modules/stats', authenticateJWT, requireAdmin, async (req: Request,
     
     const stats = await AdminService.getModuleStats();
 
-    console.log(`Admin ${adminUser.id} retrieved module stats`);
+    await logger.info('Admin retrieved module statistics', {
+      operation: 'admin_get_module_stats',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
@@ -1418,7 +1425,12 @@ router.post('/modules/submissions/:submissionId/review', authenticateJWT, requir
       adminUser.id
     );
 
-    console.log(`Admin ${adminUser.id} reviewed module submission ${submissionId}: ${action}`);
+    await logger.info('Admin reviewed module submission', {
+      operation: 'admin_review_module_submission',
+      adminId: adminUser.id,
+      submissionId,
+      action
+    });
 
     res.json({
       success: true,
@@ -1452,7 +1464,12 @@ router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: R
       adminUser.id
     );
 
-    console.log(`Admin ${adminUser.id} performed bulk action on ${submissionIds.length} submissions: ${action}`);
+    await logger.info('Admin performed bulk action on module submissions', {
+      operation: 'admin_bulk_module_action',
+      adminId: adminUser.id,
+      submissionCount: submissionIds.length,
+      action
+    });
 
     res.json({
       success: true,
@@ -1480,7 +1497,10 @@ router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Requ
     
     const analytics = await AdminService.getModuleAnalytics();
 
-    console.log(`Admin ${adminUser.id} retrieved module analytics`);
+    await logger.info('Admin retrieved module analytics', {
+      operation: 'admin_get_module_analytics',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
@@ -1508,7 +1528,10 @@ router.get('/modules/developers/stats', authenticateJWT, requireAdmin, async (re
     
     const stats = await AdminService.getDeveloperStats();
 
-    console.log(`Admin ${adminUser.id} retrieved developer stats`);
+    await logger.info('Admin retrieved developer statistics', {
+      operation: 'admin_get_developer_stats',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
@@ -1538,7 +1561,12 @@ router.patch('/modules/:moduleId/status', authenticateJWT, requireAdmin, async (
 
     const result = await AdminService.updateModuleStatus(moduleId, status, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated module ${moduleId} status to ${status}`);
+    await logger.info('Admin updated module status', {
+      operation: 'admin_update_module_status',
+      adminId: adminUser.id,
+      moduleId,
+      status
+    });
 
     res.json({
       success: true,
@@ -1568,7 +1596,11 @@ router.get('/modules/:moduleId/revenue', authenticateJWT, requireAdmin, async (r
 
     const revenue = await AdminService.getModuleRevenue(moduleId);
 
-    console.log(`Admin ${adminUser.id} retrieved revenue for module ${moduleId}`);
+    await logger.info('Admin retrieved module revenue', {
+      operation: 'admin_get_module_revenue',
+      adminId: adminUser.id,
+      moduleId
+    });
 
     res.json({
       success: true,
@@ -1603,13 +1635,22 @@ router.get('/modules/export', authenticateJWT, requireAdmin, async (req: Request
       dateRange: dateRange as string
     });
 
-    console.log(`Admin ${adminUser.id} exported module data`);
+    await logger.info('Admin exported module data', {
+      operation: 'admin_export_module_data',
+      adminId: adminUser.id
+    });
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="module-data.csv"');
     res.send(csvData);
   } catch (error) {
-    console.error('Error exporting module data:', error);
+    await logger.error('Failed to export module data', {
+      operation: 'admin_export_module_data',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export module data' });
   }
 });
@@ -1629,14 +1670,24 @@ router.get('/business-intelligence', authenticateJWT, requireAdmin, async (req: 
       userType: userType as string
     });
 
-    console.log(`Admin ${adminUser.id} retrieved business intelligence data with filters:`, req.query);
+    await logger.info('Admin retrieved business intelligence data', {
+      operation: 'admin_get_business_intelligence',
+      adminId: adminUser.id,
+      filters: req.query
+    });
 
     res.json({
       success: true,
       data: data
     });
   } catch (error) {
-    console.error('Error getting business intelligence data:', error);
+    await logger.error('Failed to get business intelligence data', {
+      operation: 'admin_get_business_intelligence',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get business intelligence data' });
   }
 });
@@ -1655,7 +1706,10 @@ router.get('/business-intelligence/export', authenticateJWT, requireAdmin, async
       userType: userType as string
     });
 
-    console.log(`Admin ${adminUser.id} exported business intelligence data`);
+    await logger.info('Admin exported business intelligence data', {
+      operation: 'admin_export_business_intelligence',
+      adminId: adminUser.id
+    });
 
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
@@ -1667,7 +1721,13 @@ router.get('/business-intelligence/export', authenticateJWT, requireAdmin, async
     
     res.send(exportData);
   } catch (error) {
-    console.error('Error exporting business intelligence data:', error);
+    await logger.error('Failed to export business intelligence data', {
+      operation: 'admin_export_business_intelligence',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export business intelligence data' });
   }
 });
@@ -1683,14 +1743,24 @@ router.post('/business-intelligence/ab-tests', authenticateJWT, requireAdmin, as
 
     const result = await AdminService.createABTest(testData, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} created A/B test:`, testData.name);
+    await logger.info('Admin created A/B test', {
+      operation: 'admin_create_ab_test',
+      adminId: adminUser.id,
+      testName: testData.name
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error creating A/B test:', error);
+    await logger.error('Failed to create A/B test', {
+      operation: 'admin_create_ab_test',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create A/B test' });
   }
 });
@@ -1706,14 +1776,25 @@ router.get('/business-intelligence/ab-tests/:testId/results', authenticateJWT, r
 
     const results = await AdminService.getABTestResults(testId);
 
-    console.log(`Admin ${adminUser.id} retrieved A/B test results for test ${testId}`);
+    await logger.info('Admin retrieved A/B test results', {
+      operation: 'admin_get_ab_test_results',
+      adminId: adminUser.id,
+      testId
+    });
 
     res.json({
       success: true,
       data: results
     });
   } catch (error) {
-    console.error('Error getting A/B test results:', error);
+    await logger.error('Failed to get A/B test results', {
+      operation: 'admin_get_ab_test_results',
+      testId: req.params.testId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get A/B test results' });
   }
 });
@@ -1730,14 +1811,25 @@ router.patch('/business-intelligence/ab-tests/:testId', authenticateJWT, require
 
     const result = await AdminService.updateABTest(testId, updates, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated A/B test ${testId}`);
+    await logger.info('Admin updated A/B test', {
+      operation: 'admin_update_ab_test',
+      adminId: adminUser.id,
+      testId
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating A/B test:', error);
+    await logger.error('Failed to update A/B test', {
+      operation: 'admin_update_ab_test',
+      testId: req.params.testId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update A/B test' });
   }
 });
@@ -1752,14 +1844,23 @@ router.get('/business-intelligence/user-segments', authenticateJWT, requireAdmin
     
     const segments = await AdminService.getUserSegments();
 
-    console.log(`Admin ${adminUser.id} retrieved user segments`);
+    await logger.info('Admin retrieved user segments', {
+      operation: 'admin_get_user_segments',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: segments
     });
   } catch (error) {
-    console.error('Error getting user segments:', error);
+    await logger.error('Failed to get user segments', {
+      operation: 'admin_get_user_segments',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get user segments' });
   }
 });
@@ -1775,14 +1876,24 @@ router.post('/business-intelligence/user-segments', authenticateJWT, requireAdmi
 
     const result = await AdminService.createUserSegment(segmentData, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} created user segment:`, segmentData.name);
+    await logger.info('Admin created user segment', {
+      operation: 'admin_create_user_segment',
+      adminId: adminUser.id,
+      segmentName: segmentData.name
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error creating user segment:', error);
+    await logger.error('Failed to create user segment', {
+      operation: 'admin_create_user_segment',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create user segment' });
   }
 });
@@ -1797,14 +1908,23 @@ router.get('/business-intelligence/predictive-insights', authenticateJWT, requir
     
     const insights = await AdminService.getPredictiveInsights();
 
-    console.log(`Admin ${adminUser.id} retrieved predictive insights`);
+    await logger.info('Admin retrieved predictive insights', {
+      operation: 'admin_get_predictive_insights',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: insights
     });
   } catch (error) {
-    console.error('Error getting predictive insights:', error);
+    await logger.error('Failed to get predictive insights', {
+      operation: 'admin_get_predictive_insights',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get predictive insights' });
   }
 });
@@ -1819,14 +1939,23 @@ router.get('/business-intelligence/competitive-analysis', authenticateJWT, requi
     
     const analysis = await AdminService.getCompetitiveAnalysis();
 
-    console.log(`Admin ${adminUser.id} retrieved competitive analysis`);
+    await logger.info('Admin retrieved competitive analysis', {
+      operation: 'admin_get_competitive_analysis',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: analysis
     });
   } catch (error) {
-    console.error('Error getting competitive analysis:', error);
+    await logger.error('Failed to get competitive analysis', {
+      operation: 'admin_get_competitive_analysis',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get competitive analysis' });
   }
 });
@@ -1842,7 +1971,11 @@ router.post('/business-intelligence/custom-report', authenticateJWT, requireAdmi
 
     const report = await AdminService.generateCustomReport(reportConfig, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} generated custom report:`, reportConfig.name);
+    await logger.info('Admin generated custom report', {
+      operation: 'admin_generate_custom_report',
+      adminId: adminUser.id,
+      reportName: reportConfig.name
+    });
 
     res.json({
       success: true,
@@ -1877,14 +2010,24 @@ router.get('/support/tickets', authenticateJWT, requireAdmin, async (req: Reques
       dateRange: dateRange as string
     });
 
-    console.log(`Admin ${adminUser.id} retrieved support tickets with filters:`, req.query);
+    await logger.info('Admin retrieved support tickets', {
+      operation: 'admin_get_support_tickets',
+      adminId: adminUser.id,
+      filters: req.query
+    });
 
     res.json({
       success: true,
       data: tickets
     });
   } catch (error) {
-    console.error('Error getting support tickets:', error);
+    await logger.error('Failed to get support tickets', {
+      operation: 'admin_get_support_tickets',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get support tickets' });
   }
 });
@@ -1899,14 +2042,23 @@ router.get('/support/stats', authenticateJWT, requireAdmin, async (req: Request,
     
     const stats = await AdminService.getSupportStats();
 
-    console.log(`Admin ${adminUser.id} retrieved support stats`);
+    await logger.info('Admin retrieved support statistics', {
+      operation: 'admin_get_support_stats',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: stats
     });
   } catch (error) {
-    console.error('Error getting support stats:', error);
+    await logger.error('Failed to get support statistics', {
+      operation: 'admin_get_support_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get support stats' });
   }
 });
@@ -1923,14 +2075,26 @@ router.patch('/support/tickets/:ticketId', authenticateJWT, requireAdmin, async 
 
     const result = await AdminService.updateSupportTicket(ticketId, action, data, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated support ticket ${ticketId}: ${action}`);
+    await logger.info('Admin updated support ticket', {
+      operation: 'admin_update_support_ticket',
+      adminId: adminUser.id,
+      ticketId,
+      action
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating support ticket:', error);
+    await logger.error('Failed to update support ticket', {
+      operation: 'admin_update_support_ticket',
+      ticketId: req.params.ticketId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update support ticket' });
   }
 });
@@ -1945,14 +2109,23 @@ router.get('/support/knowledge-base', authenticateJWT, requireAdmin, async (req:
     
     const articles = await AdminService.getKnowledgeBase();
 
-    console.log(`Admin ${adminUser.id} retrieved knowledge base`);
+    await logger.info('Admin retrieved knowledge base', {
+      operation: 'admin_get_knowledge_base',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: articles
     });
   } catch (error) {
-    console.error('Error getting knowledge base:', error);
+    await logger.error('Failed to get knowledge base', {
+      operation: 'admin_get_knowledge_base',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get knowledge base' });
   }
 });
@@ -1969,14 +2142,26 @@ router.patch('/support/knowledge-base/:articleId', authenticateJWT, requireAdmin
 
     const result = await AdminService.updateKnowledgeArticle(articleId, action, data, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated knowledge article ${articleId}: ${action}`);
+    await logger.info('Admin updated knowledge article', {
+      operation: 'admin_update_knowledge_article',
+      adminId: adminUser.id,
+      articleId,
+      action
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating knowledge article:', error);
+    await logger.error('Failed to update knowledge article', {
+      operation: 'admin_update_knowledge_article',
+      articleId: req.params.articleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update knowledge article' });
   }
 });
@@ -1991,14 +2176,23 @@ router.get('/support/live-chats', authenticateJWT, requireAdmin, async (req: Req
     
     const chats = await AdminService.getLiveChats();
 
-    console.log(`Admin ${adminUser.id} retrieved live chats`);
+    await logger.info('Admin retrieved live chats', {
+      operation: 'admin_get_live_chats',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: chats
     });
   } catch (error) {
-    console.error('Error getting live chats:', error);
+    await logger.error('Failed to get live chats', {
+      operation: 'admin_get_live_chats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get live chats' });
   }
 });
@@ -2014,14 +2208,25 @@ router.post('/support/live-chats/:chatId/join', authenticateJWT, requireAdmin, a
 
     const result = await AdminService.joinLiveChat(chatId, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} joined live chat ${chatId}`);
+    await logger.info('Admin joined live chat', {
+      operation: 'admin_join_live_chat',
+      adminId: adminUser.id,
+      chatId
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error joining live chat:', error);
+    await logger.error('Failed to join live chat', {
+      operation: 'admin_join_live_chat',
+      chatId: req.params.chatId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to join live chat' });
   }
 });
@@ -2036,14 +2241,23 @@ router.get('/support/analytics', authenticateJWT, requireAdmin, async (req: Requ
     
     const analytics = await AdminService.getSupportAnalytics();
 
-    console.log(`Admin ${adminUser.id} retrieved support analytics`);
+    await logger.info('Admin retrieved support analytics', {
+      operation: 'admin_get_support_analytics',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: analytics
     });
   } catch (error) {
-    console.error('Error getting support analytics:', error);
+    await logger.error('Failed to get support analytics', {
+      operation: 'admin_get_support_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get support analytics' });
   }
 });
@@ -2059,14 +2273,23 @@ router.post('/support/tickets', authenticateJWT, requireAdmin, async (req: Reque
 
     const result = await AdminService.createSupportTicket(ticketData, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} created support ticket`);
+    await logger.info('Admin created support ticket', {
+      operation: 'admin_create_support_ticket',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error creating support ticket:', error);
+    await logger.error('Failed to create support ticket', {
+      operation: 'admin_create_support_ticket',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create support ticket' });
   }
 });
@@ -2096,7 +2319,10 @@ router.post('/support/tickets/customer', async (req: Request, res: Response) => 
 
     const result = await AdminService.createSupportTicket(ticketData);
 
-    console.log(`Customer support ticket created: ${(result as any).id}`);
+    await logger.info('Customer support ticket created', {
+      operation: 'customer_create_support_ticket',
+      ticketId: (result as any).id
+    });
 
     res.json({
       success: true,
@@ -2106,7 +2332,13 @@ router.post('/support/tickets/customer', async (req: Request, res: Response) => 
       }
     });
   } catch (error) {
-    console.error('Error creating customer support ticket:', error);
+    await logger.error('Failed to create customer support ticket', {
+      operation: 'customer_create_support_ticket',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create support ticket' });
   }
 });
@@ -2122,14 +2354,23 @@ router.post('/support/knowledge-base', authenticateJWT, requireAdmin, async (req
 
     const result = await AdminService.createKnowledgeArticle(articleData, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} created knowledge article`);
+    await logger.info('Admin created knowledge article', {
+      operation: 'admin_create_knowledge_article',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error creating knowledge article:', error);
+    await logger.error('Failed to create knowledge article', {
+      operation: 'admin_create_knowledge_article',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to create knowledge article' });
   }
 });
@@ -2150,7 +2391,10 @@ router.get('/support/export', authenticateJWT, requireAdmin, async (req: Request
       dateRange: dateRange as string
     });
 
-    console.log(`Admin ${adminUser.id} exported support data`);
+    await logger.info('Admin exported support data', {
+      operation: 'admin_export_support_data',
+      adminId: adminUser.id
+    });
 
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
@@ -2162,7 +2406,13 @@ router.get('/support/export', authenticateJWT, requireAdmin, async (req: Request
     
     res.send(exportData);
   } catch (error) {
-    console.error('Error exporting support data:', error);
+    await logger.error('Failed to export support data', {
+      operation: 'admin_export_support_data',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export support data' });
   }
 });
@@ -2182,14 +2432,23 @@ router.get('/performance/metrics', authenticateJWT, requireAdmin, async (req: Re
       metricType: metricType as string
     });
 
-    console.log(`Admin ${adminUser.id} retrieved performance metrics`);
+    await logger.info('Admin retrieved performance metrics', {
+      operation: 'admin_get_performance_metrics',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: metrics
     });
   } catch (error) {
-    console.error('Error getting performance metrics:', error);
+    await logger.error('Failed to get performance metrics', {
+      operation: 'admin_get_performance_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get performance metrics' });
   }
 });
@@ -2204,14 +2463,23 @@ router.get('/performance/scalability', authenticateJWT, requireAdmin, async (req
     
     const scalability = await AdminService.getScalabilityMetrics();
 
-    console.log(`Admin ${adminUser.id} retrieved scalability metrics`);
+    await logger.info('Admin retrieved scalability metrics', {
+      operation: 'admin_get_scalability_metrics',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: scalability
     });
   } catch (error) {
-    console.error('Error getting scalability metrics:', error);
+    await logger.error('Failed to get scalability metrics', {
+      operation: 'admin_get_scalability_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get scalability metrics' });
   }
 });
@@ -2226,14 +2494,23 @@ router.get('/performance/optimization', authenticateJWT, requireAdmin, async (re
     
     const recommendations = await AdminService.getOptimizationRecommendations();
 
-    console.log(`Admin ${adminUser.id} retrieved optimization recommendations`);
+    await logger.info('Admin retrieved optimization recommendations', {
+      operation: 'admin_get_optimization_recommendations',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: recommendations
     });
   } catch (error) {
-    console.error('Error getting optimization recommendations:', error);
+    await logger.error('Failed to get optimization recommendations', {
+      operation: 'admin_get_optimization_recommendations',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get optimization recommendations' });
   }
 });
@@ -2250,14 +2527,26 @@ router.patch('/performance/optimization/:recommendationId', authenticateJWT, req
 
     const result = await AdminService.updateOptimizationRecommendation(recommendationId, action, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated optimization recommendation ${recommendationId}: ${action}`);
+    await logger.info('Admin updated optimization recommendation', {
+      operation: 'admin_update_optimization_recommendation',
+      adminId: adminUser.id,
+      recommendationId,
+      action
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating optimization recommendation:', error);
+    await logger.error('Failed to update optimization recommendation', {
+      operation: 'admin_update_optimization_recommendation',
+      recommendationId: req.params.recommendationId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update optimization recommendation' });
   }
 });
@@ -2276,14 +2565,23 @@ router.get('/performance/alerts', authenticateJWT, requireAdmin, async (req: Req
       status: status as string
     });
 
-    console.log(`Admin ${adminUser.id} retrieved performance alerts`);
+    await logger.info('Admin retrieved performance alerts', {
+      operation: 'admin_get_performance_alerts',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: alerts
     });
   } catch (error) {
-    console.error('Error getting performance alerts:', error);
+    await logger.error('Failed to get performance alerts', {
+      operation: 'admin_get_performance_alerts',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get performance alerts' });
   }
 });
@@ -2300,14 +2598,26 @@ router.patch('/performance/alerts/:alertId', authenticateJWT, requireAdmin, asyn
 
     const result = await AdminService.updatePerformanceAlert(alertId, action, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} updated performance alert ${alertId}: ${action}`);
+    await logger.info('Admin updated performance alert', {
+      operation: 'admin_update_performance_alert',
+      adminId: adminUser.id,
+      alertId,
+      action
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error updating performance alert:', error);
+    await logger.error('Failed to update performance alert', {
+      operation: 'admin_update_performance_alert',
+      alertId: req.params.alertId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to update performance alert' });
   }
 });
@@ -2322,14 +2632,23 @@ router.get('/performance/analytics', authenticateJWT, requireAdmin, async (req: 
     
     const analytics = await AdminService.getPerformanceAnalytics();
 
-    console.log(`Admin ${adminUser.id} retrieved performance analytics`);
+    await logger.info('Admin retrieved performance analytics', {
+      operation: 'admin_get_performance_analytics',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: analytics
     });
   } catch (error) {
-    console.error('Error getting performance analytics:', error);
+    await logger.error('Failed to get performance analytics', {
+      operation: 'admin_get_performance_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to get performance analytics' });
   }
 });
@@ -2345,14 +2664,23 @@ router.post('/performance/alerts/configure', authenticateJWT, requireAdmin, asyn
 
     const result = await AdminService.configurePerformanceAlert(alertConfig, adminUser.id);
 
-    console.log(`Admin ${adminUser.id} configured performance alert`);
+    await logger.info('Admin configured performance alert', {
+      operation: 'admin_configure_performance_alert',
+      adminId: adminUser.id
+    });
 
     res.json({
       success: true,
       data: result
     });
   } catch (error) {
-    console.error('Error configuring performance alert:', error);
+    await logger.error('Failed to configure performance alert', {
+      operation: 'admin_configure_performance_alert',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to configure performance alert' });
   }
 });
@@ -2372,7 +2700,10 @@ router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Req
       format: format as string
     });
 
-    console.log(`Admin ${adminUser.id} exported performance data`);
+    await logger.info('Admin exported performance data', {
+      operation: 'admin_export_performance_data',
+      adminId: adminUser.id
+    });
 
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
@@ -2384,7 +2715,13 @@ router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Req
 
     res.send(exportData);
   } catch (error) {
-    console.error('Error exporting performance data:', error);
+    await logger.error('Failed to export performance data', {
+      operation: 'admin_export_performance_data',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
     res.status(500).json({ error: 'Failed to export performance data' });
   }
 });

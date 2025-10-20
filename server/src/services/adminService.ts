@@ -2228,7 +2228,13 @@ export class AdminService {
 
       return test;
     } catch (error) {
-      console.error('Error creating A/B test:', error);
+      await logger.error('Failed to create A/B test', {
+        operation: 'admin_create_ab_test',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to create A/B test');
     }
   }
@@ -2255,7 +2261,13 @@ export class AdminService {
         }
       };
     } catch (error) {
-      console.error('Error getting A/B test results:', error);
+      await logger.error('Failed to get A/B test results', {
+        operation: 'admin_get_ab_test_results',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get A/B test results');
     }
   }
@@ -2285,7 +2297,13 @@ export class AdminService {
 
       return updatedTest;
     } catch (error) {
-      console.error('Error updating A/B test:', error);
+      await logger.error('Failed to update A/B test', {
+        operation: 'admin_update_ab_test',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update A/B test');
     }
   }
@@ -2309,7 +2327,13 @@ export class AdminService {
         growthRate: 0 // Would calculate based on historical data
       }));
     } catch (error) {
-      console.error('Error getting user segments:', error);
+      await logger.error('Failed to get user segments', {
+        operation: 'admin_get_user_segments',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get user segments');
     }
   }
@@ -2339,7 +2363,13 @@ export class AdminService {
 
       return segment;
     } catch (error) {
-      console.error('Error creating user segment:', error);
+      await logger.error('Failed to create user segment', {
+        operation: 'admin_create_user_segment',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to create user segment');
     }
   }
@@ -2376,7 +2406,13 @@ export class AdminService {
 
       return insights;
     } catch (error) {
-      console.error('Error getting predictive insights:', error);
+      await logger.error('Failed to get predictive insights', {
+        operation: 'admin_get_predictive_insights',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get predictive insights');
     }
   }
@@ -2414,7 +2450,13 @@ export class AdminService {
         ]
       };
     } catch (error) {
-      console.error('Error getting competitive analysis:', error);
+      await logger.error('Failed to get competitive analysis', {
+        operation: 'admin_get_competitive_analysis',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get competitive analysis');
     }
   }
@@ -2446,7 +2488,13 @@ export class AdminService {
 
       return report;
     } catch (error) {
-      console.error('Error generating custom report:', error);
+      await logger.error('Failed to generate custom report', {
+        operation: 'admin_generate_custom_report',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to generate custom report');
     }
   }
@@ -2754,7 +2802,13 @@ export class AdminService {
         topCategories
       };
     } catch (error) {
-      console.error('Error getting support stats:', error);
+      await logger.error('Failed to get support statistics', {
+        operation: 'admin_get_support_stats',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get support stats');
     }
   }
@@ -2851,7 +2905,13 @@ export class AdminService {
             break;
         }
       } catch (emailError) {
-        console.error('Error sending email notification:', emailError);
+        await logger.error('Failed to send ticket update email notification', {
+          operation: 'admin_send_ticket_email',
+          error: {
+            message: emailError instanceof Error ? emailError.message : 'Unknown error',
+            stack: emailError instanceof Error ? emailError.stack : undefined
+          }
+        });
         // Don't fail the ticket update if email fails
       }
 
@@ -2902,7 +2962,13 @@ export class AdminService {
         updatedAt: article.updatedAt.toISOString()
       }));
     } catch (error) {
-      console.error('Error getting knowledge base:', error);
+      await logger.error('Failed to get knowledge base', {
+        operation: 'admin_get_knowledge_base',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get knowledge base');
     }
   }
@@ -2933,7 +2999,13 @@ export class AdminService {
 
       return article;
     } catch (error) {
-      console.error('Error updating knowledge article:', error);
+      await logger.error('Failed to update knowledge article', {
+        operation: 'admin_update_knowledge_article',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update knowledge article');
     }
   }
@@ -2984,7 +3056,13 @@ export class AdminService {
         duration: chat.duration || 0
       }));
     } catch (error) {
-      console.error('Error getting live chats:', error);
+      await logger.error('Failed to get live chats', {
+        operation: 'admin_get_live_chats',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get live chats');
     }
   }
@@ -3012,7 +3090,13 @@ export class AdminService {
 
       return chat;
     } catch (error) {
-      console.error('Error joining live chat:', error);
+      await logger.error('Failed to join live chat', {
+        operation: 'admin_join_live_chat',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to join live chat');
     }
   }
@@ -3055,7 +3139,13 @@ export class AdminService {
         ]
       };
     } catch (error) {
-      console.error('Error getting support analytics:', error);
+      await logger.error('Failed to get support analytics', {
+        operation: 'admin_get_support_analytics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get support analytics');
     }
   }
@@ -3110,9 +3200,18 @@ export class AdminService {
         try {
           const emailService = new SupportTicketEmailService();
           // We could add a "ticket created" email template here
-          console.log(`Support ticket created by customer: ${ticket.id}`);
+          await logger.info('Customer support ticket created', {
+            operation: 'customer_create_support_ticket',
+            ticketId: ticket.id
+          });
         } catch (emailError) {
-          console.error('Error sending ticket creation email:', emailError);
+          await logger.error('Failed to send ticket creation email', {
+            operation: 'customer_send_ticket_email',
+            error: {
+              message: emailError instanceof Error ? emailError.message : 'Unknown error',
+              stack: emailError instanceof Error ? emailError.stack : undefined
+            }
+          });
         }
       }
 
@@ -3172,7 +3271,13 @@ export class AdminService {
 
       return article;
     } catch (error) {
-      console.error('Error creating knowledge article:', error);
+      await logger.error('Failed to create knowledge article', {
+        operation: 'admin_create_knowledge_article',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to create knowledge article');
     }
   }
@@ -3213,7 +3318,13 @@ export class AdminService {
 
       return csvContent;
     } catch (error) {
-      console.error('Error exporting support data:', error);
+      await logger.error('Failed to export support data', {
+        operation: 'admin_export_support_data',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to export support data');
     }
   }
@@ -3266,7 +3377,13 @@ export class AdminService {
         }
       };
     } catch (error) {
-      console.error('Error getting performance metrics:', error);
+      await logger.error('Failed to get performance metrics', {
+        operation: 'admin_get_performance_metrics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get performance metrics');
     }
   }
@@ -3303,7 +3420,13 @@ export class AdminService {
         }
       };
     } catch (error) {
-      console.error('Error getting scalability metrics:', error);
+      await logger.error('Failed to get scalability metrics', {
+        operation: 'admin_get_scalability_metrics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get scalability metrics');
     }
   }
@@ -3368,7 +3491,13 @@ export class AdminService {
         }
       ];
     } catch (error) {
-      console.error('Error getting optimization recommendations:', error);
+      await logger.error('Failed to get optimization recommendations', {
+        operation: 'admin_get_optimization_recommendations',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get optimization recommendations');
     }
   }
@@ -3397,7 +3526,13 @@ export class AdminService {
 
       return recommendation;
     } catch (error) {
-      console.error('Error updating optimization recommendation:', error);
+      await logger.error('Failed to update optimization recommendation', {
+        operation: 'admin_update_optimization_recommendation',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update optimization recommendation');
     }
   }
@@ -3464,7 +3599,13 @@ export class AdminService {
 
       return filteredAlerts;
     } catch (error) {
-      console.error('Error getting performance alerts:', error);
+      await logger.error('Failed to get performance alerts', {
+        operation: 'admin_get_performance_alerts',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get performance alerts');
     }
   }
@@ -3493,7 +3634,13 @@ export class AdminService {
 
       return alert;
     } catch (error) {
-      console.error('Error updating performance alert:', error);
+      await logger.error('Failed to update performance alert', {
+        operation: 'admin_update_performance_alert',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to update performance alert');
     }
   }
@@ -3549,7 +3696,13 @@ export class AdminService {
         ]
       };
     } catch (error) {
-      console.error('Error getting performance analytics:', error);
+      await logger.error('Failed to get performance analytics', {
+        operation: 'admin_get_performance_analytics',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to get performance analytics');
     }
   }
@@ -3579,7 +3732,13 @@ export class AdminService {
 
       return config;
     } catch (error) {
-      console.error('Error configuring performance alert:', error);
+      await logger.error('Failed to configure performance alert', {
+        operation: 'admin_configure_performance_alert',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to configure performance alert');
     }
   }
@@ -3614,7 +3773,13 @@ export class AdminService {
 
       return csvContent;
     } catch (error) {
-      console.error('Error exporting performance data:', error);
+      await logger.error('Failed to export performance data', {
+        operation: 'admin_export_performance_data',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
       throw new Error('Failed to export performance data');
     }
   }
