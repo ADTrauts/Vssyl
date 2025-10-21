@@ -394,7 +394,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 cursor-pointer"
         style={{
-          right: '52px', // Positioned on the right side + 32px to avoid sidebar
+          right: '20px', // Fixed distance from right edge
           bottom: '20px',
           width: size?.width || 400,
           height: '60px'
@@ -440,14 +440,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  // Full chat window - positioned to the left of the sidebar
+  // Full chat window - positioned at bottom right
   return (
     <div
       className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 flex flex-col"
       style={{
-        right: sidebarWidth === 'thin' ? '112px' : '352px', // Left of sidebar + 32px
-        bottom: '20px', // Positioned at bottom instead of top
-        width: size?.width || 500,
+        right: '20px', // Fixed distance from right edge
+        bottom: '20px', // Fixed distance from bottom
+        width: size?.width || 400,
         height: windowHeight,
         maxHeight: 'calc(100vh - 104px)' // Account for header + margins
       }}

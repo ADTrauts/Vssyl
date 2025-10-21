@@ -15,6 +15,8 @@ interface ChatWindowState {
   sidebarWidth: 'thin' | 'expanded';
   searchQuery: string;
   activeTab: 'focused' | 'other';
+  isDocked: boolean;
+  isDockedExpanded: boolean;
 }
 
 const StackableChatContainer: React.FC = () => {
@@ -41,7 +43,9 @@ const StackableChatContainer: React.FC = () => {
     isSidebarOpen: true,
     sidebarWidth: 'expanded',
     searchQuery: '',
-    activeTab: 'focused'
+    activeTab: 'focused',
+    isDocked: true, // Use docked mode by default
+    isDockedExpanded: false
   });
 
   // Don't render if user is not authenticated
@@ -117,6 +121,14 @@ const StackableChatContainer: React.FC = () => {
     if (chatState.activeChat?.id === conversation.id) {
       setActiveConversationInContext(null);
     }
+  };
+
+  // Toggle docked expanded state
+  const toggleDockedExpanded = () => {
+    setChatState(prev => ({
+      ...prev,
+      isDockedExpanded: !prev.isDockedExpanded
+    }));
   };
 
   // Send message
@@ -206,7 +218,7 @@ const StackableChatContainer: React.FC = () => {
 
   return (
     <>
-      {/* Sidebar */}
+      {/* Docked Chat Sidebar */}
       <ChatSidebar
         conversations={filteredConversations}
         activeChat={chatState.activeChat}
@@ -220,6 +232,9 @@ const StackableChatContainer: React.FC = () => {
         onSearchChange={(query) => setChatState(prev => ({ ...prev, searchQuery: query }))}
         activeTab={chatState.activeTab}
         onTabChange={(tab) => setChatState(prev => ({ ...prev, activeTab: tab }))}
+        isDocked={chatState.isDocked}
+        isExpanded={chatState.isDockedExpanded}
+        onToggleExpanded={toggleDockedExpanded}
       />
 
       {/* Active Chat Window */}

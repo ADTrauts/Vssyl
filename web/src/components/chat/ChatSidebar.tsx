@@ -15,6 +15,9 @@ interface ChatSidebarProps {
   onSearchChange: (query: string) => void;
   activeTab: 'focused' | 'other';
   onTabChange: (tab: 'focused' | 'other') => void;
+  isDocked?: boolean;
+  isExpanded?: boolean;
+  onToggleExpanded?: () => void;
 }
 
 interface ChatSidebarItemProps {
@@ -168,7 +171,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   searchQuery,
   onSearchChange,
   activeTab,
-  onTabChange
+  onTabChange,
+  isDocked = false,
+  isExpanded = false,
+  onToggleExpanded
 }) => {
   const filteredConversations = conversations.filter(conversation => {
     if (!searchQuery) return true;
@@ -186,6 +192,120 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         p.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
       );
   });
+
+  // LinkedIn-style docked chat
+  if (isDocked) {
+    // Minimized docked button
+    if (!isExpanded) {
+      return (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={onToggleExpanded}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-3 px-4 py-3"
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="font-medium">Messaging</span>
+            {conversations.some(conv => 
+              conv.messages?.some(msg => 
+                msg.senderId !== conv.id && 
+                !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+              )
+            ) && (
+              <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                {conversations.reduce((total, conv) => 
+                  total + (conv.messages?.filter(msg => 
+                    msg.senderId !== conv.id && 
+                    !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+                  ).length || 0), 0
+                )}
+              </div>
+            )}
+          </button>
+        </div>
+      );
+    }
+
+    // Expanded docked panel
+    return (
+      <div className="fixed bottom-4 right-4 z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-xl transition-all duration-300 max-h-96">
+        <div className="p-4 h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Messaging</h2>
+            <button
+              onClick={onToggleExpanded}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              title="Minimize"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600 rotate-90" />
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search messages"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+            <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <Filter className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 mb-4">
+            <button
+              onClick={() => onTabChange('focused')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'focused'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Focused
+            </button>
+            <button
+              onClick={() => onTabChange('other')}
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'other'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Other
+            </button>
+          </div>
+
+          {/* Conversations */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="text-sm text-gray-500">
+                  {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredConversations.map(conv => (
+                  <ChatSidebarItem
+                    key={conv.id}
+                    conversation={conv}
+                    isActive={activeChat?.id === conv.id}
+                    onClick={() => onChatSelect(conv)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (width === 'thin') {
     return (
