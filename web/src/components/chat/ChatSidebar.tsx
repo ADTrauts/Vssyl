@@ -4,6 +4,7 @@ import React from 'react';
 import { Conversation } from 'shared/types/chat';
 import { Avatar, Badge } from 'shared/components';
 import { Search, MessageSquare, Filter, ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -176,6 +177,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   isExpanded = false,
   onToggleExpanded
 }) => {
+  const { data: session } = useSession();
   const filteredConversations = conversations.filter(conversation => {
     if (!searchQuery) return true;
     
@@ -218,11 +220,25 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                       const otherParticipant = conv.type === 'DIRECT' && conv.participants.length === 2
                         ? conv.participants.find(p => p.user.id !== conv.id)?.user
                         : null;
+                      
+                      // Check if this is the current user's conversation
+                      const isCurrentUser = otherParticipant?.id === session?.user?.id;
+                      const avatarUrl = isCurrentUser ? session?.user?.image : null;
+                      const initials = otherParticipant?.name?.charAt(0) || otherParticipant?.email?.charAt(0) || '?';
+                      
                       return (
                         <div key={conv.id} className="relative">
-                          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
-                            {otherParticipant?.name?.charAt(0) || otherParticipant?.email?.charAt(0) || '?'}
-                          </div>
+                          {avatarUrl ? (
+                            <img
+                              src={avatarUrl}
+                              alt={otherParticipant?.name || otherParticipant?.email || 'User'}
+                              className="w-6 h-6 rounded-full border-2 border-white object-cover"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                              {initials}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
