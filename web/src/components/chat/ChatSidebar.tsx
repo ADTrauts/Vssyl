@@ -198,7 +198,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     // Minimized docked bar - compact horizontal bar like LinkedIn
     if (!isExpanded) {
       return (
-        <div className="fixed bottom-0 right-0 z-30" style={{ width: '320px' }}>
+        <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '80px' }}>
           <div className="bg-white border-t border-l border-gray-200 shadow-lg">
             <button
               onClick={onToggleExpanded}
@@ -212,6 +212,27 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 </div>
                 <span className="font-medium text-gray-900">Messaging</span>
+                {conversations.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {conversations.slice(0, 3).map((conv, index) => {
+                      const otherParticipant = conv.type === 'DIRECT' && conv.participants.length === 2
+                        ? conv.participants.find(p => p.user.id !== conv.id)?.user
+                        : null;
+                      return (
+                        <div key={conv.id} className="relative">
+                          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                            {otherParticipant?.name?.charAt(0) || otherParticipant?.email?.charAt(0) || '?'}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {conversations.length > 3 && (
+                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                        +{conversations.length - 3}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {conversations.some(conv => 
                   conv.messages?.some(msg => 
                     msg.senderId !== conv.id && 
@@ -247,7 +268,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
     // Expanded docked panel
     return (
-      <div className="fixed bottom-0 right-0 z-40 w-80 bg-white border-t border-l border-gray-200 shadow-xl transition-all duration-300 max-h-96">
+      <div className="fixed bottom-0 z-40 w-80 bg-white border-t border-l border-gray-200 shadow-xl transition-all duration-300 max-h-96" style={{ right: '80px' }}>
         <div className="p-4 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
