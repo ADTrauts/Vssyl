@@ -3,7 +3,7 @@
 import React from 'react';
 import { Conversation } from 'shared/types/chat';
 import { Avatar, Badge } from 'shared/components';
-import { Search, MessageSquare, Filter, ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { Search, MessageSquare, Filter, ChevronLeft, MoreHorizontal, Plus, ChevronUp } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 interface ChatSidebarProps {
@@ -201,19 +201,16 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
     if (!isExpanded) {
       return (
         <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '80px' }}>
-          <div className="bg-white border-t border-l border-gray-200 shadow-lg">
-            <button
-              onClick={onToggleExpanded}
-              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
-            >
+          <div className="bg-gray-800 rounded-t-lg shadow-lg">
+            <div className="flex items-center justify-between p-3">
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-gray-600" />
+                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-gray-300" />
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full"></div>
                 </div>
-                <span className="font-medium text-gray-900">Messaging</span>
+                <span className="font-medium text-white">Messaging</span>
                 {conversations.length > 0 && (
                   <div className="flex -space-x-2">
                     {conversations.slice(0, 3).map((conv, index) => {
@@ -232,10 +229,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             <img
                               src={avatarUrl}
                               alt={otherParticipant?.name || otherParticipant?.email || 'User'}
-                              className="w-6 h-6 rounded-full border-2 border-white object-cover"
+                              className="w-6 h-6 rounded-full border-2 border-gray-800 object-cover"
                             />
                           ) : (
-                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
                               {initials}
                             </div>
                           )}
@@ -243,7 +240,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                       );
                     })}
                     {conversations.length > 3 && (
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white">
+                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
                         +{conversations.length - 3}
                       </div>
                     )}
@@ -266,17 +263,34 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 )}
               </div>
               <div className="flex items-center space-x-2">
-                <button className="p-1 hover:bg-gray-200 rounded">
-                  <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                <button 
+                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  title="More options"
+                >
+                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
                 </button>
-                <button className="p-1 hover:bg-gray-200 rounded">
-                  <MessageSquare className="w-4 h-4 text-gray-600" />
+                <button 
+                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  title="New chat"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // TODO: Implement new chat functionality
+                    console.log('New chat clicked');
+                  }}
+                >
+                  <div className="w-4 h-4 border border-gray-300 rounded flex items-center justify-center">
+                    <Plus className="w-3 h-3 text-gray-300" />
+                  </div>
                 </button>
-                <button className="p-1 hover:bg-gray-200 rounded">
-                  <ChevronLeft className="w-4 h-4 text-gray-600 rotate-90" />
+                <button 
+                  className="p-1 hover:bg-gray-700 rounded transition-colors"
+                  title="Expand messaging"
+                  onClick={onToggleExpanded}
+                >
+                  <ChevronUp className="w-4 h-4 text-gray-300" />
                 </button>
               </div>
-            </button>
+            </div>
           </div>
         </div>
       );
