@@ -355,13 +355,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const otherParticipant = getOtherParticipant(conversation);
 
   if (isMinimized) {
-    // Minimized bubble
+    // Minimized bubble - positioned to the left of messaging panel
     return (
       <div
-        className="fixed w-16 h-16 bg-blue-500 rounded-full shadow-lg cursor-pointer z-40 flex items-center justify-center hover:scale-110 transition-transform"
+        className="fixed w-16 h-16 bg-blue-500 rounded-full shadow-lg cursor-pointer z-50 flex items-center justify-center hover:scale-110 transition-transform"
         onClick={onRestore}
         style={{
-          right: `${position?.x || 20}px`,
+          right: `${(position?.x || 20) + 320}px`, // Offset by messaging panel width
           bottom: `${position?.y || 20}px`
         }}
         title={`Restore ${conversationName}`}
@@ -392,9 +392,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   if (isMinimizedToBottom) {
     return (
       <div
-        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 cursor-pointer"
+        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 cursor-pointer"
         style={{
-          right: '20px', // Fixed distance from right edge
+          right: '320px', // Positioned to the left of the 320px messaging panel
           bottom: '20px',
           width: size?.width || 400,
           height: '60px'
@@ -440,12 +440,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  // Full chat window - positioned at bottom right
+  // Full chat window - positioned to the left of the messaging panel
   return (
     <div
-      className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-20 flex flex-col"
+      className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col"
       style={{
-        right: '20px', // Fixed distance from right edge
+        right: '320px', // Positioned to the left of the 320px messaging panel
         bottom: '20px', // Fixed distance from bottom
         width: size?.width || 400,
         height: windowHeight,

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Conversation } from 'shared/types/chat';
 import { Avatar, Badge } from 'shared/components';
-import { Search, MessageSquare, Filter, ChevronLeft } from 'lucide-react';
+import { Search, MessageSquare, Filter, ChevronLeft, MoreHorizontal } from 'lucide-react';
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -195,39 +195,59 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   // LinkedIn-style docked chat
   if (isDocked) {
-    // Minimized docked button
+    // Minimized docked bar - compact horizontal bar like LinkedIn
     if (!isExpanded) {
       return (
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={onToggleExpanded}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200 hover:scale-105 flex items-center space-x-3 px-4 py-3"
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Messaging</span>
-            {conversations.some(conv => 
-              conv.messages?.some(msg => 
-                msg.senderId !== conv.id && 
-                !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
-              )
-            ) && (
-              <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                {conversations.reduce((total, conv) => 
-                  total + (conv.messages?.filter(msg => 
+        <div className="fixed bottom-0 right-0 z-30" style={{ width: '320px' }}>
+          <div className="bg-white border-t border-l border-gray-200 shadow-lg">
+            <button
+              onClick={onToggleExpanded}
+              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                </div>
+                <span className="font-medium text-gray-900">Messaging</span>
+                {conversations.some(conv => 
+                  conv.messages?.some(msg => 
                     msg.senderId !== conv.id && 
                     !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
-                  ).length || 0), 0
+                  )
+                ) && (
+                  <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                    {conversations.reduce((total, conv) => 
+                      total + (conv.messages?.filter(msg => 
+                        msg.senderId !== conv.id && 
+                        !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+                      ).length || 0), 0
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </button>
+              <div className="flex items-center space-x-2">
+                <button className="p-1 hover:bg-gray-200 rounded">
+                  <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                </button>
+                <button className="p-1 hover:bg-gray-200 rounded">
+                  <MessageSquare className="w-4 h-4 text-gray-600" />
+                </button>
+                <button className="p-1 hover:bg-gray-200 rounded">
+                  <ChevronLeft className="w-4 h-4 text-gray-600 rotate-90" />
+                </button>
+              </div>
+            </button>
+          </div>
         </div>
       );
     }
 
     // Expanded docked panel
     return (
-      <div className="fixed bottom-4 right-4 z-50 w-80 bg-white border border-gray-200 rounded-lg shadow-xl transition-all duration-300 max-h-96">
+      <div className="fixed bottom-0 right-0 z-40 w-80 bg-white border-t border-l border-gray-200 shadow-xl transition-all duration-300 max-h-96">
         <div className="p-4 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">

@@ -208,7 +208,7 @@ const StackableChatContainer: React.FC = () => {
     return filtered;
   };
 
-  // Calculate position for minimized chat bubbles (bottom right)
+  // Calculate position for minimized chat bubbles (to the left of messaging panel)
   const getMinimizedChatPosition = (index: number) => ({
     x: 20 + (index * 10),
     y: 20 + (index * 10)
