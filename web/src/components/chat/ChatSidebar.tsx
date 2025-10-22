@@ -112,8 +112,8 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
       onClick={onClick}
       className={`w-full p-3 rounded-lg transition-all duration-200 text-left ${
         isActive 
-          ? 'bg-blue-50 border-l-4 border-blue-500' 
-          : 'hover:bg-gray-50'
+          ? 'bg-blue-900/20 border-l-4 border-blue-400' 
+          : 'hover:bg-gray-700'
       }`}
     >
       <div className="flex items-center space-x-3">
@@ -136,12 +136,12 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h3 className={`text-sm font-medium truncate ${
-              isActive ? 'text-blue-900' : 'text-gray-900'
+              isActive ? 'text-blue-300' : 'text-gray-200'
             }`}>
               {conversationName}
             </h3>
             {lastMessage && (
-              <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+              <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
                 {formatTime(lastMessage.createdAt)}
               </span>
             )}
@@ -149,7 +149,7 @@ const ChatSidebarItem: React.FC<ChatSidebarItemProps> = ({
           
           {lastMessage && (
             <p className={`text-sm truncate mt-1 ${
-              hasUnread ? 'text-gray-900 font-medium' : 'text-gray-600'
+              hasUnread ? 'text-gray-200 font-medium' : 'text-gray-400'
             }`}>
               {lastMessage.content.length > 50 
                 ? `${lastMessage.content.substring(0, 50)}...`
@@ -195,184 +195,170 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       );
   });
 
-  // LinkedIn-style docked chat
+  // LinkedIn-style docked chat - unified minimized/expanded
   if (isDocked) {
-    // Minimized docked bar - compact horizontal bar like LinkedIn
-    if (!isExpanded) {
-      return (
-        <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '80px' }}>
-          <div className="bg-gray-800 rounded-t-lg shadow-lg">
-            <div className="flex items-center justify-between p-3">
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-gray-300" />
-                  </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full"></div>
+    return (
+      <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '80px' }}>
+        <div className={`bg-gray-800 shadow-lg transition-all duration-300 ${isExpanded ? 'rounded-t-lg' : 'rounded-t-lg'}`}>
+          {/* Minimized Bar - Always visible */}
+          <div className="flex items-center justify-between p-3">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-gray-300" />
                 </div>
-                <span className="font-medium text-white">Messaging</span>
-                {conversations.length > 0 && (
-                  <div className="flex -space-x-2">
-                    {conversations.slice(0, 3).map((conv, index) => {
-                      const otherParticipant = conv.type === 'DIRECT' && conv.participants.length === 2
-                        ? conv.participants.find(p => p.user.id !== conv.id)?.user
-                        : null;
-                      
-                      // Check if this is the current user's conversation
-                      const isCurrentUser = otherParticipant?.id === session?.user?.id;
-                      const avatarUrl = isCurrentUser ? session?.user?.image : null;
-                      const initials = otherParticipant?.name?.charAt(0) || otherParticipant?.email?.charAt(0) || '?';
-                      
-                      return (
-                        <div key={conv.id} className="relative">
-                          {avatarUrl ? (
-                            <img
-                              src={avatarUrl}
-                              alt={otherParticipant?.name || otherParticipant?.email || 'User'}
-                              className="w-6 h-6 rounded-full border-2 border-gray-800 object-cover"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
-                              {initials}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {conversations.length > 3 && (
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
-                        +{conversations.length - 3}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full"></div>
+              </div>
+              <span className="font-medium text-white">Messaging</span>
+              {conversations.length > 0 && (
+                <div className="flex -space-x-2">
+                  {conversations.slice(0, 3).map((conv, index) => {
+                    const otherParticipant = conv.type === 'DIRECT' && conv.participants.length === 2
+                      ? conv.participants.find(p => p.user.id !== conv.id)?.user
+                      : null;
+                    
+                    // Check if this is the current user's conversation
+                    const isCurrentUser = otherParticipant?.id === session?.user?.id;
+                    const avatarUrl = isCurrentUser ? session?.user?.image : null;
+                    const initials = otherParticipant?.name?.charAt(0) || otherParticipant?.email?.charAt(0) || '?';
+                    
+                    return (
+                      <div key={conv.id} className="relative">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={otherParticipant?.name || otherParticipant?.email || 'User'}
+                            className="w-6 h-6 rounded-full border-2 border-gray-800 object-cover"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
+                            {initials}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
-                {conversations.some(conv => 
-                  conv.messages?.some(msg => 
-                    msg.senderId !== conv.id && 
-                    !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
-                  )
-                ) && (
-                  <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                    {conversations.reduce((total, conv) => 
-                      total + (conv.messages?.filter(msg => 
-                        msg.senderId !== conv.id && 
-                        !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
-                      ).length || 0), 0
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <button 
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
-                  title="More options"
-                >
-                  <MoreHorizontal className="w-4 h-4 text-gray-300" />
-                </button>
-                <button 
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
-                  title="New chat"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Implement new chat functionality
-                    console.log('New chat clicked');
-                  }}
-                >
-                  <div className="w-4 h-4 border border-gray-300 rounded flex items-center justify-center">
-                    <Plus className="w-3 h-3 text-gray-300" />
-                  </div>
-                </button>
-                <button 
-                  className="p-1 hover:bg-gray-700 rounded transition-colors"
-                  title="Expand messaging"
-                  onClick={onToggleExpanded}
-                >
-                  <ChevronUp className="w-4 h-4 text-gray-300" />
-                </button>
-              </div>
+                    );
+                  })}
+                  {conversations.length > 3 && (
+                    <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-gray-800">
+                      +{conversations.length - 3}
+                    </div>
+                  )}
+                </div>
+              )}
+              {conversations.some(conv => 
+                conv.messages?.some(msg => 
+                  msg.senderId !== conv.id && 
+                  !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+                )
+              ) && (
+                <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                  {conversations.reduce((total, conv) => 
+                    total + (conv.messages?.filter(msg => 
+                      msg.senderId !== conv.id && 
+                      !msg.readReceipts?.some(receipt => receipt.userId === conv.id)
+                    ).length || 0), 0
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <button 
+                className="p-1 hover:bg-gray-700 rounded transition-colors"
+                title="More options"
+              >
+                <MoreHorizontal className="w-4 h-4 text-gray-300" />
+              </button>
+              <button 
+                className="p-1 hover:bg-gray-700 rounded transition-colors"
+                title="New chat"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // TODO: Implement new chat functionality
+                  console.log('New chat clicked');
+                }}
+              >
+                <div className="w-4 h-4 border border-gray-300 rounded flex items-center justify-center">
+                  <Plus className="w-3 h-3 text-gray-300" />
+                </div>
+              </button>
+              <button 
+                className="p-1 hover:bg-gray-700 rounded transition-colors"
+                title={isExpanded ? "Minimize messaging" : "Expand messaging"}
+                onClick={onToggleExpanded}
+              >
+                <ChevronUp className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+              </button>
             </div>
           </div>
-        </div>
-      );
-    }
 
-    // Expanded docked panel
-    return (
-      <div className="fixed bottom-0 z-40 w-80 bg-white border-t border-l border-gray-200 shadow-xl transition-all duration-300 max-h-96" style={{ right: '80px' }}>
-        <div className="p-4 h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Messaging</h2>
-            <button
-              onClick={onToggleExpanded}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-              title="Minimize"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600 rotate-90" />
-            </button>
-          </div>
-
-          {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search messages"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-            <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <Filter className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-4">
-            <button
-              onClick={() => onTabChange('focused')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'focused'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Focused
-            </button>
-            <button
-              onClick={() => onTabChange('other')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors ${
-                activeTab === 'other'
-                  ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Other
-            </button>
-          </div>
-
-          {/* Conversations */}
-          <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
-                <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
-                <p className="text-sm text-gray-500">
-                  {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filteredConversations.map(conv => (
-                  <ChatSidebarItem
-                    key={conv.id}
-                    conversation={conv}
-                    isActive={activeChat?.id === conv.id}
-                    onClick={() => onChatSelect(conv)}
+          {/* Expanded Content - Grows upward from minimized bar */}
+          {isExpanded && (
+            <div className="border-t border-gray-700 bg-gray-800 max-h-96 overflow-hidden">
+              <div className="p-4 flex flex-col">
+                {/* Search */}
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search messages"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-white placeholder-gray-400"
                   />
-                ))}
+                  <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300">
+                    <Filter className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-gray-700 mb-4">
+                  <button
+                    onClick={() => onTabChange('focused')}
+                    className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'focused'
+                        ? 'text-blue-400 border-b-2 border-blue-400'
+                        : 'text-gray-400 hover:text-gray-300'
+                    }`}
+                  >
+                    Focused
+                  </button>
+                  <button
+                    onClick={() => onTabChange('other')}
+                    className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'other'
+                        ? 'text-blue-400 border-b-2 border-blue-400'
+                        : 'text-gray-400 hover:text-gray-300'
+                    }`}
+                  >
+                    Other
+                  </button>
+                </div>
+
+                {/* Conversations */}
+                <div className="flex-1 overflow-y-auto">
+                  {filteredConversations.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <MessageSquare className="w-12 h-12 text-gray-500 mb-3" />
+                      <p className="text-sm text-gray-400">
+                        {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredConversations.map(conv => (
+                        <ChatSidebarItem
+                          key={conv.id}
+                          conversation={conv}
+                          isActive={activeChat?.id === conv.id}
+                          onClick={() => onChatSelect(conv)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
