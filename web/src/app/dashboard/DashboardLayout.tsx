@@ -22,6 +22,7 @@ import { useDashboardDeletion } from '../../hooks/useDashboardDeletion';
 import DashboardDeletionModal from '../../components/DashboardDeletionModal';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
 import CompactSearchButton from '../../components/header/CompactSearchButton';
+import AIChatDropdown from '../../components/header/AIChatDropdown';
 import { Modal, DraggableWrapper } from 'shared/components';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
@@ -141,6 +142,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDashboardName, setNewDashboardName] = useState('');
   const [selectedTabType, setSelectedTabType] = useState<'blank' | 'home'>('blank');
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [aiDropdownPosition, setAIDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const aiButtonRef = useRef<HTMLButtonElement>(null);
   
   // Member invitation state for household creation
   const [inviteMembers, setInviteMembers] = useState<Array<{email: string, role: string, relation: string}>>([]);
@@ -300,6 +304,24 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   const handleSwitchToWork = (businessId: string) => {
     router.push(`/business/${businessId}/workspace`);
+  };
+
+  // Handle AI button click
+  const handleAIClick = () => {
+    if (aiButtonRef.current) {
+      const rect = aiButtonRef.current.getBoundingClientRect();
+      setAIDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: Math.max(20, (window.innerWidth - 700) / 2), // Center with min margin
+        width: Math.min(700, window.innerWidth - 40)
+      });
+    }
+    setIsAIOpen(!isAIOpen);
+  };
+
+  // Handle AI dropdown close
+  const handleAIClose = () => {
+    setIsAIOpen(false);
   };
 
   const handleDeleteDashboard = async (dashboardId: string) => {
@@ -790,11 +812,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           
           {/* AI Button */}
           <button
-            onClick={() => router.push('/ai-chat')}
+            ref={aiButtonRef}
+            onClick={handleAIClick}
             className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100"
             style={{
-              background: pathname?.startsWith('/ai-chat') ? '#8b5cf6' : 'transparent',
-              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#8b5cf6',
+              background: isAIOpen ? '#8b5cf6' : 'transparent',
+              color: isAIOpen ? '#fff' : '#8b5cf6',
               border: '2px solid #8b5cf6',
               outline: 'none',
               cursor: 'pointer',
@@ -818,6 +841,16 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <AvatarContextMenu />
           </ClientOnlyWrapper>
         </div>
+
+        {/* AI Chat Dropdown */}
+        <AIChatDropdown
+          isOpen={isAIOpen}
+          onClose={handleAIClose}
+          position={aiDropdownPosition}
+          dashboardId={currentDashboardId || undefined}
+          dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
+          dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+        />
       </header>
       {/* Main content area below header */}
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
