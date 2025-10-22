@@ -48,7 +48,7 @@ export default function AIChatModule({
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState<string | false>(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
@@ -72,10 +72,10 @@ export default function AIChatModule({
 
     try {
       setIsLoadingConversations(true);
-      const response = await getConversations(session.accessToken);
+      const response = await getConversations({ limit: 50, archived: false }, session.accessToken);
       
       if (response.success) {
-        setConversations(response.data);
+        setConversations(response.data.conversations);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
@@ -139,9 +139,7 @@ export default function AIChatModule({
         const title = generateTitle(userMessage);
         const createResponse = await createConversation({
           title,
-          dashboardId: dashboardId || currentDashboard?.id,
-          dashboardType,
-          dashboardName
+          dashboardId: dashboardId || currentDashboard?.id
         }, session.accessToken);
 
         if (createResponse.success) {
@@ -183,20 +181,28 @@ export default function AIChatModule({
       );
 
       // Validate response structure
-      if (!response.success || !response.data) {
+      const typedResponse = response as { success: boolean; data?: unknown };
+      if (!typedResponse.success || !typedResponse.data) {
         throw new Error('Invalid response structure from AI service');
       }
+
+      const aiResponse = typedResponse.data as {
+        response?: string;
+        confidence?: number;
+        reasoning?: string;
+        actions?: any[];
+      };
 
       // Add AI response to conversation
       const aiItem: ConversationItem = {
         id: `ai_${Date.now()}`,
         type: 'ai',
-        content: response.data.response || 'I apologize, but I couldn\'t generate a proper response.',
+        content: aiResponse.response || 'I apologize, but I couldn\'t generate a proper response.',
         timestamp: new Date(),
-        confidence: response.data.confidence || 0.5,
+        confidence: aiResponse.confidence || 0.5,
         metadata: {
-          reasoning: response.data.reasoning,
-          actions: response.data.actions || []
+          reasoning: aiResponse.reasoning,
+          actions: aiResponse.actions || []
         }
       };
 
@@ -206,11 +212,11 @@ export default function AIChatModule({
       if (conversationId) {
         await addMessage(conversationId, {
           role: 'assistant',
-          content: response.data.response || 'No response generated',
-          confidence: response.data.confidence || 0.5,
+          content: aiResponse.response || 'No response generated',
+          confidence: aiResponse.confidence || 0.5,
           metadata: {
-            reasoning: response.data.reasoning,
-            actions: response.data.actions || []
+            reasoning: aiResponse.reasoning,
+            actions: aiResponse.actions || []
           }
         }, session.accessToken);
       }
@@ -585,20 +591,20 @@ export default function AIChatModule({
                             <p className="text-sm text-gray-800">{item.content}</p>
                             
                             {/* Actions */}
-                            {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 && (
+                            {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 ? (
                               <div className="mt-3 space-y-2">
-                                {item.metadata.actions.map((action: any, index: number) => (
+                                {item.metadata.actions.map((action: Record<string, unknown>, index: number) => (
                                   <div key={index} className="bg-purple-50 rounded-lg p-3">
                                     <div className="flex items-center justify-between">
                                       <div>
                                         <p className="text-sm font-medium text-purple-900">
-                                          {action.type}: {action.operation}
+                                          {String(action.type || 'Action')}: {String(action.operation || 'Unknown')}
                                         </p>
                                         <p className="text-xs text-purple-700 mt-1">
-                                          {action.reasoning}
+                                          {String(action.reasoning || 'No reasoning provided')}
                                         </p>
                                       </div>
-                                      {action.requiresApproval && (
+                                      {Boolean(action.requiresApproval) && (
                                         <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                                           Approval Required
                                         </span>
@@ -607,7 +613,7 @@ export default function AIChatModule({
                                   </div>
                                 ))}
                               </div>
-                            )}
+                            ) : null}
                             
                             {/* Confidence */}
                             {item.confidence !== undefined && (
