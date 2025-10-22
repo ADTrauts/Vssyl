@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History } from 'lucide-react';
+import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { Button, Spinner } from 'shared/components';
@@ -49,15 +50,16 @@ interface ConversationItem {
 }
 
 export default function AIChatDropdown({ 
-  className = '',
-  dashboardId,
-  dashboardType = 'personal',
+  className = '', 
+  dashboardId, 
+  dashboardType = 'personal', 
   dashboardName = 'Dashboard',
-  isOpen,
-  onClose,
-  position
+  isOpen, 
+  onClose, 
+  position 
 }: AIChatDropdownProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isAILoading, setIsAILoading] = useState(false);
@@ -359,6 +361,15 @@ export default function AIChatDropdown({
             >
               <Plus className="h-4 w-4 mr-1" />
               New
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/ai-chat')}
+              className="px-2 py-1 text-xs text-purple-600 hover:text-purple-700"
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Full Chat
             </Button>
             <button
               onClick={onClose}
