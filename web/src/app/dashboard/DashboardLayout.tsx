@@ -22,7 +22,6 @@ import { useDashboardDeletion } from '../../hooks/useDashboardDeletion';
 import DashboardDeletionModal from '../../components/DashboardDeletionModal';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
 import CompactSearchButton from '../../components/header/CompactSearchButton';
-import { Brain } from 'lucide-react';
 import { Modal, DraggableWrapper } from 'shared/components';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
