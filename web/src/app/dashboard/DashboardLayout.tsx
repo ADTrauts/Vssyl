@@ -813,11 +813,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* AI Button */}
           <button
             ref={aiButtonRef}
-            onClick={handleAIClick}
+            onClick={() => router.push('/ai')}
             className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100"
             style={{
-              background: isAIOpen ? '#8b5cf6' : 'transparent',
-              color: isAIOpen ? '#fff' : '#8b5cf6',
+              background: pathname?.startsWith('/ai') ? '#8b5cf6' : 'transparent',
+              color: pathname?.startsWith('/ai') ? '#fff' : '#8b5cf6',
               border: '2px solid #8b5cf6',
               outline: 'none',
               cursor: 'pointer',
@@ -1033,10 +1033,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Marketplace/Modules Icon */}
           {/* AI Assistant Button */}
           <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') ? 'text-white' : 'text-gray-300'}`}
+            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai') ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai') ? 'text-white' : 'text-gray-300'}`}
             style={{
-              background: pathname?.startsWith('/ai-chat') ? '#9333ea' : 'transparent',
-              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#cbd5e1',
+              background: pathname?.startsWith('/ai') ? '#9333ea' : 'transparent',
+              color: pathname?.startsWith('/ai') ? '#fff' : '#cbd5e1',
               border: 'none',
               outline: 'none',
               cursor: 'pointer',
@@ -1049,7 +1049,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               borderRadius: 8,
               transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
             }}
-            onClick={() => router.push('/ai-chat')}
+            onClick={() => router.push('/ai')}
             title="AI Assistant"
           >
             <Brain size={22} />

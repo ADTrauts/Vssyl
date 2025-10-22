@@ -103,7 +103,7 @@ export const getConversations = async (
   if (params.businessId) searchParams.append('businessId', params.businessId);
 
   const queryString = searchParams.toString();
-  const endpoint = `/ai-conversations${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/api/ai-conversations${queryString ? `?${queryString}` : ''}`;
 
   return authenticatedApiCall<ConversationsResponse>(endpoint, {
     method: 'GET',
@@ -115,7 +115,7 @@ export const getConversation = async (
   conversationId: string,
   token: string
 ): Promise<ConversationResponse> => {
-  return authenticatedApiCall<ConversationResponse>(`/ai-conversations/${conversationId}`, {
+  return authenticatedApiCall<ConversationResponse>(`/api/ai-conversations/${conversationId}`, {
     method: 'GET',
   }, token);
 };
@@ -125,7 +125,7 @@ export const createConversation = async (
   data: CreateConversationData,
   token: string
 ): Promise<ConversationResponse> => {
-  return authenticatedApiCall<ConversationResponse>('/ai-conversations', {
+  return authenticatedApiCall<ConversationResponse>('/api/ai-conversations', {
     method: 'POST',
     body: JSON.stringify(data),
   }, token);
@@ -137,7 +137,7 @@ export const updateConversation = async (
   data: UpdateConversationData,
   token: string
 ): Promise<ConversationResponse> => {
-  return authenticatedApiCall<ConversationResponse>(`/ai-conversations/${conversationId}`, {
+  return authenticatedApiCall<ConversationResponse>(`/api/ai-conversations/${conversationId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   }, token);
@@ -148,7 +148,7 @@ export const deleteConversation = async (
   conversationId: string,
   token: string
 ): Promise<{ success: boolean; message: string }> => {
-  return authenticatedApiCall<{ success: boolean; message: string }>(`/ai-conversations/${conversationId}`, {
+  return authenticatedApiCall<{ success: boolean; message: string }>(`/api/ai-conversations/${conversationId}`, {
     method: 'DELETE',
   }, token);
 };
@@ -159,7 +159,7 @@ export const addMessage = async (
   data: AddMessageData,
   token: string
 ): Promise<{ success: boolean; data: AIMessage }> => {
-  return authenticatedApiCall<{ success: boolean; data: AIMessage }>(`/ai-conversations/${conversationId}/messages`, {
+  return authenticatedApiCall<{ success: boolean; data: AIMessage }>(`/api/ai-conversations/${conversationId}/messages`, {
     method: 'POST',
     body: JSON.stringify(data),
   }, token);
@@ -180,7 +180,7 @@ export const getMessages = async (
   if (params.limit) searchParams.append('limit', params.limit.toString());
 
   const queryString = searchParams.toString();
-  const endpoint = `/ai-conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/api/ai-conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`;
 
   return authenticatedApiCall<MessagesResponse>(endpoint, {
     method: 'GET',

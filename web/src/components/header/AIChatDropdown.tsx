@@ -365,7 +365,7 @@ export default function AIChatDropdown({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/ai-chat')}
+              onClick={() => router.push('/ai')}
               className="px-2 py-1 text-xs text-purple-600 hover:text-purple-700"
             >
               <ExternalLink className="h-4 w-4 mr-1" />

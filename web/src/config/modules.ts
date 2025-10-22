@@ -38,6 +38,15 @@ export const MODULES: ModuleConfig[] = [
     category: 'core',
   },
   {
+    id: 'ai',
+    name: 'AI Assistant',
+    description: 'AI-powered assistant and conversation management',
+    icon: 'brain',
+    path: '/ai',
+    permissions: ['view', 'chat'],
+    category: 'core',
+  },
+  {
     id: 'members',
     name: 'Members',
     description: 'Team member management',
