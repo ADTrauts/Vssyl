@@ -976,6 +976,30 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           })}
           
           {/* Marketplace/Modules Icon */}
+          {/* AI Assistant Button */}
+          <button
+            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') ? 'text-white' : 'text-gray-300'}`}
+            style={{
+              background: pathname?.startsWith('/ai-chat') ? '#9333ea' : 'transparent',
+              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#cbd5e1',
+              border: 'none',
+              outline: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              margin: '8px 0',
+              borderRadius: 8,
+              transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
+            }}
+            onClick={() => router.push('/ai-chat')}
+            title="AI Assistant"
+          >
+            <Brain size={22} />
+          </button>
+
           <button
             className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/modules') ? 'bg-gray-800' : 'hover:bg-gray-700'} ${pathname?.startsWith('/modules') ? 'text-white' : 'text-gray-300'}`}
             style={{

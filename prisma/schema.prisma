@@ -238,6 +238,7 @@ model User {
   aiUsageTrackings AIUsageTracking[]
   aiLearningEvents AILearningEvent[]
   aiContextCache UserAIContextCache?
+  aiConversations AIConversation[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -666,6 +667,7 @@ model Business {
   moduleSubscriptions ModuleSubscription[]
   usageRecords    UsageRecord[]
   invoices        Invoice[]
+  aiConversations AIConversation[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   businessFollows BusinessFollow[]
@@ -917,6 +919,7 @@ model Dashboard {
   complianceSettings ComplianceSettings?
   widgets     Widget[]
   conversations Conversation[]
+  aiConversations AIConversation[]
   files       File[]
   folders     Folder[]
   trashedAt   DateTime?
@@ -2299,6 +2302,55 @@ model Recommendation {
   @@index([status])
   @@index([impact])
   @@map("recommendations")
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// AI Conversations Module
+// Handles persistent AI chat conversations and messages
+
+model AIConversation {
+  id              String         @id @default(cuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String         // Auto-generated from first message or user-defined
+  dashboardId     String?        // Optional: scope to specific dashboard
+  dashboard       Dashboard?     @relation(fields: [dashboardId], references: [id], onDelete: SetNull)
+  businessId      String?        // Optional: scope to specific business
+  business        Business?      @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  lastMessageAt   DateTime       @default(now())
+  isArchived      Boolean        @default(false)
+  isPinned        Boolean        @default(false)
+  messageCount    Int            @default(0)
+  messages        AIMessage[]
+  
+  // Indexes for performance
+  @@index([userId, lastMessageAt])
+  @@index([dashboardId])
+  @@index([businessId])
+  @@index([isArchived, lastMessageAt])
+  @@map("ai_conversations")
+}
+
+model AIMessage {
+  id              String         @id @default(cuid())
+  conversationId  String
+  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role            String         // 'user' | 'assistant' | 'system'
+  content         String         @db.Text
+  confidence      Float?         // AI response confidence (0-1)
+  metadata        Json?          // Store reasoning, actions, insights, model info
+  createdAt       DateTime       @default(now())
+  
+  // Indexes for performance
+  @@index([conversationId, createdAt])
+  @@index([role, createdAt])
+  @@map("ai_messages")
 }
 
 

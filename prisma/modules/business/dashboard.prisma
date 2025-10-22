@@ -13,6 +13,7 @@ model Dashboard {
   complianceSettings ComplianceSettings?
   widgets     Widget[]
   conversations Conversation[]
+  aiConversations AIConversation[]
   files       File[]
   folders     Folder[]
   trashedAt   DateTime?

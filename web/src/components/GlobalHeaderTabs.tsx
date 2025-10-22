@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { LayoutDashboard, Home, Briefcase, GraduationCap, Users } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { LayoutDashboard, Home, Briefcase, GraduationCap, Users, Brain } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { useGlobalBranding } from '../contexts/GlobalBrandingContext';
 import { usePositionAwareModules } from './PositionAwareModuleProvider';
 import AvatarContextMenu from './AvatarContextMenu';
-import AIEnhancedSearchBar from './AIEnhancedSearchBar';
+import CompactSearchButton from './header/CompactSearchButton';
+import AIChatDropdown from './header/AIChatDropdown';
 import ClientOnlyWrapper from '../app/ClientOnlyWrapper';
 import { useWorkAuth } from '../contexts/WorkAuthContext';
 import { useThemeColors } from '../hooks/useThemeColors';
@@ -76,6 +77,9 @@ export default function GlobalHeaderTabs() {
   const [hydrated, setHydrated] = useState(false);
   const [showWorkTab, setShowWorkTab] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [aiDropdownPosition, setAIDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 700);
@@ -127,6 +131,24 @@ export default function GlobalHeaderTabs() {
     }
   };
 
+  // Handle AI button click
+  const handleAIClick = () => {
+    if (tabsRef.current) {
+      const rect = tabsRef.current.getBoundingClientRect();
+      setAIDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: Math.max(20, (window.innerWidth - 700) / 2), // Center with min margin
+        width: Math.min(700, window.innerWidth - 40)
+      });
+    }
+    setIsAIOpen(!isAIOpen);
+  };
+
+  // Handle AI dropdown close
+  const handleAIClose = () => {
+    setIsAIOpen(false);
+  };
+
   const isBusinessWorkspace = pathname?.startsWith('/business/');
   const workActive = isBusinessWorkspace || showWorkTab;
 
@@ -174,14 +196,7 @@ export default function GlobalHeaderTabs() {
         </h1>
       </div>
       <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
-        <div style={{ marginRight: 20, minWidth: 300, maxWidth: 500 }}>
-          <AIEnhancedSearchBar 
-            dashboardId={currentDashboardId || undefined}
-            dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
-            dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
-          />
-        </div>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <nav ref={tabsRef} style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
             {/* Main personal dashboard (not draggable) */}
             <button
@@ -276,11 +291,48 @@ export default function GlobalHeaderTabs() {
           </div>
         </nav>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
+        {/* Search Button */}
+        <CompactSearchButton />
+        
+        {/* AI Button */}
+        <button
+          onClick={handleAIClick}
+          className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-purple-100"
+          style={{
+            background: isAIOpen ? '#8b5cf6' : 'transparent',
+            color: isAIOpen ? '#fff' : '#8b5cf6',
+            border: 'none',
+            outline: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: 8,
+            transition: 'all 0.2s ease',
+          }}
+          title="AI Assistant"
+        >
+          <Brain size={20} />
+        </button>
+        
+        {/* Avatar */}
         <ClientOnlyWrapper>
           <AvatarContextMenu />
         </ClientOnlyWrapper>
       </div>
+
+      {/* AI Chat Dropdown */}
+      <AIChatDropdown
+        isOpen={isAIOpen}
+        onClose={handleAIClose}
+        position={aiDropdownPosition}
+        dashboardId={currentDashboardId || undefined}
+        dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
+        dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+      />
     </header>
   );
 }
