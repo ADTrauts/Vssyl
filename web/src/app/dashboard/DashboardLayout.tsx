@@ -21,7 +21,8 @@ import { toast } from 'react-hot-toast';
 import { useDashboardDeletion } from '../../hooks/useDashboardDeletion';
 import DashboardDeletionModal from '../../components/DashboardDeletionModal';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
-import AIEnhancedSearchBar from '../../components/AIEnhancedSearchBar';
+import CompactSearchButton from '../../components/header/CompactSearchButton';
+import { Brain } from 'lucide-react';
 import { Modal, DraggableWrapper } from 'shared/components';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
@@ -589,14 +590,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           </h1>
         </div>
         <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
-          {/* Global Search Bar */}
-          <div style={{ marginRight: 20, minWidth: 300, maxWidth: 500 }}>
-            <AIEnhancedSearchBar 
-              dashboardId={currentDashboardId || undefined}
-              dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
-              dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
-            />
-          </div>
+          {/* Search functionality moved to GlobalHeaderTabs */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
               {/* Main personal dashboard (not draggable) */}
@@ -791,10 +785,40 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </nav>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
-            <ClientOnlyWrapper>
-              <AvatarContextMenu />
-            </ClientOnlyWrapper>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
+          {/* Search Button */}
+          <CompactSearchButton />
+          
+          {/* AI Button */}
+          <button
+            onClick={() => {
+              // TODO: Implement AI dropdown functionality
+              console.log('AI button clicked');
+            }}
+            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-purple-100"
+            style={{
+              background: 'transparent',
+              color: '#8b5cf6',
+              border: 'none',
+              outline: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+              borderRadius: 8,
+              transition: 'all 0.2s ease',
+            }}
+            title="AI Assistant"
+          >
+            <Brain size={20} />
+          </button>
+          
+          {/* Avatar */}
+          <ClientOnlyWrapper>
+            <AvatarContextMenu />
+          </ClientOnlyWrapper>
         </div>
       </header>
       {/* Main content area below header */}
