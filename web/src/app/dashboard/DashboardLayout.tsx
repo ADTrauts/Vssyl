@@ -790,15 +790,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           
           {/* AI Button */}
           <button
-            onClick={() => {
-              // TODO: Implement AI dropdown functionality
-              console.log('AI button clicked');
-            }}
-            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors hover:bg-purple-100"
+            onClick={() => router.push('/ai-chat')}
+            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100"
             style={{
-              background: 'transparent',
-              color: '#8b5cf6',
-              border: 'none',
+              background: pathname?.startsWith('/ai-chat') ? '#8b5cf6' : 'transparent',
+              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#8b5cf6',
+              border: '2px solid #8b5cf6',
               outline: 'none',
               cursor: 'pointer',
               display: 'flex',
@@ -806,12 +803,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               justifyContent: 'center',
               width: 40,
               height: 40,
-              borderRadius: 8,
+              borderRadius: '50%',
               transition: 'all 0.2s ease',
+              fontWeight: '600',
+              fontSize: '12px',
             }}
             title="AI Assistant"
           >
-            <Brain size={20} />
+            AI
           </button>
           
           {/* Avatar */}

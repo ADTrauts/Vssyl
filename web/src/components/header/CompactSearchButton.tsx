@@ -301,8 +301,8 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
       {/* Search Button/Input */}
       <div className="relative">
         <div 
-          className={`flex items-center bg-white border border-gray-300 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all duration-300 ease-out ${
-            isExpanded ? 'w-80' : 'w-10'
+          className={`flex items-center bg-white border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all duration-300 ease-out ${
+            isExpanded ? 'w-80 rounded-lg' : 'w-10 h-10 rounded-full'
           }`}
         >
           {!isExpanded ? (
