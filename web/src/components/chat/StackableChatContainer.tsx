@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Conversation, Message } from 'shared/types/chat';
 import { useChat } from '../../contexts/ChatContext';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
@@ -21,6 +22,7 @@ interface ChatWindowState {
 
 const StackableChatContainer: React.FC = () => {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   
   // Use shared ChatContext for data
   const {
@@ -48,8 +50,13 @@ const StackableChatContainer: React.FC = () => {
     isDockedExpanded: false
   });
 
-  // Don't render if user is not authenticated
+  // Don't render if user is not authenticated or on auth pages
   if (status === 'loading' || status === 'unauthenticated' || !session) {
+    return null;
+  }
+
+  // Don't render on authentication pages
+  if (pathname?.startsWith('/auth/') || pathname === '/auth' || pathname === '/login') {
     return null;
   }
 
