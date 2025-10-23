@@ -80,8 +80,31 @@ async function handler(req: NextRequest) {
     console.log('API Proxy - Response:', {
       status: response.status,
       statusText: response.statusText,
-      pathname
+      pathname,
+      hasAuth: !!authToken,
+      backendUrl
     });
+
+    // Log authentication issues for debugging
+    if (response.status === 401 || response.status === 403) {
+      console.warn('API Proxy - Authentication error:', {
+        status: response.status,
+        pathname,
+        hasAuthToken: !!authToken,
+        tokenLength: authToken?.length,
+        backendUrl
+      });
+    }
+
+    // Log server errors for debugging
+    if (response.status >= 500) {
+      console.error('API Proxy - Server error:', {
+        status: response.status,
+        statusText: response.statusText,
+        pathname,
+        backendUrl
+      });
+    }
 
     // For file downloads, we need to preserve the content properly
     if (pathname.includes('/drive/files/') && req.method === 'GET') {
@@ -100,17 +123,37 @@ async function handler(req: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       url,
       method: req.method,
-      pathname
+      pathname,
+      hasAuthToken: !!authToken,
+      backendUrl
     });
+    
+    // Determine error type and appropriate status code
+    let statusCode = 500;
+    let errorMessage = 'Internal server error';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('fetch')) {
+        statusCode = 503; // Service unavailable
+        errorMessage = 'Backend service unavailable';
+      } else if (error.message.includes('timeout')) {
+        statusCode = 504; // Gateway timeout
+        errorMessage = 'Request timeout';
+      } else if (error.message.includes('network') || error.message.includes('ECONNREFUSED')) {
+        statusCode = 503; // Service unavailable
+        errorMessage = 'Backend service unavailable';
+      }
+    }
     
     return new NextResponse(
       JSON.stringify({ 
         error: 'Proxy error', 
-        message: error instanceof Error ? error.message : 'Unknown error',
-        path: pathname 
+        message: errorMessage,
+        path: pathname,
+        status: statusCode
       }), 
       { 
-        status: 500,
+        status: statusCode,
         headers: { 'Content-Type': 'application/json' }
       }
     );

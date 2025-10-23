@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check } from 'lucide-react';
+import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import { 
   getConversations, 
@@ -49,6 +49,8 @@ export default function AIChatModule({
   const [showArchived, setShowArchived] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState<string | false>(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
@@ -68,17 +70,50 @@ export default function AIChatModule({
 
   // Load conversations
   const loadConversations = async () => {
-    if (!session?.accessToken) return;
+    // Clear previous errors
+    setConversationError(null);
+    setAuthError(null);
+
+    // Validate session and token
+    if (!session) {
+      setAuthError('Please log in to access AI conversations');
+      return;
+    }
+
+    if (!session.accessToken) {
+      setAuthError('Authentication token not available. Please refresh the page.');
+      return;
+    }
+
+    setIsLoadingConversations(true);
 
     try {
-      setIsLoadingConversations(true);
+      console.log('Loading AI conversations with token:', {
+        hasToken: !!session.accessToken,
+        tokenLength: session.accessToken?.length,
+        dashboardId
+      });
+
       const response = await getConversations({ limit: 50, archived: false }, session.accessToken);
       
       if (response.success) {
         setConversations(response.data.conversations);
+        console.log('Successfully loaded conversations:', response.data.conversations.length);
+      } else {
+        setConversationError('Failed to load conversations. Please try again.');
+        console.error('API returned error:', response);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes('authentication')) {
+        setAuthError('Authentication failed. Please log in again.');
+      } else if (error instanceof Error && error.message.includes('token')) {
+        setAuthError('Session expired. Please refresh the page.');
+      } else {
+        setConversationError('Failed to load conversations. Please try again.');
+      }
     } finally {
       setIsLoadingConversations(false);
     }
@@ -86,7 +121,16 @@ export default function AIChatModule({
 
   // Load conversation messages
   const loadConversationMessages = async (conversationId: string) => {
-    if (!session?.accessToken) return;
+    // Validate session and token
+    if (!session) {
+      setAuthError('Please log in to access AI conversations');
+      return;
+    }
+
+    if (!session.accessToken) {
+      setAuthError('Authentication token not available. Please refresh the page.');
+      return;
+    }
 
     try {
       const response = await getConversation(conversationId, session.accessToken);
@@ -108,19 +152,45 @@ export default function AIChatModule({
         // Find and set selected conversation
         const conv = conversations.find(c => c.id === conversationId);
         setSelectedConversation(conv || null);
+      } else {
+        setConversationError('Failed to load conversation messages. Please try again.');
+        console.error('API returned error:', response);
       }
     } catch (error) {
       console.error('Failed to load conversation messages:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes('authentication')) {
+        setAuthError('Authentication failed. Please log in again.');
+      } else if (error instanceof Error && error.message.includes('token')) {
+        setAuthError('Session expired. Please refresh the page.');
+      } else {
+        setConversationError('Failed to load conversation messages. Please try again.');
+      }
     }
   };
 
   // Handle AI query
   const handleAIQuery = async () => {
-    if (!inputValue.trim() || !session?.accessToken || isAILoading) return;
+    if (!inputValue.trim() || isAILoading) return;
+
+    // Validate session and token
+    if (!session) {
+      setAuthError('Please log in to use AI features');
+      return;
+    }
+
+    if (!session.accessToken) {
+      setAuthError('Authentication token not available. Please refresh the page.');
+      return;
+    }
 
     const userMessage = inputValue.trim();
     setInputValue('');
     setIsAILoading(true);
+
+    // Clear previous errors
+    setAuthError(null);
 
     // Add user message to conversation
     const userItem: ConversationItem = {
@@ -227,9 +297,22 @@ export default function AIChatModule({
     } catch (error) {
       console.error('AI query failed:', error);
       
-      const errorMessage = error instanceof Error && error.message.includes('Invalid response structure') 
-        ? 'I encountered an issue with the AI service response. Please try again.'
-        : 'I apologize, but I encountered an error processing your request. Please try again.';
+      let errorMessage = 'I apologize, but I encountered an error processing your request. Please try again.';
+      
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('authentication') || error.message.includes('token')) {
+          setAuthError('Authentication failed. Please log in again.');
+          errorMessage = 'Authentication error. Please refresh the page and try again.';
+        } else if (error.message.includes('Invalid response structure')) {
+          errorMessage = 'I encountered an issue with the AI service response. Please try again.';
+        } else if (error.message.includes('No authentication token available')) {
+          setAuthError('Please log in to use AI features');
+          errorMessage = 'Please log in to use AI features.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        }
+      }
         
       const errorItem: ConversationItem = {
         id: `error_${Date.now()}`,
@@ -381,6 +464,37 @@ export default function AIChatModule({
             </Button>
           </div>
         </div>
+
+        {/* Error Messages */}
+        {authError && (
+          <div className="px-4 py-2 bg-red-50 border-b border-red-200">
+            <div className="flex items-center space-x-2">
+              <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+              <p className="text-sm text-red-700">{authError}</p>
+              <button
+                onClick={() => setAuthError(null)}
+                className="ml-auto text-red-400 hover:text-red-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {conversationError && (
+          <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
+            <div className="flex items-center space-x-2">
+              <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+              <p className="text-sm text-yellow-700">{conversationError}</p>
+              <button
+                onClick={() => setConversationError(null)}
+                className="ml-auto text-yellow-400 hover:text-yellow-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto p-4">

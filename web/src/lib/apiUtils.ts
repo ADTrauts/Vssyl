@@ -51,35 +51,71 @@ export async function authenticatedApiCall<T>(
 
   let response = await makeRequest(accessToken);
 
-         // If we get a 401/403 and we're using NextAuth (not a direct token), try to refresh
-         if ((response.status === 401 || response.status === 403) && !token) {
-           console.log('Authentication error detected, attempting token refresh...');
-           
-           // Get a fresh session (NextAuth will automatically refresh if needed)
-           const refreshedSession = await getSession();
-           
-           if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
-             console.log('Token refreshed successfully, retrying request...');
-             accessToken = refreshedSession.accessToken;
-             response = await makeRequest(accessToken);
-           } else {
-             console.log('Token refresh failed or no new token available');
-           }
-         }
+  // If we get a 401/403 and we're using NextAuth (not a direct token), try to refresh
+  if ((response.status === 401 || response.status === 403) && !token) {
+    console.log('Authentication error detected, attempting token refresh...', {
+      status: response.status,
+      endpoint,
+      hasToken: !!accessToken,
+      tokenLength: accessToken?.length
+    });
+    
+    try {
+      // Get a fresh session (NextAuth will automatically refresh if needed)
+      const refreshedSession = await getSession();
+      
+      if (refreshedSession?.accessToken && refreshedSession.accessToken !== accessToken) {
+        console.log('Token refreshed successfully, retrying request...', {
+          oldTokenLength: accessToken?.length,
+          newTokenLength: refreshedSession.accessToken?.length
+        });
+        accessToken = refreshedSession.accessToken;
+        response = await makeRequest(accessToken);
+      } else {
+        console.log('Token refresh failed or no new token available', {
+          hasRefreshedSession: !!refreshedSession,
+          hasNewToken: !!refreshedSession?.accessToken,
+          tokensMatch: refreshedSession?.accessToken === accessToken
+        });
+      }
+    } catch (refreshError) {
+      console.error('Error during token refresh:', refreshError);
+      // Continue with the original response to let the error handling below deal with it
+    }
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     
-         // Handle authentication errors (401, 403)
-         if (response.status === 401 || response.status === 403) {
-           console.log('Authentication error after refresh attempt:', response.status, errorData);
-           
-           // If refresh failed, the session is completely expired
-           const error = new Error('Session expired. Please refresh the page to log in again.') as ApiError;
-           error.status = response.status;
-           error.isAuthError = true;
-           throw error;
-         }
+    // Handle authentication errors (401, 403)
+    if (response.status === 401 || response.status === 403) {
+      console.log('Authentication error after refresh attempt:', {
+        status: response.status,
+        endpoint,
+        errorData,
+        hasToken: !!accessToken,
+        tokenLength: accessToken?.length
+      });
+      
+      // If refresh failed, the session is completely expired
+      const error = new Error('Session expired. Please refresh the page to log in again.') as ApiError;
+      error.status = response.status;
+      error.isAuthError = true;
+      throw error;
+    }
+    
+    // Handle server errors (500)
+    if (response.status >= 500) {
+      console.error('Server error:', {
+        status: response.status,
+        endpoint,
+        errorData
+      });
+      
+      const error = new Error('Server error. Please try again later.') as ApiError;
+      error.status = response.status;
+      throw error;
+    }
     
     // Handle other errors
     const error = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`) as ApiError;

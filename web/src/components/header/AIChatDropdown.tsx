@@ -67,6 +67,9 @@ export default function AIChatDropdown({
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -112,9 +115,30 @@ export default function AIChatDropdown({
   }, [isOpen, session?.accessToken]);
 
   const loadConversations = async () => {
-    if (!session?.accessToken) return;
+    // Clear previous errors
+    setConversationError(null);
+    setAuthError(null);
+
+    // Validate session and token
+    if (!session) {
+      setAuthError('Please log in to access AI conversations');
+      return;
+    }
+
+    if (!session.accessToken) {
+      setAuthError('Authentication token not available. Please refresh the page.');
+      return;
+    }
+
+    setIsLoadingConversations(true);
 
     try {
+      console.log('Loading AI conversations with token:', {
+        hasToken: !!session.accessToken,
+        tokenLength: session.accessToken?.length,
+        dashboardId
+      });
+
       const response = await getConversations({
         limit: 20,
         archived: false,
@@ -123,17 +147,46 @@ export default function AIChatDropdown({
 
       if (response.success) {
         setConversations(response.data.conversations);
+        console.log('Successfully loaded conversations:', response.data.conversations.length);
+      } else {
+        setConversationError('Failed to load conversations. Please try again.');
+        console.error('API returned error:', response);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message.includes('authentication')) {
+        setAuthError('Authentication failed. Please log in again.');
+      } else if (error instanceof Error && error.message.includes('token')) {
+        setAuthError('Session expired. Please refresh the page.');
+      } else {
+        setConversationError('Failed to load conversations. Please try again.');
+      }
+    } finally {
+      setIsLoadingConversations(false);
     }
   };
 
   // Handle AI query submission
   const handleAIQuery = async () => {
-    if (!inputValue.trim() || isAILoading || !session?.accessToken) return;
+    if (!inputValue.trim() || isAILoading) return;
+
+    // Validate session and token
+    if (!session) {
+      setAuthError('Please log in to use AI features');
+      return;
+    }
+
+    if (!session.accessToken) {
+      setAuthError('Authentication token not available. Please refresh the page.');
+      return;
+    }
 
     const userQuery = inputValue.trim();
+    
+    // Clear previous errors
+    setAuthError(null);
     
     // Add user message to conversation
     const userItem: ConversationItem = {
@@ -243,9 +296,22 @@ export default function AIChatDropdown({
     } catch (error) {
       console.error('AI query failed:', error);
       
-      const errorMessage = error instanceof Error && error.message.includes('Invalid response structure') 
-        ? 'I encountered an issue with the AI service response. Please try again.'
-        : 'I apologize, but I encountered an error processing your request. Please try again.';
+      let errorMessage = 'I apologize, but I encountered an error processing your request. Please try again.';
+      
+      // Check for specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('authentication') || error.message.includes('token')) {
+          setAuthError('Authentication failed. Please log in again.');
+          errorMessage = 'Authentication error. Please refresh the page and try again.';
+        } else if (error.message.includes('Invalid response structure')) {
+          errorMessage = 'I encountered an issue with the AI service response. Please try again.';
+        } else if (error.message.includes('No authentication token available')) {
+          setAuthError('Please log in to use AI features');
+          errorMessage = 'Please log in to use AI features.';
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        }
+      }
         
       const errorItem: ConversationItem = {
         id: `error_${Date.now()}`,
@@ -381,13 +447,51 @@ export default function AIChatDropdown({
         </div>
       </div>
 
+      {/* Error Messages */}
+      {authError && (
+        <div className="px-4 py-2 bg-red-50 border-b border-red-200">
+          <div className="flex items-center space-x-2">
+            <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+            <p className="text-sm text-red-700">{authError}</p>
+            <button
+              onClick={() => setAuthError(null)}
+              className="ml-auto text-red-400 hover:text-red-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {conversationError && (
+        <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
+          <div className="flex items-center space-x-2">
+            <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+            <p className="text-sm text-yellow-700">{conversationError}</p>
+            <button
+              onClick={() => setConversationError(null)}
+              className="ml-auto text-yellow-400 hover:text-yellow-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Content Area */}
       <div className="flex h-full">
         {/* Main Chat Area */}
         <div className={`flex-1 flex flex-col ${showHistory ? 'w-3/5' : 'w-full'} transition-all duration-300`}>
           {/* Conversation */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {conversation.length === 0 ? (
+            {isLoadingConversations ? (
+              <div className="text-center py-8">
+                <div className="h-8 w-8 mx-auto text-purple-600 mb-3">
+                  <Spinner size={32} />
+                </div>
+                <p className="text-gray-500 text-sm">Loading conversations...</p>
+              </div>
+            ) : conversation.length === 0 ? (
               <div className="text-center py-8">
                 <Brain className="h-12 w-12 mx-auto text-gray-300 mb-3" />
                 <p className="text-gray-500 text-sm">Ask me anything about your digital life</p>
