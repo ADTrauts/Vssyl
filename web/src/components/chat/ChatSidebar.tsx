@@ -198,8 +198,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   // LinkedIn-style docked chat - unified minimized/expanded
   if (isDocked) {
     return (
-      <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '0px' }}>
-        <div className={`bg-gray-900 shadow-lg transition-all duration-300 ${isExpanded ? 'rounded-tl-lg' : 'rounded-tl-lg'}`}>
+      <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '32px' }}>
+        <div className={`bg-gray-700 shadow-lg transition-all duration-300 ${isExpanded ? 'rounded-tl-lg' : 'rounded-tl-lg'}`}>
           {/* Minimized Bar - Always visible */}
           <div className="flex items-center justify-between p-3">
             <div className="flex items-center space-x-3">
@@ -293,7 +293,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
           {/* Expanded Content - Grows upward from minimized bar */}
           {isExpanded && (
-            <div className="border-t border-gray-700 bg-gray-900 max-h-96 overflow-hidden">
+            <div className="border-t border-gray-600 bg-gray-700 max-h-96 overflow-hidden">
               <div className="p-4 flex flex-col">
                 {/* Search */}
                 <div className="relative mb-4">
@@ -303,7 +303,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     placeholder="Search messages"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-white placeholder-gray-400"
+                        className="w-full pl-10 pr-10 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-white placeholder-gray-400"
                   />
                   <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300">
                     <Filter className="w-4 h-4" />
@@ -311,7 +311,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-700 mb-4">
+                    <div className="flex border-b border-gray-600 mb-4">
                   <button
                     onClick={() => onTabChange('focused')}
                     className={`flex-1 py-2 text-sm font-medium transition-colors ${
