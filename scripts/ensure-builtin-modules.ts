@@ -7,7 +7,10 @@
  * Run with: npx ts-node scripts/ensure-builtin-modules.ts
  */
 
-import { prisma } from '../server/src/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+
+// Create a new Prisma client instance for this script
+const prisma = new PrismaClient();
 
 // System user ID for proprietary modules
 // This should be a special "system" user or the first admin user

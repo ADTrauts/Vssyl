@@ -112,7 +112,10 @@ export default function AdminModulesPage() {
         adminApiService.getModuleStats()
       ]);
 
-      setSubmissions((submissionsRes as any)?.data || []);
+      // Ensure submissions is always an array
+      const submissionsData = (submissionsRes as any)?.data;
+      console.log('Submissions response:', { submissionsRes, submissionsData, isArray: Array.isArray(submissionsData) });
+      setSubmissions(Array.isArray(submissionsData) ? submissionsData : []);
       setStats((statsRes as any)?.data || null);
     } catch (err) {
       console.error('Error loading module data:', err);
@@ -328,7 +331,7 @@ export default function AdminModulesPage() {
     });
   };
 
-  const filteredSubmissions = (submissions || []).filter(submission => {
+  const filteredSubmissions = Array.isArray(submissions) ? submissions.filter(submission => {
     const matchesSearch = submission.module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          submission.submitter.name.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -336,7 +339,7 @@ export default function AdminModulesPage() {
     const matchesCategory = filters.category === 'all' || submission.module.category === filters.category;
     
     return matchesSearch && matchesStatus && matchesCategory;
-  });
+  }) : [];
 
   return (
     <div className="space-y-6">
