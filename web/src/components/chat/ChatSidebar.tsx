@@ -198,8 +198,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   // LinkedIn-style docked chat - unified minimized/expanded
   if (isDocked) {
     return (
-      <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '80px' }}>
-        <div className={`bg-gray-800 shadow-lg transition-all duration-300 ${isExpanded ? 'rounded-t-lg' : 'rounded-t-lg'}`}>
+      <div className="fixed bottom-0 z-30" style={{ width: '320px', right: '0px' }}>
+        <div className={`bg-gray-900 shadow-lg transition-all duration-300 ${isExpanded ? 'rounded-tl-lg' : 'rounded-tl-lg'}`}>
           {/* Minimized Bar - Always visible */}
           <div className="flex items-center justify-between p-3">
             <div className="flex items-center space-x-3">
@@ -293,7 +293,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
           {/* Expanded Content - Grows upward from minimized bar */}
           {isExpanded && (
-            <div className="border-t border-gray-700 bg-gray-800 max-h-96 overflow-hidden">
+            <div className="border-t border-gray-700 bg-gray-900 max-h-96 overflow-hidden">
               <div className="p-4 flex flex-col">
                 {/* Search */}
                 <div className="relative mb-4">
