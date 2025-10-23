@@ -227,35 +227,51 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
       orderBy: orderBy
     });
 
-    const modulesWithStatus = modules.map(module => ({
-      id: module.id,
-      name: module.name,
-      description: module.description,
-      version: module.version,
-      category: module.category,
-      developer: (module as any).developer.name || (module as any).developer.email,
-      rating: module.rating,
-      reviewCount: module.reviewCount,
-      downloads: module.downloads,
-      status:
-        scope === 'business'
-          ? ((module as any).businessInstallations?.length > 0 ? 'installed' : 'available')
-          : ((module as any).installations?.length > 0 ? 'installed' : 'available'),
-      icon: module.icon,
-      screenshots: module.screenshots,
-      tags: module.tags,
-      createdAt: module.createdAt,
-      updatedAt: module.updatedAt,
-      // Pricing data
-      pricingTier: module.pricingTier,
-      basePrice: module.basePrice,
-      enterprisePrice: module.enterprisePrice,
-      isProprietary: module.isProprietary,
-      revenueSplit: module.revenueSplit,
-      // Subscription status
-      subscriptionStatus: (module as any).subscriptions?.[0]?.status || null,
-      subscriptionAmount: (module as any).subscriptions?.[0]?.amount || null,
-    }));
+    const modulesWithStatus = modules.map(module => {
+      // Check if this is a built-in module for personal scope
+      const builtInModuleIds = ['drive', 'chat', 'calendar'];
+      const isBuiltInModule = builtInModuleIds.includes(module.id);
+      
+      // Determine status based on scope and installation
+      let status: 'installed' | 'available';
+      if (scope === 'business') {
+        status = (module as any).businessInstallations?.length > 0 ? 'installed' : 'available';
+      } else {
+        // For personal scope, check both explicit installations and built-in modules
+        const hasExplicitInstallation = (module as any).installations?.length > 0;
+        const isBuiltInAndPersonal = isBuiltInModule && scope === 'personal';
+        status = (hasExplicitInstallation || isBuiltInAndPersonal) ? 'installed' : 'available';
+      }
+
+      return {
+        id: module.id,
+        name: module.name,
+        description: module.description,
+        version: module.version,
+        category: module.category,
+        developer: (module as any).developer.name || (module as any).developer.email,
+        rating: module.rating,
+        reviewCount: module.reviewCount,
+        downloads: module.downloads,
+        status,
+        icon: module.icon,
+        screenshots: module.screenshots,
+        tags: module.tags,
+        createdAt: module.createdAt,
+        updatedAt: module.updatedAt,
+        // Pricing data
+        pricingTier: module.pricingTier,
+        basePrice: module.basePrice,
+        enterprisePrice: module.enterprisePrice,
+        isProprietary: module.isProprietary,
+        revenueSplit: module.revenueSplit,
+        // Subscription status
+        subscriptionStatus: (module as any).subscriptions?.[0]?.status || null,
+        subscriptionAmount: (module as any).subscriptions?.[0]?.amount || null,
+        // Built-in module indicator
+        isBuiltIn: isBuiltInModule,
+      };
+    });
 
     res.json({ success: true, data: modulesWithStatus });
   } catch (error) {

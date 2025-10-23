@@ -582,7 +582,7 @@ export default function ModulesPage() {
               <div className="flex space-x-2">
                 {module.status === 'installed' ? (
                   <Button variant="secondary" size="sm" className="flex-1" disabled>
-                    Installed
+                    {module.isBuiltIn ? 'Built-in' : 'Installed'}
                   </Button>
                 ) : (
                   <Button 
