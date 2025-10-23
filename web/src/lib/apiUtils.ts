@@ -1,7 +1,8 @@
 import { getSession, signOut } from 'next-auth/react';
 
 // Use relative URLs to go through Next.js API proxy instead of direct backend calls
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://vssyl-server-235369681725.us-central1.run.app';
+// This ensures all API calls go through the Next.js API proxy which handles authentication
+const API_BASE_URL = '';
 
 export interface ApiError extends Error {
   status?: number;
@@ -28,11 +29,12 @@ export async function authenticatedApiCall<T>(
   // Debug logging to help troubleshoot API routing
   console.log('API Call Debug:', {
     endpoint,
-    API_BASE_URL,
+    API_BASE_URL: 'relative (using Next.js proxy)',
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     finalUrl: url,
-    isRelative: !url.startsWith('http')
+    isRelative: !url.startsWith('http'),
+    note: 'Using Next.js API proxy for authentication'
   });
   
   const makeRequest = async (token: string): Promise<Response> => {
