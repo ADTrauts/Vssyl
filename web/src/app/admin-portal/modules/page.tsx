@@ -114,8 +114,28 @@ export default function AdminModulesPage() {
 
       // Ensure submissions is always an array
       const submissionsData = (submissionsRes as any)?.data;
-      console.log('Submissions response:', { submissionsRes, submissionsData, isArray: Array.isArray(submissionsData) });
-      setSubmissions(Array.isArray(submissionsData) ? submissionsData : []);
+      console.log('Submissions response:', { 
+        submissionsRes, 
+        submissionsData, 
+        isArray: Array.isArray(submissionsData),
+        type: typeof submissionsData,
+        keys: submissionsData ? Object.keys(submissionsData) : null
+      });
+      
+      // Handle different response formats
+      let submissionsArray = [];
+      if (Array.isArray(submissionsData)) {
+        submissionsArray = submissionsData;
+      } else if (submissionsData && typeof submissionsData === 'object') {
+        // If it's an object, try to find the array property
+        if (Array.isArray(submissionsData.submissions)) {
+          submissionsArray = submissionsData.submissions;
+        } else if (Array.isArray(submissionsData.data)) {
+          submissionsArray = submissionsData.data;
+        }
+      }
+      
+      setSubmissions(submissionsArray);
       setStats((statsRes as any)?.data || null);
     } catch (err) {
       console.error('Error loading module data:', err);
@@ -321,19 +341,31 @@ export default function AdminModulesPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Invalid Date';
+    }
   };
 
   const filteredSubmissions = Array.isArray(submissions) ? submissions.filter(submission => {
-    const matchesSearch = submission.module.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         submission.submitter.name.toLowerCase().includes(searchTerm.toLowerCase());
+    // Safety checks for malformed submission data
+    if (!submission || !submission.module || !submission.submitter) {
+      return false;
+    }
+    
+    const matchesSearch = submission.module.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         submission.submitter.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         false;
     
     const matchesStatus = filters.status === 'all' || submission.status === filters.status;
     const matchesCategory = filters.category === 'all' || submission.module.category === filters.category;
@@ -399,7 +431,7 @@ export default function AdminModulesPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">${(stats.totalRevenue || 0).toLocaleString()}</p>
               </div>
             </div>
           </Card>
