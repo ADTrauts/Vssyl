@@ -1,14 +1,20 @@
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger';
+import { SandboxService } from './sandboxService';
+import { MalwareScanningService } from './malwareScanningService';
 import {
   ModuleSecurityValidation,
   SecurityValidationResult,
   MalwareScanResult,
   VulnerabilityCheckResult,
   ModulePermissionAudit,
-  ModuleSubmissionSecurityContext
+  ModuleSubmissionSecurityContext,
+  SecurityScanReport
 } from '../../../shared/src/types/security';
+import {
+  SandboxTestResult
+} from '../../../shared/src/types/sandbox';
 
 /**
  * Module Security Service
@@ -17,11 +23,15 @@ import {
  */
 export class ModuleSecurityService extends EventEmitter {
   private prisma: PrismaClient;
+  private sandboxService: SandboxService;
+  private malwareScanningService: MalwareScanningService;
   private readonly CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
   constructor(prisma: PrismaClient) {
     super();
     this.prisma = prisma;
+    this.sandboxService = new SandboxService(prisma);
+    this.malwareScanningService = new MalwareScanningService(prisma);
   }
 
   /**
@@ -85,18 +95,22 @@ export class ModuleSecurityService extends EventEmitter {
         warnings.push('Medium-risk permissions detected');
       }
 
-      // 4. Basic Malware Scan (placeholder for now)
-      const malwareScanResult = await this.performBasicMalwareScan(submissionData);
+      // 4. Real Malware Scan using MalwareScanningService
+      const malwareScanResult = await this.malwareScanningService.scanModuleForMalware(submissionData);
       validationDetails.staticCodeAnalysis.malwareScan = malwareScanResult.isClean;
       if (!malwareScanResult.isClean) {
         errors.push('Malware detected in module');
+        errors.push(...malwareScanResult.detectedThreats);
       }
 
-      // 5. Vulnerability Check (placeholder for now)
-      const vulnerabilityResult = await this.checkVulnerabilities(submissionData);
+      // 5. Vulnerability Check using MalwareScanningService
+      const vulnerabilityResult = await this.malwareScanningService.checkModuleVulnerabilities(submissionData);
       validationDetails.staticCodeAnalysis.vulnerabilityCheck = !vulnerabilityResult.hasVulnerabilities;
       if (vulnerabilityResult.hasVulnerabilities) {
         warnings.push(`${vulnerabilityResult.vulnerabilities.length} vulnerabilities detected`);
+        if (vulnerabilityResult.summary.criticalVulnerabilities > 0) {
+          errors.push(`${vulnerabilityResult.summary.criticalVulnerabilities} critical vulnerabilities found`);
+        }
       }
 
       // Calculate security score
@@ -160,7 +174,8 @@ export class ModuleSecurityService extends EventEmitter {
 
     try {
       const manifest = submissionData.manifest as Record<string, unknown>;
-      const entryUrl = manifest?.frontend?.entryUrl as string;
+      const frontend = manifest?.frontend as Record<string, unknown>;
+      const entryUrl = frontend?.entryUrl as string;
 
       if (!entryUrl || typeof entryUrl !== 'string') {
         errors.push('manifest.frontend.entryUrl is required');
@@ -286,59 +301,72 @@ export class ModuleSecurityService extends EventEmitter {
     };
   }
 
-  /**
-   * Perform basic malware scan (placeholder implementation)
-   */
-  private async performBasicMalwareScan(submissionData: Record<string, unknown>): Promise<MalwareScanResult> {
-    // Placeholder implementation - in Phase 2, this will integrate with VirusTotal API
-    console.log('🔍 Performing basic malware scan...');
-    
-    // For now, we'll do basic checks
-    const manifest = submissionData.manifest as Record<string, unknown>;
-    const entryUrl = manifest?.frontend?.entryUrl as string;
-    
-    // Check for suspicious patterns in URL
-    const suspiciousPatterns = ['malware', 'virus', 'trojan', 'backdoor'];
-    const hasSuspiciousPatterns = suspiciousPatterns.some(pattern => 
-      entryUrl?.toLowerCase().includes(pattern)
-    );
-
-    return {
-      isClean: !hasSuspiciousPatterns,
-      scanId: `scan_${Date.now()}`,
-      scanDate: new Date().toISOString(),
-      detectedThreats: hasSuspiciousPatterns ? ['Suspicious URL patterns detected'] : [],
-      scanProvider: 'basic-scanner',
-      confidence: hasSuspiciousPatterns ? 60 : 95
-    };
-  }
 
   /**
-   * Check for vulnerabilities (placeholder implementation)
+   * Perform comprehensive security testing including sandbox testing
+   * @param submissionData - Module submission data
+   * @returns Comprehensive security scan report
    */
-  private async checkVulnerabilities(submissionData: Record<string, unknown>): Promise<VulnerabilityCheckResult> {
-    // Placeholder implementation - in Phase 2, this will integrate with npm audit or similar
-    console.log('🔍 Checking for vulnerabilities...');
-    
-    const manifest = submissionData.manifest as Record<string, unknown>;
-    const dependencies = manifest?.dependencies as string[] || [];
+  async performComprehensiveSecurityTest(submissionData: Record<string, unknown>): Promise<SecurityScanReport> {
+    try {
+      console.log('🔒 Starting comprehensive security testing...');
+      
+      // Generate security scan report
+      const securityReport = await this.malwareScanningService.generateSecurityScanReport(submissionData);
+      
+      // If basic security checks pass, run sandbox testing
+      if (securityReport.overallStatus === 'passed') {
+        console.log('✅ Basic security checks passed, running sandbox testing...');
+        
+        try {
+          const sandboxResult = await this.sandboxService.testModuleInSandbox(submissionData);
+          
+          // Update security score based on sandbox results
+          if (sandboxResult.results.securityViolations.length > 0) {
+            securityReport.overallStatus = 'failed';
+            securityReport.securityScore -= sandboxResult.results.securityViolations.length * 10;
+            securityReport.recommendations.push('Address sandbox security violations');
+          }
+          
+          // Add sandbox-specific recommendations
+          if (sandboxResult.results.performanceMetrics.cpuUsage > 80) {
+            securityReport.recommendations.push('Optimize module performance - high CPU usage detected');
+          }
+          
+          if (sandboxResult.results.performanceMetrics.memoryUsage > 100 * 1024 * 1024) { // 100MB
+            securityReport.recommendations.push('Optimize module memory usage - high memory consumption detected');
+          }
+          
+        } catch (sandboxError) {
+          console.warn('⚠️ Sandbox testing failed, but basic security checks passed:', sandboxError);
+          securityReport.recommendations.push('Sandbox testing failed - manual review required');
+        }
+      }
+      
+      this.emit('comprehensiveSecurityTestComplete', { submissionData, report: securityReport });
+      
+      await logger.info('Comprehensive security testing completed', {
+        operation: 'comprehensive_security_testing',
+        moduleId: submissionData.id,
+        overallStatus: securityReport.overallStatus,
+        securityScore: securityReport.securityScore
+      });
 
-    // For now, we'll do basic checks
-    const knownVulnerableDependencies = ['vulnerable-package', 'old-library', 'deprecated-module'];
-    const vulnerabilities = dependencies.filter(dep => 
-      knownVulnerableDependencies.some(vuln => dep.includes(vuln))
-    ).map(dep => ({
-      id: `vuln_${dep}`,
-      severity: 'medium' as const,
-      description: `Known vulnerability in ${dep}`,
-      affectedDependencies: [dep]
-    }));
+      console.log(`✅ Comprehensive security testing completed. Status: ${securityReport.overallStatus}`);
+      return securityReport;
 
-    return {
-      hasVulnerabilities: vulnerabilities.length > 0,
-      vulnerabilities,
-      scanDate: new Date().toISOString()
-    };
+    } catch (error) {
+      console.error('❌ Error in comprehensive security testing:', error);
+      await logger.error('Comprehensive security testing failed', {
+        operation: 'comprehensive_security_testing',
+        moduleId: submissionData.id,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
+      throw error;
+    }
   }
 
   /**
