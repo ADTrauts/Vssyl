@@ -49,7 +49,7 @@ interface ModuleSubmission {
       name: string;
       email: string;
     };
-    manifest: any;
+    manifest: Record<string, unknown>;
     permissions: string[];
     dependencies: string[];
     downloads?: number;
@@ -57,6 +57,12 @@ interface ModuleSubmission {
     reviewCount?: number;
     pricingTier?: string;
     revenueSplit?: number;
+  };
+  securityValidation?: {
+    securityScore: number;
+    status: 'pending' | 'passed' | 'failed' | 'warning';
+    warnings: string[];
+    recommendations: string[];
   };
 }
 
@@ -341,6 +347,25 @@ export default function AdminModulesPage() {
     }
   };
 
+  const getSecurityBadge = (securityValidation?: ModuleSubmission['securityValidation']) => {
+    if (!securityValidation) {
+      return <Badge color="gray" size="sm">No Scan</Badge>;
+    }
+
+    switch (securityValidation.status) {
+      case 'passed':
+        return <Badge color="green" size="sm">Secure ({securityValidation.securityScore}/100)</Badge>;
+      case 'warning':
+        return <Badge color="yellow" size="sm">Warnings ({securityValidation.securityScore}/100)</Badge>;
+      case 'failed':
+        return <Badge color="red" size="sm">Failed ({securityValidation.securityScore}/100)</Badge>;
+      case 'pending':
+        return <Badge color="blue" size="sm">Scanning...</Badge>;
+      default:
+        return <Badge color="gray" size="sm">Unknown</Badge>;
+    }
+  };
+
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return 'N/A';
     try {
@@ -560,6 +585,7 @@ export default function AdminModulesPage() {
                           {submission.module.name}
                         </h3>
                         {getStatusBadge(submission.status)}
+                        {getSecurityBadge(submission.securityValidation)}
                         <Badge color="gray" size="sm">
                           {submission.module.category}
                         </Badge>

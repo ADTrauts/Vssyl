@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { ModuleSecurityService } from '../services/moduleSecurityService';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
@@ -678,19 +679,26 @@ export const submitModule = async (req: Request, res: Response) => {
       });
     }
 
-    // Optional: basic validation of hosted bundle URL in manifest
-    try {
-      const entryUrl = manifest?.frontend?.entryUrl;
-      if (!entryUrl || typeof entryUrl !== 'string') {
-        return res.status(400).json({ success: false, error: 'manifest.frontend.entryUrl (HTTPS) is required' });
-      }
-      const parsed = new URL(entryUrl);
-      const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
-      if (parsed.protocol !== 'https:' && !isLocalhost) {
-        return res.status(400).json({ success: false, error: 'frontend.entryUrl must use HTTPS (http allowed only for localhost during development)' });
-      }
-    } catch {
-      return res.status(400).json({ success: false, error: 'Invalid frontend.entryUrl' });
+    // Enhanced security validation
+    const securityService = new ModuleSecurityService(prisma);
+    const securityValidation = await securityService.validateModuleSubmission(req.body);
+    
+    if (!securityValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Module failed security validation',
+        details: {
+          errors: securityValidation.errors,
+          warnings: securityValidation.warnings,
+          securityScore: securityValidation.securityScore,
+          recommendations: securityValidation.recommendations
+        }
+      });
+    }
+
+    // Log security warnings if any
+    if (securityValidation.warnings.length > 0) {
+      console.warn('⚠️ Module submission has security warnings:', securityValidation.warnings);
     }
 
     // Create the module
@@ -742,7 +750,13 @@ export const submitModule = async (req: Request, res: Response) => {
       success: true, 
       data: { 
         message: 'Module submitted successfully for review',
-        submission 
+        submission,
+        securityValidation: {
+          securityScore: securityValidation.securityScore,
+          status: securityValidation.validationDetails.securityStatus,
+          warnings: securityValidation.warnings,
+          recommendations: securityValidation.recommendations
+        }
       } 
     });
   } catch (error) {
