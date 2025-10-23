@@ -98,6 +98,8 @@ export interface Module {
   // Subscription status for installed modules
   subscriptionStatus?: 'active' | 'cancelled' | 'past_due' | 'unpaid';
   subscriptionAmount?: number;
+  // Built-in module indicator
+  isBuiltIn?: boolean;
 }
 
 export interface ModuleInstallation {

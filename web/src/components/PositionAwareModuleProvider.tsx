@@ -127,20 +127,6 @@ export function PositionAwareModuleProvider({ children }: PositionAwareModulePro
         } catch (error) {
           console.error('Error filtering business modules:', error);
         }
-      } else {
-        // Not in work context, add personal admin if user has admin permissions
-        // This could be extended to check personal admin rights
-        availableModules.push({
-          id: 'admin',
-          name: 'Admin',
-          description: 'Administrative controls',
-          icon: 'shield',
-          path: '/admin',
-          permissions: ['view', 'manage'],
-          category: 'admin',
-          accessReason: 'personal',
-          businessModule: false
-        });
       }
 
       return availableModules;

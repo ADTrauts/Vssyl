@@ -24,7 +24,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  Lock
 } from 'lucide-react';
 import { useFeatureGating } from '@/hooks/useFeatureGating';
 
@@ -162,138 +163,6 @@ export default function ModulesPage() {
       } catch (err) {
         console.error('Error loading modules:', err);
         setError('Failed to load modules. Please try again.');
-        // Fallback to mock data for now
-        const mockModules: ApiModule[] = [
-          {
-            id: '1',
-            name: 'Dashboard',
-            description: 'Core dashboard functionality',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'installed',
-            updatedAt: new Date().toISOString(),
-            pricingTier: 'free',
-            manifest: {
-              name: 'Dashboard',
-              version: '1.0.0',
-              description: 'Core dashboard functionality',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: 'index.js',
-              permissions: [],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/dashboard' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: []
-            },
-          },
-          {
-            id: '2',
-            name: 'Drive',
-            description: 'File storage and management',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'installed',
-            updatedAt: new Date().toISOString(),
-            pricingTier: 'free',
-            manifest: {
-              name: 'Drive',
-              version: '1.0.0',
-              description: 'File storage and management',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: 'index.js',
-              permissions: [],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/drive' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: []
-            },
-          },
-          {
-            id: '3',
-            name: 'Chat',
-            description: 'Real-time messaging and collaboration',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'installed',
-            updatedAt: new Date().toISOString(),
-            pricingTier: 'free',
-            manifest: {
-              name: 'Chat',
-              version: '1.0.0',
-              description: 'Real-time messaging and collaboration',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: 'index.js',
-              permissions: [],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/chat' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: []
-            },
-          },
-          {
-            id: '4',
-            name: 'Calendar',
-            description: 'Event scheduling and calendar management',
-            version: '1.0.0',
-            category: 'Productivity',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'available',
-            updatedAt: new Date().toISOString(),
-            pricingTier: 'free',
-            manifest: {
-              name: 'Calendar',
-              version: '1.0.0',
-              description: 'Event scheduling and calendar management',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: 'index.js',
-              permissions: [],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/calendar' },
-              settings: {}
-            },
-            configured: {
-              enabled: false,
-              settings: {},
-              permissions: []
-            },
-          }
-        ];
-        setModules(mockModules);
       } finally {
         setLoading(false);
       }
@@ -481,6 +350,11 @@ export default function ModulesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {module.isBuiltIn && (
+                    <span className="text-xs px-2 py-0.5 rounded border bg-green-50 text-green-700 border-green-200">
+                      Built-in
+                    </span>
+                  )}
                   <span className={`text-xs px-2 py-0.5 rounded border ${scope === 'business' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                     {scope === 'business' ? 'Business' : 'Personal'}
                   </span>
@@ -504,18 +378,30 @@ export default function ModulesPage() {
                 >
                   Open
                 </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => handleUninstallModule(module.id)}
-                  disabled={actionLoading === module.id}
-                >
-                  {actionLoading === module.id ? (
-                    <Spinner size={16} />
-                  ) : (
-                    'Uninstall'
-                  )}
-                </Button>
+                {!module.isBuiltIn && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => handleUninstallModule(module.id)}
+                    disabled={actionLoading === module.id}
+                  >
+                    {actionLoading === module.id ? (
+                      <Spinner size={16} />
+                    ) : (
+                      'Uninstall'
+                    )}
+                  </Button>
+                )}
+                {module.isBuiltIn && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    disabled
+                    title="Built-in modules cannot be uninstalled"
+                  >
+                    <Lock className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
               
               {/* Show permissions for business users */}

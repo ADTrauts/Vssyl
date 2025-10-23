@@ -65,6 +65,7 @@ export const getInstalledModules = async (req: Request, res: Response) => {
       return res.json({ success: true, data: modules });
     }
 
+    // Get explicitly installed modules
     const installations = await prisma.moduleInstallation.findMany({
       where: {
         userId: user.id,
@@ -85,7 +86,26 @@ export const getInstalledModules = async (req: Request, res: Response) => {
       }
     });
 
-    const modules = installations.map(installation => ({
+    // Get built-in modules (always available for personal users)
+    const builtInModuleIds = ['drive', 'chat', 'calendar'];
+    const builtInModules = await prisma.module.findMany({
+      where: {
+        id: { in: builtInModuleIds },
+        status: 'APPROVED'
+      },
+      include: {
+        developer: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    // Combine explicitly installed modules with built-in modules
+    const installedModules = installations.map(installation => ({
       id: installation.module.id,
       name: installation.module.name,
       description: installation.module.description,
@@ -97,12 +117,46 @@ export const getInstalledModules = async (req: Request, res: Response) => {
       downloads: installation.module.downloads,
       status: 'installed' as const,
       icon: installation.module.icon,
-      configured: installation.configured,
+      configured: installation.configured as any,
       installedAt: installation.installedAt,
-      updatedAt: installation.module.updatedAt
+      updatedAt: installation.module.updatedAt,
+      isBuiltIn: false
     }));
 
-    res.json({ success: true, data: modules });
+    // Add built-in modules (mark as built-in and always installed)
+    const builtInModulesFormatted = builtInModules.map(module => ({
+      id: module.id,
+      name: module.name,
+      description: module.description,
+      version: module.version,
+      category: module.category,
+      developer: module.developer.name || module.developer.email,
+      rating: module.rating,
+      reviewCount: module.reviewCount,
+      downloads: module.downloads,
+      status: 'installed' as const,
+      icon: module.icon,
+      configured: {
+        enabled: true,
+        settings: {},
+        permissions: [`${module.id}:read`, `${module.id}:write`]
+      },
+      installedAt: module.createdAt, // Use module creation date as "installed" date
+      updatedAt: module.updatedAt,
+      isBuiltIn: true
+    }));
+
+    // Combine all modules, avoiding duplicates (built-in modules take precedence)
+    const allModules = [...builtInModulesFormatted];
+    const installedModuleIds = new Set(builtInModulesFormatted.map(m => m.id));
+    
+    installedModules.forEach(module => {
+      if (!installedModuleIds.has(module.id)) {
+        allModules.push(module);
+      }
+    });
+
+    res.json({ success: true, data: allModules });
   } catch (error) {
     console.error('Error getting installed modules:', error);
     res.status(500).json({ success: false, error: 'Failed to get installed modules' });
