@@ -9,7 +9,7 @@ import {
   NetworkTrafficLog,
   SecurityViolation,
   PerformanceMetrics
-} from '../../../shared/src/types/sandbox';
+} from '../../../shared/dist/types/sandbox';
 
 /**
  * Sandbox Testing Service
@@ -106,7 +106,8 @@ export class SandboxService extends EventEmitter {
    */
   private async createSandboxEnvironment(moduleData: Record<string, unknown>): Promise<SandboxTestEnvironment> {
     const manifest = moduleData.manifest as Record<string, unknown>;
-    const entryUrl = manifest?.frontend?.entryUrl as string;
+    const frontend = manifest?.frontend as Record<string, unknown>;
+    const entryUrl = frontend?.entryUrl as string;
 
     return {
       container: {
@@ -183,7 +184,8 @@ export class SandboxService extends EventEmitter {
    */
   private async createTestContainer(moduleData: Record<string, unknown>): Promise<Docker.Container> {
     const manifest = moduleData.manifest as Record<string, unknown>;
-    const entryUrl = manifest?.frontend?.entryUrl as string;
+    const frontend = manifest?.frontend as Record<string, unknown>;
+    const entryUrl = frontend?.entryUrl as string;
 
     const containerConfig = {
       Image: 'node:18-alpine',
@@ -274,7 +276,7 @@ export class SandboxService extends EventEmitter {
       });
 
       const containerPromise = new Promise<void>((resolve) => {
-        container.wait((err, data) => {
+        container.wait((err: Error | null, data: unknown) => {
           if (err) {
             console.error('Container wait error:', err);
           }
@@ -319,27 +321,13 @@ export class SandboxService extends EventEmitter {
    * Get container logs and analyze them
    */
   private async getContainerLogs(container: Docker.Container): Promise<string> {
-    return new Promise((resolve, reject) => {
-      container.logs({ stdout: true, stderr: true }, (err, stream) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        let logs = '';
-        stream?.on('data', (chunk) => {
-          logs += chunk.toString();
-        });
-
-        stream?.on('end', () => {
-          resolve(logs);
-        });
-
-        stream?.on('error', (err) => {
-          reject(err);
-        });
-      });
-    });
+    try {
+      const logs = await container.logs({ stdout: true, stderr: true });
+      return logs.toString();
+    } catch (error) {
+      console.error('Error getting container logs:', error);
+      return '';
+    }
   }
 
   /**
@@ -437,38 +425,23 @@ export class SandboxService extends EventEmitter {
   /**
    * Get container statistics
    */
-  private async getContainerStats(container: Docker.Container): Promise<any> {
-    return new Promise((resolve, reject) => {
-      container.stats((err, stream) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        let statsData = '';
-        stream?.on('data', (chunk) => {
-          statsData += chunk.toString();
-        });
-
-        stream?.on('end', () => {
-          try {
-            const stats = JSON.parse(statsData);
-            resolve(stats);
-          } catch (error) {
-            resolve({});
-          }
-        });
-      });
-    });
+  private async getContainerStats(container: Docker.Container): Promise<Record<string, unknown>> {
+    try {
+      const stats = await container.stats();
+      return stats as unknown as Record<string, unknown>;
+    } catch (error) {
+      console.error('Error getting container stats:', error);
+      return {};
+    }
   }
 
   /**
    * Analyze container statistics for performance metrics
    */
-  private async analyzeContainerStats(stats: any, results: SandboxTestResult): Promise<void> {
+  private async analyzeContainerStats(stats: Record<string, unknown>, results: SandboxTestResult): Promise<void> {
     if (stats && stats.cpu_stats && stats.memory_stats) {
-      results.results.performanceMetrics.cpuUsage = this.calculateCpuUsage(stats.cpu_stats);
-      results.results.performanceMetrics.memoryUsage = stats.memory_stats.usage || 0;
+      results.results.performanceMetrics.cpuUsage = this.calculateCpuUsage(stats.cpu_stats as Record<string, unknown>);
+      results.results.performanceMetrics.memoryUsage = (stats.memory_stats as Record<string, unknown>).usage as number || 0;
     }
 
     results.results.performanceMetrics.networkRequests = results.results.networkTraffic.length;
@@ -477,13 +450,17 @@ export class SandboxService extends EventEmitter {
   /**
    * Calculate CPU usage from Docker stats
    */
-  private calculateCpuUsage(cpuStats: any): number {
-    if (!cpuStats.cpu_usage || !cpuStats.system_cpu_usage) {
+  private calculateCpuUsage(cpuStats: Record<string, unknown>): number {
+    const cpuUsage = cpuStats.cpu_usage as Record<string, unknown>;
+    const systemCpuUsage = cpuStats.system_cpu_usage as number;
+    const precpuStats = cpuStats.precpu_stats as Record<string, unknown>;
+    
+    if (!cpuUsage || !systemCpuUsage) {
       return 0;
     }
 
-    const cpuDelta = cpuStats.cpu_usage.total_usage - (cpuStats.precpu_stats?.cpu_usage?.total_usage || 0);
-    const systemDelta = cpuStats.system_cpu_usage - (cpuStats.precpu_stats?.system_cpu_usage || 0);
+    const cpuDelta = (cpuUsage.total_usage as number) - ((precpuStats?.cpu_usage as Record<string, unknown>)?.total_usage as number || 0);
+    const systemDelta = systemCpuUsage - (precpuStats?.system_cpu_usage as number || 0);
     
     if (systemDelta === 0) return 0;
     

@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../lib/logger';
 import { SandboxService } from './sandboxService';
 import { MalwareScanningService } from './malwareScanningService';
+import { BehavioralMonitoringService } from './behavioralMonitoringService';
+import { SecurityPoliciesService } from './securityPoliciesService';
 import {
   ModuleSecurityValidation,
   SecurityValidationResult,
@@ -11,10 +13,13 @@ import {
   ModulePermissionAudit,
   ModuleSubmissionSecurityContext,
   SecurityScanReport
-} from '../../../shared/src/types/security';
+} from '../../../shared/dist/types/security';
 import {
   SandboxTestResult
-} from '../../../shared/src/types/sandbox';
+} from '../../../shared/dist/types/sandbox';
+import {
+  PolicyEnforcementResult
+} from '../../../shared/dist/types/policies';
 
 /**
  * Module Security Service
@@ -25,6 +30,8 @@ export class ModuleSecurityService extends EventEmitter {
   private prisma: PrismaClient;
   private sandboxService: SandboxService;
   private malwareScanningService: MalwareScanningService;
+  private behavioralMonitoringService: BehavioralMonitoringService;
+  private securityPoliciesService: SecurityPoliciesService;
   private readonly CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
   constructor(prisma: PrismaClient) {
@@ -32,6 +39,8 @@ export class ModuleSecurityService extends EventEmitter {
     this.prisma = prisma;
     this.sandboxService = new SandboxService(prisma);
     this.malwareScanningService = new MalwareScanningService(prisma);
+    this.behavioralMonitoringService = new BehavioralMonitoringService(prisma);
+    this.securityPoliciesService = new SecurityPoliciesService(prisma);
   }
 
   /**
@@ -360,6 +369,154 @@ export class ModuleSecurityService extends EventEmitter {
       await logger.error('Comprehensive security testing failed', {
         operation: 'comprehensive_security_testing',
         moduleId: submissionData.id,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Perform enterprise-grade security testing including policy compliance
+   * @param submissionData - Module submission data
+   * @returns Comprehensive security and compliance report
+   */
+  async performEnterpriseSecurityTest(submissionData: Record<string, unknown>): Promise<{
+    securityReport: SecurityScanReport;
+    policyCompliance: PolicyEnforcementResult;
+    overallStatus: 'passed' | 'failed' | 'warning';
+    overallScore: number;
+    recommendations: string[];
+  }> {
+    try {
+      console.log('🔒 Starting enterprise-grade security testing...');
+      
+      // 1. Perform comprehensive security testing
+      const securityReport = await this.performComprehensiveSecurityTest(submissionData);
+      
+      // 2. Check policy compliance
+      const policyCompliance = await this.securityPoliciesService.checkModuleCompliance(
+        submissionData.id as string || 'unknown',
+        submissionData
+      );
+      
+      // 3. Calculate overall status and score
+      const overallScore = Math.min(securityReport.securityScore, policyCompliance.score);
+      let overallStatus: 'passed' | 'failed' | 'warning';
+      
+      if (securityReport.overallStatus === 'failed' || !policyCompliance.compliant) {
+        overallStatus = 'failed';
+      } else if (securityReport.overallStatus === 'warning' || policyCompliance.violations.length > 0) {
+        overallStatus = 'warning';
+      } else {
+        overallStatus = 'passed';
+      }
+      
+      // 4. Generate comprehensive recommendations
+      const recommendations = [
+        ...securityReport.recommendations,
+        ...policyCompliance.recommendations,
+        ...policyCompliance.violations.map(v => v.description)
+      ];
+      
+      const result = {
+        securityReport,
+        policyCompliance,
+        overallStatus,
+        overallScore,
+        recommendations
+      };
+      
+      this.emit('enterpriseSecurityTestComplete', { submissionData, result });
+      
+      await logger.info('Enterprise security testing completed', {
+        operation: 'enterprise_security_testing',
+        moduleId: submissionData.id,
+        overallStatus,
+        overallScore,
+        securityScore: securityReport.securityScore,
+        complianceScore: policyCompliance.score
+      });
+
+      console.log(`✅ Enterprise security testing completed. Status: ${overallStatus}, Score: ${overallScore}/100`);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Error in enterprise security testing:', error);
+      await logger.error('Enterprise security testing failed', {
+        operation: 'enterprise_security_testing',
+        moduleId: submissionData.id,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Start runtime monitoring for an approved module
+   * @param moduleId - ID of the approved module
+   * @param moduleData - Module configuration
+   */
+  async startRuntimeMonitoring(moduleId: string, moduleData: Record<string, unknown>): Promise<void> {
+    try {
+      console.log(`🔍 Starting runtime monitoring for approved module: ${moduleId}`);
+      
+      // Start behavioral monitoring
+      await this.behavioralMonitoringService.startMonitoringModule(moduleId, moduleData);
+      
+      this.emit('runtimeMonitoringStarted', { moduleId, moduleData });
+      
+      await logger.info('Runtime monitoring started', {
+        operation: 'runtime_monitoring_start',
+        moduleId
+      });
+
+      console.log(`✅ Runtime monitoring started for module: ${moduleId}`);
+
+    } catch (error) {
+      console.error(`❌ Error starting runtime monitoring for module ${moduleId}:`, error);
+      await logger.error('Runtime monitoring start failed', {
+        operation: 'runtime_monitoring_start',
+        moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Stop runtime monitoring for a module
+   * @param moduleId - ID of the module
+   */
+  async stopRuntimeMonitoring(moduleId: string): Promise<void> {
+    try {
+      console.log(`🛑 Stopping runtime monitoring for module: ${moduleId}`);
+      
+      // Stop behavioral monitoring
+      await this.behavioralMonitoringService.stopMonitoringModule(moduleId);
+      
+      this.emit('runtimeMonitoringStopped', { moduleId });
+      
+      await logger.info('Runtime monitoring stopped', {
+        operation: 'runtime_monitoring_stop',
+        moduleId
+      });
+
+      console.log(`✅ Runtime monitoring stopped for module: ${moduleId}`);
+
+    } catch (error) {
+      console.error(`❌ Error stopping runtime monitoring for module ${moduleId}:`, error);
+      await logger.error('Runtime monitoring stop failed', {
+        operation: 'runtime_monitoring_stop',
+        moduleId,
         error: {
           message: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined

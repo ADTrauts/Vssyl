@@ -77,6 +77,11 @@ export interface MalwareScanResult {
   detectedThreats: string[];
   scanProvider: string;
   confidence: number; // 0-100
+  details?: {
+    urlScan: Partial<MalwareScanResult>;
+    contentScan: Partial<MalwareScanResult>;
+    scanDuration: number;
+  };
 }
 
 export interface VulnerabilityCheckResult {
@@ -89,6 +94,13 @@ export interface VulnerabilityCheckResult {
     affectedDependencies: string[];
   }>;
   scanDate: string;
+  summary: {
+    totalVulnerabilities: number;
+    criticalVulnerabilities: number;
+    highVulnerabilities: number;
+    mediumVulnerabilities: number;
+    lowVulnerabilities: number;
+  };
 }
 
 export interface ModulePermissionAudit {
@@ -139,4 +151,16 @@ export interface ModuleSubmissionSecurityContext {
   }>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SecurityScanReport {
+  moduleId: string;
+  moduleName: string;
+  scanDate: string;
+  overallStatus: 'passed' | 'failed' | 'warning';
+  securityScore: number;
+  malwareScan: MalwareScanResult;
+  vulnerabilityCheck: VulnerabilityCheckResult;
+  recommendations: string[];
+  nextSteps: string[];
 }

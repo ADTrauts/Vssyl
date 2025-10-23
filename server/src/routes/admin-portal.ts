@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AdminService } from '../services/adminService';
 import { logger } from '../lib/logger';
+import adminSecurityRoutes from './adminSecurityRoutes';
 
 const router: express.Router = express.Router();
 
@@ -2725,5 +2726,8 @@ router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Req
     res.status(500).json({ error: 'Failed to export performance data' });
   }
 });
+
+// Security routes
+router.use('/security', authenticateJWT, requireAdmin, adminSecurityRoutes);
 
 export default router; 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
+import SecurityDashboard from '../../../components/admin/SecurityDashboard';
 import { 
   Eye, 
   CheckCircle, 
@@ -96,6 +97,7 @@ export default function AdminModulesPage() {
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showSecurityDashboard, setShowSecurityDashboard] = useState(false);
   const [filters, setFilters] = useState<ModuleFilters>({
     status: 'all',
     category: 'all',
@@ -407,6 +409,16 @@ export default function AdminModulesPage() {
           <p className="text-gray-600">Review submissions, manage marketplace, and track developer performance</p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button
+            variant="primary"
+            onClick={() => {
+              console.log('Security Dashboard button clicked!');
+              setShowSecurityDashboard(true);
+            }}
+          >
+            <Shield className="w-4 h-4 mr-2" />
+            Security Dashboard
+          </Button>
           <Button
             variant="secondary"
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -747,6 +759,15 @@ export default function AdminModulesPage() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Security Dashboard Modal */}
+      <Modal
+        open={showSecurityDashboard}
+        onClose={() => setShowSecurityDashboard(false)}
+        size="large"
+      >
+        <SecurityDashboard onClose={() => setShowSecurityDashboard(false)} />
       </Modal>
     </div>
   );
