@@ -101,7 +101,6 @@ const MODULE_ICONS = {
   dashboard: LayoutDashboard,
   drive: Folder,
   chat: MessageSquare,
-  admin: Shield,
   members: Users,
   analytics: BarChart3,
   connections: Users,
@@ -813,11 +812,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* AI Button */}
           <button
             ref={aiButtonRef}
-            onClick={() => router.push('/ai')}
+            onClick={handleAIClick}
             className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100"
             style={{
-              background: pathname?.startsWith('/ai') ? '#8b5cf6' : 'transparent',
-              color: pathname?.startsWith('/ai') ? '#fff' : '#8b5cf6',
+              background: isAIOpen ? '#8b5cf6' : 'transparent',
+              color: isAIOpen ? '#fff' : '#8b5cf6',
               border: '2px solid #8b5cf6',
               outline: 'none',
               cursor: 'pointer',
