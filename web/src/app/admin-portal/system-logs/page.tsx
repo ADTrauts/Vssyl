@@ -20,7 +20,10 @@ import {
   BarChart3,
   Settings,
   Bell,
-  Trash2
+  Trash2,
+  Edit,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { logsApi, LogEntry, LogFilters, LogAnalytics, LogAlert } from '../../../api/logs';
 import { useSession } from 'next-auth/react';
@@ -34,11 +37,18 @@ export default function SystemLogsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
-  const [activeTab, setActiveTab] = useState<'logs' | 'analytics' | 'alerts'>('logs');
+  const [activeTab, setActiveTab] = useState<'logs' | 'analytics' | 'alerts' | 'settings'>('logs');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [retentionSettings, setRetentionSettings] = useState<{
+    defaultRetentionDays: number;
+    errorRetentionDays: number;
+    auditRetentionDays: number;
+    enabled: boolean;
+    autoCleanup: boolean;
+  } | null>(null);
 
   const [filters, setFilters] = useState<LogFilters>({
     level: undefined,
@@ -90,6 +100,55 @@ export default function SystemLogsPage() {
     }
   }, [session?.accessToken]);
 
+  const loadRetentionSettings = useCallback(async () => {
+    if (!session?.accessToken) return;
+
+    try {
+      const settings = await logsApi.getRetentionSettings(session.accessToken);
+      setRetentionSettings(settings);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load retention settings');
+    }
+  }, [session?.accessToken]);
+
+  const toggleAlert = async (alertId: string, enabled: boolean) => {
+    if (!session?.accessToken) return;
+
+    try {
+      await logsApi.updateLogAlert(alertId, { enabled }, session.accessToken);
+      setSuccess(`Alert ${enabled ? 'enabled' : 'disabled'} successfully`);
+      loadAlerts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update alert');
+    }
+  };
+
+  const deleteAlert = async (alertId: string) => {
+    if (!session?.accessToken) return;
+    if (!confirm('Are you sure you want to delete this alert?')) return;
+
+    try {
+      await logsApi.deleteLogAlert(alertId, session.accessToken);
+      setSuccess('Alert deleted successfully');
+      loadAlerts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete alert');
+    }
+  };
+
+  const saveRetentionSettings = async () => {
+    if (!session?.accessToken || !retentionSettings) return;
+
+    try {
+      await logsApi.updateRetentionSettings(retentionSettings, session.accessToken);
+      setSuccess('Retention settings saved successfully');
+      // Reload settings to ensure we have the latest from the server
+      await loadRetentionSettings();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save retention settings');
+    }
+  };
+
   useEffect(() => {
     loadLogs();
   }, [loadLogs]);
@@ -105,6 +164,12 @@ export default function SystemLogsPage() {
       loadAlerts();
     }
   }, [activeTab, loadAlerts]);
+
+  useEffect(() => {
+    if (activeTab === 'settings') {
+      loadRetentionSettings();
+    }
+  }, [activeTab, loadRetentionSettings]);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -279,6 +344,17 @@ export default function SystemLogsPage() {
           >
             <Bell className="w-5 h-5 inline-block mr-2" />
             Alerts
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'settings'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Settings className="w-5 h-5 inline-block mr-2" />
+            Settings
           </button>
         </nav>
       </div>
@@ -604,14 +680,180 @@ export default function SystemLogsPage() {
                       <Badge className={alert.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
                         {alert.enabled ? 'Enabled' : 'Disabled'}
                       </Badge>
-                      <Button variant="ghost" size="sm">
-                        <Settings className="w-4 h-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => toggleAlert(alert.id, !alert.enabled)}
+                        title={alert.enabled ? 'Disable alert' : 'Enable alert'}
+                      >
+                        {alert.enabled ? (
+                          <PowerOff className="w-4 h-4 text-orange-500" />
+                        ) : (
+                          <Power className="w-4 h-4 text-green-500" />
+                        )}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteAlert(alert.id)}
+                        title="Delete alert"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
                     </div>
                   </div>
                 </div>
               ))
             )}
+          </div>
+        </Card>
+      )}
+
+      {activeTab === 'settings' && retentionSettings && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Log Retention Settings</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Configure how long different types of logs are retained before automatic cleanup
+              </p>
+            </div>
+            <Button onClick={saveRetentionSettings} variant="primary">
+              Save Changes
+            </Button>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Default Logs Retention
+                </label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={retentionSettings.defaultRetentionDays}
+                    onChange={(e) => setRetentionSettings({
+                      ...retentionSettings,
+                      defaultRetentionDays: parseInt(e.target.value) || 30
+                    })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-gray-600">days</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Info, debug, and warning logs
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Error Logs Retention
+                </label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={retentionSettings.errorRetentionDays}
+                    onChange={(e) => setRetentionSettings({
+                      ...retentionSettings,
+                      errorRetentionDays: parseInt(e.target.value) || 90
+                    })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-gray-600">days</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Error and critical logs
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Audit Logs Retention
+                </label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="3650"
+                    value={retentionSettings.auditRetentionDays}
+                    onChange={(e) => setRetentionSettings({
+                      ...retentionSettings,
+                      auditRetentionDays: parseInt(e.target.value) || 365
+                    })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-gray-600">days</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Audit and security logs
+                </p>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-md font-medium text-gray-900">Automatic Cleanup</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Automatically delete old logs based on retention policies
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={retentionSettings.autoCleanup}
+                    onChange={(e) => setRetentionSettings({
+                      ...retentionSettings,
+                      autoCleanup: e.target.checked
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-md font-medium text-gray-900">Log Retention System</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Enable or disable the entire log retention system
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={retentionSettings.enabled}
+                    onChange={(e) => setRetentionSettings({
+                      ...retentionSettings,
+                      enabled: e.target.checked
+                    })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-medium text-blue-900 mb-1">About Log Retention</h4>
+                  <p className="text-sm text-blue-700">
+                    Log retention policies help maintain system performance and comply with data retention regulations. 
+                    Logs older than the specified retention periods will be automatically deleted when auto-cleanup is enabled.
+                    Security and audit logs are typically kept longer for compliance purposes.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
       )}
