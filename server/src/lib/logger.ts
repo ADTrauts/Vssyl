@@ -71,11 +71,7 @@ class Logger {
   }
 
   private async logToDatabase(entry: LogEntry): Promise<void> {
-    // TEMPORARY: Disable database logging until schema is fixed
-    // TODO: Re-enable after running migration 20251021010000_fix_logging_schema
-    return;
-    
-    /* try {
+    try {
       // Store log in database for long-term analysis
       await prisma.log.create({
         data: {
@@ -99,7 +95,7 @@ class Logger {
     } catch (error) {
       // Don't throw - logging to database should not break the application
       console.error('Failed to log to database:', error);
-    } */
+    }
   }
 
   private async logToGoogleCloud(entry: LogEntry): Promise<void> {

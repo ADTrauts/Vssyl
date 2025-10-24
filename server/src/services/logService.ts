@@ -78,9 +78,8 @@ interface RetentionSettings {
 
 class LogService {
   constructor() {
-    // TEMPORARY: Disable auto-cleanup initialization until schema is fixed
-    // TODO: Re-enable after running migration 20251021010000_fix_logging_schema
-    // this.initializeAutoCleanup();
+    // Initialize auto-cleanup for log retention
+    this.initializeAutoCleanup();
   }
 
   private async initializeAutoCleanup(): Promise<void> {

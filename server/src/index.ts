@@ -92,6 +92,7 @@ import moduleAIContextRouter from './routes/moduleAIContext';
 import businessFrontPageRouter from './routes/businessFrontPage';
 import { adminLogsRouter } from './routes/admin-logs';
 import { authenticateJWT } from './middleware/auth';
+import { logger } from './lib/logger';
 
 
 
@@ -137,9 +138,26 @@ app.options('*', cors(corsOptions));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Add general request logging
+// Add general request logging with structured logging
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`[DEBUG] Incoming request: ${req.method} ${req.originalUrl}`);
+  const startTime = Date.now();
+  
+  // Log the incoming request
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    logger.logApiRequest(
+      req.method,
+      req.originalUrl,
+      (req as any).user?.id,
+      duration,
+      res.statusCode,
+      {
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      }
+    );
+  });
+  
   next();
 });
 
@@ -156,6 +174,13 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
                     req.socket.remoteAddress;
     
     const user = await registerUser(email, password, name, clientIP as string);
+    
+    // Log successful registration
+    await logger.logUserAction(user.id, 'user_registered', {
+      email: user.email,
+      ipAddress: clientIP as string,
+      userAgent: req.get('user-agent')
+    });
     
     // Send verification email if SMTP is configured, otherwise auto-verify
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
@@ -209,7 +234,17 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
       user: createUserResponse(user)
     });
   } catch (err: unknown) {
-    console.error('Registration error:', err);
+    // Log registration error
+    await logger.error('User registration failed', {
+      operation: 'user_registration',
+      email: email,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      error: {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined
+      }
+    });
     
     if (typeof err === 'object' && err && 'code' in err && (err as Record<string, unknown>).code === 'P2002') {
       res.status(409).json({ message: 'Email already in use' });
@@ -232,8 +267,25 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
 app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate('local', { session: false }, async (err: unknown, user: User | false, info: { message?: string } | undefined) => {
     if (err || !user) {
+      // Log failed login attempt
+      await logger.logSecurityEvent('login_failed', 'medium', {
+        operation: 'user_login',
+        email: req.body.email,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+        reason: info?.message || 'Invalid credentials'
+      });
+      
       return res.status(401).json({ message: info?.message || 'Unauthorized' });
     }
+    
+    // Log successful login
+    await logger.logUserAction(user.id, 'user_login', {
+      email: user.email,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+    
     const token = issueJWT(user);
     const refreshToken = await createRefreshToken(user.id);
     
