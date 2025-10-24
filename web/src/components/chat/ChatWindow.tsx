@@ -362,7 +362,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         onClick={onRestore}
         style={{
           right: `${(position?.x || 20) + 320}px`, // Offset by messaging panel width
-          bottom: `${position?.y || 20}px`
+          bottom: `${position?.y || 0}px`
         }}
         title={`Restore ${conversationName}`}
       >
@@ -394,7 +394,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div
         className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 cursor-pointer"
         style={{
-          right: '320px', // Positioned to the left of the 320px messaging panel
+          right: '352px', // Positioned to the left of the 352px messaging panel
           bottom: '20px',
           width: size?.width || 400,
           height: '60px'

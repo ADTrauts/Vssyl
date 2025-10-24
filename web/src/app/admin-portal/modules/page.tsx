@@ -411,10 +411,7 @@ export default function AdminModulesPage() {
         <div className="flex items-center space-x-3">
           <Button
             variant="primary"
-            onClick={() => {
-              console.log('Security Dashboard button clicked!');
-              setShowSecurityDashboard(true);
-            }}
+            onClick={() => setShowSecurityDashboard(true)}
           >
             <Shield className="w-4 h-4 mr-2" />
             Security Dashboard
