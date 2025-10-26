@@ -91,6 +91,7 @@ import adminSeedModulesRouter from './routes/admin-seed-modules';
 import moduleAIContextRouter from './routes/moduleAIContext';
 import businessFrontPageRouter from './routes/businessFrontPage';
 import { adminLogsRouter } from './routes/admin-logs';
+import hrRouter from './routes/hr';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -550,6 +551,7 @@ app.use('/api/content-reports', contentReportsRouter);
 app.use('/api/admin/seed', authenticateJWT, adminSeedModulesRouter);
 app.use('/api', moduleAIContextRouter);
 app.use('/api/admin/logs', authenticateJWT, adminLogsRouter);
+app.use('/api/hr', hrRouter); // HR module routes (includes own auth checks)
 
 // Schedule cleanup jobs
 startCleanupJob();
