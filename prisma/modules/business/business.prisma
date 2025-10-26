@@ -53,6 +53,10 @@ model Business {
   // Business Front Page Configuration
   frontPageConfig BusinessFrontPageConfig?
   userFrontPageCustomizations UserFrontPageCustomization[]
+  // HR Module
+  employeeHRProfiles EmployeeHRProfile[]
+  managerApprovalHierarchies ManagerApprovalHierarchy[]
+  hrModuleSettings HRModuleSettings?
 
   @@index([ein])
   @@map("businesses")

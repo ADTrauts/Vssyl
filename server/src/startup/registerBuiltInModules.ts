@@ -175,6 +175,107 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
       ],
     },
   },
+  {
+    moduleId: 'hr',
+    moduleName: 'HR Management',
+    aiContext: {
+      purpose: 'Human resources management system for employee lifecycle, attendance, payroll, and performance management',
+      category: 'BUSINESS',
+      keywords: [
+        'hr', 'human resources', 'employee', 'staff', 'team member', 'personnel',
+        'hire', 'firing', 'onboard', 'offboard', 'terminate', 'resignation',
+        'attendance', 'time off', 'pto', 'vacation', 'sick leave', 'holiday',
+        'payroll', 'salary', 'compensation', 'pay', 'wage', 'bonus',
+        'performance', 'review', 'evaluation', 'feedback', 'goal',
+        'recruitment', 'hiring', 'applicant', 'candidate', 'interview', 'job posting',
+        'benefits', 'insurance', 'enrollment', '401k', 'retirement'
+      ],
+      patterns: [
+        'hr (system|module|dashboard)',
+        'employee (list|directory|database)',
+        'how many employees',
+        'who (is off|works) (today|tomorrow|this week)',
+        'time off (request|balance|approval)',
+        'pending (time off|approvals)',
+        'payroll (run|report|processing)',
+        'performance reviews? due',
+        'upcoming reviews?',
+        'open positions',
+        'recruitment pipeline'
+      ],
+      concepts: [
+        'employee lifecycle management',
+        'human capital management',
+        'workforce administration',
+        'performance management',
+        'compensation and benefits'
+      ],
+      entities: [
+        { 
+          name: 'Employee', 
+          pluralName: 'Employees', 
+          description: 'A business employee with HR profile data' 
+        },
+        { 
+          name: 'TimeOffRequest', 
+          pluralName: 'TimeOffRequests', 
+          description: 'Employee time-off request' 
+        },
+        { 
+          name: 'PerformanceReview', 
+          pluralName: 'PerformanceReviews', 
+          description: 'Employee performance evaluation' 
+        },
+      ],
+      actions: [
+        { 
+          name: 'view_hr_dashboard', 
+          description: 'View HR management dashboard', 
+          permissions: ['hr:admin'] 
+        },
+        { 
+          name: 'manage_employees', 
+          description: 'Add, edit, or remove employees', 
+          permissions: ['hr:employees:write'] 
+        },
+        { 
+          name: 'view_team', 
+          description: 'View team member HR data', 
+          permissions: ['hr:team:view'] 
+        },
+        { 
+          name: 'approve_time_off', 
+          description: 'Approve or deny time off requests', 
+          permissions: ['hr:team:approve'] 
+        },
+        { 
+          name: 'view_own_data', 
+          description: 'View own employee HR data', 
+          permissions: ['hr:self:view'] 
+        },
+      ],
+      contextProviders: [
+        {
+          name: 'hr_overview',
+          description: 'Get HR system overview and statistics',
+          endpoint: '/api/hr/ai/context/overview',
+          cacheDuration: 300000, // 5 minutes
+        },
+        {
+          name: 'employee_count',
+          description: 'Get employee headcount by department/position',
+          endpoint: '/api/hr/ai/context/headcount',
+          cacheDuration: 600000, // 10 minutes
+        },
+        {
+          name: 'time_off_summary',
+          description: 'Get time-off summary (who\'s off today/this week)',
+          endpoint: '/api/hr/ai/context/time-off',
+          cacheDuration: 300000, // 5 minutes
+        },
+      ],
+    },
+  },
 ];
 
 // ============================================================================

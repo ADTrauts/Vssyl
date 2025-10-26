@@ -686,6 +686,10 @@ model Business {
   // Business Front Page Configuration
   frontPageConfig BusinessFrontPageConfig?
   userFrontPageCustomizations UserFrontPageCustomization[]
+  // HR Module
+  employeeHRProfiles EmployeeHRProfile[]
+  managerApprovalHierarchies ManagerApprovalHierarchy[]
+  hrModuleSettings HRModuleSettings?
 
   @@index([ein])
   @@map("businesses")
@@ -1395,6 +1399,10 @@ model EmployeePosition {
   endDate     DateTime?
   active      Boolean  @default(true)
   customPermissions Json? // Individual overrides
+  // HR Module relationships
+  hrProfile   EmployeeHRProfile?
+  employeeApprovals ManagerApprovalHierarchy[] @relation("EmployeeApprovals")
+  managerApprovals  ManagerApprovalHierarchy[] @relation("ManagerApprovals")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -3748,4 +3756,209 @@ enum LiveChatStatus {
   ACTIVE
   ENDED
 }
+
+
+// ============================================================================
+// HR MODULE
+// ============================================================================
+
+// ============================================================================
+// HR MODULE - CORE FRAMEWORK
+// ============================================================================
+// Purpose: Foundational HR data models that extend the org chart system
+// Status: Framework only - features will be added incrementally
+// Tier: Business Advanced (limited) + Enterprise (full)
+// ============================================================================
+
+// Core employee HR profile (extends org chart EmployeePosition)
+model EmployeeHRProfile {
+  id              String   @id @default(uuid())
+  
+  // ============================================================================
+  // ORG CHART INTEGRATION (REQUIRED)
+  // ============================================================================
+  // Links to existing EmployeePosition in org chart system
+  employeePositionId String  @unique
+  employeePosition   EmployeePosition @relation(fields: [employeePositionId], references: [id], onDelete: Cascade)
+  
+  // ============================================================================
+  // MULTI-TENANT ISOLATION (CRITICAL FOR SECURITY)
+  // ============================================================================
+  // All HR data MUST be scoped to a business to prevent data leakage
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // ============================================================================
+  // CORE HR DATA (Framework - minimal fields for now)
+  // ============================================================================
+  hireDate        DateTime?
+  terminationDate DateTime?
+  employeeType    EmployeeType?  // Full-time, Part-time, Contract, etc.
+  workLocation    String?        // Office, Remote, Hybrid
+  
+  // Emergency contact (stored as JSON for flexibility)
+  emergencyContact Json?  // { name, relationship, phone, email }
+  
+  // Personal information (sensitive - encrypted in production)
+  personalInfo    Json?  // { birthday, address, etc. }
+  
+  // ============================================================================
+  // SOFT DELETE (HR data must be retained for legal/audit)
+  // ============================================================================
+  deletedAt       DateTime?
+  deletedBy       String?
+  deletedReason   String?  // Termination, Resignation, etc.
+  
+  // ============================================================================
+  // TIMESTAMPS
+  // ============================================================================
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // ============================================================================
+  // FUTURE FEATURE RELATIONSHIPS (Prepared but not implemented)
+  // ============================================================================
+  // When we add features, uncomment these:
+  // attendanceRecords  AttendanceRecord[]
+  // payrollRecords     PayrollRecord[]
+  // performanceReviews PerformanceReview[]
+  // benefitEnrollments BenefitEnrollment[]
+  // timeOffRequests    TimeOffRequest[]
+  
+  // ============================================================================
+  // INDEXES (Performance optimization)
+  // ============================================================================
+  @@index([businessId])
+  @@index([employeePositionId])
+  @@index([deletedAt])
+  @@index([employeeType])
+  @@map("employee_hr_profiles")
+}
+
+// Employee type enumeration
+enum EmployeeType {
+  FULL_TIME     // Full-time employee
+  PART_TIME     // Part-time employee
+  CONTRACT      // Contract worker
+  INTERN        // Intern
+  TEMPORARY     // Temporary worker
+  SEASONAL      // Seasonal worker
+}
+
+// ============================================================================
+// MANAGER APPROVAL HIERARCHY
+// ============================================================================
+// Defines who can approve what for each employee (time-off, expenses, etc.)
+// This extends the org chart "reports to" relationship with approval-specific rules
+model ManagerApprovalHierarchy {
+  id              String   @id @default(uuid())
+  
+  // ============================================================================
+  // EMPLOYEE & MANAGER RELATIONSHIP
+  // ============================================================================
+  // Employee who needs approvals
+  employeePositionId String
+  employeePosition   EmployeePosition @relation("EmployeeApprovals", fields: [employeePositionId], references: [id], onDelete: Cascade)
+  
+  // Manager who can approve
+  managerPositionId  String
+  managerPosition    EmployeePosition @relation("ManagerApprovals", fields: [managerPositionId], references: [id], onDelete: Cascade)
+  
+  // ============================================================================
+  // MULTI-TENANT ISOLATION
+  // ============================================================================
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // ============================================================================
+  // APPROVAL CONFIGURATION
+  // ============================================================================
+  // What types of approvals this manager can handle
+  // Examples: ['time-off', 'expenses', 'performance-review', 'equipment']
+  approvalTypes   String[]
+  
+  // Priority level (1 = direct manager, 2 = skip-level, etc.)
+  // Used for escalation: if manager doesn't approve in X days, escalate to level 2
+  approvalLevel   Int      @default(1)
+  
+  // Is this the primary approver or a backup?
+  isPrimary       Boolean  @default(true)
+  
+  // Active status (can be temporarily disabled)
+  active          Boolean  @default(true)
+  
+  // ============================================================================
+  // TIMESTAMPS
+  // ============================================================================
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // ============================================================================
+  // CONSTRAINTS & INDEXES
+  // ============================================================================
+  // Ensure unique combination of employee + manager + business
+  @@unique([employeePositionId, managerPositionId, businessId])
+  @@index([businessId])
+  @@index([employeePositionId])
+  @@index([managerPositionId])
+  @@index([active])
+  @@map("manager_approval_hierarchy")
+}
+
+// ============================================================================
+// HR MODULE SETTINGS (Business-level configuration)
+// ============================================================================
+// Global HR settings for each business (policies, defaults, etc.)
+model HRModuleSettings {
+  id              String   @id @default(uuid())
+  
+  // ============================================================================
+  // MULTI-TENANT ISOLATION
+  // ============================================================================
+  businessId      String   @unique  // One settings record per business
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  // ============================================================================
+  // GENERAL SETTINGS (Framework - will be expanded)
+  // ============================================================================
+  // Time-off policies
+  timeOffSettings Json?  // { defaultPTODays, accrualRules, carryoverPolicy, etc. }
+  
+  // Work week configuration
+  workWeekSettings Json?  // { daysPerWeek, hoursPerDay, startDayOfWeek, etc. }
+  
+  // Payroll settings (Enterprise only)
+  payrollSettings Json?  // { payPeriod, directDepositDefault, etc. }
+  
+  // Feature toggles (which HR features are enabled)
+  enabledFeatures Json?  // { employees: true, attendance: true, payroll: false, etc. }
+  
+  // ============================================================================
+  // TIMESTAMPS
+  // ============================================================================
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([businessId])
+  @@map("hr_module_settings")
+}
+
+// ============================================================================
+// NOTES FOR FUTURE FEATURE DEVELOPMENT
+// ============================================================================
+// When adding new HR features (attendance, payroll, etc.), create separate
+// .prisma files in this directory:
+// - attendance.prisma (time-off, clock in/out, schedules)
+// - payroll.prisma (pay runs, pay stubs, tax calculations)
+// - recruitment.prisma (job postings, applications, interviews)
+// - performance.prisma (reviews, goals, feedback)
+// - benefits.prisma (plans, enrollments, COBRA)
+//
+// Each feature file should follow the same patterns:
+// 1. Multi-tenant isolation (businessId on all tables)
+// 2. Soft deletes where appropriate
+// 3. Proper indexing for performance
+// 4. Reference EmployeeHRProfile (not directly to User)
+// ============================================================================
+
 
