@@ -45,6 +45,7 @@ import {
 import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService } from './services/chatSocketService';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
+import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import cron from 'node-cron';
 import { dispatchDueReminders } from './services/reminderService';
 import type { JwtPayload } from 'jsonwebtoken';
@@ -635,6 +636,13 @@ const server = httpServer.listen(port, () => {
   console.log(`About to listen on port ${port}`);
 }).on('listening', async () => {
   console.log(`Server listening on port ${port}`);
+  
+  // Seed HR module if it doesn't exist (non-blocking)
+  try {
+    await seedHRModuleOnStartup();
+  } catch (e) {
+    console.error('HR module seed failed (non-critical):', e);
+  }
   
   // Register built-in modules if registry is empty (non-blocking)
   try {
