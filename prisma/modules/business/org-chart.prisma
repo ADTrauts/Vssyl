@@ -106,10 +106,6 @@ model EmployeePosition {
   endDate     DateTime?
   active      Boolean  @default(true)
   customPermissions Json? // Individual overrides
-  // HR Module relationships
-  hrProfile   EmployeeHRProfile?
-  employeeApprovals ManagerApprovalHierarchy[] @relation("EmployeeApprovals")
-  managerApprovals  ManagerApprovalHierarchy[] @relation("ManagerApprovals")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

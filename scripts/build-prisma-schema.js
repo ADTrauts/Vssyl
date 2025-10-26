@@ -176,15 +176,14 @@ function buildSchema() {
   // Read all module files in order
   const moduleOrder = [
     'auth',
-    'chat',
+    'chat', 
     'business',
     'ai',
     'billing',
     'calendar',
     'drive',
     'admin',
-    'support',
-    'hr'
+    'support'
   ];
   
   for (const moduleName of moduleOrder) {
