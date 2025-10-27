@@ -47,33 +47,48 @@ steps:
     id: 'build-web'
     waitFor: ['pull-cache']
 
-  # Step 3: Run database migrations (NEW)
+  # Step 3: Run database migrations
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         echo "🔄 Running Prisma migrations..."
+        set -e
         
         # Install dependencies
         apt-get update && apt-get install -y curl
+        
+        # Install Node.js (version 18)
         curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
         apt-get install -y nodejs
         
-        # Install pnpm
-        npm install -g pnpm
+        # Verify node and npm
+        node --version
+        npm --version
         
-        # Install dependencies and run migration
+        # Install pnpm globally
+        npm install -g pnpm@8
+        
+        # Install project dependencies
         cd /workspace
-        pnpm install
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile
         
-        # Run Prisma migration
+        # Generate Prisma client
+        echo "🔨 Generating Prisma client..."
+        npx prisma generate
+        
+        # Run Prisma migration (using URL-encoded password)
+        echo "🔄 Deploying database migrations..."
         export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
-        pnpm exec prisma migrate deploy
+        npx prisma migrate deploy --skip-generate
         
         echo "✅ Migrations completed successfully"
     id: 'run-migrations'
     waitFor: ['build-server']
+    env:
+      - 'NODE_ENV=production'
 
   # Step 4: Push images in parallel
   # Note: Module registration happens automatically on server startup (see server/src/startup/)
