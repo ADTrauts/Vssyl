@@ -44,6 +44,8 @@ export default function AdminOverridesPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [businessSearch, setBusinessSearch] = useState('');
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
@@ -138,6 +140,25 @@ export default function AdminOverridesPage() {
     return role === 'ADMIN' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
+  // Filter users based on search
+  const filteredUsers = users.filter(user => {
+    const searchLower = userSearch.toLowerCase();
+    return (
+      user.email.toLowerCase().includes(searchLower) ||
+      (user.name && user.name.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // Filter businesses based on search
+  const filteredBusinesses = businesses.filter(business => {
+    const searchLower = businessSearch.toLowerCase();
+    return (
+      business.name.toLowerCase().includes(searchLower) ||
+      (business.ein && business.ein.toLowerCase().includes(searchLower)) ||
+      (business.industry && business.industry.toLowerCase().includes(searchLower))
+    );
+  });
+
   if (loading) {
     return (
       <div className="p-6">
@@ -186,11 +207,37 @@ export default function AdminOverridesPage() {
       {/* User Management */}
       <Card>
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Users className="w-5 h-5 text-gray-600" />
+                <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">Grant or revoke admin access</p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {userSearch && (
+                <button
+                  onClick={() => setUserSearch('')}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
-          <p className="mt-1 text-sm text-gray-500">Grant or revoke admin access</p>
+          {userSearch && (
+            <div className="mt-2 text-sm text-gray-600">
+              Found {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -211,7 +258,14 @@ export default function AdminOverridesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    {userSearch ? `No users found matching "${userSearch}"` : 'No users found'}
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -256,11 +310,37 @@ export default function AdminOverridesPage() {
       {/* Business Tier Management */}
       <Card>
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <Building2 className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Business Tier Management</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Building2 className="w-5 h-5 text-gray-600" />
+                <h2 className="text-xl font-semibold text-gray-900">Business Tier Management</h2>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">Set business subscription tiers without payment</p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search businesses..."
+                value={businessSearch}
+                onChange={(e) => setBusinessSearch(e.target.value)}
+                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {businessSearch && (
+                <button
+                  onClick={() => setBusinessSearch('')}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
-          <p className="mt-1 text-sm text-gray-500">Set business subscription tiers without payment</p>
+          {businessSearch && (
+            <div className="mt-2 text-sm text-gray-600">
+              Found {filteredBusinesses.length} business{filteredBusinesses.length !== 1 ? 'es' : ''}
+            </div>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -281,7 +361,14 @@ export default function AdminOverridesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {businesses.map((business) => (
+              {filteredBusinesses.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    {businessSearch ? `No businesses found matching "${businessSearch}"` : 'No businesses found'}
+                  </td>
+                </tr>
+              ) : (
+                filteredBusinesses.map((business) => (
                 <tr key={business.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
