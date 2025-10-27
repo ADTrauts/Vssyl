@@ -68,6 +68,15 @@ RUN npx prisma generate
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
+# Create startup script that runs migrations before starting server (do this as root)
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'set -e' >> /app/start.sh && \
+    echo 'echo "🔄 Running database migrations..."' >> /app/start.sh && \
+    echo 'npx prisma migrate deploy || echo "⚠️ Migration failed (non-fatal)"' >> /app/start.sh && \
+    echo 'echo "✅ Starting server..."' >> /app/start.sh && \
+    echo 'exec node server/dist/index.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S vssyl -u 1001
@@ -83,5 +92,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
-CMD ["node", "server/dist/index.js"]
+# Start with migration script
+CMD ["/app/start.sh"]
