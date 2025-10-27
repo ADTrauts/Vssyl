@@ -53,6 +53,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
   const adminNavigation = [
     { id: 'dashboard', label: 'Overview', icon: Home, path: '/admin-portal/dashboard' },
     { id: 'users', label: 'User Management', icon: Users, path: '/admin-portal/users' },
+    { id: 'overrides', label: 'Admin Overrides', icon: Key, path: '/admin-portal/overrides' },
     { id: 'moderation', label: 'Content Moderation', icon: Shield, path: '/admin-portal/moderation' },
     { id: 'analytics', label: 'Platform Analytics', icon: BarChart3, path: '/admin-portal/analytics' },
     { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },

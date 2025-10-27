@@ -1,10 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { apiCall } from '@/lib/apiClient';
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Card } from 'shared/components';
+import { 
+  Shield, 
+  Users, 
+  Building2,
+  CheckCircle,
+  XCircle,
+  RefreshCw
+} from 'lucide-react';
 
 interface User {
   id: string;
@@ -33,22 +39,33 @@ interface Business {
 }
 
 export default function AdminOverridesPage() {
+  const { data: session, status } = useSession();
   const [users, setUsers] = useState<User[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (status === 'authenticated' && session) {
+      loadData();
+    }
+  }, [status, session]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersData, businessesData] = await Promise.all([
-        apiCall('/admin-override/users', { method: 'GET' }),
-        apiCall('/admin-override/businesses', { method: 'GET' })
+      const [usersRes, businessesRes] = await Promise.all([
+        fetch('/api/admin-override/users'),
+        fetch('/api/admin-override/businesses')
       ]);
+
+      if (!usersRes.ok || !businessesRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const usersData = await usersRes.json();
+      const businessesData = await businessesRes.json();
+
       setUsers(usersData.users || []);
       setBusinesses(businessesData.businesses || []);
     } catch (error) {
@@ -67,7 +84,8 @@ export default function AdminOverridesPage() {
   const makeAdmin = async (userId: string, userEmail: string) => {
     if (!confirm(`Grant admin access to ${userEmail}?`)) return;
     try {
-      await apiCall(`/admin-override/users/${userId}/make-admin`, { method: 'POST' });
+      const res = await fetch(`/api/admin-override/users/${userId}/make-admin`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to grant admin');
       showMessage('success', `${userEmail} is now an admin`);
       loadData();
     } catch (error) {
@@ -79,7 +97,8 @@ export default function AdminOverridesPage() {
   const revokeAdmin = async (userId: string, userEmail: string) => {
     if (!confirm(`Revoke admin access from ${userEmail}?`)) return;
     try {
-      await apiCall(`/admin-override/users/${userId}/revoke-admin`, { method: 'POST' });
+      const res = await fetch(`/api/admin-override/users/${userId}/revoke-admin`, { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to revoke admin');
       showMessage('success', `Admin access revoked from ${userEmail}`);
       loadData();
     } catch (error) {
@@ -91,10 +110,12 @@ export default function AdminOverridesPage() {
   const setBusinessTier = async (businessId: string, businessName: string, tier: string) => {
     if (!confirm(`Set "${businessName}" to ${tier.toUpperCase()} tier?`)) return;
     try {
-      await apiCall(`/admin-override/businesses/${businessId}/set-tier`, {
+      const res = await fetch(`/api/admin-override/businesses/${businessId}/set-tier`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier })
       });
+      if (!res.ok) throw new Error('Failed to set tier');
       showMessage('success', `${businessName} is now on ${tier.toUpperCase()} tier`);
       loadData();
     } catch (error) {
@@ -103,53 +124,72 @@ export default function AdminOverridesPage() {
     }
   };
 
-  const getTierBadgeColor = (tier: string): 'gray' | 'blue' | 'yellow' | 'green' => {
+  const getTierBadgeClass = (tier: string): string => {
     switch (tier) {
-      case 'free': return 'gray';
-      case 'business_basic': return 'blue';
-      case 'business_advanced': return 'yellow';
-      case 'enterprise': return 'green';
-      default: return 'gray';
+      case 'free': return 'bg-gray-100 text-gray-800';
+      case 'business_basic': return 'bg-blue-100 text-blue-800';
+      case 'business_advanced': return 'bg-yellow-100 text-yellow-800';
+      case 'enterprise': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getRoleBadgeColor = (role: string): 'gray' | 'green' => {
-    return role === 'ADMIN' ? 'green' : 'gray';
+  const getRoleBadgeClass = (role: string): string => {
+    return role === 'ADMIN' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
   if (loading) {
     return (
       <div className="p-6">
-        <PageHeader 
-          title="Admin Overrides" 
-          description="Manually manage user roles and business tiers"
-        />
-        <div className="mt-4 text-center text-gray-500">Loading...</div>
+        <div className="flex items-center space-x-3 mb-6">
+          <Shield className="w-8 h-8 text-blue-600" />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Overrides</h1>
+            <p className="text-sm text-gray-500">Manually manage user roles and business tiers</p>
+          </div>
+        </div>
+        <div className="mt-4 text-center text-gray-500">
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+          Loading...
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader 
-        title="Admin Overrides" 
-        description="Manually manage user roles and business tiers for testing and special cases"
-      />
+      <div className="flex items-center space-x-3 mb-6">
+        <Shield className="w-8 h-8 text-blue-600" />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Admin Overrides</h1>
+          <p className="text-sm text-gray-500">Manually manage user roles and business tiers for testing and special cases</p>
+        </div>
+      </div>
 
       {message && (
-        <div className={`p-4 rounded-lg ${
+        <div className={`p-4 rounded-lg border ${
           message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
-            : 'bg-red-50 text-red-800 border border-red-200'
+            ? 'bg-green-50 text-green-800 border-green-200' 
+            : 'bg-red-50 text-red-800 border-red-200'
         }`}>
-          {message.text}
+          <div className="flex items-center space-x-2">
+            {message.type === 'success' ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <XCircle className="w-5 h-5" />
+            )}
+            <span>{message.text}</span>
+          </div>
         </div>
       )}
 
       {/* User Management */}
-      <div className="bg-white rounded-lg shadow">
+      <Card>
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+          <div className="flex items-center space-x-2">
+            <Users className="w-5 h-5 text-gray-600" />
+            <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+          </div>
           <p className="mt-1 text-sm text-gray-500">Grant or revoke admin access</p>
         </div>
         <div className="overflow-x-auto">
@@ -182,30 +222,28 @@ export default function AdminOverridesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getRoleBadgeColor(user.role)}>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeClass(user.role)}`}>
                       {user.role}
-                    </Badge>
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {user._count.businesses} businesses · {user._count.subscriptions} subscriptions
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {user.role === 'ADMIN' ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      <button
                         onClick={() => revokeAdmin(user.id, user.email)}
+                        className="px-3 py-1 text-sm border border-red-300 text-red-700 rounded hover:bg-red-50"
                       >
                         Revoke Admin
-                      </Button>
+                      </button>
                     ) : (
-                      <Button
-                        size="sm"
-                        variant="primary"
+                      <button
                         onClick={() => makeAdmin(user.id, user.email)}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
                         Make Admin
-                      </Button>
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -213,12 +251,15 @@ export default function AdminOverridesPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* Business Tier Management */}
-      <div className="bg-white rounded-lg shadow">
+      <Card>
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Business Tier Management</h2>
+          <div className="flex items-center space-x-2">
+            <Building2 className="w-5 h-5 text-gray-600" />
+            <h2 className="text-xl font-semibold text-gray-900">Business Tier Management</h2>
+          </div>
           <p className="mt-1 text-sm text-gray-500">Set business subscription tiers without payment</p>
         </div>
         <div className="overflow-x-auto">
@@ -253,9 +294,9 @@ export default function AdminOverridesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge color={getTierBadgeColor(business.effectiveTier)}>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getTierBadgeClass(business.effectiveTier)}`}>
                       {business.effectiveTier.replace('_', ' ').toUpperCase()}
-                    </Badge>
+                    </span>
                     {business.hasActiveSubscription && (
                       <span className="ml-2 text-xs text-green-600">✓ Active Sub</span>
                     )}
@@ -264,35 +305,31 @@ export default function AdminOverridesPage() {
                     {business.memberCount} members · EIN: {business.ein || 'None'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
+                    <div className="flex gap-2 flex-wrap">
+                      <button
                         onClick={() => setBusinessTier(business.id, business.name, 'free')}
+                        className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
                       >
                         Free
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      </button>
+                      <button
                         onClick={() => setBusinessTier(business.id, business.name, 'business_basic')}
+                        className="px-2 py-1 text-xs border border-blue-300 text-blue-700 rounded hover:bg-blue-50"
                       >
                         Basic
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
+                      </button>
+                      <button
                         onClick={() => setBusinessTier(business.id, business.name, 'business_advanced')}
+                        className="px-2 py-1 text-xs border border-yellow-300 text-yellow-700 rounded hover:bg-yellow-50"
                       >
                         Advanced
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="primary"
+                      </button>
+                      <button
                         onClick={() => setBusinessTier(business.id, business.name, 'enterprise')}
+                        className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
                       >
                         Enterprise
-                      </Button>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -300,7 +337,7 @@ export default function AdminOverridesPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
