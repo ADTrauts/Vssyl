@@ -93,6 +93,7 @@ import moduleAIContextRouter from './routes/moduleAIContext';
 import businessFrontPageRouter from './routes/businessFrontPage';
 import { adminLogsRouter } from './routes/admin-logs';
 import hrRouter from './routes/hr';
+import debugModulesRouter from './routes/debug-modules';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -553,6 +554,7 @@ app.use('/api/admin/seed', authenticateJWT, adminSeedModulesRouter);
 app.use('/api', moduleAIContextRouter);
 app.use('/api/admin/logs', authenticateJWT, adminLogsRouter);
 app.use('/api/hr', hrRouter); // HR module routes (includes own auth checks)
+app.use('/api/debug', debugModulesRouter); // Debug endpoints (no auth for troubleshooting)
 
 // Schedule cleanup jobs
 startCleanupJob();
