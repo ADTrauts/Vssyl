@@ -200,6 +200,8 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
     const { businessId } = req.params;
     const { tier } = req.body;
 
+    console.log('Setting tier:', { businessId, tier });
+
     const validTiers = ['free', 'business_basic', 'business_advanced', 'enterprise'];
 
     if (!tier || !validTiers.includes(tier)) {
@@ -210,6 +212,7 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
       });
     }
 
+    // Simply update the business.tier field - that's all we need
     const business = await prisma.business.update({
       where: { id: businessId },
       data: { tier },
@@ -220,24 +223,7 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
       }
     });
 
-    // Also create/update subscription record for consistency
-    const existingSubscription = await prisma.subscription.findFirst({
-      where: {
-        businessId,
-        status: 'active'
-      }
-    });
-
-    if (existingSubscription) {
-      await prisma.subscription.update({
-        where: { id: existingSubscription.id },
-        data: { tier }
-      });
-    } else {
-      // Note: For business subscriptions, we just update the business.tier field
-      // The subscription model may require userId, so we skip creating it
-      console.log(`No active subscription found, business.tier updated to ${tier}`);
-    }
+    console.log('Business tier updated successfully:', business);
 
     res.json({
       success: true,
@@ -250,10 +236,13 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
     });
   } catch (error) {
     console.error('Error setting business tier:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Error details:', errorMessage);
     res.status(500).json({
       success: false,
       error: 'Failed to set business tier',
-      details: error instanceof Error ? error.message : String(error)
+      details: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined
     });
   }
 });
