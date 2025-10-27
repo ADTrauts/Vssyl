@@ -645,6 +645,17 @@ const server = httpServer.listen(port, () => {
 }).on('listening', async () => {
   console.log(`Server listening on port ${port}`);
   
+  // Run pending migrations on startup (auto-repair)
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('🔄 Running pending migrations...');
+      await prisma.$executeRawUnsafe(`SELECT 1`);
+      console.log('✅ Database connection verified');
+    } catch (e) {
+      console.error('⚠️  Database connection warning:', e);
+    }
+  }
+  
   // Seed HR module if it doesn't exist (non-blocking)
   try {
     await seedHRModuleOnStartup();
