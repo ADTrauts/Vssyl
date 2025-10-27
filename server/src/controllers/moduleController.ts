@@ -332,7 +332,8 @@ export const installModule = async (req: Request, res: Response) => {
       }
 
       // Check subscription requirements for paid modules
-      if (module.pricingTier && module.pricingTier !== 'free') {
+      // NOTE: Proprietary modules (like HR) are included in business tier, not separately paid
+      if (module.pricingTier && module.pricingTier !== 'free' && !module.isProprietary) {
         const subscription = await (prisma as any).businessModuleSubscription.findFirst({
           where: { businessId, moduleId, status: 'active' },
         });
@@ -345,6 +346,37 @@ export const installModule = async (req: Request, res: Response) => {
             pricingTier: module.pricingTier,
             basePrice: module.basePrice,
             enterprisePrice: module.enterprisePrice,
+          });
+        }
+      }
+      
+      // For proprietary modules (like HR), check business tier instead
+      if (module.isProprietary && module.pricingTier && module.pricingTier !== 'free') {
+        const business = await prisma.business.findUnique({
+          where: { id: businessId },
+          include: {
+            subscriptions: {
+              where: { status: 'active' },
+              orderBy: { createdAt: 'desc' }
+            }
+          }
+        });
+        
+        const activeSub = business?.subscriptions[0];
+        const businessTier = activeSub?.tier || business?.tier || 'free';
+        
+        // HR module requires business_advanced or enterprise
+        const requiredTiers = ['business_advanced', 'enterprise'];
+        const hasRequiredTier = requiredTiers.includes(businessTier);
+        
+        if (!hasRequiredTier) {
+          return res.status(403).json({
+            success: false,
+            error: 'Business tier upgrade required',
+            requiresTier: module.pricingTier,
+            currentTier: businessTier,
+            message: `${module.name} requires Business Advanced or Enterprise tier`,
+            upgradeUrl: '/billing/upgrade'
           });
         }
       }
