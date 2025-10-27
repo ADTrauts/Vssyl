@@ -1,80 +1,114 @@
 <!--
-Google Cloud Migration Preparation
+Google Cloud Production Infrastructure
 See README for the modular context pattern.
 -->
 
-# Google Cloud Migration Preparation
+# Google Cloud Production Infrastructure
 
 **Description:**
-This file documents the preparation needed for migrating the Block on Block application to Google Cloud, including environment configuration, service setup, and deployment considerations.
+This file documents the **PRODUCTION** Google Cloud infrastructure for Vssyl, including environment configuration, service setup, and operational procedures.
+
+**Status:** ✅ **PRODUCTION - FULLY OPERATIONAL**  
+**Last Updated:** 2025-10-25
 
 ## 1. Header & Purpose
 - **Purpose:**  
-  Document all the production-ready features and what needs to be configured when deploying to Google Cloud. This includes environment variables, service integrations, and deployment considerations.
+  Document the **PRODUCTION** Google Cloud infrastructure currently running Vssyl. This includes deployed services, environment configuration, monitoring setup, and operational procedures.
 - **Cross-References:**  
-  - [techContext.md] (current tech stack)
-  - [notificationsProductContext.md] (notification system status)
+  - [deployment.md] (CI/CD and deployment procedures)
+  - [techContext.md] (technology stack details)
   - [activeContext.md] (current development status)
 
-## 2. Production-Ready Features
+## 2. Production Services - Currently Deployed ✅
 
-### ✅ **Fully Implemented & Ready for Production:**
+### **Core Infrastructure:**
 
-#### **Notification System**
-- **In-App Notifications**: Complete with real-time WebSocket delivery
-- **Push Notifications**: Web Push API with service worker (needs VAPID keys)
-- **Email Notifications**: SMTP integration with HTML templates (needs SMTP credentials)
-- **Advanced Features**: Grouping, filtering, digests, smart prioritization
-- **User Preferences**: Complete settings management
-- **Module Integration**: Chat, Drive, Business modules integrated
+#### **Cloud Run Services** ✅ LIVE
+- **Frontend**: `vssyl-web` → `https://vssyl.com`
+  - Next.js 14 application
+  - Auto-scaling serverless deployment
+  - Domain mapping configured
+- **Backend**: `vssyl-server` → `https://vssyl-server-235369681725.us-central1.run.app`
+  - Express.js API server
+  - WebSocket support via Socket.IO
+  - Auto-scaling serverless deployment
 
-#### **Authentication System**
-- **NextAuth.js**: JWT-based authentication
-- **User Management**: Registration, login, password reset
-- **Email Verification**: Complete flow (needs SMTP for emails)
+#### **Database** ✅ LIVE
+- **Cloud SQL PostgreSQL**: Production database
+  - Instance: `vssyl-db-buffalo` (replaced by newer instance)
+  - Internal IP: `172.30.0.15`
+  - Database: `vssyl_production`
+  - Connection: Private VPC with Cloud Run
+  - Connection Pooling: Configured (limit=20, timeout=20)
 
-#### **Database & API**
-- **Prisma ORM**: Production-ready with PostgreSQL
-- **RESTful APIs**: Complete CRUD operations
-- **Real-time WebSocket**: Socket.IO integration
+#### **Storage** ✅ LIVE
+- **Google Cloud Storage**: File storage
+  - Bucket: `vssyl-storage-472202`
+  - Region: `us-central1`
+  - Public access configured for user uploads
+  - Integrated via storage service abstraction
 
-#### **Frontend**
-- **Next.js 14**: App router, server components
-- **TypeScript**: Full type safety
-- **Responsive UI**: Mobile-friendly components
-- **Error Handling**: Graceful fallbacks
+#### **CI/CD Pipeline** ✅ AUTOMATED
+- **Google Cloud Build**: Automated deployments
+  - Trigger: Git push to main branch
+  - Build time: ~7-10 minutes
+  - Machine type: E2_HIGHCPU_8
+  - Multi-stage Docker builds
+  - Automatic Prisma schema generation
+  - Container Registry: GCR
 
-## 3. Environment Configuration Needed
+#### **Secrets Management** ✅ CONFIGURED
+- **Google Cloud Secret Manager**: All production secrets
+  - JWT secrets
+  - Database credentials
+  - API keys (Stripe, OpenAI, etc.)
+  - VAPID keys for push notifications
 
-### **Database**
+#### **Application Features** ✅ DEPLOYED
+- **Authentication**: NextAuth.js with JWT
+- **WebSocket**: Real-time chat and notifications
+- **File Management**: Drive module with GCS integration
+- **Business Management**: Multi-tenant business workspaces
+- **AI Integration**: OpenAI GPT-4o and Claude-3.5-Sonnet
+- **Module Marketplace**: Dynamic module system
+
+## 3. Production Environment Configuration
+
+### **Production Database Configuration** ✅ ACTIVE
 ```bash
-# Development
-DATABASE_URL="postgresql://user:password@localhost:5432/blockonblock"
+# Production Cloud SQL Connection
+DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116!@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
 
-# Production (Google Cloud SQL)
-DATABASE_URL="postgresql://user:password@/blockonblock?host=/cloudsql/project:region:instance"
+# Connection Details:
+# - Host: 172.30.0.15 (Cloud SQL private IP)
+# - Port: 5432
+# - Database: vssyl_production
+# - User: vssyl_user
+# - Connection Pooling: 20 connections, 20s timeout
 ```
 
-### **App URLs**
+### **Production URLs** ✅ CONFIGURED
 ```bash
-# Development
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-BACKEND_URL=http://localhost:5000
+# Frontend Service
+NEXT_PUBLIC_APP_URL=https://vssyl.com
+NEXTAUTH_URL=https://vssyl.com
+NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app
 
-# Production
-NEXT_PUBLIC_APP_URL=https://your-app-domain.com
-BACKEND_URL=https://your-api-domain.com
+# Backend Service  
+BACKEND_URL=https://vssyl-server-235369681725.us-central1.run.app
+NEXT_PUBLIC_API_BASE_URL=https://vssyl-server-235369681725.us-central1.run.app
+FRONTEND_URL=https://vssyl.com
 ```
 
-### **JWT Secrets**
+### **JWT Secrets** ✅ CONFIGURED
 ```bash
-# Development (generated)
-JWT_SECRET=your-dev-secret
-NEXTAUTH_SECRET=your-dev-secret
+# Production secrets stored in Google Cloud Secret Manager
+JWT_SECRET=<generated-with-openssl-rand-base64-32>
+JWT_REFRESH_SECRET=<generated-with-openssl-rand-base64-32>
+NEXTAUTH_SECRET=<32-character-secret>
 
-# Production (strong, unique secrets)
-JWT_SECRET=your-production-secret
-NEXTAUTH_SECRET=your-production-secret
+# Secret generation command:
+# openssl rand -base64 32
 ```
 
 ### **Email Notifications (SMTP)**
@@ -119,84 +153,94 @@ VAPID_PUBLIC_KEY=your-production-public-key
 VAPID_PRIVATE_KEY=your-production-private-key
 ```
 
-### **File Storage (Cloud Storage)**
+### **File Storage Configuration** ✅ ACTIVE
 ```bash
-# Development (local storage)
-UPLOAD_DIR=./uploads
-FILE_STORAGE_TYPE=local
+# Production Google Cloud Storage
+STORAGE_PROVIDER=gcs
+GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202
+GOOGLE_CLOUD_PROJECT_ID=vssyl-472202
 
-# Production (Google Cloud Storage)
-GOOGLE_CLOUD_STORAGE_BUCKET=your-app-bucket
-GOOGLE_CLOUD_PROJECT_ID=your-project-id
-FILE_STORAGE_TYPE=cloud-storage
+# Authentication: Application Default Credentials (ADC)
+# - No key file needed when running on Cloud Run
+# - Automatic authentication via service account
 ```
 
-### **WebSocket Configuration**
+### **WebSocket Configuration** ✅ ACTIVE
 ```bash
-# Development
-WEBSOCKET_URL=ws://localhost:5000
-NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:5000
+# Production WebSocket URLs
+WEBSOCKET_URL=wss://vssyl-server-235369681725.us-central1.run.app
+NEXT_PUBLIC_WEBSOCKET_URL=wss://vssyl-server-235369681725.us-central1.run.app
+NEXT_PUBLIC_WS_URL=wss://vssyl-server-235369681725.us-central1.run.app
 
-# Production
-WEBSOCKET_URL=wss://your-api-domain.com
-NEXT_PUBLIC_WEBSOCKET_URL=wss://your-api-domain.com
+# Socket.IO configuration with authentication
+# - Requires JWT token for connection
+# - Supports chat and notifications
 ```
 
-## 4. Google Cloud Services Needed
+## 4. Google Cloud Services - Currently Active ✅
 
-### **Required Services:**
-1. **Cloud SQL**: PostgreSQL database
-2. **Cloud Run**: Containerized application hosting
-3. **Cloud Storage**: File uploads and static assets
-4. **Secret Manager**: Environment variable management
-5. **Load Balancer**: SSL termination and routing
-6. **Domain & SSL**: Custom domain with certificates
+### **Active Core Services:**
+1. **Cloud SQL**: PostgreSQL database ✅ RUNNING
+   - Instance: Production database on private IP
+   - Backups: Automated daily backups configured
+2. **Cloud Run**: Containerized application hosting ✅ RUNNING
+   - vssyl-web (frontend)
+   - vssyl-server (backend)
+3. **Cloud Storage**: File uploads and static assets ✅ CONFIGURED
+   - Bucket: vssyl-storage-472202
+4. **Secret Manager**: Environment variable management ✅ CONFIGURED
+   - All production secrets stored securely
+5. **Cloud Build**: Automated CI/CD pipeline ✅ AUTOMATED
+   - Triggered on git push to main
+6. **Domain & SSL**: Custom domain with certificates ✅ CONFIGURED
+   - Domain: vssyl.com
+   - SSL: Automatic HTTPS
 
-### **Optional Services:**
-1. **Cloud CDN**: Static asset delivery
-2. **Cloud Monitoring**: Application monitoring
-3. **Cloud Logging**: Centralized logging
-4. **Cloud Build**: Automated deployments
-5. **Cloud Redis**: Caching and session storage
-6. **Cloud Tasks**: Background job processing
+### **Active Supporting Services:**
+1. **Cloud Monitoring**: Application monitoring ✅ ACTIVE
+2. **Cloud Logging**: Centralized logging ✅ ACTIVE
+3. **Container Registry**: Docker image storage ✅ ACTIVE
+4. **IAM & Admin**: Access control and permissions ✅ CONFIGURED
 
-## 5. Deployment Checklist
+### **Future Services (Planned):**
+1. **Cloud CDN**: Static asset delivery (optional optimization)
+2. **Cloud Redis**: Caching and session storage (optional optimization)
+3. **Cloud Tasks**: Background job processing (when needed)
 
-### **Pre-Deployment:**
-- [ ] Set up Google Cloud project
-- [ ] Configure Cloud SQL instance
-- [ ] Set up Cloud Storage buckets
-- [ ] Configure domain and SSL certificates
-- [ ] Set up Secret Manager for sensitive values
-- [ ] Prepare production environment variables
-- [ ] Configure Cloud Build for automated deployments
-- [ ] Set up Cloud CDN for static assets
-- [ ] Configure Cloud Redis for caching (optional)
+## 5. Deployment Status - ✅ COMPLETED
 
-### **Database Setup:**
-- [ ] Run Prisma migrations on production database
-- [ ] Seed initial data (users, modules, etc.)
-- [ ] Configure connection pooling
-- [ ] Set up automated backups
+### **Infrastructure Setup:** ✅ COMPLETE
+- [x] Set up Google Cloud project (vssyl-472202)
+- [x] Configure Cloud SQL instance (production database)
+- [x] Set up Cloud Storage buckets (vssyl-storage-472202)
+- [x] Configure domain and SSL certificates (vssyl.com)
+- [x] Set up Secret Manager for sensitive values
+- [x] Configure production environment variables
+- [x] Configure Cloud Build for automated deployments
+- [x] Set up monitoring and logging
 
-### **Application Deployment:**
-- [ ] Build optimized production builds
-- [ ] Configure Cloud Run services
-- [ ] Set up load balancer and routing
-- [ ] Configure environment variables
-- [ ] Set up WebSocket proxy for real-time features
-- [ ] Configure file upload handling for Cloud Storage
-- [ ] Test all functionality
+### **Database Setup:** ✅ COMPLETE
+- [x] Run Prisma migrations on production database
+- [x] Configure connection pooling (limit=20, timeout=20)
+- [x] Set up automated backups
+- [x] Verify database connectivity from Cloud Run
 
-### **Post-Deployment:**
-- [ ] Test notification system (email, push, in-app)
-- [ ] Verify authentication flows
-- [ ] Test file uploads and storage
-- [ ] Test WebSocket connections and real-time features
-- [ ] Monitor performance and errors
-- [ ] Set up monitoring and alerts
-- [ ] Configure automated backups
-- [ ] Set up SSL certificate auto-renewal
+### **Application Deployment:** ✅ COMPLETE
+- [x] Build optimized production Docker images
+- [x] Configure Cloud Run services (vssyl-web, vssyl-server)
+- [x] Set up domain mapping (vssyl.com → vssyl-web)
+- [x] Configure all environment variables
+- [x] Set up WebSocket support for real-time features
+- [x] Configure file upload handling for Cloud Storage
+- [x] Enable automated deployments via Cloud Build
+
+### **Verification & Testing:** ✅ COMPLETE
+- [x] Verify authentication flows (NextAuth.js working)
+- [x] Test file uploads and storage (GCS integration working)
+- [x] Test WebSocket connections (chat and notifications working)
+- [x] Monitor performance and errors (Cloud Monitoring active)
+- [x] Verify all API endpoints (production URLs configured)
+- [x] Test database connections (connection pooling working)
 
 ## 6. Testing Strategy
 
@@ -386,35 +430,56 @@ npx prisma generate
 - Document SSL certificate management
 - Create backup and restore procedures
 
-## 15. Next Steps
+## 15. Production Operations
 
-### **Immediate (Before Migration):**
-1. Choose email service provider (Gmail, SendGrid, etc.)
-2. Generate VAPID keys for push notifications
-3. Set up Google Cloud project and services
-4. Prepare production environment variables
-5. Configure Cloud Storage buckets and permissions
-6. Set up Cloud Build for automated deployments
-7. Configure custom domain and SSL certificates
+### **Monitoring & Maintenance:**
+1. **Cloud Monitoring**: Dashboard configured for service metrics
+2. **Cloud Logging**: Centralized log aggregation active
+3. **Error Tracking**: Cloud Error Reporting configured
+4. **Performance Monitoring**: Real-time metrics tracked
+5. **Cost Monitoring**: Budget alerts configured
 
-### **During Migration:**
-1. Deploy database and run migrations
-2. Deploy application with production config
-3. Configure WebSocket proxy for real-time features
-4. Set up file upload handling for Cloud Storage
-5. Test all functionality thoroughly
-6. Monitor performance and errors
+### **Operational Procedures:**
+1. **Deployment**: Git push to main triggers automated Cloud Build
+2. **Rollback**: Use Cloud Run revisions for quick rollbacks
+3. **Database**: Automated daily backups configured
+4. **Secrets**: Update via Cloud Secret Manager
+5. **Scaling**: Auto-scaling configured (min:0, max:10)
 
-### **Post-Migration:**
-1. Set up monitoring and alerting
-2. Configure automated backups and SSL renewal
-3. Document production procedures
-4. Train team on production operations
-5. Plan for scaling and optimization
-6. Set up performance monitoring and optimization
+### **Common Operations:**
+
+**View Logs:**
+```bash
+gcloud logging read "resource.type=cloud_run_revision" --limit 50
+```
+
+**Manual Deployment:**
+```bash
+gcloud builds submit --config=cloudbuild.yaml
+```
+
+**Check Service Status:**
+```bash
+gcloud run services list --region=us-central1
+gcloud run services describe vssyl-web --region=us-central1
+gcloud run services describe vssyl-server --region=us-central1
+```
+
+**Update Secrets:**
+```bash
+# See UPDATE_SECRETS_GUIDE.md for detailed instructions
+gcloud secrets versions add JWT_SECRET --data-file=-
+```
+
+### **Performance Optimization:**
+1. **Build Time**: ~7-10 minutes (E2_HIGHCPU_8 machine type)
+2. **Cold Start**: <2 seconds (optimized Docker images)
+3. **Database**: Connection pooling configured (20 connections)
+4. **Storage**: GCS with public access for user files
 
 ---
 
-**Last Updated:** 2025-01-28
-**Status:** Ready for Google Cloud migration planning
-**Priority:** High - All features are production-ready, just need configuration 
+**Last Updated:** 2025-10-25
+**Status:** ✅ **PRODUCTION - FULLY OPERATIONAL**
+**Infrastructure:** Google Cloud Platform (Cloud Run, Cloud SQL, Cloud Storage)
+**Automation:** Fully automated CI/CD via Cloud Build 

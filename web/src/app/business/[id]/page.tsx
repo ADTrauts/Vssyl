@@ -40,6 +40,7 @@ interface Business {
   website?: string;
   logo?: string;
   description?: string;
+  tier?: string;  // Business tier field
   members: Array<{
     id: string;
     role: 'EMPLOYEE' | 'ADMIN' | 'MANAGER';
@@ -52,6 +53,11 @@ interface Business {
   dashboards: Array<{
     id: string;
     name: string;
+  }>;
+  subscriptions?: Array<{
+    id: string;
+    tier: string;
+    status: string;
   }>;
   branding?: {
     primaryColor?: string;
@@ -175,6 +181,45 @@ export default function BusinessAdminPage() {
 
   const setupProgress = getSetupProgress();
   const isSetupComplete = setupProgress === 100;
+
+  // Get effective business tier (subscription tier or business tier)
+  const getEffectiveTier = () => {
+    if (business.subscriptions && business.subscriptions.length > 0) {
+      const activeSub = business.subscriptions.find(s => s.status === 'active');
+      if (activeSub) return activeSub.tier;
+    }
+    return business.tier || 'free';
+  };
+
+  const getTierBadgeColor = (tier: string): 'blue' | 'green' | 'gray' | 'yellow' | 'red' => {
+    switch (tier) {
+      case 'enterprise':
+        return 'blue';
+      case 'business_advanced':
+        return 'yellow';
+      case 'business_basic':
+        return 'green';
+      default:
+        return 'gray';
+    }
+  };
+
+  const getTierDisplayName = (tier: string) => {
+    switch (tier) {
+      case 'enterprise':
+        return 'Enterprise';
+      case 'business_advanced':
+        return 'Business Advanced';
+      case 'business_basic':
+        return 'Business Basic';
+      case 'free':
+        return 'Free';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const effectiveTier = getEffectiveTier();
 
   // Create branding object for the provider
   const branding = {
@@ -466,8 +511,17 @@ export default function BusinessAdminPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-700">Current Plan</span>
-                  <Badge color="blue">Enterprise</Badge>
+                  <Badge color={getTierBadgeColor(effectiveTier)}>
+                    {getTierDisplayName(effectiveTier)}
+                  </Badge>
                 </div>
+                
+                {/* Show tier warning if not set */}
+                {!business.tier && !business.subscriptions?.length && (
+                  <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                    ⚠️ Tier not set. Some features may be unavailable.
+                  </div>
+                )}
                 
                 <Button 
                   variant="primary" 

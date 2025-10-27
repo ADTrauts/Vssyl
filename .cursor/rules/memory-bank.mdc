@@ -147,22 +147,79 @@ Long-term planning and vision documents:
 4. Review `databaseContext.md` for data issues
 
 ### File Creation Patterns
-**Create Module Product Context** when:
-- Adding a new major feature/module
-- Name pattern: `[moduleName]ProductContext.md`
 
-**Create Summary File** when:
-- Completing a major phase or project
-- Name pattern: `[PHASE_NAME]_SUMMARY.md` or `[feature]_SUMMARY.md`
+**CRITICAL RULE: Never Create Root-Level .md Files!** 🚫
+- ❌ **NEVER** create `.md` files at project root (except README.md which already exists)
+- ❌ **NEVER** create documentation files outside of `memory-bank/` or `docs/` directories
+- ❌ **NEVER** create session summaries at root - they belong in `docs/archive/session-summaries/`
+- ✅ **ALWAYS** check if existing memory bank files cover the topic first
+- ✅ **ALWAYS** update existing files rather than creating new ones
 
-**Create Specialized Context** when:
-- Domain requires significant documentation (e.g., deployment, testing)
-- Name pattern: `[domain]Context.md` or `[domain].md`
+**Memory Bank vs Docs - When to Use Which:**
+
+**Use `memory-bank/`** for AI context and persistent knowledge:
+- ✅ Product contexts (how features work conceptually)
+- ✅ System architecture and design patterns
+- ✅ Project summaries and major milestones
+- ✅ Strategic planning and roadmaps
+- ✅ Information AI needs to understand the codebase
+- ✅ Files that should persist across all sessions
+
+**Use `docs/`** for human-facing operational guides:
+- ✅ Setup instructions (how to configure services)
+- ✅ Deployment procedures (step-by-step guides)
+- ✅ Troubleshooting guides (fixing specific issues)
+- ✅ Session summaries (completed work documentation)
+- ✅ Migration guides (one-time procedures)
+- ✅ Technical implementation details (how-to guides)
+- ✅ Files that are reference material for operations
+
+**Quick Decision Tree:**
+- Does AI need this to understand the system? → `memory-bank/`
+- Is this operational/setup instructions for humans? → `docs/`
+- Is this a completed work summary? → `docs/archive/session-summaries/`
+- Is this about architecture/design? → `memory-bank/`
+- Is this about deployment/setup? → `docs/deployment/` or `docs/setup/`
+
+**Documentation File Placement Rules:**
+
+**Memory Bank Files** (`memory-bank/`):
+- **Module Product Context**: `memory-bank/[moduleName]ProductContext.md`
+  - When: Adding a new major feature/module
+  - Example: `chatProductContext.md`, `driveProductContext.md`
+  
+- **Phase/Project Summary**: `memory-bank/[PHASE_NAME]_SUMMARY.md`
+  - When: Completing a major phase or project
+  - Example: `ORG_CHART_PHASE1_SUMMARY.md`, `TYPE_SAFETY_PROJECT_SUMMARY.md`
+  
+- **Specialized Context**: `memory-bank/[domain]Context.md`
+  - When: Domain requires significant documentation
+  - Example: `deployment.md`, `databaseContext.md`, `securityComplianceSystem.md`
+
+**Operational Docs** (`docs/`):
+- **Setup Guides**: `docs/setup/[TOPIC]_SETUP.md`
+  - When: Creating user-facing setup instructions
+  - Example: `docs/setup/GOOGLE_CLOUD_SETUP.md`
+  
+- **Deployment Guides**: `docs/deployment/[TOPIC]_GUIDE.md`
+  - When: Creating deployment procedures
+  - Example: `docs/deployment/GOOGLE_CLOUD_DEPLOYMENT.md`
+  
+- **Implementation Guides**: `docs/guides/[TOPIC]_GUIDE.md`
+  - When: Creating technical implementation references
+  - Example: `docs/guides/TECHNICAL_IMPLEMENTATION_GUIDE.md`
+  
+- **Session Summaries**: `docs/archive/session-summaries/[SUMMARY_NAME].md`
+  - When: Documenting completed work sessions
+  - Example: `docs/archive/session-summaries/BUSINESS_WORKSPACE_IMPLEMENTATION_SUMMARY.md`
 
 **DON'T create:**
-- Temporary or one-off documentation files
-- Duplicate information already covered elsewhere
-- Files that should be code comments instead
+- ❌ Root-level `.md` files (except README.md which exists)
+- ❌ Temporary or one-off documentation files
+- ❌ Duplicate information already covered elsewhere
+- ❌ Files that should be code comments instead
+- ❌ Architecture diagrams at root (use `docs/guides/`)
+- ❌ Feature comparison files at root (use `docs/archive/session-summaries/`)
 
 ## Core Workflows
 

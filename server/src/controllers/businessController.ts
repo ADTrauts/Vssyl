@@ -290,6 +290,19 @@ export const getUserBusinesses = async (req: Request, res: Response) => {
             userId: user.id
           }
         },
+        subscriptions: {
+          where: {
+            status: 'active'
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          select: {
+            id: true,
+            tier: true,
+            status: true
+          }
+        },
         _count: {
           select: {
             members: {
@@ -346,6 +359,19 @@ export const getBusiness = async (req: Request, res: Response) => {
         dashboards: {
           where: {
             userId: user.id
+          }
+        },
+        subscriptions: {
+          where: {
+            status: 'active'
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          select: {
+            id: true,
+            tier: true,
+            status: true
           }
         }
       }

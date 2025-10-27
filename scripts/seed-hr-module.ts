@@ -2,33 +2,29 @@
  * Seed HR Module
  * 
  * Creates the HR module record in the database
- * This should be run once to register the HR module
+ * This runs automatically on server startup if HR module doesn't exist
  * 
- * Usage: npx ts-node scripts/seed-hr-module.ts
+ * Can also be run manually: npx ts-node scripts/seed-hr-module.ts
  */
 
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
-
-async function seedHRModule() {
+// Allow using custom prisma instance (for server startup)
+export async function seedHRModule(prismaInstance?: PrismaClient): Promise<boolean> {
+  const prisma = prismaInstance || new PrismaClient();
+  
   try {
-    console.log('🏥 Seeding HR Module...\n');
-    
     // Check if HR module already exists
     const existing = await prisma.module.findUnique({
       where: { id: 'hr' }
     });
     
     if (existing) {
-      console.log('✅ HR module already exists');
-      console.log(`   ID: ${existing.id}`);
-      console.log(`   Name: ${existing.name}`);
-      console.log(`   Version: ${existing.version}`);
-      console.log(`   Status: ${existing.status}`);
-      console.log(`   Pricing: ${existing.pricingTier}\n`);
-      return;
+      console.log('   ✅ HR module already registered');
+      return true;
     }
+    
+    console.log('   📝 Creating HR module record...');
     
     // Get a user to be the developer (system user or first admin)
     const systemUser = await prisma.user.findFirst({
@@ -180,32 +176,49 @@ async function seedHRModule() {
       }
     });
     
-    console.log('✅ HR module created successfully!\n');
-    console.log('Module Details:');
-    console.log(`   ID: ${hrModule.id}`);
-    console.log(`   Name: ${hrModule.name}`);
-    console.log(`   Version: ${hrModule.version}`);
-    console.log(`   Category: ${hrModule.category}`);
-    console.log(`   Status: ${hrModule.status}`);
-    console.log(`   Pricing Tier: ${hrModule.pricingTier}`);
-    console.log(`   Minimum Tier: business_advanced`);
-    console.log(`   Is Proprietary: ${hrModule.isProprietary}`);
-    console.log('\n🎯 Next Steps:');
-    console.log('   1. Run database migration: npm run prisma:migrate');
-    console.log('   2. Restart server to register AI context');
-    console.log('   3. Install HR module for a business via admin panel\n');
+    console.log('   ✅ HR module registered successfully');
+    return true;
     
   } catch (error) {
-    console.error('❌ Error seeding HR module:', error);
-    process.exit(1);
+    console.error('   ❌ Error seeding HR module:', error);
+    return false;
   } finally {
-    await prisma.$disconnect();
+    // Only disconnect if we created our own prisma instance
+    if (!prismaInstance) {
+      await prisma.$disconnect();
+    }
+  }
+}
+
+// ============================================================================
+// STANDALONE EXECUTION (Manual Run)
+// ============================================================================
+
+async function runStandalone() {
+  try {
+    console.log('\n🏥 ============================================');
+    console.log('🏥 HR Module Seed - Manual Execution');
+    console.log('🏥 ============================================\n');
+    
+    const success = await seedHRModule();
+    
+    if (success) {
+      console.log('\n🎯 Next Steps:');
+      console.log('   1. Restart server to register AI context');
+      console.log('   2. Install HR module for a business via admin panel\n');
+    } else {
+      console.error('\n❌ Seeding failed. Check errors above.\n');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error('\n❌ Fatal error:', error);
+    process.exit(1);
   }
 }
 
 // Run if called directly
 if (require.main === module) {
-  seedHRModule();
+  runStandalone();
 }
 
 export default seedHRModule;
