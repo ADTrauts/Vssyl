@@ -296,12 +296,12 @@ export default function AdminOverridesPage() {
                         onClick={() => makeAdmin(user.id, user.email)}
                         className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                       >
-                        Make Admin
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      Make Admin
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )))}
             </tbody>
           </table>
         </div>
@@ -415,12 +415,12 @@ export default function AdminOverridesPage() {
                         onClick={() => setBusinessTier(business.id, business.name, 'enterprise')}
                         className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
                       >
-                        Enterprise
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      Enterprise
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )))}
             </tbody>
           </table>
         </div>
