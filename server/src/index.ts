@@ -563,8 +563,8 @@ app.use('/api/debug', debugModulesRouter); // Debug endpoints (no auth for troub
 app.use('/api/debug/database', debugDatabaseRouter); // Database debug endpoints
 app.use('/api/debug/business-tier', debugBusinessTierRouter); // Business tier debug
 app.use('/api/admin-override', adminOverrideRouter); // Admin override endpoints (requires ADMIN role)
-app.use('/api/admin/hr-setup', adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
-app.use('/api/admin/fix-hr', adminFixHRRouter); // Emergency HR fix endpoints (migrations & raw DB access)
+app.use('/api/admin/hr-setup', authenticateJWT, adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
+app.use('/api/admin/fix-hr', authenticateJWT, adminFixHRRouter); // Emergency HR fix endpoints (migrations & raw DB access)
 
 // Schedule cleanup jobs
 startCleanupJob();
