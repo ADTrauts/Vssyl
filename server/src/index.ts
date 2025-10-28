@@ -97,6 +97,7 @@ import debugModulesRouter from './routes/debug-modules';
 import debugDatabaseRouter from './routes/debug-database';
 import debugBusinessTierRouter from './routes/debug-business-tier';
 import adminOverrideRouter from './routes/admin-override';
+import adminHRSetupRouter from './routes/admin-hr-setup';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -561,6 +562,7 @@ app.use('/api/debug', debugModulesRouter); // Debug endpoints (no auth for troub
 app.use('/api/debug/database', debugDatabaseRouter); // Database debug endpoints
 app.use('/api/debug/business-tier', debugBusinessTierRouter); // Business tier debug
 app.use('/api/admin-override', adminOverrideRouter); // Admin override endpoints (requires ADMIN role)
+app.use('/api/admin/hr-setup', adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
 
 // Schedule cleanup jobs
 startCleanupJob();
