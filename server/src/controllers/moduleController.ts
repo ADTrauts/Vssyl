@@ -386,9 +386,9 @@ export const installModule = async (req: Request, res: Response) => {
         data: { 
           moduleId, 
           businessId, 
-          installedBy: user.id,
           enabled: true,
           installedAt: new Date()
+          // Note: installedBy column doesn't exist in production DB yet
         },
         include: { 
           module: { 
