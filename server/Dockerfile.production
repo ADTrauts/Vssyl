@@ -73,9 +73,14 @@ RUN mkdir -p /app/uploads
 # Create startup script that builds schema and runs migrations before starting server
 RUN printf '#!/bin/sh\n\
 echo "📦 Building Prisma schema from modules..."\n\
-node scripts/build-prisma-schema.js || echo "⚠️ Schema build failed (continuing anyway)"\n\
+if ! node scripts/build-prisma-schema.js; then\n\
+  echo "❌ Schema build failed - starting anyway (using pre-built schema)"\n\
+fi\n\
 echo "🔄 Running database migrations..."\n\
-npx prisma migrate deploy || echo "⚠️ Migration failed (continuing anyway)"\n\
+if ! npx prisma migrate deploy; then\n\
+  echo "⚠️ Migration failed - this may cause runtime errors!"\n\
+  echo "⚠️ Check /api/admin/fix-hr/check-db for database state"\n\
+fi\n\
 echo "✅ Starting server..."\n\
 exec node server/dist/index.js\n' > /app/start.sh && \
     chmod +x /app/start.sh
