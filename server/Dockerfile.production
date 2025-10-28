@@ -63,13 +63,16 @@ COPY --from=base /app/server/package.json ./server/
 
 # Copy Prisma schema (including migrations) and generate client
 COPY prisma/ ./prisma/
+COPY scripts/build-prisma-schema.js ./scripts/
 RUN npx prisma generate
 
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
-# Create startup script that runs migrations before starting server (do this as root)
+# Create startup script that builds schema and runs migrations before starting server
 RUN printf '#!/bin/sh\n\
+echo "📦 Building Prisma schema from modules..."\n\
+node scripts/build-prisma-schema.js || echo "⚠️ Schema build failed (continuing anyway)"\n\
 echo "🔄 Running database migrations..."\n\
 npx prisma migrate deploy || echo "⚠️ Migration failed (continuing anyway)"\n\
 echo "✅ Starting server..."\n\
