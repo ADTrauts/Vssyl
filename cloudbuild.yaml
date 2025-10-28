@@ -82,7 +82,7 @@ steps:
         # Run Prisma migration (using URL-encoded password)
         # Note: This will fail during build (no VPC access), but migrations run on container startup
         echo "🔄 Attempting database migrations..."
-        export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20"
+        export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=5&pool_timeout=20"
         npx prisma migrate deploy || echo "⚠️  Database not reachable during build - migrations will run on container startup"
         
         echo "✅ Build step completed (migrations will run on deployment)"
@@ -144,7 +144,7 @@ steps:
       - '--subnet'
       - 'default'
       - '--set-env-vars'
-      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,STORAGE_PROVIDER=gcs,GOOGLE_CLOUD_PROJECT_ID=vssyl-472202,GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202'  
+      - 'NODE_ENV=production,DATABASE_URL=postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=5&pool_timeout=20,DIRECT_URL=postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production?connection_limit=5&pool_timeout=20,JWT_SECRET=OhTXx5RiJu1YOzqGta56ZnN9tTap29sVlvOQMUnGGiI=,JWT_REFRESH_SECRET=/NkIB2sn75WZyqsWOmevzv1wgn9zHuFgmi9x8DTmVG4=,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,STORAGE_PROVIDER=gcs,GOOGLE_CLOUD_PROJECT_ID=vssyl-472202,GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202'  
       - '--set-secrets'
       - 'OPENAI_API_KEY=openai-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest'
     id: 'deploy-server'
