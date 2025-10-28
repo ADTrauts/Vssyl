@@ -497,7 +497,9 @@ export const installModule = async (req: Request, res: Response) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to install module',
-      details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
+      // Show details always for now (debugging production issue)
+      details: error instanceof Error ? error.message : String(error),
+      errorName: error instanceof Error ? error.name : 'Unknown'
     });
   }
 };
