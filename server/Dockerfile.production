@@ -63,7 +63,8 @@ COPY --from=base /app/server/package.json ./server/
 
 # Copy Prisma schema (including migrations) and generate client
 COPY prisma/ ./prisma/
-COPY scripts/build-prisma-schema.js ./scripts/
+RUN mkdir -p ./scripts
+COPY scripts/build-prisma-schema.js ./scripts/build-prisma-schema.js
 RUN npx prisma generate
 
 # Create uploads directory
