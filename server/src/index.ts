@@ -100,6 +100,7 @@ import adminOverrideRouter from './routes/admin-override';
 import adminHRSetupRouter from './routes/admin-hr-setup';
 import adminFixHRRouter from './routes/admin-fix-hr';
 import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
+import adminFixSubscriptionsRouter from './routes/admin-fix-subscriptions';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -567,6 +568,7 @@ app.use('/api/admin-override', adminOverrideRouter); // Admin override endpoints
 app.use('/api/admin/hr-setup', authenticateJWT, adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
 app.use('/api/admin/fix-hr', authenticateJWT, adminFixHRRouter); // Emergency HR fix endpoints (migrations & raw DB access)
 app.use('/api/admin/create-hr-tables', authenticateJWT, adminCreateHRTablesRouter); // Manually create HR tables via raw SQL
+app.use('/api/admin/fix-subscriptions', authenticateJWT, adminFixSubscriptionsRouter); // Fix subscriptions table schema
 
 // Schedule cleanup jobs
 startCleanupJob();
