@@ -59,8 +59,8 @@ steps:
         # Install dependencies
         apt-get update && apt-get install -y curl
         
-        # Install Node.js (version 18)
-        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+        # Install Node.js (version 20 - matches Dockerfile and package.json)
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
         apt-get install -y nodejs
         
         # Verify node and npm
