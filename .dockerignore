@@ -103,8 +103,9 @@ jspm_packages/
 cloudbuild-archive/
 *.yaml.backup
 
-# Build scripts
+# Build scripts (except Prisma schema builder needed for Docker)
 scripts/
+!scripts/build-prisma-schema.js
 
 # TypeScript build info
 *.tsbuildinfo
