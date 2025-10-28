@@ -69,12 +69,11 @@ RUN npx prisma generate
 RUN mkdir -p /app/uploads
 
 # Create startup script that runs migrations before starting server (do this as root)
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'set -e' >> /app/start.sh && \
-    echo 'echo "🔄 Running database migrations..."' >> /app/start.sh && \
-    echo 'npx prisma migrate deploy || echo "⚠️ Migration failed (non-fatal)"' >> /app/start.sh && \
-    echo 'echo "✅ Starting server..."' >> /app/start.sh && \
-    echo 'exec node server/dist/index.js' >> /app/start.sh && \
+RUN printf '#!/bin/sh\n\
+echo "🔄 Running database migrations..."\n\
+npx prisma migrate deploy || echo "⚠️ Migration failed (continuing anyway)"\n\
+echo "✅ Starting server..."\n\
+exec node server/dist/index.js\n' > /app/start.sh && \
     chmod +x /app/start.sh
 
 # Create non-root user
