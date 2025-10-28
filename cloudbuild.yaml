@@ -67,8 +67,8 @@ steps:
         node --version
         npm --version
         
-        # Install pnpm globally
-        npm install -g pnpm@8
+        # Install pnpm globally (matches package.json packageManager field)
+        npm install -g pnpm@10.11.0
         
         # Install project dependencies
         cd /workspace
