@@ -9,6 +9,7 @@ Update Rules for deployment.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2025-10-28**: Documented critical migration failure patterns and emergency fix procedures
 - **2025-10-25**: Updated deployment documentation to reflect production Google Cloud infrastructure
 - **2025-09-19**: Complete Google Cloud Production deployment with automated CI/CD
 
@@ -145,6 +146,90 @@ gcloud builds submit --config=cloudbuild.yaml
 ```bash
 gcloud run services list --region=us-central1
 ```
+
+---
+
+## 🚨 CRITICAL: Production Migration Failures
+
+### The Pattern (October 28, 2025 - HR Module Deployment)
+
+**Problem**: Migrations fail silently in production, causing schema drift and runtime 500 errors.
+
+**Root Causes**:
+1. **Startup script hides failures**: `|| echo "continuing anyway"` in Dockerfile
+2. **No migration visibility**: Can't see if migrations succeeded without checking logs
+3. **Schema drift**: Prisma schema has fields that don't exist in production database
+4. **Build exclusions**: `.dockerignore` can exclude critical files like schema builders
+
+**Symptoms**:
+- ✅ Build succeeds
+- ✅ Containers start successfully
+- ❌ Runtime 500 errors when using new features
+- ❌ Error: "column does not exist in the current database"
+
+### Emergency Fix Procedures
+
+**Always create these admin endpoints for new modules**:
+
+```typescript
+// Check database state (bypasses Prisma models)
+GET /api/admin/fix-[module]/check-db
+
+// Create tables via raw SQL (backup if migrations fail)
+POST /api/admin/create-[module]-tables
+
+// Run migrations manually
+POST /api/admin/fix-[module]/run-migrations
+```
+
+**Production Database Fix Commands**:
+```javascript
+// 1. Check what's missing
+fetch('/api/admin/fix-hr/check-db').then(r=>r.json()).then(console.log)
+
+// 2. Create missing tables
+fetch('/api/admin/create-hr-tables', {method:'POST'}).then(r=>r.json()).then(console.log)
+
+// 3. Fix missing columns
+fetch('/api/admin/fix-subscriptions/add-employee-columns', {method:'POST'}).then(r=>r.json()).then(console.log)
+```
+
+### Prevention Strategy
+
+**Pre-Deployment**:
+1. ✅ Test migrations locally with `npm run prisma:migrate`
+2. ✅ Review generated SQL in `prisma/migrations/[name]/migration.sql`
+3. ✅ Create diagnostic and fix endpoints BEFORE deploying
+4. ✅ Verify `.dockerignore` doesn't exclude migration files or schema builder
+
+**Post-Deployment**:
+1. ✅ Hard refresh browser (Cmd+Shift+R) to get latest code
+2. ✅ Run diagnostic endpoints to verify database state
+3. ✅ Manually apply fixes if migrations failed
+4. ✅ Check Cloud Run logs for migration warnings
+
+**See Also**: `docs/deployment/MODULE_DEPLOYMENT_CHECKLIST.md` for complete checklist
+
+### HR Module Deployment (October 28, 2025)
+
+**Issues Found**:
+1. Missing `subscriptions` columns: `employeeCount`, `includedEmployees`, `additionalEmployeeCost`
+2. Missing HR tables: `employee_hr_profiles`, `manager_approval_hierarchy`, `hr_module_settings`
+3. Missing `business_module_installations.installedBy` column
+4. `.dockerignore` excluded `scripts/build-prisma-schema.js`
+
+**Fixes Applied**:
+- Created 6 admin diagnostic/fix endpoints
+- Manually created tables via raw SQL
+- Added missing columns to subscriptions table
+- Fixed `.dockerignore` to allow schema builder
+- Improved Dockerfile startup script error messages
+
+**Files Created**:
+- `server/src/routes/admin-fix-hr.ts` - HR diagnostics
+- `server/src/routes/admin-create-hr-tables.ts` - Raw SQL table creation
+- `server/src/routes/admin-fix-subscriptions.ts` - Subscription table fixes
+- `docs/deployment/MODULE_DEPLOYMENT_CHECKLIST.md` - Comprehensive guide
 
 ---
 
