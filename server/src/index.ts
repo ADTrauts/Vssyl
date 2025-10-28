@@ -99,6 +99,7 @@ import debugBusinessTierRouter from './routes/debug-business-tier';
 import adminOverrideRouter from './routes/admin-override';
 import adminHRSetupRouter from './routes/admin-hr-setup';
 import adminFixHRRouter from './routes/admin-fix-hr';
+import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -565,6 +566,7 @@ app.use('/api/debug/business-tier', debugBusinessTierRouter); // Business tier d
 app.use('/api/admin-override', adminOverrideRouter); // Admin override endpoints (requires ADMIN role)
 app.use('/api/admin/hr-setup', authenticateJWT, adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
 app.use('/api/admin/fix-hr', authenticateJWT, adminFixHRRouter); // Emergency HR fix endpoints (migrations & raw DB access)
+app.use('/api/admin/create-hr-tables', authenticateJWT, adminCreateHRTablesRouter); // Manually create HR tables via raw SQL
 
 // Schedule cleanup jobs
 startCleanupJob();
