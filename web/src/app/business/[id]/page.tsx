@@ -8,26 +8,26 @@ import { businessAPI } from '@/api/business';
 import { BusinessBrandingProvider, BrandedHeader, BrandedButton } from '@/components/BusinessBranding';
 import AvatarContextMenu from '@/components/AvatarContextMenu';
 import BillingModal from '@/components/BillingModal';
-import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
+import { getInstalledModules } from '@/api/modules';
 import { 
   Building2, 
   Users, 
-  Settings, 
   Palette, 
   Brain, 
   Package, 
   BarChart3, 
-  Shield,
   CheckCircle,
   AlertCircle,
   ArrowRight,
-  Plus,
   Zap,
   Target,
   Briefcase,
-  User,
   CreditCard,
-  Layout
+  Layout,
+  Folder,
+  MessageSquare,
+  Calendar,
+  UserCheck
 } from 'lucide-react';
 
 interface Business {
@@ -80,6 +80,14 @@ interface SetupStatus {
   employees: boolean;
 }
 
+interface InstalledModule {
+  id: string;
+  name: string;
+  description?: string;
+  status: string;
+  category?: string;
+}
+
 export default function BusinessAdminPage() {
   const params = useParams();
   const router = useRouter();
@@ -97,6 +105,7 @@ export default function BusinessAdminPage() {
     employees: false
   });
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const [installedModules, setInstalledModules] = useState<InstalledModule[]>([]);
 
   useEffect(() => {
     if (businessId && session?.accessToken) {
@@ -114,6 +123,19 @@ export default function BusinessAdminPage() {
 
       if (businessResponse.success) {
         setBusiness(businessResponse.data as unknown as Business);
+      }
+
+      // Load installed modules
+      try {
+        const modules = await getInstalledModules({
+          scope: 'business',
+          businessId: businessId
+        });
+        setInstalledModules(modules);
+      } catch (moduleError) {
+        console.error('Failed to load installed modules:', moduleError);
+        // Don't fail the whole page if modules can't load
+        setInstalledModules([]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load business data');
@@ -220,6 +242,24 @@ export default function BusinessAdminPage() {
   };
 
   const effectiveTier = getEffectiveTier();
+
+  // Get module icon based on module ID
+  const getModuleIcon = (moduleId: string) => {
+    switch (moduleId.toLowerCase()) {
+      case 'drive':
+        return Folder;
+      case 'chat':
+        return MessageSquare;
+      case 'calendar':
+        return Calendar;
+      case 'hr':
+        return UserCheck;
+      case 'dashboard':
+        return Layout;
+      default:
+        return Package;
+    }
+  };
 
   // Create branding object for the provider
   const branding = {
@@ -442,9 +482,38 @@ export default function BusinessAdminPage() {
             </div>
             
             <div className="space-y-3">
+              {/* Installed Modules List */}
+              {installedModules.length > 0 ? (
+                <div className="space-y-2 mb-3">
+                  {installedModules.map((module) => {
+                    const ModuleIcon = getModuleIcon(module.id);
+                    return (
+                      <div 
+                        key={module.id} 
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className="p-1.5 bg-white rounded">
+                            <ModuleIcon className="w-4 h-4 text-gray-700" />
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{module.name}</span>
+                        </div>
+                        <Badge color="green" size="sm">Active</Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 rounded-lg mb-3">
+                  <p className="text-sm text-amber-800">No modules installed yet</p>
+                </div>
+              )}
+              
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm font-medium text-gray-700">Core Modules</span>
-                <Badge color="green">3 Installed</Badge>
+                <span className="text-sm font-medium text-gray-700">Installed Modules</span>
+                <Badge color={installedModules.length > 0 ? "green" : "gray"}>
+                  {installedModules.length} Installed
+                </Badge>
               </div>
               
               <Button 

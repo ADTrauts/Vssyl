@@ -13,7 +13,9 @@ import {
   Briefcase,
   Home,
   Brain,
-  ArrowRight
+  ArrowRight,
+  UserCheck,
+  Calendar
 } from 'lucide-react';
 import { Card, Button, Badge, Avatar, Alert, Spinner } from 'shared/components';
 import { useWorkAuth } from '../contexts/WorkAuthContext';
@@ -124,7 +126,9 @@ export default function BrandedWorkDashboard({
       case 'dashboard': return LayoutDashboard;
       case 'drive': return Folder;
       case 'chat': return MessageSquare;
+      case 'calendar': return Calendar;
       case 'members': return Users;
+      case 'hr': return UserCheck;
       case 'admin': return Settings;
       default: return LayoutDashboard;
     }
@@ -135,9 +139,11 @@ export default function BrandedWorkDashboard({
       case 'dashboard': return 'Dashboard';
       case 'drive': return 'Drive';
       case 'chat': return 'Chat';
+      case 'calendar': return 'Calendar';
       case 'members': return 'Members';
+      case 'hr': return 'HR';
       case 'admin': return 'Admin';
-      default: return module;
+      default: return module.charAt(0).toUpperCase() + module.slice(1);
     }
   };
 
