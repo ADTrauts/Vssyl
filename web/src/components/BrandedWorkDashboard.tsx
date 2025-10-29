@@ -116,7 +116,8 @@ export default function BrandedWorkDashboard({
     if (module === 'dashboard') {
       router.push(`/business/${businessId}/workspace`);
     } else {
-      router.push(`/business/${businessId}/workspace/${module}`);
+      const routeId = normalizeModuleId(module);
+      router.push(`/business/${businessId}/workspace/${routeId}`);
     }
     setError(null);
   };
@@ -147,18 +148,35 @@ export default function BrandedWorkDashboard({
     }
   };
 
+  // Normalize module IDs coming from config/installed modules to route-safe IDs
+  const normalizeModuleId = (rawId: string): string => {
+    const id = rawId.toLowerCase();
+    if (id === 'hr' || id.startsWith('hr-') || id.startsWith('hr_') || id.includes('hr') && id.includes('manage')) {
+      return 'hr';
+    }
+    if (id === 'calendar' || id.startsWith('cal')) return 'calendar';
+    if (id === 'drive' || id.includes('drive')) return 'drive';
+    if (id === 'chat' || id.includes('chat')) return 'chat';
+    if (id === 'members' || id.includes('member')) return 'members';
+    if (id === 'admin') return 'admin';
+    return id;
+  };
+
   // Get available modules from business configuration based on user permissions
   const getAvailableModules = () => {
     if (!configuration || !session?.user?.id) return [];
     
     const userModules = getModulesForUser(session.user.id);
     
-    return userModules.map(module => ({
-      id: module.id,
-      name: module.name,
-      icon: getModuleIcon(module.id),
-      permission: module.id === 'dashboard' ? null : 'view'
-    }));
+    return userModules.map(module => {
+      const routeId = normalizeModuleId(module.id);
+      return {
+        id: routeId,
+        name: module.name,
+        icon: getModuleIcon(routeId),
+        permission: routeId === 'dashboard' ? null : 'view'
+      };
+    });
   };
 
   if (loading || configLoading) {
