@@ -48,6 +48,7 @@ router.get('/admin/employees/:id', checkHRAdmin, hrController.getAdminEmployee);
 router.post('/admin/employees', checkHRAdmin, hrController.createEmployee);
 router.put('/admin/employees/:id', checkHRAdmin, hrController.updateEmployee);
 router.delete('/admin/employees/:id', checkHRAdmin, hrController.deleteEmployee);
+router.post('/admin/employees/:id/terminate', checkHRAdmin, hrController.terminateEmployee);
 
 // HR Settings (Available on Business Advanced+)
 router.get('/admin/settings', checkHRAdmin, hrController.getHRSettings);
@@ -136,23 +137,12 @@ router.get('/team/employees', checkManagerAccess, hrController.getTeamEmployees)
 // Approve team time-off (framework stub)
 router.get('/team/time-off/pending',
   checkManagerAccess,
-  (req, res) => {
-    res.json({ 
-      message: 'Pending time-off requests - framework stub',
-      requests: [],
-      note: 'Feature implementation pending'
-    });
-  }
+  hrController.getPendingTeamTimeOff
 );
 
 router.post('/team/time-off/:id/approve',
   checkManagerAccess,
-  (req, res) => {
-    res.json({ 
-      message: 'Time-off approval - framework stub',
-      note: 'Feature implementation pending'
-    });
-  }
+  hrController.approveTeamTimeOff
 );
 
 // ============================================================================
@@ -170,24 +160,19 @@ router.put('/me', checkEmployeeAccess, hrController.updateOwnHRData);
 // Request time off (framework stub)
 router.post('/me/time-off/request',
   checkEmployeeAccess,
-  (req, res) => {
-    res.json({ 
-      message: 'Time-off request - framework stub',
-      note: 'Feature implementation pending'
-    });
-  }
+  hrController.requestTimeOff
 );
 
 // View own time-off balance (framework stub)
 router.get('/me/time-off/balance',
   checkEmployeeAccess,
-  (req, res) => {
-    res.json({ 
-      message: 'Time-off balance - framework stub',
-      balance: { pto: 15, sick: 10, personal: 5 },
-      note: 'Feature implementation pending'
-    });
-  }
+  hrController.getTimeOffBalance
+);
+
+// List own time-off requests
+router.get('/me/time-off/requests',
+  checkEmployeeAccess,
+  hrController.getMyTimeOffRequests
 );
 
 // View own pay stubs (framework stub)

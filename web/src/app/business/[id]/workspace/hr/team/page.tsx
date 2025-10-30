@@ -29,6 +29,19 @@ interface TeamMember {
   };
 }
 
+type PendingRequest = {
+  id: string;
+  employeePosition: {
+    user: { name?: string | null; email: string };
+    position: { title: string };
+  };
+  type: string;
+  startDate: string;
+  endDate: string;
+  requestedAt: string;
+  reason?: string;
+};
+
 export default function ManagerTeamView() {
   const params = useParams();
   const { data: session } = useSession();
@@ -40,16 +53,50 @@ export default function ManagerTeamView() {
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [hasDirectReports, setHasDirectReports] = useState(false);
+  const [pending, setPending] = useState<PendingRequest[]>([]);
+  const [approving, setApproving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    // TODO: Fetch team members from API
-    // For now, simulate loading
-    setTimeout(() => {
-      setLoading(false);
-      // Mock: Check if user has direct reports
-      setHasDirectReports(false); // Will be true when org chart is connected
-    }, 500);
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // Load team members
+        const teamRes = await fetch(`/api/hr/team/employees?businessId=${encodeURIComponent(businessId)}`);
+        if (teamRes.ok) {
+          const teamJson = await teamRes.json();
+          setTeamMembers(teamJson.employees || []);
+          setHasDirectReports((teamJson.employees || []).length > 0);
+        } else {
+          setHasDirectReports(false);
+        }
+        // Load pending approvals
+        const penRes = await fetch(`/api/hr/team/time-off/pending?businessId=${encodeURIComponent(businessId)}`);
+        if (penRes.ok) {
+          const pjson = await penRes.json();
+          setPending(pjson.requests || []);
+        }
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (businessId) load();
   }, [businessId, session]);
+
+  const actOn = async (id: string, decision: 'APPROVE' | 'DENY') => {
+    setApproving(id);
+    const res = await fetch(`/api/hr/team/time-off/${encodeURIComponent(id)}/approve?businessId=${encodeURIComponent(businessId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision })
+    });
+    setApproving(null);
+    if (!res.ok) { alert('Action failed'); return; }
+    setPending((prev) => prev.filter((r) => r.id !== id));
+  };
   
   if (loading) {
     return (
@@ -112,64 +159,67 @@ export default function ManagerTeamView() {
         </div>
         <div className="bg-white border rounded-lg p-4">
           <div className="text-sm text-gray-600">Pending Approvals</div>
-          <div className="text-2xl font-bold">0</div>
-          <div className="text-xs text-gray-500 mt-1">Feature coming soon</div>
+          <div className="text-2xl font-bold">{pending.length}</div>
         </div>
         <div className="bg-white border rounded-lg p-4">
           <div className="text-sm text-gray-600">Out Today</div>
           <div className="text-2xl font-bold">0</div>
-          <div className="text-xs text-gray-500 mt-1">Feature coming soon</div>
+          <div className="text-xs text-gray-500 mt-1">Coming later</div>
         </div>
       </div>
       
       {/* Team Management Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Team Members */}
-        <div className="border rounded-lg p-6 bg-white hover:shadow-lg transition-shadow">
+        <div className="border rounded-lg p-6 bg-white">
           <div className="text-3xl mb-3">👥</div>
           <h3 className="text-lg font-semibold mb-2">Team Members</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            View your team's profiles and information
-          </p>
-          <p className="text-sm text-gray-500">
-            {teamMembers.length} direct reports
-          </p>
+          {teamMembers.length === 0 ? (
+            <p className="text-sm text-gray-600">No team members found</p>
+          ) : (
+            <div className="divide-y">
+              {teamMembers.map((m) => (
+                <div key={m.id} className="py-2 text-sm">
+                  <div className="font-medium">{m.user?.name || m.user?.email}</div>
+                  <div className="text-gray-500">{m.position?.title}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         
         {/* Time-Off Approvals */}
-        <div className="border rounded-lg p-6 bg-white hover:shadow-lg transition-shadow">
+        <div className="border rounded-lg p-6 bg-white">
           <div className="text-3xl mb-3">✅</div>
           <h3 className="text-lg font-semibold mb-2">Time-Off Approvals</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Approve or deny team time-off requests
-          </p>
-          <p className="text-sm text-gray-500">
-            Feature coming soon
-          </p>
-        </div>
-        
-        {/* Team Attendance */}
-        <div className="border rounded-lg p-6 bg-white hover:shadow-lg transition-shadow">
-          <div className="text-3xl mb-3">📊</div>
-          <h3 className="text-lg font-semibold mb-2">Team Attendance</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            View team attendance and schedules
-          </p>
-          <p className="text-sm text-gray-500">
-            Feature coming soon
-          </p>
-        </div>
-        
-        {/* Team Reports */}
-        <div className="border rounded-lg p-6 bg-white hover:shadow-lg transition-shadow">
-          <div className="text-3xl mb-3">📈</div>
-          <h3 className="text-lg font-semibold mb-2">Team Reports</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Generate team performance and attendance reports
-          </p>
-          <p className="text-sm text-gray-500">
-            Feature coming soon
-          </p>
+          {pending.length === 0 ? (
+            <p className="text-sm text-gray-600">No pending requests</p>
+          ) : (
+            <div className="border rounded">
+              <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+                <div className="col-span-3">Employee</div>
+                <div className="col-span-2">Type</div>
+                <div className="col-span-3">Dates</div>
+                <div className="col-span-2">Submitted</div>
+                <div className="col-span-2 text-right">Actions</div>
+              </div>
+              {pending.map((r) => (
+                <div key={r.id} className="grid grid-cols-12 px-3 py-2 border-t text-sm items-center">
+                  <div className="col-span-3">
+                    <div className="font-medium">{r.employeePosition.user?.name || r.employeePosition.user.email}</div>
+                    <div className="text-gray-500">{r.employeePosition.position.title}</div>
+                  </div>
+                  <div className="col-span-2">{r.type}</div>
+                  <div className="col-span-3">{new Date(r.startDate).toLocaleDateString()} → {new Date(r.endDate).toLocaleDateString()}</div>
+                  <div className="col-span-2">{new Date(r.requestedAt).toLocaleDateString()}</div>
+                  <div className="col-span-2 text-right">
+                    <button disabled={approving === r.id} className="text-green-600 hover:underline mr-3 disabled:opacity-50" onClick={() => actOn(r.id, 'APPROVE')}>Approve</button>
+                    <button disabled={approving === r.id} className="text-red-600 hover:underline disabled:opacity-50" onClick={() => actOn(r.id, 'DENY')}>Deny</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       

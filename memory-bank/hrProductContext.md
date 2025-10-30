@@ -5,7 +5,7 @@
 **Module ID**: `hr`  
 **Category**: Business Only  
 **Minimum Tier**: Business Advanced
-**Production URL**: `/business/[id]/admin/hr` (Admin), `/business/[id]/workspace/hr/me` (Employee)
+**Production URL**: `/business/[id]/admin/hr` (Admin), `/business/[id]/workspace?module=hr` (Workspace), `/business/[id]/workspace/hr/me` (Employee)
 
 ---
 
@@ -325,9 +325,10 @@ Feature Data (Attendance, Payroll, etc.) ← Future features
 - Accessible from admin sidebar navigation
 
 **Employee/Manager Access**:
-- Self-service and team features in Business Workspace
-- Located at `/business/[id]/workspace/hr/*`
-- Accessible from workspace navigation
+- Self-service and team features render inside the unified workspace
+- Primary entry: `/business/[id]/workspace?module=hr` (unified renderer)
+- Deep links remain at `/business/[id]/workspace/hr/*` for specific views
+- Accessible from Work tab and sidebar; module list provided by BusinessConfigurationContext
 
 ---
 

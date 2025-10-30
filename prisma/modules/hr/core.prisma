@@ -29,6 +29,10 @@ model EmployeeHRProfile {
   // ============================================================================
   hireDate        DateTime?
   terminationDate DateTime?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  terminationReason String?
+  terminatedBy    String?
+  terminationNotes Json?
   employeeType    EmployeeType?  // Full-time, Part-time, Contract, etc.
   workLocation    String?        // Office, Remote, Hybrid
   
@@ -68,6 +72,7 @@ model EmployeeHRProfile {
   @@index([employeePositionId])
   @@index([deletedAt])
   @@index([employeeType])
+  @@index([employmentStatus])
   @@map("employee_hr_profiles")
 }
 
@@ -79,6 +84,14 @@ enum EmployeeType {
   INTERN        // Intern
   TEMPORARY     // Temporary worker
   SEASONAL      // Seasonal worker
+}
+
+// Employment lifecycle status
+enum EmploymentStatus {
+  ACTIVE
+  TERMINATED
+  LEAVE
+  SABBATICAL
 }
 
 // ============================================================================

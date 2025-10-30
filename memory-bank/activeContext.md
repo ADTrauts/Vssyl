@@ -85,6 +85,9 @@ Built complete HR module infrastructure (database, API, UI framework):
 - ✅ `web/src/app/business/[id]/workspace/hr/me/page.tsx` - Employee Self-Service
 - ✅ `web/src/app/business/[id]/workspace/hr/team/page.tsx` - Manager Team View
 - ✅ `web/src/hooks/useHRFeatures.ts` - Tier-based feature detection
+- ✅ `web/src/components/hr/HRWorkspaceLanding.tsx` - Shared HR workspace landing component
+- ✅ `web/src/components/business/BusinessWorkspaceContent.tsx` - Added `case 'hr'` to unified renderer
+- ✅ `web/src/components/BrandedWorkDashboard.tsx` - Normalized module routing to `?module=` and ensured HR icon/name
 
 **AI Integration:**
 - ✅ Registered in `registerBuiltInModules.ts` with full AI context
@@ -96,6 +99,12 @@ Built complete HR module infrastructure (database, API, UI framework):
 - ✅ Employee: Self-service only
 
 **Subscription Tiers:**
+#### **Workspace Module Rendering Rule (NEW)**
+- Routing: `/business/{id}/workspace?module={id}` (dashboard omits `module`)
+- Renderer: `BusinessWorkspaceContent` switches on `currentModule`
+- HR wiring: `case 'hr'` → `<HRWorkspaceLanding businessId={business.id} />`
+- Deep link remains: `/business/[id]/workspace/hr/page.tsx`, but the shared component is the source of truth
+- Future improvement: replace switch with a registry (id → component, icon, title) to avoid manual cases
 - ✅ Business Advanced: Core HR features
 - ✅ Enterprise: All HR features including payroll & performance
 

@@ -690,6 +690,7 @@ model Business {
   employeeHRProfiles EmployeeHRProfile[]
   managerApprovalHierarchies ManagerApprovalHierarchy[]
   hrModuleSettings HRModuleSettings?
+  timeOffRequests TimeOffRequest[] @relation("BusinessTimeOffRequests")
 
   @@index([ein])
   @@map("businesses")
@@ -1403,6 +1404,8 @@ model EmployeePosition {
   hrProfile   EmployeeHRProfile?
   employeeApprovals ManagerApprovalHierarchy[] @relation("EmployeeApprovals")
   managerApprovals  ManagerApprovalHierarchy[] @relation("ManagerApprovals")
+  // HR Time-Off back-relation
+  timeOffRequests   TimeOffRequest[]          @relation("EmployeePositionTimeOffRequests")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -3763,6 +3766,60 @@ enum LiveChatStatus {
 // ============================================================================
 
 // ============================================================================
+// HR ATTENDANCE & TIME-OFF
+// ============================================================================
+
+model TimeOffRequest {
+  id                 String   @id @default(uuid())
+  businessId         String
+  business           Business @relation("BusinessTimeOffRequests", fields: [businessId], references: [id], onDelete: Cascade)
+
+  employeePositionId String
+  employeePosition   EmployeePosition @relation("EmployeePositionTimeOffRequests", fields: [employeePositionId], references: [id], onDelete: Cascade)
+
+  type               TimeOffType
+  startDate          DateTime
+  endDate            DateTime
+  reason             String?
+
+  status             TimeOffStatus @default(PENDING)
+  requestedById      String
+  requestedAt        DateTime @default(now())
+  approvedById       String?
+  approvedAt         DateTime?
+  managerNote        String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([businessId])
+  @@index([employeePositionId])
+  @@index([status])
+  @@map("time_off_requests")
+}
+
+enum TimeOffType {
+  PTO
+  SICK
+  PERSONAL
+  UNPAID
+}
+
+enum TimeOffStatus {
+  PENDING
+  APPROVED
+  DENIED
+  CANCELED
+}
+
+
+
+
+// ============================================================================
+// HR MODULE
+// ============================================================================
+
+// ============================================================================
 // HR MODULE - CORE FRAMEWORK
 // ============================================================================
 // Purpose: Foundational HR data models that extend the org chart system
@@ -3793,6 +3850,10 @@ model EmployeeHRProfile {
   // ============================================================================
   hireDate        DateTime?
   terminationDate DateTime?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  terminationReason String?
+  terminatedBy    String?
+  terminationNotes Json?
   employeeType    EmployeeType?  // Full-time, Part-time, Contract, etc.
   workLocation    String?        // Office, Remote, Hybrid
   
@@ -3832,6 +3893,7 @@ model EmployeeHRProfile {
   @@index([employeePositionId])
   @@index([deletedAt])
   @@index([employeeType])
+  @@index([employmentStatus])
   @@map("employee_hr_profiles")
 }
 
@@ -3843,6 +3905,14 @@ enum EmployeeType {
   INTERN        // Intern
   TEMPORARY     // Temporary worker
   SEASONAL      // Seasonal worker
+}
+
+// Employment lifecycle status
+enum EmploymentStatus {
+  ACTIVE
+  TERMINATED
+  LEAVE
+  SABBATICAL
 }
 
 // ============================================================================

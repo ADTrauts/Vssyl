@@ -57,6 +57,7 @@ model Business {
   employeeHRProfiles EmployeeHRProfile[]
   managerApprovalHierarchies ManagerApprovalHierarchy[]
   hrModuleSettings HRModuleSettings?
+  timeOffRequests TimeOffRequest[] @relation("BusinessTimeOffRequests")
 
   @@index([ein])
   @@map("businesses")

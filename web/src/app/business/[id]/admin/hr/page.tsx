@@ -164,6 +164,25 @@ export default function HRAdminDashboard() {
           href={`/business/${businessId}/admin/hr/benefits`}
         />
       </div>
+
+      {/* Quick Links */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold mb-2">Quick Links</h3>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <Link
+            href={`/business/${businessId}/admin/hr/employees`}
+            className="text-blue-600 hover:underline"
+          >
+            View Active Employees
+          </Link>
+          <Link
+            href={`/business/${businessId}/admin/hr/employees?status=terminated`}
+            className="text-blue-600 hover:underline"
+          >
+            View Terminated Employees
+          </Link>
+        </div>
+      </div>
       
       {/* HR Settings */}
       <div className="mt-8 p-4 border rounded-lg">
