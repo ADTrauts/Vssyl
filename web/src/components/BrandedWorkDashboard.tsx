@@ -167,19 +167,29 @@ export default function BrandedWorkDashboard({
 
   // Get available modules from business configuration based on user permissions
   const getAvailableModules = () => {
-    if (!configuration || !session?.user?.id) return [];
+    if (!configuration || !session?.user?.id) {
+      console.log('[Work] No configuration or session, returning empty modules');
+      return [];
+    }
     
     const userModules = getModulesForUser(session.user.id);
+    console.log('[Work] Raw user modules from config:', userModules);
     
-    return userModules.map(module => {
+    const mapped = userModules.map(module => {
       const routeId = normalizeModuleId(module.id);
-      return {
+      const mappedModule = {
         id: routeId,
         name: module.name,
         icon: getModuleIcon(routeId),
-        permission: routeId === 'dashboard' ? null : 'view'
+        permission: routeId === 'dashboard' ? null : 'view',
+        originalId: module.id // Keep for debugging
       };
+      console.log('[Work] Module mapping:', { original: module.id, routeId, name: module.name });
+      return mappedModule;
     });
+    
+    console.log('[Work] Final available modules:', mapped);
+    return mapped;
   };
 
   if (loading || configLoading) {
@@ -363,18 +373,27 @@ export default function BrandedWorkDashboard({
           </div>
 
           {/* Additional Modules */}
-          {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).length > 0 && (
+          {(() => {
+            const additionalModules = availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id));
+            console.log('[Work] Additional modules to render:', additionalModules);
+            return additionalModules.length > 0;
+          })() && (
             <div className="max-w-6xl mx-auto mt-12">
               <div className="text-center mb-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">More Tools</h3>
                 <p className="text-gray-600">Additional modules available for your business</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).map((module) => (
+                {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).map((module) => {
+                  console.log('[Work] Rendering module card:', { id: module.id, name: module.name, originalId: module.originalId });
+                  return (
                   <div
                     key={module.id}
                     className="cursor-pointer group"
-                    onClick={() => handleModuleClick(module.id)}
+                    onClick={() => {
+                      console.log('[Work] Module card clicked!', { id: module.id, name: module.name, originalId: module.originalId });
+                      handleModuleClick(module.id);
+                    }}
                   >
                     <BrandedCard className="p-4 hover:shadow-md transition-all duration-200 border border-gray-200 group-hover:border-gray-300">
                       <div className="flex items-center space-x-3">
@@ -393,7 +412,8 @@ export default function BrandedWorkDashboard({
                       </div>
                     </BrandedCard>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
