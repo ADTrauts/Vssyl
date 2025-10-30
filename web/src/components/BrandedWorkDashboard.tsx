@@ -116,11 +116,11 @@ export default function BrandedWorkDashboard({
       console.warn('No explicit permission for module, proceeding to landing for validation:', module);
     }
     
-    // Navigate to the new workspace structure
+    // Navigate to the unified workspace route using query param (consistent with sidebar)
     if (module === 'dashboard') {
       router.push(`/business/${businessId}/workspace`);
     } else {
-      router.push(`/business/${businessId}/workspace/${routeId}`);
+      router.push(`/business/${businessId}/workspace?module=${routeId}`);
     }
     setError(null);
   };
