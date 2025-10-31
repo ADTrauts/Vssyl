@@ -15,6 +15,9 @@ import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useHRFeatures } from '@/hooks/useHRFeatures';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
+import { Spinner, Alert, EmptyState } from 'shared/components';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
 interface EmployeeData {
@@ -49,8 +52,10 @@ export default function EmployeeSelfService() {
   const { data: session } = useSession();
   const businessId = (params?.id as string) || '';
   
-  const [businessTier, setBusinessTier] = useState<string>('business_advanced');
-  const hrFeatures = useHRFeatures(businessTier);
+  console.log('[HR/me] Component mounted/updated:', { businessId, hasSession: !!session, pathname: typeof window !== 'undefined' ? window.location.pathname : 'SSR' });
+  
+  const { businessTier } = useBusinessConfiguration();
+  const hrFeatures = useHRFeatures(businessTier || undefined);
   
   const [loading, setLoading] = useState(true);
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
@@ -58,6 +63,7 @@ export default function EmployeeSelfService() {
   const [requests, setRequests] = useState<MyRequest[]>([]);
   const [showRequest, setShowRequest] = useState(false);
   const [reqForm, setReqForm] = useState<{ type: string; startDate: string; endDate: string; reason: string }>({ type: '', startDate: '', endDate: '', reason: '' });
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
@@ -66,63 +72,105 @@ export default function EmployeeSelfService() {
       try {
         setLoading(true);
         setError(null);
+        console.log('[HR/me] Loading employee data for businessId:', businessId);
+        
         const [profileRes, balanceRes, requestsRes] = await Promise.all([
           fetch(`/api/hr/me?businessId=${encodeURIComponent(businessId)}`),
           fetch(`/api/hr/me/time-off/balance?businessId=${encodeURIComponent(businessId)}`),
           fetch(`/api/hr/me/time-off/requests?businessId=${encodeURIComponent(businessId)}`)
         ]);
-        if (!profileRes.ok) throw new Error('Failed to load profile');
+        
+        console.log('[HR/me] API responses:', {
+          profile: { status: profileRes.status, ok: profileRes.ok },
+          balance: { status: balanceRes.status, ok: balanceRes.ok },
+          requests: { status: requestsRes.status, ok: requestsRes.ok }
+        });
+        
+        if (!profileRes.ok) {
+          const errorText = await profileRes.text();
+          console.error('[HR/me] Profile API error:', profileRes.status, errorText);
+          throw new Error(`Failed to load profile (${profileRes.status}): ${errorText}`);
+        }
+        
         const profileJson = await profileRes.json();
+        console.log('[HR/me] Profile data received:', profileJson);
+        
         setEmployeeData({
           id: profileJson.employee?.id || '1',
           user: { name: session?.user?.name || 'Employee', email: session?.user?.email || 'employee@example.com' } as any,
           position: profileJson.employee?.position || { title: 'Software Engineer', department: { name: 'Engineering' } },
           hrProfile: profileJson.employee?.hrProfile || { hireDate: '2024-01-15', employeeType: 'FULL_TIME' }
         });
+        
         if (balanceRes.ok) {
           const balJson = await balanceRes.json();
           setBalance(balJson.balance);
         } else {
+          console.warn('[HR/me] Balance API failed:', balanceRes.status);
           setBalance({ pto: 0, sick: 0, personal: 0 });
         }
+        
         if (requestsRes.ok) {
           const rjson = await requestsRes.json();
           setRequests(rjson.requests || []);
+        } else {
+          console.warn('[HR/me] Requests API failed:', requestsRes.status);
         }
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Failed to load');
+        const errorMsg = e instanceof Error ? e.message : 'Failed to load';
+        console.error('[HR/me] Load error:', errorMsg, e);
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
-    if (businessId) load();
+    if (businessId) {
+      load();
+    } else {
+      console.warn('[HR/me] No businessId provided');
+      setError('Business ID is required');
+      setLoading(false);
+    }
   }, [businessId, session]);
   
   const submitRequest = async () => {
     if (!reqForm.type || !reqForm.startDate || !reqForm.endDate) {
-      alert('Type and Dates are required');
+      toast.error('Please fill in all required fields (Type, Start Date, End Date)');
       return;
     }
     if (new Date(reqForm.endDate) < new Date(reqForm.startDate)) {
-      alert('End date must be after start date');
+      toast.error('End date must be after start date');
       return;
     }
-    const res = await fetch(`/api/hr/me/time-off/request?businessId=${encodeURIComponent(businessId)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: reqForm.type, startDate: reqForm.startDate, endDate: reqForm.endDate, reason: reqForm.reason })
-    });
-    if (!res.ok) {
-      alert('Failed to submit request');
-      return;
+    
+    setSubmittingRequest(true);
+    try {
+      const res = await fetch(`/api/hr/me/time-off/request?businessId=${encodeURIComponent(businessId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: reqForm.type, startDate: reqForm.startDate, endDate: reqForm.endDate, reason: reqForm.reason })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to submit request' }));
+        throw new Error(errorData.error || `Request failed (${res.status})`);
+      }
+      
+      const data = await res.json();
+      setRequests((prev) => [
+        { id: data.request.id, type: data.request.type, startDate: data.request.startDate, endDate: data.request.endDate, status: data.request.status, requestedAt: data.request.requestedAt },
+        ...prev
+      ]);
+      setShowRequest(false);
+      setReqForm({ type: '', startDate: '', endDate: '', reason: '' });
+      toast.success('Time-off request submitted successfully!');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to submit request';
+      toast.error(errorMsg);
+      console.error('[HR/me] Request submission error:', err);
+    } finally {
+      setSubmittingRequest(false);
     }
-    const data = await res.json();
-    setRequests((prev) => [
-      { id: data.request.id, type: data.request.type, startDate: data.request.startDate, endDate: data.request.endDate, status: data.request.status, requestedAt: data.request.requestedAt },
-      ...prev
-    ]);
-    setShowRequest(false);
-    setReqForm({ type: '', startDate: '', endDate: '', reason: '' });
   };
   
   if (loading) {
@@ -140,13 +188,22 @@ export default function EmployeeSelfService() {
     );
   }
   
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert type="error" title="Error Loading HR Data">
+          {error}
+        </Alert>
+      </div>
+    );
+  }
+  
   if (!hrFeatures.hasHRAccess) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">HR Self-Service Not Available</h1>
-        <p className="text-gray-600">
+        <Alert type="warning" title="HR Self-Service Not Available">
           Your company needs Business Advanced or Enterprise tier to access HR features.
-        </p>
+        </Alert>
       </div>
     );
   }
@@ -233,7 +290,13 @@ export default function EmployeeSelfService() {
               <div className="col-span-2">Submitted</div>
             </div>
             {requests.length === 0 ? (
-              <div className="p-4 text-sm text-gray-600">No requests yet</div>
+              <div className="p-8">
+                <EmptyState
+                  icon="📅"
+                  title="No Time-Off Requests"
+                  description="You haven't submitted any time-off requests yet. Click 'New Request' to get started."
+                />
+              </div>
             ) : (
               requests.map((r) => (
                 <div key={r.id} className="grid grid-cols-12 px-3 py-2 border-t text-sm">
@@ -315,8 +378,21 @@ export default function EmployeeSelfService() {
               </div>
             </div>
             <div className="mt-4 flex justify-end gap-3">
-              <button className="px-4 py-2 border rounded" onClick={() => setShowRequest(false)}>Cancel</button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={submitRequest}>Submit</button>
+              <button 
+                className="px-4 py-2 border rounded disabled:opacity-50" 
+                onClick={() => setShowRequest(false)}
+                disabled={submittingRequest}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 flex items-center gap-2" 
+                onClick={submitRequest}
+                disabled={submittingRequest}
+              >
+                {submittingRequest && <Spinner size={16} />}
+                {submittingRequest ? 'Submitting...' : 'Submit'}
+              </button>
             </div>
           </div>
         </div>

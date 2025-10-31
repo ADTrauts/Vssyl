@@ -294,16 +294,21 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
         </Card>
 
         <Card className="p-6 hover:shadow-lg transition-shadow">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Calendar className="w-6 h-6 text-yellow-600" />
+          <Link href={`/business/${businessId}/workspace/hr/me`} className="block w-full">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <Calendar className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Request Time Off</h3>
+                <p className="text-sm text-gray-600">Submit vacation or sick leave requests</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Request Time Off</h3>
-              <p className="text-sm text-gray-600">Submit vacation or sick leave requests</p>
-            </div>
-          </div>
-          <Badge color="gray">Coming Soon</Badge>
+            <Button variant="secondary" className="w-full">
+              Request Time Off
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
         </Card>
 
         <Card className="p-6 hover:shadow-lg transition-shadow">

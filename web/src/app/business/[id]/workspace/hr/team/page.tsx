@@ -15,6 +15,9 @@ import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useHRFeatures } from '@/hooks/useHRFeatures';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
+import { Spinner, Alert, EmptyState } from 'shared/components';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
 interface TeamMember {
@@ -47,8 +50,8 @@ export default function ManagerTeamView() {
   const { data: session } = useSession();
   const businessId = (params?.id as string) || '';
   
-  const [businessTier, setBusinessTier] = useState<string>('business_advanced');
-  const hrFeatures = useHRFeatures(businessTier);
+  const { businessTier } = useBusinessConfiguration();
+  const hrFeatures = useHRFeatures(businessTier || undefined);
   
   const [loading, setLoading] = useState(true);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -88,14 +91,27 @@ export default function ManagerTeamView() {
 
   const actOn = async (id: string, decision: 'APPROVE' | 'DENY') => {
     setApproving(id);
-    const res = await fetch(`/api/hr/team/time-off/${encodeURIComponent(id)}/approve?businessId=${encodeURIComponent(businessId)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ decision })
-    });
-    setApproving(null);
-    if (!res.ok) { alert('Action failed'); return; }
-    setPending((prev) => prev.filter((r) => r.id !== id));
+    try {
+      const res = await fetch(`/api/hr/team/time-off/${encodeURIComponent(id)}/approve?businessId=${encodeURIComponent(businessId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision })
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Action failed' }));
+        throw new Error(errorData.error || `Failed to ${decision.toLowerCase()} request`);
+      }
+      
+      setPending((prev) => prev.filter((r) => r.id !== id));
+      toast.success(`Request ${decision === 'APPROVE' ? 'approved' : 'denied'} successfully`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Action failed';
+      toast.error(errorMsg);
+      console.error('[HR/team] Approval error:', err);
+    } finally {
+      setApproving(null);
+    }
   };
   
   if (loading) {
@@ -113,30 +129,42 @@ export default function ManagerTeamView() {
     );
   }
   
-  if (!hrFeatures.hasHRAccess) {
+  if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Team HR Not Available</h1>
-        <p className="text-gray-600">
-          Your company needs Business Advanced or Enterprise tier to access HR features.
-        </p>
+        <Alert type="error" title="Error Loading Team Data">
+          {error}
+        </Alert>
       </div>
     );
   }
-  
+
+  if (!hrFeatures.hasHRAccess) {
+    return (
+      <div className="p-6">
+        <Alert type="warning" title="Team HR Not Available">
+          Your company needs Business Advanced or Enterprise tier to access HR features.
+        </Alert>
+      </div>
+    );
+  }
+
   if (!hasDirectReports) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">No Team Members</h1>
-        <p className="text-gray-600 mb-4">
-          You don't have any direct reports. Team HR features are available when you manage a team.
-        </p>
-        <Link 
-          href={`/business/${businessId}/workspace`}
-          className="text-blue-600 hover:underline"
-        >
-          ← Back to Workspace
-        </Link>
+        <EmptyState
+          icon="👥"
+          title="No Team Members"
+          description="You don't have any direct reports. Team HR features are available when you manage a team."
+        />
+        <div className="mt-6 text-center">
+          <Link 
+            href={`/business/${businessId}/workspace`}
+            className="text-blue-600 hover:underline"
+          >
+            ← Back to Workspace
+          </Link>
+        </div>
       </div>
     );
   }
@@ -175,7 +203,11 @@ export default function ManagerTeamView() {
           <div className="text-3xl mb-3">👥</div>
           <h3 className="text-lg font-semibold mb-2">Team Members</h3>
           {teamMembers.length === 0 ? (
-            <p className="text-sm text-gray-600">No team members found</p>
+            <EmptyState
+              icon="👥"
+              title="No Team Members"
+              description="You don't have any direct reports assigned yet."
+            />
           ) : (
             <div className="divide-y">
               {teamMembers.map((m) => (
@@ -193,7 +225,13 @@ export default function ManagerTeamView() {
           <div className="text-3xl mb-3">✅</div>
           <h3 className="text-lg font-semibold mb-2">Time-Off Approvals</h3>
           {pending.length === 0 ? (
-            <p className="text-sm text-gray-600">No pending requests</p>
+            <div className="p-6">
+              <EmptyState
+                icon="✅"
+                title="All Caught Up!"
+                description="No pending time-off requests. Your team's requests will appear here when submitted."
+              />
+            </div>
           ) : (
             <div className="border rounded">
               <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
@@ -212,9 +250,27 @@ export default function ManagerTeamView() {
                   <div className="col-span-2">{r.type}</div>
                   <div className="col-span-3">{new Date(r.startDate).toLocaleDateString()} → {new Date(r.endDate).toLocaleDateString()}</div>
                   <div className="col-span-2">{new Date(r.requestedAt).toLocaleDateString()}</div>
-                  <div className="col-span-2 text-right">
-                    <button disabled={approving === r.id} className="text-green-600 hover:underline mr-3 disabled:opacity-50" onClick={() => actOn(r.id, 'APPROVE')}>Approve</button>
-                    <button disabled={approving === r.id} className="text-red-600 hover:underline disabled:opacity-50" onClick={() => actOn(r.id, 'DENY')}>Deny</button>
+                  <div className="col-span-2 text-right flex items-center justify-end gap-2">
+                    {approving === r.id ? (
+                      <Spinner size={16} />
+                    ) : (
+                      <>
+                        <button 
+                          disabled={approving === r.id} 
+                          className="text-green-600 hover:underline disabled:opacity-50" 
+                          onClick={() => actOn(r.id, 'APPROVE')}
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          disabled={approving === r.id} 
+                          className="text-red-600 hover:underline disabled:opacity-50" 
+                          onClick={() => actOn(r.id, 'DENY')}
+                        >
+                          Deny
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

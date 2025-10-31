@@ -15,6 +15,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useHRFeatures } from '@/hooks/useHRFeatures';
+import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import Link from 'next/link';
 
 export default function HRAdminDashboard() {
@@ -23,17 +24,17 @@ export default function HRAdminDashboard() {
   const { data: session } = useSession();
   const businessId = (params?.id as string) || '';
   
-  // TODO: Get actual business tier from API
-  const [businessTier, setBusinessTier] = useState<string>('business_advanced');
-  const hrFeatures = useHRFeatures(businessTier);
+  const { businessTier, loading: contextLoading } = useBusinessConfiguration();
+  const hrFeatures = useHRFeatures(businessTier || undefined);
   
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // TODO: Fetch business tier from API
-    // For now, simulate loading
-    setTimeout(() => setLoading(false), 500);
-  }, [businessId]);
+    // Once context has loaded tier info, we're ready
+    if (!contextLoading && businessTier !== null) {
+      setLoading(false);
+    }
+  }, [contextLoading, businessTier]);
   
   if (loading || hrFeatures.loading) {
     return (

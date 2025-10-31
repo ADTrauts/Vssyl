@@ -19,6 +19,10 @@ import { prisma } from '../lib/prisma';
 export const getAdminEmployees = async (req: Request, res: Response) => {
   try {
     const businessId = req.query.businessId as string;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId is required' });
+    }
+    
     const status = (req.query.status as string) || 'ACTIVE';
     const q = (req.query.q as string) || '';
     const page = Number(req.query.page || 1);
@@ -26,30 +30,38 @@ export const getAdminEmployees = async (req: Request, res: Response) => {
     const skip = (page - 1) * pageSize;
     
     if (status === 'TERMINATED') {
+      // Build where clause
+      const where: Record<string, unknown> = {
+        businessId,
+        employmentStatus: 'TERMINATED'
+      };
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hrProfiles = await (prisma as any).employeeHRProfile.findMany({
-        where: {
-          businessId,
-          employmentStatus: 'TERMINATED'
-        },
-        include: {
-          employeePosition: {
-            include: {
-              user: {
-                select: { id: true, name: true, email: true, image: true }
-              },
-              position: { include: { department: true, tier: true } }
+      const [hrProfiles, totalCount] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma as any).employeeHRProfile.findMany({
+          where,
+          include: {
+            employeePosition: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true, image: true }
+                },
+                position: { include: { department: true, tier: true } }
+              }
             }
-          }
-        },
-        orderBy: { updatedAt: 'desc' },
-        skip,
-        take: pageSize
-      });
+          },
+          orderBy: { updatedAt: 'desc' },
+          skip,
+          take: pageSize
+        }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma as any).employeeHRProfile.count({ where })
+      ]);
 
       return res.json({ 
         employees: hrProfiles,
-        count: hrProfiles.length,
+        count: totalCount,
         page,
         pageSize,
         tier: req.hrTier,
@@ -57,31 +69,38 @@ export const getAdminEmployees = async (req: Request, res: Response) => {
       });
     }
 
-    const employees = await prisma.employeePosition.findMany({
-      where: {
-        businessId,
-        active: true,
-        OR: q
-          ? [
-              { user: { name: { contains: q, mode: 'insensitive' } } },
-              { user: { email: { contains: q, mode: 'insensitive' } } },
-              { position: { title: { contains: q, mode: 'insensitive' } } }
-            ]
-          : undefined
-      },
-      include: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-        position: { include: { department: true, tier: true } },
-        hrProfile: true
-      },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: pageSize
-    });
+    // ACTIVE employees
+    const where: Record<string, unknown> = {
+      businessId,
+      active: true
+    };
+    
+    if (q) {
+      where.OR = [
+        { user: { name: { contains: q, mode: 'insensitive' } } },
+        { user: { email: { contains: q, mode: 'insensitive' } } },
+        { position: { title: { contains: q, mode: 'insensitive' } } }
+      ];
+    }
+
+    const [employees, totalCount] = await Promise.all([
+      prisma.employeePosition.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+          position: { include: { department: true, tier: true } },
+          hrProfile: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize
+      }),
+      prisma.employeePosition.count({ where })
+    ]);
 
     return res.json({ 
       employees,
-      count: employees.length,
+      count: totalCount,
       page,
       pageSize,
       tier: req.hrTier,
@@ -89,7 +108,8 @@ export const getAdminEmployees = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching employees:', error);
-    res.status(500).json({ error: 'Failed to fetch employees' });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch employees';
+    res.status(500).json({ error: errorMessage });
   }
 };
 

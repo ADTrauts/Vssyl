@@ -6,6 +6,7 @@ export * from './Avatar';
 export * from './Badge';
 export * from './Alert';
 export * from './Spinner';
+export * from './EmptyState';
 export * from './Textarea';
 export * from './Checkbox';
 export * from './Radio';

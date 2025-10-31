@@ -88,6 +88,10 @@ export interface BusinessConfiguration {
 
 interface BusinessConfigurationContextType {
   configuration: BusinessConfiguration | null;
+  // Business metadata (tier, subscriptions, etc.)
+  businessTier: string | null; // 'free' | 'business_basic' | 'business_advanced' | 'enterprise'
+  subscriptions: Array<{ id: string; tier: string; status: string }> | null;
+  businessData: { id: string; name: string; tier?: string } | null;
   loading: boolean;
   error: string | null;
   loadConfiguration: (businessId: string) => Promise<void>;
@@ -124,6 +128,9 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
   const { workCredentials } = useWorkAuth();
   
   const [configuration, setConfiguration] = useState<BusinessConfiguration | null>(null);
+  const [businessTier, setBusinessTier] = useState<string | null>(null);
+  const [subscriptions, setSubscriptions] = useState<Array<{ id: string; tier: string; status: string }> | null>(null);
+  const [businessData, setBusinessData] = useState<{ id: string; name: string; tier?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // WebSocket connection state
@@ -206,15 +213,33 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
         employeeData = [];
       }
 
-      // Load business data for branding
-      let businessData: any = null;
+      // Load business data for branding, tier, and subscriptions
+      let businessDataLoaded: any = null;
       try {
         const businessResponse = await fetch(`/api/business/${businessId}`, {
           headers: session?.accessToken ? { 'Authorization': `Bearer ${session.accessToken}` } : undefined
         });
         if (businessResponse.ok) {
           const businessResult = await businessResponse.json();
-          businessData = businessResult.data;
+          businessDataLoaded = businessResult.data;
+          
+          // Extract and store tier/subscription info
+          const activeSubscription = businessDataLoaded?.subscriptions?.find((s: any) => s.status === 'active');
+          const tier = activeSubscription?.tier || businessDataLoaded?.tier || 'free';
+          
+          setBusinessTier(tier);
+          setSubscriptions(businessDataLoaded?.subscriptions || null);
+          setBusinessData({
+            id: businessDataLoaded.id,
+            name: businessDataLoaded.name,
+            tier: businessDataLoaded.tier
+          });
+          
+          console.log('[BusinessConfig] Business tier loaded:', tier, {
+            hasActiveSub: !!activeSubscription,
+            businessTier: businessDataLoaded.tier,
+            subscriptions: businessDataLoaded.subscriptions
+          });
         }
       } catch (error) {
         console.warn('Failed to load business data for branding:', error);
@@ -223,7 +248,7 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
       // Create business configuration
       const businessConfig: BusinessConfiguration = {
         businessId,
-        name: businessData?.name || 'Sample Business',
+        name: businessDataLoaded?.name || 'Sample Business',
         enabledModules: businessModules,
         modulePermissions: {
           'dashboard': ['view'],
@@ -233,11 +258,11 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
           'analytics': ['view']
         },
         branding: {
-          primaryColor: businessData?.branding?.primaryColor || '#3b82f6',
-          secondaryColor: businessData?.branding?.secondaryColor || '#1e40af',
-          accentColor: businessData?.branding?.accentColor || '#f59e0b',
-          fontFamily: businessData?.branding?.fontFamily || 'Inter',
-          logo: businessData?.logo || businessData?.branding?.logo
+          primaryColor: businessDataLoaded?.branding?.primaryColor || '#3b82f6',
+          secondaryColor: businessDataLoaded?.branding?.secondaryColor || '#1e40af',
+          accentColor: businessDataLoaded?.branding?.accentColor || '#f59e0b',
+          fontFamily: businessDataLoaded?.branding?.fontFamily || 'Inter',
+          logo: businessDataLoaded?.logo || businessDataLoaded?.branding?.logo
         },
         settings: {
           allowModuleInstallation: true,
@@ -898,6 +923,9 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
 
   const value: BusinessConfigurationContextType = {
     configuration,
+    businessTier,
+    subscriptions,
+    businessData,
     loading,
     error,
     loadConfiguration,
