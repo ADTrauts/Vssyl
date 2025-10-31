@@ -9,7 +9,7 @@ type ActiveEmployee = {
   id: string; // employeePositionId
   user: { id: string; name: string | null; email: string; image?: string | null };
   position: { title: string; department?: { name?: string | null } | null; tier?: { name?: string | null } | null };
-  hrProfile?: { hireDate?: string | null } | null;
+  hrProfile?: { hireDate?: string | null; employeeType?: string | null; workLocation?: string | null } | null;
 };
 
 type TerminatedEmployee = {
@@ -26,10 +26,10 @@ export default function HREmployeesPage() {
   const router = useRouter();
   const businessId = (params?.id as string) || '';
 
-  const initialTab = (searchParams.get('status') || 'active').toLowerCase() === 'terminated' ? 'terminated' : 'active';
+  const initialTab = (searchParams?.get('status') || 'active').toLowerCase() === 'terminated' ? 'terminated' : 'active';
   const [tab, setTab] = useState<'active' | 'terminated'>(initialTab);
-  const [q, setQ] = useState<string>(searchParams.get('q') || '');
-  const [page, setPage] = useState<number>(Number(searchParams.get('page') || 1));
+  const [q, setQ] = useState<string>(searchParams?.get('q') || '');
+  const [page, setPage] = useState<number>(Number(searchParams?.get('page') || 1));
   const [pageSize] = useState<number>(20);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
