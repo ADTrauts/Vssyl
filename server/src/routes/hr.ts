@@ -14,6 +14,7 @@
  */
 
 import express from 'express';
+import multer from 'multer';
 import { authenticateJWT } from '../middleware/auth';
 import { 
   checkHRAdmin, 
@@ -26,6 +27,19 @@ import {
   checkHRModuleInstalled
 } from '../middleware/hrFeatureGating';
 import * as hrController from '../controllers/hrController';
+
+// Configure multer for CSV uploads
+const csvUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files are allowed'));
+    }
+  }
+});
 
 const router: express.Router = express.Router();
 
@@ -49,6 +63,14 @@ router.post('/admin/employees', checkHRAdmin, hrController.createEmployee);
 router.put('/admin/employees/:id', checkHRAdmin, hrController.updateEmployee);
 router.delete('/admin/employees/:id', checkHRAdmin, hrController.deleteEmployee);
 router.post('/admin/employees/:id/terminate', checkHRAdmin, hrController.terminateEmployee);
+
+// Employee Import/Export (Available on Business Advanced+)
+router.post('/admin/employees/import', 
+  checkHRAdmin, 
+  csvUpload.single('file'),
+  hrController.importEmployeesCSV
+);
+router.get('/admin/employees/export', checkHRAdmin, hrController.exportEmployeesCSV);
 
 // HR Settings (Available on Business Advanced+)
 router.get('/admin/settings', checkHRAdmin, hrController.getHRSettings);

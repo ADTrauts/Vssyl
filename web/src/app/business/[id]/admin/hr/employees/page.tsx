@@ -37,6 +37,10 @@ export default function HREmployeesPage() {
   const [terminatedData, setTerminatedData] = useState<{ items: TerminatedEmployee[]; count: number }>({ items: [], count: 0 });
   const [showEdit, setShowEdit] = useState<boolean>(false);
   const [showDetail, setShowDetail] = useState<boolean>(false);
+  const [showImport, setShowImport] = useState<boolean>(false);
+  const [importing, setImporting] = useState<boolean>(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResults, setImportResults] = useState<{ summary: { total: number; created: number; updated: number; skipped: number; errors: number }; results: Array<{ row: number; success: boolean; email: string; name: string; error?: string; action?: string }> } | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null); // employeePositionId for detail view
   const [editingId, setEditingId] = useState<string | null>(null); // employeePositionId
   const [form, setForm] = useState<{ hireDate?: string; employeeType?: string; workLocation?: string; emergencyContact?: string; personalInfo?: string }>({});
@@ -128,6 +132,68 @@ export default function HREmployeesPage() {
   };
 
   const [submittingEdit, setSubmittingEdit] = useState(false);
+  
+  const handleExport = async () => {
+    try {
+      const statusParam = active ? 'ACTIVE' : 'TERMINATED';
+      const url = `/api/hr/admin/employees/export?businessId=${encodeURIComponent(businessId)}&status=${statusParam}&q=${encodeURIComponent(q || '')}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `employees-${statusParam.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+      toast.success('Employees exported successfully');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    }
+  };
+  
+  const handleImport = async () => {
+    if (!importFile) {
+      toast.error('Please select a CSV file');
+      return;
+    }
+    
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      
+      const response = await fetch(`/api/hr/admin/employees/import?businessId=${encodeURIComponent(businessId)}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Import failed');
+      }
+      
+      setImportResults(data);
+      toast.success(`Import completed: ${data.summary.created} created, ${data.summary.updated} updated, ${data.summary.errors} errors`);
+      
+      // Refresh employee list
+      setPage(1);
+      
+      // Reload data after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
   
   const submitEdit = async () => {
     if (!editingId) return;
@@ -228,6 +294,20 @@ export default function HREmployeesPage() {
               ✕
             </button>
           )}
+          <button
+            onClick={handleExport}
+            className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+            title="Export employees to CSV"
+          >
+            📥 Export CSV
+          </button>
+          <button
+            onClick={() => setShowImport(true)}
+            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            title="Import employees from CSV"
+          >
+            📤 Import CSV
+          </button>
         </div>
       </div>
 
@@ -479,6 +559,135 @@ export default function HREmployeesPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Wizard Modal */}
+      {showImport && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Import Employees from CSV</h2>
+              <button
+                onClick={() => {
+                  setShowImport(false);
+                  setImportFile(null);
+                  setImportResults(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            {!importResults ? (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="csv-upload"
+                  />
+                  <label
+                    htmlFor="csv-upload"
+                    className="cursor-pointer flex flex-col items-center gap-2"
+                  >
+                    <div className="text-4xl">📄</div>
+                    <div className="font-semibold">Click to select CSV file</div>
+                    <div className="text-sm text-gray-500">
+                      {importFile ? importFile.name : 'Required columns: name, email, title, department'}
+                    </div>
+                  </label>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded p-4 text-sm">
+                  <div className="font-semibold mb-2">CSV Format Requirements:</div>
+                  <div className="space-y-1 text-gray-700">
+                    <div>• <strong>Required:</strong> name, email</div>
+                    <div>• <strong>Optional:</strong> title, department, hiredate, employeetype, worklocation</div>
+                    <div>• First row must contain column headers</div>
+                    <div>• Dates should be in YYYY-MM-DD format</div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setShowImport(false);
+                      setImportFile(null);
+                    }}
+                    className="px-4 py-2 border rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleImport}
+                    disabled={!importFile || importing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {importing && <Spinner size={16} />}
+                    {importing ? 'Importing...' : 'Import Employees'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded p-4">
+                  <div className="font-semibold mb-2">Import Summary</div>
+                  <div className="grid grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <div className="text-gray-600">Total Rows</div>
+                      <div className="text-2xl font-bold">{importResults.summary.total}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Created</div>
+                      <div className="text-2xl font-bold text-green-600">{importResults.summary.created}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Updated</div>
+                      <div className="text-2xl font-bold text-blue-600">{importResults.summary.updated}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600">Errors</div>
+                      <div className="text-2xl font-bold text-red-600">{importResults.summary.errors}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {importResults.summary.errors > 0 && (
+                  <div className="border rounded max-h-60 overflow-y-auto">
+                    <div className="bg-gray-50 px-3 py-2 font-semibold text-sm">Errors ({importResults.summary.errors})</div>
+                    {importResults.results.filter(r => !r.success).slice(0, 20).map((result, idx) => (
+                      <div key={idx} className="px-3 py-2 border-t text-sm">
+                        <div className="font-medium">Row {result.row}: {result.name} ({result.email})</div>
+                        <div className="text-red-600">{result.error}</div>
+                      </div>
+                    ))}
+                    {importResults.results.filter(r => !r.success).length > 20 && (
+                      <div className="px-3 py-2 border-t text-sm text-gray-500">
+                        ...and {importResults.results.filter(r => !r.success).length - 20} more errors
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowImport(false);
+                      setImportFile(null);
+                      setImportResults(null);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

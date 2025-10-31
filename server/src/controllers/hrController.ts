@@ -7,6 +7,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { z } from 'zod';
 
 // ============================================================================
 // ADMIN CONTROLLERS (Business Admin Dashboard)
@@ -773,6 +774,412 @@ export const getMyTimeOffRequests = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching my time-off requests:', error);
     return res.status(500).json({ error: 'Failed to fetch your time-off requests' });
+  }
+};
+
+// ============================================================================
+// CSV IMPORT/EXPORT CONTROLLERS
+// ============================================================================
+
+/**
+ * Import employees from CSV
+ * Expects CSV file with columns: name, email, title, department, managerEmail, employeeType, hireDate, workLocation
+ */
+export const importEmployeesCSV = async (req: Request & { file?: Express.Multer.File }, res: Response) => {
+  try {
+    const businessId = req.query.businessId as string;
+    const userId = req.user?.id;
+    
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId is required' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'CSV file is required' });
+    }
+    
+    // Parse CSV content
+    const csvContent = req.file.buffer?.toString('utf-8') || 
+                      (typeof req.file === 'string' ? require('fs').readFileSync(req.file, 'utf-8') : '');
+    
+    const lines = csvContent.split('\n').filter((line: string) => line.trim());
+    if (lines.length < 2) {
+      return res.status(400).json({ error: 'CSV must have at least a header row and one data row' });
+    }
+    
+    // Parse header
+    const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
+    const requiredFields = ['name', 'email'];
+    const missingFields = requiredFields.filter((field: string) => !headers.includes(field));
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        error: `Missing required columns: ${missingFields.join(', ')}` 
+      });
+    }
+    
+    // Get default tier for positions
+    const defaultTier = await prisma.organizationalTier.findFirst({
+      where: { businessId },
+      orderBy: { level: 'asc' }
+    });
+    
+    if (!defaultTier) {
+      return res.status(400).json({ error: 'Business must have at least one organizational tier' });
+    }
+    
+    // Parse data rows
+    const results: Array<{
+      row: number;
+      success: boolean;
+      email: string;
+      name: string;
+      error?: string;
+      action?: 'created' | 'updated' | 'skipped';
+    }> = [];
+    
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    
+    // Generate random password for imported users
+    const bcrypt = require('bcrypt');
+    const generateRandomPassword = () => {
+      return Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+    };
+    
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i];
+      const values = row.split(',').map((v: string) => v.trim());
+      
+      if (values.length !== headers.length) {
+        results.push({
+          row: i + 1,
+          success: false,
+          email: values[headers.indexOf('email')] || 'unknown',
+          name: values[headers.indexOf('name')] || 'unknown',
+          error: 'Column count mismatch'
+        });
+        skipped++;
+        continue;
+      }
+      
+      const rowData: Record<string, string> = {};
+      headers.forEach((header: string, index: number) => {
+        rowData[header] = values[index] || '';
+      });
+      
+      const email = rowData.email;
+      const name = rowData.name;
+      
+      if (!email || !name) {
+        results.push({
+          row: i + 1,
+          success: false,
+          email: email || 'unknown',
+          name: name || 'unknown',
+          error: 'Missing required fields (name or email)'
+        });
+        skipped++;
+        continue;
+      }
+      
+      try {
+        // Find or create user
+        let user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+          // Generate temporary password for imported users
+          const tempPassword = generateRandomPassword();
+          const hashedPassword = await bcrypt.hash(tempPassword, 10);
+          
+          user = await prisma.user.create({
+            data: {
+              email,
+              name,
+              password: hashedPassword,
+              emailVerified: null
+            }
+          });
+        } else if (user.name !== name) {
+          // Update name if different
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { name }
+          });
+        }
+        
+        // Find or create position
+        // For import, we'll need department and position title
+        const title = rowData.title || 'Employee';
+        const departmentName = rowData.department || 'General';
+        
+        // Find or create department
+        let department = await prisma.department.findFirst({
+          where: {
+            businessId,
+            name: { equals: departmentName, mode: 'insensitive' }
+          }
+        });
+        
+        if (!department) {
+          department = await prisma.department.create({
+            data: {
+              businessId,
+              name: departmentName
+            }
+          });
+        }
+        
+        // Find or create position (requires tierId)
+        let position = await prisma.position.findFirst({
+          where: {
+            businessId,
+            departmentId: department.id,
+            title: { equals: title, mode: 'insensitive' }
+          }
+        });
+        
+        if (!position) {
+          position = await prisma.position.create({
+            data: {
+              businessId,
+              departmentId: department.id,
+              tierId: defaultTier.id,
+              title
+            }
+          });
+        }
+        
+        // Find or create employee position
+        const hireDate = rowData.hiredate ? new Date(rowData.hiredate) : new Date();
+        const existingPosition = await prisma.employeePosition.findFirst({
+          where: {
+            businessId,
+            userId: user.id,
+            positionId: position.id,
+            active: true
+          }
+        });
+        
+        let action: 'created' | 'updated' = 'created';
+        const assignedById = userId || user.id; // Use importing user or employee user as fallback
+        
+        if (existingPosition) {
+          // Update existing
+          await prisma.employeePosition.update({
+            where: { id: existingPosition.id },
+            data: {
+              startDate: hireDate,
+              active: true,
+              endDate: null
+            }
+          });
+          action = 'updated';
+          updated++;
+        } else {
+          // Create new (requires assignedById)
+          await prisma.employeePosition.create({
+            data: {
+              businessId,
+              userId: user.id,
+              positionId: position.id,
+              assignedById,
+              startDate: hireDate,
+              active: true
+            }
+          });
+          created++;
+        }
+        
+        // Create or update HR profile
+        const employeePosition = await prisma.employeePosition.findFirst({
+          where: {
+            businessId,
+            userId: user.id,
+            positionId: position.id
+          }
+        });
+        
+        if (employeePosition) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (prisma as any).employeeHRProfile.upsert({
+            where: { employeePositionId: employeePosition.id },
+            create: {
+              employeePositionId: employeePosition.id,
+              businessId,
+              hireDate,
+              employeeType: rowData.employeetype?.toUpperCase() || 'FULL_TIME',
+              workLocation: rowData.worklocation || null,
+              employmentStatus: 'ACTIVE'
+            },
+            update: {
+              hireDate,
+              employeeType: rowData.employeetype?.toUpperCase() || undefined,
+              workLocation: rowData.worklocation || undefined,
+              employmentStatus: 'ACTIVE'
+            }
+          });
+        }
+        
+        results.push({
+          row: i + 1,
+          success: true,
+          email,
+          name,
+          action
+        });
+      } catch (error) {
+        results.push({
+          row: i + 1,
+          success: false,
+          email,
+          name,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        skipped++;
+      }
+    }
+    
+    return res.json({
+      success: true,
+      summary: {
+        total: lines.length - 1,
+        created,
+        updated,
+        skipped,
+        errors: skipped
+      },
+      results
+    });
+  } catch (error) {
+    console.error('Error importing employees:', error);
+    return res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to import employees' 
+    });
+  }
+};
+
+/**
+ * Export employees to CSV
+ * Supports filtering via query params (same as getAdminEmployees)
+ */
+export const exportEmployeesCSV = async (req: Request, res: Response) => {
+  try {
+    const businessId = req.query.businessId as string;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId is required' });
+    }
+    
+    const status = (req.query.status as string) || 'ACTIVE';
+    const q = (req.query.q as string) || '';
+    
+    // Build where clause (same logic as getAdminEmployees)
+    let employees: Array<{
+      name: string;
+      email: string;
+      title: string;
+      department: string;
+      tier: string;
+      hireDate: string | null;
+      employeeType: string | null;
+      workLocation: string | null;
+    }> = [];
+    
+    if (status === 'TERMINATED') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hrProfiles = await (prisma as any).employeeHRProfile.findMany({
+        where: {
+          businessId,
+          employmentStatus: 'TERMINATED'
+        },
+        include: {
+          employeePosition: {
+            include: {
+              user: true,
+              position: {
+                include: {
+                  department: true,
+                  tier: true
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      employees = hrProfiles.map((profile: any) => ({
+        name: profile.employeePosition?.user?.name || '',
+        email: profile.employeePosition?.user?.email || '',
+        title: profile.employeePosition?.position?.title || '',
+        department: profile.employeePosition?.position?.department?.name || '',
+        tier: profile.employeePosition?.position?.tier?.name || '',
+        hireDate: profile.hireDate ? new Date(profile.hireDate).toISOString().split('T')[0] : null,
+        employeeType: profile.employeeType || null,
+        workLocation: profile.workLocation || null
+      }));
+    } else {
+      const where: Record<string, unknown> = {
+        businessId,
+        active: true
+      };
+      
+      if (q) {
+        where.OR = [
+          { user: { name: { contains: q, mode: 'insensitive' } } },
+          { user: { email: { contains: q, mode: 'insensitive' } } },
+          { position: { title: { contains: q, mode: 'insensitive' } } }
+        ];
+      }
+      
+      const employeePositions = await prisma.employeePosition.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          position: { include: { department: true, tier: true } },
+          hrProfile: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      employees = employeePositions.map(ep => ({
+        name: ep.user?.name || '',
+        email: ep.user?.email || '',
+        title: ep.position?.title || '',
+        department: ep.position?.department?.name || '',
+        tier: ep.position?.tier?.name || '',
+        hireDate: (ep.hrProfile as any)?.hireDate 
+          ? new Date((ep.hrProfile as any).hireDate).toISOString().split('T')[0] 
+          : null,
+        employeeType: (ep.hrProfile as any)?.employeeType || null,
+        workLocation: (ep.hrProfile as any)?.workLocation || null
+      }));
+    }
+    
+    // Generate CSV
+    const headers = ['Name', 'Email', 'Title', 'Department', 'Tier', 'Hire Date', 'Employee Type', 'Work Location'];
+    const csvRows = [
+      headers.join(','),
+      ...employees.map(emp => [
+        `"${emp.name}"`,
+        `"${emp.email}"`,
+        `"${emp.title}"`,
+        `"${emp.department}"`,
+        `"${emp.tier}"`,
+        emp.hireDate || '',
+        emp.employeeType || '',
+        emp.workLocation || ''
+      ].join(','))
+    ];
+    
+    const csvContent = csvRows.join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="employees-${status.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error exporting employees:', error);
+    return res.status(500).json({ 
+      error: error instanceof Error ? error.message : 'Failed to export employees' 
+    });
   }
 };
 

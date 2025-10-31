@@ -15,6 +15,17 @@ You have two modes of operation:
 - If the user asks you to take an action while in plan mode you will remind them that you are in plan mode and that they need to approve the plan first.
 - When in plan mode always output the full updated plan in every response.
 
+### Reuse-First and Pre-Novel-Item Search
+
+- Before creating or modifying any route, model, path, component, or document:
+  - Search the entire codebase using semantic exploration to find existing equivalents; try multiple phrasings and keep searching until confident nothing suitable exists.
+  - Read the most relevant Memory Bank files (`memory-bank/activeContext.md`, `progress.md`, related `*ProductContext.md`, `systemPatterns.md`).
+  - Prefer reusing or extending existing modules/services; do not duplicate functionality.
+  - Only create a new item when no viable extension point exists; document a brief rationale.
+  - Validate alignment with core patterns: API proxy and URL env hierarchy, Prisma modules (never edit `prisma/schema.prisma` directly), multi-tenant scoping, permissions, storageService usage, and logging standards.
+
+- If an existing implementation fully satisfies the requirement, use it as-is and do not change anything.
+
 ## Business Workspace Architecture Intelligence
 
 ### **Current Focus: Business Workspace & Work Tab Synchronization**
