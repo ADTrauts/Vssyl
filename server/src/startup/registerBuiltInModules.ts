@@ -579,28 +579,43 @@ async function getSystemDeveloperId(): Promise<string | null> {
 
 /**
  * Ensure a built-in module exists in the Module table
- * Creates it if missing
+ * Creates it if missing, updates it if name/description changed
  */
 async function ensureModuleExists(moduleId: string, developerId: string): Promise<boolean> {
   try {
+    // Find module definition
+    const moduleDef = BUILT_IN_MODULE_DEFINITIONS.find(m => m.id === moduleId);
+    if (!moduleDef) {
+      console.error(`   ⚠️  No module definition found for '${moduleId}'`);
+      return false;
+    }
+
     // Check if module already exists
     const existingModule = await prisma.module.findUnique({
       where: { id: moduleId },
     });
 
     if (existingModule) {
+      // Update if name or description has changed (e.g., "Drive" → "File Hub")
+      if (existingModule.name !== moduleDef.name || existingModule.description !== moduleDef.description) {
+        console.error(`   📝 Updating Module '${existingModule.name}' → '${moduleDef.name}'...`);
+        await prisma.module.update({
+          where: { id: moduleId },
+          data: {
+            name: moduleDef.name,
+            description: moduleDef.description,
+            icon: moduleDef.icon,
+            tags: moduleDef.tags,
+            category: moduleDef.category,
+          },
+        });
+        console.error(`   ✅ Module '${moduleDef.name}' updated successfully`);
+      }
       return true;
     }
 
-    // Find module definition
-    const moduleDef = BUILT_IN_MODULE_DEFINITIONS.find(m => m.id === moduleId);
-    if (!moduleDef) {
-      console.log(`   ⚠️  No module definition found for '${moduleId}'`);
-      return false;
-    }
-
-    // Create the module
-    console.log(`   📦 Creating Module record for '${moduleDef.name}'...`);
+    // Create the module if it doesn't exist
+    console.error(`   📦 Creating Module record for '${moduleDef.name}'...`);
     await prisma.module.create({
       data: {
         id: moduleDef.id,
@@ -630,10 +645,10 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
       },
     });
 
-    console.log(`   ✅ Module '${moduleDef.name}' created successfully`);
+    console.error(`   ✅ Module '${moduleDef.name}' created successfully`);
     return true;
   } catch (error) {
-    console.error(`   ❌ Error creating module '${moduleId}':`, error);
+    console.error(`   ❌ Error ensuring module '${moduleId}' exists:`, error);
     return false;
   }
 }
