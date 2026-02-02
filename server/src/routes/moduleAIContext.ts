@@ -606,21 +606,21 @@ router.post(
   requireRole('ADMIN'),
   async (req: Request, res: Response) => {
     try {
-      console.log('='.repeat(60));
-      console.log('🤖 ADMIN-TRIGGERED MODULE REGISTRATION');
-      console.log('='.repeat(60));
+      console.error('='.repeat(60)); // Using console.error to ensure it appears in logs
+      console.error('🤖 ADMIN-TRIGGERED MODULE REGISTRATION');
+      console.error('='.repeat(60));
       
       // Get count BEFORE registration
       const beforeCount = await prisma.moduleAIContextRegistry.count();
-      console.log(`📊 Registry count BEFORE registration: ${beforeCount}`);
+      console.error(`📊 Registry count BEFORE registration: ${beforeCount}`);
       
       // Import and call the startup registration function
       const { registerBuiltInModulesOnStartup } = await import('../startup/registerBuiltInModules');
       
       // Call the registration function
-      console.log('🚀 Calling registerBuiltInModulesOnStartup()...');
+      console.error('🚀 Calling registerBuiltInModulesOnStartup()...');
       await registerBuiltInModulesOnStartup();
-      console.log('✅ registerBuiltInModulesOnStartup() completed');
+      console.error('✅ registerBuiltInModulesOnStartup() completed');
       
       // Get detailed status AFTER registration
       const registryEntries = await prisma.moduleAIContextRegistry.findMany({
@@ -628,15 +628,15 @@ router.post(
       });
       
       const afterCount = registryEntries.length;
-      console.log(`📊 Registry count AFTER registration: ${afterCount}`);
-      console.log(`📊 New registrations: ${afterCount - beforeCount}`);
+      console.error(`📊 Registry count AFTER registration: ${afterCount}`);
+      console.error(`📊 New registrations: ${afterCount - beforeCount}`);
       
       const allModules = await prisma.module.findMany({
         select: { id: true, name: true, status: true },
       });
       
-      console.log(`📊 Total modules in Module table: ${allModules.length}`);
-      console.log(`📊 Module IDs: ${allModules.map((m: { id: string }) => m.id).join(', ')}`);
+      console.error(`📊 Total modules in Module table: ${allModules.length}`);
+      console.error(`📊 Module IDs: ${allModules.map((m: { id: string }) => m.id).join(', ')}`);
       
       // Check which built-in modules exist and which are registered
       const builtInIds = ['drive', 'chat', 'calendar', 'hr', 'scheduling', 'todo'];
@@ -653,11 +653,11 @@ router.post(
         };
       });
       
-      console.log('📊 Built-in module status:');
+      console.error('📊 Built-in module status:');
       moduleStatus.forEach((m: { moduleId: string; moduleExists: boolean; registryExists: boolean }) => {
-        console.log(`   - ${m.moduleId}: module=${m.moduleExists ? 'EXISTS' : 'MISSING'}, registry=${m.registryExists ? 'REGISTERED' : 'NOT_REGISTERED'}`);
+        console.error(`   - ${m.moduleId}: module=${m.moduleExists ? 'EXISTS' : 'MISSING'}, registry=${m.registryExists ? 'REGISTERED' : 'NOT_REGISTERED'}`);
       });
-      console.log('='.repeat(60));
+      console.error('='.repeat(60));
       
       res.json({
         success: true,

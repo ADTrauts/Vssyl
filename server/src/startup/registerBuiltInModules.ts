@@ -723,36 +723,40 @@ async function registerModule(
  */
 export async function registerBuiltInModulesOnStartup(): Promise<void> {
   try {
-    console.log('\n🤖 ============================================');
-    console.log('🤖 Module AI Context Registry - Startup Check');
-    console.log('🤖 ============================================\n');
+    console.error('\n🤖 ============================================');
+    console.error('🤖 Module AI Context Registry - Startup Check');
+    console.error('🤖 ============================================\n');
 
     // Check if registry is empty
     let registryCount: number;
     try {
       registryCount = await prisma.moduleAIContextRegistry.count();
+      console.error(`📊 Current registry count: ${registryCount}`);
     } catch (dbError) {
       // Database might not be available during startup
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+      console.error(`❌ Database error during count: ${errorMessage}`);
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('⚠️  Database not available during startup');
-        console.log('   Module registration will be skipped');
-        console.log('   You can manually trigger registration via: POST /api/admin/modules/ai/register-built-ins\n');
+        console.error('⚠️  Database not available during startup');
+        console.error('   Module registration will be skipped');
+        console.error('   You can manually trigger registration via: POST /api/admin/modules/ai/register-built-ins\n');
         return;
       }
       // Re-throw if it's a different database error
+      console.error('❌ Rethrowing database error...');
       throw dbError;
     }
 
     // Get a system developer ID (needed to create Module records)
+    console.error('🔍 Looking for system developer ID...');
     const developerId = await getSystemDeveloperId();
     if (!developerId) {
-      console.log('⚠️  No users found in database - cannot create Module records');
-      console.log('   Module registration will be skipped');
-      console.log('   Create a user first, then manually trigger: POST /api/admin/modules/ai/register-built-ins\n');
+      console.error('⚠️  No users found in database - cannot create Module records');
+      console.error('   Module registration will be skipped');
+      console.error('   Create a user first, then manually trigger: POST /api/admin/modules/ai/register-built-ins\n');
       return;
     }
-    console.log(`📋 Using developer ID: ${developerId.substring(0, 8)}...`);
+    console.error(`📋 Using developer ID: ${developerId.substring(0, 8)}...`);
 
     // Get list of already registered module IDs
     const registeredModuleIds = new Set<string>();
@@ -761,7 +765,9 @@ export async function registerBuiltInModulesOnStartup(): Promise<void> {
         select: { moduleId: true },
       });
       registered.forEach((r: { moduleId: string }) => registeredModuleIds.add(r.moduleId));
-      console.log(`📋 Found ${registryCount} already registered AI contexts`);
+      console.error(`📋 Found ${registryCount} already registered AI contexts: ${Array.from(registeredModuleIds).join(', ')}`);
+    } else {
+      console.error('📋 Registry is empty - will register all built-in modules');
     }
 
     // Check which modules need registration
@@ -769,13 +775,16 @@ export async function registerBuiltInModulesOnStartup(): Promise<void> {
       ({ moduleId }) => !registeredModuleIds.has(moduleId)
     );
 
+    console.error(`📦 Built-in modules to check: ${BUILT_IN_MODULES.map(m => m.moduleId).join(', ')}`);
+    console.error(`📦 Modules needing registration: ${modulesToRegister.map(m => m.moduleId).join(', ')}`);
+
     if (modulesToRegister.length === 0) {
-      console.log(`✅ All built-in modules already registered (${registryCount} modules)`);
-      console.log('   No new modules to register\n');
+      console.error(`✅ All built-in modules already registered (${registryCount} modules)`);
+      console.error('   No new modules to register\n');
       return;
     }
 
-    console.log(`📦 Registering ${modulesToRegister.length} missing module(s)...\n`);
+    console.error(`📦 Registering ${modulesToRegister.length} missing module(s)...\n`);
 
     // Register each missing built-in module
     let successCount = 0;
@@ -804,19 +813,19 @@ export async function registerBuiltInModulesOnStartup(): Promise<void> {
       }
     }
 
-    console.log('\n📊 Registration Summary:');
-    console.log(`   ✅ Newly Registered: ${successCount}`);
-    console.log(`   ✅ Previously Registered: ${registryCount}`);
-    if (errorCount > 0) console.log(`   ❌ Errors: ${errorCount}`);
-    console.log('');
+    console.error('\n📊 Registration Summary:');
+    console.error(`   ✅ Newly Registered: ${successCount}`);
+    console.error(`   ✅ Previously Registered: ${registryCount}`);
+    if (errorCount > 0) console.error(`   ❌ Errors: ${errorCount}`);
+    console.error('');
 
     if (successCount > 0) {
-      console.log(`✅ Successfully registered ${successCount} new module(s)!`);
-      console.log(`   Total registered modules: ${registryCount + successCount}\n`);
+      console.error(`✅ Successfully registered ${successCount} new module(s)!`);
+      console.error(`   Total registered modules: ${registryCount + successCount}\n`);
     } else if (errorCount > 0) {
-      console.warn('⚠️  Some modules could not be registered. Check logs for details.\n');
+      console.error('⚠️  Some modules could not be registered. Check logs for details.\n');
     } else {
-      console.log('✅ All built-in modules are already registered.\n');
+      console.error('✅ All built-in modules are already registered.\n');
     }
   } catch (error) {
     console.error('❌ Error during module registration startup:');
