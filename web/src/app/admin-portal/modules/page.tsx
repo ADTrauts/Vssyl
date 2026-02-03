@@ -338,23 +338,28 @@ export default function AdminModulesPage() {
       }
       
       const data = response.data;
-      console.log('✅ Registration successful:');
+      const errors: string[] = data?.registrationErrors || [];
+      
+      console.log('✅ Registration response:');
       console.log('   - Registered count:', data?.registeredCount);
       console.log('   - New registrations:', data?.newRegistrations);
       console.log('   - Total modules:', data?.totalModules);
       console.log('   - Built-in status:', data?.builtInModuleStatus);
-      console.log('   - All module IDs:', data?.allModuleIds);
+      if (errors.length > 0) {
+        console.error('   - Registration errors:', errors);
+      }
       
-      // Reload data after registration
-      console.log('🔄 Reloading AI context data...');
       await loadAIContextData();
-      console.log('✅ Data reloaded');
       console.log('='.repeat(60));
       
-      // Show success message with details
       const newRegs = data?.newRegistrations || 0;
       const totalRegs = data?.registeredCount || 0;
-      alert(`Module registration completed!\n\nNew registrations: ${newRegs}\nTotal registered: ${totalRegs}\n\nCheck the console for detailed status.`);
+      let alertMsg = `Module registration completed!\n\nNew registrations: ${newRegs}\nTotal registered: ${totalRegs}`;
+      if (errors.length > 0) {
+        alertMsg += `\n\nErrors (${errors.length}):\n${errors.slice(0, 3).join('\n')}`;
+        if (errors.length > 3) alertMsg += `\n... and ${errors.length - 3} more`;
+      }
+      alert(alertMsg);
     } catch (err) {
       console.error('❌ Error registering modules:', err);
       setAiContextError('Failed to register modules. Please try again.');
