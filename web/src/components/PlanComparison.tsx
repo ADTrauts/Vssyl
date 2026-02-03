@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, Button, Badge } from 'shared/components';
 import { Check, X } from 'lucide-react';
 
 export type Tier = 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise';
+
+export type TierOrString = Tier | string;
 
 export interface TierFeature {
   name: string;
@@ -14,12 +16,19 @@ export interface TierFeature {
     business_basic: boolean | string;
     business_advanced: boolean | string;
     enterprise: boolean | string;
+    [key: string]: boolean | string | undefined;
   };
 }
 
+interface PricingRow {
+  tier: string;
+  billingCycle: string;
+  basePrice: number;
+}
+
 interface PlanComparisonProps {
-  currentTier?: Tier;
-  onSelectTier?: (tier: Tier) => void;
+  currentTier?: TierOrString;
+  onSelectTier?: (tier: TierOrString) => void;
   showActions?: boolean;
   userType?: 'personal' | 'business'; // Filter plans based on user type
 }
@@ -156,16 +165,72 @@ const TIER_NAMES: Record<Tier, string> = {
   enterprise: 'Enterprise',
 };
 
-const TIER_COLORS: Record<Tier, 'gray' | 'blue' | 'green' | 'yellow' | 'red'> = {
+const TIER_COLORS: Record<string, 'gray' | 'blue' | 'green' | 'yellow' | 'red'> = {
   free: 'gray',
   pro: 'blue',
   business_basic: 'green',
-  business_advanced: 'green', // Using green since purple isn't available
+  business_advanced: 'green',
   enterprise: 'yellow',
 };
 
+function formatTierDisplayName(tier: string): string {
+  return tier
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+}
+
 export default function PlanComparison({ currentTier, onSelectTier, showActions = true, userType }: PlanComparisonProps) {
-  const renderFeatureValue = (value: boolean | string) => {
+  const [pricing, setPricing] = useState<PricingRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/pricing')
+      .then((res) => (res.ok ? res.json() : { pricing: [] }))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.pricing)) setPricing(data.pricing);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const pricesByTier = useMemo(() => {
+    const map: Record<string, { monthly: number; yearly: number }> = {};
+    pricing.forEach((p) => {
+      if (!map[p.tier]) map[p.tier] = { monthly: 0, yearly: 0 };
+      if (p.billingCycle === 'monthly') map[p.tier].monthly = p.basePrice;
+      else map[p.tier].yearly = p.basePrice;
+    });
+    return map;
+  }, [pricing]);
+
+  const uniqueTiersFromApi = useMemo(() => {
+    const tiers = Array.from(new Set(pricing.map((p) => p.tier))).filter((t) => t !== 'free');
+    return ['free', ...tiers.sort((a, b) => a.localeCompare(b))];
+  }, [pricing]);
+
+  const availableTiers = useMemo((): TierOrString[] => {
+    const businessTiers = ['business_basic', 'business_advanced', 'enterprise'];
+    const personalTiers = ['pro'];
+    if (userType === 'business') {
+      return uniqueTiersFromApi.filter(
+        (t) => t === 'free' || businessTiers.includes(t) || !personalTiers.includes(t)
+      );
+    }
+    if (userType === 'personal') {
+      return uniqueTiersFromApi.filter(
+        (t) => t === 'free' || personalTiers.includes(t) || !businessTiers.includes(t)
+      );
+    }
+    return uniqueTiersFromApi.length > 0 ? uniqueTiersFromApi : ['free', 'pro', 'business_basic', 'business_advanced', 'enterprise'];
+  }, [userType, uniqueTiersFromApi]);
+
+  const renderFeatureValue = (value: boolean | string | undefined) => {
+    if (value === undefined) return <span className="text-sm text-gray-500">—</span>;
     if (typeof value === 'boolean') {
       return value ? (
         <Check className="h-5 w-5 text-green-600" />
@@ -176,22 +241,30 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
     return <span className="text-sm text-gray-700">{value}</span>;
   };
 
-  const isCurrentTier = (tier: Tier) => tier === currentTier;
+  const isCurrentTier = (tier: TierOrString) => tier === currentTier;
 
-  // Filter tiers based on user type
-  const getAvailableTiers = (): Tier[] => {
-    if (userType === 'business') {
-      // Business users can only see business plans
-      return ['free', 'business_basic', 'business_advanced', 'enterprise'];
-    } else if (userType === 'personal') {
-      // Personal users can only see personal plans
-      return ['free', 'pro'];
-    }
-    // Default: show all tiers (for backwards compatibility)
-    return ['free', 'pro', 'business_basic', 'business_advanced', 'enterprise'];
+  const getTierName = (tier: TierOrString) => {
+    const key = tier as Tier;
+    return (TIER_NAMES as Record<string, string>)[tier] ?? formatTierDisplayName(tier);
   };
 
-  const availableTiers = getAvailableTiers();
+  const getTierColor = (tier: TierOrString): 'gray' | 'blue' | 'green' | 'yellow' | 'red' =>
+    tier in TIER_COLORS ? TIER_COLORS[tier] : 'blue';
+
+  const getFeatureValueForTier = (featureName: string, tier: TierOrString): boolean | string | undefined => {
+    if (featureName === 'Price (Monthly)') {
+      const prices = pricesByTier[tier];
+      return prices ? formatCurrency(prices.monthly) : (TIER_FEATURES[0].tiers[tier] as string | undefined);
+    }
+    if (featureName === 'Price (Yearly)') {
+      const prices = pricesByTier[tier];
+      return prices ? formatCurrency(prices.yearly) : (TIER_FEATURES[1].tiers[tier] as string | undefined);
+    }
+    const feature = TIER_FEATURES.find((f) => f.name === featureName);
+    if (!feature) return undefined;
+    const val = feature.tiers[tier];
+    return val !== undefined ? val : undefined;
+  };
 
   return (
     <div className="space-y-4">
@@ -210,9 +283,9 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
                   <th key={tier} className="text-center p-4 border-b border-gray-200">
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-gray-900">{TIER_NAMES[tier]}</span>
+                        <span className="font-semibold text-gray-900">{getTierName(tier)}</span>
                         {isCurrentTier(tier) && (
-                          <Badge color={TIER_COLORS[tier]} className="text-xs">Current</Badge>
+                          <Badge color={getTierColor(tier)} className="text-xs">Current</Badge>
                         )}
                       </div>
                       {showActions && onSelectTier && !isCurrentTier(tier) && (
@@ -242,7 +315,7 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
                   <td className="p-4 border-b border-gray-200 font-medium text-gray-900">{feature.name}</td>
                   {availableTiers.map((tier) => (
                     <td key={tier} className="p-4 border-b border-gray-200 text-center">
-                      {renderFeatureValue(feature.tiers[tier])}
+                      {renderFeatureValue(getFeatureValueForTier(feature.name, tier))}
                     </td>
                   ))}
                 </tr>

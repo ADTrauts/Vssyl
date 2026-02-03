@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getSession } from 'next-auth/react';
 import { Card, Button, Badge, Spinner, Alert, Tabs, Input, Modal } from 'shared/components';
-import { DollarSign, Edit, History, TrendingUp, Mail, RefreshCw, Save, X } from 'lucide-react';
+import { DollarSign, Edit, History, TrendingUp, Mail, RefreshCw, Save, X, Plus } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
 
 interface PricingConfig {
@@ -38,6 +39,16 @@ export default function PricingManagementPage() {
   const [sendNotifications, setSendNotifications] = useState(true);
   const [updateExistingSubscriptions, setUpdateExistingSubscriptions] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showCreateTierModal, setShowCreateTierModal] = useState(false);
+  const [createTierForm, setCreateTierForm] = useState({
+    tier: '',
+    displayName: '',
+    basePriceMonthly: '',
+    basePriceYearly: '',
+    perEmployeePrice: '',
+    includedEmployees: '',
+  });
+  const [loadingCreateTier, setLoadingCreateTier] = useState(false);
 
   useEffect(() => {
     loadPricing();
@@ -85,9 +96,14 @@ export default function PricingManagementPage() {
     try {
       setLoadingImpact(true);
       setError(null);
+      const session = await getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.accessToken) {
+        headers['Authorization'] = `Bearer ${session.accessToken}`;
+      }
       const response = await fetch('/api/pricing/calculate-impact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           tier: editingPrice.tier,
           newBasePrice: editForm.basePrice,
@@ -129,9 +145,14 @@ export default function PricingManagementPage() {
 
     try {
       setLoading(true);
+      const session = await getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.accessToken) {
+        headers['Authorization'] = `Bearer ${session.accessToken}`;
+      }
       const response = await fetch('/api/pricing', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           tier: editingPrice.tier,
           billingCycle: editingPrice.billingCycle,
@@ -150,7 +171,8 @@ export default function PricingManagementPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update pricing');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to update pricing');
       }
 
       await loadPricing();
@@ -175,6 +197,54 @@ export default function PricingManagementPage() {
       .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  const handleCreateTier = async () => {
+    const tier = createTierForm.tier.trim().toLowerCase().replace(/\s+/g, '_');
+    const displayName = createTierForm.displayName.trim();
+    const basePriceMonthly = parseFloat(createTierForm.basePriceMonthly);
+    const basePriceYearly = parseFloat(createTierForm.basePriceYearly);
+    if (!tier || !displayName || Number.isNaN(basePriceMonthly) || Number.isNaN(basePriceYearly) || basePriceMonthly < 0 || basePriceYearly < 0) {
+      setError('Tier key, display name, and non-negative monthly/yearly prices are required.');
+      return;
+    }
+    if (!/^[a-z0-9_]+$/.test(tier)) {
+      setError('Tier key must be lowercase letters, numbers, and underscores only.');
+      return;
+    }
+    try {
+      setLoadingCreateTier(true);
+      setError(null);
+      const session = await getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.accessToken) headers['Authorization'] = `Bearer ${session.accessToken}`;
+      const body: Record<string, unknown> = {
+        tier,
+        displayName,
+        basePriceMonthly,
+        basePriceYearly,
+      };
+      if (createTierForm.perEmployeePrice.trim() !== '') {
+        const v = parseFloat(createTierForm.perEmployeePrice);
+        if (!Number.isNaN(v) && v >= 0) body.perEmployeePrice = v;
+      }
+      if (createTierForm.includedEmployees.trim() !== '') {
+        const v = parseInt(createTierForm.includedEmployees, 10);
+        if (!Number.isNaN(v) && v >= 0) body.includedEmployees = v;
+      }
+      const response = await fetch('/api/pricing/tiers', { method: 'POST', headers, body: JSON.stringify(body) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create tier');
+      }
+      await loadPricing();
+      setShowCreateTierModal(false);
+      setCreateTierForm({ tier: '', displayName: '', basePriceMonthly: '', basePriceYearly: '', perEmployeePrice: '', includedEmployees: '' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create tier');
+    } finally {
+      setLoadingCreateTier(false);
+    }
   };
 
   // Group pricing by tier
@@ -206,6 +276,14 @@ export default function PricingManagementPage() {
           <p className="text-gray-600 mt-1">Manage subscription tier pricing and query pack prices</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="primary"
+            onClick={() => setShowCreateTierModal(true)}
+            disabled={loading}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add tier
+          </Button>
           <Button
             variant="secondary"
             onClick={loadPricing}
@@ -551,6 +629,96 @@ export default function PricingManagementPage() {
           </div>
         </Modal>
       )}
+
+      {/* Create new tier modal */}
+      <Modal
+        open={showCreateTierModal}
+        onClose={() => {
+          setShowCreateTierModal(false);
+          setCreateTierForm({ tier: '', displayName: '', basePriceMonthly: '', basePriceYearly: '', perEmployeePrice: '', includedEmployees: '' });
+        }}
+        title="Create new tier"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Add a new subscription tier. A Stripe product and monthly/yearly prices will be created and the tier will appear in the billing modal.</p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tier key (slug)</label>
+            <Input
+              value={createTierForm.tier}
+              onChange={(e) => setCreateTierForm({ ...createTierForm, tier: e.target.value })}
+              placeholder="e.g. pro_plus"
+            />
+            <p className="text-xs text-gray-600 mt-1">Lowercase letters, numbers, underscores only</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Display name</label>
+            <Input
+              value={createTierForm.displayName}
+              onChange={(e) => setCreateTierForm({ ...createTierForm, displayName: e.target.value })}
+              placeholder="e.g. Pro Plus"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Monthly price ($)</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={createTierForm.basePriceMonthly}
+                onChange={(e) => setCreateTierForm({ ...createTierForm, basePriceMonthly: e.target.value })}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Yearly price ($)</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={createTierForm.basePriceYearly}
+                onChange={(e) => setCreateTierForm({ ...createTierForm, basePriceYearly: e.target.value })}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Per employee price ($) — optional</label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={createTierForm.perEmployeePrice}
+                onChange={(e) => setCreateTierForm({ ...createTierForm, perEmployeePrice: e.target.value })}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Included employees — optional</label>
+              <Input
+                type="number"
+                min="0"
+                value={createTierForm.includedEmployees}
+                onChange={(e) => setCreateTierForm({ ...createTierForm, includedEmployees: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setShowCreateTierModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTier} disabled={loadingCreateTier}>
+              {loadingCreateTier ? <span className="mr-2 inline-block"><Spinner size={16} /></span> : <Plus className="w-4 h-4 mr-2" />}
+              Create tier
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

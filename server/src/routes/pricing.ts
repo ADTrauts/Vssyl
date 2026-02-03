@@ -5,6 +5,7 @@ import {
   getPricing,
   getPricingInfo,
   upsertPricing,
+  createTier,
   getPriceHistory,
   getAllPriceHistory,
   calculatePriceImpact,
@@ -27,7 +28,8 @@ router.get('/', getAllPricing);
 router.get('/:tier', getPricing);
 router.get('/:tier/info', getPricingInfo);
 
-// Admin-only routes
+// Admin-only routes (specific paths before /:tier)
+router.post('/tiers', authenticateJWT, requireAdmin, createTier);
 router.post('/', authenticateJWT, requireAdmin, upsertPricing);
 router.post('/calculate-impact', authenticateJWT, requireAdmin, calculatePriceImpact);
 router.get('/history/all', authenticateJWT, requireAdmin, getAllPriceHistory);

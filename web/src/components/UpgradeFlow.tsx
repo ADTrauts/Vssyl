@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Card, Badge, Alert, Spinner } from 'shared/components';
 import { ArrowRight, Check, X, AlertCircle, Info } from 'lucide-react';
-import PlanComparison, { Tier } from './PlanComparison';
+import PlanComparison, { Tier, TierOrString } from './PlanComparison';
 import { authenticatedApiCall } from '../lib/apiUtils';
 
 interface UpgradeFlowProps {
   isOpen: boolean;
   onClose: () => void;
-  currentTier?: Tier;
+  currentTier?: TierOrString;
   subscriptionId?: string;
   businessId?: string;
   onSuccess?: () => void;
@@ -25,7 +25,7 @@ export default function UpgradeFlow({
   businessId,
   onSuccess,
 }: UpgradeFlowProps) {
-  const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
+  const [selectedTier, setSelectedTier] = useState<TierOrString | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export default function UpgradeFlow({
     }
   }, [isOpen]);
 
-  const handleSelectTier = (tier: Tier) => {
+  const handleSelectTier = (tier: TierOrString) => {
     setSelectedTier(tier);
     setStep('confirm');
   };
@@ -109,18 +109,16 @@ export default function UpgradeFlow({
     if (!selectedTier) return null;
 
     // Filter tiers based on user type (personal vs business)
-    const getUserTiers = (): Tier[] => {
+    const getUserTiers = (): TierOrString[] => {
       if (businessId) {
-        // Business users can only see business plans
         return ['free', 'business_basic', 'business_advanced', 'enterprise'];
       } else {
-        // Personal users can only see personal plans
         return ['free', 'pro'];
       }
     };
-    
-    const tierHierarchy: Tier[] = getUserTiers();
-    const currentIndex = tierHierarchy.indexOf(currentTier);
+
+    const tierHierarchy: TierOrString[] = getUserTiers();
+    const currentIndex = tierHierarchy.indexOf(currentTier as TierOrString);
     const selectedIndex = tierHierarchy.indexOf(selectedTier);
 
     if (selectedIndex > currentIndex) {

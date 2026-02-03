@@ -4,7 +4,8 @@ import { logger } from '../lib/logger';
 import { sendPriceChangeNotification } from '../services/emailService';
 import { prisma } from '../lib/prisma';
 import { StripeService } from '../services/stripeService';
-import { STRIPE_PRODUCTS, stripe } from '../config/stripe';
+import { stripe } from '../config/stripe';
+import { getStripeProductIdForTier, getTierProductConfigKey } from '../lib/getStripeProductIdForTier';
 
 /**
  * GET /api/pricing
@@ -138,18 +139,13 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
     }
 
     const effectiveDateObj = effectiveDate ? new Date(effectiveDate) : new Date();
-    
-    // Map tier to Stripe product ID
-    const tierToProductId: Record<string, string> = {
-      pro: STRIPE_PRODUCTS.PRO,
-      business_basic: STRIPE_PRODUCTS.BUSINESS_BASIC,
-      business_advanced: STRIPE_PRODUCTS.BUSINESS_ADVANCED,
-      enterprise: STRIPE_PRODUCTS.ENTERPRISE,
-    };
+
+    // Resolve Stripe product ID (built-in tiers or admin-created tiers from SystemConfig)
+    const productIdForTier = await getStripeProductIdForTier(tier);
 
     // Automatically create/update Stripe price if basePrice changed and tier is paid
     let updatedStripePriceId = stripePriceId;
-    if (basePrice > 0 && tierToProductId[tier] && basePrice !== oldPrice) {
+    if (basePrice > 0 && productIdForTier && basePrice !== oldPrice) {
       try {
         // Check if Stripe is configured
         const { isStripeConfigured } = await import('../config/stripe');
@@ -160,7 +156,7 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
             billingCycle,
           });
         } else {
-          const productId = tierToProductId[tier];
+          const productId = productIdForTier;
           const interval = billingCycle === 'monthly' ? 'month' : 'year';
           const amountInCents = Math.round(basePrice * 100);
 
@@ -200,10 +196,14 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
         // Continue with existing stripePriceId if provided
       }
     }
+    // Preserve existing base Stripe price ID when we didn't create a new one and body didn't send one
+    if (updatedStripePriceId === undefined || updatedStripePriceId === null) {
+      updatedStripePriceId = currentPricing?.stripePriceId ?? undefined;
+    }
 
     // Automatically create/update Stripe per-employee price if perEmployeePrice changed and tier is paid
     let updatedPerEmployeeStripePriceId = perEmployeeStripePriceId;
-    if (perEmployeePrice !== undefined && perEmployeePrice !== null && perEmployeePrice > 0 && tierToProductId[tier] && perEmployeePrice !== oldPerEmployeePrice) {
+    if (perEmployeePrice !== undefined && perEmployeePrice !== null && perEmployeePrice > 0 && productIdForTier && perEmployeePrice !== oldPerEmployeePrice) {
       try {
         // Check if Stripe is configured
         const { isStripeConfigured } = await import('../config/stripe');
@@ -214,7 +214,7 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
             billingCycle,
           });
         } else {
-          const productId = tierToProductId[tier];
+          const productId = productIdForTier;
           const interval = billingCycle === 'monthly' ? 'month' : 'year';
           const amountInCents = Math.round(perEmployeePrice * 100);
 
@@ -259,6 +259,9 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
     } else if (perEmployeePrice === null || perEmployeePrice === 0) {
       // If per-employee price is removed, clear the Stripe price ID
       updatedPerEmployeeStripePriceId = null;
+    } else {
+      // Preserve existing per-employee Stripe price ID when we didn't create/clear and body didn't send one
+      updatedPerEmployeeStripePriceId = currentPricing?.perEmployeeStripePriceId ?? updatedPerEmployeeStripePriceId;
     }
 
     const pricing = await PricingService.upsertPricing(
@@ -444,6 +447,163 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
       },
     });
     res.status(500).json({ error: 'Failed to update pricing' });
+  }
+};
+
+/**
+ * POST /api/pricing/tiers
+ * Create a new tier with Stripe product and monthly/yearly pricing (admin only)
+ */
+export const createTier = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    if (!user || user.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+
+    const { tier, displayName, basePriceMonthly, basePriceYearly, perEmployeePrice, includedEmployees } = req.body;
+
+    if (!tier || typeof tier !== 'string' || !displayName || typeof displayName !== 'string') {
+      res.status(400).json({ error: 'Missing required fields: tier (slug), displayName' });
+      return;
+    }
+    const tierSlug = tier.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!/^[a-z0-9_]+$/.test(tierSlug)) {
+      res.status(400).json({ error: 'Tier must be a slug: lowercase letters, numbers, underscores only' });
+      return;
+    }
+    if (basePriceMonthly === undefined || basePriceYearly === undefined) {
+      res.status(400).json({ error: 'Missing required fields: basePriceMonthly, basePriceYearly' });
+      return;
+    }
+    const monthly = Number(basePriceMonthly);
+    const yearly = Number(basePriceYearly);
+    if (Number.isNaN(monthly) || Number.isNaN(yearly) || monthly < 0 || yearly < 0) {
+      res.status(400).json({ error: 'basePriceMonthly and basePriceYearly must be non-negative numbers' });
+      return;
+    }
+
+    // Reject if tier already has a Stripe product (built-in or previously created)
+    const existingProductId = await getStripeProductIdForTier(tierSlug);
+    if (existingProductId) {
+      res.status(400).json({ error: `Tier "${tierSlug}" already exists. Use Pricing Management to edit it.` });
+      return;
+    }
+
+    // Reject if tier already has pricing configs
+    const existingPricing = await PricingService.getPricing(tierSlug, 'monthly');
+    if (existingPricing) {
+      res.status(400).json({ error: `Tier "${tierSlug}" already has pricing. Use Pricing Management to edit it.` });
+      return;
+    }
+
+    const { isStripeConfigured } = await import('../config/stripe');
+    let stripeProductId: string | null = null;
+
+    if (isStripeConfigured()) {
+      const product = await StripeService.createProduct(
+        displayName,
+        `Subscription plan: ${displayName}`,
+        { tier: tierSlug }
+      );
+      stripeProductId = product.id;
+      await prisma.systemConfig.upsert({
+        where: { configKey: getTierProductConfigKey(tierSlug) },
+        create: {
+          configKey: getTierProductConfigKey(tierSlug),
+          configValue: stripeProductId,
+          updatedBy: user.id,
+        },
+        update: {
+          configValue: stripeProductId,
+          updatedBy: user.id,
+        },
+      });
+      await logger.info('Created Stripe product for new tier', {
+        operation: 'pricing_create_tier',
+        tier: tierSlug,
+        stripeProductId,
+      });
+    }
+
+    const effectiveDateObj = new Date();
+    const perEmp = perEmployeePrice != null ? Number(perEmployeePrice) : undefined;
+    const incl = includedEmployees != null ? Number(includedEmployees) : undefined;
+
+    // Create Stripe prices for the new tier so we can pass stripePriceId to upsertPricing
+    let monthlyStripePriceId: string | undefined;
+    let yearlyStripePriceId: string | undefined;
+    const productIdForTier = await getStripeProductIdForTier(tierSlug);
+    if (productIdForTier && isStripeConfigured() && monthly > 0) {
+      const monthlyPrice = await StripeService.createPrice(
+        productIdForTier,
+        Math.round(monthly * 100),
+        'usd',
+        { interval: 'month', metadata: { type: 'base', tier: tierSlug, billingCycle: 'monthly' } }
+      );
+      monthlyStripePriceId = monthlyPrice.id;
+    }
+    if (productIdForTier && isStripeConfigured() && yearly > 0) {
+      const yearlyPrice = await StripeService.createPrice(
+        productIdForTier,
+        Math.round(yearly * 100),
+        'usd',
+        { interval: 'year', metadata: { type: 'base', tier: tierSlug, billingCycle: 'yearly' } }
+      );
+      yearlyStripePriceId = yearlyPrice.id;
+    }
+
+    const monthlyPricing = await PricingService.upsertPricing(
+      tierSlug,
+      'monthly',
+      {
+        basePrice: monthly,
+        perEmployeePrice: Number.isNaN(perEmp) ? undefined : perEmp,
+        includedEmployees: Number.isNaN(incl) ? undefined : incl,
+        stripePriceId: monthlyStripePriceId,
+        effectiveDate: effectiveDateObj,
+        createdBy: user.id,
+      }
+    );
+    const yearlyPricing = await PricingService.upsertPricing(
+      tierSlug,
+      'yearly',
+      {
+        basePrice: yearly,
+        perEmployeePrice: Number.isNaN(perEmp) ? undefined : perEmp,
+        includedEmployees: Number.isNaN(incl) ? undefined : incl,
+        stripePriceId: yearlyStripePriceId,
+        effectiveDate: effectiveDateObj,
+        createdBy: user.id,
+      }
+    );
+
+    const serialize = (p: { effectiveDate: Date; endDate?: Date | null; createdAt: Date; updatedAt: Date }) => ({
+      ...p,
+      effectiveDate: p.effectiveDate.toISOString(),
+      endDate: p.endDate != null ? p.endDate.toISOString() : null,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    });
+    res.status(201).json({
+      tier: tierSlug,
+      displayName,
+      stripeProductId: stripeProductId ?? undefined,
+      pricing: {
+        monthly: serialize(monthlyPricing),
+        yearly: serialize(yearlyPricing),
+      },
+    });
+  } catch (error) {
+    await logger.error('Failed to create tier', {
+      operation: 'pricing_create_tier',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Failed to create tier' });
   }
 };
 
