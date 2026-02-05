@@ -10,6 +10,7 @@ import {
   getAllPriceHistory,
   calculatePriceImpact,
   clearPricingCache,
+  seedPricing,
 } from '../controllers/pricingController';
 
 const router: express.Router = express.Router();
@@ -29,6 +30,7 @@ router.get('/:tier', getPricing);
 router.get('/:tier/info', getPricingInfo);
 
 // Admin-only routes (specific paths before /:tier)
+router.post('/seed', authenticateJWT, requireAdmin, seedPricing);
 router.post('/tiers', authenticateJWT, requireAdmin, createTier);
 router.post('/', authenticateJWT, requireAdmin, upsertPricing);
 router.post('/calculate-impact', authenticateJWT, requireAdmin, calculatePriceImpact);

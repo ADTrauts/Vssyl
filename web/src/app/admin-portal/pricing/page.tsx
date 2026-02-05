@@ -49,6 +49,8 @@ export default function PricingManagementPage() {
     includedEmployees: '',
   });
   const [loadingCreateTier, setLoadingCreateTier] = useState(false);
+  const [loadingSeed, setLoadingSeed] = useState(false);
+  const [seedResult, setSeedResult] = useState<{ success: boolean; created?: string[] } | null>(null);
 
   useEffect(() => {
     loadPricing();
@@ -74,6 +76,31 @@ export default function PricingManagementPage() {
       setError(err instanceof Error ? err.message : 'Failed to load pricing');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runSeedPricing = async () => {
+    try {
+      setLoadingSeed(true);
+      setError(null);
+      setSeedResult(null);
+      const session = await getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.accessToken) {
+        headers['Authorization'] = `Bearer ${session.accessToken}`;
+      }
+      const response = await fetch('/api/pricing/seed', { method: 'POST', headers });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to seed pricing');
+      }
+      setSeedResult({ success: true, created: data.created });
+      await loadPricing();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seed pricing');
+      setSeedResult({ success: false });
+    } finally {
+      setLoadingSeed(false);
     }
   };
 
@@ -292,12 +319,25 @@ export default function PricingManagementPage() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
+          <Button
+            variant="secondary"
+            onClick={runSeedPricing}
+            disabled={loadingSeed}
+          >
+            {loadingSeed ? <span className="mr-2 inline-block"><Spinner size={16} /></span> : <DollarSign className="w-4 h-4 mr-2" />}
+            Seed pricing
+          </Button>
         </div>
       </div>
 
       {error && (
         <Alert type="error" title="Error" onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+      {seedResult?.success && (
+        <Alert type="success" title="Pricing seeded" onClose={() => setSeedResult(null)}>
+          Created: {seedResult.created?.join(', ') || 'all tiers'}
         </Alert>
       )}
 

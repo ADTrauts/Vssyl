@@ -31,8 +31,11 @@ export function SessionReadyGate({ children }: SessionReadyGateProps) {
   const currentPathname = pathname || clientPathname || '/';
 
   // Public routes that don't need authentication
+  // IMPORTANT: '/' must match exactly, not via startsWith (every path would match otherwise)
   const publicRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/verify-email', '/landing', '/'];
-  const isPublicRoute = publicRoutes.some(route => currentPathname?.startsWith(route));
+  const isPublicRoute = publicRoutes.some(route =>
+    route === '/' ? currentPathname === '/' || currentPathname === '' : currentPathname?.startsWith(route)
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setTimeoutReached(true), 5000);

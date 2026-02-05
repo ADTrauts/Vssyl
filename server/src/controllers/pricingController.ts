@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 import { sendPriceChangeNotification } from '../services/emailService';
 import { prisma } from '../lib/prisma';
 import { StripeService } from '../services/stripeService';
-import { stripe } from '../config/stripe';
+import { stripe, PRICING_CONFIG } from '../config/stripe';
 import { getStripeProductIdForTier, getTierProductConfigKey } from '../lib/getStripeProductIdForTier';
 
 /**
@@ -749,6 +749,99 @@ export const getAllPriceHistory = async (req: Request, res: Response): Promise<v
       },
     });
     res.status(500).json({ error: 'Failed to get price history' });
+  }
+};
+
+/**
+ * POST /api/pricing/seed
+ * Seed pricing configs from PRICING_CONFIG (admin only). Runs on the server so it
+ * uses the production DB directly—no proxy or local script needed.
+ */
+export const seedPricing = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = (req as any).user;
+    if (!user || user.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+
+    const adminUserId = user.id;
+    const now = new Date();
+    const tiers = ['FREE', 'PRO', 'BUSINESS_BASIC', 'BUSINESS_ADVANCED', 'ENTERPRISE'] as const;
+    const created: string[] = [];
+
+    for (const tier of tiers) {
+      const config = PRICING_CONFIG[tier] as { monthly?: number; yearly?: number; perEmployee?: number; includedEmployees?: number } | undefined;
+      if (!config) continue;
+
+      // Deactivate any existing active pricing for this tier/cycle
+      await prisma.pricingConfig.updateMany({
+        where: {
+          tier: tier.toLowerCase(),
+          billingCycle: 'monthly',
+          isActive: true,
+        },
+        data: { isActive: false, endDate: now },
+      });
+      await prisma.pricingConfig.updateMany({
+        where: {
+          tier: tier.toLowerCase(),
+          billingCycle: 'yearly',
+          isActive: true,
+        },
+        data: { isActive: false, endDate: now },
+      });
+
+      if (config.monthly !== undefined) {
+        await prisma.pricingConfig.create({
+          data: {
+            tier: tier.toLowerCase(),
+            billingCycle: 'monthly',
+            basePrice: config.monthly,
+            perEmployeePrice: config.perEmployee ?? null,
+            includedEmployees: config.includedEmployees ?? null,
+            effectiveDate: now,
+            isActive: true,
+            createdBy: adminUserId,
+          },
+        });
+        created.push(`${tier} monthly $${config.monthly}`);
+      }
+      if (config.yearly !== undefined) {
+        await prisma.pricingConfig.create({
+          data: {
+            tier: tier.toLowerCase(),
+            billingCycle: 'yearly',
+            basePrice: config.yearly,
+            perEmployeePrice: config.perEmployee ?? null,
+            includedEmployees: config.includedEmployees ?? null,
+            effectiveDate: now,
+            isActive: true,
+            createdBy: adminUserId,
+          },
+        });
+        created.push(`${tier} yearly $${config.yearly}`);
+      }
+    }
+
+    await logger.info('Pricing seed completed', {
+      operation: 'pricing_seed',
+      userId: adminUserId,
+      created: created.length,
+    });
+    res.json({ success: true, message: 'Pricing seeded', created });
+  } catch (error) {
+    await logger.error('Pricing seed failed', {
+      operation: 'pricing_seed',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({
+      error: 'Failed to seed pricing',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };
 

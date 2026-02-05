@@ -24,13 +24,17 @@ interface PricingRow {
   tier: string;
   billingCycle: string;
   basePrice: number;
+  perEmployeePrice?: number | null;
+  includedEmployees?: number | null;
 }
 
 interface PlanComparisonProps {
   currentTier?: TierOrString;
   onSelectTier?: (tier: TierOrString) => void;
   showActions?: boolean;
-  userType?: 'personal' | 'business'; // Filter plans based on user type
+  userType?: 'personal' | 'business';
+  /** When provided (e.g. by BillingModal), use this instead of fetching so pricing stays in sync when modal opens */
+  pricingFromParent?: PricingRow[];
 }
 
 // Feature definitions for comparison table
@@ -184,19 +188,22 @@ function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-export default function PlanComparison({ currentTier, onSelectTier, showActions = true, userType }: PlanComparisonProps) {
-  const [pricing, setPricing] = useState<PricingRow[]>([]);
+export default function PlanComparison({ currentTier, onSelectTier, showActions = true, userType, pricingFromParent }: PlanComparisonProps) {
+  const [pricingFetched, setPricingFetched] = useState<PricingRow[]>([]);
 
   useEffect(() => {
+    if (pricingFromParent != null) return;
     let cancelled = false;
     fetch('/api/pricing')
       .then((res) => (res.ok ? res.json() : { pricing: [] }))
       .then((data) => {
-        if (!cancelled && Array.isArray(data.pricing)) setPricing(data.pricing);
+        if (!cancelled && Array.isArray(data.pricing)) setPricingFetched(data.pricing);
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [pricingFromParent]);
+
+  const pricing = pricingFromParent ?? pricingFetched;
 
   const pricesByTier = useMemo(() => {
     const map: Record<string, { monthly: number; yearly: number }> = {};

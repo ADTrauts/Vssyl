@@ -101,6 +101,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSpendingLimitModal, setShowSpendingLimitModal] = useState(false);
+  const [pricingFromApi, setPricingFromApi] = useState<Array<{ tier: string; billingCycle: string; basePrice: number; perEmployeePrice?: number | null; includedEmployees?: number | null }>>([]);
   const { features, loading: featuresLoading } = useFeatureGating();
 
   useEffect(() => {
@@ -112,7 +113,16 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
   const loadBillingData = async () => {
     try {
       setLoading(true);
-      
+
+      // Load pricing (used for Overview current plan display and passed to PlanComparison)
+      try {
+        const pricingRes = await fetch('/api/pricing');
+        const pricingData = pricingRes.ok ? await pricingRes.json() : { pricing: [] };
+        setPricingFromApi(Array.isArray(pricingData.pricing) ? pricingData.pricing : []);
+      } catch (error) {
+        console.error('Failed to load pricing:', error);
+      }
+
       // Load subscription data
       try {
         const subscriptionData = await authenticatedApiCall('/api/billing/subscriptions/user');
@@ -149,6 +159,17 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
     } finally {
       setLoading(false);
     }
+  };
+
+  const getCurrentPlanPriceLabel = (tier: string) => {
+    if (tier === 'free') return 'Free tier with ads';
+    const monthly = pricingFromApi.find((p) => p.tier === tier && p.billingCycle === 'monthly');
+    const perEmp = monthly?.perEmployeePrice;
+    const incl = monthly?.includedEmployees ?? 10;
+    const base = monthly ? formatCurrency(monthly.basePrice) : null;
+    if (!base) return 'Custom pricing';
+    if (perEmp != null && perEmp > 0) return `${base}/month + ${formatCurrency(perEmp)}/employee (${incl} included)`;
+    return `${base}/month`;
   };
 
   const getTierColor = (tier: string) => {
@@ -218,11 +239,10 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
             <div className="space-y-4">
               <PlanComparison
                 currentTier={subscription?.tier as Tier || 'free'}
-                onSelectTier={(tier) => {
-                  setShowUpgradeFlow(true);
-                }}
+                onSelectTier={() => setShowUpgradeFlow(true)}
                 showActions={true}
                 userType={businessId ? 'business' : 'personal'}
+                pricingFromParent={pricingFromApi}
               />
             </div>
           </Tabs.Content>
@@ -246,11 +266,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                         <div>
                           <h3 className="text-lg font-semibold capitalize">{subscription.tier.replace('_', ' ')} Plan</h3>
                           <p className="text-sm text-gray-600">
-                            {subscription.tier === 'free' ? 'Free tier with ads' : 
-                             subscription.tier === 'pro' ? '$29.00/month' :
-                             subscription.tier === 'business_basic' ? `$49.99/month + $5/employee (${subscription.includedEmployees || 10} included)` :
-                             subscription.tier === 'business_advanced' ? `$69.99/month + $5/employee (${subscription.includedEmployees || 10} included)` :
-                             subscription.tier === 'enterprise' ? `$129.99/month + $5/employee (${subscription.includedEmployees || 10} included)` : 'Custom pricing'}
+                            {getCurrentPlanPriceLabel(subscription.tier)}
                           </p>
                         </div>
                         <div className="flex gap-2">
