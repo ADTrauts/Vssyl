@@ -786,41 +786,68 @@ export const getAllPriceHistory = async (req: Request, res: Response): Promise<v
 
 /**
  * GET /api/pricing/stripe-status
- * Admin-only: test Stripe connectivity (e.g. from Cloud Run). Returns ok + detail so you can see the exact error in production.
+ * Admin-only: test Stripe connectivity (e.g. from Cloud Run). Runs both Stripe SDK and raw HTTPS
+ * so you can see if the failure is SDK vs network (egress to api.stripe.com).
  */
 export const stripeStatus = async (req: Request, res: Response): Promise<void> => {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    res.json({ ok: false, reason: 'not_configured', message: 'STRIPE_SECRET_KEY not set', sdk: null, raw: null });
+    return;
+  }
+
+  // 1) Raw HTTPS to api.stripe.com (tests egress / DNS / TLS)
+  let rawResult: { ok: boolean; status?: number; error?: string } = { ok: false };
   try {
-    const { isStripeConfigured } = await import('../config/stripe');
-    if (!isStripeConfigured() || !stripe) {
-      res.json({ ok: false, reason: 'not_configured', message: 'STRIPE_SECRET_KEY not set' });
-      return;
+    const rawRes = await fetch('https://api.stripe.com/v1/products?limit=1', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(15000),
+    });
+    rawResult = { ok: rawRes.ok, status: rawRes.status, error: rawRes.ok ? undefined : `HTTP ${rawRes.status}` };
+  } catch (rawErr: unknown) {
+    const e = rawErr as Error;
+    rawResult = { ok: false, error: e.message || 'Request failed' };
+  }
+
+  // 2) Stripe SDK (same call – if raw works but SDK fails, it's SDK/env; if both fail, it's network)
+  let sdkResult: { ok: boolean; error?: string; type?: string; cause?: string } = { ok: false };
+  if (stripe) {
+    try {
+      await stripe.products.list({ limit: 1 });
+      sdkResult = { ok: true };
+    } catch (sdkErr: unknown) {
+      const e = sdkErr as Error & { type?: string; cause?: Error };
+      sdkResult = {
+        ok: false,
+        error: e.message,
+        type: e.type,
+        cause: e.cause?.message,
+      };
     }
-    await stripe.products.list({ limit: 1 });
-    res.json({ ok: true, message: 'Stripe API reachable' });
-  } catch (error: unknown) {
-    const err = error as Error & { type?: string; code?: string; cause?: Error };
-    const detail = [
-      err.message,
-      err.type ? `type: ${err.type}` : '',
-      err.code ? `code: ${err.code}` : '',
-      err.cause?.message ? `cause: ${err.cause.message}` : '',
-    ].filter(Boolean).join(', ');
+  } else {
+    sdkResult = { ok: false, error: 'Stripe client not initialized' };
+  }
+
+  const ok = rawResult.ok && sdkResult.ok;
+  if (!ok) {
     await logger.error('Stripe status check failed', {
       operation: 'pricing_stripe_status',
-      error: { message: err.message, code: err.code },
-      stripeErrorType: err.type,
-      stripeErrorCause: err.cause?.message,
-    });
-    res.json({
-      ok: false,
-      reason: 'stripe_error',
-      message: err.message,
-      detail: detail || undefined,
-      type: err.type,
-      code: err.code,
-      cause: err.cause?.message,
+      raw: rawResult,
+      sdk: sdkResult,
     });
   }
+  res.json({
+    ok,
+    message: ok ? 'Stripe API reachable (SDK + raw)' : 'One or both checks failed',
+    raw: rawResult,
+    sdk: sdkResult,
+    hint: !rawResult.ok
+      ? 'Raw HTTPS to api.stripe.com failed – check Cloud Run egress, VPC/Cloud NAT if using all-traffic-through-vpc, and firewall.'
+      : !sdkResult.ok
+        ? 'Raw HTTPS succeeded but Stripe SDK failed – possible SDK/config issue.'
+        : undefined,
+  });
 };
 
 /**

@@ -1,15 +1,30 @@
 import Stripe from 'stripe';
 
+// Normalize key (trim so Secret Manager / env trailing newline doesn't break auth)
+const rawSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
+const secretKey = typeof rawSecretKey === 'string' ? rawSecretKey.trim() : '';
+
 // Stripe configuration
 export const STRIPE_CONFIG = {
-  secretKey: process.env.STRIPE_SECRET_KEY || '',
+  secretKey,
   publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   apiVersion: '2025-08-27.basil' as const,
 };
 
+// Fail-fast / runtime check: in production, log clearly if key is missing or which mode is loaded
+if (process.env.NODE_ENV === 'production') {
+  if (!STRIPE_CONFIG.secretKey) {
+    console.error('[Stripe] STRIPE_SECRET_KEY is not set at runtime. Stripe API calls will fail. Check Cloud Run env/secrets and Secret Manager access.');
+  } else {
+    // Masked: only prefix so you can verify test vs live in Cloud Run logs (e.g. sk_test_ vs sk_live_)
+    const prefix = STRIPE_CONFIG.secretKey.slice(0, 8);
+    console.log('[Stripe] Key loaded at runtime, prefix:', prefix);
+  }
+}
+
 // Initialize Stripe client (timeout + retries for serverless/Cloud Run)
-export const stripe = STRIPE_CONFIG.secretKey 
+export const stripe = STRIPE_CONFIG.secretKey
   ? new Stripe(STRIPE_CONFIG.secretKey, {
       apiVersion: STRIPE_CONFIG.apiVersion as any, // TypeScript types may lag behind Stripe API versions
       timeout: 30_000, // 30s for serverless environments
