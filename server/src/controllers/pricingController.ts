@@ -199,17 +199,27 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
               stripePriceId: newStripePrice.id,
             });
           }
-        } catch (error) {
+        } catch (error: unknown) {
           stripeBasePriceOutcome = 'error';
-          stripeBasePriceMessage = error instanceof Error ? error.message : 'Unknown error';
+          const err = error as Error & { type?: string; code?: string; cause?: Error };
+          const detail = [
+            err.message,
+            err.type ? `(type: ${err.type})` : '',
+            err.code ? `(code: ${err.code})` : '',
+            err.cause?.message ? `(cause: ${err.cause.message})` : '',
+          ].filter(Boolean).join(' ');
+          stripeBasePriceMessage = detail || 'Unknown error';
           await logger.error('Failed to create Stripe price', {
             operation: 'pricing_create_stripe_price',
             tier,
             billingCycle,
             error: {
-              message: error instanceof Error ? error.message : 'Unknown error',
-              stack: error instanceof Error ? error.stack : undefined,
+              message: err.message,
+              stack: err.stack,
+              code: err.code,
             },
+            stripeErrorType: err.type,
+            stripeErrorCause: err.cause?.message,
           });
         }
       }
@@ -771,6 +781,45 @@ export const getAllPriceHistory = async (req: Request, res: Response): Promise<v
       },
     });
     res.status(500).json({ error: 'Failed to get price history' });
+  }
+};
+
+/**
+ * GET /api/pricing/stripe-status
+ * Admin-only: test Stripe connectivity (e.g. from Cloud Run). Returns ok + detail so you can see the exact error in production.
+ */
+export const stripeStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { isStripeConfigured } = await import('../config/stripe');
+    if (!isStripeConfigured() || !stripe) {
+      res.json({ ok: false, reason: 'not_configured', message: 'STRIPE_SECRET_KEY not set' });
+      return;
+    }
+    await stripe.products.list({ limit: 1 });
+    res.json({ ok: true, message: 'Stripe API reachable' });
+  } catch (error: unknown) {
+    const err = error as Error & { type?: string; code?: string; cause?: Error };
+    const detail = [
+      err.message,
+      err.type ? `type: ${err.type}` : '',
+      err.code ? `code: ${err.code}` : '',
+      err.cause?.message ? `cause: ${err.cause.message}` : '',
+    ].filter(Boolean).join(', ');
+    await logger.error('Stripe status check failed', {
+      operation: 'pricing_stripe_status',
+      error: { message: err.message, code: err.code },
+      stripeErrorType: err.type,
+      stripeErrorCause: err.cause?.message,
+    });
+    res.json({
+      ok: false,
+      reason: 'stripe_error',
+      message: err.message,
+      detail: detail || undefined,
+      type: err.type,
+      code: err.code,
+      cause: err.cause?.message,
+    });
   }
 };
 

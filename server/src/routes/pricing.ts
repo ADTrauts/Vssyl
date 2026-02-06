@@ -11,6 +11,7 @@ import {
   calculatePriceImpact,
   clearPricingCache,
   seedPricing,
+  stripeStatus,
 } from '../controllers/pricingController';
 
 const router: express.Router = express.Router();
@@ -26,6 +27,8 @@ const requireAdmin = (req: express.Request, res: express.Response, next: express
 
 // Public routes (for frontend to display pricing)
 router.get('/', getAllPricing);
+// Admin Stripe connectivity check (must be before /:tier)
+router.get('/stripe-status', authenticateJWT, requireAdmin, stripeStatus);
 router.get('/:tier', getPricing);
 router.get('/:tier/info', getPricingInfo);
 

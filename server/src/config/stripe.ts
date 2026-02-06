@@ -8,10 +8,12 @@ export const STRIPE_CONFIG = {
   apiVersion: '2025-08-27.basil' as const,
 };
 
-// Initialize Stripe client
+// Initialize Stripe client (timeout + retries for serverless/Cloud Run)
 export const stripe = STRIPE_CONFIG.secretKey 
   ? new Stripe(STRIPE_CONFIG.secretKey, {
       apiVersion: STRIPE_CONFIG.apiVersion as any, // TypeScript types may lag behind Stripe API versions
+      timeout: 30_000, // 30s for serverless environments
+      maxNetworkRetries: 3,
     })
   : null;
 
