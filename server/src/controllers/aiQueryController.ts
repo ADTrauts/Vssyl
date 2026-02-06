@@ -8,6 +8,7 @@ import { Request, Response } from 'express';
 import { AIQueryService } from '../services/aiQueryService';
 import { AI_QUERY_PACKS, type QueryPackType } from '../config/aiQueryPacks';
 import { logger } from '../lib/logger';
+import { prisma } from '../lib/prisma';
 
 /**
  * GET /api/ai/queries/balance
@@ -214,14 +215,33 @@ export async function getPurchaseHistory(req: Request, res: Response): Promise<v
 
 /**
  * GET /api/ai/queries/packs
- * Get available query pack options
+ * Get available query pack options (uses DB prices from first active tier, falls back to config)
  */
 export async function getQueryPacks(req: Request, res: Response): Promise<void> {
   try {
-    // Convert pack config to array format for frontend
+    // Get query pack prices from database (use first active tier's prices as "global" prices)
+    const { PricingService } = await import('../services/pricingService');
+    const activePricing = await prisma.pricingConfig.findFirst({
+      where: { isActive: true },
+      orderBy: { effectiveDate: 'desc' },
+    });
+
+    // Map pack types to DB fields
+    const packPriceMap: Record<string, number | null> = {
+      small: activePricing?.queryPackSmall ?? null,
+      medium: activePricing?.queryPackMedium ?? null,
+      large: activePricing?.queryPackLarge ?? null,
+      enterprise: activePricing?.queryPackEnterprise ?? null,
+    };
+
+    // Convert pack config to array format, using DB prices if available, otherwise fall back to config
     const packs = Object.entries(AI_QUERY_PACKS).map(([key, pack]) => ({
       id: key,
-      ...pack,
+      queries: pack.queries,
+      price: packPriceMap[key] ?? pack.price, // Use DB price if available, otherwise config price
+      name: pack.name,
+      description: pack.description,
+      stripePriceId: pack.stripePriceId, // Still use env var for Stripe price ID (can be synced separately)
     }));
 
     res.json({

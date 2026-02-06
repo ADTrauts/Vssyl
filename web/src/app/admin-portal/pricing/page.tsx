@@ -205,10 +205,32 @@ export default function PricingManagementPage() {
       }
 
       const data = await response.json().catch(() => ({}));
-      if (data.stripe?.basePriceOutcome) {
+      // Show Stripe results for base price or query packs
+      if (data.stripe?.basePriceOutcome || data.stripe?.queryPacks?.length > 0) {
+        const queryPackResults = data.stripe?.queryPacks || [];
+        const hasQueryPackChanges = queryPackResults.length > 0;
+        const hasBasePriceChange = data.stripe?.basePriceOutcome && data.stripe.basePriceOutcome !== 'skipped_no_change';
+        
+        // Build message combining base price and query pack results
+        let message = '';
+        if (hasBasePriceChange) {
+          message = `Base price: ${data.stripe.message || data.stripe.basePriceOutcome}`;
+        }
+        if (hasQueryPackChanges) {
+          const packMessages = queryPackResults.map((qp: any) => 
+            `${qp.packType}: ${qp.outcome === 'created' ? 'Stripe updated' : qp.message || qp.outcome}`
+          ).join('; ');
+          if (message) message += ' | ';
+          message += `Query packs: ${packMessages}`;
+        }
+        
+        // Determine overall outcome (success if any created, warning if skipped, error if any error)
+        const hasCreated = data.stripe?.basePriceOutcome === 'created' || queryPackResults.some((qp: any) => qp.outcome === 'created');
+        const hasError = data.stripe?.basePriceOutcome === 'error' || queryPackResults.some((qp: any) => qp.outcome === 'error');
+        
         setStripeSaveMessage({
-          outcome: data.stripe.basePriceOutcome,
-          message: data.stripe.message,
+          outcome: hasError ? 'error' : hasCreated ? 'created' : 'warning',
+          message: message || 'Stripe sync completed',
         });
       } else {
         setStripeSaveMessage(null);
@@ -622,6 +644,81 @@ export default function PricingManagementPage() {
                   />
               <p className="text-xs text-gray-500 mt-1">Number of employees included in base price</p>
                 </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-semibold text-gray-900">AI Query Pack Prices</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Small Pack (500 queries) ($)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.queryPackSmall || ''}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        queryPackSmall: parseFloat(e.target.value) || undefined,
+                      })
+                    }
+                    placeholder="10.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Medium Pack (2,500 queries) ($)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.queryPackMedium || ''}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        queryPackMedium: parseFloat(e.target.value) || undefined,
+                      })
+                    }
+                    placeholder="40.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Large Pack (5,000 queries) ($)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.queryPackLarge || ''}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        queryPackLarge: parseFloat(e.target.value) || undefined,
+                      })
+                    }
+                    placeholder="70.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Enterprise Pack (10,000 queries) ($)
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editForm.queryPackEnterprise || ''}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        queryPackEnterprise: parseFloat(e.target.value) || undefined,
+                      })
+                    }
+                    placeholder="120.00"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">Query pack prices are global (same for all tiers). Changes will sync to Stripe.</p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

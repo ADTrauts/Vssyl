@@ -127,11 +127,21 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    // Normalize query pack prices
+    const normalizedQueryPackSmall = queryPackSmall !== undefined && queryPackSmall !== null ? (typeof queryPackSmall === 'string' ? parseFloat(queryPackSmall) : Number(queryPackSmall)) : undefined;
+    const normalizedQueryPackMedium = queryPackMedium !== undefined && queryPackMedium !== null ? (typeof queryPackMedium === 'string' ? parseFloat(queryPackMedium) : Number(queryPackMedium)) : undefined;
+    const normalizedQueryPackLarge = queryPackLarge !== undefined && queryPackLarge !== null ? (typeof queryPackLarge === 'string' ? parseFloat(queryPackLarge) : Number(queryPackLarge)) : undefined;
+    const normalizedQueryPackEnterprise = queryPackEnterprise !== undefined && queryPackEnterprise !== null ? (typeof queryPackEnterprise === 'string' ? parseFloat(queryPackEnterprise) : Number(queryPackEnterprise)) : undefined;
+
     // Ensure fresh DB value for comparison (avoid stale cache when deciding to create Stripe price)
     PricingService.clearCache();
     const currentPricing = await PricingService.getPricing(tier, billingCycle);
     const oldPrice = currentPricing?.basePrice ?? 0;
     const oldPerEmployeePrice = currentPricing?.perEmployeePrice ?? null;
+    const oldQueryPackSmall = currentPricing?.queryPackSmall ?? null;
+    const oldQueryPackMedium = currentPricing?.queryPackMedium ?? null;
+    const oldQueryPackLarge = currentPricing?.queryPackLarge ?? null;
+    const oldQueryPackEnterprise = currentPricing?.queryPackEnterprise ?? null;
 
     // Record price change if price changed
     if (currentPricing && basePrice !== oldPrice) {
@@ -290,6 +300,104 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
     } else {
       // Preserve existing per-employee Stripe price ID when we didn't create/clear and body didn't send one
       updatedPerEmployeeStripePriceId = currentPricing?.perEmployeeStripePriceId ?? updatedPerEmployeeStripePriceId;
+    }
+
+    // Create/update Stripe prices for query packs if prices changed (query packs are global, not tier-specific)
+    // Note: Query pack prices are stored per-tier in DB but should be the same across tiers
+    // We create Stripe prices when any tier's query pack prices change
+    const queryPackChanges: Array<{ packType: 'small' | 'medium' | 'large' | 'enterprise'; oldPrice: number | null; newPrice: number | undefined; stripePriceId?: string }> = [];
+    
+    if (normalizedQueryPackSmall !== undefined && normalizedQueryPackSmall !== oldQueryPackSmall && normalizedQueryPackSmall > 0) {
+      queryPackChanges.push({ packType: 'small', oldPrice: oldQueryPackSmall, newPrice: normalizedQueryPackSmall });
+    }
+    if (normalizedQueryPackMedium !== undefined && normalizedQueryPackMedium !== oldQueryPackMedium && normalizedQueryPackMedium > 0) {
+      queryPackChanges.push({ packType: 'medium', oldPrice: oldQueryPackMedium, newPrice: normalizedQueryPackMedium });
+    }
+    if (normalizedQueryPackLarge !== undefined && normalizedQueryPackLarge !== oldQueryPackLarge && normalizedQueryPackLarge > 0) {
+      queryPackChanges.push({ packType: 'large', oldPrice: oldQueryPackLarge, newPrice: normalizedQueryPackLarge });
+    }
+    if (normalizedQueryPackEnterprise !== undefined && normalizedQueryPackEnterprise !== oldQueryPackEnterprise && normalizedQueryPackEnterprise > 0) {
+      queryPackChanges.push({ packType: 'enterprise', oldPrice: oldQueryPackEnterprise, newPrice: normalizedQueryPackEnterprise });
+    }
+
+    // Create Stripe prices for changed query packs
+    const { STRIPE_PRODUCTS } = await import('../config/stripe');
+    const queryPackProductId = STRIPE_PRODUCTS.AI_QUERY_PACKS;
+    const queryPackStripeResults: Array<{ packType: string; outcome: string; message: string; stripePriceId?: string }> = [];
+
+    for (const change of queryPackChanges) {
+      try {
+        const { isStripeConfigured } = await import('../config/stripe');
+        if (!isStripeConfigured()) {
+          queryPackStripeResults.push({
+            packType: change.packType,
+            outcome: 'skipped_not_configured',
+            message: 'Stripe not configured',
+          });
+          continue;
+        }
+
+        if (!queryPackProductId) {
+          queryPackStripeResults.push({
+            packType: change.packType,
+            outcome: 'skipped_no_product',
+            message: 'AI Query Packs product not found in Stripe',
+          });
+          continue;
+        }
+
+        const amountInCents = Math.round(change.newPrice! * 100);
+        const newStripePrice = await StripeService.createPrice(
+          queryPackProductId,
+          amountInCents,
+          'usd',
+          {
+            metadata: {
+              type: 'ai_query_pack',
+              packType: change.packType,
+            },
+          }
+        );
+
+        queryPackStripeResults.push({
+          packType: change.packType,
+          outcome: 'created',
+          message: `Stripe price created: ${newStripePrice.id}`,
+          stripePriceId: newStripePrice.id,
+        });
+
+        await logger.info('Created new Stripe price for query pack', {
+          operation: 'pricing_create_query_pack_stripe_price',
+          packType: change.packType,
+          oldPrice: change.oldPrice,
+          newPrice: change.newPrice,
+          stripePriceId: newStripePrice.id,
+        });
+      } catch (error: unknown) {
+        const err = error as Error & { type?: string; code?: string; cause?: Error };
+        const detail = [
+          err.message,
+          err.type ? `(type: ${err.type})` : '',
+          err.code ? `(code: ${err.code})` : '',
+          err.cause?.message ? `(cause: ${err.cause.message})` : '',
+        ].filter(Boolean).join(' ');
+        queryPackStripeResults.push({
+          packType: change.packType,
+          outcome: 'error',
+          message: detail || 'Unknown error',
+        });
+        await logger.error('Failed to create Stripe price for query pack', {
+          operation: 'pricing_create_query_pack_stripe_price',
+          packType: change.packType,
+          error: {
+            message: err.message,
+            stack: err.stack,
+            code: err.code,
+          },
+          stripeErrorType: err.type,
+          stripeErrorCause: err.cause?.message,
+        });
+      }
     }
 
     const pricing = await PricingService.upsertPricing(
@@ -465,10 +573,24 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
       createdAt: pricing.createdAt.toISOString(),
       updatedAt: pricing.updatedAt.toISOString(),
     };
-    const json: { pricing: typeof serializedPricing; stripe?: { basePriceOutcome: string; message?: string } } = { pricing: serializedPricing };
+    const json: { 
+      pricing: typeof serializedPricing; 
+      stripe?: { 
+        basePriceOutcome: string; 
+        message?: string;
+        queryPacks?: Array<{ packType: string; outcome: string; message: string; stripePriceId?: string }>;
+      } 
+    } = { pricing: serializedPricing };
+    
     if (basePrice !== oldPrice && basePrice > 0) {
       json.stripe = { basePriceOutcome: stripeBasePriceOutcome, message: stripeBasePriceMessage };
     }
+    
+    if (queryPackStripeResults.length > 0) {
+      if (!json.stripe) json.stripe = { basePriceOutcome: 'skipped_no_change' };
+      json.stripe.queryPacks = queryPackStripeResults;
+    }
+    
     res.json(json);
   } catch (error) {
     await logger.error('Failed to upsert pricing', {

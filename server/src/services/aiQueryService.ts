@@ -300,6 +300,22 @@ export class AIQueryService {
       throw new Error('Invalid pack type');
     }
 
+    // Get query pack price from database (use first active tier's prices as "global" prices)
+    const activePricing = await prisma.pricingConfig.findFirst({
+      where: { isActive: true },
+      orderBy: { effectiveDate: 'desc' },
+    });
+
+    const packPriceMap: Record<QueryPackType, number | null> = {
+      small: activePricing?.queryPackSmall ?? null,
+      medium: activePricing?.queryPackMedium ?? null,
+      large: activePricing?.queryPackLarge ?? null,
+      enterprise: activePricing?.queryPackEnterprise ?? null,
+    };
+
+    // Use DB price if available, otherwise fall back to config price
+    const packPrice = packPriceMap[packType] ?? pack.price;
+
     // Get or create Stripe customer
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -328,7 +344,7 @@ export class AIQueryService {
     // Note: Payment Intents use amount directly (not price_id)
     // We create Stripe Products/Prices for management, but Payment Intents work with amounts
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(pack.price * 100), // Convert to cents
+      amount: Math.round(packPrice * 100), // Convert to cents (uses DB price)
       currency: 'usd',
       customer: customerId,
       metadata: {
@@ -353,7 +369,7 @@ export class AIQueryService {
         businessId: businessId || null,
         packType,
         queriesAmount: pack.queries,
-        amountPaid: pack.price,
+        amountPaid: packPrice,
         stripePaymentIntentId: paymentIntent.id,
         status: 'pending',
       },
@@ -362,7 +378,7 @@ export class AIQueryService {
     return {
       paymentIntentId: paymentIntent.id,
       queries: pack.queries,
-      price: pack.price,
+      price: packPrice,
       clientSecret: paymentIntent.client_secret,
     };
   }
