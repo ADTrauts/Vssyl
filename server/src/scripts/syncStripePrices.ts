@@ -85,17 +85,12 @@ async function syncStripePrices() {
         continue;
       }
 
-      // Verify amount matches (within 1 cent tolerance for rounding)
+      // Warn if amount doesn't match (still sync the ID - display price is in DB, Stripe ID is for checkout)
       const expectedAmount = Math.round(config.basePrice * 100);
       const actualAmount = matchingPrice.unit_amount || 0;
-      
       if (Math.abs(expectedAmount - actualAmount) > 1) {
-        console.log(`⚠️  Price mismatch for ${config.tier}/${config.billingCycle}:`);
-        console.log(`   Database: $${config.basePrice.toFixed(2)} (${expectedAmount} cents)`);
-        console.log(`   Stripe: $${(actualAmount / 100).toFixed(2)} (${actualAmount} cents)`);
-        console.log(`   Difference: $${Math.abs(expectedAmount - actualAmount) / 100}`);
-        skipped++;
-        continue;
+        console.log(`⚠️  Price mismatch for ${config.tier}/${config.billingCycle} (syncing ID anyway):`);
+        console.log(`   Database display: $${config.basePrice.toFixed(2)} | Stripe: $${(actualAmount / 100).toFixed(2)}`);
       }
 
       // Check if already synced

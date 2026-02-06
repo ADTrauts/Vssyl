@@ -191,7 +191,7 @@ export const getUserSubscription = async (req: Request, res: Response) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     await logger.error('Failed to get user subscription', {
       operation: 'billing_get_user_subscription',
       error: {
@@ -200,13 +200,9 @@ export const getUserSubscription = async (req: Request, res: Response) => {
       },
       userId: (req as any).user?.id
     });
-    
-    // Include error details in development mode for debugging
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    res.status(500).json({ 
-      error: 'Failed to get user subscription',
-      ...(isDevelopment && { details: errorMessage })
-    });
+
+    // Return 200 with null so billing modal can show "no subscription" instead of breaking
+    res.status(200).json({ subscription: null });
   }
 };
 
@@ -631,7 +627,7 @@ export const getInvoices = async (req: Request, res: Response) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     await logger.error('Failed to get invoices', {
       operation: 'billing_get_invoices',
       error: {
@@ -640,13 +636,9 @@ export const getInvoices = async (req: Request, res: Response) => {
       },
       userId: (req as any).user?.id
     });
-    
-    // Include error details in development mode for debugging
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    res.status(500).json({ 
-      error: 'Failed to get invoices',
-      ...(isDevelopment && { details: errorMessage })
-    });
+
+    // Return 200 with empty list so billing modal can show "no invoices" instead of breaking
+    res.status(200).json({ invoices: [] });
   }
 };
 

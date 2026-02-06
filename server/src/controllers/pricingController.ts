@@ -114,17 +114,24 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const { tier, billingCycle, basePrice, perEmployeePrice, includedEmployees, queryPackSmall, queryPackMedium, queryPackLarge, queryPackEnterprise, baseAIAllowance, stripePriceId, perEmployeeStripePriceId, effectiveDate, updateExistingSubscriptions } = req.body;
+    const { tier, billingCycle, basePrice: basePriceRaw, perEmployeePrice, includedEmployees, queryPackSmall, queryPackMedium, queryPackLarge, queryPackEnterprise, baseAIAllowance, stripePriceId, perEmployeeStripePriceId, effectiveDate, updateExistingSubscriptions } = req.body;
 
-    if (!tier || !billingCycle || basePrice === undefined) {
+    if (!tier || !billingCycle || basePriceRaw === undefined) {
       res.status(400).json({ error: 'Missing required fields: tier, billingCycle, basePrice' });
       return;
     }
 
-    // Get current pricing to compare
+    const basePrice = typeof basePriceRaw === 'string' ? parseFloat(basePriceRaw) : Number(basePriceRaw);
+    if (Number.isNaN(basePrice)) {
+      res.status(400).json({ error: 'Invalid basePrice' });
+      return;
+    }
+
+    // Ensure fresh DB value for comparison (avoid stale cache when deciding to create Stripe price)
+    PricingService.clearCache();
     const currentPricing = await PricingService.getPricing(tier, billingCycle);
-    const oldPrice = currentPricing?.basePrice || 0;
-    const oldPerEmployeePrice = currentPricing?.perEmployeePrice || null;
+    const oldPrice = currentPricing?.basePrice ?? 0;
+    const oldPerEmployeePrice = currentPricing?.perEmployeePrice ?? null;
 
     // Record price change if price changed
     if (currentPricing && basePrice !== oldPrice) {
@@ -143,57 +150,68 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
     // Resolve Stripe product ID (built-in tiers or admin-created tiers from SystemConfig)
     const productIdForTier = await getStripeProductIdForTier(tier);
 
+    // Track Stripe outcome for API response (so admin UI can show why Stripe did/didn't update)
+    let stripeBasePriceOutcome: 'created' | 'skipped_not_configured' | 'skipped_no_product' | 'skipped_no_change' | 'error' = 'skipped_no_change';
+    let stripeBasePriceMessage: string | undefined;
+
     // Automatically create/update Stripe price if basePrice changed and tier is paid
     let updatedStripePriceId = stripePriceId;
-    if (basePrice > 0 && productIdForTier && basePrice !== oldPrice) {
-      try {
-        // Check if Stripe is configured
-        const { isStripeConfigured } = await import('../config/stripe');
-        if (!isStripeConfigured()) {
-          await logger.warn('Stripe not configured, skipping price creation', {
+    if (basePrice > 0 && basePrice !== oldPrice) {
+      if (!productIdForTier) {
+        stripeBasePriceOutcome = 'skipped_no_product';
+        stripeBasePriceMessage = `No Stripe product for tier "${tier}". Add product in Stripe or create tier via Admin.`;
+      } else {
+        try {
+          const { isStripeConfigured } = await import('../config/stripe');
+          if (!isStripeConfigured()) {
+            stripeBasePriceOutcome = 'skipped_not_configured';
+            stripeBasePriceMessage = 'Stripe not configured (STRIPE_SECRET_KEY). Set in production env/secrets.';
+            await logger.warn('Stripe not configured, skipping price creation', {
+              operation: 'pricing_create_stripe_price',
+              tier,
+              billingCycle,
+            });
+          } else {
+            const productId = productIdForTier;
+            const interval = billingCycle === 'monthly' ? 'month' : 'year';
+            const amountInCents = Math.round(basePrice * 100);
+
+            const newStripePrice = await StripeService.createPrice(
+              productId,
+              amountInCents,
+              'usd',
+              { 
+                interval: interval as 'month' | 'year',
+                metadata: { type: 'base', tier, billingCycle }
+              }
+            );
+
+            updatedStripePriceId = newStripePrice.id;
+            stripeBasePriceOutcome = 'created';
+            stripeBasePriceMessage = `New Stripe price created: ${newStripePrice.id}`;
+
+            await logger.info('Created new Stripe price', {
+              operation: 'pricing_create_stripe_price',
+              tier,
+              billingCycle,
+              oldPrice,
+              newPrice: basePrice,
+              stripePriceId: newStripePrice.id,
+            });
+          }
+        } catch (error) {
+          stripeBasePriceOutcome = 'error';
+          stripeBasePriceMessage = error instanceof Error ? error.message : 'Unknown error';
+          await logger.error('Failed to create Stripe price', {
             operation: 'pricing_create_stripe_price',
             tier,
             billingCycle,
-          });
-        } else {
-          const productId = productIdForTier;
-          const interval = billingCycle === 'monthly' ? 'month' : 'year';
-          const amountInCents = Math.round(basePrice * 100);
-
-          // Create new Stripe price (Stripe doesn't allow updating prices, must create new)
-          const newStripePrice = await StripeService.createPrice(
-            productId,
-            amountInCents,
-            'usd',
-            { 
-              interval: interval as 'month' | 'year',
-              metadata: { type: 'base', tier, billingCycle }
-            }
-          );
-
-          updatedStripePriceId = newStripePrice.id;
-
-          await logger.info('Created new Stripe price', {
-            operation: 'pricing_create_stripe_price',
-            tier,
-            billingCycle,
-            oldPrice,
-            newPrice: basePrice,
-            stripePriceId: newStripePrice.id,
+            error: {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+            },
           });
         }
-      } catch (error) {
-        // Log error but don't fail the request - pricing will still be saved
-        await logger.error('Failed to create Stripe price', {
-          operation: 'pricing_create_stripe_price',
-          tier,
-          billingCycle,
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-          },
-        });
-        // Continue with existing stripePriceId if provided
       }
     }
     // Preserve existing base Stripe price ID when we didn't create a new one and body didn't send one
@@ -437,7 +455,11 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
       createdAt: pricing.createdAt.toISOString(),
       updatedAt: pricing.updatedAt.toISOString(),
     };
-    res.json({ pricing: serializedPricing });
+    const json: { pricing: typeof serializedPricing; stripe?: { basePriceOutcome: string; message?: string } } = { pricing: serializedPricing };
+    if (basePrice !== oldPrice && basePrice > 0) {
+      json.stripe = { basePriceOutcome: stripeBasePriceOutcome, message: stripeBasePriceMessage };
+    }
+    res.json(json);
   } catch (error) {
     await logger.error('Failed to upsert pricing', {
       operation: 'pricing_upsert',

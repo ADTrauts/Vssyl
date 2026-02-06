@@ -51,6 +51,7 @@ export default function PricingManagementPage() {
   const [loadingCreateTier, setLoadingCreateTier] = useState(false);
   const [loadingSeed, setLoadingSeed] = useState(false);
   const [seedResult, setSeedResult] = useState<{ success: boolean; created?: string[] } | null>(null);
+  const [stripeSaveMessage, setStripeSaveMessage] = useState<{ outcome: string; message?: string } | null>(null);
 
   useEffect(() => {
     loadPricing();
@@ -153,6 +154,7 @@ export default function PricingManagementPage() {
   };
 
   const handleEdit = (price: PricingConfig) => {
+    setStripeSaveMessage(null);
     setEditingPrice(price);
     setEditForm({
       basePrice: price.basePrice,
@@ -202,11 +204,22 @@ export default function PricingManagementPage() {
         throw new Error(errData.error || 'Failed to update pricing');
       }
 
+      const data = await response.json().catch(() => ({}));
+      if (data.stripe?.basePriceOutcome) {
+        setStripeSaveMessage({
+          outcome: data.stripe.basePriceOutcome,
+          message: data.stripe.message,
+        });
+      } else {
+        setStripeSaveMessage(null);
+      }
+
       await loadPricing();
       setEditingPrice(null);
       setEditForm({});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save pricing');
+      setStripeSaveMessage(null);
     } finally {
       setLoading(false);
     }
@@ -338,6 +351,17 @@ export default function PricingManagementPage() {
       {seedResult?.success && (
         <Alert type="success" title="Pricing seeded" onClose={() => setSeedResult(null)}>
           Created: {seedResult.created?.join(', ') || 'all tiers'}
+        </Alert>
+      )}
+      {stripeSaveMessage && (
+        <Alert
+          type={stripeSaveMessage.outcome === 'created' ? 'success' : stripeSaveMessage.outcome === 'error' ? 'error' : 'warning'}
+          title={stripeSaveMessage.outcome === 'created' ? 'Stripe updated' : 'Stripe not updated'}
+          onClose={() => setStripeSaveMessage(null)}
+        >
+          {stripeSaveMessage.outcome === 'created'
+            ? 'New price created in Stripe; checkout will use it.'
+            : stripeSaveMessage.message || stripeSaveMessage.outcome}
         </Alert>
       )}
 
