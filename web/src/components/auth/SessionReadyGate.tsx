@@ -2,7 +2,6 @@
 
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
 
 interface SessionReadyGateProps {
   children: ReactNode;
@@ -15,27 +14,7 @@ interface SessionReadyGateProps {
  */
 export function SessionReadyGate({ children }: SessionReadyGateProps) {
   const { data: session, status } = useSession();
-  // usePathname may return null during SSR - handle gracefully
-  const pathname = usePathname();
   const [timeoutReached, setTimeoutReached] = useState(false);
-  const [clientPathname, setClientPathname] = useState<string | null>(null);
-
-  // Get pathname from window on client side as fallback
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setClientPathname(window.location.pathname);
-    }
-  }, []);
-
-  // Use pathname from hook if available, otherwise use client pathname
-  const currentPathname = pathname || clientPathname || '/';
-
-  // Public routes that don't need authentication
-  // IMPORTANT: '/' must match exactly, not via startsWith (every path would match otherwise)
-  const publicRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/verify-email', '/landing', '/'];
-  const isPublicRoute = publicRoutes.some(route =>
-    route === '/' ? currentPathname === '/' || currentPathname === '' : currentPathname?.startsWith(route)
-  );
 
   useEffect(() => {
     const timer = setTimeout(() => setTimeoutReached(true), 5000);
@@ -43,24 +22,24 @@ export function SessionReadyGate({ children }: SessionReadyGateProps) {
   }, []);
 
   const isReady = useMemo(() => {
-    // Public routes always render immediately
-    if (isPublicRoute) {
-      return true;
-    }
-
-    // For protected routes, wait for session
+    // CRITICAL: Always wait for session to settle before rendering data-fetching providers.
+    // The layout mounts DashboardProvider, ChatProvider, GlobalTrashProvider which fire API
+    // calls as soon as session?.accessToken is truthy. If we render before session is ready,
+    // we get 403s when the token is stale, in refresh, or not yet propagated.
     if (status === 'loading') {
       return false;
     }
 
+    // Unauthenticated: safe to render (route protection handles access)
     if (status === 'unauthenticated') {
-      // User is not authenticated on a protected route - let the route protection handle this
       return true;
     }
 
-    // For authenticated state, wait until we have a token from NextAuth
+    // Authenticated: must have a valid accessToken before rendering.
+    // Do NOT use public-route shortcut - providers mount for all routes and will
+    // immediately call APIs when session?.accessToken exists.
     return Boolean(session?.accessToken);
-  }, [status, session?.accessToken, currentPathname, isPublicRoute]);
+  }, [status, session?.accessToken]);
 
   if (!isReady) {
     return (
