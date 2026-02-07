@@ -990,6 +990,15 @@ export const seedPricing = async (req: Request, res: Response): Promise<void> =>
     const tiers = ['FREE', 'PRO', 'BUSINESS_BASIC', 'BUSINESS_ADVANCED', 'ENTERPRISE'] as const;
     const created: string[] = [];
 
+    // Query pack default prices (same for all tiers; used when seeding)
+    const { AI_QUERY_PACKS } = await import('../config/aiQueryPacks');
+    const queryPackDefaults = {
+      queryPackSmall: AI_QUERY_PACKS.small.price,
+      queryPackMedium: AI_QUERY_PACKS.medium.price,
+      queryPackLarge: AI_QUERY_PACKS.large.price,
+      queryPackEnterprise: AI_QUERY_PACKS.enterprise.price,
+    };
+
     for (const tier of tiers) {
       const config = PRICING_CONFIG[tier] as { monthly?: number; yearly?: number; perEmployee?: number; includedEmployees?: number } | undefined;
       if (!config) continue;
@@ -1020,6 +1029,7 @@ export const seedPricing = async (req: Request, res: Response): Promise<void> =>
             basePrice: config.monthly,
             perEmployeePrice: config.perEmployee ?? null,
             includedEmployees: config.includedEmployees ?? null,
+            ...queryPackDefaults,
             effectiveDate: now,
             isActive: true,
             createdBy: adminUserId,
@@ -1035,6 +1045,7 @@ export const seedPricing = async (req: Request, res: Response): Promise<void> =>
             basePrice: config.yearly,
             perEmployeePrice: config.perEmployee ?? null,
             includedEmployees: config.includedEmployees ?? null,
+            ...queryPackDefaults,
             effectiveDate: now,
             isActive: true,
             createdBy: adminUserId,
