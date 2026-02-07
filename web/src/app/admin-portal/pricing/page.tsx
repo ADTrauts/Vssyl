@@ -404,12 +404,21 @@ export default function PricingManagementPage() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Yearly</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Per Employee</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Included</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Query Packs</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(pricingByTier).map(([tier, prices]) => (
+                  {Object.entries(pricingByTier).map(([tier, prices]) => {
+                    const m = prices.monthly;
+                    const hasQueryPacks = m && (m.queryPackSmall != null || m.queryPackMedium != null || m.queryPackLarge != null || m.queryPackEnterprise != null);
+                    const queryPackSummary = hasQueryPacks && m
+                      ? [m.queryPackSmall, m.queryPackMedium, m.queryPackLarge, m.queryPackEnterprise]
+                          .map(v => v != null ? formatCurrency(v) : '-')
+                          .join(' / ')
+                      : '-';
+                    return (
                     <tr key={tier} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4 font-medium text-gray-900">{formatTierName(tier)}</td>
                       <td className="py-3 px-4 text-gray-700">
@@ -425,6 +434,9 @@ export default function PricingManagementPage() {
                       </td>
                       <td className="py-3 px-4 text-gray-700">
                         {prices.monthly?.includedEmployees || '-'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-700 text-xs" title="Small / Medium / Large / Enterprise">
+                        {queryPackSummary}
                       </td>
                       <td className="py-3 px-4">
                         {prices.monthly?.isActive ? (
@@ -462,7 +474,7 @@ export default function PricingManagementPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>
