@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
+import AIMessageContent from '../../components/ai/AIMessageContent';
+import AIThinkingIndicator from '../../components/ai/AIThinkingIndicator';
 import { 
   getConversations, 
   getConversation,
@@ -61,13 +63,13 @@ export default function AIChat() {
     }
   }, [conversation]);
 
-  // Load conversations on mount
+  // Load conversations on mount and when dashboard changes
   useEffect(() => {
     if (session?.accessToken) {
       loadConversations();
       loadProviderPreference();
     }
-  }, [session?.accessToken, showArchived]);
+  }, [session?.accessToken, showArchived, currentDashboard?.id]);
 
   // Load user's provider preference
   const loadProviderPreference = async () => {
@@ -266,7 +268,8 @@ export default function AIChat() {
             context: {
               currentModule: 'ai-chat',
               dashboardType: 'personal',
-              urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium'
+              urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
+              conversationId: currentConversationId || undefined,
             }
           })
         },
@@ -1023,8 +1026,8 @@ export default function AIChat() {
                       <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 max-w-2xl">
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-800 whitespace-pre-wrap">{item.content}</p>
+                          <div className="flex-1 min-w-0">
+                            <AIMessageContent content={item.content} textColor="text-gray-800" />
                             
                             {item.confidence !== undefined && (
                               <div className="flex items-center space-x-2 mt-2">
@@ -1055,10 +1058,9 @@ export default function AIChat() {
           
           {isAILoading && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
-                <div className="flex items-center space-x-3">
-                  <Spinner size={16} />
-                  <span className="text-sm text-gray-600">AI is thinking...</span>
+              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 max-w-2xl">
+                <div className="flex items-start space-x-3">
+                  <AIThinkingIndicator message="Thinking..." iconSize={20} />
                 </div>
               </div>
             </div>

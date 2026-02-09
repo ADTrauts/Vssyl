@@ -565,6 +565,14 @@ CURRENT CONTEXT:
 - Current Module: ${query.context.currentModule || 'Dashboard'}
 - Dashboard Type: ${query.context.dashboardType || 'Personal'}
 - Query Urgency: ${analysis.urgency}
+${query.conversationHistory && query.conversationHistory.length > 0 ? `
+RECENT MESSAGES IN THIS CONVERSATION (oldest to newest):
+${query.conversationHistory.map((msg) => {
+  const label = msg.role === 'user' ? 'User' : msg.role === 'assistant' ? 'Assistant' : 'System';
+  return `${label}: ${(msg.content || '').trim().replace(/\n/g, ' ').substring(0, 800)}`;
+}).join('\n\n')}
+
+The following is the user's latest message in this conversation. Respond in context of the messages above.` : ''}
 
 USER QUERY: "${query.query}"
 
@@ -582,6 +590,11 @@ Your response should:
 - Show awareness of their current context and priorities
 - Be helpful while respecting their autonomy preferences
 - CRITICALLY: Follow any user-defined context instructions above - these are explicit preferences and workflows the user has defined${userContextSection}
+
+FORMATTING FOR READABILITY:
+- Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.
+- Prefer short paragraphs; avoid long run-on blocks of text.
+- Use bullet points or numbered lists when listing items, steps, or options.
 
 Respond naturally as if you ARE them, making decisions and suggestions they would make.`;
   }

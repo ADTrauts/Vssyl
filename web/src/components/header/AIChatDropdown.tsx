@@ -20,6 +20,8 @@ import {
   type AIMessage as AIMessageType 
 } from '../../api/aiConversations';
 import AIServicePicker, { type AIProvider } from '../ai/AIServicePicker';
+import AIMessageContent from '../ai/AIMessageContent';
+import AIThinkingIndicator from '../ai/AIThinkingIndicator';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { toast } from 'react-hot-toast';
@@ -168,7 +170,7 @@ export default function AIChatDropdown({
       loadConversations();
       loadProviderPreference();
     }
-  }, [isOpen, session?.accessToken]);
+  }, [isOpen, session?.accessToken, dashboardId, currentDashboard?.id]);
 
   // Load user's provider preference
   const loadProviderPreference = async () => {
@@ -216,10 +218,11 @@ export default function AIChatDropdown({
         dashboardId
       });
 
+      const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
       const response = await getConversations({
         limit: 20,
         archived: false,
-        dashboardId,
+        dashboardId: effectiveDashboardId,
       }, session.accessToken);
 
       if (response.success) {
@@ -284,9 +287,10 @@ export default function AIChatDropdown({
       // Create conversation if it doesn't exist
       let conversationId = currentConversationId;
       if (!conversationId) {
+        const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
         const conversationResponse = await createConversation({
           title: generateTitle(userQuery),
-          dashboardId,
+          dashboardId: effectiveDashboardId,
         }, session.accessToken);
         
         if (conversationResponse.success) {
@@ -331,6 +335,7 @@ export default function AIChatDropdown({
               currentModule: effectiveModuleContext?.module || 'search',
               dashboardType,
               dashboardName,
+              conversationId: currentConversationId || undefined,
               moduleContext: effectiveModuleContext ? {
                 module: effectiveModuleContext.module,
                 businessId: effectiveModuleContext.businessId,
@@ -1015,8 +1020,8 @@ export default function AIChatDropdown({
                         <div className="bg-gray-100 rounded-lg px-3 py-2 max-w-sm">
                           <div className="flex items-start space-x-2">
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
-                            <div>
-                              <p className="text-sm text-gray-800">{item.content}</p>
+                            <div className="min-w-0 flex-1">
+                              <AIMessageContent content={item.content} textColor="text-gray-800" />
                               
                               {/* Actions */}
                               {item.aiResponse?.actions && item.aiResponse.actions.length > 0 && (
@@ -1056,10 +1061,7 @@ export default function AIChatDropdown({
             {isAILoading && (
               <div className="flex justify-start">
                 <div className="bg-gray-100 rounded-lg px-3 py-2">
-                  <div className="flex items-center space-x-2">
-                    <Spinner size={16} />
-                    <span className="text-sm text-gray-600">Thinking...</span>
-                  </div>
+                  <AIThinkingIndicator message="Thinking..." iconSize={16} />
                 </div>
               </div>
             )}

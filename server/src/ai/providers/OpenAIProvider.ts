@@ -165,7 +165,7 @@ CAPABILITIES:
 RESPONSE FORMAT:
 Always respond with a JSON object containing:
 {
-  "response": "Your conversational response to the user",
+  "response": "Your conversational response to the user. Format for readability: use paragraph breaks (blank lines) between ideas, short paragraphs, and bullet points for lists or steps.",
   "confidence": 0.0-1.0,
   "reasoning": "Brief explanation of your thought process",
   "actions": [
@@ -187,7 +187,8 @@ GUIDELINES:
 - Respect autonomy settings when proposing actions
 - Consider how actions affect others and require approval when needed
 - Learn and adapt your personality based on user interactions
-- Provide insights that span multiple aspects of the user's life`;
+- Provide insights that span multiple aspects of the user's life
+- Format the response text for readability: use clear paragraph breaks between ideas, keep paragraphs short, and use bullet points for lists or steps`;
   }
 
   /**

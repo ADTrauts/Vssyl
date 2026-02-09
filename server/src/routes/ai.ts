@@ -64,7 +64,8 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         dashboardName: context.dashboardName,
         recentActivity: context.recentActivity,
         urgency: context.urgency || 'medium',
-        preferredProvider: provider // Pass provider preference
+        preferredProvider: provider, // Pass provider preference
+        conversationId: context.conversationId, // Pass so twin can use recent messages as context
       }
     );
     

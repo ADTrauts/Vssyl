@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
+import AIMessageContent from './AIMessageContent';
+import AIThinkingIndicator from './AIThinkingIndicator';
 import { 
   getConversations, 
   getConversation,
@@ -64,12 +66,13 @@ export default function AIChatModule({
     }
   }, [conversation]);
 
-  // Load conversations on mount
+  // Load conversations on mount and when dashboard context changes
+  const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
   useEffect(() => {
     if (session?.accessToken) {
       loadConversations();
     }
-  }, [session?.accessToken]);
+  }, [session?.accessToken, effectiveDashboardId]);
 
   // Load conversations
   const loadConversations = async () => {
@@ -97,7 +100,12 @@ export default function AIChatModule({
         dashboardId
       });
 
-      const response = await getConversations({ limit: 50, archived: false }, session.accessToken);
+      const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
+      const response = await getConversations({
+        limit: 50,
+        archived: false,
+        dashboardId: effectiveDashboardId,
+      }, session.accessToken);
       
       if (response.success) {
         setConversations(response.data.conversations);
@@ -210,9 +218,10 @@ export default function AIChatModule({
       let conversationId = currentConversationId;
       if (!conversationId) {
         const title = generateTitle(userMessage);
+        const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
         const createResponse = await createConversation({
           title,
-          dashboardId: dashboardId || currentDashboard?.id
+          dashboardId: effectiveDashboardId,
         }, session.accessToken);
 
         if (createResponse.success) {
@@ -720,8 +729,8 @@ export default function AIChatModule({
                       <div className="bg-gray-100 rounded-lg px-4 py-2 max-w-2xl">
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-800">{item.content}</p>
+                          <div className="flex-1 min-w-0">
+                            <AIMessageContent content={item.content} textColor="text-gray-800" />
                             
                             {/* Actions */}
                             {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 ? (
@@ -782,13 +791,7 @@ export default function AIChatModule({
           {isAILoading && (
             <div className="flex justify-start">
               <div className="bg-gray-100 rounded-lg px-4 py-2">
-                <div className="flex items-center space-x-3">
-                  <Bot className="h-5 w-5 text-purple-600" />
-                  <div className="flex items-center space-x-2">
-                    <Spinner size={16} />
-                    <span className="text-sm text-gray-600">Thinking...</span>
-                  </div>
-                </div>
+                <AIThinkingIndicator message="Thinking..." iconSize={20} />
               </div>
             </div>
           )}

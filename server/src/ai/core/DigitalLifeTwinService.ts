@@ -8,7 +8,7 @@ import { DecisionEngine } from './DecisionEngine';
 import { LearningEngine } from './LearningEngine';
 import { ActionExecutor } from './ActionExecutor';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
-import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse } from './DigitalLifeTwinCore';
+import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type ConversationHistoryItem } from './DigitalLifeTwinCore';
 
 export interface AIRequest {
   id: string;
@@ -110,14 +110,49 @@ export class DigitalLifeTwinService {
       recentActivity?: unknown[];
       urgency?: 'low' | 'medium' | 'high';
       preferredProvider?: 'auto' | 'openai' | 'anthropic';
+      conversationId?: string;
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
+    let conversationHistory: ConversationHistoryItem[] = [];
+
+    if (context.conversationId && typeof context.conversationId === 'string') {
+      try {
+        const conversation = await this.prisma.aIConversation.findFirst({
+          where: {
+            id: context.conversationId,
+            userId,
+            trashedAt: null,
+          },
+        });
+        if (conversation) {
+          const messages = await this.prisma.aIMessage.findMany({
+            where: { conversationId: context.conversationId },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          });
+          const reversed = messages.reverse().map((m) => ({
+            role: m.role as ConversationHistoryItem['role'],
+            content: m.content,
+            timestamp: m.createdAt,
+          }));
+          // Skip duplicate: frontend already saved the current message, so drop it if it matches
+          const last = reversed[reversed.length - 1];
+          if (last?.role === 'user' && (last.content || '').trim() === (query || '').trim()) {
+            reversed.pop();
+          }
+          conversationHistory = reversed;
+        }
+      } catch (err) {
+        console.warn('Failed to load conversation history for twin:', err);
+      }
+    }
+
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
-      context: context as any, // Context structure is runtime-determined
-      conversationHistory: [], // Could be populated from recent AI conversations
-      preferredProvider: context.preferredProvider // Pass provider preference
+      context: context as Record<string, unknown>,
+      conversationHistory,
+      preferredProvider: context.preferredProvider,
     };
 
     return await this.digitalLifeTwinCore.processAsDigitalTwin(lifeTwinQuery);

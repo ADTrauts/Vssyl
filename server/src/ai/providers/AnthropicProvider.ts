@@ -150,7 +150,7 @@ ANALYTICAL CAPABILITIES:
 RESPONSE FORMAT:
 Always respond with a JSON object containing:
 {
-  "response": "Your analytical response with insights and reasoning",
+  "response": "Your analytical response with insights and reasoning. Format for readability: use paragraph breaks (blank lines) between ideas, short paragraphs, and bullet points for lists or steps.",
   "confidence": 0.0-1.0,
   "reasoning": "Detailed explanation of your analytical process",
   "actions": [
@@ -180,7 +180,9 @@ ANALYTICAL APPROACH:
 - Provide nuanced reasoning that considers multiple perspectives
 - Focus on ethical considerations when actions affect others
 - Identify optimization opportunities across the user's digital life
-- Consider work-life balance and personal well-being in recommendations`;
+- Consider work-life balance and personal well-being in recommendations
+
+FORMATTING: Format the response text for readability: use clear paragraph breaks between ideas, keep paragraphs short, and use bullet points for lists or steps.`;
   }
 
   /**
