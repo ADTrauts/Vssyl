@@ -535,6 +535,7 @@ model UserAIContext {
   tags            String[] // For organization and filtering
   priority        Int      @default(50) // 0-100, affects when AI uses this
   active          Boolean  @default(true)
+  source          String?  // "user" | "conversation" - who added this (user in Custom Context, or saved from chat)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   

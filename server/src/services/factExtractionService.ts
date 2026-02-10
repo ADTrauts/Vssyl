@@ -86,7 +86,8 @@ export class FactExtractionService {
                 content: fact.content,
                 tags: fact.tags || [],
                 priority: fact.priority || 50,
-                active: true
+                active: true,
+                source: 'conversation'
               }
             });
 

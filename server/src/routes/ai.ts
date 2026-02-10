@@ -1,7 +1,8 @@
 import express from 'express';
 import { DigitalLifeTwinService, AIRequest } from '../ai/core/DigitalLifeTwinService';
 import { PersonalityEngine } from '../ai/core/PersonalityEngine';
-import { PrismaClient } from '@prisma/client';
+import AdvancedLearningEngine from '../ai/learning/AdvancedLearningEngine';
+import type { LearningPattern } from '../ai/learning/AdvancedLearningEngine';
 import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { FeatureGatingService } from '../services/featureGatingService';
@@ -10,6 +11,36 @@ import { AIQueryService } from '../services/aiQueryService';
 const router: express.Router = express.Router();
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 const personalityEngine = new PersonalityEngine(prisma);
+const learningEngine = new AdvancedLearningEngine(prisma);
+
+function formatPatternForUser(p: LearningPattern): { id: string; description: string; type: string } {
+  const type = p.patternType;
+  const data = p.data as Record<string, unknown> | undefined;
+  let description: string;
+  if (type === 'temporal' && data?.peakHours) {
+    const hours = (data.peakHours as [number, number][])?.slice(0, 2).map(([h]) => `${h}:00`).join(', ') || '';
+    description = hours ? `You’re most active around ${hours}.` : 'Your activity tends to cluster at certain times.';
+  } else if (type === 'temporal' && data?.dailyActivity) {
+    description = 'Your usage follows a weekly rhythm.';
+  } else if (type === 'behavioral') {
+    const am = data?.activeModules;
+    if (Array.isArray(am) && am.length > 0) {
+      const modules = am.slice(0, 2).map((entry: unknown) => (Array.isArray(entry) ? entry[0] : String(entry))).join(', ');
+      description = modules ? `You often use ${modules}.` : 'You have consistent usage across modules.';
+    } else {
+      description = 'Your actions follow recognizable patterns.';
+    }
+  } else if (type === 'preference') {
+    description = 'The AI has learned your response preferences.';
+  } else if (type === 'communication') {
+    description = 'Your communication style is reflected in responses.';
+  } else if (type === 'decision') {
+    description = 'Your decision patterns inform suggestions.';
+  } else {
+    description = `Learned ${type} pattern (${Math.round((p.confidence ?? 0) * 100)}% confidence).`;
+  }
+  return { id: p.id, description, type };
+}
 
 /**
  * 🚀 POST /api/ai/twin
@@ -215,6 +246,29 @@ router.get('/context/:module', authenticateJWT, async (req, res) => {
     res.status(500).json({
       error: 'Failed to get module context',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+/**
+ * GET /api/ai/learning/my-patterns
+ * User-friendly learned patterns for the Memories view (read-only)
+ */
+router.get('/learning/my-patterns', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+    const raw = await learningEngine.getUserPatterns(userId);
+    const patterns = raw.map(formatPatternForUser);
+    res.json({ success: true, patterns });
+  } catch (error) {
+    console.error('Get my-patterns error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load learned patterns',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

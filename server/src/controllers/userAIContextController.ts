@@ -20,6 +20,7 @@ export interface UserAIContextInput {
   tags?: string[];
   priority?: number;
   active?: boolean;
+  source?: 'user' | 'conversation';
 }
 
 /**
@@ -189,7 +190,8 @@ export async function createUserAIContext(req: Request, res: Response): Promise<
         content: data.content,
         tags: data.tags || [],
         priority: data.priority ?? 50,
-        active: data.active ?? true
+        active: data.active ?? true,
+        source: 'user'
       }
     });
 
@@ -261,6 +263,8 @@ export async function updateUserAIContext(req: Request, res: Response): Promise<
     if (data.scope !== undefined) updateData.scope = data.scope;
     if (data.scopeId !== undefined) updateData.scopeId = data.scopeId;
     if (data.moduleId !== undefined) updateData.moduleId = data.moduleId;
+    // Editing in Custom Context means user maintains this entry
+    updateData.source = 'user';
 
     const updated = await prisma.userAIContext.update({
       where: { id },

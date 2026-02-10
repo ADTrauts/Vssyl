@@ -14,13 +14,15 @@ import {
   TrendingUp,
   Activity,
   Clock,
-  CheckCircle
+  CheckCircle,
+  BookOpen
 } from 'lucide-react';
 import AutonomyControls from '../../components/ai/AutonomyControls';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
 import AutonomousActions from '../../components/ai/AutonomousActions';
 import CustomContext from '../../components/ai/CustomContext';
 import ProviderSettings from '../../components/ai/ProviderSettings';
+import AIMemoriesView from '../../components/ai/AIMemoriesView';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
 interface AIStats {
@@ -126,10 +128,14 @@ export default function AIPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-1">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="memories" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Memories
           </TabsTrigger>
           <TabsTrigger value="provider" className="flex items-center gap-2">
             <Brain className="w-4 h-4" />
@@ -137,19 +143,19 @@ export default function AIPage() {
           </TabsTrigger>
           <TabsTrigger value="autonomy" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
-            Autonomy Settings
+            Autonomy
           </TabsTrigger>
           <TabsTrigger value="personality" className="flex items-center gap-2">
             <User className="w-4 h-4" />
-            Personality Profile
+            Personality
           </TabsTrigger>
           <TabsTrigger value="context" className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
-            Custom Context
+            Context
           </TabsTrigger>
           <TabsTrigger value="actions" className="flex items-center gap-2">
             <Zap className="w-4 h-4" />
-            Autonomous Actions
+            Actions
           </TabsTrigger>
         </TabsList>
 
@@ -320,6 +326,11 @@ export default function AIPage() {
               </div>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Memories Tab */}
+        <TabsContent value="memories" className="mt-6">
+          <AIMemoriesView onNavigateToTab={handleTabChange} />
         </TabsContent>
 
         {/* Provider Tab */}
