@@ -799,8 +799,14 @@ export default function AIChatDropdown({
             id: msg.id,
             response: msg.content,
             confidence: msg.confidence || 0.5,
-            reasoning: msg.metadata?.reasoning,
-            actions: msg.metadata?.actions || []
+            reasoning: typeof msg.metadata?.reasoning === 'string' ? msg.metadata.reasoning : undefined,
+            actions: Array.isArray(msg.metadata?.actions) ? msg.metadata.actions as Array<{
+              type: string;
+              module: string;
+              operation: string;
+              requiresApproval: boolean;
+              reasoning: string;
+            }> : []
           } : undefined
         }));
 
