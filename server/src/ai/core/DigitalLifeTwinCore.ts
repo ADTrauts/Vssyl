@@ -83,6 +83,14 @@ export interface ConversationHistoryItem {
   [key: string]: unknown;
 }
 
+export interface AttachedFileContext {
+  id: string;
+  name: string;
+  size?: number | null;
+  createdAt?: Date | string;
+  summary?: string;
+}
+
 export interface LifeTwinQuery {
   query: string;
   context: {
@@ -91,6 +99,8 @@ export interface LifeTwinQuery {
     dashboardName?: string;
     recentActivity?: RecentActivityItem[];
     urgency?: 'low' | 'medium' | 'high';
+    // Optional list of Drive file IDs attached to this query
+    fileIds?: string[];
   };
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
@@ -157,6 +167,67 @@ export class DigitalLifeTwinCore {
           console.warn('Error getting user context:', fallbackError);
           userContext = this.createFallbackUserContext(query.userId);
         }
+      }
+
+      // 1a. Get context for attached Drive files (metadata + content summaries)
+      let attachedFiles: AttachedFileContext[] = [];
+      try {
+        const contextFileIds = Array.isArray(query.context.fileIds)
+          ? query.context.fileIds.filter((id): id is string => typeof id === 'string')
+          : [];
+
+        if (contextFileIds.length > 0) {
+          const files = await this.prisma.file.findMany({
+            where: {
+              id: { in: contextFileIds },
+              trashedAt: null,
+              OR: [
+                { userId: query.userId },
+                { permissions: { some: { userId: query.userId, canRead: true } } },
+              ],
+            },
+            select: {
+              id: true,
+              name: true,
+              size: true,
+              path: true,
+              url: true,
+              type: true,
+              createdAt: true,
+            },
+          });
+
+          attachedFiles = files.map((file) => ({
+            id: file.id,
+            name: file.name,
+            size: file.size,
+            createdAt: file.createdAt,
+          }));
+
+          // Extract text summaries for AI context
+          try {
+            const { getFileSummaries } = await import('../../services/fileAnalysisService');
+            const summaries = await getFileSummaries(
+              files.map((f) => ({
+                id: f.id,
+                name: f.name,
+                path: f.path,
+                url: f.url,
+                size: f.size,
+                type: f.type,
+              }))
+            );
+            const summaryMap = new Map(summaries.map((s) => [s.id, s.summary]));
+            attachedFiles = attachedFiles.map((f) => ({
+              ...f,
+              summary: summaryMap.get(f.id),
+            }));
+          } catch (summaryError) {
+            console.warn('Error extracting file summaries for Digital Life Twin:', summaryError);
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading attached file context for Digital Life Twin:', error);
       }
       
       // 2. Get user's personality profile (with fallback)
@@ -261,8 +332,18 @@ export class DigitalLifeTwinCore {
       // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
       const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
       
-      // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, and collective learning)
-      const response = await this.generateLifeTwinResponse(query, userContext, personality, queryAnalysis, smartAnalysis, semanticEnhancement, userDefinedContext, globalPatterns);
+      // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, and attached file context)
+      const response = await this.generateLifeTwinResponse(
+        query,
+        userContext,
+        personality,
+        queryAnalysis,
+        smartAnalysis,
+        semanticEnhancement,
+        userDefinedContext,
+        globalPatterns,
+        attachedFiles
+      );
       
       // 5. Identify cross-module connections and opportunities (with error handling)
       let connections: CrossModuleConnection[] = [];
@@ -434,10 +515,21 @@ export class DigitalLifeTwinCore {
     smartAnalysis?: any,
     semanticEnhancement?: any,
     userDefinedContext?: Array<Record<string, unknown>>,
-    globalPatterns?: Array<Record<string, unknown>>
+    globalPatterns?: Array<Record<string, unknown>>,
+    attachedFiles?: AttachedFileContext[]
   ) {
-    // Build context-aware prompt (enhanced with smart patterns, semantics, and collective learning)
-    const prompt = this.buildDigitalTwinPrompt(query, userContext, personality, analysis, smartAnalysis, semanticEnhancement, userDefinedContext, globalPatterns);
+    // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
+    const prompt = this.buildDigitalTwinPrompt(
+      query,
+      userContext,
+      personality,
+      analysis,
+      smartAnalysis,
+      semanticEnhancement,
+      userDefinedContext,
+      globalPatterns,
+      attachedFiles
+    );
     
     // Get user preference if not provided in query
     let preferredProvider = query.preferredProvider;
@@ -487,7 +579,17 @@ export class DigitalLifeTwinCore {
    * Build comprehensive prompt for Digital Life Twin (enhanced with smart patterns and semantics)
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildDigitalTwinPrompt(query: LifeTwinQuery, userContext: UserContext, personality: any, analysis: any, smartAnalysis?: any, semanticEnhancement?: any, userDefinedContext?: Array<Record<string, unknown>>, globalPatterns?: Array<Record<string, unknown>>): string {
+  private buildDigitalTwinPrompt(
+    query: LifeTwinQuery,
+    userContext: UserContext,
+    personality: any,
+    analysis: any,
+    smartAnalysis?: any,
+    semanticEnhancement?: any,
+    userDefinedContext?: Array<Record<string, unknown>>,
+    globalPatterns?: Array<Record<string, unknown>>,
+    attachedFiles?: AttachedFileContext[]
+  ): string {
     const currentTime = new Date().toLocaleString();
     
     // Build user-defined context section
@@ -515,6 +617,26 @@ ${relevantContexts.map((ctx, idx) => {
       }
     }
     
+    // Build attached files section (metadata + content summaries when available)
+    let attachedFilesSection = '';
+    if (attachedFiles && attachedFiles.length > 0) {
+      attachedFilesSection = `\n\nATTACHED FILES CONTEXT:
+The user has attached the following Drive files to this question. Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer.
+${attachedFiles
+  .map((file, index) => {
+    const sizeDescription =
+      typeof file.size === 'number'
+        ? `${Math.max(1, Math.round(file.size / 1024))} KB`
+        : 'unknown size';
+    const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
+    if (file.summary && file.summary.trim()) {
+      return `${meta}\n   Content/summary:\n   ${file.summary.split('\n').join('\n   ')}`;
+    }
+    return meta;
+  })
+  .join('\n\n')}`;
+    }
+
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
 
 PERSONALITY PROFILE:
@@ -551,6 +673,8 @@ ${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ?
   '- Learning query patterns...'}
 - Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
 - Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
+
+${attachedFilesSection}
 
 COLLECTIVE LEARNING (System-wide patterns from all users):
 ${globalPatterns && globalPatterns.length > 0 ? 

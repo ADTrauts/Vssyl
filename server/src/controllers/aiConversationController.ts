@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 
@@ -25,6 +26,7 @@ const addMessageSchema = z.object({
   content: z.string().min(1),
   confidence: z.number().min(0).max(1).optional(),
   metadata: z.record(z.any()).optional(),
+  fileIds: z.array(z.string().min(1)).max(10).optional(),
 });
 
 // Helper function to generate conversation title from first message
@@ -402,6 +404,32 @@ export const addMessage = async (req: Request, res: Response) => {
       });
     }
 
+    // Validate file access for user messages with attachments
+    let attachments: { fileIds: string[] } | null = null;
+    if (validatedData.fileIds && validatedData.fileIds.length > 0 && validatedData.role === 'user') {
+      const accessibleFiles = await prisma.file.findMany({
+        where: {
+          id: { in: validatedData.fileIds },
+          trashedAt: null,
+          OR: [
+            { userId },
+            { permissions: { some: { userId, canRead: true } } },
+          ],
+        },
+        select: { id: true },
+      });
+      const accessibleIds = new Set(accessibleFiles.map((f) => f.id));
+      const invalidIds = validatedData.fileIds.filter((fileId) => !accessibleIds.has(fileId));
+      if (invalidIds.length > 0) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied to one or more files',
+          invalidFileIds: invalidIds,
+        });
+      }
+      attachments = { fileIds: validatedData.fileIds };
+    }
+
     // Create message
     const message = await prisma.aIMessage.create({
       data: {
@@ -409,7 +437,8 @@ export const addMessage = async (req: Request, res: Response) => {
         role: validatedData.role,
         content: validatedData.content,
         confidence: validatedData.confidence,
-        metadata: validatedData.metadata,
+        metadata: validatedData.metadata as Prisma.InputJsonValue | undefined,
+        attachments: attachments as Prisma.InputJsonValue | undefined,
       },
     });
 

@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
 import AIThinkingIndicator from '../../components/ai/AIThinkingIndicator';
@@ -21,6 +22,9 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
 import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
+import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
+
+const MAX_ATTACHMENTS = 10;
 
 interface ConversationItem {
   id: string;
@@ -33,6 +37,7 @@ interface ConversationItem {
 
 export default function AIChat() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const { currentDashboard } = useDashboard();
   const { trashItem } = useGlobalTrash();
   const [conversations, setConversations] = useState<AIConversation[]>([]);
@@ -52,9 +57,31 @@ export default function AIChat() {
   const [conversationMenuOpen, setConversationMenuOpen] = useState<string | null>(null);
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Pre-attach files from URL (e.g. "Ask AI about this file" from Drive)
+  useEffect(() => {
+    const fileIdsParam = searchParams?.get('fileIds');
+    const fileNamesParam = searchParams?.get('fileNames');
+    if (!fileIdsParam) return;
+    const ids = fileIdsParam.split(',').map((s) => s.trim()).filter(Boolean);
+    const names = fileNamesParam
+      ? fileNamesParam.split(',').map((s) => decodeURIComponent(s.trim())).filter(Boolean)
+      : ids.map((id) => id);
+    const initial: AIAttachedFile[] = ids
+      .slice(0, MAX_ATTACHMENTS)
+      .map((id, i) => ({ id, name: names[i] ?? id }));
+    if (initial.length > 0) {
+      setAttachedFiles((prev) => {
+        const seen = new Set(prev.map((f) => f.id));
+        const added = initial.filter((f) => !seen.has(f.id));
+        return [...prev, ...added].slice(0, MAX_ATTACHMENTS);
+      });
+    }
+  }, [searchParams?.toString()]);
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -199,7 +226,7 @@ export default function AIChat() {
 
   // Handle AI query submission
   const handleAIQuery = async () => {
-    if (!inputValue.trim() || isAILoading) return;
+    if ((!inputValue.trim() && attachedFiles.length === 0) || isAILoading) return;
 
     // Validate session and token
     if (!session) {
@@ -213,6 +240,7 @@ export default function AIChat() {
     }
 
     const userQuery = inputValue.trim();
+    const currentAttachedFiles = attachedFiles;
     
     // Clear previous errors
     setAuthError(null);
@@ -226,6 +254,7 @@ export default function AIChat() {
     
     setConversation(prev => [...prev, userItem]);
     setInputValue('');
+    setAttachedFiles([]);
     setIsAILoading(true);
 
     try {
@@ -244,9 +273,11 @@ export default function AIChat() {
       }
 
       if (conversationId) {
+        const fileIds = currentAttachedFiles.map((f) => f.id);
         await addMessage(conversationId, {
           role: 'user',
           content: userQuery,
+          ...(fileIds.length > 0 && { fileIds }),
         }, session.accessToken);
       }
 
@@ -270,6 +301,7 @@ export default function AIChat() {
               dashboardType: 'personal',
               urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
               conversationId: currentConversationId || undefined,
+              fileIds: currentAttachedFiles.map((file) => file.id),
             }
           })
         },
@@ -355,6 +387,7 @@ export default function AIChat() {
     setCurrentConversationId(null);
     setSelectedConversation(null);
     inputRef.current?.focus();
+    setAttachedFiles([]);
   };
 
 
@@ -1068,36 +1101,68 @@ export default function AIChat() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white border-t border-gray-200 p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-end space-x-4">
-              <div className="flex-1 relative">
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Ask your AI assistant anything..."
-                  className="w-full py-3 px-4 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-                  rows={3}
-                  disabled={isAILoading}
-                />
-                <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-                  Press Enter to send, Shift+Enter for new line
+      <div className="bg-white border-t border-gray-200 p-6">
+        <div className="max-w-4xl mx-auto space-y-3">
+          {/* Attached Files Preview */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              {attachedFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 border border-purple-200 max-w-xs"
+                >
+                  <Paperclip className="h-3 w-3 text-purple-600 mr-1" />
+                  <span className="text-xs text-gray-800 truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))
+                    }
+                    className="ml-1 text-purple-500 hover:text-purple-700"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
-              </div>
-              <Button
-                onClick={handleAIQuery}
-                disabled={!inputValue.trim() || isAILoading}
-                size="lg"
-                variant="primary"
-                className="px-6 py-3 rounded-2xl"
-              >
-                {isAILoading ? <Spinner size={16} /> : <Send className="w-5 h-5" />}
-              </Button>
+              ))}
             </div>
+          )}
+
+          <div className="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-3 md:space-y-0">
+            <div className="md:w-72">
+              <AIFileUpload
+                disabled={isAILoading}
+                onFilesUploaded={(files) =>
+                  setAttachedFiles((prev) => [...prev, ...files])
+                }
+              />
+            </div>
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Ask your AI assistant anything..."
+                className="w-full py-3 px-4 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
+                rows={3}
+                disabled={isAILoading}
+              />
+              <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                Press Enter to send, Shift+Enter for new line. Up to {MAX_ATTACHMENTS} files. Large files (500KB+) may be summarized only.
+              </div>
+            </div>
+            <Button
+              onClick={handleAIQuery}
+              disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading}
+              size="lg"
+              variant="primary"
+              className="px-6 py-3 rounded-2xl"
+            >
+              {isAILoading ? <Spinner size={16} /> : <Send className="w-5 h-5" />}
+            </Button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

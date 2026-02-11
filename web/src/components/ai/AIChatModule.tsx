@@ -2,10 +2,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X } from 'lucide-react';
+import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Paperclip } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from './AIMessageContent';
 import AIThinkingIndicator from './AIThinkingIndicator';
+import AIFileUpload, { type AIAttachedFile } from './AIFileUpload';
+import { toast } from 'react-hot-toast';
+
+const MAX_ATTACHMENTS = 10;
 import { 
   getConversations, 
   getConversation,
@@ -19,7 +23,6 @@ import {
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
-import { toast } from 'react-hot-toast';
 
 interface ConversationItem {
   id: string;
@@ -56,6 +59,7 @@ export default function AIChatModule({
   const [showMoreMenu, setShowMoreMenu] = useState<string | false>(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +201,9 @@ export default function AIChatModule({
     }
 
     const userMessage = inputValue.trim();
+    const currentAttachedFiles = attachedFiles;
     setInputValue('');
+    setAttachedFiles([]);
     setIsAILoading(true);
 
     // Clear previous errors
@@ -235,9 +241,11 @@ export default function AIChatModule({
 
       // Add user message to database
       if (conversationId) {
+        const fileIds = currentAttachedFiles.map((f) => f.id);
         await addMessage(conversationId, {
           role: 'user',
-          content: userMessage
+          content: userMessage,
+          ...(fileIds.length > 0 && { fileIds }),
         }, session.accessToken);
       }
 
@@ -255,7 +263,8 @@ export default function AIChatModule({
               dashboardId: dashboardId || currentDashboard?.id,
               dashboardType,
               dashboardName,
-              conversationId
+              conversationId,
+              fileIds: currentAttachedFiles.map((file) => file.id),
             }
           })
         },
@@ -360,6 +369,7 @@ export default function AIChatModule({
     setCurrentConversationId(null);
     setSelectedConversation(null);
     setInputValue('');
+    setAttachedFiles([]);
     inputRef.current?.focus();
   };
 
@@ -799,7 +809,51 @@ export default function AIChatModule({
 
         {/* Input Area */}
         <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-end space-x-3">
+          {/* Attached Files Preview */}
+          {attachedFiles.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2 items-center">
+              {attachedFiles.map((file) => (
+                <div
+                  key={file.id}
+                  className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 border border-purple-200 max-w-xs"
+                >
+                  <Paperclip className="h-3 w-3 text-purple-600 mr-1" />
+                  <span className="text-xs text-gray-800 truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))
+                    }
+                    className="ml-1 text-purple-500 hover:text-purple-700"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <span className="text-xs text-gray-600">
+                {attachedFiles.length}/{MAX_ATTACHMENTS} files
+              </span>
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row md:items-end md:space-x-3 space-y-3 md:space-y-0">
+            <div className="md:w-64">
+              <AIFileUpload
+                disabled={isAILoading || attachedFiles.length >= MAX_ATTACHMENTS}
+                maxFiles={MAX_ATTACHMENTS}
+                currentCount={attachedFiles.length}
+                onFilesUploaded={(files) => {
+                  setAttachedFiles((prev) => {
+                    const combined = [...prev, ...files];
+                    const capped = combined.slice(0, MAX_ATTACHMENTS);
+                    if (capped.length < combined.length) {
+                      toast(`Maximum ${MAX_ATTACHMENTS} files allowed. Extra files not added.`);
+                    }
+                    return capped;
+                  });
+                }}
+              />
+            </div>
             <div className="flex-1">
               <textarea
                 ref={inputRef}
@@ -815,7 +869,7 @@ export default function AIChatModule({
             </div>
             <Button
               onClick={handleAIQuery}
-              disabled={!inputValue.trim() || isAILoading}
+              disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading}
               size="lg"
               variant="primary"
               className="px-6 py-3"
@@ -824,7 +878,7 @@ export default function AIChatModule({
             </Button>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Press Enter to send, Shift+Enter for new line
+            Press Enter to send, Shift+Enter for new line. Up to {MAX_ATTACHMENTS} files. Large files (500KB+) may be summarized only.
           </p>
         </div>
       </div>

@@ -27,7 +27,8 @@ export interface AIMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   confidence?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  attachments?: { fileIds: string[] };
   createdAt: string;
 }
 
@@ -47,7 +48,8 @@ export interface AddMessageData {
   role: 'user' | 'assistant' | 'system';
   content: string;
   confidence?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  fileIds?: string[];
 }
 
 export interface ConversationsResponse {

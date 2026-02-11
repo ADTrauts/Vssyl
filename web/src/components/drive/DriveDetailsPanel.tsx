@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from 'shared/components';
-import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw } from 'lucide-react';
+import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw, Brain } from 'lucide-react';
 // DriveItem interface - matches DriveModule.tsx
 interface DriveItem {
   id: string;
@@ -31,6 +31,7 @@ interface DriveDetailsPanelProps {
   onRename?: (id: string) => void;
   onMove?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onAskAI?: (id: string, name: string) => void;
   getFileIcon?: (item: DriveItem) => React.ReactNode;
   formatFileSize?: (size: number) => string;
   formatDate?: (date: string) => string;
@@ -67,6 +68,7 @@ export default function DriveDetailsPanel({
   onRename,
   onMove,
   onDelete,
+  onAskAI,
   getFileIcon,
   formatFileSize: formatFileSizeProp,
   formatDate: formatDateProp
@@ -490,6 +492,18 @@ export default function DriveDetailsPanel({
                 >
                   <Share className="w-4 h-4 mr-2" />
                   Share
+                </Button>
+              )}
+              {item.type === 'file' && onAskAI && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full justify-center"
+                  onClick={() => onAskAI(item.id, item.name)}
+                  disabled={isLoading}
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  Ask AI about this file
                 </Button>
               )}
               {onRename && (

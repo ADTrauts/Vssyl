@@ -111,6 +111,7 @@ export class DigitalLifeTwinService {
       urgency?: 'low' | 'medium' | 'high';
       preferredProvider?: 'auto' | 'openai' | 'anthropic';
       conversationId?: string;
+      fileIds?: string[];
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
     let conversationHistory: ConversationHistoryItem[] = [];

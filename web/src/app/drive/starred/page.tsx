@@ -13,7 +13,7 @@ import { ShareModal, ShareLinkModal } from 'shared/components';
 import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
 import DriveDetailsPanel from '@/components/drive/DriveDetailsPanel';
 import DriveSidebar from '../DriveSidebar';
-import { Pin, Grid, List, Share, Download, Trash2 } from 'lucide-react';
+import { Pin, Grid, List, Share, Download, Trash2, Brain } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -417,6 +417,10 @@ const PinnedPage = () => {
     setShareModalOpen(true);
   };
 
+  const handleAskAIAboutFile = useCallback((id: string, name: string) => {
+    window.location.href = `/ai-chat?fileIds=${encodeURIComponent(id)}&fileNames=${encodeURIComponent(name)}`;
+  }, []);
+
   const handleDownload = async (itemId: string) => {
     if (!session?.accessToken) {
       toast.error('Please log in to download files');
@@ -760,6 +764,7 @@ const PinnedPage = () => {
               onDelete={handleDelete}
               onShare={handleShare}
               onDownload={handleDownload}
+              onAskAI={handleAskAIAboutFile}
               getFileIcon={getFileIcon}
               formatFileSize={formatFileSize}
               formatDate={formatDate}
@@ -795,16 +800,28 @@ const PinnedPage = () => {
               Share
             </button>
             {contextMenu.item.type === 'file' && (
-              <button
-                onClick={() => {
-                  handleDownload(contextMenu.item.id);
-                  setContextMenu(null);
-                }}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    handleDownload(contextMenu.item.id);
+                    setContextMenu(null);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download
+                </button>
+                <button
+                  onClick={() => {
+                    handleAskAIAboutFile(contextMenu.item.id, contextMenu.item.name);
+                    setContextMenu(null);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Brain className="w-4 h-4" />
+                  Ask AI about this file
+                </button>
+              </>
             )}
             <button
               onClick={() => {

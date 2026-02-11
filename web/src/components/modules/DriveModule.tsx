@@ -19,6 +19,7 @@ import {
   Pin,
   SlidersHorizontal,
   MessageSquare,
+  Brain,
   HelpCircle,
   X as XIcon,
   Keyboard,
@@ -1189,9 +1190,15 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
 
   const handleDiscussInChat = useCallback((item: DriveItem) => {
     // Navigate to chat with file reference
-    // Create a URL that includes the file ID so chat can reference it
     const chatUrl = `/chat?fileId=${item.id}&fileName=${encodeURIComponent(item.name)}`;
     window.location.href = chatUrl;
+  }, []);
+
+  const handleAskAIAboutFile = useCallback((itemOrId: DriveItem | string, name?: string) => {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
+    const fileName = typeof itemOrId === 'string' ? (name ?? id) : itemOrId.name;
+    const aiChatUrl = `/ai-chat?fileIds=${encodeURIComponent(id)}&fileNames=${encodeURIComponent(fileName)}`;
+    window.location.href = aiChatUrl;
   }, []);
 
   // Bulk operations
@@ -2152,6 +2159,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           onDownload={handleDownload}
           onShare={handleShare}
           onDelete={handleDelete}
+          onAskAI={handleAskAIAboutFile}
           getFileIcon={getFileIcon}
           formatFileSize={formatFileSize}
           formatDate={formatDate}
@@ -2237,6 +2245,20 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
             <MessageSquare className="w-4 h-4" />
             <span>Discuss in chat</span>
           </button>
+          {contextMenu.item.type === 'file' && (
+            <button
+              className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+              onClick={() => {
+                handleAskAIAboutFile(contextMenu.item);
+                setContextMenu(null);
+              }}
+              role="menuitem"
+              aria-label={`Ask AI about ${contextMenu.item.name}`}
+            >
+              <Brain className="w-4 h-4" />
+              <span>Ask AI about this file</span>
+            </button>
+          )}
           <div className="border-t border-gray-200 my-1" role="separator"></div>
           <button
             className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2 focus:outline-none focus:bg-red-50"

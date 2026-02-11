@@ -36,6 +36,7 @@ model AIMessage {
   content         String         @db.Text
   confidence      Float?         // AI response confidence (0-1)
   metadata        Json?          // Store reasoning, actions, insights, model info
+  attachments     Json?          // { fileIds: string[] } - Drive file refs for user messages
   createdAt       DateTime       @default(now())
   
   // Indexes for performance
