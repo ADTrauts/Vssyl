@@ -52,6 +52,15 @@ router.post('/twin', authenticateJWT, async (req, res) => {
     const userId = req.user?.id;
     const businessId = context.businessId || null;
     
+    console.log('[AI Twin Route] Request received:', {
+      userId,
+      queryLength: query?.length,
+      provider,
+      hasFileIds: !!context.fileIds,
+      fileIdsCount: Array.isArray(context.fileIds) ? context.fileIds.length : 0,
+      fileIds: context.fileIds
+    });
+    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }

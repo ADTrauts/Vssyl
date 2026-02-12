@@ -176,6 +176,12 @@ export class DigitalLifeTwinCore {
           ? query.context.fileIds.filter((id): id is string => typeof id === 'string')
           : [];
 
+        console.log('[DigitalLifeTwin] Processing attached files:', {
+          fileIdsReceived: contextFileIds.length,
+          fileIds: contextFileIds,
+          userId: query.userId
+        });
+
         if (contextFileIds.length > 0) {
           const files = await this.prisma.file.findMany({
             where: {
@@ -195,6 +201,13 @@ export class DigitalLifeTwinCore {
               type: true,
               createdAt: true,
             },
+          });
+
+          console.log('[DigitalLifeTwin] Files found in database:', {
+            requestedCount: contextFileIds.length,
+            foundCount: files.length,
+            fileNames: files.map(f => f.name),
+            fileTypes: files.map(f => f.type)
           });
 
           attachedFiles = files.map((file) => ({
@@ -217,16 +230,32 @@ export class DigitalLifeTwinCore {
                 type: f.type,
               }))
             );
+            
+            console.log('[DigitalLifeTwin] File summaries generated:', {
+              summaryCount: summaries.length,
+              summaries: summaries.map(s => ({
+                id: s.id,
+                name: s.name,
+                summaryLength: s.summary.length,
+                hasContent: s.summary.length > 0 && !s.summary.startsWith('('),
+                preview: s.summary.substring(0, 100)
+              }))
+            });
+
             const summaryMap = new Map(summaries.map((s) => [s.id, s.summary]));
             attachedFiles = attachedFiles.map((f) => ({
               ...f,
               summary: summaryMap.get(f.id),
             }));
           } catch (summaryError) {
+            console.error('[DigitalLifeTwin] Error extracting file summaries:', summaryError);
             console.warn('Error extracting file summaries for Digital Life Twin:', summaryError);
           }
+        } else {
+          console.log('[DigitalLifeTwin] No fileIds provided in context');
         }
       } catch (error) {
+        console.error('[DigitalLifeTwin] Error loading attached file context:', error);
         console.warn('Error loading attached file context for Digital Life Twin:', error);
       }
       
@@ -620,8 +649,14 @@ ${relevantContexts.map((ctx, idx) => {
     // Build attached files section (metadata + content summaries when available)
     let attachedFilesSection = '';
     if (attachedFiles && attachedFiles.length > 0) {
+      console.log('[DigitalLifeTwin] Building attached files section for prompt:', {
+        fileCount: attachedFiles.length,
+        filesWithSummaries: attachedFiles.filter(f => f.summary && f.summary.trim()).length,
+        fileNames: attachedFiles.map(f => f.name)
+      });
+
       attachedFilesSection = `\n\nATTACHED FILES CONTEXT:
-The user has attached the following Drive files to this question. Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer.
+The user has attached the following Drive files to this question. **CRITICAL: You MUST read and analyze the content of these files to answer the user's question.** Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer. If the user asks about the file content, you MUST reference specific details from the file content below.
 ${attachedFiles
   .map((file, index) => {
     const sizeDescription =
@@ -630,11 +665,21 @@ ${attachedFiles
         : 'unknown size';
     const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
     if (file.summary && file.summary.trim()) {
-      return `${meta}\n   Content/summary:\n   ${file.summary.split('\n').join('\n   ')}`;
+      const summaryText = file.summary.split('\n').join('\n   ');
+      console.log(`[DigitalLifeTwin] Including summary for ${file.name}:`, {
+        summaryLength: summaryText.length,
+        preview: summaryText.substring(0, 200)
+      });
+      return `${meta}\n   Content/summary:\n   ${summaryText}`;
     }
+    console.log(`[DigitalLifeTwin] No summary available for ${file.name}`);
     return meta;
   })
   .join('\n\n')}`;
+      
+      console.log('[DigitalLifeTwin] Attached files section length:', attachedFilesSection.length);
+    } else {
+      console.log('[DigitalLifeTwin] No attached files to include in prompt');
     }
 
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.

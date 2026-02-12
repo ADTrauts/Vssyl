@@ -2,13 +2,20 @@
  * File Analysis Service
  *
  * Extracts text content or summaries from Drive files for AI context.
- * Supports plain text, markdown, JSON, CSV, HTML, and PDF.
+ * Supports:
+ * - Text files: .txt, .md, .json, .csv, .html, etc.
+ * - PDF: .pdf
+ * - Word: .docx, .doc
+ * - Excel: .xlsx, .xls
+ * - PowerPoint: .pptx, .ppt
+ * - Images: .png, .jpg, .jpeg (with OCR)
  */
 
 import { logger } from '../lib/logger';
 import { storageService } from './storageService';
 
-const MAX_FILE_SIZE_BYTES = 500 * 1024; // 500 KB
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB (increased for images and Office docs)
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for images (OCR can handle larger)
 const MAX_SUMMARY_CHARS = 4000;
 const MAX_FILES_TO_ANALYZE = 5;
 
@@ -16,6 +23,9 @@ const TEXT_EXTENSIONS = new Set([
   'txt', 'md', 'markdown', 'json', 'csv', 'html', 'htm', 'xml', 'log',
   'yml', 'yaml', 'js', 'ts', 'tsx', 'jsx', 'css', 'scss', 'py', 'sh',
 ]);
+
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']);
+const OFFICE_EXTENSIONS = new Set(['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt', 'odt', 'ods', 'odp', 'rtf']);
 
 function getExtension(name: string): string {
   const lastDot = name.lastIndexOf('.');
@@ -34,10 +44,11 @@ function resolveStoragePath(file: { path?: string | null; url?: string | null })
 
 async function extractTextFromBuffer(
   buffer: Buffer,
-  extension: string,
+  fileExtension: string,
   name: string
 ): Promise<string> {
-  if (TEXT_EXTENSIONS.has(extension)) {
+  // Handle text files
+  if (TEXT_EXTENSIONS.has(fileExtension)) {
     try {
       const text = buffer.toString('utf-8');
       const truncated = text.length > MAX_SUMMARY_CHARS
@@ -49,7 +60,8 @@ async function extractTextFromBuffer(
     }
   }
 
-  if (extension === 'pdf') {
+  // Handle PDF files
+  if (fileExtension === 'pdf') {
     try {
       const { PDFParse } = await import('pdf-parse');
       const parser = new PDFParse({ data: buffer });
@@ -70,7 +82,83 @@ async function extractTextFromBuffer(
     }
   }
 
-  return `(Binary or unsupported file type: ${name})`;
+  // Handle Office documents (Word, Excel, PowerPoint)
+  if (OFFICE_EXTENSIONS.has(fileExtension)) {
+    try {
+      const OfficeParser = await import('officeparser');
+      const result = await OfficeParser.parseOffice(buffer, {
+        outputErrorToConsole: false,
+      });
+      
+      // Extract text from the parsed result
+      let text = '';
+      if (typeof result === 'string') {
+        text = result;
+      } else if (result && typeof result === 'object') {
+        // officeparser returns different structures for different file types
+        if ('text' in result && typeof result.text === 'string') {
+          text = result.text;
+        } else if ('content' in result && typeof result.content === 'string') {
+          text = result.content;
+        } else if (Array.isArray(result)) {
+          // Some formats return arrays of text blocks
+          text = result.map((item: unknown) => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object' && 'text' in item) {
+              return String((item as { text: unknown }).text);
+            }
+            return '';
+          }).join('\n');
+        } else {
+          // Try to extract any text-like properties
+          text = JSON.stringify(result).substring(0, MAX_SUMMARY_CHARS);
+        }
+      }
+      
+      const truncated = text.length > MAX_SUMMARY_CHARS
+        ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+        : text;
+      return truncated.trim() || `(${fileExtension.toUpperCase()} file: ${name} - no extractable text)`;
+    } catch (err) {
+      logger.warn('Office document extraction failed', {
+        operation: 'file_analysis_office',
+        fileName: name,
+        fileType: fileExtension,
+        error: { message: err instanceof Error ? err.message : 'Unknown error' },
+      });
+      return `(${fileExtension.toUpperCase()} file: ${name} - text extraction unavailable)`;
+    }
+  }
+
+  // Handle images with OCR
+  if (IMAGE_EXTENSIONS.has(fileExtension)) {
+    try {
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker('eng'); // English language
+      
+      try {
+        const { data: { text } } = await worker.recognize(buffer);
+        await worker.terminate();
+        
+        const truncated = text.length > MAX_SUMMARY_CHARS
+          ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+          : text;
+        return truncated.trim() || `(Image: ${name} - no text detected via OCR)`;
+      } catch (ocrError) {
+        await worker.terminate();
+        throw ocrError;
+      }
+    } catch (err) {
+      logger.warn('Image OCR failed', {
+        operation: 'file_analysis_ocr',
+        fileName: name,
+        error: { message: err instanceof Error ? err.message : 'Unknown error' },
+      });
+      return `(Image: ${name} - OCR text extraction unavailable)`;
+    }
+  }
+
+  return `(Unsupported file type: ${name} - ${fileExtension.toUpperCase()})`;
 }
 
 export interface FileRecordForAnalysis {
@@ -91,7 +179,9 @@ export interface FileAnalysisResult {
 
 /**
  * Extract text summaries from files for AI context.
- * Limits: max 5 files, 500KB per file, 4000 chars per summary.
+ * Supports: Text files, PDF, Word (.docx, .doc), Excel (.xlsx, .xls), 
+ * PowerPoint (.pptx, .ppt), Images with OCR (.png, .jpg, .jpeg, etc.)
+ * Limits: max 5 files, 2MB per file (5MB for images), 4000 chars per summary.
  */
 export async function getFileSummaries(
   files: FileRecordForAnalysis[]
@@ -102,11 +192,15 @@ export async function getFileSummaries(
 
   for (const file of toProcess) {
     try {
-      if (file.size > MAX_FILE_SIZE_BYTES) {
+      const extension = getExtension(file.name);
+      const isImage = IMAGE_EXTENSIONS.has(extension);
+      const maxSize = isImage ? MAX_IMAGE_SIZE_BYTES : MAX_FILE_SIZE_BYTES;
+      
+      if (file.size > maxSize) {
         results.push({
           id: file.id,
           name: file.name,
-          summary: `(File too large to analyze: ${file.name}, ${Math.round(file.size / 1024)} KB)`,
+          summary: `(File too large to analyze: ${file.name}, ${Math.round(file.size / 1024)} KB. Max size: ${Math.round(maxSize / 1024)} KB)`,
         });
         continue;
       }
@@ -122,7 +216,6 @@ export async function getFileSummaries(
       }
 
       const buffer = await storageService.getFileBuffer(storagePath);
-      const extension = getExtension(file.name);
       const summary = await extractTextFromBuffer(buffer, extension, file.name);
 
       results.push({
