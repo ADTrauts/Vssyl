@@ -97,6 +97,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         urgency: context.urgency || 'medium',
         preferredProvider: provider, // Pass provider preference
         conversationId: context.conversationId, // Pass so twin can use recent messages as context
+        fileIds: context.fileIds, // Pass attached file IDs so AI can read them
       }
     );
     

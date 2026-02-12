@@ -23,6 +23,7 @@ import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
 import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
+import { uploadFile, listFiles, type File as DriveFile } from '../../api/drive';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -33,6 +34,7 @@ interface ConversationItem {
   timestamp: Date;
   confidence?: number;
   metadata?: Record<string, unknown>;
+  attachments?: { fileIds: string[] };
 }
 
 export default function AIChat() {
@@ -58,7 +60,11 @@ export default function AIChat() {
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [fileDetailsCache, setFileDetailsCache] = useState<Record<string, { name: string; url?: string }>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -200,8 +206,35 @@ export default function AIChat() {
           content: msg.content,
           timestamp: new Date(msg.createdAt),
           confidence: msg.confidence,
-          metadata: msg.metadata
+          metadata: msg.metadata,
+          attachments: msg.attachments
         }));
+
+        // Fetch file details for messages with attachments
+        if (session?.accessToken) {
+          const fileIdsToFetch = new Set<string>();
+          conversationItems.forEach((item) => {
+            if (item.attachments?.fileIds) {
+              item.attachments.fileIds.forEach((id) => fileIdsToFetch.add(id));
+            }
+          });
+          
+          if (fileIdsToFetch.size > 0) {
+            try {
+              // Fetch all files to get names
+              const allFiles = await listFiles(session.accessToken);
+              const fileMap: Record<string, { name: string; url?: string }> = {};
+              allFiles.forEach((file: DriveFile) => {
+                if (fileIdsToFetch.has(file.id)) {
+                  fileMap[file.id] = { name: file.name, url: file.url };
+                }
+              });
+              setFileDetailsCache((prev) => ({ ...prev, ...fileMap }));
+            } catch (error) {
+              console.error('Failed to fetch file details:', error);
+            }
+          }
+        }
 
         setConversation(conversationItems);
         setCurrentConversationId(conversationId);
@@ -245,11 +278,21 @@ export default function AIChat() {
     // Clear previous errors
     setAuthError(null);
     
+    // Store file names in cache immediately
+    if (currentAttachedFiles.length > 0) {
+      const fileMap: Record<string, { name: string; url?: string }> = {};
+      currentAttachedFiles.forEach((file) => {
+        fileMap[file.id] = { name: file.name };
+      });
+      setFileDetailsCache((prev) => ({ ...prev, ...fileMap }));
+    }
+
     const userItem: ConversationItem = {
       id: `user_${Date.now()}`,
       type: 'user',
       content: userQuery,
-      timestamp: new Date()
+      timestamp: new Date(),
+      attachments: currentAttachedFiles.length > 0 ? { fileIds: currentAttachedFiles.map((f) => f.id) } : undefined
     };
     
     setConversation(prev => [...prev, userItem]);
@@ -380,6 +423,80 @@ export default function AIChat() {
   const generateTitle = (content: string): string => {
     const title = content.substring(0, 50).trim();
     return title.length < content.length ? `${title}...` : title;
+  };
+
+  // Handle file upload (for both click and drag-and-drop)
+  const handleFileUpload = async (files: FileList | File[]) => {
+    if (!session?.accessToken || attachedFiles.length >= MAX_ATTACHMENTS) return;
+    
+    const fileArray = Array.from(files);
+    const remainingSlots = MAX_ATTACHMENTS - attachedFiles.length;
+    const filesToUpload = fileArray.slice(0, remainingSlots);
+    
+    if (filesToUpload.length === 0) {
+      toast(`Maximum ${MAX_ATTACHMENTS} files allowed.`);
+      return;
+    }
+    
+    setIsUploadingFiles(true);
+    
+    try {
+      const uploadPromises = filesToUpload.map(async (file) => {
+        const uploadedFile = await uploadFile(
+          session.accessToken!,
+          file,
+          undefined,
+          true, // isChatFile
+          currentDashboard?.id
+        );
+        return { id: uploadedFile.id, name: uploadedFile.name };
+      });
+      
+      const uploaded = await Promise.all(uploadPromises);
+      setAttachedFiles((prev) => [...prev, ...uploaded].slice(0, MAX_ATTACHMENTS));
+      
+      if (fileArray.length > remainingSlots) {
+        toast(`Added ${remainingSlots} files. Maximum ${MAX_ATTACHMENTS} files allowed.`);
+      }
+    } catch (error) {
+      console.error('File upload failed:', error);
+      toast.error('Failed to upload files. Please try again.');
+    } finally {
+      setIsUploadingFiles(false);
+    }
+  };
+
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files);
+      e.target.value = ''; // Reset input
+    }
+  };
+
+  // Drag and drop handlers for chat area
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files);
+    }
   };
 
   const handleNewConversation = () => {
@@ -1030,12 +1147,25 @@ export default function AIChat() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div 
+          className={`flex-1 overflow-y-auto p-6 space-y-4 relative ${isDragging ? 'border-2 border-dashed border-purple-400 bg-purple-50' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 flex items-center justify-center bg-purple-50/80 z-10 pointer-events-none">
+              <div className="text-center">
+                <Paperclip className="h-12 w-12 mx-auto text-purple-600 mb-2" />
+                <p className="text-lg font-semibold text-purple-900">Drop files here to attach</p>
+              </div>
+            </div>
+          )}
           {conversation.length === 0 && !selectedConversation ? (
             <div className="text-center py-16">
               <Brain className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Welcome to AI Assistant
+                What's on your mind today?
               </h3>
               <p className="text-gray-500 max-w-md mx-auto">
                 Ask me anything about your digital life. I can help you schedule meetings, 
@@ -1050,6 +1180,23 @@ export default function AIChat() {
                     <div className="flex justify-end">
                       <div className="bg-blue-600 text-white rounded-2xl px-4 py-3 max-w-2xl">
                         <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                        {item.attachments?.fileIds && item.attachments.fileIds.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-blue-500/30 flex flex-wrap gap-2">
+                            {item.attachments.fileIds.map((fileId) => {
+                              const fileDetail = fileDetailsCache[fileId] || attachedFiles.find((f) => f.id === fileId);
+                              const fileName = fileDetail?.name || `File ${fileId.slice(0, 8)}...`;
+                              return (
+                                <div
+                                  key={fileId}
+                                  className="inline-flex items-center px-2 py-1 rounded bg-blue-500/20 border border-blue-400/30"
+                                >
+                                  <Paperclip className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">{fileName}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1101,11 +1248,11 @@ export default function AIChat() {
         </div>
 
         {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-6">
+      <div className="bg-white border-t border-gray-200 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-3">
           {/* Attached Files Preview */}
           {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center mb-2">
               {attachedFiles.map((file) => (
                 <div
                   key={file.id}
@@ -1124,43 +1271,63 @@ export default function AIChat() {
                   </button>
                 </div>
               ))}
+              <span className="text-xs text-gray-600">
+                {attachedFiles.length}/{MAX_ATTACHMENTS} files
+              </span>
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-3 md:space-y-0">
-            <div className="md:w-72">
-              <AIFileUpload
-                disabled={isAILoading}
-                onFilesUploaded={(files) =>
-                  setAttachedFiles((prev) => [...prev, ...files])
-                }
-              />
-            </div>
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Ask your AI assistant anything..."
-                className="w-full py-3 px-4 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"
-                rows={3}
-                disabled={isAILoading}
-              />
-              <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-                Press Enter to send, Shift+Enter for new line. Up to {MAX_ATTACHMENTS} files. Large files (500KB+) may be summarized only.
-              </div>
-            </div>
+          {/* Compact Input Bar */}
+          <div className="flex items-center gap-2 border border-gray-300 rounded-2xl px-4 py-3 bg-white focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
+            {/* Paperclip Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Attach files"
+            >
+              <Paperclip className="h-5 w-5 text-gray-500" />
+            </button>
+            
+            {/* Hidden File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileInputChange}
+              className="hidden"
+              disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
+            />
+            
+            {/* Textarea */}
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Ask your AI assistant anything..."
+              className="flex-1 border-0 focus:outline-none resize-none text-sm py-1 min-h-[24px] max-h-[120px] overflow-y-auto"
+              rows={1}
+              disabled={isAILoading}
+            />
+            
+            {/* Send Button */}
             <Button
               onClick={handleAIQuery}
-              disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading}
-              size="lg"
+              disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading || isUploadingFiles}
+              size="sm"
               variant="primary"
-              className="px-6 py-3 rounded-2xl"
+              className="px-4 py-2 rounded-lg flex-shrink-0"
             >
-              {isAILoading ? <Spinner size={16} /> : <Send className="w-5 h-5" />}
+              {isAILoading ? <Spinner size={16} /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
+          
+          {/* Helper Text */}
+          <p className="text-xs text-gray-500 text-center">
+            Press Enter to send • Up to {MAX_ATTACHMENTS} files • Large files (500KB+) summarized only
+          </p>
         </div>
       </div>
       </div>
