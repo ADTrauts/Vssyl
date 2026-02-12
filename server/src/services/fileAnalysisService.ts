@@ -71,12 +71,20 @@ async function extractTextFromBuffer(
       const truncated = text.length > MAX_SUMMARY_CHARS
         ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
         : text;
-      return truncated || `(PDF with no extractable text: ${name})`;
+      const output = truncated || `(PDF with no extractable text: ${name})`;
+      logger.info('PDF extraction succeeded', {
+        operation: 'file_analysis_pdf',
+        fileName: name,
+        textLength: text.length,
+        outputLength: output.length,
+      });
+      return output;
     } catch (err) {
       logger.warn('PDF extraction failed', {
         operation: 'file_analysis_pdf',
         fileName: name,
         error: { message: err instanceof Error ? err.message : 'Unknown error' },
+        stack: err instanceof Error ? err.stack : undefined,
       });
       return `(PDF file: ${name} - text extraction unavailable)`;
     }
@@ -207,6 +215,13 @@ export async function getFileSummaries(
 
       const storagePath = resolveStoragePath(file);
       if (!storagePath) {
+        logger.warn('Could not resolve storage path for file', {
+          operation: 'file_analysis_resolve',
+          fileId: file.id,
+          fileName: file.name,
+          hasPath: !!file.path,
+          hasUrl: !!file.url,
+        });
         results.push({
           id: file.id,
           name: file.name,

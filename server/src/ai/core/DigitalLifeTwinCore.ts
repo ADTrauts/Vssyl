@@ -7,6 +7,7 @@ import { ActionExecutor } from './ActionExecutor';
 import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
 import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine';
 import { prisma as sharedPrisma } from '../../lib/prisma';
+import { logger } from '../../lib/logger';
 
 export interface DigitalLifeTwinResponse {
   response: string;
@@ -176,7 +177,8 @@ export class DigitalLifeTwinCore {
           ? query.context.fileIds.filter((id): id is string => typeof id === 'string')
           : [];
 
-        console.log('[DigitalLifeTwin] Processing attached files:', {
+        logger.info('Processing attached files', {
+          operation: 'digital_life_twin_files',
           fileIdsReceived: contextFileIds.length,
           fileIds: contextFileIds,
           userId: query.userId
@@ -203,7 +205,8 @@ export class DigitalLifeTwinCore {
             },
           });
 
-          console.log('[DigitalLifeTwin] Files found in database:', {
+          logger.info('Files found in database', {
+            operation: 'digital_life_twin_files_found',
             requestedCount: contextFileIds.length,
             foundCount: files.length,
             fileNames: files.map(f => f.name),
@@ -231,7 +234,8 @@ export class DigitalLifeTwinCore {
               }))
             );
             
-            console.log('[DigitalLifeTwin] File summaries generated:', {
+            logger.info('File summaries generated', {
+              operation: 'digital_life_twin_summaries',
               summaryCount: summaries.length,
               summaries: summaries.map(s => ({
                 id: s.id,
@@ -248,15 +252,21 @@ export class DigitalLifeTwinCore {
               summary: summaryMap.get(f.id),
             }));
           } catch (summaryError) {
-            console.error('[DigitalLifeTwin] Error extracting file summaries:', summaryError);
-            console.warn('Error extracting file summaries for Digital Life Twin:', summaryError);
+            const err = summaryError instanceof Error ? summaryError : new Error(String(summaryError));
+            logger.error('Error extracting file summaries', {
+              operation: 'digital_life_twin_summary_error',
+              error: { message: err.message, stack: err.stack }
+            });
           }
         } else {
-          console.log('[DigitalLifeTwin] No fileIds provided in context');
+          logger.info('No fileIds provided in context', { operation: 'digital_life_twin_files' });
         }
       } catch (error) {
-        console.error('[DigitalLifeTwin] Error loading attached file context:', error);
-        console.warn('Error loading attached file context for Digital Life Twin:', error);
+        const err = error instanceof Error ? error : new Error(String(error));
+        logger.error('Error loading attached file context', {
+          operation: 'digital_life_twin_file_context_error',
+          error: { message: err.message, stack: err.stack }
+        });
       }
       
       // 2. Get user's personality profile (with fallback)
@@ -649,7 +659,8 @@ ${relevantContexts.map((ctx, idx) => {
     // Build attached files section (metadata + content summaries when available)
     let attachedFilesSection = '';
     if (attachedFiles && attachedFiles.length > 0) {
-      console.log('[DigitalLifeTwin] Building attached files section for prompt:', {
+      logger.info('Building attached files section for prompt', {
+        operation: 'digital_life_twin_prompt_files',
         fileCount: attachedFiles.length,
         filesWithSummaries: attachedFiles.filter(f => f.summary && f.summary.trim()).length,
         fileNames: attachedFiles.map(f => f.name)
@@ -666,20 +677,16 @@ ${attachedFiles
     const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
     if (file.summary && file.summary.trim()) {
       const summaryText = file.summary.split('\n').join('\n   ');
-      console.log(`[DigitalLifeTwin] Including summary for ${file.name}:`, {
-        summaryLength: summaryText.length,
-        preview: summaryText.substring(0, 200)
-      });
       return `${meta}\n   Content/summary:\n   ${summaryText}`;
     }
-    console.log(`[DigitalLifeTwin] No summary available for ${file.name}`);
     return meta;
   })
   .join('\n\n')}`;
       
-      console.log('[DigitalLifeTwin] Attached files section length:', attachedFilesSection.length);
-    } else {
-      console.log('[DigitalLifeTwin] No attached files to include in prompt');
+      logger.info('Attached files section built', {
+        operation: 'digital_life_twin_prompt_files',
+        sectionLength: attachedFilesSection.length
+      });
     }
 
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.

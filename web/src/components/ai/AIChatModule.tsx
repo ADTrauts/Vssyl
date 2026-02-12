@@ -292,9 +292,9 @@ export default function AIChatModule({
         }, session.accessToken);
       }
 
-      // Call AI service
+      // Call AI service (Digital Life Twin - supports file attachments)
       const response = await authenticatedApiCall(
-        '/api/ai/query',
+        '/api/ai/twin',
         {
           method: 'POST',
           headers: {
@@ -302,11 +302,14 @@ export default function AIChatModule({
           },
           body: JSON.stringify({
             query: userMessage,
+            provider: 'auto',
             context: {
               dashboardId: dashboardId || currentDashboard?.id,
               dashboardType,
               dashboardName,
+              currentModule: 'ai-chat',
               conversationId,
+              urgency: 'medium',
               fileIds: currentAttachedFiles.map((file) => file.id),
             }
           })
