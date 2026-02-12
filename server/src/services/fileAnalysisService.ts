@@ -60,34 +60,62 @@ async function extractTextFromBuffer(
     }
   }
 
-  // Handle PDF files
+  // Handle PDF files - try pdf-parse first, fallback to unpdf
   if (fileExtension === 'pdf') {
+    const data = buffer instanceof Buffer ? new Uint8Array(buffer) : buffer;
+
+    // Primary: pdf-parse
     try {
       const { PDFParse } = await import('pdf-parse');
-      const parser = new PDFParse({ data: buffer });
-      const result = await parser.getText({ first: 10 });
+      const parser = new PDFParse({ data });
+      const result = await parser.getText(); // Full document - no page limit
       await parser.destroy();
       const text = (result && typeof result === 'object' && 'text' in result ? (result as { text?: string }).text : '')?.trim() ?? '';
-      const truncated = text.length > MAX_SUMMARY_CHARS
-        ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
-        : text;
-      const output = truncated || `(PDF with no extractable text: ${name})`;
-      logger.info('PDF extraction succeeded', {
-        operation: 'file_analysis_pdf',
-        fileName: name,
-        textLength: text.length,
-        outputLength: output.length,
-      });
-      return output;
+      if (text) {
+        const truncated = text.length > MAX_SUMMARY_CHARS
+          ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+          : text;
+        logger.info('PDF extraction succeeded (pdf-parse)', {
+          operation: 'file_analysis_pdf',
+          fileName: name,
+          textLength: text.length,
+        });
+        return truncated;
+      }
     } catch (err) {
-      logger.warn('PDF extraction failed', {
+      logger.warn('pdf-parse failed, trying unpdf fallback', {
         operation: 'file_analysis_pdf',
         fileName: name,
         error: { message: err instanceof Error ? err.message : 'Unknown error' },
-        stack: err instanceof Error ? err.stack : undefined,
       });
-      return `(PDF file: ${name} - text extraction unavailable)`;
     }
+
+    // Fallback: unpdf
+    try {
+      const { extractText, getDocumentProxy } = await import('unpdf');
+      const pdf = await getDocumentProxy(data);
+      const { text } = await extractText(pdf, { mergePages: true });
+      const trimmed = (text || '').trim();
+      if (trimmed) {
+        const truncated = trimmed.length > MAX_SUMMARY_CHARS
+          ? trimmed.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+          : trimmed;
+        logger.info('PDF extraction succeeded (unpdf fallback)', {
+          operation: 'file_analysis_pdf',
+          fileName: name,
+          textLength: trimmed.length,
+        });
+        return truncated;
+      }
+    } catch (err) {
+      logger.warn('unpdf fallback also failed', {
+        operation: 'file_analysis_pdf',
+        fileName: name,
+        error: { message: err instanceof Error ? err.message : 'Unknown error' },
+      });
+    }
+
+    return `(PDF file: ${name} - text extraction unavailable. The file may be image-based; try exporting as text from the original application.)`;
   }
 
   // Handle Office documents (Word, Excel, PowerPoint)
