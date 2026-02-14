@@ -2,6 +2,13 @@
  * File Analysis Service
  *
  * Extracts text content or summaries from Drive files for AI context.
+ * Pipeline: store in Drive → extract text → cap per-file (chunk-style) → send to AI.
+ *
+ * Production-style limits (aligned with ChatGPT/OpenAI recommendations):
+ * - File size: 25 MB (PDF/Office/text), 5 MB (images). Never send raw binary; always extract → chunk → send.
+ * - Per-file context: ~5 chunks × ~1k tokens ≈ 20k chars per file.
+ * - Total file context is capped in DigitalLifeTwinCore (~15k tokens).
+ *
  * Supports:
  * - Text files: .txt, .md, .json, .csv, .html, etc.
  * - PDF: .pdf
@@ -14,9 +21,13 @@
 import { logger } from '../lib/logger';
 import { storageService } from './storageService';
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB (increased for images and Office docs)
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for images (OCR can handle larger)
-const MAX_SUMMARY_CHARS = 4000;
+// File size limits (production-safe: 25 MB upload max, 5 MB images)
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB for PDFs, Office, text (ChatGPT-style max)
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for images
+// Per-file context: ~1k tokens per chunk, 5 chunks max → ~20k chars. Total file context capped in Core.
+const CHUNK_SIZE_CHARS = 4000; // ~1000 tokens
+const MAX_CHUNKS_PER_FILE = 5;
+const MAX_SUMMARY_CHARS = CHUNK_SIZE_CHARS * MAX_CHUNKS_PER_FILE; // 20_000 chars (~5k tokens per file)
 const MAX_FILES_TO_ANALYZE = 5;
 
 const TEXT_EXTENSIONS = new Set([
@@ -232,7 +243,7 @@ export interface FileAnalysisResult {
  * Extract text summaries from files for AI context.
  * Supports: Text files, PDF, Word (.docx, .doc), Excel (.xlsx, .xls), 
  * PowerPoint (.pptx, .ppt), Images with OCR (.png, .jpg, .jpeg, etc.)
- * Limits: max 5 files, 2MB per file (5MB for images), 4000 chars per summary.
+ * Limits: max 5 files, 25MB per file (5MB for images), ~20k chars per file (~5 chunks × 1k tokens).
  */
 export async function getFileSummaries(
   files: FileRecordForAnalysis[]

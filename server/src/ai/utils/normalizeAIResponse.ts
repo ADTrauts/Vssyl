@@ -78,8 +78,14 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
     if (type === 'table' && parsed.table && typeof parsed.table === 'object') {
       const t = parsed.table as unknown as Record<string, unknown>;
       const cols = Array.isArray(t.columns) ? (t.columns as unknown[]).map((c) => String(c ?? '')) : [];
-      const rows = Array.isArray(t.rows) ? (t.rows as unknown[]).map((r) => (Array.isArray(r) ? (r as unknown[]).map((c) => String(c ?? '')) : [])) : [];
-      table = cols.length ? { columns: cols, rows } : undefined;
+      const rawRows = Array.isArray(t.rows) ? (t.rows as unknown[]).map((r) => (Array.isArray(r) ? (r as unknown[]).map((c) => String(c ?? '')) : [])) : [];
+      const colCount = cols.length;
+      const rows = colCount
+        ? rawRows.map((row) =>
+            Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
+          )
+        : [];
+      table = colCount ? { columns: cols, rows } : undefined;
     }
     const structured: StructuredAIResponse = {
       type,

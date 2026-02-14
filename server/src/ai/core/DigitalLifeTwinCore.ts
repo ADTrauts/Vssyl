@@ -10,6 +10,9 @@ import { prisma as sharedPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 
+/** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
+const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60_000;
+
 export interface DigitalLifeTwinResponse {
   response: string;
   confidence: number;
@@ -661,7 +664,7 @@ ${relevantContexts.map((ctx, idx) => {
       }
     }
     
-    // Build attached files section (metadata + content summaries when available)
+    // Build attached files section (metadata + content summaries when available). Cap total length for context limit.
     let attachedFilesSection = '';
     if (attachedFiles && attachedFiles.length > 0) {
       logger.info('Building attached files section for prompt', {
@@ -671,26 +674,34 @@ ${relevantContexts.map((ctx, idx) => {
         fileNames: attachedFiles.map(f => f.name)
       });
 
-      attachedFilesSection = `\n\nATTACHED FILES CONTEXT:
+      const header = `\n\nATTACHED FILES CONTEXT:
 The user has attached the following Drive files to this question. **CRITICAL: You MUST read and analyze the content of these files to answer the user's question.** Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer. If the user asks about the file content, you MUST reference specific details from the file content below.
-${attachedFiles
-  .map((file, index) => {
-    const sizeDescription =
-      typeof file.size === 'number'
-        ? `${Math.max(1, Math.round(file.size / 1024))} KB`
-        : 'unknown size';
-    const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
-    if (file.summary && file.summary.trim()) {
-      const summaryText = file.summary.split('\n').join('\n   ');
-      return `${meta}\n   Content/summary:\n   ${summaryText}`;
-    }
-    return meta;
-  })
-  .join('\n\n')}`;
-      
+`;
+      const body = attachedFiles
+        .map((file, index) => {
+          const sizeDescription =
+            typeof file.size === 'number'
+              ? `${Math.max(1, Math.round(file.size / 1024))} KB`
+              : 'unknown size';
+          const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
+          if (file.summary && file.summary.trim()) {
+            const summaryText = file.summary.split('\n').join('\n   ');
+            return `${meta}\n   Content/summary:\n   ${summaryText}`;
+          }
+          return meta;
+        })
+        .join('\n\n');
+      const truncationNotice = '\n\n[... file context truncated to stay within model context limit ...]';
+      const maxBodyChars = MAX_ATTACHED_FILES_CONTEXT_CHARS - header.length - truncationNotice.length;
+      const cappedBody = body.length > maxBodyChars
+        ? body.slice(0, maxBodyChars) + truncationNotice
+        : body;
+      attachedFilesSection = header + cappedBody;
+
       logger.info('Attached files section built', {
         operation: 'digital_life_twin_prompt_files',
-        sectionLength: attachedFilesSection.length
+        sectionLength: attachedFilesSection.length,
+        truncated: body.length > maxBodyChars
       });
     }
 

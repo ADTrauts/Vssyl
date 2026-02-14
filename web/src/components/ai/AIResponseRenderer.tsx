@@ -166,30 +166,39 @@ export default function AIResponseRenderer({
       )}
 
       {hasTable && structured.table ? (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="min-w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-900 font-medium">
-              <tr>
-                {structured.table.columns.map((col, i) => (
-                  <th key={i} className="px-3 py-2 border-b border-gray-200">
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="text-gray-700">
-              {structured.table.rows.map((row, ri) => (
-                <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                  {row.map((cell, ci) => (
-                    <td key={ci} className="px-3 py-2 border-b border-gray-100">
-                      {cell}
-                    </td>
+        (() => {
+          const { columns, rows } = structured.table;
+          const colCount = columns.length;
+          const normalizedRows = rows.map((row) =>
+            Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
+          );
+          return (
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+              <table className="min-w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-900 font-medium">
+                  <tr>
+                    {columns.map((col, i) => (
+                      <th key={i} className="px-3 py-2 border-b border-gray-200">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="text-gray-700">
+                  {normalizedRows.map((row, ri) => (
+                    <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="px-3 py-2 border-b border-gray-100">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          );
+        })()
       ) : null}
 
       {hasSections ? (
