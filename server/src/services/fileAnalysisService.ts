@@ -33,14 +33,23 @@ function getExtension(name: string): string {
 }
 
 function resolveStoragePath(file: { path?: string | null; url?: string | null }): string | null {
+  // Prefer path; ensure it's not a URL (GCS may store object path or full URL)
   if (file.path && file.path.trim()) {
-    return file.path;
+    const p = file.path.trim();
+    // If path looks like a URL, extract object path for GCS
+    if (p.startsWith('http://') || p.startsWith('https://')) {
+      return storageService.extractPathFromUrl(p);
+    }
+    return p;
   }
   if (file.url && typeof file.url === 'string') {
     return storageService.extractPathFromUrl(file.url);
   }
   return null;
 }
+
+/** Use unpdf first in production (serverless-optimized); pdf-parse may fail on Cloud Run. */
+const isProduction = process.env.NODE_ENV === 'production';
 
 async function extractTextFromBuffer(
   buffer: Buffer,
@@ -60,59 +69,65 @@ async function extractTextFromBuffer(
     }
   }
 
-  // Handle PDF files - try pdf-parse first, fallback to unpdf
+  // Handle PDF files
+  // Production (Cloud Run): use unpdf first (serverless-optimized; pdf-parse native modules may fail)
+  // Local dev: try pdf-parse first, fallback to unpdf
   if (fileExtension === 'pdf') {
     const data = buffer instanceof Buffer ? new Uint8Array(buffer) : buffer;
 
-    // Primary: pdf-parse
-    try {
-      const { PDFParse } = await import('pdf-parse');
-      const parser = new PDFParse({ data });
-      const result = await parser.getText(); // Full document - no page limit
-      await parser.destroy();
-      const text = (result && typeof result === 'object' && 'text' in result ? (result as { text?: string }).text : '')?.trim() ?? '';
-      if (text) {
-        const truncated = text.length > MAX_SUMMARY_CHARS
-          ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
-          : text;
-        logger.info('PDF extraction succeeded (pdf-parse)', {
-          operation: 'file_analysis_pdf',
-          fileName: name,
-          textLength: text.length,
-        });
-        return truncated;
+    const tryUnpdf = async (): Promise<string | null> => {
+      try {
+        const { extractText, getDocumentProxy } = await import('unpdf');
+        const pdf = await getDocumentProxy(data);
+        const { text } = await extractText(pdf, { mergePages: true });
+        const trimmed = (text || '').trim();
+        return trimmed || null;
+      } catch {
+        return null;
       }
-    } catch (err) {
-      logger.warn('pdf-parse failed, trying unpdf fallback', {
-        operation: 'file_analysis_pdf',
-        fileName: name,
-        error: { message: err instanceof Error ? err.message : 'Unknown error' },
-      });
-    }
+    };
 
-    // Fallback: unpdf
-    try {
-      const { extractText, getDocumentProxy } = await import('unpdf');
-      const pdf = await getDocumentProxy(data);
-      const { text } = await extractText(pdf, { mergePages: true });
-      const trimmed = (text || '').trim();
-      if (trimmed) {
-        const truncated = trimmed.length > MAX_SUMMARY_CHARS
-          ? trimmed.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
-          : trimmed;
-        logger.info('PDF extraction succeeded (unpdf fallback)', {
+    const tryPdfParse = async (): Promise<string | null> => {
+      try {
+        const { PDFParse } = await import('pdf-parse');
+        const parser = new PDFParse({ data });
+        const result = await parser.getText();
+        await parser.destroy();
+        const text = (result && typeof result === 'object' && 'text' in result ? (result as { text?: string }).text : '')?.trim() ?? '';
+        return text || null;
+      } catch {
+        return null;
+      }
+    };
+
+    // Production: unpdf first (works better on Cloud Run)
+    const order = isProduction ? [tryUnpdf, tryPdfParse] : [tryPdfParse, tryUnpdf];
+    const names = isProduction ? ['unpdf', 'pdf-parse'] : ['pdf-parse', 'unpdf'];
+
+    for (let i = 0; i < order.length; i++) {
+      try {
+        const text = await order[i]();
+        if (text) {
+          const truncated = text.length > MAX_SUMMARY_CHARS
+            ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+            : text;
+          logger.info('PDF extraction succeeded', {
+            operation: 'file_analysis_pdf',
+            fileName: name,
+            textLength: text.length,
+            library: names[i],
+            environment: isProduction ? 'production' : 'development',
+          });
+          return truncated;
+        }
+      } catch (err) {
+        logger.warn('PDF extraction attempt failed', {
           operation: 'file_analysis_pdf',
           fileName: name,
-          textLength: trimmed.length,
+          library: names[i],
+          error: { message: err instanceof Error ? err.message : 'Unknown error' },
         });
-        return truncated;
       }
-    } catch (err) {
-      logger.warn('unpdf fallback also failed', {
-        operation: 'file_analysis_pdf',
-        fileName: name,
-        error: { message: err instanceof Error ? err.message : 'Unknown error' },
-      });
     }
 
     return `(PDF file: ${name} - text extraction unavailable. The file may be image-based; try exporting as text from the original application.)`;
@@ -249,16 +264,37 @@ export async function getFileSummaries(
           fileName: file.name,
           hasPath: !!file.path,
           hasUrl: !!file.url,
+          pathPreview: file.path ? `${String(file.path).slice(0, 80)}...` : undefined,
         });
         results.push({
           id: file.id,
           name: file.name,
-          summary: `(Could not locate file: ${file.name})`,
+          summary: `(Could not locate file in storage: ${file.name})`,
         });
         continue;
       }
 
-      const buffer = await storageService.getFileBuffer(storagePath);
+      let buffer: Buffer;
+      try {
+        buffer = await storageService.getFileBuffer(storagePath);
+      } catch (storageErr) {
+        const msg = storageErr instanceof Error ? storageErr.message : 'Unknown error';
+        logger.warn('Failed to fetch file from storage', {
+          operation: 'file_analysis_storage_fetch',
+          fileId: file.id,
+          fileName: file.name,
+          storagePath: storagePath.slice(0, 100),
+          provider: storageService.getProvider(),
+          error: { message: msg },
+        });
+        results.push({
+          id: file.id,
+          name: file.name,
+          summary: `(Could not fetch file from storage: ${file.name})`,
+        });
+        continue;
+      }
+
       const summary = await extractTextFromBuffer(buffer, extension, file.name);
 
       results.push({

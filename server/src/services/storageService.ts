@@ -347,8 +347,8 @@ export class StorageService {
   extractPathFromUrl(urlString: string): string | null {
     try {
       const u = new URL(urlString);
-      // GCS public URL: https://storage.googleapis.com/<bucket>/<path>
-      if (u.hostname === 'storage.googleapis.com') {
+      // GCS URLs: storage.googleapis.com or storage.cloud.google.com (signed URLs use same pathname)
+      if (u.hostname === 'storage.googleapis.com' || u.hostname === 'storage.cloud.google.com') {
         const parts = u.pathname.split('/').filter(Boolean);
         if (parts.length >= 2) {
           // parts[0] = bucket name, rest = object path
