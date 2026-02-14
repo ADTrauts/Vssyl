@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
+import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 
 export interface AnthropicConfig {
   apiKey: string;
@@ -58,34 +59,33 @@ export class AnthropicProvider {
         throw new Error('Unexpected response type from Anthropic');
       }
 
-      // Parse structured response
-      let parsedResponse;
+      // Parse and normalize response (supports both structured and legacy JSON)
+      let parsed: Record<string, unknown>;
       try {
-        parsedResponse = JSON.parse(content.text);
+        parsed = JSON.parse(content.text) as Record<string, unknown>;
       } catch {
-        // If not JSON, treat as plain text response
-        parsedResponse = {
+        parsed = {
           response: content.text,
           confidence: 0.8,
           reasoning: 'Analysis completed',
           actions: []
         };
       }
+      const normalized = normalizeAIResponse(parsed);
 
-      // Calculate costs
       const inputTokens = response.usage.input_tokens;
       const outputTokens = response.usage.output_tokens;
       const cost = (inputTokens * this.config.costPerInputToken) + (outputTokens * this.config.costPerOutputToken);
-
       const processingTime = Date.now() - startTime;
 
       return {
         id: this.generateResponseId(),
         requestId: request.id,
-        response: parsedResponse.response || parsedResponse.message || content.text,
-        confidence: parsedResponse.confidence || 0.85, // Claude typically more confident in analysis
-        reasoning: parsedResponse.reasoning,
-        actions: parsedResponse.actions || [],
+        response: normalized.response,
+        confidence: normalized.confidence,
+        reasoning: normalized.reasoning,
+        actions: (normalized.actions as AIResponse['actions']) || [],
+        structured: normalized.structured,
         metadata: {
           provider: 'anthropic',
           model: this.config.model,
@@ -147,31 +147,27 @@ ANALYTICAL CAPABILITIES:
 - Pattern recognition in communication, work, and personal habits
 - Understanding of context and nuance in all interactions
 
-RESPONSE FORMAT:
-Always respond with a JSON object containing:
+RESPONSE FORMAT (use structured format for summaries, lists, document answers, or multi-part answers):
+Always respond with a valid JSON object. Prefer the structured format so the UI can render sections and actions cleanly.
+
+Structured format (preferred when you have distinct sections, e.g. document summary, list of points, steps, or tabular data):
 {
-  "response": "Your analytical response with insights and reasoning. Format for readability: use paragraph breaks (blank lines) between ideas, short paragraphs, and bullet points for lists or steps.",
-  "confidence": 0.0-1.0,
-  "reasoning": "Detailed explanation of your analytical process",
-  "actions": [
-    {
-      "type": "action_type",
-      "module": "module_name", 
-      "operation": "operation_name",
-      "parameters": {},
-      "requiresApproval": boolean,
-      "affectedUsers": ["userId"],
-      "reasoning": "Detailed reasoning for this action"
-    }
+  "type": "summary" | "answer" | "list" | "steps" | "actionable" | "table",
+  "title": "Short title (e.g. Document Summary, Key Points)",
+  "sections": [
+    { "heading": "Section heading", "content": "Section body text. Be concise.", "icon": "optional emoji or icon name" }
   ],
-  "insights": [
-    {
-      "pattern": "Description of pattern identified",
-      "impact": "How this affects the user's life",
-      "recommendation": "Suggested optimization or change"
-    }
-  ]
+  "table": { "columns": ["Col1", "Col2"], "rows": [["a", "b"], ["c", "d"]] },
+  "actions": [{ "label": "Button label", "action": "optional_action_id", "fileId": "optional_file_id" }],
+  "confidence": 0.0-1.0,
+  "reasoning": "Brief explanation of your process"
 }
+When type is "table", provide "table" with "columns" (array of strings) and "rows" (array of string arrays). Sections can be empty.
+
+Legacy format (allowed for very short replies only):
+{ "response": "Plain text reply.", "confidence": 0.0-1.0, "reasoning": "...", "actions": [] }
+
+Rules: Use "summary" for document/content summaries; "list" for bullet-style answers; "steps" for procedures; "table" for tabular data; "answer" for single-block. Optional "icon" per section (emoji or name). Never return raw markdown outside JSON. Section "content" should be plain text, not markdown.
 
 ANALYTICAL APPROACH:
 - Consider long-term implications of decisions and actions

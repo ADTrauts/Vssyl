@@ -1,0 +1,116 @@
+/**
+ * Central handler for AI twin API response → conversation item.
+ * Single place for defaults and shape so ai-chat page, AIChatDropdown, and AIChatModule stay in sync.
+ */
+
+import type { StructuredAIResponse } from '../components/ai/AIResponseRenderer';
+
+export interface TwinResponseData {
+  response?: string;
+  confidence?: number;
+  reasoning?: string;
+  actions?: unknown[];
+  structured?: StructuredAIResponse;
+}
+
+export interface AIConversationItemBase {
+  id: string;
+  type: 'ai';
+  content: string;
+  timestamp: Date;
+  confidence: number;
+  structured?: StructuredAIResponse;
+  metadata: {
+    reasoning?: string;
+    actions: unknown[];
+  };
+}
+
+export interface AIConversationItemWithLegacy extends AIConversationItemBase {
+  aiResponse?: {
+    id: string;
+    response: string;
+    confidence: number;
+    reasoning?: string;
+    actions: unknown[];
+  };
+}
+
+const FALLBACK_CONTENT = "I apologize, but I couldn't generate a proper response.";
+
+/**
+ * Build an AI conversation item from /api/ai/twin response data.
+ * Use this in ai-chat page, AIChatDropdown, and AIChatModule after a successful twin call.
+ */
+export function buildAIConversationItemFromTwinData(
+  data: TwinResponseData,
+  options?: { includeLegacyAiResponse?: boolean; id?: string }
+): AIConversationItemWithLegacy {
+  const id = options?.id ?? `ai_${Date.now()}`;
+  const content = data.response?.trim() || FALLBACK_CONTENT;
+  const confidence = typeof data.confidence === 'number' ? data.confidence : 0.5;
+  const timestamp = new Date();
+
+  const item: AIConversationItemWithLegacy = {
+    id,
+    type: 'ai',
+    content,
+    timestamp,
+    confidence,
+    structured: data.structured,
+    metadata: {
+      reasoning: data.reasoning,
+      actions: Array.isArray(data.actions) ? data.actions : [],
+    },
+  };
+
+  if (options?.includeLegacyAiResponse) {
+    item.aiResponse = {
+      id: `ai-res-${Date.now()}`,
+      response: content,
+      confidence,
+      reasoning: data.reasoning,
+      actions: Array.isArray(data.actions) ? data.actions : [],
+    };
+  }
+
+  return item;
+}
+
+/**
+ * Payload for addMessage(conversationId, payload) after a twin response.
+ */
+export function buildAddMessagePayloadFromTwinData(data: TwinResponseData): {
+  role: 'assistant';
+  content: string;
+  confidence: number;
+  metadata: { reasoning?: string; actions: unknown[] };
+} {
+  return {
+    role: 'assistant',
+    content: data.response?.trim() || 'No response generated',
+    confidence: typeof data.confidence === 'number' ? data.confidence : 0.5,
+    metadata: {
+      reasoning: data.reasoning,
+      actions: Array.isArray(data.actions) ? data.actions : [],
+    },
+  };
+}
+
+/**
+ * Build an AI conversation item for error states (e.g. rate limit, network error).
+ * Use in ai-chat page, AIChatDropdown, and AIChatModule when the twin call fails.
+ */
+export function buildErrorConversationItem(
+  message: string,
+  options?: { id?: string }
+): AIConversationItemBase {
+  return {
+    id: options?.id ?? `error_${Date.now()}`,
+    type: 'ai',
+    content: message.trim() || "I apologize, but I encountered an error. Please try again.",
+    timestamp: new Date(),
+    confidence: 0,
+    metadata: { actions: [] },
+  };
+}

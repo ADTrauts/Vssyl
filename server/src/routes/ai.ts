@@ -192,6 +192,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         insights: response.insights,
         personalityAlignment: response.personalityAlignment,
         crossModuleConnections: response.crossModuleConnections,
+        structured: response.structured,
         metadata: response.metadata,
         queryBalance
       }

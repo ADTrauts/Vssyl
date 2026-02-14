@@ -8,6 +8,7 @@ import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
 import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine';
 import { prisma as sharedPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
+import type { StructuredAIResponse } from '../types/structuredResponse';
 
 export interface DigitalLifeTwinResponse {
   response: string;
@@ -17,6 +18,8 @@ export interface DigitalLifeTwinResponse {
   reasoning: string;
   personalityAlignment: number;
   crossModuleConnections: CrossModuleConnection[];
+  /** When set, frontend should use AIResponseRenderer for polished section/action UI */
+  structured?: StructuredAIResponse;
   metadata: {
     contextUsed: string[];
     modulesFocused: string[];
@@ -460,6 +463,7 @@ export class DigitalLifeTwinCore {
         reasoning: response.reasoning,
         personalityAlignment,
         crossModuleConnections: connections,
+        structured: response.structured as StructuredAIResponse | undefined,
         metadata: {
           contextUsed: Object.keys(userContext),
           modulesFocused: response.modulesFocused || [],
@@ -610,7 +614,8 @@ export class DigitalLifeTwinCore {
       reasoning,
       modulesFocused: (analysis as any)?.scope?.modules || [],
       patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
-      provider
+      provider,
+      structured: aiResponse.structured
     };
   }
 
@@ -1208,7 +1213,8 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
       return {
         response: response.response,
         confidence: response.confidence,
-        reasoning: response.reasoning || "Generated using AI provider analysis"
+        reasoning: response.reasoning || "Generated using AI provider analysis",
+        structured: response.structured
       };
     } catch (error) {
       console.error(`Error calling AI provider ${provider}:`, error);

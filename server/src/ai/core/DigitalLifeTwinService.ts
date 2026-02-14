@@ -9,6 +9,7 @@ import { LearningEngine } from './LearningEngine';
 import { ActionExecutor } from './ActionExecutor';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type ConversationHistoryItem } from './DigitalLifeTwinCore';
+import type { StructuredAIResponse } from '../types/structuredResponse';
 
 export interface AIRequest {
   id: string;
@@ -26,6 +27,8 @@ export interface AIResponse {
   confidence: number;
   reasoning?: string;
   actions?: AIAction[];
+  /** When set, frontend should use AIResponseRenderer for section/action UI */
+  structured?: StructuredAIResponse;
   metadata: {
     provider: string;
     model: string;

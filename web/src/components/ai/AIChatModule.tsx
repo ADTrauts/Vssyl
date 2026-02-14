@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Paperclip } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from './AIMessageContent';
+import AIResponseRenderer, { type StructuredAIResponse } from './AIResponseRenderer';
 import AIThinkingIndicator from './AIThinkingIndicator';
 import AIFileUpload, { type AIAttachedFile } from './AIFileUpload';
 import { toast } from 'react-hot-toast';
@@ -22,6 +24,7 @@ import {
   type AIMessage 
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 
@@ -32,6 +35,7 @@ interface ConversationItem {
   timestamp: Date;
   confidence?: number;
   metadata?: Record<string, unknown>;
+  structured?: StructuredAIResponse;
   attachments?: { fileIds: string[] };
 }
 
@@ -47,6 +51,7 @@ export default function AIChatModule({
   dashboardName = 'Dashboard' 
 }: AIChatModuleProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const { currentDashboard } = useDashboard();
   const { trashItem } = useGlobalTrash();
   const [conversations, setConversations] = useState<AIConversation[]>([]);
@@ -323,39 +328,13 @@ export default function AIChatModule({
         throw new Error('Invalid response structure from AI service');
       }
 
-      const aiResponse = typedResponse.data as {
-        response?: string;
-        confidence?: number;
-        reasoning?: string;
-        actions?: any[];
-      };
+      const aiResponseData = typedResponse.data as Parameters<typeof buildAIConversationItemFromTwinData>[0];
 
-      // Add AI response to conversation
-      const aiItem: ConversationItem = {
-        id: `ai_${Date.now()}`,
-        type: 'ai',
-        content: aiResponse.response || 'I apologize, but I couldn\'t generate a proper response.',
-        timestamp: new Date(),
-        confidence: aiResponse.confidence || 0.5,
-        metadata: {
-          reasoning: aiResponse.reasoning,
-          actions: aiResponse.actions || []
-        }
-      };
-
+      const aiItem = buildAIConversationItemFromTwinData(aiResponseData) as ConversationItem;
       setConversation(prev => [...prev, aiItem]);
 
-      // Add AI message to database
       if (conversationId) {
-        await addMessage(conversationId, {
-          role: 'assistant',
-          content: aiResponse.response || 'No response generated',
-          confidence: aiResponse.confidence || 0.5,
-          metadata: {
-            reasoning: aiResponse.reasoning,
-            actions: aiResponse.actions || []
-          }
-        }, session.accessToken);
+        await addMessage(conversationId, buildAddMessagePayloadFromTwinData(aiResponseData), session.accessToken);
       }
 
       // Refresh conversations list to update last message time
@@ -381,15 +360,7 @@ export default function AIChatModule({
         }
       }
         
-      const errorItem: ConversationItem = {
-        id: `error_${Date.now()}`,
-        type: 'ai',
-        content: errorMessage,
-        timestamp: new Date(),
-        confidence: 0
-      };
-      
-      setConversation(prev => [...prev, errorItem]);
+      setConversation(prev => [...prev, buildErrorConversationItem(errorMessage) as ConversationItem]);
     } finally {
       setIsAILoading(false);
     }
@@ -893,52 +864,66 @@ export default function AIChatModule({
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <AIMessageContent content={item.content} textColor="text-gray-800" />
-                            
-                            {/* Actions */}
-                            {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 ? (
-                              <div className="mt-3 space-y-2">
-                                {item.metadata.actions.map((action: Record<string, unknown>, index: number) => (
-                                  <div key={index} className="bg-purple-50 rounded-lg p-3">
-                                    <div className="flex items-center justify-between">
-                                      <div>
-                                        <p className="text-sm font-medium text-purple-900">
-                                          {String(action.type || 'Action')}: {String(action.operation || 'Unknown')}
-                                        </p>
-                                        <p className="text-xs text-purple-700 mt-1">
-                                          {String(action.reasoning || 'No reasoning provided')}
-                                        </p>
+                            {item.structured ? (
+                              <AIResponseRenderer
+                                structured={item.structured}
+                                confidence={item.confidence}
+                                textColor="text-gray-700"
+                                onAction={(action) => {
+                                  if (action.href) {
+                                    if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                    else router.push(action.href);
+                                  } else if (action.fileId) {
+                                    router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <>
+                                <AIMessageContent content={item.content} textColor="text-gray-800" />
+                                {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 ? (
+                                  <div className="mt-3 space-y-2">
+                                    {item.metadata.actions.map((action: Record<string, unknown>, index: number) => (
+                                      <div key={index} className="bg-purple-50 rounded-lg p-3">
+                                        <div className="flex items-center justify-between">
+                                          <div>
+                                            <p className="text-sm font-medium text-purple-900">
+                                              {String(action.type || 'Action')}: {String(action.operation || 'Unknown')}
+                                            </p>
+                                            <p className="text-xs text-purple-700 mt-1">
+                                              {String(action.reasoning || 'No reasoning provided')}
+                                            </p>
+                                          </div>
+                                          {Boolean(action.requiresApproval) && (
+                                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                              Approval Required
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
-                                      {Boolean(action.requiresApproval) && (
-                                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                                          Approval Required
-                                        </span>
-                                      )}
+                                    ))}
+                                  </div>
+                                ) : null}
+                                {item.confidence !== undefined && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-xs text-gray-600">Confidence:</span>
+                                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                        <div
+                                          className={`h-2 rounded-full ${
+                                            item.confidence > 0.8 ? 'bg-green-500' :
+                                            item.confidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                                          }`}
+                                          style={{ width: `${item.confidence * 100}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-xs text-gray-600">
+                                        {Math.round(item.confidence * 100)}%
+                                      </span>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
-                            ) : null}
-                            
-                            {/* Confidence */}
-                            {item.confidence !== undefined && (
-                              <div className="mt-2">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-xs text-gray-500">Confidence:</span>
-                                  <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                    <div
-                                      className={`h-2 rounded-full ${
-                                        item.confidence > 0.8 ? 'bg-green-500' :
-                                        item.confidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
-                                      style={{ width: `${item.confidence * 100}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-xs text-gray-500">
-                                    {Math.round(item.confidence * 100)}%
-                                  </span>
-                                </div>
-                              </div>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>

@@ -6,6 +6,7 @@ import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History, E
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
 import { Button, Spinner } from 'shared/components';
 import { generateAISchedule } from '../../api/scheduling';
 import * as todoAPI from '../../api/todo';
@@ -21,6 +22,7 @@ import {
 } from '../../api/aiConversations';
 import AIServicePicker, { type AIProvider } from '../ai/AIServicePicker';
 import AIMessageContent from '../ai/AIMessageContent';
+import AIResponseRenderer, { type StructuredAIResponse } from '../ai/AIResponseRenderer';
 import AIThinkingIndicator from '../ai/AIThinkingIndicator';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -72,6 +74,7 @@ interface ConversationItem {
   timestamp: Date;
   aiResponse?: AIResponse;
   confidence?: number;
+  structured?: StructuredAIResponse;
   attachments?: { fileIds: string[] };
 }
 
@@ -429,6 +432,7 @@ export default function AIChatDropdown({
             requiresApproval: boolean;
             reasoning: string;
           }>;
+          structured?: StructuredAIResponse;
         }
       }>(
         '/api/ai/twin',
@@ -460,35 +464,13 @@ export default function AIChatDropdown({
         throw new Error('Invalid response structure from AI service');
       }
 
-      // Add AI response to conversation
-      const aiItem: ConversationItem = {
-        id: `ai_${Date.now()}`,
-        type: 'ai',
-        content: response.data.response || 'I apologize, but I couldn\'t generate a proper response.',
-        timestamp: new Date(),
-        aiResponse: {
-          id: `ai-res-${Date.now()}`,
-          response: response.data.response || 'No response generated',
-          confidence: response.data.confidence || 0.5,
-          reasoning: response.data.reasoning,
-          actions: response.data.actions || []
-        },
-        confidence: response.data.confidence || 0.5
-      };
-
+      const aiItem = buildAIConversationItemFromTwinData(response.data, {
+        includeLegacyAiResponse: true
+      }) as ConversationItem;
       setConversation(prev => [...prev, aiItem]);
 
-      // Add AI message to database
       if (conversationId) {
-        await addMessage(conversationId, {
-          role: 'assistant',
-          content: response.data.response || 'No response generated',
-          confidence: response.data.confidence || 0.5,
-          metadata: {
-            reasoning: response.data.reasoning,
-            actions: response.data.actions || []
-          }
-        }, session.accessToken);
+        await addMessage(conversationId, buildAddMessagePayloadFromTwinData(response.data), session.accessToken);
       }
 
     } catch (error) {
@@ -499,14 +481,9 @@ export default function AIChatDropdown({
         const errorData = (error as any)?.errorData;
         if (errorData?.error === 'AI query limit exceeded' || error.message.includes('AI query limit exceeded')) {
           const remaining = errorData?.remaining ?? 0;
-          const errorItem: ConversationItem = {
-            id: `error_${Date.now()}`,
-            type: 'ai',
-            content: `I apologize, but you've reached your AI query limit for this period. ${remaining > 0 ? `You have ${remaining} queries remaining.` : 'No queries remaining.'} Please upgrade your subscription or wait for your quota to reset to continue using AI features.`,
-            timestamp: new Date(),
-            confidence: 0
-          };
-          setConversation(prev => [...prev, errorItem]);
+          setConversation(prev => [...prev, buildErrorConversationItem(
+            `I apologize, but you've reached your AI query limit for this period. ${remaining > 0 ? `You have ${remaining} queries remaining.` : 'No queries remaining.'} Please upgrade your subscription or wait for your quota to reset to continue using AI features.`
+          ) as ConversationItem]);
           return;
         }
       }
@@ -533,15 +510,7 @@ export default function AIChatDropdown({
         }
       }
         
-      const errorItem: ConversationItem = {
-        id: `error_${Date.now()}`,
-        type: 'ai',
-        content: errorMessage,
-        timestamp: new Date(),
-        confidence: 0
-      };
-      
-      setConversation(prev => [...prev, errorItem]);
+      setConversation(prev => [...prev, buildErrorConversationItem(errorMessage) as ConversationItem]);
     } finally {
       setIsAILoading(false);
     }
@@ -712,13 +681,9 @@ export default function AIChatDropdown({
         return; // handleAIQuery manages its own loading state
       }
     } catch (error) {
-      const errorItem: ConversationItem = {
-        id: `error_${Date.now()}`,
-        type: 'ai',
-        content: `I'm sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        timestamp: new Date(),
-      };
-      setConversation(prev => [...prev, errorItem]);
+      setConversation(prev => [...prev, buildErrorConversationItem(
+        `I'm sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      ) as ConversationItem]);
     } finally {
       setIsAILoading(false);
     }
@@ -1164,31 +1129,45 @@ export default function AIChatDropdown({
                           <div className="flex items-start space-x-2">
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <AIMessageContent content={item.content} textColor="text-gray-800" />
-                              
-                              {/* Actions */}
-                              {item.aiResponse?.actions && item.aiResponse.actions.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  {item.aiResponse.actions.map((action, index) => (
-                                    <div key={index} className="bg-purple-50 rounded px-2 py-1">
-                                      <span className="text-xs text-purple-700">
-                                        {action.type}: {action.operation}
-                                      </span>
-                                      {action.requiresApproval && (
-                                        <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
-                                          Approval Required
-                                        </span>
-                                      )}
+                              {item.structured ? (
+                                <AIResponseRenderer
+                                  structured={item.structured}
+                                  confidence={item.confidence}
+                                  textColor="text-gray-700"
+                                  onAction={(action) => {
+                                    if (action.href) {
+                                      if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                      else router.push(action.href);
+                                    } else if (action.fileId) {
+                                      router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                    }
+                                  }}
+                                />
+                              ) : (
+                                <>
+                                  <AIMessageContent content={item.content} textColor="text-gray-800" />
+                                  {item.aiResponse?.actions && item.aiResponse.actions.length > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                      {item.aiResponse.actions.map((action, index) => (
+                                        <div key={index} className="bg-purple-50 rounded px-2 py-1">
+                                          <span className="text-xs text-purple-700">
+                                            {action.type}: {action.operation}
+                                          </span>
+                                          {action.requiresApproval && (
+                                            <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
+                                              Approval Required
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
-                                </div>
-                              )}
-                              
-                              {/* Confidence */}
-                              {item.confidence !== undefined && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Confidence: {Math.round(item.confidence * 100)}%
-                                </p>
+                                  )}
+                                  {item.confidence !== undefined && (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      Confidence: {Math.round(item.confidence * 100)}%
+                                    </p>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

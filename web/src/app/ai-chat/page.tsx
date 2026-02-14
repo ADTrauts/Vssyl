@@ -2,10 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
+import AIResponseRenderer, { type StructuredAIResponse } from '../../components/ai/AIResponseRenderer';
 import AIThinkingIndicator from '../../components/ai/AIThinkingIndicator';
 import { 
   getConversations, 
@@ -18,6 +19,7 @@ import {
   type AIMessage 
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
@@ -34,12 +36,15 @@ interface ConversationItem {
   timestamp: Date;
   confidence?: number;
   metadata?: Record<string, unknown>;
+  /** When set, render with AIResponseRenderer for section/action UI */
+  structured?: StructuredAIResponse;
   attachments?: { fileIds: string[] };
 }
 
 export default function AIChat() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { currentDashboard } = useDashboard();
   const { trashItem } = useGlobalTrash();
   const [conversations, setConversations] = useState<AIConversation[]>([]);
@@ -331,6 +336,7 @@ export default function AIChat() {
           confidence: number;
           reasoning?: string;
           actions?: Array<Record<string, unknown>>;
+          structured?: StructuredAIResponse;
         }
       }>(
         '/api/ai/twin',
@@ -355,30 +361,11 @@ export default function AIChat() {
         throw new Error('Invalid response structure from AI service');
       }
 
-      const aiItem: ConversationItem = {
-        id: `ai_${Date.now()}`,
-        type: 'ai',
-        content: response.data.response || 'I apologize, but I couldn\'t generate a proper response.',
-        timestamp: new Date(),
-        confidence: response.data.confidence || 0.5,
-        metadata: {
-          reasoning: response.data.reasoning,
-          actions: response.data.actions || []
-        }
-      };
-
+      const aiItem = buildAIConversationItemFromTwinData(response.data) as ConversationItem;
       setConversation(prev => [...prev, aiItem]);
 
       if (conversationId) {
-        await addMessage(conversationId, {
-          role: 'assistant',
-          content: response.data.response || 'No response generated',
-          confidence: response.data.confidence || 0.5,
-          metadata: {
-            reasoning: response.data.reasoning,
-            actions: response.data.actions || []
-          }
-        }, session.accessToken);
+        await addMessage(conversationId, buildAddMessagePayloadFromTwinData(response.data), session.accessToken);
       }
 
     } catch (error) {
@@ -406,15 +393,7 @@ export default function AIChat() {
         }
       }
       
-      const errorItem: ConversationItem = {
-        id: `error_${Date.now()}`,
-        type: 'ai',
-        content: errorMessage,
-        timestamp: new Date(),
-        confidence: 0
-      };
-      
-      setConversation(prev => [...prev, errorItem]);
+      setConversation(prev => [...prev, buildErrorConversationItem(errorMessage) as ConversationItem]);
     } finally {
       setIsAILoading(false);
     }
@@ -1207,23 +1186,41 @@ export default function AIChat() {
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <AIMessageContent content={item.content} textColor="text-gray-800" />
-                            
-                            {item.confidence !== undefined && (
-                              <div className="flex items-center space-x-2 mt-2">
-                                <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                                  <div 
-                                    className={`h-1.5 rounded-full ${
-                                      item.confidence > 0.7 ? 'bg-green-500' :
-                                      item.confidence > 0.4 ? 'bg-yellow-500' : 'bg-red-500'
-                                    }`}
-                                    style={{ width: `${item.confidence * 100}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-gray-500">
-                                  {Math.round(item.confidence * 100)}%
-                                </span>
-                              </div>
+                            {item.structured ? (
+                              <AIResponseRenderer
+                                structured={item.structured}
+                                confidence={item.confidence}
+                                textColor="text-gray-700"
+                                collapsibleSections
+                                onAction={(action) => {
+                                  if (action.href) {
+                                    if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                    else router.push(action.href);
+                                  } else if (action.fileId) {
+                                    router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <>
+                                <AIMessageContent content={item.content} textColor="text-gray-800" />
+                                {item.confidence !== undefined && (
+                                  <div className="flex items-center space-x-2 mt-2">
+                                    <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className={`h-1.5 rounded-full ${
+                                          item.confidence > 0.7 ? 'bg-green-500' :
+                                          item.confidence > 0.4 ? 'bg-yellow-500' : 'bg-red-500'
+                                        }`}
+                                        style={{ width: `${item.confidence * 100}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-xs text-gray-600">
+                                      {Math.round(item.confidence * 100)}%
+                                    </span>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>

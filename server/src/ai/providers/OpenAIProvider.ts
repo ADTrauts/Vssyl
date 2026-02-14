@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
+import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -68,34 +69,33 @@ export class OpenAIProvider {
         throw new Error('No response from OpenAI');
       }
 
-      // Parse structured response with error handling
-      let parsedResponse;
+      // Parse and normalize (supports both structured and legacy JSON)
+      let parsed: Record<string, unknown>;
       try {
-        parsedResponse = JSON.parse(response);
+        parsed = JSON.parse(response) as Record<string, unknown>;
       } catch (parseError) {
         console.error('Failed to parse OpenAI response as JSON:', response);
-        // Try to extract useful information from the raw response
-        parsedResponse = {
+        parsed = {
           response: response,
           confidence: 0.7,
           reasoning: 'Response received but not in expected JSON format'
         };
       }
+      const normalized = normalizeAIResponse(parsed);
 
-      // Calculate costs
       const inputTokens = completion.usage?.prompt_tokens || 0;
       const outputTokens = completion.usage?.completion_tokens || 0;
       const cost = (inputTokens * this.config.costPerInputToken) + (outputTokens * this.config.costPerOutputToken);
-
       const processingTime = Date.now() - startTime;
 
       return {
         id: this.generateResponseId(),
         requestId: request.id,
-        response: parsedResponse.response || parsedResponse.message || response,
-        confidence: parsedResponse.confidence || 0.8,
-        reasoning: parsedResponse.reasoning,
-        actions: parsedResponse.actions || [],
+        response: normalized.response,
+        confidence: normalized.confidence,
+        reasoning: normalized.reasoning,
+        actions: (normalized.actions as AIResponse['actions']) || [],
+        structured: normalized.structured,
         metadata: {
           provider: 'openai',
           model: this.config.model,
@@ -162,24 +162,26 @@ CAPABILITIES:
 - You understand relationships and context across the user's digital life
 - You can coordinate actions that affect multiple people (with appropriate approvals)
 
-RESPONSE FORMAT:
-Always respond with a JSON object containing:
+RESPONSE FORMAT (use structured format for summaries, lists, document answers):
+Always respond with valid JSON. Prefer the structured format so the UI can render sections and actions.
+
+Structured format (preferred when you have distinct sections or tabular data):
 {
-  "response": "Your conversational response to the user. Format for readability: use paragraph breaks (blank lines) between ideas, short paragraphs, and bullet points for lists or steps.",
+  "type": "summary" | "answer" | "list" | "steps" | "actionable" | "table",
+  "title": "Short title (e.g. Document Summary)",
+  "sections": [
+    { "heading": "Section heading", "content": "Section body. Be concise.", "icon": "optional emoji or icon name" }
+  ],
+  "table": { "columns": ["Col1", "Col2"], "rows": [["a", "b"], ["c", "d"]] },
+  "actions": [{ "label": "Button label", "action": "optional_action", "fileId": "optional_id" }],
   "confidence": 0.0-1.0,
-  "reasoning": "Brief explanation of your thought process",
-  "actions": [
-    {
-      "type": "action_type",
-      "module": "module_name", 
-      "operation": "operation_name",
-      "parameters": {},
-      "requiresApproval": boolean,
-      "affectedUsers": ["userId"],
-      "reasoning": "Why this action is needed"
-    }
-  ]
+  "reasoning": "Brief thought process"
 }
+When type is "table", provide "table" with "columns" and "rows" (array of string arrays). Sections can be empty.
+
+Legacy format (for very short replies): { "response": "Plain text.", "confidence": 0.0-1.0, "reasoning": "...", "actions": [] }
+
+Rules: Use "summary" for document/content summaries; "list" for bullet answers; "steps" for procedures; "table" for tabular data; "answer" for single-block. Optional "icon" per section. Section content is plain text, not markdown.
 
 GUIDELINES:
 - Be conversational and natural, as if you ARE the user in digital form
