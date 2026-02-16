@@ -52,16 +52,29 @@ export class OpenAIProvider {
       // Build user prompt with request and data
       const userPrompt = this.buildUserPrompt(request, data);
 
-      // Make OpenAI API call
+      // Multimodal: when vision image parts are present, send text + images so the model can "see" attached images
+      const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64: string; fileName: string }> | undefined;
+      const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
+      const userContent: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = hasVision
+        ? [
+            { type: 'text', text: userPrompt },
+            ...visionParts.map((p) => ({
+              type: 'image_url' as const,
+              image_url: { url: `data:${p.mimeType};base64,${p.dataBase64}` },
+            })),
+          ]
+        : userPrompt;
+
+      // Make OpenAI API call (vision-enabled when userContent includes image parts)
       const completion = await this.client.chat.completions.create({
         model: this.config.model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'user', content: userContent },
         ],
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
-        response_format: { type: 'json_object' }
+        response_format: { type: 'json_object' },
       });
 
       const response = completion.choices[0]?.message?.content;

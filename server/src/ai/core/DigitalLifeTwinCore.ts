@@ -176,8 +176,9 @@ export class DigitalLifeTwinCore {
         }
       }
 
-      // 1a. Get context for attached Drive files (metadata + content summaries)
+      // 1a. Get context for attached Drive files (metadata + content summaries) and vision image parts
       let attachedFiles: AttachedFileContext[] = [];
+      let visionImageParts: Array<{ mimeType: string; dataBase64: string; fileName: string }> = [];
       try {
         const contextFileIds = Array.isArray(query.context.fileIds)
           ? query.context.fileIds.filter((id): id is string => typeof id === 'string')
@@ -389,7 +390,7 @@ export class DigitalLifeTwinCore {
       // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
       const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
       
-      // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, and attached file context)
+      // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, attached file context, and vision images)
       const response = await this.generateLifeTwinResponse(
         query,
         userContext,
@@ -399,7 +400,8 @@ export class DigitalLifeTwinCore {
         semanticEnhancement,
         userDefinedContext,
         globalPatterns,
-        attachedFiles
+        attachedFiles,
+        visionImageParts
       );
       
       // 5. Identify cross-module connections and opportunities (with error handling)
@@ -574,7 +576,8 @@ export class DigitalLifeTwinCore {
     semanticEnhancement?: any,
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
-    attachedFiles?: AttachedFileContext[]
+    attachedFiles?: AttachedFileContext[],
+    visionImageParts?: Array<{ mimeType: string; dataBase64: string; fileName: string }>
   ) {
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
     const prompt = this.buildDigitalTwinPrompt(
@@ -1242,16 +1245,19 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         autonomySettings: {}
       };
 
-      // Call the appropriate provider
+      // Call the appropriate provider (pass options as data so providers can use visionImageParts)
       let response;
       const aiRequestTyped = aiRequest as any; // AI request structures are runtime-determined
       const userContextTyped = userContext as any; // User context structures are runtime-determined
+      const providerData = (options?.visionImageParts && Array.isArray(options.visionImageParts) && (options.visionImageParts as unknown[]).length > 0)
+        ? { visionImageParts: options.visionImageParts }
+        : {};
       if (provider === 'openai') {
         const openaiProvider = new OpenAIProvider();
-        response = await openaiProvider.process(aiRequestTyped, userContextTyped, {});
+        response = await openaiProvider.process(aiRequestTyped, userContextTyped, providerData);
       } else if (provider === 'anthropic') {
         const anthropicProvider = new AnthropicProvider();
-        response = await anthropicProvider.process(aiRequestTyped, userContextTyped, {});
+        response = await anthropicProvider.process(aiRequestTyped, userContextTyped, providerData);
       } else {
         const localProvider = new LocalProvider();
         response = await localProvider.process(aiRequestTyped, userContextTyped, {});

@@ -378,6 +378,77 @@ export interface FileAnalysisResult {
   truncated?: boolean;
 }
 
+/** Vision API: image part for multimodal prompts (base64 + mime for OpenAI/Anthropic). */
+export interface VisionImagePart {
+  mimeType: string;
+  dataBase64: string;
+  fileName: string;
+}
+
+const EXT_TO_MIME: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+};
+
+/** Max image parts to send to vision API (token/size safety). */
+const DEFAULT_MAX_VISION_PARTS = 5;
+/** Max size per image for vision (5 MB). */
+const DEFAULT_MAX_VISION_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Get image parts for Vision API: fetch image files from storage, return base64 + mime.
+ * Used so the model can "see" attached images (photos, screenshots) instead of only OCR text.
+ * Caller should pass only image-type files; non-image entries are skipped.
+ */
+export async function getVisionImageParts(
+  files: FileRecordForAnalysis[],
+  maxParts: number = DEFAULT_MAX_VISION_PARTS,
+  maxSizePerPartBytes: number = DEFAULT_MAX_VISION_IMAGE_BYTES
+): Promise<VisionImagePart[]> {
+  const parts: VisionImagePart[] = [];
+  for (const file of files) {
+    if (parts.length >= maxParts) break;
+    const extension = getExtension(file.name);
+    if (!IMAGE_EXTENSIONS.has(extension)) continue;
+    if (file.size > maxSizePerPartBytes) {
+      logger.info('Skipping image for vision (too large)', {
+        operation: 'vision_image_parts',
+        fileName: file.name,
+        size: file.size,
+        max: maxSizePerPartBytes,
+      });
+      continue;
+    }
+    const storagePath = resolveStoragePath(file);
+    if (!storagePath) continue;
+    try {
+      const buffer = await storageService.getFileBuffer(storagePath);
+      const mimeType = EXT_TO_MIME[extension] ?? 'image/jpeg';
+      parts.push({
+        mimeType,
+        dataBase64: buffer.toString('base64'),
+        fileName: file.name,
+      });
+      logger.info('Vision image part added', {
+        operation: 'vision_image_parts',
+        fileName: file.name,
+        sizeBytes: buffer.length,
+      });
+    } catch (err) {
+      logger.warn('Failed to load image for vision', {
+        operation: 'vision_image_parts',
+        fileName: file.name,
+        error: { message: err instanceof Error ? err.message : 'Unknown error' },
+      });
+    }
+  }
+  return parts;
+}
+
 /**
  * Extract text summaries from files for AI context.
  * Supports: Text files, PDF, Word (.docx, .doc), Excel (.xlsx, .xls), 

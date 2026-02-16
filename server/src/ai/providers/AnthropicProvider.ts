@@ -43,15 +43,33 @@ export class AnthropicProvider {
       // Build user prompt
       const userPrompt = this.buildUserPrompt(request, data);
 
-      // Make Anthropic API call
+      // Multimodal: when vision image parts are present, send text + image blocks so Claude can "see" attached images
+      const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64: string; fileName: string }> | undefined;
+      const allowedMediaTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+      const supportedParts = Array.isArray(visionParts) ? visionParts.filter((p) => allowedMediaTypes.has(p.mimeType)) : [];
+      const hasVision = supportedParts.length > 0;
+      type AnthropicImageBlock = { type: 'image'; source: { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; data: string } };
+      const userContent: Array<{ type: 'text'; text: string } | AnthropicImageBlock> = hasVision
+        ? [
+            { type: 'text', text: userPrompt },
+            ...supportedParts.map((p): AnthropicImageBlock => ({
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: p.mimeType as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp',
+                data: p.dataBase64,
+              },
+            })),
+          ]
+        : [{ type: 'text', text: userPrompt }];
+
+      // Make Anthropic API call (vision-enabled when userContent includes image blocks)
       const response = await this.client.messages.create({
         model: this.config.model,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
         system: systemPrompt,
-        messages: [
-          { role: 'user', content: userPrompt }
-        ]
+        messages: [{ role: 'user', content: userContent }],
       });
 
       const content = response.content[0];
