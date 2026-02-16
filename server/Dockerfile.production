@@ -2,6 +2,19 @@
 # Optimized for Kaniko layer caching - layers ordered by change frequency
 FROM node:20-alpine AS base
 
+# Install system dependencies for canvas (PDF OCR fallback)
+# These are needed for canvas native module compilation
+RUN apk add --no-cache \
+    cairo \
+    jpeg \
+    pango \
+    giflib \
+    librsvg \
+    pkgconfig \
+    python3 \
+    make \
+    g++
+
 # Install pnpm globally (this layer rarely changes)
 RUN npm install -g pnpm@10.11.0
 
@@ -43,6 +56,15 @@ RUN cd server && pnpm build
 
 # Production stage - minimal image
 FROM node:20-alpine AS production
+
+# Install runtime dependencies for canvas (PDF OCR fallback)
+# Note: canvas native module is pre-built in base stage, but runtime libs are needed
+RUN apk add --no-cache \
+    cairo \
+    jpeg \
+    pango \
+    giflib \
+    librsvg
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0

@@ -67,6 +67,8 @@
     "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
     "stripe": "^18.4.0",
+    "canvas": "^3.0.3",
+    "pdfjs-dist": "^4.7.76",
     "tesseract.js": "^7.0.0",
     "unpdf": "^1.4.0",
     "vssyl-shared": "workspace:*",

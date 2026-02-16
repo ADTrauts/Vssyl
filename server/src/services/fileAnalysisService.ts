@@ -62,6 +62,112 @@ function resolveStoragePath(file: { path?: string | null; url?: string | null })
 /** Use unpdf first in production (serverless-optimized); pdf-parse may fail on Cloud Run. */
 const isProduction = process.env.NODE_ENV === 'production';
 
+/** Max PDF pages to OCR when text extraction returns nothing (image-based PDF). */
+const MAX_PDF_OCR_PAGES = 5;
+
+/**
+ * When PDF has no extractable text, render pages to images and run OCR (image-based/scanned PDF).
+ * Uses pdfjs-dist + canvas + tesseract. Returns null if any step fails (e.g. canvas not installed).
+ */
+async function tryPdfOcrFallback(buffer: Buffer, name: string): Promise<string | null> {
+  try {
+    // Try to load canvas - it may not be available in production if native build failed
+    let Canvas: typeof import('canvas');
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      Canvas = require('canvas');
+      if (!Canvas || !Canvas.createCanvas) {
+        logger.warn('Canvas module loaded but createCanvas not available', {
+          operation: 'file_analysis_pdf_ocr',
+          fileName: name,
+        });
+        return null;
+      }
+    } catch (canvasErr) {
+      logger.warn('Canvas module not available (OCR fallback disabled)', {
+        operation: 'file_analysis_pdf_ocr',
+        fileName: name,
+        error: { message: canvasErr instanceof Error ? canvasErr.message : 'Unknown error' },
+      });
+      return null; // Gracefully skip OCR if canvas isn't available
+    }
+
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+    function createNodeCanvasFactory() {
+      return {
+        create(width: number, height: number) {
+          const canvas = Canvas.createCanvas(width, height);
+          return { canvas, context: canvas.getContext('2d') };
+        },
+        reset(canvasAndContext: { canvas: { width: number; height: number } }, width: number, height: number) {
+          canvasAndContext.canvas.width = width;
+          canvasAndContext.canvas.height = height;
+        },
+        destroy(canvasAndContext: { canvas: { width: number; height: number }; context: unknown }) {
+          canvasAndContext.canvas.width = 0;
+          canvasAndContext.canvas.height = 0;
+          (canvasAndContext as Record<string, unknown>).canvas = null;
+          (canvasAndContext as Record<string, unknown>).context = null;
+        },
+      };
+    }
+
+    const data = new Uint8Array(buffer);
+    const loadingTask = pdfjsLib.getDocument({ data });
+    const pdf = await loadingTask.promise;
+    const numPages = pdf.numPages;
+    const pagesToOcr = Math.min(MAX_PDF_OCR_PAGES, numPages);
+    const textParts: string[] = [];
+
+    for (let p = 1; p <= pagesToOcr; p++) {
+      const page = await pdf.getPage(p);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const factory = createNodeCanvasFactory();
+      const canvasAndContext = factory.create(viewport.width, viewport.height);
+      const renderContext = {
+        canvasContext: canvasAndContext.context,
+        viewport,
+        canvasFactory: factory,
+        canvas: canvasAndContext.canvas,
+      };
+      const renderTask = page.render(renderContext as unknown as Parameters<typeof page.render>[0]);
+      await renderTask.promise;
+      const imageBuffer = canvasAndContext.canvas.toBuffer('image/png');
+      factory.destroy(canvasAndContext);
+
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker('eng');
+      try {
+        const { data: { text } } = await worker.recognize(imageBuffer);
+        if (text && text.trim()) textParts.push(`[Page ${p}]\n${text.trim()}`);
+      } finally {
+        await worker.terminate();
+      }
+    }
+
+    if (textParts.length === 0) return null;
+    const full = textParts.join('\n\n');
+    const truncated = full.length > MAX_SUMMARY_CHARS
+      ? full.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+      : full;
+    logger.info('PDF OCR fallback succeeded', {
+      operation: 'file_analysis_pdf_ocr',
+      fileName: name,
+      pagesOcred: textParts.length,
+      textLength: full.length,
+    });
+    return truncated;
+  } catch (err) {
+    logger.warn('PDF OCR fallback failed (image-based PDF may be unreadable)', {
+      operation: 'file_analysis_pdf_ocr',
+      fileName: name,
+      error: { message: err instanceof Error ? err.message : 'Unknown error' },
+    });
+    return null;
+  }
+}
+
 async function extractTextFromBuffer(
   buffer: Buffer,
   fileExtension: string,
@@ -141,7 +247,11 @@ async function extractTextFromBuffer(
       }
     }
 
-    return `(PDF file: ${name} - text extraction unavailable. The file may be image-based; try exporting as text from the original application.)`;
+    // No text from either library: try OCR on rendered pages (image-based/scanned PDF)
+    const ocrText = await tryPdfOcrFallback(buffer, name);
+    if (ocrText) return ocrText;
+
+    return `(No text could be extracted from "${name}". The PDF may be scanned or image-only. Tell the user you could not read its contents and suggest they share a text-based PDF or describe the document.)`;
   }
 
   // Handle Office documents (Word, Excel, PowerPoint)
