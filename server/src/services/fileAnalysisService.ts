@@ -64,6 +64,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 /** Max PDF pages to OCR when text extraction returns nothing (image-based PDF). */
 const MAX_PDF_OCR_PAGES = 5;
+/** If extracted PDF text is below this, treat as scanned and try OCR. */
+const MIN_PDF_TEXT_CHARS_FOR_SUCCESS = 500;
 
 /**
  * When PDF has no extractable text, render pages to images and run OCR (image-based/scanned PDF).
@@ -221,21 +223,16 @@ async function extractTextFromBuffer(
     const order = isProduction ? [tryUnpdf, tryPdfParse] : [tryPdfParse, tryUnpdf];
     const names = isProduction ? ['unpdf', 'pdf-parse'] : ['pdf-parse', 'unpdf'];
 
+    let extractedText: string | null = null;
+    let extractionLibrary: string | null = null;
+
     for (let i = 0; i < order.length; i++) {
       try {
         const text = await order[i]();
         if (text) {
-          const truncated = text.length > MAX_SUMMARY_CHARS
-            ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
-            : text;
-          logger.info('PDF extraction succeeded', {
-            operation: 'file_analysis_pdf',
-            fileName: name,
-            textLength: text.length,
-            library: names[i],
-            environment: isProduction ? 'production' : 'development',
-          });
-          return truncated;
+          extractedText = text;
+          extractionLibrary = names[i];
+          break;
         }
       } catch (err) {
         logger.warn('PDF extraction attempt failed', {
@@ -247,11 +244,43 @@ async function extractTextFromBuffer(
       }
     }
 
-    // No text from either library: try OCR on rendered pages (image-based/scanned PDF)
-    const ocrText = await tryPdfOcrFallback(buffer, name);
-    if (ocrText) return ocrText;
+    // Log extraction result (high-signal for Cloud Run debugging)
+    const extractedTextChars = extractedText ? extractedText.length : 0;
+    const isScannedHeuristic = extractedTextChars < MIN_PDF_TEXT_CHARS_FOR_SUCCESS;
+    logger.info('PDF extraction result', {
+      operation: 'file_analysis_pdf_result',
+      fileName: name,
+      extractedTextChars,
+      extractionLibrary: extractionLibrary ?? 'none',
+      isScannedHeuristic,
+      bufferBytes: buffer.length,
+    });
 
-    return `(No text could be extracted from "${name}". The PDF may be scanned or image-only. Tell the user you could not read its contents and suggest they share a text-based PDF or describe the document.)`;
+    // If we got enough text, use it
+    if (extractedText && extractedTextChars >= MIN_PDF_TEXT_CHARS_FOR_SUCCESS) {
+      const truncated = extractedText.length > MAX_SUMMARY_CHARS
+        ? extractedText.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
+        : extractedText;
+      return truncated;
+    }
+
+    // No text or very little text: try OCR (image-based/scanned PDF)
+    logger.info('PDF text insufficient, attempting OCR fallback', {
+      operation: 'file_analysis_pdf_ocr_attempt',
+      fileName: name,
+      extractedTextChars,
+    });
+    const ocrText = await tryPdfOcrFallback(buffer, name);
+    if (ocrText) {
+      logger.info('PDF OCR fallback succeeded', {
+        operation: 'file_analysis_pdf_ocr_success',
+        fileName: name,
+        ocrTextChars: ocrText.length,
+      });
+      return ocrText;
+    }
+
+    return `(No text could be extracted from "${name}". The PDF may be scanned or image-only. INSTRUCTION: Tell the user you could not read this file's contents. Suggest they share a text-based PDF or describe the document. Do NOT say the file is "too large" or "exceeds processing capabilities" — the only issue is that no text could be extracted.)`;
   }
 
   // Handle Office documents (Word, Excel, PowerPoint)
@@ -367,7 +396,16 @@ export async function getFileSummaries(
       const extension = getExtension(file.name);
       const isImage = IMAGE_EXTENSIONS.has(extension);
       const maxSize = isImage ? MAX_IMAGE_SIZE_BYTES : MAX_FILE_SIZE_BYTES;
-      
+
+      logger.info('File analysis starting', {
+        operation: 'file_analysis_start',
+        fileId: file.id,
+        fileName: file.name,
+        fileSizeBytes: file.size,
+        mimeType: file.type ?? extension,
+        extension,
+      });
+
       if (file.size > maxSize) {
         results.push({
           id: file.id,
@@ -417,6 +455,18 @@ export async function getFileSummaries(
       }
 
       const summary = await extractTextFromBuffer(buffer, extension, file.name);
+
+      const extractedTextChars = summary.startsWith('(') ? 0 : summary.length;
+      const extractedTextIsEmpty = extractedTextChars < MIN_PDF_TEXT_CHARS_FOR_SUCCESS;
+      logger.info('File analysis complete', {
+        operation: 'file_analysis_complete',
+        fileId: file.id,
+        fileName: file.name,
+        summaryLength: summary.length,
+        extractedTextChars,
+        extractedTextIsEmpty,
+        hasErrorPrefix: summary.startsWith('('),
+      });
 
       results.push({
         id: file.id,

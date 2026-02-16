@@ -689,6 +689,7 @@ ${relevantContexts.map((ctx, idx) => {
 
         const header = `\n\nATTACHED FILES CONTEXT:
 The user has attached the following Drive files to this question. **CRITICAL: You MUST read and analyze the content of these files to answer the user's question.** Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer. If the user asks about the file content, you MUST reference specific details from the file content below.
+If a file shows "No text could be extracted" or similar, the only reason is that the PDF is scanned/image-based — do NOT say the file is too large or exceeds processing capabilities. Say only that you could not read its contents and suggest a text-based PDF or that they describe the document.
 `;
         const body = attachedFiles
           .map((file, index) => {
