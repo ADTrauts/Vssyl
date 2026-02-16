@@ -280,7 +280,7 @@ async function extractTextFromBuffer(
       return ocrText;
     }
 
-    return `(No text could be extracted from "${name}". The PDF may be scanned or image-only. INSTRUCTION: Tell the user you could not read this file's contents. Suggest they share a text-based PDF or describe the document. Do NOT say the file is "too large" or "exceeds processing capabilities" — the only issue is that no text could be extracted.)`;
+    return `(No text could be extracted from "${name}" — the PDF is likely scanned or image-only. STRICT INSTRUCTION: Say only that you could not read this file's contents and suggest a text-based PDF or that they describe the document. You must NOT mention: file size, "too large", "exceeds", "processing capabilities", or "limits". The problem is extraction only.)`;
   }
 
   // Handle Office documents (Word, Excel, PowerPoint)
