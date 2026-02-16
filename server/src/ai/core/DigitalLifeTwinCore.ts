@@ -11,7 +11,7 @@ import { logger } from '../../lib/logger';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 
 /** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
-const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60_000;
+const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60000;
 
 export interface DigitalLifeTwinResponse {
   response: string;
@@ -226,10 +226,12 @@ export class DigitalLifeTwinCore {
             createdAt: file.createdAt,
           }));
 
-          // Extract text summaries for AI context
+          // Extract text summaries for AI context (with timeout to prevent blocking)
           try {
             const { getFileSummaries } = await import('../../services/fileAnalysisService');
-            const summaries = await getFileSummaries(
+            
+            // Add timeout wrapper: max 30 seconds for file processing
+            const summariesPromise = getFileSummaries(
               files.map((f) => ({
                 id: f.id,
                 name: f.name,
@@ -239,6 +241,12 @@ export class DigitalLifeTwinCore {
                 type: f.type,
               }))
             );
+            
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error('File analysis timeout after 30 seconds')), 30000);
+            });
+            
+            const summaries = await Promise.race([summariesPromise, timeoutPromise]);
             
             logger.info('File summaries generated', {
               operation: 'digital_life_twin_summaries',
@@ -259,10 +267,14 @@ export class DigitalLifeTwinCore {
             }));
           } catch (summaryError) {
             const err = summaryError instanceof Error ? summaryError : new Error(String(summaryError));
-            logger.error('Error extracting file summaries', {
+            logger.error('Error extracting file summaries (continuing without summaries)', {
               operation: 'digital_life_twin_summary_error',
-              error: { message: err.message, stack: err.stack }
+              error: { message: err.message, stack: err.stack },
+              fileCount: files.length,
+              fileNames: files.map(f => f.name)
             });
+            // Continue without summaries - attachedFiles already has metadata, just no summaries
+            // This allows the AI request to proceed even if file analysis fails
           }
         } else {
           logger.info('No fileIds provided in context', { operation: 'digital_life_twin_files' });
@@ -667,42 +679,65 @@ ${relevantContexts.map((ctx, idx) => {
     // Build attached files section (metadata + content summaries when available). Cap total length for context limit.
     let attachedFilesSection = '';
     if (attachedFiles && attachedFiles.length > 0) {
-      logger.info('Building attached files section for prompt', {
-        operation: 'digital_life_twin_prompt_files',
-        fileCount: attachedFiles.length,
-        filesWithSummaries: attachedFiles.filter(f => f.summary && f.summary.trim()).length,
-        fileNames: attachedFiles.map(f => f.name)
-      });
+      try {
+        logger.info('Building attached files section for prompt', {
+          operation: 'digital_life_twin_prompt_files',
+          fileCount: attachedFiles.length,
+          filesWithSummaries: attachedFiles.filter(f => f.summary && f.summary.trim()).length,
+          fileNames: attachedFiles.map(f => f.name)
+        });
 
-      const header = `\n\nATTACHED FILES CONTEXT:
+        const header = `\n\nATTACHED FILES CONTEXT:
 The user has attached the following Drive files to this question. **CRITICAL: You MUST read and analyze the content of these files to answer the user's question.** Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer. If the user asks about the file content, you MUST reference specific details from the file content below.
 `;
-      const body = attachedFiles
-        .map((file, index) => {
-          const sizeDescription =
-            typeof file.size === 'number'
-              ? `${Math.max(1, Math.round(file.size / 1024))} KB`
-              : 'unknown size';
-          const meta = `${index + 1}. ${file.name} (${sizeDescription})`;
-          if (file.summary && file.summary.trim()) {
-            const summaryText = file.summary.split('\n').join('\n   ');
-            return `${meta}\n   Content/summary:\n   ${summaryText}`;
-          }
-          return meta;
-        })
-        .join('\n\n');
-      const truncationNotice = '\n\n[... file context truncated to stay within model context limit ...]';
-      const maxBodyChars = MAX_ATTACHED_FILES_CONTEXT_CHARS - header.length - truncationNotice.length;
-      const cappedBody = body.length > maxBodyChars
-        ? body.slice(0, maxBodyChars) + truncationNotice
-        : body;
-      attachedFilesSection = header + cappedBody;
+        const body = attachedFiles
+          .map((file, index) => {
+            try {
+              const sizeDescription =
+                typeof file.size === 'number'
+                  ? `${Math.max(1, Math.round(file.size / 1024))} KB`
+                  : 'unknown size';
+              const meta = `${index + 1}. ${file.name || 'unnamed'} (${sizeDescription})`;
+              if (file.summary && typeof file.summary === 'string' && file.summary.trim()) {
+                const summaryText = file.summary.split('\n').join('\n   ');
+                return `${meta}\n   Content/summary:\n   ${summaryText}`;
+              }
+              return meta;
+            } catch (fileErr) {
+              logger.warn('Error formatting file in attached section', {
+                operation: 'digital_life_twin_prompt_files',
+                fileIndex: index,
+                fileName: file.name,
+                error: { message: fileErr instanceof Error ? fileErr.message : 'Unknown error' }
+              });
+              return `${index + 1}. ${file.name || 'unnamed'} (error formatting file)`;
+            }
+          })
+          .join('\n\n');
+        const truncationNotice = '\n\n[... file context truncated to stay within model context limit ...]';
+        const headerLength = header.length;
+        const noticeLength = truncationNotice.length;
+        const maxBodyChars = Math.max(0, MAX_ATTACHED_FILES_CONTEXT_CHARS - headerLength - noticeLength);
+        const cappedBody = body.length > maxBodyChars
+          ? body.slice(0, maxBodyChars) + truncationNotice
+          : body;
+        attachedFilesSection = header + cappedBody;
 
-      logger.info('Attached files section built', {
-        operation: 'digital_life_twin_prompt_files',
-        sectionLength: attachedFilesSection.length,
-        truncated: body.length > maxBodyChars
-      });
+        logger.info('Attached files section built', {
+          operation: 'digital_life_twin_prompt_files',
+          sectionLength: attachedFilesSection.length,
+          truncated: body.length > maxBodyChars,
+          maxBodyChars,
+          originalBodyLength: body.length
+        });
+      } catch (filesSectionErr) {
+        logger.error('Error building attached files section', {
+          operation: 'digital_life_twin_prompt_files_error',
+          error: { message: filesSectionErr instanceof Error ? filesSectionErr.message : 'Unknown error', stack: filesSectionErr instanceof Error ? filesSectionErr.stack : undefined }
+        });
+        // Continue without attached files section rather than failing the entire request
+        attachedFilesSection = '';
+      }
     }
 
     return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
