@@ -476,8 +476,8 @@ const VISION_IMAGE_MAX_DIMENSION = 1024;
 /** JPEG quality when converting for vision (balance quality vs size).
  * Reduced to 75% to reduce file size and token count. */
 const VISION_IMAGE_JPEG_QUALITY = 75;
-/** Max base64 size (after encoding) - hard cap to avoid TPM limits. ~1MB base64 ≈ 750KB binary. */
-const MAX_VISION_BASE64_BYTES = 1024 * 1024; // 1 MB base64
+/** Max base64 size (after encoding). 5 MB matches Anthropic limits; OpenAI allows ~20 MB. Resize logic keeps output reasonable. */
+const MAX_VISION_BASE64_BYTES = 5 * 1024 * 1024; // 5 MB base64
 
 async function resizeImageForVision(
   buffer: Buffer,
@@ -512,10 +512,12 @@ async function resizeImageForVision(
     let quality = VISION_IMAGE_JPEG_QUALITY;
     let dimension = maxDimension;
     
-    // If still too large, reduce quality and dimension iteratively
-    while ((outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) && dimension > 256 && quality > 50) {
-      dimension = Math.max(256, Math.floor(dimension * 0.9)); // Reduce by 10%
-      quality = Math.max(50, quality - 5); // Reduce quality by 5%
+    // If still too large, reduce quality and dimension iteratively (down to 128px and 40% quality)
+    const minDimension = 128;
+    const minQuality = 40;
+    while ((outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) && (dimension > minDimension || quality > minQuality)) {
+      dimension = Math.max(minDimension, Math.floor(dimension * 0.85));
+      quality = Math.max(minQuality, quality - 5);
       outBuffer = await sharp(buffer)
         .resize(dimension, dimension, { fit: 'inside', withoutEnlargement: true })
         .jpeg({ quality })
@@ -523,7 +525,16 @@ async function resizeImageForVision(
       base64Size = Math.ceil(outBuffer.length * 4 / 3);
     }
     
-    // Final check: if still too large, skip this image
+    // Last resort: single small resize if still over
+    if (outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) {
+      outBuffer = await sharp(buffer)
+        .resize(384, 384, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 35 })
+        .toBuffer();
+      base64Size = Math.ceil(outBuffer.length * 4 / 3);
+    }
+    
+    // Only throw if still over (should be rare)
     if (outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) {
       logger.warn('[VISION_PIPELINE] image too large even after aggressive resize', {
         operation: 'vision_image_resize_failed',

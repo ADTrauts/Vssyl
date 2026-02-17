@@ -765,6 +765,16 @@ const isGCS = storageService.isGCSConfigured(); // boolean
 
 ---
 
+## 🤖 AI Vision & Attachments (Cloud Run)
+
+- **When attachments exist**, ensure `getVisionImageParts` is called (in DigitalLifeTwinCore) and **visionImageParts** are passed to the provider; otherwise the model never "sees" images.
+- **Do not assume /uploads exists in Cloud Run.** Use **GCS** and **storageService** for all file reads; path/url must resolve via `resolveStoragePath` and `storageService.getFileBuffer(path)`.
+- **Prefer GCS fetch + /tmp or in-memory processing** for vision (e.g. PDF→image via Poppler under /tmp); no reliance on a persistent local uploads directory.
+- **When adding a new AI provider**, declare vision/image capabilities in `server/src/ai/providers/capabilities.ts` and use the **vision model** when images exist; do not send vision parts to providers that do not support them.
+- **Logging**: Use the `[VISION_PIPELINE]` prefix and log files.length, visionParts.length, model chosen, and request shape (multimodal vs text-only) for repeatable debugging. See `docs/ai/RUNBOOK.md` and `docs/ai/GOLDEN_RULES.md`.
+
+---
+
 ## 🔄 Common Error Prevention
 
 ### Browser Cache Issues

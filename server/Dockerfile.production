@@ -57,14 +57,16 @@ RUN cd server && pnpm build
 # Production stage - minimal image
 FROM node:20-alpine AS production
 
-# Install runtime dependencies for canvas (PDF OCR fallback)
+# Install runtime dependencies for canvas (PDF OCR fallback) and Poppler (PDF→image for vision)
 # Note: canvas native module is pre-built in base stage, but runtime libs are needed
+# poppler-utils provides pdftoppm for rendering PDF pages to PNG (Phase 3 PDF vision)
 RUN apk add --no-cache \
     cairo \
     jpeg \
     pango \
     giflib \
-    librsvg
+    librsvg \
+    poppler-utils
 
 # Install pnpm
 RUN npm install -g pnpm@10.11.0

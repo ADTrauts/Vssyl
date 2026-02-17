@@ -44,11 +44,12 @@ export class OpenAIProvider {
    */
   async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
     const startTime = Date.now();
+    let modelToUse = this.config.model;
 
     try {
       // Check if API key is configured
       if (!this.config.apiKey) {
-        return this.getFallbackResponse(request, 'OpenAI API key not configured');
+        return this.getFallbackResponse(request, 'OpenAI API key not configured', modelToUse);
       }
 
       // Build system prompt with user context
@@ -62,19 +63,22 @@ export class OpenAIProvider {
       const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
       const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete (people, objects, layout); avoid generic phrasing.';
       const userTextWithVision = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
-      const userContent: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = hasVision
+      const userContent: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'auto' | 'high' } }> = hasVision
         ? [
             { type: 'text', text: userTextWithVision },
             ...visionParts.map((p) => ({
               type: 'image_url' as const,
-              image_url: { url: `data:${p.mimeType};base64,${p.dataBase64}` },
+              image_url: {
+                url: `data:${p.mimeType};base64,${p.dataBase64}`,
+                detail: 'low' as const, // Reduces latency and rate-limit (TPM) pressure
+              },
             })),
           ]
         : userPrompt;
 
       const traceContext = data.traceContext as { requestId?: string; conversationId?: string; userId?: string } | undefined;
       const visionModelOverride = data.visionModelOverride as string | undefined;
-      const modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+      modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
       await logger.debug(`${VISION_PIPELINE_PREFIX} provider request shape`, {
         operation: 'vision_pipeline_provider_request',
         requestId: traceContext?.requestId,
@@ -98,6 +102,13 @@ export class OpenAIProvider {
         totalMessageCount,
         userMultimodalMessageIndex: userMessageIndex,
         imageBlocksOrPartsCount: imagePartsCount,
+      });
+
+      logger.info(`${VISION_PIPELINE_PREFIX} sending request`, {
+        operation: 'vision_pipeline_sending',
+        visionParts: Array.isArray(visionParts) ? visionParts.length : 0,
+        model: modelToUse,
+        requestId: traceContext?.requestId,
       });
 
       // Make OpenAI API call (vision-enabled when userContent includes image parts; use vision model when override set)
@@ -154,7 +165,7 @@ export class OpenAIProvider {
         structured: normalized.structured,
         metadata: {
           provider: 'openai',
-          model: this.config.model,
+          model: modelToUse,
           tokens: inputTokens + outputTokens,
           cost,
           processingTime,
@@ -207,7 +218,7 @@ export class OpenAIProvider {
         userMessage = 'OpenAI service is temporarily unavailable. Please try again in a few moments.';
       }
       
-      return this.getFallbackResponse(request, userMessage);
+      return this.getFallbackResponse(request, userMessage, modelToUse);
     }
   }
 
@@ -249,7 +260,7 @@ export class OpenAIProvider {
   /**
    * Generate fallback response when OpenAI is unavailable
    */
-  private getFallbackResponse(request: AIRequest, errorMessage: string): AIResponse {
+  private getFallbackResponse(request: AIRequest, errorMessage: string, modelUsed?: string): AIResponse {
     // Use the error message directly if it's user-friendly, otherwise use generic message
     const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
     const isUnavailable = errorMessage.includes('unavailable') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND');
@@ -275,7 +286,7 @@ export class OpenAIProvider {
       actions: [],
       metadata: {
         provider: 'openai',
-        model: this.config.model,
+        model: modelUsed ?? this.config.model,
         tokens: 0,
         cost: 0,
         processingTime: 0,
