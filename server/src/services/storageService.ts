@@ -334,10 +334,15 @@ export class StorageService {
     const resolved = path.isAbsolute(filePath)
       ? filePath
       : path.join(uploadDir, filePath);
-    if (!fs.existsSync(resolved)) {
-      throw new Error(`File not found: ${resolved}`);
+    try {
+      return await fs.promises.readFile(resolved);
+    } catch (err) {
+      const code = err && typeof err === 'object' && 'code' in err ? (err as NodeJS.ErrnoException).code : undefined;
+      if (code === 'ENOENT') {
+        throw new Error(`File not found: ${resolved}`);
+      }
+      throw err;
     }
-    return fs.readFileSync(resolved);
   }
 
   /**

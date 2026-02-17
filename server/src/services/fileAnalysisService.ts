@@ -563,11 +563,15 @@ export async function getVisionImageParts(
       continue;
     }
     try {
+      const t0_fetch = Date.now();
       let buffer = await storageService.getFileBuffer(storagePath);
+      const fetch_ms = Date.now() - t0_fetch;
       let mimeType = EXT_TO_MIME[extension] ?? 'image/jpeg';
+      const t0_resize = Date.now();
       const resized = await resizeImageForVision(buffer, mimeType, file.name, VISION_IMAGE_MAX_DIMENSION, maxSizePerPartBytes);
       buffer = resized.buffer;
       mimeType = resized.mimeType;
+      const resize_ms = Date.now() - t0_resize;
       if (buffer.length > maxSizePerPartBytes) {
         logger.info(`${VISION_PIPELINE} vision skip (resized still too large)`, {
           operation: 'vision_image_parts',
@@ -578,9 +582,12 @@ export async function getVisionImageParts(
         });
         continue;
       }
+      const t0_base64 = Date.now();
+      const dataBase64 = buffer.toString('base64');
+      const base64_ms = Date.now() - t0_base64;
       parts.push({
         mimeType,
-        dataBase64: buffer.toString('base64'),
+        dataBase64,
         fileName: file.name,
       });
       logger.info(`${VISION_PIPELINE} vision image part added`, {
@@ -588,6 +595,10 @@ export async function getVisionImageParts(
         fileName: file.name,
         sizeBytes: buffer.length,
         mimeType,
+        fetch_ms,
+        resize_ms,
+        base64_ms,
+        dataBase64Length: dataBase64.length,
       });
     } catch (err) {
       logger.warn(`${VISION_PIPELINE} vision skip (getFileBuffer failed)`, {
@@ -785,6 +796,21 @@ export async function getFileSummaries(
           name: file.name,
           summary: `(File exceeds size limit: ${file.name}, ${Math.round(file.size / 1024)} KB. Max: ${Math.round(maxSize / 1024)} KB)`,
           fileIssueCode: 'FILE_TOO_LARGE_POLICY',
+        });
+        continue;
+      }
+
+      // Skip fetch + OCR for image files: vision pipeline will send image to model; avoid double GCS fetch and heavy OCR
+      if (isImage) {
+        results.push({
+          id: file.id,
+          name: file.name,
+          summary: '(Image attached; vision will be used to describe it.)',
+        });
+        logger.info('File analysis skipped (image – vision path)', {
+          operation: 'file_analysis_skip_image',
+          fileId: file.id,
+          fileName: file.name,
         });
         continue;
       }

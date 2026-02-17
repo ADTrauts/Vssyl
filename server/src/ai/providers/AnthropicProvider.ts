@@ -30,6 +30,8 @@ export class AnthropicProvider {
 
     this.client = new Anthropic({
       apiKey: this.config.apiKey,
+      timeout: 120000, // 120 seconds timeout for API calls (2 minutes max)
+      maxRetries: 2, // Retry up to 2 times on transient errors
     });
   }
 
@@ -105,13 +107,21 @@ export class AnthropicProvider {
       });
 
       // Make Anthropic API call (vision-enabled when userContent includes image blocks; use vision model when override set)
-      const response = await this.client.messages.create({
+      // Add explicit timeout wrapper for additional safety (120 seconds max)
+      const timeoutMs = 120000; // 2 minutes
+      const apiCallPromise = this.client.messages.create({
         model: modelToUse,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
         system: systemPrompt,
         messages,
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`Anthropic API request timed out after ${timeoutMs / 1000} seconds`)), timeoutMs);
+      });
+      
+      const response = await Promise.race([apiCallPromise, timeoutPromise]);
 
       const content = response.content[0];
       if (content.type !== 'text') {
@@ -157,14 +167,38 @@ export class AnthropicProvider {
       };
 
     } catch (error) {
-      console.error('Anthropic processing error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+      const isUnavailable = errorMessage.includes('unavailable') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND');
+      
+      await logger.error('Anthropic processing error', {
+        operation: 'anthropic_provider_error',
+        error: { 
+          message: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          code: error instanceof Error && 'code' in error ? String(error.code) : undefined,
+        },
+        isTimeout,
+        isUnavailable,
+        requestId: request.id,
+      });
+      
+      // Provide user-friendly error message
+      let responseText: string;
+      if (isTimeout) {
+        responseText = 'The AI request timed out. This can happen with large files or when the AI service is slow. Please try again with a smaller file or simpler query.';
+      } else if (isUnavailable) {
+        responseText = 'Anthropic service is temporarily unavailable. Please try again in a few moments.';
+      } else {
+        responseText = 'I apologize, but I encountered an error during analysis. Please try again.';
+      }
       
       return {
         id: this.generateResponseId(),
         requestId: request.id,
-        response: 'I apologize, but I encountered an error during analysis. Please try again.',
+        response: responseText,
         confidence: 0,
-        reasoning: 'Analysis error occurred',
+        reasoning: `Analysis error occurred: ${errorMessage}`,
         actions: [],
         metadata: {
           provider: 'anthropic',
@@ -172,7 +206,7 @@ export class AnthropicProvider {
           tokens: 0,
           cost: 0,
           processingTime: Date.now() - startTime,
-          error: error instanceof Error ? error.message : 'Unknown error occurred'
+          error: errorMessage
         }
       };
     }

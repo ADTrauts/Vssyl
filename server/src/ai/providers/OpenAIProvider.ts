@@ -34,6 +34,8 @@ export class OpenAIProvider {
 
     this.client = new OpenAI({
       apiKey: this.config.apiKey || 'dummy-key',
+      timeout: 120000, // 120 seconds timeout for API calls (2 minutes max)
+      maxRetries: 2, // Retry up to 2 times on transient errors
     });
   }
 
@@ -99,7 +101,9 @@ export class OpenAIProvider {
       });
 
       // Make OpenAI API call (vision-enabled when userContent includes image parts; use vision model when override set)
-      const completion = await this.client.chat.completions.create({
+      // Add explicit timeout wrapper for additional safety (120 seconds max)
+      const timeoutMs = 120000; // 2 minutes
+      const apiCallPromise = this.client.chat.completions.create({
         model: modelToUse,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -109,6 +113,12 @@ export class OpenAIProvider {
         temperature: this.config.temperature,
         response_format: { type: 'json_object' },
       });
+      
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`OpenAI API request timed out after ${timeoutMs / 1000} seconds`)), timeoutMs);
+      });
+      
+      const completion = await Promise.race([apiCallPromise, timeoutPromise]);
 
       const response = completion.choices[0]?.message?.content;
       if (!response) {
@@ -154,8 +164,42 @@ export class OpenAIProvider {
       };
 
     } catch (error) {
-      console.error('OpenAI processing error:', error);
-      return this.getFallbackResponse(request, error instanceof Error ? error.message : 'Unknown error');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+      const isUnavailable = errorMessage.includes('unavailable') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND');
+      const visionParts = data.visionImageParts as Array<{ dataBase64?: string }> | undefined;
+      const visionPayloadChars = Array.isArray(visionParts) ? visionParts.reduce((s, p) => s + (p.dataBase64?.length ?? 0), 0) : 0;
+      const errObj = error as Record<string, unknown> | undefined;
+      const httpStatus = errObj?.status ?? errObj?.statusCode ?? (errObj?.response && typeof errObj.response === 'object' && 'status' in errObj.response ? (errObj.response as { status?: number }).status : undefined);
+      const openaiCode = errObj?.code ?? (errObj?.error && typeof errObj.error === 'object' && 'code' in errObj.error ? (errObj.error as { code?: string }).code : undefined);
+      const openaiType = errObj?.type ?? (errObj?.error && typeof errObj.error === 'object' && 'type' in errObj.error ? (errObj.error as { type?: string }).type : undefined);
+      
+      await logger.error('OpenAI processing error', {
+        operation: 'openai_provider_error',
+        error: { 
+          message: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          code: error instanceof Error && 'code' in error ? String(error.code) : undefined,
+        },
+        httpStatus,
+        openaiCode,
+        openaiType,
+        visionPartsCount: Array.isArray(visionParts) ? visionParts.length : 0,
+        visionPayloadChars,
+        isTimeout,
+        isUnavailable,
+        requestId: request.id,
+      });
+      
+      // Provide user-friendly error message
+      let userMessage = errorMessage;
+      if (isTimeout) {
+        userMessage = 'The AI request timed out. Please try again with a smaller file or simpler query.';
+      } else if (isUnavailable) {
+        userMessage = 'OpenAI service is temporarily unavailable. Please try again in a few moments.';
+      }
+      
+      return this.getFallbackResponse(request, userMessage);
     }
   }
 
@@ -198,12 +242,28 @@ export class OpenAIProvider {
    * Generate fallback response when OpenAI is unavailable
    */
   private getFallbackResponse(request: AIRequest, errorMessage: string): AIResponse {
+    // Use the error message directly if it's user-friendly, otherwise use generic message
+    const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+    const isUnavailable = errorMessage.includes('unavailable') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND');
+    
+    let responseText: string;
+    if (isTimeout) {
+      responseText = 'I apologize, but the request timed out. This can happen with large files or when the AI service is slow. Please try again with a smaller file or simpler query.';
+    } else if (isUnavailable) {
+      responseText = 'I understand your request, but OpenAI is temporarily unavailable. Please try again in a few moments.';
+    } else if (errorMessage && !errorMessage.includes('API key')) {
+      // Use the error message if it's informative and not about API key
+      responseText = `I encountered an issue: ${errorMessage}. Please try again.`;
+    } else {
+      responseText = 'I understand your request and I\'m working to provide the best response. (OpenAI temporarily unavailable)';
+    }
+    
     return {
       id: this.generateResponseId(),
       requestId: request.id,
-      response: 'I understand your request and I\'m working to provide the best response. (OpenAI temporarily unavailable)',
+      response: responseText,
       confidence: 0.6,
-      reasoning: 'Fallback response due to OpenAI API issue',
+      reasoning: `Fallback response due to OpenAI API issue: ${errorMessage}`,
       actions: [],
       metadata: {
         provider: 'openai',

@@ -206,6 +206,7 @@ export class DigitalLifeTwinCore {
         });
 
         if (contextFileIds.length > 0) {
+          const t0 = Date.now();
           const files = await this.prisma.file.findMany({
             where: {
               id: { in: contextFileIds },
@@ -224,6 +225,15 @@ export class DigitalLifeTwinCore {
               type: true,
               createdAt: true,
             },
+          });
+          const t_findMany_ms = Date.now() - t0;
+          logger.info(`${VISION_PIPELINE_PREFIX} stage=findMany ms=${t_findMany_ms}`, {
+            operation: 'vision_pipeline_timing',
+            stage: 'findMany',
+            ms: t_findMany_ms,
+            requestId,
+            conversationId,
+            fileCount: files.length,
           });
 
           logger.info('Files found in database', {
@@ -252,6 +262,7 @@ export class DigitalLifeTwinCore {
 
           // Extract text summaries for AI context (with timeout to prevent blocking)
           try {
+            const t0_summaries = Date.now();
             const { getFileSummaries } = await import('../../services/fileAnalysisService');
             
             // Add timeout wrapper: max 30 seconds for file processing
@@ -303,12 +314,23 @@ export class DigitalLifeTwinCore {
 
           // Vision API: get image parts for attached image files so the model can "see" them
           try {
+            const t0_vision = Date.now();
             const { getVisionImageParts } = await import('../../services/fileAnalysisService');
+            // Limit to 1 image per message initially to avoid payload/CPU bottlenecks (can bump to 5 later)
             visionImageParts = await getVisionImageParts(
               files.map((f) => ({ id: f.id, name: f.name, path: f.path, url: f.url, size: f.size ?? 0, type: f.type })),
-              5,
+              1,
               5 * 1024 * 1024
             );
+            const t_getVisionImageParts_ms = Date.now() - t0_vision;
+            logger.info(`${VISION_PIPELINE_PREFIX} stage=visionParts ms=${t_getVisionImageParts_ms}`, {
+              operation: 'vision_pipeline_timing',
+              stage: 'visionParts',
+              ms: t_getVisionImageParts_ms,
+              requestId,
+              conversationId,
+              visionPartsCount: visionImageParts.length,
+            });
             await logger.debug(`${VISION_PIPELINE_PREFIX} after getVisionImageParts`, {
               operation: 'vision_pipeline_vision_parts',
               requestId,
@@ -484,6 +506,7 @@ export class DigitalLifeTwinCore {
       const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
       
       // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, attached file context, and vision images)
+      const t0_provider = Date.now();
       const response = await this.generateLifeTwinResponse(
         query,
         userContext,
@@ -497,6 +520,16 @@ export class DigitalLifeTwinCore {
         visionImageParts,
         { requestId, conversationId, userId: query.userId }
       );
+      const t_provider_ms = Date.now() - t0_provider;
+      const t_total_ms = Date.now() - startTime;
+      logger.info(`${VISION_PIPELINE_PREFIX} stage=provider ms=${t_provider_ms} stage=total ms=${t_total_ms}`, {
+        operation: 'vision_pipeline_timing',
+        stage: 'provider_and_total',
+        t_provider_ms,
+        t_total_ms,
+        requestId,
+        conversationId,
+      });
       
       // 5. Identify cross-module connections and opportunities (with error handling)
       let connections: CrossModuleConnection[] = [];
