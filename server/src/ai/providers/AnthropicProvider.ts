@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
+import { logger } from '../../lib/logger';
+
+const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 
 export interface AnthropicConfig {
   apiKey: string;
@@ -48,10 +51,20 @@ export class AnthropicProvider {
       const allowedMediaTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
       const supportedParts = Array.isArray(visionParts) ? visionParts.filter((p) => allowedMediaTypes.has(p.mimeType)) : [];
       const hasVision = supportedParts.length > 0;
+      if (Array.isArray(visionParts) && visionParts.length > 0 && supportedParts.length === 0) {
+        await logger.debug(`${VISION_PIPELINE_PREFIX} vision fallback: no supported image types, using text only`, {
+          operation: 'vision_pipeline_fallback',
+          provider: 'anthropic',
+          requestedCount: visionParts.length,
+          mimeTypes: visionParts.map((p) => p.mimeType),
+        });
+      }
+      const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete (people, objects, layout); avoid generic phrasing.';
+      const userTextWithVision = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
       type AnthropicImageBlock = { type: 'image'; source: { type: 'base64'; media_type: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; data: string } };
       const userContent: Array<{ type: 'text'; text: string } | AnthropicImageBlock> = hasVision
         ? [
-            { type: 'text', text: userPrompt },
+            { type: 'text', text: userTextWithVision },
             ...supportedParts.map((p): AnthropicImageBlock => ({
               type: 'image',
               source: {
@@ -61,15 +74,43 @@ export class AnthropicProvider {
               },
             })),
           ]
-        : [{ type: 'text', text: userPrompt }];
+        : [{ type: 'text', text: userTextWithVision }];
 
-      // Make Anthropic API call (vision-enabled when userContent includes image blocks)
+      const traceContext = data.traceContext as { requestId?: string; conversationId?: string; userId?: string } | undefined;
+      const visionModelOverride = data.visionModelOverride as string | undefined;
+      const modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+      await logger.debug(`${VISION_PIPELINE_PREFIX} provider request shape`, {
+        operation: 'vision_pipeline_provider_request',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider: 'anthropic',
+        hasVision,
+        visionPartsLength: supportedParts.length,
+        model: modelToUse,
+        contentType: typeof userContent,
+        isMultimodal: Array.isArray(userContent) && userContent.some((p) => p && typeof p === 'object' && (p as { type?: string }).type === 'image'),
+      });
+
+      const messages = [{ role: 'user' as const, content: userContent }];
+      const userMessageIndex = 0;
+      const imagePartsCount = userContent.filter((p) => p && typeof p === 'object' && (p as { type?: string }).type === 'image').length;
+      await logger.debug(`${VISION_PIPELINE_PREFIX} provider final payload shape`, {
+        operation: 'vision_pipeline_final_payload',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider: 'anthropic',
+        totalMessageCount: messages.length,
+        userMultimodalMessageIndex: userMessageIndex,
+        imageBlocksOrPartsCount: imagePartsCount,
+      });
+
+      // Make Anthropic API call (vision-enabled when userContent includes image blocks; use vision model when override set)
       const response = await this.client.messages.create({
-        model: this.config.model,
+        model: modelToUse,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userContent }],
+        messages,
       });
 
       const content = response.content[0];

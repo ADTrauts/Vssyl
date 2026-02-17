@@ -6,9 +6,14 @@ import { AdvancedLearningEngine } from '../learning/AdvancedLearningEngine';
 import { ActionExecutor } from './ActionExecutor';
 import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
 import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine';
+import { randomUUID } from 'crypto';
 import { prisma as sharedPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import type { StructuredAIResponse } from '../types/structuredResponse';
+import type { FileIssue } from '../types/fileIssues';
+import { getMessageForCode } from '../types/fileIssues';
+
+const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 
 /** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
 const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60000;
@@ -23,6 +28,10 @@ export interface DigitalLifeTwinResponse {
   crossModuleConnections: CrossModuleConnection[];
   /** When set, frontend should use AIResponseRenderer for polished section/action UI */
   structured?: StructuredAIResponse;
+  /** Phase 5: deterministic file/attachment issues for UI to render (message is user-facing). */
+  fileIssues?: FileIssue[];
+  /** Optional: true when the model used vision parts (images) in this reply; UI can show "Image used in this reply". */
+  usedVisionParts?: boolean;
   metadata: {
     contextUsed: string[];
     modulesFocused: string[];
@@ -147,6 +156,9 @@ export class DigitalLifeTwinCore {
    */
   async processAsDigitalTwin(query: LifeTwinQuery): Promise<DigitalLifeTwinResponse> {
     const startTime = Date.now();
+    const requestId = randomUUID();
+    const context = query.context as Record<string, unknown> | undefined;
+    const conversationId = (context?.conversationId != null && typeof context.conversationId === 'string') ? context.conversationId : undefined;
 
     try {
       // Validate input
@@ -179,6 +191,8 @@ export class DigitalLifeTwinCore {
       // 1a. Get context for attached Drive files (metadata + content summaries) and vision image parts
       let attachedFiles: AttachedFileContext[] = [];
       let visionImageParts: Array<{ mimeType: string; dataBase64: string; fileName: string }> = [];
+      /** Phase 5: collect file analysis results so we can build fileIssues for the response */
+      let fileAnalysisResults: Array<{ id: string; name: string; summary: string; fileIssueCode?: string }> = [];
       try {
         const contextFileIds = Array.isArray(query.context.fileIds)
           ? query.context.fileIds.filter((id): id is string => typeof id === 'string')
@@ -218,6 +232,15 @@ export class DigitalLifeTwinCore {
             foundCount: files.length,
             fileNames: files.map(f => f.name),
             fileTypes: files.map(f => f.type)
+          });
+
+          await logger.debug(`${VISION_PIPELINE_PREFIX} after fetch files`, {
+            operation: 'vision_pipeline_files',
+            requestId,
+            conversationId,
+            userId: query.userId,
+            filesLength: files.length,
+            files: files.map((f) => ({ id: f.id, name: f.name, type: f.type, size: f.size, hasPath: !!f.path, hasUrl: !!f.url })),
           });
 
           attachedFiles = files.map((file) => ({
@@ -276,6 +299,76 @@ export class DigitalLifeTwinCore {
             });
             // Continue without summaries - attachedFiles already has metadata, just no summaries
             // This allows the AI request to proceed even if file analysis fails
+          }
+
+          // Vision API: get image parts for attached image files so the model can "see" them
+          try {
+            const { getVisionImageParts } = await import('../../services/fileAnalysisService');
+            visionImageParts = await getVisionImageParts(
+              files.map((f) => ({ id: f.id, name: f.name, path: f.path, url: f.url, size: f.size ?? 0, type: f.type })),
+              5,
+              5 * 1024 * 1024
+            );
+            await logger.debug(`${VISION_PIPELINE_PREFIX} after getVisionImageParts`, {
+              operation: 'vision_pipeline_vision_parts',
+              requestId,
+              conversationId,
+              userId: query.userId,
+              visionImagePartsLength: visionImageParts.length,
+              fileNames: visionImageParts.map((p) => p.fileName),
+              mimeTypes: visionImageParts.map((p) => p.mimeType),
+            });
+
+            // Phase 3: image-based PDFs – render PDF pages to images when summary is short and we have vision slots
+            try {
+              const { getPdfVisionParts } = await import('../../services/fileAnalysisService');
+              const summaryMapForPdf = new Map(
+                    (attachedFiles ?? [])
+                      .filter((f) => f.summary != null)
+                      .map((f) => [f.id, f.summary as string])
+                  );
+              for (const file of files) {
+                if (visionImageParts.length >= 5) break;
+                const name = (file.name ?? '').toLowerCase();
+                if (!name.endsWith('.pdf')) continue;
+                const summary = summaryMapForPdf.get(file.id);
+                const pdfParts = await getPdfVisionParts(
+                  { id: file.id, name: file.name ?? '', path: file.path, url: file.url, size: file.size ?? 0, type: file.type },
+                  summary,
+                  visionImageParts.length,
+                  5
+                );
+                for (const p of pdfParts) {
+                  visionImageParts.push(p);
+                  if (visionImageParts.length >= 5) break;
+                }
+              }
+              if (visionImageParts.length > 0) {
+                await logger.debug(`${VISION_PIPELINE_PREFIX} after PDF vision`, {
+                  operation: 'vision_pipeline_pdf_vision',
+                  requestId,
+                  conversationId,
+                  visionImagePartsLength: visionImageParts.length,
+                  fileNames: visionImageParts.map((p) => p.fileName),
+                });
+              }
+            } catch (pdfVisionErr) {
+              const err = pdfVisionErr instanceof Error ? pdfVisionErr : new Error(String(pdfVisionErr));
+              logger.warn('PDF vision parts failed (continuing with image parts only)', {
+                operation: 'vision_pipeline_pdf_vision_error',
+                requestId,
+                conversationId,
+                error: { message: err.message },
+              });
+            }
+          } catch (visionErr) {
+            const err = visionErr instanceof Error ? visionErr : new Error(String(visionErr));
+            logger.warn('Failed to get vision image parts (continuing without)', {
+              operation: 'vision_pipeline_vision_parts_error',
+              requestId,
+              conversationId,
+              error: { message: err.message },
+            });
           }
         } else {
           logger.info('No fileIds provided in context', { operation: 'digital_life_twin_files' });
@@ -401,7 +494,8 @@ export class DigitalLifeTwinCore {
         userDefinedContext,
         globalPatterns,
         attachedFiles,
-        visionImageParts
+        visionImageParts,
+        { requestId, conversationId, userId: query.userId }
       );
       
       // 5. Identify cross-module connections and opportunities (with error handling)
@@ -472,6 +566,17 @@ export class DigitalLifeTwinCore {
 
       const processingTime = Date.now() - startTime;
 
+      const includeDeveloperDetails = process.env.INCLUDE_FILE_ISSUE_DEVELOPER_DETAILS === 'true';
+      const fileIssues: FileIssue[] = fileAnalysisResults
+        .filter((r) => r.fileIssueCode)
+        .map((r) => ({
+          fileId: r.id,
+          code: r.fileIssueCode as FileIssue['code'],
+          message: getMessageForCode(r.fileIssueCode as FileIssue['code']),
+          details: r.name,
+          ...(includeDeveloperDetails && { developerDetails: r.summary }),
+        }));
+
       return {
         response: response.response,
         confidence: response.confidence,
@@ -481,6 +586,8 @@ export class DigitalLifeTwinCore {
         personalityAlignment,
         crossModuleConnections: connections,
         structured: response.structured as StructuredAIResponse | undefined,
+        ...(fileIssues.length > 0 && { fileIssues }),
+        ...(response.usedVisionParts && { usedVisionParts: true }),
         metadata: {
           contextUsed: Object.keys(userContext),
           modulesFocused: response.modulesFocused || [],
@@ -514,6 +621,7 @@ export class DigitalLifeTwinCore {
         reasoning: "Limited context due to system error",
         personalityAlignment: 0.5,
         crossModuleConnections: [],
+        fileIssues: [],
         metadata: {
           contextUsed: [],
           modulesFocused: [],
@@ -577,7 +685,8 @@ export class DigitalLifeTwinCore {
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
     attachedFiles?: AttachedFileContext[],
-    visionImageParts?: Array<{ mimeType: string; dataBase64: string; fileName: string }>
+    visionImageParts?: Array<{ mimeType: string; dataBase64: string; fileName: string }>,
+    traceContext?: { requestId?: string; conversationId?: string; userId?: string }
   ) {
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
     const prompt = this.buildDigitalTwinPrompt(
@@ -614,17 +723,66 @@ export class DigitalLifeTwinCore {
       preferredProvider
     );
     
-    // Generate response
-    const aiResponse = await this.callAIProvider(provider, prompt, {
+    // Build options for provider (include visionImageParts when present for multimodal requests)
+    const options: Record<string, unknown> = {
       temperature: 0.7,
       maxTokens: 1000,
       personalityMode: true,
-      userId: query.userId
+      userId: query.userId,
+    };
+    if (visionImageParts && visionImageParts.length > 0) {
+      options.visionImageParts = visionImageParts;
+    }
+    if (traceContext) {
+      options.traceContext = traceContext;
+    }
+
+    // Phase 4: capability-aware vision — ensure vision model when images present, log model, strip vision for local
+    const visionParts = options.visionImageParts as unknown[] | undefined;
+    const hasVisionParts = Array.isArray(visionParts) && visionParts.length > 0;
+    if (hasVisionParts) {
+      const { getProviderCapabilities } = await import('../providers/capabilities');
+      const caps = getProviderCapabilities(provider as 'openai' | 'anthropic' | 'local');
+      if (caps.supportsVisionInput && caps.visionModel) {
+        options.visionModelOverride = caps.visionModel;
+        await logger.info(`${VISION_PIPELINE_PREFIX} vision request → model`, {
+          operation: 'vision_pipeline_model_selection',
+          requestId: traceContext?.requestId,
+          conversationId: traceContext?.conversationId,
+          provider,
+          model: caps.visionModel,
+          visionPartsCount: visionParts.length,
+        });
+      } else {
+        await logger.info(`${VISION_PIPELINE_PREFIX} vision not supported by provider, using file summaries only`, {
+          operation: 'vision_pipeline_no_vision',
+          requestId: traceContext?.requestId,
+          conversationId: traceContext?.conversationId,
+          provider,
+        });
+        delete options.visionImageParts;
+      }
+    }
+
+    // Phase 0.15: providerData trace before callAIProvider
+    const dataKeys = Object.keys(options);
+    await logger.debug(`${VISION_PIPELINE_PREFIX} providerData trace`, {
+      operation: 'vision_pipeline_provider_data',
+      requestId: traceContext?.requestId,
+      conversationId: traceContext?.conversationId,
+      userId: traceContext?.userId,
+      provider,
+      dataKeys,
+      visionImagePartsLength: (options.visionImageParts as unknown[] | undefined)?.length ?? 0,
     });
+
+    // Generate response
+    const aiResponse = await this.callAIProvider(provider, prompt, options);
     
     const response = typeof aiResponse.response === 'string' ? aiResponse.response : String(aiResponse.response || '');
     const confidence = typeof aiResponse.confidence === 'number' ? aiResponse.confidence : 0.5;
     const reasoning = typeof aiResponse.reasoning === 'string' ? aiResponse.reasoning : "Generated based on your digital life patterns and personality";
+    const usedVisionParts = (options.visionImageParts as unknown[] | undefined)?.length ? (options.visionImageParts as unknown[]).length > 0 : false;
     
     return {
       response,
@@ -633,7 +791,8 @@ export class DigitalLifeTwinCore {
       modulesFocused: (analysis as any)?.scope?.modules || [],
       patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
       provider,
-      structured: aiResponse.structured
+      structured: aiResponse.structured,
+      usedVisionParts,
     };
   }
 
@@ -1245,13 +1404,20 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         autonomySettings: {}
       };
 
-      // Call the appropriate provider (pass options as data so providers can use visionImageParts)
+      // Call the appropriate provider (pass options as data so providers can use visionImageParts and traceContext)
       let response;
       const aiRequestTyped = aiRequest as any; // AI request structures are runtime-determined
       const userContextTyped = userContext as any; // User context structures are runtime-determined
-      const providerData = (options?.visionImageParts && Array.isArray(options.visionImageParts) && (options.visionImageParts as unknown[]).length > 0)
-        ? { visionImageParts: options.visionImageParts }
-        : {};
+      const providerData: Record<string, unknown> = {};
+      if (options?.visionImageParts && Array.isArray(options.visionImageParts) && (options.visionImageParts as unknown[]).length > 0) {
+        providerData.visionImageParts = options.visionImageParts;
+      }
+      if (options?.traceContext && typeof options.traceContext === 'object') {
+        providerData.traceContext = options.traceContext;
+      }
+      if (options?.visionModelOverride && typeof options.visionModelOverride === 'string') {
+        providerData.visionModelOverride = options.visionModelOverride;
+      }
       if (provider === 'openai') {
         const openaiProvider = new OpenAIProvider();
         response = await openaiProvider.process(aiRequestTyped, userContextTyped, providerData);
@@ -1260,7 +1426,9 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         response = await anthropicProvider.process(aiRequestTyped, userContextTyped, providerData);
       } else {
         const localProvider = new LocalProvider();
-        response = await localProvider.process(aiRequestTyped, userContextTyped, {});
+        // LocalProvider does not support vision; pass only traceContext so logging still works
+        const localData = providerData.traceContext ? { traceContext: providerData.traceContext } : {};
+        response = await localProvider.process(aiRequestTyped, userContextTyped, localData);
       }
 
       return {

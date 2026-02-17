@@ -194,7 +194,9 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         crossModuleConnections: response.crossModuleConnections,
         structured: response.structured,
         metadata: response.metadata,
-        queryBalance
+        queryBalance,
+        ...(response.fileIssues && response.fileIssues.length > 0 && { fileIssues: response.fileIssues }),
+        ...(response.usedVisionParts && { usedVisionParts: true }),
       }
     });
   } catch (error) {
@@ -202,6 +204,50 @@ router.post('/twin', authenticateJWT, async (req, res) => {
     res.status(500).json({
       error: 'Failed to process Digital Life Twin request',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+  }
+});
+
+/**
+ * POST /api/ai/generate-image
+ * Generate image using DALL·E 3 (OpenAI). Requires OPENAI_API_KEY.
+ */
+router.post('/generate-image', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    const { prompt, size, quality } = req.body;
+    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: 'prompt is required and must be a non-empty string' });
+    }
+    const { OpenAIProvider } = await import('../ai/providers/OpenAIProvider');
+    const { getProviderCapabilities } = await import('../ai/providers/capabilities');
+    const caps = getProviderCapabilities('openai');
+    if (!caps.supportsImageGeneration) {
+      return res.status(501).json({ error: 'Image generation not supported by current provider' });
+    }
+    const provider = new OpenAIProvider();
+    const result = await provider.generateImage(prompt.trim(), {
+      size: size === '1024x1792' || size === '1792x1024' ? size : '1024x1024',
+      quality: quality === 'hd' ? 'hd' : 'standard',
+    });
+    if (result.error) {
+      return res.status(502).json({ success: false, error: result.error });
+    }
+    res.json({
+      success: true,
+      data: {
+        url: result.url,
+        revisedPrompt: result.revisedPrompt,
+      },
+    });
+  } catch (error) {
+    console.error('Generate image error:', error);
+    res.status(500).json({
+      error: 'Failed to generate image',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
     });
   }
 });

@@ -1,6 +1,9 @@
 import OpenAI from 'openai';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
+import { logger } from '../../lib/logger';
+
+const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 
 export interface OpenAIConfig {
   apiKey: string;
@@ -55,9 +58,11 @@ export class OpenAIProvider {
       // Multimodal: when vision image parts are present, send text + images so the model can "see" attached images
       const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64: string; fileName: string }> | undefined;
       const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
+      const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete (people, objects, layout); avoid generic phrasing.';
+      const userTextWithVision = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
       const userContent: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }> = hasVision
         ? [
-            { type: 'text', text: userPrompt },
+            { type: 'text', text: userTextWithVision },
             ...visionParts.map((p) => ({
               type: 'image_url' as const,
               image_url: { url: `data:${p.mimeType};base64,${p.dataBase64}` },
@@ -65,9 +70,37 @@ export class OpenAIProvider {
           ]
         : userPrompt;
 
-      // Make OpenAI API call (vision-enabled when userContent includes image parts)
+      const traceContext = data.traceContext as { requestId?: string; conversationId?: string; userId?: string } | undefined;
+      const visionModelOverride = data.visionModelOverride as string | undefined;
+      const modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+      await logger.debug(`${VISION_PIPELINE_PREFIX} provider request shape`, {
+        operation: 'vision_pipeline_provider_request',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider: 'openai',
+        hasVision,
+        visionPartsLength: Array.isArray(visionParts) ? visionParts.length : 0,
+        model: modelToUse,
+        contentType: typeof userContent,
+        isMultimodal: Array.isArray(userContent),
+      });
+
+      const totalMessageCount = 2;
+      const userMessageIndex = 1;
+      const imagePartsCount = Array.isArray(userContent) ? userContent.filter((p) => p && typeof p === 'object' && 'image_url' in p).length : 0;
+      await logger.debug(`${VISION_PIPELINE_PREFIX} provider final payload shape`, {
+        operation: 'vision_pipeline_final_payload',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider: 'openai',
+        totalMessageCount,
+        userMultimodalMessageIndex: userMessageIndex,
+        imageBlocksOrPartsCount: imagePartsCount,
+      });
+
+      // Make OpenAI API call (vision-enabled when userContent includes image parts; use vision model when override set)
       const completion = await this.client.chat.completions.create({
-        model: this.config.model,
+        model: modelToUse,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userContent },
@@ -123,6 +156,41 @@ export class OpenAIProvider {
     } catch (error) {
       console.error('OpenAI processing error:', error);
       return this.getFallbackResponse(request, error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
+
+  /**
+   * Generate image using DALL·E 3 (when supportsImageGeneration is true).
+   * Returns URL or base64; use response_format: 'url' for simplicity.
+   */
+  async generateImage(
+    prompt: string,
+    options?: { size?: '1024x1024' | '1024x1792' | '1792x1024'; quality?: 'standard' | 'hd' }
+  ): Promise<{ url?: string; revisedPrompt?: string; error?: string }> {
+    if (!this.config.apiKey) {
+      return { error: 'OpenAI API key not configured' };
+    }
+    try {
+      const response = await this.client.images.generate({
+        model: 'dall-e-3',
+        prompt: prompt.slice(0, 4000),
+        n: 1,
+        size: options?.size ?? '1024x1024',
+        quality: options?.quality ?? 'standard',
+        response_format: 'url',
+      });
+      const item = response.data?.[0];
+      if (!item || !('url' in item) || typeof item.url !== 'string') {
+        return { error: 'No image URL in response' };
+      }
+      return { url: item.url, revisedPrompt: 'revised_prompt' in item ? String(item.revised_prompt) : undefined };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      logger.warn('DALL·E image generation failed', {
+        operation: 'openai_generate_image',
+        error: { message },
+      });
+      return { error: message };
     }
   }
 

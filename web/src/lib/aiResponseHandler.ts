@@ -5,12 +5,24 @@
 
 import type { StructuredAIResponse } from '../components/ai/AIResponseRenderer';
 
+/** Phase 5: file/attachment issues for UI to render (message is user-facing). */
+export interface FileIssue {
+  fileId: string;
+  code: string;
+  message: string;
+  details?: string;
+  developerDetails?: string;
+}
+
 export interface TwinResponseData {
   response?: string;
   confidence?: number;
   reasoning?: string;
   actions?: unknown[];
   structured?: StructuredAIResponse;
+  fileIssues?: FileIssue[];
+  /** Optional: true when the model used vision parts (images) in this reply; UI shows "Image used in this reply". */
+  usedVisionParts?: boolean;
 }
 
 export interface AIConversationItemBase {
@@ -20,6 +32,9 @@ export interface AIConversationItemBase {
   timestamp: Date;
   confidence: number;
   structured?: StructuredAIResponse;
+  fileIssues?: FileIssue[];
+  /** When true, UI shows "Image used in this reply" badge. */
+  usedVisionParts?: boolean;
   metadata: {
     reasoning?: string;
     actions: unknown[];
@@ -58,6 +73,8 @@ export function buildAIConversationItemFromTwinData(
     timestamp,
     confidence,
     structured: data.structured,
+    fileIssues: Array.isArray(data.fileIssues) ? data.fileIssues : undefined,
+    usedVisionParts: data.usedVisionParts === true,
     metadata: {
       reasoning: data.reasoning,
       actions: Array.isArray(data.actions) ? data.actions : [],

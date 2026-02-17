@@ -18,6 +18,11 @@
  * - Images: .png, .jpg, .jpeg (with OCR)
  */
 
+import { spawn } from 'child_process';
+import { writeFile, readFile, unlink } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import sharp from 'sharp';
 import { logger } from '../lib/logger';
 import { storageService } from './storageService';
 
@@ -170,6 +175,63 @@ async function tryPdfOcrFallback(buffer: Buffer, name: string): Promise<string |
   }
 }
 
+/**
+ * Parse CSV content and format as markdown table for structured AI context.
+ * Handles simple CSV (comma-separated, optional quoted fields). Caps output by maxChars.
+ */
+function parseCsvToMarkdownTable(csv: string, maxChars: number): string | null {
+  try {
+    const lines = csv.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length === 0) return null;
+    const rows: string[][] = [];
+    for (const line of lines) {
+      const row: string[] = [];
+      let i = 0;
+      while (i < line.length) {
+        if (line[i] === '"') {
+          i++;
+          let cell = '';
+          while (i < line.length) {
+            if (line[i] === '"') {
+              i++;
+              if (line[i] === '"') {
+                cell += '"';
+                i++;
+              } else break;
+            } else {
+              cell += line[i];
+              i++;
+            }
+          }
+          row.push(cell.trim());
+        } else {
+          const comma = line.indexOf(',', i);
+          const end = comma >= 0 ? comma : line.length;
+          row.push(line.slice(i, end).trim());
+          i = comma >= 0 ? comma + 1 : line.length;
+        }
+      }
+      rows.push(row);
+    }
+    if (rows.length === 0) return null;
+    const colCount = Math.max(...rows.map((r) => r.length));
+    const header = rows[0];
+    const headerCells = header.concat(Array(colCount - header.length).fill(''));
+    const sep = '| ' + headerCells.map(() => '---').join(' | ') + ' |';
+    let out = '| ' + headerCells.join(' | ') + ' |\n' + sep + '\n';
+    for (let r = 1; r < rows.length && out.length < maxChars - 50; r++) {
+      const cells = rows[r].concat(Array(colCount - rows[r].length).fill(''));
+      out += '| ' + cells.join(' | ') + ' |\n';
+    }
+    if (out.length > maxChars) {
+      out = out.slice(0, maxChars - 20) + '\n\n[... truncated ...]';
+    }
+    return out.trim();
+  } catch {
+    return null;
+  }
+}
+
 async function extractTextFromBuffer(
   buffer: Buffer,
   fileExtension: string,
@@ -178,11 +240,17 @@ async function extractTextFromBuffer(
   // Handle text files
   if (TEXT_EXTENSIONS.has(fileExtension)) {
     try {
-      const text = buffer.toString('utf-8');
+      let text = buffer.toString('utf-8').trim();
+      if (!text) return `(Empty file: ${name})`;
+      // Optional: for CSV, parse and format as markdown table for structured context
+      if (fileExtension === 'csv') {
+        const table = parseCsvToMarkdownTable(text, MAX_SUMMARY_CHARS);
+        if (table) return table;
+      }
       const truncated = text.length > MAX_SUMMARY_CHARS
         ? text.slice(0, MAX_SUMMARY_CHARS) + '\n\n[... truncated ...]'
         : text;
-      return truncated.trim() || `(Empty file: ${name})`;
+      return truncated;
     } catch {
       return `(Could not decode text from ${name})`;
     }
@@ -371,11 +439,15 @@ export interface FileRecordForAnalysis {
   type?: string | null;
 }
 
+import type { FileIssueCode } from '../ai/types/fileIssues';
+
 export interface FileAnalysisResult {
   id: string;
   name: string;
   summary: string;
   truncated?: boolean;
+  /** Set when summary describes a failure; use for fileIssues in API response. */
+  fileIssueCode?: FileIssueCode;
 }
 
 /** Vision API: image part for multimodal prompts (base64 + mime for OpenAI/Anthropic). */
@@ -398,6 +470,54 @@ const EXT_TO_MIME: Record<string, string> = {
 const DEFAULT_MAX_VISION_PARTS = 5;
 /** Max size per image for vision (5 MB). */
 const DEFAULT_MAX_VISION_IMAGE_BYTES = 5 * 1024 * 1024;
+/** Optional: max dimension (longest side) for resizing; reduces tokens/cost. */
+const VISION_IMAGE_MAX_DIMENSION = 1600;
+/** JPEG quality when converting for vision (balance quality vs size). */
+const VISION_IMAGE_JPEG_QUALITY = 85;
+
+async function resizeImageForVision(
+  buffer: Buffer,
+  mimeType: string,
+  fileName: string,
+  maxDimension: number = VISION_IMAGE_MAX_DIMENSION,
+  maxBytes: number = DEFAULT_MAX_VISION_IMAGE_BYTES
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  try {
+    const meta = await sharp(buffer).metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    const needsResize = w > maxDimension || h > maxDimension;
+    if (!needsResize && buffer.length <= maxBytes) return { buffer, mimeType };
+    let outBuffer = await sharp(buffer)
+      .resize(maxDimension, maxDimension, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: VISION_IMAGE_JPEG_QUALITY })
+      .toBuffer();
+    if (outBuffer.length > maxBytes) {
+      const scale = Math.sqrt(maxBytes / outBuffer.length);
+      const smallerDim = Math.max(256, Math.floor(maxDimension * scale));
+      outBuffer = await sharp(buffer)
+        .resize(smallerDim, smallerDim, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: Math.max(60, VISION_IMAGE_JPEG_QUALITY - 20) })
+        .toBuffer();
+    }
+    if (needsResize || outBuffer.length < buffer.length) {
+      logger.debug('[VISION_PIPELINE] image resized for vision', {
+        operation: 'vision_image_resize',
+        fileName,
+        originalBytes: buffer.length,
+        resizedBytes: outBuffer.length,
+      });
+    }
+    return { buffer: outBuffer, mimeType: 'image/jpeg' };
+  } catch (err) {
+    logger.debug('[VISION_PIPELINE] image resize skipped (sharp failed)', {
+      operation: 'vision_image_resize',
+      fileName,
+      error: { message: err instanceof Error ? err.message : 'Unknown error' },
+    });
+    return { buffer, mimeType };
+  }
+}
 
 /**
  * Get image parts for Vision API: fetch image files from storage, return base64 + mime.
@@ -409,44 +529,226 @@ export async function getVisionImageParts(
   maxParts: number = DEFAULT_MAX_VISION_PARTS,
   maxSizePerPartBytes: number = DEFAULT_MAX_VISION_IMAGE_BYTES
 ): Promise<VisionImagePart[]> {
+  const VISION_PIPELINE = '[VISION_PIPELINE]';
   const parts: VisionImagePart[] = [];
   for (const file of files) {
     if (parts.length >= maxParts) break;
     const extension = getExtension(file.name);
-    if (!IMAGE_EXTENSIONS.has(extension)) continue;
-    if (file.size > maxSizePerPartBytes) {
-      logger.info('Skipping image for vision (too large)', {
+    if (!IMAGE_EXTENSIONS.has(extension)) {
+      logger.debug(`${VISION_PIPELINE} vision skip`, {
         operation: 'vision_image_parts',
+        skipReason: 'unsupported_mime',
+        fileName: file.name,
+        extension,
+      });
+      continue;
+    }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      logger.info(`${VISION_PIPELINE} vision skip (too large to process)`, {
+        operation: 'vision_image_parts',
+        skipReason: 'too_large',
         fileName: file.name,
         size: file.size,
-        max: maxSizePerPartBytes,
+        max: MAX_FILE_SIZE_BYTES,
       });
       continue;
     }
     const storagePath = resolveStoragePath(file);
-    if (!storagePath) continue;
+    if (!storagePath) {
+      logger.debug(`${VISION_PIPELINE} vision skip (no path)`, {
+        operation: 'vision_image_parts',
+        skipReason: 'no_path',
+        fileName: file.name,
+      });
+      continue;
+    }
     try {
-      const buffer = await storageService.getFileBuffer(storagePath);
-      const mimeType = EXT_TO_MIME[extension] ?? 'image/jpeg';
+      let buffer = await storageService.getFileBuffer(storagePath);
+      let mimeType = EXT_TO_MIME[extension] ?? 'image/jpeg';
+      const resized = await resizeImageForVision(buffer, mimeType, file.name, VISION_IMAGE_MAX_DIMENSION, maxSizePerPartBytes);
+      buffer = resized.buffer;
+      mimeType = resized.mimeType;
+      if (buffer.length > maxSizePerPartBytes) {
+        logger.info(`${VISION_PIPELINE} vision skip (resized still too large)`, {
+          operation: 'vision_image_parts',
+          skipReason: 'too_large_after_resize',
+          fileName: file.name,
+          size: buffer.length,
+          max: maxSizePerPartBytes,
+        });
+        continue;
+      }
       parts.push({
         mimeType,
         dataBase64: buffer.toString('base64'),
         fileName: file.name,
       });
-      logger.info('Vision image part added', {
+      logger.info(`${VISION_PIPELINE} vision image part added`, {
         operation: 'vision_image_parts',
         fileName: file.name,
         sizeBytes: buffer.length,
+        mimeType,
       });
     } catch (err) {
-      logger.warn('Failed to load image for vision', {
+      logger.warn(`${VISION_PIPELINE} vision skip (getFileBuffer failed)`, {
         operation: 'vision_image_parts',
+        skipReason: 'getFileBuffer_failed',
         fileName: file.name,
         error: { message: err instanceof Error ? err.message : 'Unknown error' },
       });
     }
   }
   return parts;
+}
+
+/** Phase 3 PDF vision: max pages to render per PDF, DPI, timeout, and per-image size cap */
+const PDF_VISION_MAX_PAGES_DEFAULT = 2;
+const PDF_VISION_DPI = 150;
+const PDF_VISION_TIMEOUT_MS = 10000;
+const PDF_VISION_MAX_BYTES_PER_IMAGE = 5 * 1024 * 1024;
+/** Minimum summary length to consider PDF "text-based" (skip vision for it) */
+const PDF_TEXT_BASED_SUMMARY_LENGTH = 500;
+
+/**
+ * Render PDF pages to PNGs via pdftoppm (poppler-utils), then return as VisionImagePart[].
+ * Used when PDF has little/no extractable text (image-based PDF). Writes to OS tmp dir.
+ * @param pdfBuffer - raw PDF bytes
+ * @param fileName - original file name for part labels
+ * @param options - maxPages (default 2), maxPartBytes (default 5MB), timeoutMs (default 10s), dpi (default 150)
+ * @returns VisionImagePart[] (base64 data URLs); empty if pdftoppm missing or fails
+ */
+export async function renderPdfPagesToVisionParts(
+  pdfBuffer: Buffer,
+  fileName: string,
+  options: {
+    maxPages?: number;
+    maxPartBytes?: number;
+    timeoutMs?: number;
+    dpi?: number;
+  } = {}
+): Promise<VisionImagePart[]> {
+  const {
+    maxPages = PDF_VISION_MAX_PAGES_DEFAULT,
+    maxPartBytes = PDF_VISION_MAX_BYTES_PER_IMAGE,
+    timeoutMs = PDF_VISION_TIMEOUT_MS,
+    dpi = PDF_VISION_DPI,
+  } = options;
+  const prefix = `pdfvision_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const tmpDir = tmpdir();
+  const pdfPath = join(tmpDir, `${prefix}.pdf`);
+  const outPrefix = join(tmpDir, prefix);
+  const parts: VisionImagePart[] = [];
+  const toClean: string[] = [pdfPath];
+
+  try {
+    await writeFile(pdfPath, pdfBuffer, { flag: 'w' });
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        'pdftoppm',
+        ['-png', '-r', String(dpi), '-f', '1', '-l', String(maxPages), pdfPath, outPrefix],
+        { stdio: ['ignore', 'pipe', 'pipe'] }
+      );
+      const t = setTimeout(() => {
+        proc.kill('SIGKILL');
+        reject(new Error('pdftoppm timeout'));
+      }, timeoutMs);
+      proc.on('error', (err) => {
+        clearTimeout(t);
+        reject(err);
+      });
+      proc.on('close', (code) => {
+        clearTimeout(t);
+        if (code === 0) resolve();
+        else reject(new Error(`pdftoppm exited ${code}`));
+      });
+    });
+
+    for (let p = 1; p <= maxPages; p++) {
+      const pngPath = `${outPrefix}-${p}.png`;
+      toClean.push(pngPath);
+      try {
+        const buf = await readFile(pngPath);
+        if (buf.length > maxPartBytes) {
+          logger.info('[VISION_PIPELINE] pdf vision skip (page too large)', {
+            operation: 'pdf_vision_page_skip',
+            fileName,
+            page: p,
+            sizeBytes: buf.length,
+            maxBytes: maxPartBytes,
+          });
+          continue;
+        }
+        const b64 = buf.toString('base64');
+        const mime = 'image/png';
+        parts.push({
+          mimeType: mime,
+          dataBase64: b64,
+          fileName: `${fileName} (page ${p})`,
+        });
+      } catch {
+        // page file missing or unreadable
+        break;
+      }
+    }
+  } catch (err) {
+    logger.info('[VISION_PIPELINE] pdf vision render failed (pdftoppm missing or error)', {
+      operation: 'pdf_vision_render',
+      fileName,
+      error: { message: err instanceof Error ? err.message : 'Unknown error' },
+    });
+  } finally {
+    for (const p of toClean) {
+      try {
+        await unlink(p);
+      } catch {
+        // ignore
+      }
+    }
+    // pdftoppm may write page-1.png, page-2.png; we already added those to toClean
+  }
+  return parts;
+}
+
+/**
+ * Get vision image parts for a single PDF when it is image-based (short/no text summary).
+ * Fetches PDF from storage, renders up to maxPages pages (respecting remaining slots).
+ * @param file - file record with path or url for resolveStoragePath
+ * @param summary - existing text summary; if length >= 500 and not starting with "(", skip (text-based PDF)
+ * @param currentPartCount - current visionImageParts.length
+ * @param maxTotalParts - cap (e.g. 5)
+ * @returns VisionImagePart[] to append; empty if not PDF, text-based, no slots, or error
+ */
+export async function getPdfVisionParts(
+  file: FileRecordForAnalysis,
+  summary: string | undefined,
+  currentPartCount: number,
+  maxTotalParts: number
+): Promise<VisionImagePart[]> {
+  const name = (file.name || '').toLowerCase();
+  if (!name.endsWith('.pdf')) return [];
+  if (currentPartCount >= maxTotalParts) return [];
+  const summaryLen = (summary ?? '').length;
+  const looksTextBased = summaryLen >= PDF_TEXT_BASED_SUMMARY_LENGTH && !(summary ?? '').startsWith('(');
+  if (looksTextBased) return [];
+
+  const storagePath = resolveStoragePath(file);
+  if (!storagePath) return [];
+  let buffer: Buffer;
+  try {
+    buffer = await storageService.getFileBuffer(storagePath);
+  } catch {
+    return [];
+  }
+  const remainingSlots = maxTotalParts - currentPartCount;
+  const maxPages = Math.min(PDF_VISION_MAX_PAGES_DEFAULT, remainingSlots);
+  if (maxPages < 1) return [];
+
+  return renderPdfPagesToVisionParts(buffer, file.name || 'document.pdf', {
+    maxPages,
+    maxPartBytes: PDF_VISION_MAX_BYTES_PER_IMAGE,
+    timeoutMs: PDF_VISION_TIMEOUT_MS,
+    dpi: PDF_VISION_DPI,
+  });
 }
 
 /**
@@ -481,7 +783,8 @@ export async function getFileSummaries(
         results.push({
           id: file.id,
           name: file.name,
-          summary: `(File too large to analyze: ${file.name}, ${Math.round(file.size / 1024)} KB. Max size: ${Math.round(maxSize / 1024)} KB)`,
+          summary: `(File exceeds size limit: ${file.name}, ${Math.round(file.size / 1024)} KB. Max: ${Math.round(maxSize / 1024)} KB)`,
+          fileIssueCode: 'FILE_TOO_LARGE_POLICY',
         });
         continue;
       }
@@ -499,7 +802,8 @@ export async function getFileSummaries(
         results.push({
           id: file.id,
           name: file.name,
-          summary: `(Could not locate file in storage: ${file.name})`,
+          summary: `(File not found in storage: ${file.name})`,
+          fileIssueCode: 'FILE_NOT_IN_STORAGE',
         });
         continue;
       }
@@ -520,7 +824,8 @@ export async function getFileSummaries(
         results.push({
           id: file.id,
           name: file.name,
-          summary: `(Could not fetch file from storage: ${file.name})`,
+          summary: `(Could not load file from storage: ${file.name})`,
+          fileIssueCode: 'FILE_NOT_FETCHABLE_FROM_STORAGE',
         });
         continue;
       }
@@ -544,6 +849,7 @@ export async function getFileSummaries(
         name: file.name,
         summary,
         truncated: summary.includes('[... truncated ...]'),
+        fileIssueCode: summary.startsWith('(') ? 'NO_TEXT_EXTRACTED' : undefined,
       });
     } catch (err) {
       logger.warn('File analysis failed', {
@@ -555,7 +861,8 @@ export async function getFileSummaries(
       results.push({
         id: file.id,
         name: file.name,
-        summary: `(Could not analyze file: ${file.name})`,
+        summary: `(Text could not be extracted from file: ${file.name})`,
+        fileIssueCode: 'NO_TEXT_EXTRACTED',
       });
     }
   }

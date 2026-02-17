@@ -1,4 +1,7 @@
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
+import { getProviderCapabilities, type ProviderVisionCapability } from './capabilities';
+
+/** LocalProvider does not support vision input; vision parts are never passed to it (see Core + capabilities). */
 
 export interface LocalConfig {
   model: string;
@@ -285,6 +288,14 @@ export class LocalProvider {
    */
   private estimateTokens(text: string): number {
     return Math.ceil(text.length / 4);
+  }
+
+  /**
+   * Vision capabilities: LocalProvider does not support vision; images are not sent to it.
+   * Core uses getProviderCapabilities('local') and strips vision parts when provider is local.
+   */
+  static getVisionCapability(): ProviderVisionCapability {
+    return getProviderCapabilities('local');
   }
 
   /**

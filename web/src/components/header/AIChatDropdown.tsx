@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
+import type { FileIssue } from '../../lib/aiResponseHandler';
 import { Button, Spinner } from 'shared/components';
 import { generateAISchedule } from '../../api/scheduling';
 import * as todoAPI from '../../api/todo';
@@ -75,6 +76,8 @@ interface ConversationItem {
   aiResponse?: AIResponse;
   confidence?: number;
   structured?: StructuredAIResponse;
+  fileIssues?: FileIssue[];
+  usedVisionParts?: boolean;
   attachments?: { fileIds: string[] };
 }
 
@@ -1130,19 +1133,34 @@ export default function AIChatDropdown({
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               {item.structured ? (
-                                <AIResponseRenderer
-                                  structured={item.structured}
-                                  confidence={item.confidence}
-                                  textColor="text-gray-700"
-                                  onAction={(action) => {
-                                    if (action.href) {
-                                      if (action.href.startsWith('http')) window.open(action.href, '_blank');
-                                      else router.push(action.href);
-                                    } else if (action.fileId) {
-                                      router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
-                                    }
-                                  }}
-                                />
+                                <>
+                                  <AIResponseRenderer
+                                    structured={item.structured}
+                                    confidence={item.confidence}
+                                    textColor="text-gray-700"
+                                    onAction={(action) => {
+                                      if (action.href) {
+                                        if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                        else router.push(action.href);
+                                      } else if (action.fileId) {
+                                        router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                      }
+                                    }}
+                                  />
+                                  {item.fileIssues && item.fileIssues.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
+                                      <ul className="text-xs text-gray-600 space-y-0.5">
+                                        {item.fileIssues.map((issue: FileIssue, i: number) => (
+                                          <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {item.usedVisionParts && (
+                                    <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                  )}
+                                </>
                               ) : (
                                 <>
                                   <AIMessageContent content={item.content} textColor="text-gray-800" />
@@ -1166,6 +1184,19 @@ export default function AIChatDropdown({
                                     <p className="text-xs text-gray-600 mt-1">
                                       Confidence: {Math.round(item.confidence * 100)}%
                                     </p>
+                                  )}
+                                  {item.fileIssues && item.fileIssues.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
+                                      <ul className="text-xs text-gray-600 space-y-0.5">
+                                        {item.fileIssues.map((issue: FileIssue, i: number) => (
+                                          <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {item.usedVisionParts && (
+                                    <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
                                   )}
                                 </>
                               )}

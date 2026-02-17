@@ -19,7 +19,7 @@ import {
   type AIMessage 
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
-import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, type FileIssue } from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
@@ -38,6 +38,10 @@ interface ConversationItem {
   metadata?: Record<string, unknown>;
   /** When set, render with AIResponseRenderer for section/action UI */
   structured?: StructuredAIResponse;
+  /** Phase 5: attachment issues to show under the message */
+  fileIssues?: FileIssue[];
+  /** Optional: true when the model used vision parts; show "Image used in this reply" badge */
+  usedVisionParts?: boolean;
   attachments?: { fileIds: string[] };
 }
 
@@ -1187,20 +1191,35 @@ export default function AIChat() {
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             {item.structured ? (
-                              <AIResponseRenderer
-                                structured={item.structured}
-                                confidence={item.confidence}
-                                textColor="text-gray-700"
-                                collapsibleSections
-                                onAction={(action) => {
-                                  if (action.href) {
-                                    if (action.href.startsWith('http')) window.open(action.href, '_blank');
-                                    else router.push(action.href);
-                                  } else if (action.fileId) {
-                                    router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
-                                  }
-                                }}
-                              />
+                              <>
+                                <AIResponseRenderer
+                                  structured={item.structured}
+                                  confidence={item.confidence}
+                                  textColor="text-gray-700"
+                                  collapsibleSections
+                                  onAction={(action) => {
+                                    if (action.href) {
+                                      if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                      else router.push(action.href);
+                                    } else if (action.fileId) {
+                                      router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                    }
+                                  }}
+                                />
+                                {item.fileIssues && item.fileIssues.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 space-y-0.5">
+                                      {item.fileIssues.map((issue, i) => (
+                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {item.usedVisionParts && (
+                                  <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                )}
+                              </>
                             ) : (
                               <>
                                 <AIMessageContent content={item.content} textColor="text-gray-800" />
@@ -1219,6 +1238,19 @@ export default function AIChat() {
                                       {Math.round(item.confidence * 100)}%
                                     </span>
                                   </div>
+                                )}
+                                {item.fileIssues && item.fileIssues.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 space-y-0.5">
+                                      {item.fileIssues.map((issue: FileIssue, i: number) => (
+                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {item.usedVisionParts && (
+                                  <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
                                 )}
                               </>
                             )}
