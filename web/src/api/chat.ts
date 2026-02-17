@@ -192,10 +192,19 @@ class ChatAPI {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private eventListeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
+  private isConnecting = false; // Prevent multiple simultaneous connection attempts
 
   // WebSocket Management
   async connect(): Promise<void> {
-    if (this.socket?.connected) return;
+    // Prevent multiple simultaneous connection attempts
+    if (this.isConnecting) {
+      return;
+    }
+
+    // If already connected, don't reconnect
+    if (this.socket?.connected) {
+      return;
+    }
 
     const session = await getSession();
     if (!session?.accessToken) {
@@ -203,9 +212,18 @@ class ChatAPI {
       return;
     }
 
+    this.isConnecting = true;
+
     try {
       // Use centralized WebSocket configuration
       const config = getWebSocketConfig();
+      
+      // If socket exists but disconnected, disconnect it first to avoid conflicts
+      if (this.socket && !this.socket.connected) {
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+        this.socket = null;
+      }
       
       this.socket = io(config.url, {
         ...config.options,
@@ -219,24 +237,60 @@ class ChatAPI {
     } catch (_error) {
       // Failed to initialize WebSocket connection - non-critical, silent fail
       // Don't throw - let the application continue without WebSocket
+      this.isConnecting = false;
     }
   }
 
   private setupSocketListeners(): void {
-    if (!this.socket) return;
+    if (!this.socket) {
+      this.isConnecting = false;
+      return;
+    }
 
     this.socket.on('connect', () => {
-      // Connected to chat server
+      // Connected to chat server - reset reconnection counter
       this.reconnectAttempts = 0;
+      this.isConnecting = false;
+      console.log('✅ Chat WebSocket connected');
     });
 
-    this.socket.on('disconnect', (_reason: string) => {
-      // Disconnected from chat server
-      this.handleReconnect();
+    this.socket.on('disconnect', (reason: string) => {
+      // Socket.IO handles reconnection automatically - we just log the reason
+      // Don't call handleReconnect() - Socket.IO will handle it
+      this.isConnecting = false;
+      
+      // Only log if it's not a normal client-initiated disconnect
+      if (reason !== 'io client disconnect') {
+        console.log(`🔌 Chat WebSocket disconnected: ${reason}`);
+      }
+    });
+
+    // Track Socket.IO's automatic reconnection attempts (for logging only)
+    this.socket.on('reconnect_attempt', (attemptNumber: number) => {
+      this.reconnectAttempts = attemptNumber;
+      // Only log if it's a reasonable number of attempts
+      if (attemptNumber <= this.maxReconnectAttempts) {
+        console.log(`🔄 Chat WebSocket reconnecting (${attemptNumber}/${this.maxReconnectAttempts})`);
+      }
+    });
+
+    this.socket.on('reconnect', () => {
+      // Successfully reconnected
+      this.reconnectAttempts = 0;
+      this.isConnecting = false;
+      console.log('✅ Chat WebSocket reconnected');
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      // Socket.IO has exhausted its reconnection attempts
+      this.reconnectAttempts = this.maxReconnectAttempts;
+      this.isConnecting = false;
+      console.warn('❌ Chat WebSocket reconnection failed - Socket.IO exhausted attempts');
     });
 
     this.socket.on('error', (error: { message: string; code?: string }) => {
       console.error('❌ Chat socket error:', error);
+      this.isConnecting = false;
     });
 
     // Handle specific events with proper typing
@@ -282,23 +336,14 @@ class ChatAPI {
     }
   }
 
-  private handleReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('❌ Max reconnection attempts reached');
-      return;
-    }
-
-    setTimeout(() => {
-      this.reconnectAttempts++;
-      console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-      this.connect();
-    }, this.reconnectDelay * this.reconnectAttempts);
-  }
-
   disconnect(): void {
+    this.isConnecting = false;
     if (this.socket) {
+      // Disable automatic reconnection when manually disconnecting
       this.socket.disconnect();
+      this.socket.removeAllListeners();
       this.socket = null;
+      this.reconnectAttempts = 0;
     }
   }
 

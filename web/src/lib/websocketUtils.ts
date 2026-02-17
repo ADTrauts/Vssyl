@@ -12,9 +12,11 @@ export interface WebSocketConfig {
     reconnection: boolean;
     reconnectionAttempts: number;
     reconnectionDelay: number;
+    reconnectionDelayMax?: number;
     timeout: number;
     forceNew?: boolean;
     path?: string;
+    autoConnect?: boolean;
   };
 }
 
@@ -74,10 +76,13 @@ export const getWebSocketConfig = (): WebSocketConfig => {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 1000, // Initial delay (Socket.IO uses exponential backoff)
+      reconnectionDelayMax: 5000, // Maximum delay between attempts
       timeout: 20000,
       forceNew: true,
-      path: socketPath
+      path: socketPath,
+      // Handle idle disconnects gracefully - don't spam reconnection attempts
+      autoConnect: true
     }
   };
 };
