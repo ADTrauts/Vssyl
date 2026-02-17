@@ -193,7 +193,15 @@ export class OpenAIProvider {
       
       // Provide user-friendly error message
       let userMessage = errorMessage;
-      if (isTimeout) {
+      if (httpStatus === 429) {
+        if (errorMessage.includes('TPM') || errorMessage.includes('tokens per min')) {
+          userMessage = 'The image is too large for processing. Please try a smaller image (under 1MB) or a lower resolution photo.';
+        } else if (errorMessage.includes('RPM') || errorMessage.includes('requests per min')) {
+          userMessage = 'Too many requests. Please wait a moment and try again.';
+        } else {
+          userMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        }
+      } else if (isTimeout) {
         userMessage = 'The AI request timed out. Please try again with a smaller file or simpler query.';
       } else if (isUnavailable) {
         userMessage = 'OpenAI service is temporarily unavailable. Please try again in a few moments.';

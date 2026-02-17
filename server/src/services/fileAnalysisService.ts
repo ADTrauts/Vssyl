@@ -470,10 +470,14 @@ const EXT_TO_MIME: Record<string, string> = {
 const DEFAULT_MAX_VISION_PARTS = 5;
 /** Max size per image for vision (5 MB). */
 const DEFAULT_MAX_VISION_IMAGE_BYTES = 5 * 1024 * 1024;
-/** Optional: max dimension (longest side) for resizing; reduces tokens/cost. */
-const VISION_IMAGE_MAX_DIMENSION = 1600;
-/** JPEG quality when converting for vision (balance quality vs size). */
-const VISION_IMAGE_JPEG_QUALITY = 85;
+/** Optional: max dimension (longest side) for resizing; reduces tokens/cost.
+ * Reduced to 1024px to avoid OpenAI TPM limits (base64 encoding increases token count significantly). */
+const VISION_IMAGE_MAX_DIMENSION = 1024;
+/** JPEG quality when converting for vision (balance quality vs size).
+ * Reduced to 75% to reduce file size and token count. */
+const VISION_IMAGE_JPEG_QUALITY = 75;
+/** Max base64 size (after encoding) - hard cap to avoid TPM limits. ~1MB base64 ≈ 750KB binary. */
+const MAX_VISION_BASE64_BYTES = 1024 * 1024; // 1 MB base64
 
 async function resizeImageForVision(
   buffer: Buffer,
@@ -487,25 +491,60 @@ async function resizeImageForVision(
     const w = meta.width ?? 0;
     const h = meta.height ?? 0;
     const needsResize = w > maxDimension || h > maxDimension;
-    if (!needsResize && buffer.length <= maxBytes) return { buffer, mimeType };
+    
+    // If already small enough and within byte limit, return as-is
+    if (!needsResize && buffer.length <= maxBytes) {
+      // Still check base64 size - base64 is ~33% larger
+      const base64Size = Math.ceil(buffer.length * 4 / 3);
+      if (base64Size <= MAX_VISION_BASE64_BYTES) {
+        return { buffer, mimeType };
+      }
+    }
+    
+    // Resize to max dimension with initial quality
     let outBuffer = await sharp(buffer)
       .resize(maxDimension, maxDimension, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: VISION_IMAGE_JPEG_QUALITY })
       .toBuffer();
-    if (outBuffer.length > maxBytes) {
-      const scale = Math.sqrt(maxBytes / outBuffer.length);
-      const smallerDim = Math.max(256, Math.floor(maxDimension * scale));
+    
+    // Check both binary size and base64 size
+    let base64Size = Math.ceil(outBuffer.length * 4 / 3);
+    let quality = VISION_IMAGE_JPEG_QUALITY;
+    let dimension = maxDimension;
+    
+    // If still too large, reduce quality and dimension iteratively
+    while ((outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) && dimension > 256 && quality > 50) {
+      dimension = Math.max(256, Math.floor(dimension * 0.9)); // Reduce by 10%
+      quality = Math.max(50, quality - 5); // Reduce quality by 5%
       outBuffer = await sharp(buffer)
-        .resize(smallerDim, smallerDim, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: Math.max(60, VISION_IMAGE_JPEG_QUALITY - 20) })
+        .resize(dimension, dimension, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality })
         .toBuffer();
+      base64Size = Math.ceil(outBuffer.length * 4 / 3);
     }
+    
+    // Final check: if still too large, skip this image
+    if (outBuffer.length > maxBytes || base64Size > MAX_VISION_BASE64_BYTES) {
+      logger.warn('[VISION_PIPELINE] image too large even after aggressive resize', {
+        operation: 'vision_image_resize_failed',
+        fileName,
+        originalBytes: buffer.length,
+        finalBytes: outBuffer.length,
+        base64Size,
+        maxBase64Bytes: MAX_VISION_BASE64_BYTES,
+      });
+      throw new Error(`Image too large after resize: ${fileName}`);
+    }
+    
     if (needsResize || outBuffer.length < buffer.length) {
       logger.debug('[VISION_PIPELINE] image resized for vision', {
         operation: 'vision_image_resize',
         fileName,
         originalBytes: buffer.length,
         resizedBytes: outBuffer.length,
+        base64Size,
+        finalDimension: dimension,
+        finalQuality: quality,
       });
     }
     return { buffer: outBuffer, mimeType: 'image/jpeg' };
@@ -515,7 +554,7 @@ async function resizeImageForVision(
       fileName,
       error: { message: err instanceof Error ? err.message : 'Unknown error' },
     });
-    return { buffer, mimeType };
+    throw err; // Re-throw so caller knows to skip this image
   }
 }
 
@@ -568,17 +607,33 @@ export async function getVisionImageParts(
       const fetch_ms = Date.now() - t0_fetch;
       let mimeType = EXT_TO_MIME[extension] ?? 'image/jpeg';
       const t0_resize = Date.now();
-      const resized = await resizeImageForVision(buffer, mimeType, file.name, VISION_IMAGE_MAX_DIMENSION, maxSizePerPartBytes);
-      buffer = resized.buffer;
-      mimeType = resized.mimeType;
-      const resize_ms = Date.now() - t0_resize;
-      if (buffer.length > maxSizePerPartBytes) {
-        logger.info(`${VISION_PIPELINE} vision skip (resized still too large)`, {
+      let resized;
+      try {
+        resized = await resizeImageForVision(buffer, mimeType, file.name, VISION_IMAGE_MAX_DIMENSION, maxSizePerPartBytes);
+        buffer = resized.buffer;
+        mimeType = resized.mimeType;
+      } catch (resizeErr) {
+        const resize_ms = Date.now() - t0_resize;
+        logger.warn(`${VISION_PIPELINE} vision skip (resize failed or still too large)`, {
           operation: 'vision_image_parts',
-          skipReason: 'too_large_after_resize',
+          skipReason: 'resize_failed',
           fileName: file.name,
-          size: buffer.length,
-          max: maxSizePerPartBytes,
+          resize_ms,
+          error: { message: resizeErr instanceof Error ? resizeErr.message : 'Unknown error' },
+        });
+        continue;
+      }
+      const resize_ms = Date.now() - t0_resize;
+      
+      // Final check: base64 size must be under limit
+      const base64Size = Math.ceil(buffer.length * 4 / 3);
+      if (base64Size > MAX_VISION_BASE64_BYTES) {
+        logger.info(`${VISION_PIPELINE} vision skip (base64 too large)`, {
+          operation: 'vision_image_parts',
+          skipReason: 'base64_too_large',
+          fileName: file.name,
+          base64Size,
+          maxBase64Bytes: MAX_VISION_BASE64_BYTES,
         });
         continue;
       }
