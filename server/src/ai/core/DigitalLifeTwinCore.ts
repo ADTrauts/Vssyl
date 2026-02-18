@@ -190,7 +190,7 @@ export class DigitalLifeTwinCore {
 
       // 1a. Get context for attached Drive files (metadata + content summaries) and vision image parts
       let attachedFiles: AttachedFileContext[] = [];
-      let visionImageParts: Array<{ mimeType: string; dataBase64: string; fileName: string }> = [];
+      let visionImageParts: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }> = [];
       /** Phase 5: collect file analysis results so we can build fileIssues for the response */
       let fileAnalysisResults: Array<{ id: string; name: string; summary: string; fileIssueCode?: string }> = [];
       try {
@@ -317,10 +317,12 @@ export class DigitalLifeTwinCore {
             const t0_vision = Date.now();
             const { getVisionImageParts } = await import('../../services/fileAnalysisService');
             // Limit to 1 image per message initially to avoid payload/CPU bottlenecks (can bump to 5 later)
+            // Use 'both' transport - providers will choose URL or base64 based on their capabilities
             visionImageParts = await getVisionImageParts(
               files.map((f) => ({ id: f.id, name: f.name, path: f.path, url: f.url, size: f.size ?? 0, type: f.type })),
               1,
-              5 * 1024 * 1024
+              5 * 1024 * 1024,
+              'both'
             );
             const t_getVisionImageParts_ms = Date.now() - t0_vision;
             logger.info(`${VISION_PIPELINE_PREFIX} stage=visionParts ms=${t_getVisionImageParts_ms}`, {
@@ -718,7 +720,7 @@ export class DigitalLifeTwinCore {
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
     attachedFiles?: AttachedFileContext[],
-    visionImageParts?: Array<{ mimeType: string; dataBase64: string; fileName: string }>,
+    visionImageParts?: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>,
     traceContext?: { requestId?: string; conversationId?: string; userId?: string }
   ) {
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)

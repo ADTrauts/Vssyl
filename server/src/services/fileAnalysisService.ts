@@ -453,9 +453,14 @@ export interface FileAnalysisResult {
 /** Vision API: image part for multimodal prompts (base64 + mime for OpenAI/Anthropic). */
 export interface VisionImagePart {
   mimeType: string;
-  dataBase64: string;
+  /** Base64-encoded image bytes (no data: prefix). Required for providers that need inline data (e.g., Anthropic). */
+  dataBase64?: string;
+  /** Public or signed URL to the image bytes. Prefer when supported (e.g., OpenAI) to reduce token usage. */
+  url?: string;
   fileName: string;
 }
+
+export type VisionTransport = 'base64' | 'url' | 'both';
 
 const EXT_TO_MIME: Record<string, string> = {
   png: 'image/png',
@@ -476,8 +481,8 @@ const VISION_IMAGE_MAX_DIMENSION = 1024;
 /** JPEG quality when converting for vision (balance quality vs size).
  * Reduced to 75% to reduce file size and token count. */
 const VISION_IMAGE_JPEG_QUALITY = 75;
-/** Max base64 size (after encoding). 5 MB matches Anthropic limits; OpenAI allows ~20 MB. Resize logic keeps output reasonable. */
-const MAX_VISION_BASE64_BYTES = 5 * 1024 * 1024; // 5 MB base64
+// Base64 is ~33% larger than raw bytes. 5MB raw ≈ 6.7MB base64.
+const MAX_VISION_BASE64_BYTES = 7 * 1024 * 1024; // ~7MB base64
 
 async function resizeImageForVision(
   buffer: Buffer,
@@ -577,7 +582,8 @@ async function resizeImageForVision(
 export async function getVisionImageParts(
   files: FileRecordForAnalysis[],
   maxParts: number = DEFAULT_MAX_VISION_PARTS,
-  maxSizePerPartBytes: number = DEFAULT_MAX_VISION_IMAGE_BYTES
+  maxSizePerPartBytes: number = DEFAULT_MAX_VISION_IMAGE_BYTES,
+  transport: VisionTransport = 'both'
 ): Promise<VisionImagePart[]> {
   const VISION_PIPELINE = '[VISION_PIPELINE]';
   const parts: VisionImagePart[] = [];
@@ -603,6 +609,17 @@ export async function getVisionImageParts(
       });
       continue;
     }
+    // For vision, use the per-call cap (defaults to 5MB). Do not gate on MAX_FILE_SIZE_BYTES.
+    if (file.size > maxSizePerPartBytes) {
+      logger.info(`${VISION_PIPELINE} vision skip (too large to process)`, {
+        operation: 'vision_image_parts',
+        skipReason: 'too_large',
+        fileName: file.name,
+        size: file.size,
+        max: maxSizePerPartBytes,
+      });
+      continue;
+    }
     const storagePath = resolveStoragePath(file);
     if (!storagePath) {
       logger.debug(`${VISION_PIPELINE} vision skip (no path)`, {
@@ -612,6 +629,31 @@ export async function getVisionImageParts(
       });
       continue;
     }
+
+    // Prefer URL transport when requested (reduces token usage for OpenAI).
+    // If the URL points to localhost, a third-party model can't fetch it, so fallback to base64.
+    let signedUrl: string | undefined;
+    if (transport === 'url' || transport === 'both') {
+      try {
+        signedUrl = await storageService.getSignedUrl(storagePath, 10 * 60);
+        try {
+          const u = new URL(signedUrl);
+          if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+            signedUrl = undefined;
+          }
+        } catch {
+          // ignore parse errors
+        }
+      } catch (urlErr) {
+        logger.debug(`${VISION_PIPELINE} signed url generation failed (will fallback)`, {
+          operation: 'vision_image_parts',
+          skipReason: 'signed_url_failed',
+          fileName: file.name,
+          error: { message: urlErr instanceof Error ? urlErr.message : 'Unknown error' },
+        });
+      }
+    }
+
     try {
       const t0_fetch = Date.now();
       let buffer = await storageService.getFileBuffer(storagePath);
@@ -636,24 +678,28 @@ export async function getVisionImageParts(
       }
       const resize_ms = Date.now() - t0_resize;
       
-      // Final check: base64 size must be under limit
-      const base64Size = Math.ceil(buffer.length * 4 / 3);
-      if (base64Size > MAX_VISION_BASE64_BYTES) {
-        logger.info(`${VISION_PIPELINE} vision skip (base64 too large)`, {
-          operation: 'vision_image_parts',
-          skipReason: 'base64_too_large',
-          fileName: file.name,
-          base64Size,
-          maxBase64Bytes: MAX_VISION_BASE64_BYTES,
-        });
-        continue;
+      let dataBase64: string | undefined;
+      let base64_ms = 0;
+      if (transport === 'base64' || transport === 'both' || !signedUrl) {
+        const base64Size = Math.ceil((buffer.length * 4) / 3);
+        if (base64Size > MAX_VISION_BASE64_BYTES) {
+          logger.info(`${VISION_PIPELINE} vision skip (base64 too large)`, {
+            operation: 'vision_image_parts',
+            skipReason: 'base64_too_large',
+            fileName: file.name,
+            base64Size,
+            maxBase64Bytes: MAX_VISION_BASE64_BYTES,
+          });
+          continue;
+        }
+        const t0_base64 = Date.now();
+        dataBase64 = buffer.toString('base64');
+        base64_ms = Date.now() - t0_base64;
       }
-      const t0_base64 = Date.now();
-      const dataBase64 = buffer.toString('base64');
-      const base64_ms = Date.now() - t0_base64;
       parts.push({
         mimeType,
         dataBase64,
+        url: signedUrl,
         fileName: file.name,
       });
       logger.info(`${VISION_PIPELINE} vision image part added`, {
@@ -661,10 +707,11 @@ export async function getVisionImageParts(
         fileName: file.name,
         sizeBytes: buffer.length,
         mimeType,
+        hasSignedUrl: Boolean(signedUrl),
         fetch_ms,
         resize_ms,
         base64_ms,
-        dataBase64Length: dataBase64.length,
+        dataBase64Length: dataBase64?.length ?? 0,
       });
     } catch (err) {
       logger.warn(`${VISION_PIPELINE} vision skip (getFileBuffer failed)`, {
@@ -721,7 +768,7 @@ export async function renderPdfPagesToVisionParts(
     await writeFile(pdfPath, pdfBuffer, { flag: 'w' });
     await new Promise<void>((resolve, reject) => {
       const proc = spawn(
-        'pdftoppm',
+        '/usr/bin/pdftoppm',
         ['-png', '-r', String(dpi), '-f', '1', '-l', String(maxPages), pdfPath, outPrefix],
         { stdio: ['ignore', 'pipe', 'pipe'] }
       );

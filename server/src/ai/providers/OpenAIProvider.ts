@@ -59,20 +59,33 @@ export class OpenAIProvider {
       const userPrompt = this.buildUserPrompt(request, data);
 
       // Multimodal: when vision image parts are present, send text + images so the model can "see" attached images
-      const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64: string; fileName: string }> | undefined;
+      const visionParts = data.visionImageParts as
+        | Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>
+        | undefined;
       const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
       const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete (people, objects, layout); avoid generic phrasing.';
       const userTextWithVision = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
-      const userContent: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'auto' | 'high' } }> = hasVision
+      const userContent:
+        | string
+        | Array<
+            { type: 'text'; text: string }
+            | { type: 'image_url'; image_url: { url: string; detail?: 'low' | 'high' | 'auto' } }
+          > = hasVision
         ? [
             { type: 'text', text: userTextWithVision },
-            ...visionParts.map((p) => ({
-              type: 'image_url' as const,
-              image_url: {
-                url: `data:${p.mimeType};base64,${p.dataBase64}`,
-                detail: 'low' as const, // Reduces latency and rate-limit (TPM) pressure
-              },
-            })),
+            ...visionParts
+              .map((p) => {
+                const url =
+                  typeof p.url === 'string' && p.url.length > 0
+                    ? p.url
+                    : (p.dataBase64 ? `data:${p.mimeType};base64,${p.dataBase64}` : undefined);
+                if (!url) return null;
+                return {
+                  type: 'image_url' as const,
+                  image_url: { url, detail: 'low' as const },
+                };
+              })
+              .filter(Boolean) as any[],
           ]
         : userPrompt;
 

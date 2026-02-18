@@ -49,9 +49,18 @@ export class AnthropicProvider {
       const userPrompt = this.buildUserPrompt(request, data);
 
       // Multimodal: when vision image parts are present, send text + image blocks so Claude can "see" attached images
-      const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64: string; fileName: string }> | undefined;
+      const visionParts = data.visionImageParts as
+        | Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>
+        | undefined;
       const allowedMediaTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
-      const supportedParts = Array.isArray(visionParts) ? visionParts.filter((p) => allowedMediaTypes.has(p.mimeType)) : [];
+      type PartWithBase64 = { mimeType: string; dataBase64: string; fileName: string };
+      const supportedParts: PartWithBase64[] = Array.isArray(visionParts)
+        ? visionParts
+            .filter(
+              (p): p is PartWithBase64 =>
+                allowedMediaTypes.has(p.mimeType) && typeof p.dataBase64 === 'string' && p.dataBase64.length > 0
+            )
+        : [];
       const hasVision = supportedParts.length > 0;
       if (Array.isArray(visionParts) && visionParts.length > 0 && supportedParts.length === 0) {
         await logger.debug(`${VISION_PIPELINE_PREFIX} vision fallback: no supported image types, using text only`, {
@@ -72,7 +81,7 @@ export class AnthropicProvider {
               source: {
                 type: 'base64',
                 media_type: p.mimeType as 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp',
-                data: p.dataBase64,
+                data: p.dataBase64!, // Safe: supportedParts filter guarantees dataBase64 exists
               },
             })),
           ]
