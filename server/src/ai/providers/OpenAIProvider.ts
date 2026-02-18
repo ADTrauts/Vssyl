@@ -202,16 +202,12 @@ export class OpenAIProvider {
         requestId: request.id,
       });
       
-      // Provide user-friendly error message
+      // Provide user-friendly error message (429 = rate limit / quota, not image size)
       let userMessage = errorMessage;
       if (httpStatus === 429) {
-        if (errorMessage.includes('TPM') || errorMessage.includes('tokens per min')) {
-          userMessage = 'The image is too large for processing. Please try a smaller image (under 1MB) or a lower resolution photo.';
-        } else if (errorMessage.includes('RPM') || errorMessage.includes('requests per min')) {
-          userMessage = 'Too many requests. Please wait a moment and try again.';
-        } else {
-          userMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-        }
+        userMessage =
+          'OpenAI is rate-limiting requests right now. Please wait a moment and try again. ' +
+          'If it keeps happening, try fewer/smaller attachments or switch providers.';
       } else if (isTimeout) {
         userMessage = 'The AI request timed out. Please try again with a smaller file or simpler query.';
       } else if (isUnavailable) {
