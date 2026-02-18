@@ -25,7 +25,7 @@ import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
 import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
-import { uploadFile, listFiles, type File as DriveFile } from '../../api/drive';
+import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -71,6 +71,7 @@ export default function AIChat() {
   const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null); // 0-100 or null
   const [fileDetailsCache, setFileDetailsCache] = useState<Record<string, { name: string; url?: string }>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1279,6 +1280,25 @@ export default function AIChat() {
         {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-3">
+          {/* Upload progress bar */}
+          {isUploadingFiles && (
+            <div className="mb-2">
+              <div className="flex items-center gap-2">
+                <Spinner size={14} />
+                <span className="text-sm text-gray-700">Uploading…</span>
+                {uploadProgress != null && uploadProgress >= 0 && (
+                  <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                )}
+              </div>
+              <div className="mt-1 h-1.5 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-purple-500 transition-all duration-300"
+                  style={{ width: uploadProgress != null && uploadProgress >= 0 ? `${uploadProgress}%` : '30%' }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Attached Files Preview */}
           {attachedFiles.length > 0 && (
             <div className="flex flex-wrap gap-2 items-center mb-2">

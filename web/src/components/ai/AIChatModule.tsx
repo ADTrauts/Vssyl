@@ -10,7 +10,7 @@ import AIResponseRenderer, { type StructuredAIResponse } from './AIResponseRende
 import AIThinkingIndicator from './AIThinkingIndicator';
 import AIFileUpload, { type AIAttachedFile } from './AIFileUpload';
 import { toast } from 'react-hot-toast';
-import { uploadFile, listFiles, type File as DriveFile } from '../../api/drive';
+import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 
 const MAX_ATTACHMENTS = 10;
 import { 
@@ -69,6 +69,7 @@ export default function AIChatModule({
   const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fileDetailsCache, setFileDetailsCache] = useState<Record<string, { name: string; url?: string }>>({});
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -947,6 +948,25 @@ export default function AIChatModule({
 
         {/* Input Area */}
         <div className="p-4 border-t border-gray-200 bg-white">
+          {/* Upload progress bar */}
+          {isUploadingFiles && (
+            <div className="mb-2">
+              <div className="flex items-center gap-2">
+                <Spinner size={14} />
+                <span className="text-sm text-gray-700">Uploading…</span>
+                {uploadProgress != null && uploadProgress >= 0 && (
+                  <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                )}
+              </div>
+              <div className="mt-1 h-1.5 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-purple-500 transition-all duration-300"
+                  style={{ width: uploadProgress != null && uploadProgress >= 0 ? `${uploadProgress}%` : '30%' }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Attached Files Preview */}
           {attachedFiles.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2 items-center">

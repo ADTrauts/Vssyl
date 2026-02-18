@@ -122,6 +122,58 @@ export async function uploadFile(
   return data.file;
 }
 
+/** Upload with progress callback (XHR). Use for AI chat so user sees progress. */
+export function uploadFileWithProgress(
+  token: string,
+  file: globalThis.File,
+  options: {
+    folderId?: string;
+    isChatFile?: boolean;
+    dashboardId?: string;
+    onProgress?: (percent: number) => void;
+  }
+): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options.folderId) formData.append('folderId', options.folderId);
+    if (options.isChatFile) formData.append('chat', 'true');
+    if (options.dashboardId) formData.append('dashboardId', options.dashboardId);
+
+    const xhr = new XMLHttpRequest();
+    const url = '/api/drive/files';
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && options.onProgress) {
+        options.onProgress(Math.round((e.loaded / e.total) * 100));
+      } else if (options.onProgress && e.loaded > 0) {
+        options.onProgress(-1); // indeterminate
+      }
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.file);
+        } catch {
+          reject(new Error('Invalid response'));
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+      }
+    });
+    xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+    xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+    xhr.open('POST', url);
+    const headers = authHeaders(token);
+    // XHR doesn't use headers from our object; set Authorization manually
+    if (headers.Authorization) xhr.setRequestHeader('Authorization', headers.Authorization);
+    xhr.send(formData);
+  });
+}
+
 export async function renameFile(token: string, id: string, name: string) {
   const res = await fetch(`/api/drive/files/${id}`, {
     method: 'PUT',
