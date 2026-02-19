@@ -36,6 +36,43 @@ export class AnthropicProvider {
   }
 
   /**
+   * IMPORTANT: never stringify raw multimodal payloads (base64 images) into the text prompt.
+   * That explodes token usage and can trigger rate limiting.
+   */
+  private sanitizeDataForPrompt(data: Record<string, unknown>): Record<string, unknown> {
+    if (!data || typeof data !== 'object') return data;
+
+    const cloned: Record<string, any> = { ...(data as any) };
+
+    if (Array.isArray(cloned.visionImageParts)) {
+      cloned.visionImageParts = (cloned.visionImageParts as any[]).map((p) => ({
+        fileName: p?.fileName,
+        mimeType: p?.mimeType,
+        bytes: p?.bytes,
+        hasUrl: !!p?.url,
+        hasBase64: !!p?.dataBase64,
+      }));
+    }
+
+    delete cloned.base64;
+    delete cloned.buffer;
+    delete cloned.fileBuffer;
+    delete cloned.binary;
+    delete cloned.raw;
+
+    const truncate = (v: unknown, max = 4000) =>
+      typeof v === 'string' && v.length > max ? `${v.slice(0, max)}…[truncated ${v.length - max} chars]` : v;
+
+    for (const k of Object.keys(cloned)) {
+      const v = cloned[k];
+      if (typeof v === 'string') cloned[k] = truncate(v);
+      if (Array.isArray(v) && v.length > 50) cloned[k] = v.slice(0, 50);
+    }
+
+    return cloned;
+  }
+
+  /**
    * Process AI request using Anthropic Claude
    */
   async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
@@ -302,15 +339,16 @@ FORMATTING: Format the response text for readability: use clear paragraph breaks
    * Build user prompt optimized for analytical tasks
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
+    const safeData = this.sanitizeDataForPrompt(data);
     return `ANALYTICAL REQUEST: ${request.query}
 
 AVAILABLE DATA FOR ANALYSIS:
-${JSON.stringify(data, null, 2)}
+${JSON.stringify(safeData, null, 2)}
 
 REQUEST CONTEXT:
 - Priority: ${request.priority}
 - Timestamp: ${request.timestamp.toISOString()}
-- Module Context: ${data.currentModule || 'Cross-module'}
+- Module Context: ${(safeData as any).currentModule || 'Cross-module'}
 
 Please provide a thorough analysis as my Digital Life Twin, considering:
 1. Patterns in the data and their implications

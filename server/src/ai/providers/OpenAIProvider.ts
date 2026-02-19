@@ -40,6 +40,46 @@ export class OpenAIProvider {
   }
 
   /**
+   * IMPORTANT: never stringify raw multimodal payloads (base64 images) into the text prompt.
+   * Doing so massively increases token usage and can trigger provider rate limiting.
+   */
+  private sanitizeDataForPrompt(data: Record<string, unknown>): Record<string, unknown> {
+    if (!data || typeof data !== 'object') return data;
+
+    const cloned: Record<string, any> = { ...(data as any) };
+
+    // Replace visionImageParts with light metadata only.
+    if (Array.isArray(cloned.visionImageParts)) {
+      cloned.visionImageParts = (cloned.visionImageParts as any[]).map((p) => ({
+        fileName: p?.fileName,
+        mimeType: p?.mimeType,
+        bytes: p?.bytes,
+        hasUrl: !!p?.url,
+        hasBase64: !!p?.dataBase64,
+      }));
+    }
+
+    // Remove common heavy keys if present.
+    delete cloned.base64;
+    delete cloned.buffer;
+    delete cloned.fileBuffer;
+    delete cloned.binary;
+    delete cloned.raw;
+
+    // Truncate very large strings/arrays defensively.
+    const truncate = (v: unknown, max = 4000) =>
+      typeof v === 'string' && v.length > max ? `${v.slice(0, max)}…[truncated ${v.length - max} chars]` : v;
+
+    for (const k of Object.keys(cloned)) {
+      const v = cloned[k];
+      if (typeof v === 'string') cloned[k] = truncate(v);
+      if (Array.isArray(v) && v.length > 50) cloned[k] = v.slice(0, 50);
+    }
+
+    return cloned;
+  }
+
+  /**
    * Process AI request using OpenAI
    */
   async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
@@ -436,15 +476,16 @@ GUIDELINES:
    * Build user prompt with request and available data
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
+    const safeData = this.sanitizeDataForPrompt(data);
     return `USER REQUEST: ${request.query}
 
 AVAILABLE DATA:
-${JSON.stringify(data, null, 2)}
+${JSON.stringify(safeData, null, 2)}
 
 REQUEST CONTEXT:
 - Priority: ${request.priority}
 - Timestamp: ${request.timestamp.toISOString()}
-- Module Context: ${data.currentModule || 'Cross-module'}
+- Module Context: ${(safeData as any).currentModule || 'Cross-module'}
 
 Please process this request as my Digital Life Twin, understanding the full context of my digital life and providing an appropriate response with any necessary actions.`;
   }
