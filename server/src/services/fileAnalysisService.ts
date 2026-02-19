@@ -475,12 +475,12 @@ const EXT_TO_MIME: Record<string, string> = {
 const DEFAULT_MAX_VISION_PARTS = 5;
 /** Max size per image for vision (5 MB). */
 const DEFAULT_MAX_VISION_IMAGE_BYTES = 5 * 1024 * 1024;
-/** Optional: max dimension (longest side) for resizing; reduces tokens/cost.
- * Reduced to 1024px to avoid OpenAI TPM limits (base64 encoding increases token count significantly). */
-const VISION_IMAGE_MAX_DIMENSION = 1024;
+/** Optional: max dimension (longest side) for resizing; reduces tokens/cost and rate limits.
+ * 1600px balances quality with payload size (base64 encoding increases token count). */
+const VISION_IMAGE_MAX_DIMENSION = 1600;
 /** JPEG quality when converting for vision (balance quality vs size).
- * Reduced to 75% to reduce file size and token count. */
-const VISION_IMAGE_JPEG_QUALITY = 75;
+ * 80% for good quality while reducing file size and rate-limit pressure. */
+const VISION_IMAGE_JPEG_QUALITY = 80;
 // Base64 is ~33% larger than raw bytes. 5MB raw ≈ 6.7MB base64.
 const MAX_VISION_BASE64_BYTES = 7 * 1024 * 1024; // ~7MB base64
 
@@ -733,13 +733,37 @@ const PDF_VISION_MAX_BYTES_PER_IMAGE = 5 * 1024 * 1024;
 /** Minimum summary length to consider PDF "text-based" (skip vision for it) */
 const PDF_TEXT_BASED_SUMMARY_LENGTH = 500;
 
+const PDFTOPPM_BIN = '/usr/bin/pdftoppm';
+
+/** Check if pdftoppm (poppler-utils) is available. Run once before PDF vision to avoid silent failures. */
+async function isPdftoppmAvailable(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const proc = spawn(PDFTOPPM_BIN, ['-v'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const t = setTimeout(() => {
+      proc.kill('SIGKILL');
+      resolve(false);
+    }, 3000);
+    proc.on('error', () => {
+      clearTimeout(t);
+      resolve(false);
+    });
+    proc.on('close', (code) => {
+      clearTimeout(t);
+      resolve(code === 0);
+    });
+  });
+}
+
+export type RenderPdfVisionResult = { parts: VisionImagePart[]; pdftoppmUnavailable?: boolean };
+
 /**
  * Render PDF pages to PNGs via pdftoppm (poppler-utils), then return as VisionImagePart[].
  * Used when PDF has little/no extractable text (image-based PDF). Writes to OS tmp dir.
+ * If pdftoppm is not installed, returns { parts: [], pdftoppmUnavailable: true } so caller can surface PDF_RENDER_UNAVAILABLE.
  * @param pdfBuffer - raw PDF bytes
  * @param fileName - original file name for part labels
  * @param options - maxPages (default 2), maxPartBytes (default 5MB), timeoutMs (default 10s), dpi (default 150)
- * @returns VisionImagePart[] (base64 data URLs); empty if pdftoppm missing or fails
+ * @returns { parts, pdftoppmUnavailable? }; empty parts if pdftoppm missing or fails
  */
 export async function renderPdfPagesToVisionParts(
   pdfBuffer: Buffer,
@@ -750,25 +774,35 @@ export async function renderPdfPagesToVisionParts(
     timeoutMs?: number;
     dpi?: number;
   } = {}
-): Promise<VisionImagePart[]> {
+): Promise<RenderPdfVisionResult> {
   const {
     maxPages = PDF_VISION_MAX_PAGES_DEFAULT,
     maxPartBytes = PDF_VISION_MAX_BYTES_PER_IMAGE,
     timeoutMs = PDF_VISION_TIMEOUT_MS,
     dpi = PDF_VISION_DPI,
   } = options;
+  const parts: VisionImagePart[] = [];
+
+  const available = await isPdftoppmAvailable();
+  if (!available) {
+    logger.info('[VISION_PIPELINE] pdftoppm not available (poppler-utils not installed)', {
+      operation: 'pdf_vision_pdftoppm_check',
+      fileName,
+    });
+    return { parts: [], pdftoppmUnavailable: true };
+  }
+
   const prefix = `pdfvision_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const tmpDir = tmpdir();
   const pdfPath = join(tmpDir, `${prefix}.pdf`);
   const outPrefix = join(tmpDir, prefix);
-  const parts: VisionImagePart[] = [];
   const toClean: string[] = [pdfPath];
 
   try {
     await writeFile(pdfPath, pdfBuffer, { flag: 'w' });
     await new Promise<void>((resolve, reject) => {
       const proc = spawn(
-        '/usr/bin/pdftoppm',
+        PDFTOPPM_BIN,
         ['-png', '-r', String(dpi), '-f', '1', '-l', String(maxPages), pdfPath, outPrefix],
         { stdio: ['ignore', 'pipe', 'pipe'] }
       );
@@ -815,7 +849,7 @@ export async function renderPdfPagesToVisionParts(
       }
     }
   } catch (err) {
-    logger.info('[VISION_PIPELINE] pdf vision render failed (pdftoppm missing or error)', {
+    logger.info('[VISION_PIPELINE] pdf vision render failed (pdftoppm error)', {
       operation: 'pdf_vision_render',
       fileName,
       error: { message: err instanceof Error ? err.message : 'Unknown error' },
@@ -828,51 +862,69 @@ export async function renderPdfPagesToVisionParts(
         // ignore
       }
     }
-    // pdftoppm may write page-1.png, page-2.png; we already added those to toClean
   }
-  return parts;
+  return { parts };
 }
+
+/** Result of getPdfVisionParts: parts to append and optional file issue when pdftoppm is unavailable. */
+export type GetPdfVisionPartsResult = {
+  parts: VisionImagePart[];
+  fileIssueCode?: 'PDF_RENDER_UNAVAILABLE';
+  fileId?: string;
+  fileName?: string;
+};
 
 /**
  * Get vision image parts for a single PDF when it is image-based (short/no text summary).
  * Fetches PDF from storage, renders up to maxPages pages (respecting remaining slots).
+ * If pdftoppm is not available, returns { parts: [], fileIssueCode: 'PDF_RENDER_UNAVAILABLE', fileId, fileName }.
  * @param file - file record with path or url for resolveStoragePath
  * @param summary - existing text summary; if length >= 500 and not starting with "(", skip (text-based PDF)
  * @param currentPartCount - current visionImageParts.length
  * @param maxTotalParts - cap (e.g. 5)
- * @returns VisionImagePart[] to append; empty if not PDF, text-based, no slots, or error
+ * @returns { parts, fileIssueCode?, fileId?, fileName? }; empty parts if not PDF, text-based, no slots, or error
  */
 export async function getPdfVisionParts(
   file: FileRecordForAnalysis,
   summary: string | undefined,
   currentPartCount: number,
   maxTotalParts: number
-): Promise<VisionImagePart[]> {
+): Promise<GetPdfVisionPartsResult> {
   const name = (file.name || '').toLowerCase();
-  if (!name.endsWith('.pdf')) return [];
-  if (currentPartCount >= maxTotalParts) return [];
+  if (!name.endsWith('.pdf')) return { parts: [] };
+  if (currentPartCount >= maxTotalParts) return { parts: [] };
   const summaryLen = (summary ?? '').length;
   const looksTextBased = summaryLen >= PDF_TEXT_BASED_SUMMARY_LENGTH && !(summary ?? '').startsWith('(');
-  if (looksTextBased) return [];
+  if (looksTextBased) return { parts: [] };
 
   const storagePath = resolveStoragePath(file);
-  if (!storagePath) return [];
+  if (!storagePath) return { parts: [] };
   let buffer: Buffer;
   try {
     buffer = await storageService.getFileBuffer(storagePath);
   } catch {
-    return [];
+    return { parts: [] };
   }
   const remainingSlots = maxTotalParts - currentPartCount;
   const maxPages = Math.min(PDF_VISION_MAX_PAGES_DEFAULT, remainingSlots);
-  if (maxPages < 1) return [];
+  if (maxPages < 1) return { parts: [] };
 
-  return renderPdfPagesToVisionParts(buffer, file.name || 'document.pdf', {
+  const result = await renderPdfPagesToVisionParts(buffer, file.name || 'document.pdf', {
     maxPages,
     maxPartBytes: PDF_VISION_MAX_BYTES_PER_IMAGE,
     timeoutMs: PDF_VISION_TIMEOUT_MS,
     dpi: PDF_VISION_DPI,
   });
+
+  if (result.pdftoppmUnavailable) {
+    return {
+      parts: [],
+      fileIssueCode: 'PDF_RENDER_UNAVAILABLE',
+      fileId: file.id,
+      fileName: file.name ?? undefined,
+    };
+  }
+  return { parts: result.parts };
 }
 
 /**

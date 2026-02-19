@@ -11,6 +11,7 @@ export const FILE_ISSUE_CODES = [
   'FILE_NOT_IN_STORAGE',
   'FILE_TOO_LARGE_POLICY',
   'PROVIDER_REJECTED_MEDIA_TYPE',
+  'PDF_RENDER_UNAVAILABLE',
 ] as const;
 
 export type FileIssueCode = (typeof FILE_ISSUE_CODES)[number];
@@ -32,6 +33,7 @@ const USER_MESSAGES: Record<FileIssueCode, string> = {
   FILE_NOT_IN_STORAGE: 'File could not be found in storage.',
   FILE_TOO_LARGE_POLICY: 'This file exceeds the size limit for analysis.',
   PROVIDER_REJECTED_MEDIA_TYPE: 'This image type is not supported for vision.',
+  PDF_RENDER_UNAVAILABLE: 'PDF page rendering is not available (e.g. scanned PDFs cannot be read in this environment).',
 };
 
 export function getMessageForCode(code: FileIssueCode): string {

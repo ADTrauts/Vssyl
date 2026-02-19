@@ -179,20 +179,31 @@ export class AnthropicProvider {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
       const isUnavailable = errorMessage.includes('unavailable') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND');
-      
+      const errObj = error as Record<string, unknown> | undefined;
+      const responseObj = errObj?.response && typeof errObj.response === 'object' ? (errObj.response as Record<string, unknown>) : undefined;
+      const httpStatus =
+        typeof errObj?.status === 'number'
+          ? errObj.status
+          : typeof errObj?.statusCode === 'number'
+            ? errObj.statusCode
+            : typeof responseObj?.status === 'number'
+              ? responseObj.status
+              : undefined;
+      const rateLimited = httpStatus === 429 || errorMessage.toLowerCase().includes('rate limit');
+
       await logger.error('Anthropic processing error', {
         operation: 'anthropic_provider_error',
-        error: { 
+        error: {
           message: errorMessage,
           stack: error instanceof Error ? error.stack : undefined,
           code: error instanceof Error && 'code' in error ? String(error.code) : undefined,
         },
+        httpStatus,
         isTimeout,
         isUnavailable,
         requestId: request.id,
       });
-      
-      // Provide user-friendly error message
+
       let responseText: string;
       if (isTimeout) {
         responseText = 'The AI request timed out. This can happen with large files or when the AI service is slow. Please try again with a smaller file or simpler query.';
@@ -201,7 +212,18 @@ export class AnthropicProvider {
       } else {
         responseText = 'I apologize, but I encountered an error during analysis. Please try again.';
       }
-      
+
+      const metadata: Record<string, unknown> = {
+        provider: 'anthropic',
+        model: this.config.model,
+        tokens: 0,
+        cost: 0,
+        processingTime: Date.now() - startTime,
+        error: errorMessage,
+      };
+      if (rateLimited) metadata.code = 'RATE_LIMITED';
+      else if (isUnavailable) metadata.code = 'TEMP_UNAVAILABLE';
+
       return {
         id: this.generateResponseId(),
         requestId: request.id,
@@ -209,14 +231,7 @@ export class AnthropicProvider {
         confidence: 0,
         reasoning: `Analysis error occurred: ${errorMessage}`,
         actions: [],
-        metadata: {
-          provider: 'anthropic',
-          model: this.config.model,
-          tokens: 0,
-          cost: 0,
-          processingTime: Date.now() - startTime,
-          error: errorMessage
-        }
+        metadata: metadata as AIResponse['metadata'],
       };
     }
   }

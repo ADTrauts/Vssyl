@@ -41,6 +41,10 @@ export interface AIResponse {
     specialization?: string;
     actionResults?: any;
     processingMethod?: string;
+    /** Set on 429 fallback for provider fallback (e.g. try Anthropic). */
+    code?: string;
+    /** Retry-After seconds from provider (e.g. OpenAI 429); UI can show "Try again in ~Ns". */
+    retryAfter?: number;
   };
 }
 

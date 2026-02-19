@@ -356,15 +356,23 @@ export class DigitalLifeTwinCore {
                 const name = (file.name ?? '').toLowerCase();
                 if (!name.endsWith('.pdf')) continue;
                 const summary = summaryMapForPdf.get(file.id);
-                const pdfParts = await getPdfVisionParts(
+                const pdfResult = await getPdfVisionParts(
                   { id: file.id, name: file.name ?? '', path: file.path, url: file.url, size: file.size ?? 0, type: file.type },
                   summary,
                   visionImageParts.length,
                   5
                 );
-                for (const p of pdfParts) {
+                for (const p of pdfResult.parts) {
                   visionImageParts.push(p);
                   if (visionImageParts.length >= 5) break;
+                }
+                if (pdfResult.fileIssueCode && pdfResult.fileId) {
+                  fileAnalysisResults.push({
+                    id: pdfResult.fileId,
+                    name: pdfResult.fileName ?? pdfResult.fileId,
+                    summary: '',
+                    fileIssueCode: pdfResult.fileIssueCode,
+                  });
                 }
               }
               if (visionImageParts.length > 0) {
@@ -811,21 +819,43 @@ export class DigitalLifeTwinCore {
       visionImagePartsLength: (options.visionImageParts as unknown[] | undefined)?.length ?? 0,
     });
 
-    // Generate response
-    const aiResponse = await this.callAIProvider(provider, prompt, options);
-    
+    // Generate response — try selected provider, then auto-fallback to other provider on 429/unavailable
+    let aiResponse = await this.callAIProvider(provider, prompt, options);
+    const metadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
+    const providerErrored = Boolean(metadata.error);
+    const shouldFallback =
+      providerErrored &&
+      (metadata.code === 'RATE_LIMITED' || metadata.code === 'TEMP_UNAVAILABLE') &&
+      (provider === 'openai' || provider === 'anthropic');
+
+    if (shouldFallback) {
+      const fallbackProvider = provider === 'openai' ? 'anthropic' : 'openai';
+      await logger.info(`${VISION_PIPELINE_PREFIX} provider fallback (${provider} → ${fallbackProvider})`, {
+        operation: 'vision_pipeline_fallback',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        fromProvider: provider,
+        toProvider: fallbackProvider,
+        reason: metadata.code,
+      });
+      aiResponse = await this.callAIProvider(fallbackProvider, prompt, options);
+    }
+
     const response = typeof aiResponse.response === 'string' ? aiResponse.response : String(aiResponse.response || '');
     const confidence = typeof aiResponse.confidence === 'number' ? aiResponse.confidence : 0.5;
     const reasoning = typeof aiResponse.reasoning === 'string' ? aiResponse.reasoning : "Generated based on your digital life patterns and personality";
-    const usedVisionParts = (options.visionImageParts as unknown[] | undefined)?.length ? (options.visionImageParts as unknown[]).length > 0 : false;
-    
+    const finalMetadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
+    const finalProviderErrored = Boolean(finalMetadata.error);
+    const usedVisionParts = hasVisionParts && !finalProviderErrored;
+    const effectiveProvider = shouldFallback ? (provider === 'openai' ? 'anthropic' : 'openai') : provider;
+
     return {
       response,
       confidence,
       reasoning,
       modulesFocused: (analysis as any)?.scope?.modules || [],
       patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
-      provider,
+      provider: effectiveProvider,
       structured: aiResponse.structured,
       usedVisionParts,
     };
@@ -1470,16 +1500,18 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         response: response.response,
         confidence: response.confidence,
         reasoning: response.reasoning || "Generated using AI provider analysis",
-        structured: response.structured
+        structured: response.structured,
+        metadata: response.metadata,
       };
     } catch (error) {
       console.error(`Error calling AI provider ${provider}:`, error);
-      
-      // Fallback to mock response if AI provider fails
+      const errMessage = error instanceof Error ? error.message : 'Unknown error';
+      // Fallback to mock response if AI provider fails; include metadata.error so Core can set usedVisionParts = false
       return {
         response: "I understand your request and I'm working to provide the best response. (AI provider temporarily unavailable)",
         confidence: 0.6,
-        reasoning: "Fallback response due to AI provider connection issue"
+        reasoning: "Fallback response due to AI provider connection issue",
+        metadata: { provider, error: errMessage } as Record<string, unknown>,
       };
     }
   }

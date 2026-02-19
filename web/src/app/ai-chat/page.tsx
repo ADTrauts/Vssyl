@@ -77,6 +77,7 @@ export default function AIChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const submittingRef = useRef(false);
 
   // Pre-attach files from URL (e.g. "Ask AI about this file" from Drive)
   useEffect(() => {
@@ -270,6 +271,8 @@ export default function AIChat() {
   // Handle AI query submission
   const handleAIQuery = async () => {
     if ((!inputValue.trim() && attachedFiles.length === 0) || isAILoading) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
 
     // Validate session and token
     if (!session) {
@@ -400,6 +403,7 @@ export default function AIChat() {
       
       setConversation(prev => [...prev, buildErrorConversationItem(errorMessage) as ConversationItem]);
     } finally {
+      submittingRef.current = false;
       setIsAILoading(false);
     }
   };
