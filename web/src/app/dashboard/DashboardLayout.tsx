@@ -24,6 +24,7 @@ import AvatarContextMenu from '../../components/AvatarContextMenu';
 import CompactSearchButton from '../../components/header/CompactSearchButton';
 import AIChatDropdown from '../../components/header/AIChatDropdown';
 import { Modal, DraggableWrapper } from 'shared/components';
+import { getSuggestions } from '../../api/aiSuggestions';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import { DragEndEvent } from '@dnd-kit/core';
 import { SidebarCustomizationModal } from '../../components/sidebar/SidebarCustomizationModal';
@@ -160,6 +161,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [newDashboardName, setNewDashboardName] = useState('');
   const [selectedTabType, setSelectedTabType] = useState<'blank' | 'home'>('blank');
   const [isAIOpen, setIsAIOpen] = useState(false);
+  const [pendingSuggestionsCount, setPendingSuggestionsCount] = useState(0);
   const [aiDropdownPosition, setAIDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const aiButtonRef = useRef<HTMLButtonElement>(null);
   
@@ -873,7 +875,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           <button
             ref={aiButtonRef}
             onClick={handleAIClick}
-            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100"
+            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100 relative"
             style={{
               background: isAIOpen ? '#8b5cf6' : 'transparent',
               color: isAIOpen ? '#fff' : '#8b5cf6',
@@ -890,9 +892,24 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               fontWeight: '600',
               fontSize: '12px',
             }}
-            title="AI Assistant"
+            title={pendingSuggestionsCount > 0 ? `AI Assistant (${pendingSuggestionsCount} suggestion${pendingSuggestionsCount > 1 ? 's' : ''})` : 'AI Assistant'}
           >
             AI
+            {pendingSuggestionsCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10"
+                style={{
+                  minWidth: '18px',
+                  height: '18px',
+                  padding: '0 4px',
+                  fontSize: '10px',
+                  lineHeight: '1',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
+              >
+                {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+              </span>
+            )}
           </button>
           
           {/* Avatar */}

@@ -15,6 +15,7 @@ import { useWorkAuth } from '../contexts/WorkAuthContext';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useBusinessConfiguration } from '../contexts/BusinessConfigurationContext';
 import { getBusiness } from '../api/business';
+import { getSuggestions } from '../api/aiSuggestions';
 
 // Helper: get dashboard icon
 function getDashboardIcon(name: string, type?: string) {
@@ -79,6 +80,7 @@ export default function GlobalHeaderTabs() {
   const [editMode, setEditMode] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
   const [aiDropdownPosition, setAIDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [pendingSuggestionsCount, setPendingSuggestionsCount] = useState(0);
   const tabsRef = useRef<HTMLDivElement>(null);
   const [isInScheduling, setIsInScheduling] = useState(false);
   const [schedulingContext, setSchedulingContext] = useState<{ businessId?: string; scheduleId?: string } | null>(null);
@@ -131,6 +133,28 @@ export default function GlobalHeaderTabs() {
       window.removeEventListener('scheduleSelected', handleScheduleSelected as EventListener);
     };
   }, [isInScheduling, schedulingContext]);
+
+  // Poll for AI suggestions to show badge on AI button
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    
+    const loadSuggestionCount = async () => {
+      try {
+        const suggestions = await getSuggestions(session.accessToken);
+        const pendingCount = suggestions.filter(s => s.status === 'PENDING').length;
+        setPendingSuggestionsCount(pendingCount);
+      } catch (error) {
+        console.error('Failed to load suggestion count:', error);
+      }
+    };
+
+    // Load immediately
+    loadSuggestionCount();
+    
+    // Poll every 3 seconds
+    const interval = setInterval(loadSuggestionCount, 3000);
+    return () => clearInterval(interval);
+  }, [session?.accessToken]);
 
 
   // Personal dashboards ordering
@@ -361,8 +385,24 @@ export default function GlobalHeaderTabs() {
             transition: 'all 0.2s ease',
             position: 'relative',
           }}
-          title="AI Assistant"
+          title={pendingSuggestionsCount > 0 ? `AI Assistant (${pendingSuggestionsCount} suggestion${pendingSuggestionsCount > 1 ? 's' : ''})` : 'AI Assistant'}
         >
+          {/* Badge for pending suggestions */}
+          {pendingSuggestionsCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10"
+              style={{
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 4px',
+                fontSize: '10px',
+                lineHeight: '1',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+            </span>
+          )}
           {/* Pulsing circle animation when in scheduling or To-Do context */}
           {isInScheduling && !isAIOpen && (
             <>
@@ -400,6 +440,22 @@ export default function GlobalHeaderTabs() {
             </>
           )}
           <Brain size={26} style={{ position: 'relative', zIndex: 1 }} />
+          {/* Badge for pending suggestions */}
+          {pendingSuggestionsCount > 0 && (
+            <span
+              className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20"
+              style={{
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 4px',
+                fontSize: '10px',
+                lineHeight: '1',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}
+            >
+              {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+            </span>
+          )}
         </button>
         
         {/* Avatar */}

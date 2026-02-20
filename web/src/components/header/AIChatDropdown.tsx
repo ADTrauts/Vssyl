@@ -194,16 +194,17 @@ export default function AIChatDropdown({
     if (isOpen && session?.accessToken) {
       loadConversations();
       loadProviderPreference();
+      // Load suggestions immediately when dropdown opens
       loadSuggestions();
     }
   }, [isOpen, session?.accessToken, dashboardId, currentDashboard?.id]);
 
-  // Poll for new suggestions every 5 seconds when dropdown is open
+  // Poll for new suggestions every 3 seconds when dropdown is open (faster polling)
   useEffect(() => {
     if (!isOpen || !session?.accessToken) return;
     const interval = setInterval(() => {
       loadSuggestions();
-    }, 5000);
+    }, 3000);
     return () => clearInterval(interval);
   }, [isOpen, session?.accessToken]);
 
