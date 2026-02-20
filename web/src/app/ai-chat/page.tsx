@@ -69,6 +69,14 @@ interface ConversationItem {
   };
 }
 
+/** Detect if user wants to edit the last generated image (natural language) */
+function getEditImageIntent(query: string, lastGeneratedImage: { url: string; revisedPrompt?: string; fileId?: string } | undefined): boolean {
+  if (!lastGeneratedImage || !query || query.length < 3) return false;
+  const q = query.toLowerCase().trim();
+  return /\b(edit|modify|change|adjust|remove\s+background|add|remove|tweak|fix)\s+(this\s+)?(image|picture|photo|img)/.test(q) ||
+         /\b(edit|modify|change|adjust)\s+(the\s+)?(last|previous|above|that)\s+(image|picture|photo)/.test(q);
+}
+
 export default function AIChat() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
@@ -415,6 +423,28 @@ export default function AIChat() {
     setIsAILoading(true);
 
     try {
+      // Check if user wants to edit the last generated image (natural language)
+      const lastGeneratedImage = conversation
+        .filter((item) => item.type === 'ai' && item.generatedImage)
+        .slice(-1)[0]?.generatedImage;
+      if (getEditImageIntent(userQuery, lastGeneratedImage) && lastGeneratedImage) {
+        // Save to Drive if needed, then open edit modal
+        const itemWithImage = conversation.find((item) => item.generatedImage === lastGeneratedImage);
+        if (itemWithImage) {
+          const fileId = await handleSaveGeneratedImageToDrive(itemWithImage.id, true);
+          if (fileId) {
+            submittingRef.current = false;
+            setIsAILoading(false);
+            return; // Edit modal will open
+          } else {
+            toast.error('Please save the image to Drive first, then edit');
+            submittingRef.current = false;
+            setIsAILoading(false);
+            return;
+          }
+        }
+      }
+
       const extractIntent = getExtractDocumentIntent(userQuery, currentAttachedFiles.length > 0);
       if (extractIntent && currentAttachedFiles.length > 0) {
         const extractRes = await authenticatedApiCall<{ success: boolean; data?: ConversationItem['extractedDocument']; error?: string }>(
@@ -977,10 +1007,18 @@ export default function AIChat() {
     }
   };
 
-  const handleSaveGeneratedImageToDrive = async (itemId: string) => {
+  const handleSaveGeneratedImageToDrive = async (itemId: string, thenEdit?: boolean): Promise<string | null> => {
     const item = conversation.find((c) => c.id === itemId);
     const gen = item?.generatedImage;
-    if (!gen?.url || !session?.accessToken || savingImageToDriveId) return;
+    if (!gen?.url || !session?.accessToken || savingImageToDriveId) return null;
+    if (gen.fileId) {
+      // Already saved - if thenEdit, attach and open modal
+      if (thenEdit) {
+        setAttachedFiles([{ id: gen.fileId, name: `generated-image-${gen.fileId.slice(0, 8)}.png` }]);
+        setShowEditImageModal(true);
+      }
+      return gen.fileId;
+    }
     setSavingImageToDriveId(itemId);
     try {
       const response = await authenticatedApiCall<{
@@ -1000,17 +1038,24 @@ export default function AIChat() {
         session.accessToken
       );
       if (!response.success || !response.data?.fileId) throw new Error(response.error || 'Failed to save');
+      const fileId = response.data.fileId;
       setConversation((prev) =>
         prev.map((c) =>
           c.id === itemId && c.generatedImage
-            ? { ...c, generatedImage: { ...c.generatedImage, fileId: response.data!.fileId } }
+            ? { ...c, generatedImage: { ...c.generatedImage, fileId } }
             : c
         )
       );
       toast.success('Saved to Drive');
+      if (thenEdit) {
+        setAttachedFiles([{ id: fileId, name: response.data.name || `generated-image-${fileId.slice(0, 8)}.png` }]);
+        setShowEditImageModal(true);
+      }
+      return fileId;
     } catch (error) {
       console.error('Save to Drive failed:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to save to Drive');
+      return null;
     } finally {
       setSavingImageToDriveId(null);
     }
@@ -1791,24 +1836,50 @@ export default function AIChat() {
                                 />
                                 <div className="mt-2 flex items-center gap-2">
                                   {item.generatedImage.fileId ? (
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => router.push(`/drive?file=${encodeURIComponent(item.generatedImage!.fileId!)}`)}
-                                    >
-                                      <Folder className="h-3 w-3 mr-1" />
-                                      Open in Drive
-                                    </Button>
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => router.push(`/drive?file=${encodeURIComponent(item.generatedImage!.fileId!)}`)}
+                                      >
+                                        <Folder className="h-3 w-3 mr-1" />
+                                        Open in Drive
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={async () => {
+                                          // Attach the file and open edit modal
+                                          const fileId = item.generatedImage!.fileId!;
+                                          setAttachedFiles([{ id: fileId, name: `generated-image-${fileId.slice(0, 8)}.png` }]);
+                                          setShowEditImageModal(true);
+                                        }}
+                                      >
+                                        <Edit className="h-3 w-3 mr-1" />
+                                        Edit
+                                      </Button>
+                                    </>
                                   ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => handleSaveGeneratedImageToDrive(item.id)}
-                                      disabled={savingImageToDriveId === item.id}
-                                    >
-                                      {savingImageToDriveId === item.id ? <Spinner size={14} /> : <Folder className="h-3 w-3 mr-1" />}
-                                      Save to Drive
-                                    </Button>
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => handleSaveGeneratedImageToDrive(item.id)}
+                                        disabled={savingImageToDriveId === item.id}
+                                      >
+                                        {savingImageToDriveId === item.id ? <Spinner size={14} /> : <Folder className="h-3 w-3 mr-1" />}
+                                        Save to Drive
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => handleSaveGeneratedImageToDrive(item.id, true)}
+                                        disabled={savingImageToDriveId === item.id}
+                                      >
+                                        {savingImageToDriveId === item.id ? <Spinner size={14} /> : <Edit className="h-3 w-3 mr-1" />}
+                                        Edit
+                                      </Button>
+                                    </>
                                   )}
                                 </div>
                               </>
