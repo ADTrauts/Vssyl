@@ -304,15 +304,23 @@ export default function AIChat() {
       const response = await getConversation(conversationId, session.accessToken);
       
       if (response.success) {
-        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessage) => ({
-          id: msg.id,
-          type: msg.role === 'assistant' ? 'ai' : 'user',
-          content: msg.content,
-          timestamp: new Date(msg.createdAt),
-          confidence: msg.confidence,
-          metadata: msg.metadata,
-          attachments: msg.attachments
-        }));
+        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessage) => {
+          const meta = (msg.metadata || {}) as Record<string, unknown>;
+          return {
+            id: msg.id,
+            type: msg.role === 'assistant' ? 'ai' : 'user',
+            content: msg.content,
+            timestamp: new Date(msg.createdAt),
+            confidence: msg.confidence,
+            metadata: msg.metadata,
+            attachments: msg.attachments,
+            structured: meta.structured as ConversationItem['structured'],
+            generatedImage: meta.generatedImage as ConversationItem['generatedImage'],
+            extractedDocument: meta.extractedDocument as ConversationItem['extractedDocument'],
+            usedVisionParts: meta.usedVisionParts as boolean | undefined,
+            fileIssues: meta.fileIssues as ConversationItem['fileIssues'],
+          };
+        });
 
         // Fetch file details for messages with attachments
         if (session?.accessToken) {
@@ -445,7 +453,7 @@ export default function AIChat() {
               role: 'assistant',
               content: aiExtractItem.content,
               confidence: 1,
-              metadata: {},
+              metadata: { extractedDocument: extractRes.data },
             }, session.accessToken);
           }
           submittingRef.current = false;
@@ -790,13 +798,27 @@ export default function AIChat() {
     setShowGenerateImageModal(false);
     setGenerateImagePrompt('');
 
+    const userContent = `Generate image: ${prompt}`;
     const userItem: ConversationItem = {
       id: `user_${Date.now()}`,
       type: 'user',
-      content: `Generate image: ${prompt}`,
+      content: userContent,
       timestamp: new Date(),
     };
     setConversation((prev) => [...prev, userItem]);
+
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      const convRes = await createConversation({ title: userContent.slice(0, 50), dashboardId: currentDashboard?.id }, session.accessToken);
+      if (convRes.success) {
+        conversationId = convRes.data.id;
+        setCurrentConversationId(conversationId);
+        loadConversations();
+      }
+    }
+    if (conversationId) {
+      addMessage(conversationId, { role: 'user', content: userContent }, session.accessToken).catch(() => {});
+    }
 
     try {
       const response = await authenticatedApiCall<{
@@ -820,19 +842,21 @@ export default function AIChat() {
         throw new Error(response.error || 'Failed to generate image');
       }
 
+      const aiContent = response.data.revisedPrompt ? `Here's your image. "${response.data.revisedPrompt}"` : "Here's your generated image.";
+      const generatedImage = { url: response.data.url, revisedPrompt: response.data.revisedPrompt };
       const aiItem: ConversationItem = {
         id: `ai_${Date.now()}`,
         type: 'ai',
-        content: response.data.revisedPrompt ? `Here's your image. "${response.data.revisedPrompt}"` : "Here's your generated image.",
+        content: aiContent,
         timestamp: new Date(),
         confidence: 1,
         metadata: {},
-        generatedImage: {
-          url: response.data.url,
-          revisedPrompt: response.data.revisedPrompt,
-        },
+        generatedImage,
       };
       setConversation((prev) => [...prev, aiItem]);
+      if (conversationId) {
+        addMessage(conversationId, { role: 'assistant', content: aiContent, confidence: 1, metadata: { generatedImage } }, session.accessToken).catch(() => {});
+      }
     } catch (error) {
       console.error('Generate image failed:', error);
       const errMsg = error instanceof Error ? error.message : 'Failed to generate image';
@@ -846,6 +870,9 @@ export default function AIChat() {
         metadata: {},
       };
       setConversation((prev) => [...prev, errorItem]);
+      if (conversationId) {
+        addMessage(conversationId, { role: 'assistant', content: errorItem.content, confidence: 0 }, session.accessToken).catch(() => {});
+      }
     } finally {
       setIsGeneratingImage(false);
     }
@@ -854,16 +881,32 @@ export default function AIChat() {
   const handleEditImage = async () => {
     if (attachedFiles.length !== 1 || !session?.accessToken || !editImagePrompt.trim() || isEditingImage) return;
     const fileId = attachedFiles[0].id;
+    const promptText = editImagePrompt.trim();
     setShowEditImageModal(false);
     setEditImagePrompt('');
+    const userContent = `Edit image: ${promptText}`;
     const userItem: ConversationItem = {
       id: `user_${Date.now()}`,
       type: 'user',
-      content: `Edit image: ${editImagePrompt.trim()}`,
+      content: userContent,
       timestamp: new Date(),
     };
     setConversation((prev) => [...prev, userItem]);
     setIsEditingImage(true);
+
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      const convRes = await createConversation({ title: userContent.slice(0, 50), dashboardId: currentDashboard?.id }, session.accessToken);
+      if (convRes.success) {
+        conversationId = convRes.data.id;
+        setCurrentConversationId(conversationId);
+        loadConversations();
+      }
+    }
+    if (conversationId) {
+      addMessage(conversationId, { role: 'user', content: userContent }, session.accessToken).catch(() => {});
+    }
+
     try {
       const response = await authenticatedApiCall<{
         success: boolean;
@@ -875,7 +918,7 @@ export default function AIChat() {
           method: 'POST',
           body: JSON.stringify({
             fileId,
-            prompt: editImagePrompt.trim(),
+            prompt: promptText,
             background: editImageBackground,
             saveToDrive: true,
             dashboardId: currentDashboard?.id ?? undefined,
@@ -887,21 +930,21 @@ export default function AIChat() {
       if (!response.success || !response.data?.url) {
         throw new Error(response.error || 'Failed to edit image');
       }
+      const aiContent = response.data.fileId ? "Here's your edited image, saved to Drive." : "Here's your edited image.";
+      const generatedImage = { url: response.data.url, fileId: response.data.fileId };
       const aiItem: ConversationItem = {
         id: `ai_${Date.now()}`,
         type: 'ai',
-        content: response.data.fileId
-          ? "Here's your edited image, saved to Drive."
-          : "Here's your edited image.",
+        content: aiContent,
         timestamp: new Date(),
         confidence: 1,
         metadata: {},
-        generatedImage: {
-          url: response.data.url,
-          fileId: response.data.fileId,
-        },
+        generatedImage,
       };
       setConversation((prev) => [...prev, aiItem]);
+      if (conversationId) {
+        addMessage(conversationId, { role: 'assistant', content: aiContent, confidence: 1, metadata: { generatedImage } }, session.accessToken).catch(() => {});
+      }
       toast.success(response.data.fileId ? 'Edited image saved to Drive' : 'Image edited');
     } catch (error) {
       console.error('Edit image failed:', error);
@@ -916,6 +959,9 @@ export default function AIChat() {
         metadata: {},
       };
       setConversation((prev) => [...prev, errorItem]);
+      if (conversationId) {
+        addMessage(conversationId, { role: 'assistant', content: errorItem.content, confidence: 0 }, session.accessToken).catch(() => {});
+      }
     } finally {
       setIsEditingImage(false);
     }

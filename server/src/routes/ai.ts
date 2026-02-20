@@ -432,8 +432,12 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
     if (!caps.supportsImageEdit) {
       return res.status(501).json({ error: 'Image edit not supported by current provider' });
     }
+    // Prefer storage path so we don't depend on fetching file.url (signed URLs, auth, or CORS can fail in production).
     let imageBuffer: Buffer;
-    if (file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'))) {
+    if (file.path) {
+      const { storageService } = await import('../services/storageService');
+      imageBuffer = await storageService.getFileBuffer(file.path);
+    } else if (file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'))) {
       const imageRes = await fetch(file.url, { method: 'GET' });
       if (!imageRes.ok) {
         return res.status(502).json({ error: 'Failed to fetch image from URL' });
@@ -441,11 +445,7 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
       const arrayBuffer = await imageRes.arrayBuffer();
       imageBuffer = Buffer.from(arrayBuffer);
     } else {
-      if (!file.path) {
-        return res.status(400).json({ error: 'File has no storage path' });
-      }
-      const { storageService } = await import('../services/storageService');
-      imageBuffer = await storageService.getFileBuffer(file.path);
+      return res.status(400).json({ error: 'File has no storage path or accessible URL' });
     }
     const { OpenAIProvider } = await import('../ai/providers/OpenAIProvider');
     const provider = new OpenAIProvider();

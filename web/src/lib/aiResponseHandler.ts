@@ -96,21 +96,26 @@ export function buildAIConversationItemFromTwinData(
 
 /**
  * Payload for addMessage(conversationId, payload) after a twin response.
+ * Includes structured, fileIssues, usedVisionParts so history loads with correct formatting.
  */
 export function buildAddMessagePayloadFromTwinData(data: TwinResponseData): {
   role: 'assistant';
   content: string;
   confidence: number;
-  metadata: { reasoning?: string; actions: unknown[] };
+  metadata: Record<string, unknown>;
 } {
+  const metadata: Record<string, unknown> = {
+    reasoning: data.reasoning,
+    actions: Array.isArray(data.actions) ? data.actions : [],
+  };
+  if (data.structured != null) metadata.structured = data.structured;
+  if (Array.isArray(data.fileIssues) && data.fileIssues.length > 0) metadata.fileIssues = data.fileIssues;
+  if (data.usedVisionParts === true) metadata.usedVisionParts = true;
   return {
     role: 'assistant',
     content: data.response?.trim() || 'No response generated',
     confidence: typeof data.confidence === 'number' ? data.confidence : 0.5,
-    metadata: {
-      reasoning: data.reasoning,
-      actions: Array.isArray(data.actions) ? data.actions : [],
-    },
+    metadata,
   };
 }
 

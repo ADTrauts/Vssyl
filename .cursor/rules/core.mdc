@@ -67,3 +67,8 @@ You have two modes of operation:
 - **Work on entire set of tasks at once** (don't stop between actions)
 - **Consistent global font and matching icons** (prefer Drive module icons)
 - **Run both Next.js frontend and Express backend** with `pnpm dev` from root
+
+### **AI Platform Phased Plan**
+- When building the AI platform roadmap, follow **memory-bank/AI_PLATFORM_PHASED_PLAN.md** phase by phase.
+- **Do not start the next phase** until the current phase is complete and the user confirms.
+- At the end of each phase, ask: **"Phase N is complete. Ready to start Phase N+1?"** and wait for the user to say yes (e.g. "Yes, start Phase N+1" or "ACT" with that intent).
