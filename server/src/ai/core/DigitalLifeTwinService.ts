@@ -45,6 +45,10 @@ export interface AIResponse {
     code?: string;
     /** Retry-After seconds from provider (e.g. OpenAI 429); UI can show "Try again in ~Ns". */
     retryAfter?: number;
+    /** When present, Core should execute tools and re-call provider with assistant + tool result messages. */
+    toolCalls?: Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }>;
+    /** When toolCalls is present, the messages sent to the API so Core can extend and re-call. */
+    messagesSent?: unknown[];
   };
 }
 
@@ -164,6 +168,84 @@ export class DigitalLifeTwinService {
     };
 
     return await this.digitalLifeTwinCore.processAsDigitalTwin(lifeTwinQuery);
+  }
+
+  /**
+   * Process as Digital Life Twin with SSE streaming. Sets res headers and writes chunks;
+   * when done, writes final event and calls onDone(response) so the route can consume/save.
+   */
+  async processAsDigitalLifeTwinStreaming(
+    query: string,
+    userId: string,
+    context: {
+      currentModule?: string;
+      dashboardType?: string;
+      dashboardName?: string;
+      recentActivity?: unknown[];
+      urgency?: 'low' | 'medium' | 'high';
+      preferredProvider?: 'auto' | 'openai' | 'anthropic';
+      conversationId?: string;
+      fileIds?: string[];
+    },
+    res: { setHeader: (name: string, value: string) => void; write: (chunk: string) => void; end: () => void },
+    onDone?: (response: DigitalLifeTwinResponse) => Promise<void>
+  ): Promise<void> {
+    let conversationHistory: ConversationHistoryItem[] = [];
+    if (context.conversationId && typeof context.conversationId === 'string') {
+      try {
+        const conversation = await this.prisma.aIConversation.findFirst({
+          where: { id: context.conversationId, userId, trashedAt: null },
+        });
+        if (conversation) {
+          const messages = await this.prisma.aIMessage.findMany({
+            where: { conversationId: context.conversationId },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+          });
+          const reversed = messages.reverse().map((m) => ({
+            role: m.role as ConversationHistoryItem['role'],
+            content: m.content,
+            timestamp: m.createdAt,
+          }));
+          const last = reversed[reversed.length - 1];
+          if (last?.role === 'user' && (last.content || '').trim() === (query || '').trim()) {
+            reversed.pop();
+          }
+          conversationHistory = reversed;
+        }
+      } catch (err) {
+        console.warn('Failed to load conversation history for twin (streaming):', err);
+      }
+    }
+    const lifeTwinQuery: LifeTwinQuery = {
+      query,
+      userId,
+      context: context as Record<string, unknown>,
+      conversationHistory,
+      preferredProvider: context.preferredProvider,
+    };
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    const onChunk = (text: string) => {
+      res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    };
+    try {
+      const response = await this.digitalLifeTwinCore.processAsDigitalTwin(lifeTwinQuery, {
+        stream: true,
+        onChunk,
+      });
+      res.write(`data: ${JSON.stringify({ done: true, data: response })}\n\n`);
+      if (onDone) {
+        await onDone(response);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      res.write(`data: ${JSON.stringify({ error: true, message })}\n\n`);
+    } finally {
+      res.end();
+    }
   }
 
   /**

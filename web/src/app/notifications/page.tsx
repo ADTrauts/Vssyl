@@ -48,6 +48,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
   calendar: Clock,
   scheduling: Clock,
   todo: Check,
+  ai: Zap,
 };
 
 // Fallback category mapping for legacy notification types
@@ -62,6 +63,7 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'member_request': 'members',
   'system_alert': 'system',
   'calendar_reminder': 'calendar',
+  'ai_suggestion': 'ai',
 };
 
 export default function NotificationsPage() {
@@ -626,7 +628,9 @@ export default function NotificationsPage() {
           const item = items[focusedIndex];
           if (viewMode === 'list') {
             const notification = item as Notification;
-            if ((notification.data as any)?.fileId) {
+            if ((notification.data as any)?.actionUrl) {
+              router.push((notification.data as any).actionUrl);
+            } else if ((notification.data as any)?.fileId) {
               router.push(`/drive/shared?file=${(notification.data as any)?.fileId}`);
             } else if ((notification.data as any)?.conversationId) {
               router.push(`/chat?conversation=${(notification.data as any)?.conversationId}`);
@@ -1220,8 +1224,11 @@ export default function NotificationsPage() {
                         if (selectionMode) {
                           handleSelectNotification(notification.id);
                         } else {
-                          // Auto-navigate to relevant resource if clickable
-                          if ((notification.data as any)?.fileId) {
+                          // Auto-navigate to relevant resource if clickable (actionUrl for ai_suggestion)
+                          if ((notification.data as any)?.actionUrl) {
+                            router.push((notification.data as any).actionUrl);
+                            handleMarkAsRead(notification.id);
+                          } else if ((notification.data as any)?.fileId) {
                             router.push(`/drive/shared?file=${(notification.data as any)?.fileId}`);
                             handleMarkAsRead(notification.id);
                           } else if ((notification.data as any)?.folderId) {
@@ -1385,6 +1392,20 @@ export default function NotificationsPage() {
                               >
                                 <Folder className="w-3 h-3 mr-1" />
                                 Open folder
+                              </Button>
+                            )}
+                            {Boolean((notification.data as any)?.actionUrl) && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs"
+                                onClick={() => {
+                                  router.push((notification.data as any).actionUrl);
+                                  handleMarkAsRead(notification.id);
+                                }}
+                              >
+                                <Zap className="w-3 h-3 mr-1" />
+                                Open in AI
                               </Button>
                             )}
                           </div>

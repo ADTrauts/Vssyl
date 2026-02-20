@@ -7,6 +7,8 @@ export interface ProviderVisionCapability {
   supportsVisionInput: boolean;
   /** Optional: true when provider supports image generation (e.g. DALL·E). */
   supportsImageGeneration?: boolean;
+  /** Optional: true when provider supports image edit (e.g. remove background). Phase 8. */
+  supportsImageEdit?: boolean;
   /** Model id to use when vision is used (e.g. gpt-4o, claude-3-5-sonnet-20241022). */
   visionModel?: string;
   maxImageCount: number;
@@ -20,6 +22,7 @@ export type ProviderId = 'openai' | 'anthropic' | 'local';
 const OPENAI_VISION: ProviderVisionCapability = {
   supportsVisionInput: true,
   supportsImageGeneration: true,
+  supportsImageEdit: true,
   visionModel: 'gpt-4o',
   maxImageCount: 5,
   maxImageBytes: 5 * 1024 * 1024,

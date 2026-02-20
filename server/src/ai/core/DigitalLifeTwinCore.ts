@@ -12,8 +12,12 @@ import { logger } from '../../lib/logger';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { FileIssue } from '../types/fileIssues';
 import { getMessageForCode } from '../types/fileIssues';
+import { executeTool } from '../tools/toolExecutor';
+import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
+import type { AIToolName } from '../tools/toolDefinitions';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
+const MAX_TOOL_CALL_ROUNDS = 3;
 
 /** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
 const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60000;
@@ -151,10 +155,16 @@ export class DigitalLifeTwinCore {
     }
   }
 
+  /** Options for streaming: when set, provider streams text via onChunk and tools are disabled. */
+  public static readonly STREAM_OPTIONS_KEY = 'streamOptions' as const;
+
   /**
    * Main interface - process a query as the user's Digital Life Twin
    */
-  async processAsDigitalTwin(query: LifeTwinQuery): Promise<DigitalLifeTwinResponse> {
+  async processAsDigitalTwin(
+    query: LifeTwinQuery,
+    streamOptions?: { stream: boolean; onChunk: (text: string) => void }
+  ): Promise<DigitalLifeTwinResponse> {
     const startTime = Date.now();
     const requestId = randomUUID();
     const context = query.context as Record<string, unknown> | undefined;
@@ -528,7 +538,8 @@ export class DigitalLifeTwinCore {
         globalPatterns,
         attachedFiles,
         visionImageParts,
-        { requestId, conversationId, userId: query.userId }
+        { requestId, conversationId, userId: query.userId },
+        streamOptions
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -729,7 +740,8 @@ export class DigitalLifeTwinCore {
     globalPatterns?: Array<Record<string, unknown>>,
     attachedFiles?: AttachedFileContext[],
     visionImageParts?: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>,
-    traceContext?: { requestId?: string; conversationId?: string; userId?: string }
+    traceContext?: { requestId?: string; conversationId?: string; userId?: string },
+    streamOptions?: { stream: boolean; onChunk: (text: string) => void }
   ) {
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
     const prompt = this.buildDigitalTwinPrompt(
@@ -767,17 +779,29 @@ export class DigitalLifeTwinCore {
     );
     
     // Build options for provider (include visionImageParts when present for multimodal requests)
+    const dashboardContext = (userContext as unknown as Record<string, unknown>)?.dashboardContext;
+    const optionsDashboardId = dashboardContext && typeof dashboardContext === 'object' && 'dashboardId' in dashboardContext
+      ? (dashboardContext as { dashboardId?: string }).dashboardId ?? null
+      : null;
     const options: Record<string, unknown> = {
       temperature: 0.7,
       maxTokens: 1000,
       personalityMode: true,
       userId: query.userId,
+      dashboardId: optionsDashboardId,
     };
     if (visionImageParts && visionImageParts.length > 0) {
       options.visionImageParts = visionImageParts;
     }
     if (traceContext) {
       options.traceContext = traceContext;
+    }
+    if (provider === 'openai' && !streamOptions?.stream) {
+      options.tools = AI_TOOL_DEFINITIONS;
+    }
+    if (streamOptions?.stream && streamOptions?.onChunk) {
+      options.stream = true;
+      options.onChunk = streamOptions.onChunk;
     }
 
     // Phase 4: capability-aware vision — ensure vision model when images present, log model, strip vision for local
@@ -821,6 +845,35 @@ export class DigitalLifeTwinCore {
 
     // Generate response — try selected provider, then auto-fallback to other provider on 429/unavailable
     let aiResponse = await this.callAIProvider(provider, prompt, options);
+    let round = 0;
+    const toolContext = { userId: query.userId, dashboardId: options.dashboardId as string | null | undefined };
+    while (round < MAX_TOOL_CALL_ROUNDS) {
+      const meta = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
+      const toolCalls = meta.toolCalls as Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> | undefined;
+      if (!toolCalls || toolCalls.length === 0) break;
+      const messagesSent = meta.messagesSent as Array<Record<string, unknown>> | undefined;
+      if (!messagesSent || messagesSent.length === 0) break;
+      round++;
+      const results = await Promise.all(
+        toolCalls.map(async (tc) => {
+          let args: Record<string, unknown> = {};
+          try {
+            args = (typeof tc.function?.arguments === 'string' ? JSON.parse(tc.function.arguments) : {}) as Record<string, unknown>;
+          } catch {
+            // ignore
+          }
+          const content = await executeTool(tc.function.name as AIToolName, args, toolContext);
+          return { role: 'tool' as const, tool_call_id: tc.id, content };
+        })
+      );
+      const assistantMsg: Record<string, unknown> = {
+        role: 'assistant',
+        content: aiResponse.response || null,
+        tool_calls: toolCalls.map((tc) => ({ id: tc.id, type: 'function' as const, function: { name: tc.function.name, arguments: tc.function.arguments } })),
+      };
+      options.messages = [...messagesSent, assistantMsg, ...results];
+      aiResponse = await this.callAIProvider(provider, prompt, options);
+    }
     const metadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
     const providerErrored = Boolean(metadata.error);
     const shouldFallback =
@@ -1482,6 +1535,10 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
       }
       if (options?.visionModelOverride && typeof options.visionModelOverride === 'string') {
         providerData.visionModelOverride = options.visionModelOverride;
+      }
+      if (options?.stream === true && typeof options.onChunk === 'function') {
+        providerData.stream = true;
+        providerData.onChunk = options.onChunk;
       }
       if (provider === 'openai') {
         const openaiProvider = new OpenAIProvider();

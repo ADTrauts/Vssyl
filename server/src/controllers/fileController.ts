@@ -287,6 +287,15 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       },
     });
 
+    // Phase 7: Proactive suggestion for document uploads (fire-and-forget)
+    const { onFileUploaded } = await import('../services/proactiveSuggestionsService');
+    onFileUploaded({
+      userId,
+      fileId: fileRecord.id,
+      fileName: originalname,
+      mimetype: mimetype || '',
+    }).catch(() => {});
+
     // Broadcast real-time drive event to owner
     try {
       const socketService = getChatSocketService();

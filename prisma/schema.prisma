@@ -295,6 +295,8 @@ model User {
   aiContextCache UserAIContextCache?
   aiConversations AIConversation[]
   userAIContexts UserAIContext[]
+  aiExtractedExpenses AIExtractedExpense[]
+  aiSuggestions       AISuggestion[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -2258,6 +2260,55 @@ model AutoMLTrial {
   @@index([trialNumber])
   @@index([status])
   @@map("automl_trials")
+}
+
+// Phase 5: Expense records created from AI document extraction (invoice/receipt)
+model AIExtractedExpense {
+  id              String   @id @default(uuid())
+  userId          String
+  vendor          String
+  amount          Float
+  currency        String?
+  documentDate    String?  // Date from document (ISO or readable)
+  category        String?
+  invoiceNumber   String?
+  notes           String?
+  lineItems       Json?    // Array of { description, quantity?, unitPrice?, amount }
+  sourceFileId    String?  // Link to Drive file
+  conversationId  String?  // Optional: AI conversation where extracted
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("ai_extracted_expenses")
+}
+
+// Phase 7: Proactive AI suggestions (e.g. after document upload)
+model AISuggestion {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // e.g. 'document_upload'
+  title       String
+  body        String
+  actionData  Json     // e.g. { fileId, suggestedAction: 'extract' | 'add_reminder' }
+  status      AISuggestionStatus @default(PENDING)
+  respondedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("ai_suggestions")
+}
+
+enum AISuggestionStatus {
+  PENDING
+  ACCEPTED
+  DISMISSED
 }
 
 

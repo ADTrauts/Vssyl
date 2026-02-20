@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip } from 'lucide-react';
+import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2 } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
 import AIResponseRenderer, { type StructuredAIResponse } from '../../components/ai/AIResponseRenderer';
@@ -26,8 +26,19 @@ import { toast } from 'react-hot-toast';
 import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
+import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 
 const MAX_ATTACHMENTS = 10;
+
+/** Detect if user wants document extraction (invoice/receipt) when files are attached */
+function getExtractDocumentIntent(query: string, hasFiles: boolean): 'invoice' | 'receipt' | null {
+  if (!hasFiles || !query || query.length < 3) return null;
+  const q = query.toLowerCase().trim();
+  if (/\b(extract|parse|read|get)\s+(invoice|receipt)|(invoice|receipt)\s+(extract|parse|from)|what'?s?\s+on\s+(this\s+)?receipt|extract\s+(from\s+)?(this\s+)?(file|document)/.test(q)) return 'invoice';
+  if (/\breceipt\b/.test(q) && (/\bextract\b|\bparse\b|\bwhat'?s?\s+on\b/.test(q) || q.includes("what's on this"))) return 'receipt';
+  if (/\binvoice\b/.test(q) && (/\bextract\b|\bparse\b/.test(q))) return 'invoice';
+  return null;
+}
 
 interface ConversationItem {
   id: string;
@@ -43,6 +54,19 @@ interface ConversationItem {
   /** Optional: true when the model used vision parts; show "Image used in this reply" badge */
   usedVisionParts?: boolean;
   attachments?: { fileIds: string[] };
+  /** Phase 1: generated image from /api/ai/generate-image */
+  generatedImage?: { url: string; revisedPrompt?: string; fileId?: string };
+  /** Phase 2: structured document extraction (invoice/receipt) */
+  extractedDocument?: {
+    vendor: string;
+    amount: number;
+    currency?: string;
+    date?: string;
+    category?: string;
+    lineItems?: Array<{ description: string; quantity?: number; unitPrice?: number; amount: number }>;
+    invoiceNumber?: string;
+    notes?: string;
+  };
 }
 
 export default function AIChat() {
@@ -73,11 +97,34 @@ export default function AIChat() {
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null); // 0-100 or null
   const [fileDetailsCache, setFileDetailsCache] = useState<Record<string, { name: string; url?: string }>>({});
+  const [showGenerateImageModal, setShowGenerateImageModal] = useState(false);
+  const [generateImagePrompt, setGenerateImagePrompt] = useState('');
+  const [generateImageSize, setGenerateImageSize] = useState<string>('1024x1024');
+  const [generateImageQuality, setGenerateImageQuality] = useState<string>('standard');
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [savingImageToDriveId, setSavingImageToDriveId] = useState<string | null>(null);
+  const [creatingExpenseId, setCreatingExpenseId] = useState<string | null>(null);
+  const [expenseCreatedIds, setExpenseCreatedIds] = useState<string[]>([]);
+  const [showEditImageModal, setShowEditImageModal] = useState(false);
+  const [editImagePrompt, setEditImagePrompt] = useState('');
+  const [editImageBackground, setEditImageBackground] = useState<'auto' | 'transparent' | 'opaque'>('auto');
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const submittingRef = useRef(false);
+
+  // Phase 7: Proactive AI suggestions (e.g. after document upload)
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestionItem[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionActionId, setSuggestionActionId] = useState<string | null>(null);
 
   // Pre-attach files from URL (e.g. "Ask AI about this file" from Drive)
   useEffect(() => {
@@ -114,6 +161,52 @@ export default function AIChat() {
       loadProviderPreference();
     }
   }, [session?.accessToken, showArchived, currentDashboard?.id]);
+
+  // Phase 7: Load AI suggestions on mount
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    let cancelled = false;
+    setLoadingSuggestions(true);
+    getSuggestions(session.accessToken)
+      .then((list) => {
+        if (!cancelled) setAiSuggestions(list);
+      })
+      .catch(() => {
+        if (!cancelled) setAiSuggestions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSuggestions(false);
+      });
+    return () => { cancelled = true; };
+  }, [session?.accessToken]);
+
+  const handleAcceptSuggestion = async (s: AISuggestionItem) => {
+    if (!session?.accessToken) return;
+    setSuggestionActionId(s.id);
+    try {
+      const { actionUrl } = await acceptSuggestion(s.id, session.accessToken);
+      setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+      toast.success('Suggestion accepted');
+      if (actionUrl) router.push(actionUrl);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to accept');
+    } finally {
+      setSuggestionActionId(null);
+    }
+  };
+
+  const handleDismissSuggestion = async (s: AISuggestionItem) => {
+    if (!session?.accessToken) return;
+    setSuggestionActionId(s.id);
+    try {
+      await dismissSuggestion(s.id, session.accessToken);
+      setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to dismiss');
+    } finally {
+      setSuggestionActionId(null);
+    }
+  };
 
   // Load user's provider preference
   const loadProviderPreference = async () => {
@@ -314,6 +407,53 @@ export default function AIChat() {
     setIsAILoading(true);
 
     try {
+      const extractIntent = getExtractDocumentIntent(userQuery, currentAttachedFiles.length > 0);
+      if (extractIntent && currentAttachedFiles.length > 0) {
+        const extractRes = await authenticatedApiCall<{ success: boolean; data?: ConversationItem['extractedDocument']; error?: string }>(
+          '/api/ai/extract-document',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              fileIds: currentAttachedFiles.map((f) => f.id),
+              documentType: extractIntent,
+            }),
+          },
+          session.accessToken
+        );
+        if (extractRes.success && extractRes.data) {
+          const aiExtractItem: ConversationItem = {
+            id: `ai_${Date.now()}`,
+            type: 'ai',
+            content: `Here’s the extracted ${extractIntent} data.`,
+            timestamp: new Date(),
+            confidence: 1,
+            metadata: {},
+            extractedDocument: extractRes.data,
+          };
+          setConversation((prev) => [...prev, aiExtractItem]);
+          let conversationId = currentConversationId;
+          if (!conversationId) {
+            const convRes = await createConversation({ title: generateTitle(userQuery), dashboardId: currentDashboard?.id }, session.accessToken);
+            if (convRes.success) {
+              conversationId = convRes.data.id;
+              setCurrentConversationId(conversationId);
+              loadConversations();
+            }
+          }
+          if (conversationId) {
+            await addMessage(conversationId, {
+              role: 'assistant',
+              content: aiExtractItem.content,
+              confidence: 1,
+              metadata: {},
+            }, session.accessToken);
+          }
+          submittingRef.current = false;
+          setIsAILoading(false);
+          return;
+        }
+      }
+
       let conversationId = currentConversationId;
       if (!conversationId) {
         const conversationResponse = await createConversation({
@@ -337,43 +477,95 @@ export default function AIChat() {
         }, session.accessToken);
       }
 
-      const response = await authenticatedApiCall<{ 
-        success: boolean;
-        data: {
-          response: string;
-          confidence: number;
-          reasoning?: string;
-          actions?: Array<Record<string, unknown>>;
-          structured?: StructuredAIResponse;
-        }
-      }>(
-        '/api/ai/twin',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            query: userQuery,
-            provider: selectedProvider, // Include provider selection
-            context: {
-              currentModule: 'ai-chat',
-              dashboardType: 'personal',
-              urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
-              conversationId: currentConversationId || undefined,
-              fileIds: currentAttachedFiles.map((file) => file.id),
-            }
-          })
+      const twinBody = {
+        query: userQuery,
+        provider: selectedProvider,
+        context: {
+          currentModule: 'ai-chat',
+          dashboardType: 'personal',
+          urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
+          conversationId: currentConversationId || undefined,
+          fileIds: currentAttachedFiles.map((file) => file.id),
         },
-        session.accessToken
-      );
+        stream: true,
+      };
+      const res = await fetch('/api/ai/twin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify(twinBody),
+      });
 
-      if (!response.success || !response.data) {
-        throw new Error('Invalid response structure from AI service');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({})) as { error?: string; message?: string };
+        throw new Error(errData?.message || errData?.error || `Request failed ${res.status}`);
       }
 
-      const aiItem = buildAIConversationItemFromTwinData(response.data) as ConversationItem;
-      setConversation(prev => [...prev, aiItem]);
-
-      if (conversationId) {
-        await addMessage(conversationId, buildAddMessagePayloadFromTwinData(response.data), session.accessToken);
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('text/event-stream') && res.body) {
+        const streamId = `ai_stream_${Date.now()}`;
+        setConversation((prev) => [...prev, {
+          id: streamId,
+          type: 'ai',
+          content: '',
+          timestamp: new Date(),
+          confidence: 0.5,
+          metadata: {},
+        }]);
+        let buffer = '';
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullData: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse } | undefined;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              try {
+                const payload = JSON.parse(line.slice(6)) as { text?: string; done?: boolean; data?: unknown; error?: boolean; message?: string };
+                if (payload.error && payload.message) {
+                  throw new Error(payload.message);
+                }
+                if (typeof payload.text === 'string') {
+                  setConversation((prev) => prev.map((item) =>
+                    item.id === streamId ? { ...item, content: item.content + payload.text } : item
+                  ));
+                }
+                if (payload.done === true && payload.data) {
+                  fullData = payload.data as { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse };
+                }
+              } catch (e) {
+                if (e instanceof SyntaxError) continue;
+                throw e;
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+        if (fullData) {
+          const aiItem = buildAIConversationItemFromTwinData(fullData) as ConversationItem;
+          setConversation((prev) => prev.map((item) => (item.id === streamId ? { ...aiItem, id: streamId } : item)));
+          if (conversationId) {
+            await addMessage(conversationId, buildAddMessagePayloadFromTwinData(fullData), session.accessToken);
+          }
+        }
+      } else {
+        const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse } };
+        if (!json.success || !json.data) {
+          throw new Error('Invalid response structure from AI service');
+        }
+        const aiItem = buildAIConversationItemFromTwinData(json.data) as ConversationItem;
+        setConversation((prev) => [...prev, aiItem]);
+        if (conversationId) {
+          await addMessage(conversationId, buildAddMessagePayloadFromTwinData(json.data), session.accessToken);
+        }
       }
 
     } catch (error) {
@@ -411,6 +603,110 @@ export default function AIChat() {
   const generateTitle = (content: string): string => {
     const title = content.substring(0, 50).trim();
     return title.length < content.length ? `${title}...` : title;
+  };
+
+  // Voice input: start/stop recording and transcribe (Phase 6 STT)
+  const handleVoiceInput = async () => {
+    if (!session?.accessToken) {
+      toast.error('Please log in to use voice input');
+      return;
+    }
+    if (isRecording) {
+      const mr = mediaRecorderRef.current;
+      if (mr && mr.state !== 'inactive') {
+        mr.stop();
+      }
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordedChunksRef.current = [];
+      const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(recordedChunksRef.current, { type: mime });
+        if (blob.size < 100) {
+          setIsRecording(false);
+          toast.error('Recording too short');
+          return;
+        }
+        setIsTranscribing(true);
+        try {
+          const form = new FormData();
+          form.append('audio', blob, 'recording.webm');
+          const res = await fetch('/api/ai/transcribe', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.accessToken}` },
+            body: form,
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.transcript) {
+            setInputValue((prev) => (prev ? `${prev} ${data.transcript}` : data.transcript));
+            toast.success('Transcription added');
+          } else {
+            toast.error(data?.message || data?.error || 'Transcription failed');
+          }
+        } catch (e) {
+          toast.error('Transcription failed');
+        } finally {
+          setIsTranscribing(false);
+        }
+        setIsRecording(false);
+      };
+      recorder.start(1000);
+      setIsRecording(true);
+    } catch (e) {
+      toast.error('Microphone access denied or unavailable');
+    }
+  };
+
+  const handlePlayTTS = async (item: ConversationItem) => {
+    const text = (item.content || '').trim().slice(0, 4096);
+    if (!text || !session?.accessToken) return;
+    if (playingAudioId) {
+      audioRef.current?.pause();
+      if (playingAudioId === item.id) {
+        setPlayingAudioId(null);
+        return;
+      }
+    }
+    setPlayingAudioId(item.id);
+    try {
+      const res = await fetch('/api/ai/speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        toast.error('Could not play audio');
+        setPlayingAudioId(null);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setPlayingAudioId(null);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        setPlayingAudioId(null);
+      };
+      await audio.play();
+    } catch (e) {
+      toast.error('Could not play audio');
+      setPlayingAudioId(null);
+    }
   };
 
   // Handle file upload (for both click and drag-and-drop)
@@ -484,6 +780,183 @@ export default function AIChat() {
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileUpload(e.dataTransfer.files);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!generateImagePrompt.trim() || !session?.accessToken || isGeneratingImage) return;
+    setIsGeneratingImage(true);
+    const prompt = generateImagePrompt.trim();
+    setShowGenerateImageModal(false);
+    setGenerateImagePrompt('');
+
+    const userItem: ConversationItem = {
+      id: `user_${Date.now()}`,
+      type: 'user',
+      content: `Generate image: ${prompt}`,
+      timestamp: new Date(),
+    };
+    setConversation((prev) => [...prev, userItem]);
+
+    try {
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        data?: { url: string; revisedPrompt?: string };
+        error?: string;
+      }>(
+        '/api/ai/generate-image',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            prompt,
+            size: generateImageSize,
+            quality: generateImageQuality === 'hd' ? 'hd' : 'standard',
+          }),
+        },
+        session.accessToken
+      );
+
+      if (!response.success || !response.data?.url) {
+        throw new Error(response.error || 'Failed to generate image');
+      }
+
+      const aiItem: ConversationItem = {
+        id: `ai_${Date.now()}`,
+        type: 'ai',
+        content: response.data.revisedPrompt ? `Here's your image. "${response.data.revisedPrompt}"` : "Here's your generated image.",
+        timestamp: new Date(),
+        confidence: 1,
+        metadata: {},
+        generatedImage: {
+          url: response.data.url,
+          revisedPrompt: response.data.revisedPrompt,
+        },
+      };
+      setConversation((prev) => [...prev, aiItem]);
+    } catch (error) {
+      console.error('Generate image failed:', error);
+      const errMsg = error instanceof Error ? error.message : 'Failed to generate image';
+      toast.error(errMsg);
+      const errorItem: ConversationItem = {
+        id: `ai_${Date.now()}`,
+        type: 'ai',
+        content: `I couldn't generate that image. ${errMsg}`,
+        timestamp: new Date(),
+        confidence: 0,
+        metadata: {},
+      };
+      setConversation((prev) => [...prev, errorItem]);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleEditImage = async () => {
+    if (attachedFiles.length !== 1 || !session?.accessToken || !editImagePrompt.trim() || isEditingImage) return;
+    const fileId = attachedFiles[0].id;
+    setShowEditImageModal(false);
+    setEditImagePrompt('');
+    const userItem: ConversationItem = {
+      id: `user_${Date.now()}`,
+      type: 'user',
+      content: `Edit image: ${editImagePrompt.trim()}`,
+      timestamp: new Date(),
+    };
+    setConversation((prev) => [...prev, userItem]);
+    setIsEditingImage(true);
+    try {
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        data?: { url: string; fileId?: string; name?: string };
+        error?: string;
+      }>(
+        '/api/ai/edit-image',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            fileId,
+            prompt: editImagePrompt.trim(),
+            background: editImageBackground,
+            saveToDrive: true,
+            dashboardId: currentDashboard?.id ?? undefined,
+            name: `ai-edited-${attachedFiles[0].name?.replace(/\.[^.]+$/, '') || Date.now()}.png`,
+          }),
+        },
+        session.accessToken
+      );
+      if (!response.success || !response.data?.url) {
+        throw new Error(response.error || 'Failed to edit image');
+      }
+      const aiItem: ConversationItem = {
+        id: `ai_${Date.now()}`,
+        type: 'ai',
+        content: response.data.fileId
+          ? "Here's your edited image, saved to Drive."
+          : "Here's your edited image.",
+        timestamp: new Date(),
+        confidence: 1,
+        metadata: {},
+        generatedImage: {
+          url: response.data.url,
+          fileId: response.data.fileId,
+        },
+      };
+      setConversation((prev) => [...prev, aiItem]);
+      toast.success(response.data.fileId ? 'Edited image saved to Drive' : 'Image edited');
+    } catch (error) {
+      console.error('Edit image failed:', error);
+      const errMsg = error instanceof Error ? error.message : 'Failed to edit image';
+      toast.error(errMsg);
+      const errorItem: ConversationItem = {
+        id: `ai_${Date.now()}`,
+        type: 'ai',
+        content: `I couldn't edit that image. ${errMsg}`,
+        timestamp: new Date(),
+        confidence: 0,
+        metadata: {},
+      };
+      setConversation((prev) => [...prev, errorItem]);
+    } finally {
+      setIsEditingImage(false);
+    }
+  };
+
+  const handleSaveGeneratedImageToDrive = async (itemId: string) => {
+    const item = conversation.find((c) => c.id === itemId);
+    const gen = item?.generatedImage;
+    if (!gen?.url || !session?.accessToken || savingImageToDriveId) return;
+    setSavingImageToDriveId(itemId);
+    try {
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        data?: { fileId: string; url: string; name: string };
+        error?: string;
+      }>(
+        '/api/ai/generate-image/save-to-drive',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            imageUrl: gen.url,
+            dashboardId: currentDashboard?.id ?? undefined,
+            name: `ai-generated-${Date.now()}.png`,
+          }),
+        },
+        session.accessToken
+      );
+      if (!response.success || !response.data?.fileId) throw new Error(response.error || 'Failed to save');
+      setConversation((prev) =>
+        prev.map((c) =>
+          c.id === itemId && c.generatedImage
+            ? { ...c, generatedImage: { ...c.generatedImage, fileId: response.data!.fileId } }
+            : c
+        )
+      );
+      toast.success('Saved to Drive');
+    } catch (error) {
+      console.error('Save to Drive failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save to Drive');
+    } finally {
+      setSavingImageToDriveId(null);
     }
   };
 
@@ -696,6 +1169,63 @@ export default function AIChat() {
             <Archive className="h-4 w-4" />
             <span>{showArchived ? 'Show Active' : 'Show Archived'}</span>
           </button>
+
+          {/* Phase 7: AI Suggestions */}
+          {loadingSuggestions && (
+            <div className="mt-3 flex items-center justify-center py-2">
+              <Spinner size={20} />
+            </div>
+          )}
+          {!loadingSuggestions && aiSuggestions.length > 0 && (
+            <div className="mt-3 border-t border-gray-100 pt-3">
+              <div className="px-2 py-1 text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3" />
+                AI Suggestions
+              </div>
+              <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                {aiSuggestions.map((s) => {
+                  const busy = suggestionActionId === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className="rounded-lg border border-gray-200 bg-gray-50/80 p-2 text-left"
+                    >
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">{s.title}</p>
+                      {s.body && (
+                        <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{s.body}</p>
+                      )}
+                      <div className="mt-2 flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="flex-1 text-xs"
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcceptSuggestion(s);
+                          }}
+                        >
+                          {busy ? <Spinner size={14} /> : 'Accept'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs"
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDismissSuggestion(s);
+                          }}
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error Messages */}
@@ -1195,7 +1725,113 @@ export default function AIChat() {
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            {item.structured ? (
+                            {item.generatedImage ? (
+                              <>
+                                <p className="text-sm text-gray-700 mb-2">{item.content}</p>
+                                <img
+                                  src={item.generatedImage.url}
+                                  alt="Generated"
+                                  className="rounded-lg max-w-full max-h-80 object-contain border border-gray-200"
+                                />
+                                <div className="mt-2 flex items-center gap-2">
+                                  {item.generatedImage.fileId ? (
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => router.push(`/drive?file=${encodeURIComponent(item.generatedImage!.fileId!)}`)}
+                                    >
+                                      <Folder className="h-3 w-3 mr-1" />
+                                      Open in Drive
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => handleSaveGeneratedImageToDrive(item.id)}
+                                      disabled={savingImageToDriveId === item.id}
+                                    >
+                                      {savingImageToDriveId === item.id ? <Spinner size={14} /> : <Folder className="h-3 w-3 mr-1" />}
+                                      Save to Drive
+                                    </Button>
+                                  )}
+                                </div>
+                              </>
+                            ) : item.extractedDocument ? (
+                              <>
+                                <p className="text-sm text-gray-700 mb-2">{item.content}</p>
+                                <div className="text-sm space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                  <p><span className="font-medium text-gray-700">Vendor:</span> {item.extractedDocument.vendor}</p>
+                                  <p><span className="font-medium text-gray-700">Amount:</span> {item.extractedDocument.currency || ''} {item.extractedDocument.amount}</p>
+                                  {item.extractedDocument.date && <p><span className="font-medium text-gray-700">Date:</span> {item.extractedDocument.date}</p>}
+                                  {item.extractedDocument.category && <p><span className="font-medium text-gray-700">Category:</span> {item.extractedDocument.category}</p>}
+                                  {item.extractedDocument.invoiceNumber && <p><span className="font-medium text-gray-700">Invoice #:</span> {item.extractedDocument.invoiceNumber}</p>}
+                                  {item.extractedDocument.lineItems && item.extractedDocument.lineItems.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className="font-medium text-gray-700 mb-1">Line items</p>
+                                      <ul className="list-disc list-inside text-gray-600 space-y-0.5">
+                                        {item.extractedDocument.lineItems.map((line, i) => (
+                                          <li key={i}>{line.description}: {line.amount}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {item.extractedDocument.notes && <p className="text-gray-600 italic">{item.extractedDocument.notes}</p>}
+                                </div>
+                                {!expenseCreatedIds.includes(item.id) ? (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="mt-2"
+                                    disabled={!!creatingExpenseId}
+                                    onClick={async () => {
+                                      if (!session?.accessToken || !item.extractedDocument) return;
+                                      setCreatingExpenseId(item.id);
+                                      try {
+                                        const res = await fetch('/api/ai/create-expense-from-extraction', {
+                                          method: 'POST',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                            Authorization: `Bearer ${session.accessToken}`,
+                                          },
+                                          body: JSON.stringify({
+                                            vendor: item.extractedDocument.vendor,
+                                            amount: item.extractedDocument.amount,
+                                            currency: item.extractedDocument.currency,
+                                            date: item.extractedDocument.date,
+                                            category: item.extractedDocument.category,
+                                            invoiceNumber: item.extractedDocument.invoiceNumber,
+                                            notes: item.extractedDocument.notes,
+                                            lineItems: item.extractedDocument.lineItems,
+                                            conversationId: currentConversationId ?? undefined,
+                                          }),
+                                        });
+                                        const data = await res.json().catch(() => ({}));
+                                        if (res.ok && data.success) {
+                                          setExpenseCreatedIds((prev) => [...prev, item.id]);
+                                          toast.success('Expense saved');
+                                        } else {
+                                          toast.error(data?.message || data?.error || 'Failed to save expense');
+                                        }
+                                      } catch (e) {
+                                        toast.error('Failed to save expense');
+                                      } finally {
+                                        setCreatingExpenseId(null);
+                                      }
+                                    }}
+                                  >
+                                    {creatingExpenseId === item.id ? (
+                                      <span className="inline-flex items-center gap-1">
+                                        <Spinner size={14} /> Saving…
+                                      </span>
+                                    ) : (
+                                      'Create expense'
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <p className="text-sm text-gray-600 mt-2">Expense saved</p>
+                                )}
+                              </>
+                            ) : item.structured ? (
                               <>
                                 <AIResponseRenderer
                                   structured={item.structured}
@@ -1259,6 +1895,23 @@ export default function AIChat() {
                                 )}
                               </>
                             )}
+                            {item.type === 'ai' && (item.content || '').trim().length > 0 && (
+                              <div className="mt-2 pt-2 border-t border-gray-100">
+                                <button
+                                  type="button"
+                                  onClick={() => handlePlayTTS(item)}
+                                  className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-purple-600"
+                                  title="Listen"
+                                >
+                                  {playingAudioId === item.id ? (
+                                    <Spinner size={12} />
+                                  ) : (
+                                    <Volume2 className="h-4 w-4" />
+                                  )}
+                                  <span>{playingAudioId === item.id ? 'Playing…' : 'Listen'}</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1270,16 +1923,99 @@ export default function AIChat() {
             </>
           )}
           
-          {isAILoading && (
+          {(isAILoading || isGeneratingImage) && (
             <div className="flex justify-start">
               <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 max-w-2xl">
                 <div className="flex items-start space-x-3">
-                  <AIThinkingIndicator message="Thinking..." iconSize={20} />
+                  <AIThinkingIndicator message={isGeneratingImage ? 'Generating image...' : 'Thinking...'} iconSize={20} />
                 </div>
               </div>
             </div>
           )}
         </div>
+
+        {/* Generate image modal */}
+        {showGenerateImageModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowGenerateImageModal(false)}>
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900">Generate image</h3>
+              <p className="text-sm text-gray-600">Describe the image you want. Uses DALL·E 3 (OpenAI).</p>
+              <textarea
+                value={generateImagePrompt}
+                onChange={(e) => setGenerateImagePrompt(e.target.value)}
+                placeholder="e.g. A modern logo for a coffee shop"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows={3}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Size</label>
+                  <select
+                    value={generateImageSize}
+                    onChange={(e) => setGenerateImageSize(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="1024x1024">1024×1024</option>
+                    <option value="1024x1792">1024×1792</option>
+                    <option value="1792x1024">1792×1024</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Quality</label>
+                  <select
+                    value={generateImageQuality}
+                    onChange={(e) => setGenerateImageQuality(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="standard">Standard</option>
+                    <option value="hd">HD</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="secondary" onClick={() => setShowGenerateImageModal(false)}>Cancel</Button>
+                <Button variant="primary" onClick={handleGenerateImage} disabled={!generateImagePrompt.trim() || isGeneratingImage}>
+                  {isGeneratingImage ? <Spinner size={16} /> : 'Generate'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit image modal (Phase 8) */}
+        {showEditImageModal && attachedFiles.length === 1 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowEditImageModal(false)}>
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900">Edit image</h3>
+              <p className="text-sm text-gray-600">Describe the edit (e.g. &quot;Remove background&quot;, &quot;Crop to square&quot;). Result will be saved to Drive.</p>
+              <textarea
+                value={editImagePrompt}
+                onChange={(e) => setEditImagePrompt(e.target.value)}
+                placeholder="e.g. Remove background"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                rows={3}
+              />
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Background</label>
+                <select
+                  value={editImageBackground}
+                  onChange={(e) => setEditImageBackground(e.target.value as 'auto' | 'transparent' | 'opaque')}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="transparent">Transparent</option>
+                  <option value="opaque">Opaque</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="secondary" onClick={() => setShowEditImageModal(false)}>Cancel</Button>
+                <Button variant="primary" onClick={handleEditImage} disabled={!editImagePrompt.trim() || isEditingImage}>
+                  {isEditingImage ? <Spinner size={16} /> : 'Edit & save to Drive'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-6 pb-24">
@@ -1341,6 +2077,44 @@ export default function AIChat() {
               title="Attach files"
             >
               <Paperclip className="h-5 w-5 text-gray-500" />
+            </button>
+            {/* Generate image button */}
+            <button
+              type="button"
+              onClick={() => setShowGenerateImageModal(true)}
+              disabled={isAILoading || isGeneratingImage}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Generate image"
+            >
+              <ImageIcon className="h-5 w-5 text-gray-500" />
+            </button>
+            {/* Edit image button (Phase 8) - when exactly one file attached */}
+            {attachedFiles.length === 1 && (
+              <button
+                type="button"
+                onClick={() => setShowEditImageModal(true)}
+                disabled={isAILoading || isEditingImage}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Edit image (e.g. remove background)"
+              >
+                <Edit className="h-5 w-5 text-gray-500" />
+              </button>
+            )}
+            {/* Voice input (record → transcribe → add to message) */}
+            <button
+              type="button"
+              onClick={handleVoiceInput}
+              disabled={isAILoading || isTranscribing}
+              className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isRecording ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'hover:bg-gray-100 text-gray-500'}`}
+              title={isRecording ? 'Stop recording' : 'Voice input'}
+            >
+              {isRecording ? (
+                <Square className="h-5 w-5 fill-current" />
+              ) : isTranscribing ? (
+                <Spinner size={20} />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
             </button>
             
             {/* Hidden File Input */}

@@ -90,6 +90,8 @@ model User {
   aiContextCache UserAIContextCache?
   aiConversations AIConversation[]
   userAIContexts UserAIContext[]
+  aiExtractedExpenses AIExtractedExpense[]
+  aiSuggestions       AISuggestion[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]

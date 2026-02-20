@@ -92,6 +92,177 @@ export class OpenAIProvider {
         return this.getFallbackResponse(request, 'OpenAI API key not configured', modelToUse);
       }
 
+      // Tool-calling path: when data.tools (and optionally data.messages) are provided. Core handles multi-turn by re-calling with extended messages.
+      const toolsInput = data.tools as OpenAI.Chat.ChatCompletionTool[] | undefined;
+      const messagesInput = data.messages as OpenAI.Chat.ChatCompletionMessageParam[] | undefined;
+      if (toolsInput && Array.isArray(toolsInput) && toolsInput.length > 0) {
+        const systemPrompt = this.buildSystemPrompt(context);
+        const userPrompt = this.buildUserPrompt(request, data);
+        const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }> | undefined;
+        const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
+        const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete.';
+        const userText = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
+        const userContent: string | OpenAI.Chat.ChatCompletionContentPart[] = hasVision
+          ? [
+              { type: 'text', text: userText },
+              ...visionParts
+                .map((p) => {
+                  const url = typeof p.url === 'string' && p.url.length > 0 ? p.url : (p.dataBase64 ? `data:${p.mimeType};base64,${p.dataBase64}` : undefined);
+                  if (!url) return null;
+                  return { type: 'image_url' as const, image_url: { url, detail: 'low' as const } };
+                })
+                .filter(Boolean) as OpenAI.Chat.ChatCompletionContentPart[],
+            ]
+          : userPrompt;
+        const messages: OpenAI.Chat.ChatCompletionMessageParam[] = messagesInput && messagesInput.length > 0
+          ? messagesInput
+          : [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }];
+        const visionModelOverride = data.visionModelOverride as string | undefined;
+        modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+        const timeoutMs = 120000;
+        const MAX_RETRIES = 3;
+        let completion: OpenAI.Chat.ChatCompletion | undefined;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          try {
+            const body: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
+              model: modelToUse,
+              messages,
+              max_tokens: this.config.maxTokens,
+              temperature: this.config.temperature,
+              tools: toolsInput,
+            };
+            const apiCallPromise = this.client.chat.completions.create(body);
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error(`OpenAI API request timed out after ${timeoutMs / 1000} seconds`)), timeoutMs);
+            });
+            completion = (await Promise.race([apiCallPromise, timeoutPromise])) as OpenAI.Chat.ChatCompletion;
+            break;
+          } catch (error: unknown) {
+            const err = error as { status?: number; code?: string };
+            const isRateLimit = err?.status === 429 || err?.code === 'rate_limit_exceeded';
+            if (!isRateLimit || attempt === MAX_RETRIES - 1) throw error;
+            await new Promise((r) => setTimeout(r, Math.pow(2, attempt) * 1000));
+          }
+        }
+        if (!completion) throw new Error('No completion from OpenAI after retries');
+        const msg = completion.choices[0]?.message;
+        const content = msg?.content ?? '';
+        const toolCalls = msg?.tool_calls && msg.tool_calls.length > 0 ? msg.tool_calls : undefined;
+        const inputTokens = completion.usage?.prompt_tokens ?? 0;
+        const outputTokens = completion.usage?.completion_tokens ?? 0;
+        const cost = inputTokens * this.config.costPerInputToken + outputTokens * this.config.costPerOutputToken;
+        const metadata: AIResponse['metadata'] = {
+          provider: 'openai',
+          model: modelToUse,
+          tokens: inputTokens + outputTokens,
+          cost,
+          processingTime: Date.now() - startTime,
+          inputTokens,
+          outputTokens,
+          ...(toolCalls && { toolCalls }),
+        };
+        if (toolCalls) {
+          return {
+            id: this.generateResponseId(),
+            requestId: request.id,
+            response: content || '',
+            confidence: 0.8,
+            reasoning: 'Tool calls requested',
+            actions: [],
+            metadata: { ...metadata, messagesSent: messages },
+          };
+        }
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = (content ? JSON.parse(content) : { response: '', confidence: 0.7, reasoning: '' }) as Record<string, unknown>;
+        } catch {
+          parsed = { response: content || '', confidence: 0.7, reasoning: 'Response not JSON' };
+        }
+        const normalized = normalizeAIResponse(parsed);
+        return {
+          id: this.generateResponseId(),
+          requestId: request.id,
+          response: normalized.response,
+          confidence: normalized.confidence,
+          reasoning: normalized.reasoning,
+          actions: (normalized.actions as AIResponse['actions']) || [],
+          structured: normalized.structured,
+          metadata,
+        };
+      }
+
+      // Streaming path: when data.stream and data.onChunk are set (no tools)
+      const streamOnChunk = data.onChunk as ((text: string) => void) | undefined;
+      if (data.stream === true && typeof streamOnChunk === 'function') {
+        const systemPrompt = this.buildSystemPrompt(context);
+        const userPrompt = this.buildUserPrompt(request, data);
+        const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }> | undefined;
+        const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
+        const visionInstruction = 'Describe exactly what you see in the attached image(s). If text is visible, transcribe it. Be concrete.';
+        const userText = hasVision ? `${visionInstruction}\n\n${userPrompt}` : userPrompt;
+        const userContentStream: string | OpenAI.Chat.ChatCompletionContentPart[] = hasVision
+          ? [
+              { type: 'text', text: userText },
+              ...visionParts
+                .map((p) => {
+                  const url = typeof p.url === 'string' && p.url.length > 0 ? p.url : (p.dataBase64 ? `data:${p.mimeType};base64,${p.dataBase64}` : undefined);
+                  if (!url) return null;
+                  return { type: 'image_url' as const, image_url: { url, detail: 'low' as const } };
+                })
+                .filter(Boolean) as OpenAI.Chat.ChatCompletionContentPart[],
+            ]
+          : userPrompt;
+        const visionModelOverride = data.visionModelOverride as string | undefined;
+        modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+        const streamPromise = this.client.chat.completions.create({
+          model: modelToUse,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userContentStream },
+          ],
+          max_tokens: this.config.maxTokens,
+          temperature: this.config.temperature,
+          stream: true,
+        });
+        const stream = await streamPromise;
+        let fullContent = '';
+        for await (const chunk of stream) {
+          const delta = chunk.choices[0]?.delta?.content;
+          if (typeof delta === 'string' && delta.length > 0) {
+            fullContent += delta;
+            streamOnChunk(delta);
+          }
+        }
+        let parsed: Record<string, unknown>;
+        try {
+          parsed = (fullContent.trim() ? JSON.parse(fullContent) : { response: '', confidence: 0.7, reasoning: '' }) as Record<string, unknown>;
+        } catch {
+          parsed = { response: fullContent || '', confidence: 0.7, reasoning: 'Response not JSON' };
+        }
+        const normalized = normalizeAIResponse(parsed);
+        const inputTokens = 0; // streaming doesn't give us token counts easily
+        const outputTokens = 0;
+        const cost = 0;
+        return {
+          id: this.generateResponseId(),
+          requestId: request.id,
+          response: normalized.response,
+          confidence: normalized.confidence,
+          reasoning: normalized.reasoning,
+          actions: (normalized.actions as AIResponse['actions']) || [],
+          structured: normalized.structured,
+          metadata: {
+            provider: 'openai',
+            model: modelToUse,
+            tokens: 0,
+            cost,
+            processingTime: Date.now() - startTime,
+            inputTokens,
+            outputTokens,
+          },
+        };
+      }
+
       // Build system prompt with user context
       const systemPrompt = this.buildSystemPrompt(context);
       
@@ -363,6 +534,51 @@ export class OpenAIProvider {
       const message = err instanceof Error ? err.message : 'Unknown error';
       logger.warn('DALL·E image generation failed', {
         operation: 'openai_generate_image',
+        error: { message },
+      });
+      return { error: message };
+    }
+  }
+
+  /**
+   * Phase 8: Edit image (e.g. remove background) using OpenAI Images Edit API.
+   * Accepts image as Buffer (from URL fetch or base64). SDK uses multipart form.
+   */
+  async editImage(
+    imageBuffer: Buffer,
+    prompt: string,
+    options?: { background?: 'transparent' | 'opaque' | 'auto'; size?: string }
+  ): Promise<{ url?: string; b64_json?: string; error?: string }> {
+    if (!this.config.apiKey) {
+      return { error: 'OpenAI API key not configured' };
+    }
+    if (!imageBuffer || imageBuffer.length === 0) {
+      return { error: 'Image buffer required' };
+    }
+    try {
+      const response = await this.client.images.edit({
+        image: imageBuffer as unknown as Parameters<typeof this.client.images.edit>[0]['image'],
+        prompt: prompt.slice(0, 4000),
+        background: options?.background ?? 'auto',
+        size: (options?.size as '1024x1024' | '1536x1024' | '1024x1536' | 'auto') ?? 'auto',
+        n: 1,
+        model: 'gpt-image-1',
+      });
+      const item = response.data?.[0];
+      if (!item) {
+        return { error: 'No image in edit response' };
+      }
+      if ('url' in item && typeof item.url === 'string') {
+        return { url: item.url };
+      }
+      if ('b64_json' in item && typeof item.b64_json === 'string') {
+        return { b64_json: item.b64_json };
+      }
+      return { error: 'Unsupported edit response format' };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      logger.warn('OpenAI image edit failed', {
+        operation: 'openai_edit_image',
         error: { message },
       });
       return { error: message };
