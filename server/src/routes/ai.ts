@@ -813,10 +813,13 @@ router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
     });
     const actionData = suggestion.actionData as Record<string, unknown> | null;
     const fileId = actionData?.fileId as string | undefined;
+    const suggestedPrompt = actionData?.suggestedPrompt as string | undefined;
     res.json({
       success: true,
       data: {
         suggestionId: id,
+        fileId: fileId,
+        suggestedPrompt: suggestedPrompt || `Extract key information from this document. Identify important details like dates, amounts, names, and any actionable items.`,
         actionUrl: fileId ? `/ai-chat?fileIds=${encodeURIComponent(fileId)}&suggestion=extract` : '/ai-chat',
       },
     });

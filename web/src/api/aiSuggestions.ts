@@ -19,7 +19,7 @@ export interface SuggestionsListResponse {
 
 export interface AcceptSuggestionResponse {
   success: boolean;
-  data: { suggestionId: string; actionUrl: string };
+  data: { suggestionId: string; actionUrl: string; fileId?: string; suggestedPrompt?: string };
 }
 
 export interface DismissSuggestionResponse {

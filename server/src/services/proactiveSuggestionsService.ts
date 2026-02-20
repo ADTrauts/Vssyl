@@ -48,6 +48,7 @@ export async function onFileUploaded(context: DocumentUploadContext): Promise<vo
           fileId: context.fileId,
           fileName: context.fileName,
           suggestedActions: ['extract_document', 'add_reminder'],
+          suggestedPrompt: `Extract key information from "${context.fileName}". Identify important details like dates, amounts, names, and any actionable items.`,
         },
         status: 'PENDING',
       },

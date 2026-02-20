@@ -29,6 +29,7 @@ import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { toast } from 'react-hot-toast';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
+import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -139,6 +140,9 @@ export default function AIChatDropdown({
   const [isUploadingFiles, setIsUploadingFiles] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fileDetailsCache, setFileDetailsCache] = useState<Record<string, { name: string; url?: string }>>({});
+  const [aiSuggestions, setAiSuggestions] = useState<AISuggestionItem[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionActionId, setSuggestionActionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
@@ -185,13 +189,87 @@ export default function AIChatDropdown({
     }
   }, [isOpen, onClose]);
 
-  // Load conversation history
+  // Load conversation history and suggestions
   useEffect(() => {
     if (isOpen && session?.accessToken) {
       loadConversations();
       loadProviderPreference();
+      loadSuggestions();
     }
   }, [isOpen, session?.accessToken, dashboardId, currentDashboard?.id]);
+
+  // Poll for new suggestions every 5 seconds when dropdown is open
+  useEffect(() => {
+    if (!isOpen || !session?.accessToken) return;
+    const interval = setInterval(() => {
+      loadSuggestions();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isOpen, session?.accessToken]);
+
+  // Load AI suggestions
+  const loadSuggestions = async () => {
+    if (!session?.accessToken) return;
+    setLoadingSuggestions(true);
+    try {
+      const suggestions = await getSuggestions(session.accessToken);
+      setAiSuggestions(suggestions);
+    } catch (error) {
+      console.error('Failed to load suggestions:', error);
+      setAiSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  // Handle accepting a suggestion
+  const handleAcceptSuggestion = async (s: AISuggestionItem) => {
+    if (!session?.accessToken) return;
+    setSuggestionActionId(s.id);
+    try {
+      const { fileId, suggestedPrompt } = await acceptSuggestion(s.id, session.accessToken);
+      setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+      toast.success('Suggestion accepted');
+      
+      // Attach file if provided
+      if (fileId) {
+        const actionData = s.actionData as Record<string, unknown> | null;
+        const fileName = (actionData?.fileName as string) || 'Document';
+        setAttachedFiles((prev) => {
+          if (prev.some(f => f.id === fileId)) return prev;
+          return [...prev, { id: fileId, name: fileName }].slice(0, MAX_ATTACHMENTS);
+        });
+      }
+      
+      // Auto-execute the prompt if provided
+      if (suggestedPrompt) {
+        // Set input value for display, then execute with the prompt directly
+        setInputValue(suggestedPrompt);
+        // Small delay to ensure file is attached and state is updated
+        setTimeout(() => {
+          handleAIQuery(suggestedPrompt);
+        }, 100);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to accept');
+    } finally {
+      setSuggestionActionId(null);
+    }
+  };
+
+  // Handle dismissing a suggestion
+  const handleDismissSuggestion = async (s: AISuggestionItem) => {
+    if (!session?.accessToken) return;
+    setSuggestionActionId(s.id);
+    try {
+      await dismissSuggestion(s.id, session.accessToken);
+      setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to dismiss');
+    } finally {
+      setSuggestionActionId(null);
+    }
+  };
 
   // Load user's provider preference
   const loadProviderPreference = async () => {
@@ -363,6 +441,10 @@ export default function AIChatDropdown({
     }
 
     const userQuery = query;
+    // Update input value if queryText was provided
+    if (queryText && queryText !== inputValue) {
+      setInputValue(queryText);
+    }
     
     // Clear previous errors
     setAuthError(null);
@@ -1220,6 +1302,58 @@ export default function AIChatDropdown({
               </div>
             )}
           </div>
+
+          {/* AI Suggestions */}
+          {!loadingSuggestions && aiSuggestions.length > 0 && (
+            <div className="px-4 pt-3 pb-2 border-t border-gray-100 bg-gradient-to-br from-purple-50 to-blue-50">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                <span className="text-xs font-semibold text-gray-700 uppercase">AI Suggestions</span>
+              </div>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {aiSuggestions.map((s) => {
+                  const busy = suggestionActionId === s.id;
+                  return (
+                    <div
+                      key={s.id}
+                      className="rounded-lg border border-purple-200 bg-white/80 p-2 text-left shadow-sm"
+                    >
+                      <p className="text-xs font-medium text-gray-900 line-clamp-1">{s.title}</p>
+                      {s.body && (
+                        <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{s.body}</p>
+                      )}
+                      <div className="mt-1.5 flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="flex-1 text-xs h-6 px-2"
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAcceptSuggestion(s);
+                          }}
+                        >
+                          {busy ? <Spinner size={12} /> : 'Accept'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs h-6 px-2"
+                          disabled={busy}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDismissSuggestion(s);
+                          }}
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Input Area */}
           <div className="p-4 border-t border-gray-100">

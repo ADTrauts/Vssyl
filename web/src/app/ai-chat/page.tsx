@@ -170,32 +170,62 @@ export default function AIChat() {
     }
   }, [session?.accessToken, showArchived, currentDashboard?.id]);
 
-  // Phase 7: Load AI suggestions on mount
+  // Phase 7: Load AI suggestions on mount and poll for updates
   useEffect(() => {
     if (!session?.accessToken) return;
     let cancelled = false;
-    setLoadingSuggestions(true);
-    getSuggestions(session.accessToken)
-      .then((list) => {
+    const loadSuggestions = async () => {
+      setLoadingSuggestions(true);
+      try {
+        const list = await getSuggestions(session.accessToken);
         if (!cancelled) setAiSuggestions(list);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setAiSuggestions([]);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoadingSuggestions(false);
-      });
-    return () => { cancelled = true; };
+      }
+    };
+    loadSuggestions();
+    // Poll every 5 seconds for new suggestions
+    const interval = setInterval(() => {
+      if (!cancelled) loadSuggestions();
+    }, 5000);
+    return () => { 
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [session?.accessToken]);
 
   const handleAcceptSuggestion = async (s: AISuggestionItem) => {
     if (!session?.accessToken) return;
     setSuggestionActionId(s.id);
     try {
-      const { actionUrl } = await acceptSuggestion(s.id, session.accessToken);
+      const { fileId, suggestedPrompt } = await acceptSuggestion(s.id, session.accessToken);
       setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
       toast.success('Suggestion accepted');
-      if (actionUrl) router.push(actionUrl);
+      
+      // Attach file if provided
+      if (fileId) {
+        const actionData = s.actionData as Record<string, unknown> | null;
+        const fileName = (actionData?.fileName as string) || 'Document';
+        setAttachedFiles((prev) => {
+          if (prev.some(f => f.id === fileId)) return prev;
+          return [...prev, { id: fileId, name: fileName }].slice(0, MAX_ATTACHMENTS);
+        });
+      }
+      
+      // Auto-execute the prompt if provided
+      if (suggestedPrompt) {
+        // Set input value for display, then execute with the prompt directly
+        setInputValue(suggestedPrompt);
+        // Small delay to ensure file is attached and state is updated
+        setTimeout(() => {
+          handleAIQuery(suggestedPrompt);
+        }, 100);
+      } else if (fileId) {
+        // If no prompt but file exists, just navigate
+        router.push(`/ai-chat?fileIds=${encodeURIComponent(fileId)}`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to accept');
     } finally {
@@ -378,23 +408,26 @@ export default function AIChat() {
   };
 
   // Handle AI query submission
-  const handleAIQuery = async () => {
-    if ((!inputValue.trim() && attachedFiles.length === 0) || isAILoading) return;
+  const handleAIQuery = async (queryOverride?: string) => {
+    const queryToUse = queryOverride || inputValue.trim();
+    if ((!queryToUse && attachedFiles.length === 0) || isAILoading) return;
     if (submittingRef.current) return;
     submittingRef.current = true;
 
     // Validate session and token
     if (!session) {
       setAuthError('Please log in to use AI features');
+      submittingRef.current = false;
       return;
     }
 
     if (!session.accessToken) {
       setAuthError('Authentication token not available. Please refresh the page.');
+      submittingRef.current = false;
       return;
     }
 
-    const userQuery = inputValue.trim();
+    const userQuery = queryToUse;
     const currentAttachedFiles = attachedFiles;
     
     // Clear previous errors
@@ -2268,7 +2301,7 @@ export default function AIChat() {
             
             {/* Send Button */}
             <Button
-              onClick={handleAIQuery}
+              onClick={() => handleAIQuery()}
               disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading || isUploadingFiles}
               size="sm"
               variant="primary"
