@@ -400,9 +400,12 @@ export class OpenAIProvider {
       }
 
       // Parse and normalize (supports both structured and legacy JSON)
+      // Extract JSON from markdown code blocks if present (AI sometimes returns ```json {...} ```)
       let parsed: Record<string, unknown>;
       try {
-        parsed = JSON.parse(response) as Record<string, unknown>;
+        const { extractJSONFromMarkdown } = await import('../utils/normalizeAIResponse');
+        const jsonText = extractJSONFromMarkdown(response);
+        parsed = JSON.parse(jsonText) as Record<string, unknown>;
       } catch (parseError) {
         console.error('Failed to parse OpenAI response as JSON:', response);
         parsed = {

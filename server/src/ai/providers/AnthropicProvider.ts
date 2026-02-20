@@ -175,9 +175,12 @@ export class AnthropicProvider {
       }
 
       // Parse and normalize response (supports both structured and legacy JSON)
+      // Extract JSON from markdown code blocks if present (AI sometimes returns ```json {...} ```)
       let parsed: Record<string, unknown>;
       try {
-        parsed = JSON.parse(content.text) as Record<string, unknown>;
+        const { extractJSONFromMarkdown } = await import('../utils/normalizeAIResponse');
+        const jsonText = extractJSONFromMarkdown(content.text);
+        parsed = JSON.parse(jsonText) as Record<string, unknown>;
       } catch {
         parsed = {
           response: content.text,

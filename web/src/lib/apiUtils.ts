@@ -88,8 +88,8 @@ export async function authenticatedApiCall<T>(
 
     // Add timeout for API calls (30 seconds for most requests, longer for file uploads and AI queries)
     const controller = new AbortController();
-    const isAIQuery = endpoint.includes('/api/ai/twin') || endpoint.includes('/api/ai/chat') || endpoint.includes('/api/business-ai/');
-    const timeoutDuration = isFormDataBody || isAIQuery ? 120000 : 30000; // 2 min for uploads/AI, 30 sec for others
+    const isAIQuery = endpoint.includes('/api/ai/twin') || endpoint.includes('/api/ai/chat') || endpoint.includes('/api/business-ai/') || endpoint.includes('/api/ai/edit-image') || endpoint.includes('/api/ai/generate-image');
+    const timeoutDuration = isFormDataBody || isAIQuery ? 120000 : 30000; // 2 min for uploads/AI/image operations, 30 sec for others
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
     try {

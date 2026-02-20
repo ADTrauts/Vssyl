@@ -421,12 +421,15 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
     if (!fileId || typeof fileId !== 'string' || !prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return res.status(400).json({ error: 'fileId and prompt are required' });
     }
+    console.log('[edit-image] Request:', { fileId, userId, promptLength: prompt.length, background, saveToDrive });
     const file = await prisma.file.findFirst({
       where: { id: fileId, userId, trashedAt: null },
     });
     if (!file) {
+      console.warn('[edit-image] File not found:', { fileId, userId });
       return res.status(404).json({ error: 'File not found or access denied' });
     }
+    console.log('[edit-image] File found:', { fileId: file.id, name: file.name, path: file.path, url: file.url?.substring(0, 50) });
     const { getProviderCapabilities } = await import('../ai/providers/capabilities');
     const caps = getProviderCapabilities('openai');
     if (!caps.supportsImageEdit) {

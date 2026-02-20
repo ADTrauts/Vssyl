@@ -879,8 +879,17 @@ export default function AIChat() {
   };
 
   const handleEditImage = async () => {
-    if (attachedFiles.length !== 1 || !session?.accessToken || !editImagePrompt.trim() || isEditingImage) return;
+    if (attachedFiles.length !== 1 || !session?.accessToken || !editImagePrompt.trim() || isEditingImage) {
+      if (attachedFiles.length !== 1) {
+        toast.error('Please attach exactly one image to edit');
+      }
+      return;
+    }
     const fileId = attachedFiles[0].id;
+    if (!fileId) {
+      toast.error('Invalid file ID');
+      return;
+    }
     const promptText = editImagePrompt.trim();
     setShowEditImageModal(false);
     setEditImagePrompt('');
@@ -908,6 +917,7 @@ export default function AIChat() {
     }
 
     try {
+      console.log('Edit image request:', { fileId, prompt: promptText, background: editImageBackground, fileName: attachedFiles[0].name });
       const response = await authenticatedApiCall<{
         success: boolean;
         data?: { url: string; fileId?: string; name?: string };

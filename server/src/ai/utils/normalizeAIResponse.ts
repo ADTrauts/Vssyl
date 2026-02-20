@@ -11,6 +11,37 @@ import {
   type StructuredResponseType,
 } from '../types/structuredResponse';
 
+/**
+ * Extract JSON from markdown code blocks (```json ... ```) or return the string as-is.
+ * Handles cases where AI returns JSON wrapped in code blocks, even with surrounding text.
+ */
+export function extractJSONFromMarkdown(text: string): string {
+  const trimmed = text.trim();
+  // Match ```json ... ``` or ``` ... ``` anywhere in the text (with optional json language tag)
+  const codeBlockMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (codeBlockMatch && codeBlockMatch[1]) {
+    const extracted = codeBlockMatch[1].trim();
+    // If it looks like JSON (starts with { or [), return it
+    if (extracted.startsWith('{') || extracted.startsWith('[')) {
+      return extracted;
+    }
+  }
+  // Also handle inline code blocks with JSON
+  const inlineMatch = trimmed.match(/`([\s\S]*?)`/);
+  if (inlineMatch && inlineMatch[1]) {
+    const inner = inlineMatch[1].trim();
+    // If it looks like JSON (starts with { or [), return it
+    if (inner.startsWith('{') || inner.startsWith('[')) {
+      return inner;
+    }
+  }
+  // If the whole text looks like JSON (starts with { or [), return it as-is
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return trimmed;
+  }
+  return trimmed;
+}
+
 export interface NormalizedAIResponse {
   /** Plain text for DB storage and fallback display (always set) */
   response: string;

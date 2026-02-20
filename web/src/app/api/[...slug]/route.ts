@@ -182,8 +182,8 @@ async function handler(req: NextRequest) {
 
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
-    const isAIQuery = pathname.includes('/api/ai/twin') || pathname.includes('/api/ai/chat') || pathname.includes('/api/business-ai/');
-    const timeoutDuration = contentType?.includes('multipart/form-data') || isAIQuery ? 120000 : 30000; // 2 min for uploads/AI, 30 sec for others
+    const isAIQuery = pathname.includes('/api/ai/twin') || pathname.includes('/api/ai/chat') || pathname.includes('/api/business-ai/') || pathname.includes('/api/ai/edit-image') || pathname.includes('/api/ai/generate-image');
+    const timeoutDuration = contentType?.includes('multipart/form-data') || isAIQuery ? 120000 : 30000; // 2 min for uploads/AI/image operations, 30 sec for others
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
     
     // Add signal to fetch options if not already present
