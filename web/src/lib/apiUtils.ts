@@ -226,22 +226,29 @@ export async function authenticatedApiCall<T>(
       throw error;
     }
     
-    // Handle server errors (500)
+    // Handle server errors (500) and gateway errors (502/503/504)
     if (response.status >= 500) {
       console.error('Server error:', {
         status: response.status,
         endpoint,
         errorData,
-        // Include full error details in development
         ...(process.env.NODE_ENV === 'development' && { fullError: errorData })
       });
-      
-      // Prefer error message from backend, fallback to generic message
-      const errorMessage = errorData.error || errorData.message || errorData.details || 'Server error. Please try again later.';
+
+      const hasBackendMessage = errorData && (errorData.error || errorData.message || errorData.details);
+      let errorMessage: string;
+      if (hasBackendMessage) {
+        errorMessage = errorData.error || errorData.message || errorData.details || 'Server error. Please try again later.';
+      } else if (response.status === 502 || response.status === 503 || response.status === 504) {
+        errorMessage = response.status === 504
+          ? 'Request timed out. Image editing can take a minute—please try again.'
+          : 'Service temporarily unavailable. Please try again in a moment.';
+      } else {
+        errorMessage = 'Server error. Please try again later.';
+      }
       const error = new Error(errorMessage) as ApiError;
       error.status = response.status;
-      // Attach error data for the UI to use
-      (error as any).errorData = errorData;
+      (error as unknown as Record<string, unknown>).errorData = errorData;
       throw error;
     }
     

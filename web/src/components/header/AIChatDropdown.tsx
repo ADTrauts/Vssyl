@@ -21,8 +21,7 @@ import {
   type AIConversation as AIConversationType,
   type AIMessage as AIMessageType 
 } from '../../api/aiConversations';
-import AIServicePicker, { type AIProvider } from '../ai/AIServicePicker';
-import AIModelPicker from '../ai/AIModelPicker';
+import AIProviderModelPicker, { type AIProvider } from '../ai/AIProviderModelPicker';
 import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIMessageContent from '../ai/AIMessageContent';
 import AIResponseRenderer, { type StructuredAIResponse } from '../ai/AIResponseRenderer';
@@ -1009,16 +1008,11 @@ export default function AIChatDropdown({
           </div>
           
           <div className="flex items-center space-x-2">
-            <AIServicePicker
-              value={selectedProvider}
-              onChange={setSelectedProvider}
-              compact={true}
-              showLabel={true}
-            />
-            <AIModelPicker
+            <AIProviderModelPicker
               provider={selectedProvider}
-              value={selectedModel}
-              onChange={setSelectedModel}
+              model={selectedModel}
+              onProviderChange={setSelectedProvider}
+              onModelChange={setSelectedModel}
               models={aiModels}
               compact={true}
               showLabel={true}

@@ -23,8 +23,7 @@ import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
-import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
-import AIModelPicker from '../../components/ai/AIModelPicker';
+import AIProviderModelPicker, { type AIProvider } from '../../components/ai/AIProviderModelPicker';
 import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
@@ -1782,16 +1781,11 @@ export default function AIChat() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <AIServicePicker
-                  value={selectedProvider}
-                  onChange={setSelectedProvider}
-                  compact={false}
-                  showLabel={true}
-                />
-                <AIModelPicker
+                <AIProviderModelPicker
                   provider={selectedProvider}
-                  value={selectedModel}
-                  onChange={setSelectedModel}
+                  model={selectedModel}
+                  onProviderChange={setSelectedProvider}
+                  onModelChange={setSelectedModel}
                   models={aiModels}
                   compact={false}
                   showLabel={true}
@@ -1840,16 +1834,11 @@ export default function AIChat() {
                 <p className="text-sm text-gray-500">Start a new conversation</p>
               </div>
               <div className="flex items-center gap-3">
-                <AIServicePicker
-                  value={selectedProvider}
-                  onChange={setSelectedProvider}
-                  compact={false}
-                  showLabel={true}
-                />
-                <AIModelPicker
+                <AIProviderModelPicker
                   provider={selectedProvider}
-                  value={selectedModel}
-                  onChange={setSelectedModel}
+                  model={selectedModel}
+                  onProviderChange={setSelectedProvider}
+                  onModelChange={setSelectedModel}
                   models={aiModels}
                   compact={false}
                   showLabel={true}
