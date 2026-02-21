@@ -15,8 +15,13 @@ import { getMessageForCode } from '../types/fileIssues';
 import { executeTool } from '../tools/toolExecutor';
 import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
+import { getModel } from '../providers/modelCatalog';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
+const MODEL_PREF_KEYS: Record<string, string> = {
+  openai: 'ai_preferred_model_openai',
+  anthropic: 'ai_preferred_model_anthropic',
+};
 const MAX_TOOL_CALL_ROUNDS = 3;
 
 /** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
@@ -125,6 +130,8 @@ export interface LifeTwinQuery {
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
   preferredProvider?: 'auto' | 'openai' | 'anthropic';
+  /** Optional model id override (e.g. gpt-4o-mini). Validated in Core against modelCatalog. */
+  preferredModel?: string;
 }
 
 export class DigitalLifeTwinCore {
@@ -771,13 +778,31 @@ export class DigitalLifeTwinCore {
       }
     }
     
-    // Use appropriate AI provider based on complexity, privacy, and user preference
     const provider = this.selectAIProvider(
-      (analysis as any)?.complexity || 'medium', 
+      (analysis as any)?.complexity || 'medium',
       query.query,
       preferredProvider
     );
-    
+
+    // Model selection: 1) request override (query.preferredModel) 2) user pref for this provider 3) vision block may override to vision-capable model when images present
+    let resolvedModel: string | null = query.preferredModel && query.preferredModel.trim() ? query.preferredModel.trim() : null;
+    if (!resolvedModel && (provider === 'openai' || provider === 'anthropic')) {
+      try {
+        const prefKey = MODEL_PREF_KEYS[provider];
+        if (prefKey) {
+          const userPref = await this.prisma.userPreference.findUnique({
+            where: { userId_key: { userId: query.userId, key: prefKey } },
+          });
+          if (userPref?.value?.trim()) {
+            const def = getModel(userPref.value.trim());
+            if (def && def.provider === provider) resolvedModel = userPref.value.trim();
+          }
+        }
+      } catch (err) {
+        console.warn('Error getting user model preference:', err);
+      }
+    }
+
     // Build options for provider (include visionImageParts when present for multimodal requests)
     const dashboardContext = (userContext as unknown as Record<string, unknown>)?.dashboardContext;
     const optionsDashboardId = dashboardContext && typeof dashboardContext === 'object' && 'dashboardId' in dashboardContext
@@ -804,20 +829,24 @@ export class DigitalLifeTwinCore {
       options.onChunk = streamOptions.onChunk;
     }
 
-    // Phase 4: capability-aware vision — ensure vision model when images present, log model, strip vision for local
+    // Phase 4: capability-aware vision — ensure vision model when images present; apply modelOverride for cloud providers
     const visionParts = options.visionImageParts as unknown[] | undefined;
     const hasVisionParts = Array.isArray(visionParts) && visionParts.length > 0;
+    let modelOverride: string | null = null;
+
     if (hasVisionParts) {
       const { getProviderCapabilities } = await import('../providers/capabilities');
       const caps = getProviderCapabilities(provider as 'openai' | 'anthropic' | 'local');
       if (caps.supportsVisionInput && caps.visionModel) {
-        options.visionModelOverride = caps.visionModel;
+        const preferredSupportsVision = resolvedModel ? (getModel(resolvedModel)?.supportsVision ?? false) : false;
+        modelOverride = preferredSupportsVision && resolvedModel ? resolvedModel : caps.visionModel;
+        options.visionModelOverride = modelOverride;
         await logger.info(`${VISION_PIPELINE_PREFIX} vision request → model`, {
           operation: 'vision_pipeline_model_selection',
           requestId: traceContext?.requestId,
           conversationId: traceContext?.conversationId,
           provider,
-          model: caps.visionModel,
+          model: modelOverride,
           visionPartsCount: visionParts.length,
         });
       } else {
@@ -829,6 +858,12 @@ export class DigitalLifeTwinCore {
         });
         delete options.visionImageParts;
       }
+    } else if (resolvedModel && (provider === 'openai' || provider === 'anthropic')) {
+      modelOverride = resolvedModel;
+    }
+
+    if (modelOverride && (provider === 'openai' || provider === 'anthropic')) {
+      options.modelOverride = modelOverride;
     }
 
     // Phase 0.15: providerData trace before callAIProvider
@@ -1535,6 +1570,9 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
       }
       if (options?.visionModelOverride && typeof options.visionModelOverride === 'string') {
         providerData.visionModelOverride = options.visionModelOverride;
+      }
+      if (options?.modelOverride && typeof options.modelOverride === 'string') {
+        providerData.modelOverride = options.modelOverride;
       }
       if (options?.stream === true && typeof options.onChunk === 'function') {
         providerData.stream = true;

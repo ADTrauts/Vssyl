@@ -121,6 +121,7 @@ export class DigitalLifeTwinService {
       recentActivity?: unknown[];
       urgency?: 'low' | 'medium' | 'high';
       preferredProvider?: 'auto' | 'openai' | 'anthropic';
+      preferredModel?: string;
       conversationId?: string;
       fileIds?: string[];
     } = {}
@@ -165,6 +166,7 @@ export class DigitalLifeTwinService {
       context: context as Record<string, unknown>,
       conversationHistory,
       preferredProvider: context.preferredProvider,
+      preferredModel: context.preferredModel,
     };
 
     return await this.digitalLifeTwinCore.processAsDigitalTwin(lifeTwinQuery);
@@ -184,6 +186,7 @@ export class DigitalLifeTwinService {
       recentActivity?: unknown[];
       urgency?: 'low' | 'medium' | 'high';
       preferredProvider?: 'auto' | 'openai' | 'anthropic';
+      preferredModel?: string;
       conversationId?: string;
       fileIds?: string[];
     },
@@ -223,6 +226,7 @@ export class DigitalLifeTwinService {
       context: context as Record<string, unknown>,
       conversationHistory,
       preferredProvider: context.preferredProvider,
+      preferredModel: context.preferredModel,
     };
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

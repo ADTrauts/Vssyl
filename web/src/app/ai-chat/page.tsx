@@ -24,6 +24,8 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
 import AIServicePicker, { type AIProvider } from '../../components/ai/AIServicePicker';
+import AIModelPicker from '../../components/ai/AIModelPicker';
+import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
@@ -96,6 +98,10 @@ export default function AIChat() {
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('auto');
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [preferredModelOpenai, setPreferredModelOpenai] = useState<string | null>(null);
+  const [preferredModelAnthropic, setPreferredModelAnthropic] = useState<string | null>(null);
+  const [aiModels, setAiModels] = useState<ChatModelDefinition[]>([]);
   const [hoveredConversationId, setHoveredConversationId] = useState<string | null>(null);
   const [conversationMenuOpen, setConversationMenuOpen] = useState<string | null>(null);
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
@@ -246,25 +252,60 @@ export default function AIChat() {
     }
   };
 
-  // Load user's provider preference
+  // Load user's provider and model preferences
   const loadProviderPreference = async () => {
     if (!session?.accessToken) return;
-    
+
     try {
       const response = await authenticatedApiCall<{
         success: boolean;
-        data: { preferredProvider: AIProvider };
+        data: {
+          preferredProvider: AIProvider;
+          preferredModelOpenai: string | null;
+          preferredModelAnthropic: string | null;
+        };
       }>('/api/ai/preferences', {
         method: 'GET',
       }, session.accessToken);
-      
-      if (response.success && response.data?.preferredProvider) {
-        setSelectedProvider(response.data.preferredProvider);
+
+      if (response.success && response.data) {
+        if (response.data.preferredProvider) {
+          setSelectedProvider(response.data.preferredProvider);
+        }
+        setPreferredModelOpenai(response.data.preferredModelOpenai ?? null);
+        setPreferredModelAnthropic(response.data.preferredModelAnthropic ?? null);
+        const prov = response.data.preferredProvider || 'auto';
+        if (prov === 'openai' && response.data.preferredModelOpenai) {
+          setSelectedModel(response.data.preferredModelOpenai);
+        } else if (prov === 'anthropic' && response.data.preferredModelAnthropic) {
+          setSelectedModel(response.data.preferredModelAnthropic);
+        } else {
+          setSelectedModel(null);
+        }
       }
     } catch (error) {
       console.warn('Failed to load provider preference:', error);
     }
   };
+
+  // Load available AI models for picker
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    getAIModels(session.accessToken)
+      .then((data) => setAiModels([...data.openai, ...data.anthropic, ...data.local]))
+      .catch(() => {});
+  }, [session?.accessToken]);
+
+  // When provider changes, sync selected model from saved preference for that provider
+  useEffect(() => {
+    if (selectedProvider === 'auto') {
+      setSelectedModel(null);
+    } else if (selectedProvider === 'openai') {
+      setSelectedModel(preferredModelOpenai);
+    } else if (selectedProvider === 'anthropic') {
+      setSelectedModel(preferredModelAnthropic);
+    }
+  }, [selectedProvider, preferredModelOpenai, preferredModelAnthropic]);
 
   const loadConversations = async () => {
     // Clear previous errors
@@ -551,6 +592,7 @@ export default function AIChat() {
       const twinBody = {
         query: userQuery,
         provider: selectedProvider,
+        ...(selectedModel && { model: selectedModel }),
         context: {
           currentModule: 'ai-chat',
           dashboardType: 'personal',
@@ -1746,6 +1788,15 @@ export default function AIChat() {
                   compact={false}
                   showLabel={true}
                 />
+                <AIModelPicker
+                  provider={selectedProvider}
+                  value={selectedModel}
+                  onChange={setSelectedModel}
+                  models={aiModels}
+                  compact={false}
+                  showLabel={true}
+                  hasImages={attachedFiles.length > 0}
+                />
                 <div className="relative">
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -1788,12 +1839,23 @@ export default function AIChat() {
                 <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
                 <p className="text-sm text-gray-500">Start a new conversation</p>
               </div>
-              <AIServicePicker
-                value={selectedProvider}
-                onChange={setSelectedProvider}
-                compact={false}
-                showLabel={true}
-              />
+              <div className="flex items-center gap-3">
+                <AIServicePicker
+                  value={selectedProvider}
+                  onChange={setSelectedProvider}
+                  compact={false}
+                  showLabel={true}
+                />
+                <AIModelPicker
+                  provider={selectedProvider}
+                  value={selectedModel}
+                  onChange={setSelectedModel}
+                  models={aiModels}
+                  compact={false}
+                  showLabel={true}
+                  hasImages={attachedFiles.length > 0}
+                />
+              </div>
             </>
           )}
         </div>

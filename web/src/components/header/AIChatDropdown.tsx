@@ -22,6 +22,8 @@ import {
   type AIMessage as AIMessageType 
 } from '../../api/aiConversations';
 import AIServicePicker, { type AIProvider } from '../ai/AIServicePicker';
+import AIModelPicker from '../ai/AIModelPicker';
+import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIMessageContent from '../ai/AIMessageContent';
 import AIResponseRenderer, { type StructuredAIResponse } from '../ai/AIResponseRenderer';
 import AIThinkingIndicator from '../ai/AIThinkingIndicator';
@@ -131,6 +133,10 @@ export default function AIChatDropdown({
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('auto');
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [preferredModelOpenai, setPreferredModelOpenai] = useState<string | null>(null);
+  const [preferredModelAnthropic, setPreferredModelAnthropic] = useState<string | null>(null);
+  const [aiModels, setAiModels] = useState<ChatModelDefinition[]>([]);
   const [hoveredConversationId, setHoveredConversationId] = useState<string | null>(null);
   const [conversationMenuOpen, setConversationMenuOpen] = useState<string | null>(null);
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
@@ -527,7 +533,8 @@ export default function AIChatDropdown({
           method: 'POST',
           body: JSON.stringify({
             query: userQuery,
-            provider: selectedProvider, // Include provider selection
+            provider: selectedProvider,
+            ...(selectedModel && { model: selectedModel }),
             context: {
               currentModule: effectiveModuleContext?.module || 'search',
               dashboardType,
@@ -1007,6 +1014,15 @@ export default function AIChatDropdown({
               onChange={setSelectedProvider}
               compact={true}
               showLabel={true}
+            />
+            <AIModelPicker
+              provider={selectedProvider}
+              value={selectedModel}
+              onChange={setSelectedModel}
+              models={aiModels}
+              compact={true}
+              showLabel={true}
+              hasImages={attachedFiles.length > 0}
             />
             <Button
               variant={showHistory ? "primary" : "ghost"}

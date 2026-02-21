@@ -9,7 +9,7 @@ export interface ProviderVisionCapability {
   supportsImageGeneration?: boolean;
   /** Optional: true when provider supports image edit (e.g. remove background). Phase 8. */
   supportsImageEdit?: boolean;
-  /** Model id to use when vision is used (e.g. gpt-4o, claude-3-5-sonnet-20241022). */
+  /** Model id to use when vision is used. Must exist in modelCatalog with supportsVision: true. */
   visionModel?: string;
   maxImageCount: number;
   maxImageBytes?: number;

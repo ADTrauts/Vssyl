@@ -125,8 +125,10 @@ export class AnthropicProvider {
         : [{ type: 'text', text: userTextWithVision }];
 
       const traceContext = data.traceContext as { requestId?: string; conversationId?: string; userId?: string } | undefined;
+      const modelOverride = data.modelOverride as string | undefined;
       const visionModelOverride = data.visionModelOverride as string | undefined;
-      const modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+      let modelToUse = modelOverride && modelOverride.trim() ? modelOverride.trim() : this.config.model;
+      if (hasVision && visionModelOverride) modelToUse = visionModelOverride;
       await logger.debug(`${VISION_PIPELINE_PREFIX} provider request shape`, {
         operation: 'vision_pipeline_provider_request',
         requestId: traceContext?.requestId,
@@ -206,7 +208,7 @@ export class AnthropicProvider {
         structured: normalized.structured,
         metadata: {
           provider: 'anthropic',
-          model: this.config.model,
+          model: modelToUse,
           tokens: inputTokens + outputTokens,
           cost,
           processingTime,

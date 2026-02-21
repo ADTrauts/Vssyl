@@ -11,6 +11,7 @@ import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { AIQueryService } from '../services/aiQueryService';
+import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
 
 const router: express.Router = express.Router();
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
@@ -47,24 +48,39 @@ function formatPatternForUser(p: LearningPattern): { id: string; description: st
 }
 
 /**
+ * GET /api/ai/models
+ * Returns available chat/twin models grouped by provider (for model selection UI).
+ */
+router.get('/models', authenticateJWT, (_req, res) => {
+  try {
+    const models = getModelsGroupedByProvider();
+    res.json({ success: true, data: models });
+  } catch (err) {
+    console.error('[AI models] Failed to get models:', err);
+    res.status(500).json({ success: false, error: 'Failed to load models' });
+  }
+});
+
+/**
  * 🚀 POST /api/ai/twin
  * Revolutionary Digital Life Twin interaction endpoint
  */
 router.post('/twin', authenticateJWT, async (req, res) => {
   try {
-    const { query, provider, context = {} } = req.body;
+    const { query, provider, model, context = {} } = req.body;
     const userId = req.user?.id;
     const businessId = context.businessId || null;
-    
+
     console.log('[AI Twin Route] Request received:', {
       userId,
       queryLength: query?.length,
       provider,
+      model,
       hasFileIds: !!context.fileIds,
       fileIdsCount: Array.isArray(context.fileIds) ? context.fileIds.length : 0,
       fileIds: context.fileIds
     });
-    
+
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -73,9 +89,15 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    // Validate provider if provided
     if (provider && !['auto', 'openai', 'anthropic'].includes(provider)) {
       return res.status(400).json({ error: 'Invalid provider. Must be auto, openai, or anthropic' });
+    }
+
+    if (model != null && typeof model === 'string') {
+      const modelDef = getModel(model.trim());
+      if (!modelDef) {
+        return res.status(400).json({ error: 'Invalid model. Use a model id from GET /api/ai/models.' });
+      }
     }
 
     // Admin users bypass feature gating
@@ -96,6 +118,19 @@ router.post('/twin', authenticateJWT, async (req, res) => {
           remaining: featureCheck.usageInfo?.remaining || 0,
         });
       }
+
+      // Premium models consume more queries; ensure user has enough for the requested model
+      const requestedQueryCost = (model != null && typeof model === 'string')
+        ? getQueryCostForModel(model.trim())
+        : 1;
+      const remaining = featureCheck.usageInfo?.remaining ?? 0;
+      if (remaining >= 0 && remaining < requestedQueryCost) {
+        return res.status(429).json({
+          error: 'AI query limit exceeded',
+          message: `This model uses ${requestedQueryCost} query${requestedQueryCost > 1 ? 's' : ''} per request. You have ${remaining} remaining.`,
+          remaining,
+        });
+      }
     }
 
     const wantStream = req.body.stream === true || (req.get('Accept') || '').includes('text/event-stream');
@@ -110,6 +145,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
           recentActivity: context.recentActivity,
           urgency: context.urgency || 'medium',
           preferredProvider: provider,
+          preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
           conversationId: context.conversationId,
           fileIds: context.fileIds,
         },
@@ -169,32 +205,32 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       return;
     }
 
-    // Use the revolutionary Digital Life Twin Core
     const response = await digitalLifeTwin.processAsDigitalLifeTwin(
-      query, 
-      userId, 
+      query,
+      userId,
       {
         currentModule: context.currentModule,
         dashboardType: context.dashboardType,
         dashboardName: context.dashboardName,
         recentActivity: context.recentActivity,
         urgency: context.urgency || 'medium',
-        preferredProvider: provider, // Pass provider preference
-        conversationId: context.conversationId, // Pass so twin can use recent messages as context
-        fileIds: context.fileIds, // Pass attached file IDs so AI can read them
+        preferredProvider: provider,
+        preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
+        conversationId: context.conversationId,
+        fileIds: context.fileIds,
       }
     );
     
-    // Consume query (only after successful processing) - skip for admins
+    // Consume query (only after successful processing) - skip for admins. Premium models use more queries.
     if (!isAdmin) {
       try {
-        const consumeResult = await AIQueryService.consumeQuery(userId, businessId, 1);
+        const modelUsed = (response.metadata as Record<string, unknown> | undefined)?.model;
+        const queryCost = typeof modelUsed === 'string' ? getQueryCostForModel(modelUsed) : 1;
+        const consumeResult = await AIQueryService.consumeQuery(userId, businessId, queryCost);
         if (!consumeResult.success) {
-          // This shouldn't happen since we checked above, but handle gracefully
           console.warn('Query consumption failed after processing:', consumeResult.error);
         }
       } catch (consumeError) {
-        // Log error but don't fail the request since processing already succeeded
         console.error('Error consuming query after processing:', consumeError);
       }
     }
@@ -437,18 +473,24 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
     }
     // Prefer storage path so we don't depend on fetching file.url (signed URLs, auth, or CORS can fail in production).
     let imageBuffer: Buffer;
-    if (file.path) {
-      const { storageService } = await import('../services/storageService');
-      imageBuffer = await storageService.getFileBuffer(file.path);
-    } else if (file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'))) {
-      const imageRes = await fetch(file.url, { method: 'GET' });
-      if (!imageRes.ok) {
-        return res.status(502).json({ error: 'Failed to fetch image from URL' });
+    try {
+      if (file.path) {
+        const { storageService } = await import('../services/storageService');
+        imageBuffer = await storageService.getFileBuffer(file.path);
+      } else if (file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'))) {
+        const imageRes = await fetch(file.url, { method: 'GET' });
+        if (!imageRes.ok) {
+          return res.status(502).json({ error: 'Failed to fetch image from URL' });
+        }
+        const arrayBuffer = await imageRes.arrayBuffer();
+        imageBuffer = Buffer.from(arrayBuffer);
+      } else {
+        return res.status(400).json({ error: 'File has no storage path or accessible URL' });
       }
-      const arrayBuffer = await imageRes.arrayBuffer();
-      imageBuffer = Buffer.from(arrayBuffer);
-    } else {
-      return res.status(400).json({ error: 'File has no storage path or accessible URL' });
+    } catch (loadErr) {
+      const msg = loadErr instanceof Error ? loadErr.message : 'Failed to load image';
+      console.error('[edit-image] Failed to load image:', loadErr);
+      return res.status(502).json({ error: `Could not load image: ${msg}` });
     }
     const { OpenAIProvider } = await import('../ai/providers/OpenAIProvider');
     const provider = new OpenAIProvider();
@@ -518,10 +560,11 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Edit image error:', error);
+    const err = error instanceof Error ? error : new Error('Unknown error');
+    console.error('Edit image error:', err.message, err.stack);
     res.status(500).json({
-      error: 'Failed to edit image',
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      error: err.message || 'Failed to edit image',
+      message: err.message,
     });
   }
 });

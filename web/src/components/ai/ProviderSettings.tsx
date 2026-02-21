@@ -5,11 +5,16 @@ import { useSession } from 'next-auth/react';
 import { Card, Button, Spinner, Alert } from 'shared/components';
 import { Sparkles, Zap, Brain, Info } from 'lucide-react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
+import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIServicePicker, { type AIProvider } from './AIServicePicker';
+import AIModelPicker from './AIModelPicker';
 
 export default function ProviderSettings() {
   const { data: session } = useSession();
   const [preferredProvider, setPreferredProvider] = useState<AIProvider>('auto');
+  const [preferredModelOpenai, setPreferredModelOpenai] = useState<string | null>(null);
+  const [preferredModelAnthropic, setPreferredModelAnthropic] = useState<string | null>(null);
+  const [models, setModels] = useState<ChatModelDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,25 +23,34 @@ export default function ProviderSettings() {
   useEffect(() => {
     if (session?.accessToken) {
       loadPreferences();
+      loadModels();
     }
   }, [session?.accessToken]);
 
   const loadPreferences = async () => {
     if (!session?.accessToken) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await authenticatedApiCall<{
         success: boolean;
-        data: { preferredProvider: AIProvider };
+        data: {
+          preferredProvider: AIProvider;
+          preferredModelOpenai: string | null;
+          preferredModelAnthropic: string | null;
+        };
       }>('/api/ai/preferences', {
         method: 'GET',
       }, session.accessToken);
-      
-      if (response.success && response.data?.preferredProvider) {
-        setPreferredProvider(response.data.preferredProvider);
+
+      if (response.success && response.data) {
+        if (response.data.preferredProvider) {
+          setPreferredProvider(response.data.preferredProvider);
+        }
+        setPreferredModelOpenai(response.data.preferredModelOpenai ?? null);
+        setPreferredModelAnthropic(response.data.preferredModelAnthropic ?? null);
       }
     } catch (err) {
       console.error('Failed to load provider preferences:', err);
@@ -46,24 +60,36 @@ export default function ProviderSettings() {
     }
   };
 
+  const loadModels = async () => {
+    if (!session?.accessToken) return;
+    try {
+      const data = await getAIModels(session.accessToken);
+      setModels([...data.openai, ...data.anthropic, ...data.local]);
+    } catch (err) {
+      console.warn('Failed to load AI models:', err);
+    }
+  };
+
   const savePreferences = async () => {
     if (!session?.accessToken) return;
-    
+
     setSaving(true);
     setError(null);
     setSuccess(false);
-    
+
     try {
       const response = await authenticatedApiCall<{
         success: boolean;
-        data: { preferredProvider: AIProvider };
+        data: { preferredProvider: AIProvider; preferredModelOpenai: string | null; preferredModelAnthropic: string | null };
       }>('/api/ai/preferences', {
         method: 'PUT',
         body: JSON.stringify({
-          preferredProvider
-        })
+          preferredProvider,
+          preferredModelOpenai: preferredModelOpenai ?? '',
+          preferredModelAnthropic: preferredModelAnthropic ?? '',
+        }),
       }, session.accessToken);
-      
+
       if (response.success) {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
@@ -121,6 +147,36 @@ export default function ProviderSettings() {
               compact={false}
               showLabel={true}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default model for OpenAI
+            </label>
+            <AIModelPicker
+              provider="openai"
+              value={preferredModelOpenai}
+              onChange={setPreferredModelOpenai}
+              models={models}
+              compact={false}
+              showLabel={false}
+            />
+            <p className="text-xs text-gray-600 mt-1">Used when OpenAI is selected as provider. Leave default to use the recommended model. Premium models use 2 queries per request.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Default model for Anthropic
+            </label>
+            <AIModelPicker
+              provider="anthropic"
+              value={preferredModelAnthropic}
+              onChange={setPreferredModelAnthropic}
+              models={models}
+              compact={false}
+              showLabel={false}
+            />
+            <p className="text-xs text-gray-600 mt-1">Used when Anthropic is selected as provider. Premium models use 2 queries per request.</p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

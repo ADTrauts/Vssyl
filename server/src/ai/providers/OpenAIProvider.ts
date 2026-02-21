@@ -84,7 +84,8 @@ export class OpenAIProvider {
    */
   async process(request: AIRequest, context: UserContext, data: Record<string, unknown>): Promise<AIResponse> {
     const startTime = Date.now();
-    let modelToUse = this.config.model;
+    const modelOverride = data.modelOverride as string | undefined;
+    let modelToUse = modelOverride && modelOverride.trim() ? modelOverride.trim() : this.config.model;
 
     try {
       // Check if API key is configured
@@ -118,7 +119,7 @@ export class OpenAIProvider {
           ? messagesInput
           : [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }];
         const visionModelOverride = data.visionModelOverride as string | undefined;
-        modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+        if (hasVision && visionModelOverride) modelToUse = visionModelOverride;
         const timeoutMs = 120000;
         const MAX_RETRIES = 3;
         let completion: OpenAI.Chat.ChatCompletion | undefined;
@@ -213,7 +214,7 @@ export class OpenAIProvider {
             ]
           : userPrompt;
         const visionModelOverride = data.visionModelOverride as string | undefined;
-        modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+        if (hasVision && visionModelOverride) modelToUse = visionModelOverride;
         const streamPromise = this.client.chat.completions.create({
           model: modelToUse,
           messages: [
@@ -321,7 +322,7 @@ export class OpenAIProvider {
         : userPrompt;
 
       const visionModelOverride = data.visionModelOverride as string | undefined;
-      modelToUse = hasVision && visionModelOverride ? visionModelOverride : this.config.model;
+      if (hasVision && visionModelOverride) modelToUse = visionModelOverride;
       await logger.debug(`${VISION_PIPELINE_PREFIX} provider request shape`, {
         operation: 'vision_pipeline_provider_request',
         requestId: traceContext?.requestId,
