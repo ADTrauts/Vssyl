@@ -143,6 +143,16 @@ model User {
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]
+  placeDismissedSuggestions PlaceDismissedSuggestion[]
+  placeTransactions    PlaceTransaction[]
+  placeInteractionClicks PlaceInteractionClick[]
+  placeMeetingsCreated PlaceMeetingPlace[] @relation("PlaceMeetingCreator")
+  placeMeetingInvites  PlaceMeetingInvite[] @relation("PlaceMeetingInvitee")
+  placeLocationPrivacy PlaceLocationPrivacy?
+  placeCommunitiesCreated PlaceCommunity[] @relation("PlaceCommunityCreator")
+  placeCommunityMemberships PlaceCommunityMember[]
+  placeActivityFeed    PlaceActivityFeedItem[]
+  placeAnalyticsSnapshots PlaceAnalyticsSnapshot[]
 
   @@map("users")
   @@index([userNumber])

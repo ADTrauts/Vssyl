@@ -1,14 +1,20 @@
 'use client';
 
-import React from 'react';
-import { MapPin, Compass } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Compass, Users, Settings, Receipt, Zap, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
 import { usePlace } from '../../contexts/PlaceContext';
 import PlaceGraph from '../../components/place/PlaceGraph';
 import PlaceExplore from '../../components/place/PlaceExplore';
 import PlaceOnboarding from '../../components/place/PlaceOnboarding';
+import PlaceMeetings from '../../components/place/PlaceMeetings';
+import PlaceActivityFeed from '../../components/place/PlaceActivityFeed';
+import PlaceAnalyticsDashboard from '../../components/place/PlaceAnalyticsDashboard';
+import PlacePrivacySettings from '../../components/place/PlacePrivacySettings';
 
 export default function PlacePage() {
   const { place, loading, activeTab, setActiveTab } = usePlace();
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   if (loading) {
     return (
@@ -111,16 +117,113 @@ export default function PlacePage() {
           <Compass size={18} />
           Explore
         </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'meetings'}
+          onClick={() => setActiveTab('meetings')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '14px 20px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            color: activeTab === 'meetings' ? '#4F46E5' : '#6B7280',
+            borderBottom: activeTab === 'meetings' ? '2px solid #4F46E5' : '2px solid transparent',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          <Users size={18} />
+          Meetings
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'feed'}
+          onClick={() => setActiveTab('feed')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '14px 20px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            color: activeTab === 'feed' ? '#4F46E5' : '#6B7280',
+            borderBottom: activeTab === 'feed' ? '2px solid #4F46E5' : '2px solid transparent',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          <Zap size={18} />
+          Feed
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'analytics'}
+          onClick={() => setActiveTab('analytics')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '14px 20px',
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 600,
+            color: activeTab === 'analytics' ? '#4F46E5' : '#6B7280',
+            borderBottom: activeTab === 'analytics' ? '2px solid #4F46E5' : '2px solid transparent',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          <BarChart3 size={18} />
+          Insights
+        </button>
+
+        {/* Right-side actions */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, paddingRight: 4 }}>
+          <Link
+            href="/place/transactions"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, color: '#374151', borderRadius: 8, textDecoration: 'none' }}
+            className="hover:bg-gray-100 transition-colors"
+          >
+            <Receipt size={16} />
+            History
+          </Link>
+          <button
+            onClick={() => setShowPrivacy(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, color: '#374151', border: 'none', background: 'none', cursor: 'pointer', borderRadius: 8 }}
+            className="hover:bg-gray-100 transition-colors"
+          >
+            <Settings size={16} />
+            Privacy
+          </button>
+        </div>
       </nav>
 
       {/* Tab content */}
       <div
         role="tabpanel"
-        style={{ flex: 1, overflow: 'hidden' }}
-        aria-label={activeTab === 'my-place' ? 'My Place neighborhood view' : 'Explore businesses'}
+        style={{ flex: 1, overflow: activeTab === 'my-place' ? 'hidden' : 'auto' }}
+        aria-label={
+          activeTab === 'my-place' ? 'My Place neighborhood view' :
+          activeTab === 'explore' ? 'Explore businesses' :
+          activeTab === 'meetings' ? 'Meeting places' :
+          activeTab === 'feed' ? 'Activity feed' : 'Analytics insights'
+        }
       >
-        {activeTab === 'my-place' ? <PlaceGraph /> : <PlaceExplore />}
+        {activeTab === 'my-place' && <PlaceGraph />}
+        {activeTab === 'explore' && <PlaceExplore />}
+        {activeTab === 'meetings' && <PlaceMeetings />}
+        {activeTab === 'feed' && <PlaceActivityFeed />}
+        {activeTab === 'analytics' && <PlaceAnalyticsDashboard />}
       </div>
+
+      {showPrivacy && <PlacePrivacySettings onClose={() => setShowPrivacy(false)} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -19,6 +19,7 @@ import '@xyflow/react/dist/style.css';
 import { usePlace, PlaceNode as PlaceNodeData } from '../../contexts/PlaceContext';
 import BusinessNode from './nodes/BusinessNode';
 import UserNode from './nodes/UserNode';
+import BusinessProfilePanel from './BusinessProfilePanel';
 
 const nodeTypes: NodeTypes = {
   business: BusinessNode,
@@ -66,6 +67,7 @@ function placeNodesToFlowNodes(placeNodes: PlaceNodeData[]): Node[] {
         nodeType: pn.nodeType,
         color: pn.color || (isUser ? COLORS.user : getCategoryColor(pn.label)),
         pinned: pn.pinned,
+        verified: pn.verified,
       },
       draggable: true,
     };
@@ -85,6 +87,7 @@ function generateEdges(nodes: Node[]): Edge[] {
 
 export default function PlaceGraph() {
   const { place, updateNodePosition } = usePlace();
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
 
   const initialNodes = useMemo(() => {
     if (!place?.nodes.length) return [];
@@ -122,13 +125,20 @@ export default function PlaceGraph() {
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     onNodesChange(changes);
 
-    // Persist position changes
     for (const change of changes) {
       if (change.type === 'position' && change.position && change.dragging === false && change.id !== '__center__') {
         updateNodePosition(change.id, change.position.x, change.position.y, true);
       }
     }
   }, [onNodesChange, updateNodePosition]);
+
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    if (node.id === '__center__') return;
+    const data = node.data as Record<string, string>;
+    if (data.nodeType === 'BUSINESS') {
+      setSelectedBusinessId(data.entityId);
+    }
+  }, []);
 
   const isEmpty = !place?.nodes.length;
 
@@ -153,12 +163,13 @@ export default function PlaceGraph() {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%' }} role="application" aria-label="Your neighborhood map">
+    <div style={{ width: '100%', height: '100%', position: 'relative' }} role="application" aria-label="Your neighborhood map">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         fitView
@@ -179,6 +190,13 @@ export default function PlaceGraph() {
           style={{ borderRadius: 8, border: '1px solid #E5E7EB' }}
         />
       </ReactFlow>
+
+      {selectedBusinessId && (
+        <BusinessProfilePanel
+          businessId={selectedBusinessId}
+          onClose={() => setSelectedBusinessId(null)}
+        />
+      )}
     </div>
   );
 }

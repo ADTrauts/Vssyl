@@ -562,7 +562,8 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
       keywords: [
         'place', 'neighborhood', 'main street', 'business', 'follow',
         'connection', 'local', 'discover', 'explore', 'restaurant',
-        'store', 'shop', 'service', 'node', 'map'
+        'store', 'shop', 'service', 'node', 'map', 'meeting',
+        'reservation', 'order', 'transaction', 'purchase', 'delivery'
       ],
       patterns: [
         'show (my )?place',
@@ -571,14 +572,24 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
         'discover (new )?(businesses|places|restaurants)',
         'what.s in my neighborhood',
         'local (businesses|restaurants|stores)',
-        'explore (new )?places'
+        'explore (new )?places',
+        'order (food|from)',
+        'make a reservation',
+        'book a table',
+        'how much (have I spent|did I spend)',
+        'my (transactions|purchases|activity)',
+        'meeting (with|at|place)',
+        'where (should|can) (we|I) (meet|eat|go)'
       ],
       concepts: [
         'personal neighborhood',
         'business discovery',
         'local commerce',
         'connection network',
-        'user-curated space'
+        'user-curated space',
+        'meeting coordination',
+        'purchase assistance',
+        'reservation booking'
       ],
       entities: [
         { name: 'Place', pluralName: 'Places', description: 'A user\'s personal Main Street / neighborhood' },
@@ -596,6 +607,30 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           description: 'Get Place overview — node count, interests, setup status',
           endpoint: '/api/place/ai/context/overview',
           cacheDuration: 300000,
+        },
+        {
+          name: 'place_connections',
+          description: 'Get user connections — followed businesses with names, user connections count',
+          endpoint: '/api/place/ai/context/connections',
+          cacheDuration: 300000,
+        },
+        {
+          name: 'place_discoveries',
+          description: 'Get discovery data — total available businesses, category breakdown, trending',
+          endpoint: '/api/place/ai/context/discoveries',
+          cacheDuration: 600000,
+        },
+        {
+          name: 'place_activity',
+          description: 'Get user transaction activity — purchases, external clicks, top businesses, upcoming meetings',
+          endpoint: '/api/place/ai/context/activity',
+          cacheDuration: 300000,
+        },
+        {
+          name: 'place_analytics',
+          description: 'Get user analytics — network size, spending, engagement level, communities, growth trends',
+          endpoint: '/api/place/ai/context/analytics',
+          cacheDuration: 600000,
         },
       ],
     },

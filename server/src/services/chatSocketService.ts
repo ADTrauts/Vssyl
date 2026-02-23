@@ -708,6 +708,19 @@ export class ChatSocketService {
       scheduleId
     });
   }
+
+  // ============================================================================
+  // VSSYL PLACE BROADCASTS
+  // ============================================================================
+
+  public broadcastPlaceEvent(
+    userId: string,
+    event: 'place:node:added' | 'place:node:removed' | 'place:connection:accepted' | 'place:connection:request',
+    data: Record<string, unknown>
+  ) {
+    const payload = { ...data, timestamp: new Date().toISOString() };
+    this.broadcastToUser(userId, event, payload);
+  }
 }
 
 let chatSocketServiceInstance: ChatSocketService;

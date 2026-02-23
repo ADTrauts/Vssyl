@@ -348,6 +348,16 @@ model User {
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]
+  placeDismissedSuggestions PlaceDismissedSuggestion[]
+  placeTransactions    PlaceTransaction[]
+  placeInteractionClicks PlaceInteractionClick[]
+  placeMeetingsCreated PlaceMeetingPlace[] @relation("PlaceMeetingCreator")
+  placeMeetingInvites  PlaceMeetingInvite[] @relation("PlaceMeetingInvitee")
+  placeLocationPrivacy PlaceLocationPrivacy?
+  placeCommunitiesCreated PlaceCommunity[] @relation("PlaceCommunityCreator")
+  placeCommunityMemberships PlaceCommunityMember[]
+  placeActivityFeed    PlaceActivityFeedItem[]
+  placeAnalyticsSnapshots PlaceAnalyticsSnapshot[]
 
   @@map("users")
   @@index([userNumber])
@@ -795,6 +805,10 @@ model Business {
   businessStations BusinessStation[] @relation("BusinessStations")
   jobLocations JobLocation[] @relation("BusinessJobLocations")
   
+  // Vssyl Place
+  placeListing BusinessPlaceListing?
+  placeTransactions PlaceTransaction[]
+
   // Scheduling Configuration
   schedulingMode       SchedulingMode?
   schedulingStrategy   SchedulingStrategy?
@@ -5760,6 +5774,179 @@ model PlaceInterest {
   @@map("place_interests")
 }
 
+// ============================================================================
+// VSSYL PLACE - BUSINESS "BUILDINGS"
+// ============================================================================
+
+enum PlaceCategory {
+  RESTAURANT
+  RETAIL
+  GROCERY
+  DIGITAL_SERVICE
+  DELIVERY
+  LOCAL_SERVICE
+  HEALTH_WELLNESS
+  ENTERTAINMENT
+  OTHER
+}
+
+enum InteractionLinkType {
+  WEBSITE
+  DOORDASH
+  UBEREATS
+  INSTACART
+  OPENTABLE
+  RESY
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  TIKTOK
+  YELP
+  GOOGLE_MAPS
+  CUSTOM
+}
+
+model BusinessPlaceListing {
+  id              String        @id @default(uuid())
+  businessId      String        @unique
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Listing control
+  isEnabled       Boolean       @default(false) // Admin must explicitly enable
+  isPublished     Boolean       @default(false) // Draft vs published
+
+  // Display info (overrides or supplements Business model fields)
+  displayName     String?       // Override business name for Place
+  shortDescription String?      // Brief tagline for the "building"
+  coverImage      String?       // Cover/hero image URL
+  category        PlaceCategory @default(OTHER)
+  tags            String[]      // Freeform tags for search
+
+  // Node appearance
+  nodeColor       String?       // Custom color for the graph node
+  nodeShape       String?       // Override default shape based on category
+
+  interactionLinks BusinessInteractionLink[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([category])
+  @@index([isEnabled, isPublished])
+  @@map("business_place_listings")
+}
+
+model BusinessInteractionLink {
+  id          String              @id @default(uuid())
+  listingId   String
+  listing     BusinessPlaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  type        InteractionLinkType
+  label       String              // Display label (e.g., "Order on DoorDash", "Visit Website")
+  url         String              // The actual URL
+  sortOrder   Int                 @default(0)
+  isActive    Boolean             @default(true)
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([listingId])
+  @@index([sortOrder])
+  @@map("business_interaction_links")
+}
+
+// Dismissed / "not interested" suggestions (user controls)
+model PlaceDismissedSuggestion {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId      String
+  reason          String   @default("dismissed") // "dismissed" | "not_interested"
+
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@map("place_dismissed_suggestions")
+}
+
+// ============================================================================
+// VSSYL PLACE - TRANSACTIONS & INTERACTIONS
+// ============================================================================
+
+enum PlaceTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PlaceTransactionType {
+  PURCHASE       // Direct purchase through Vssyl
+  EXTERNAL_CLICK // Routed to external service (DoorDash, etc.)
+  RESERVATION    // Future: reservation through AI assistant
+}
+
+model PlaceTransaction {
+  id                    String                   @id @default(uuid())
+  userId                String
+  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId            String
+  business              Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  type                  PlaceTransactionType
+  status                PlaceTransactionStatus   @default(PENDING)
+
+  // Financial (null for EXTERNAL_CLICK type)
+  amount                Float?
+  currency              String                   @default("USD")
+  vssylFee              Float?                   // Platform fee (Shopify model)
+  stripePaymentIntentId String?                  @unique
+  stripeChargeId        String?
+
+  // Metadata
+  description           String?                  // "Order from Joe's Pizza", "DoorDash link click"
+  externalService       String?                  // "doordash", "instacart", "opentable", etc.
+  externalUrl           String?                  // The URL the user was routed to
+  interactionLinkId     String?                  // Which BusinessInteractionLink was used
+
+  // Privacy
+  isPrivate             Boolean                  @default(true)
+
+  // Receipt
+  receiptData           Json?                    // Structured receipt info
+
+  completedAt           DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("place_transactions")
+}
+
+// Click tracking for external interaction links (analytics)
+model PlaceInteractionClick {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId        String
+  interactionLinkId String
+  externalService   String   // "DOORDASH", "WEBSITE", etc.
+  url               String
+
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([interactionLinkId])
+  @@index([createdAt])
+  @@map("place_interaction_clicks")
+}
+
 // Per-business follow visibility override (user controls which follows are visible)
 model PlaceFollowVisibility {
   id              String   @id @default(uuid())
@@ -5776,5 +5963,224 @@ model PlaceFollowVisibility {
   @@index([userId])
   @@index([businessId])
   @@map("place_follow_visibility")
+}
+
+// ============================================================================
+// VSSYL PLACE - MEETING PLACES
+// ============================================================================
+
+enum MeetingPlaceStatus {
+  PROPOSED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum MeetingInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model PlaceMeetingPlace {
+  id              String               @id @default(uuid())
+  creatorId       String
+  creator         User                 @relation("PlaceMeetingCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // Where
+  businessId      String?              // Link to a business on Place (optional)
+  locationName    String               // "Joe's Pizza", "Central Park", custom name
+  locationAddress String?              // Physical address if applicable
+  latitude        Float?
+  longitude       Float?
+
+  // When
+  scheduledAt     DateTime?
+  duration        Int?                 // Duration in minutes
+
+  // Calendar link
+  eventId         String?              // Link to a Calendar Event
+
+  // Status & details
+  status          MeetingPlaceStatus   @default(PROPOSED)
+  note            String?              // "Let's grab lunch!"
+
+  // Privacy
+  isPrivate       Boolean              @default(true)
+
+  invites         PlaceMeetingInvite[]
+
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([creatorId])
+  @@index([businessId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("place_meeting_places")
+}
+
+model PlaceMeetingInvite {
+  id              String              @id @default(uuid())
+  meetingPlaceId  String
+  meetingPlace    PlaceMeetingPlace   @relation(fields: [meetingPlaceId], references: [id], onDelete: Cascade)
+  inviteeId       String
+  invitee         User                @relation("PlaceMeetingInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  status          MeetingInviteStatus @default(PENDING)
+  respondedAt     DateTime?
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@unique([meetingPlaceId, inviteeId])
+  @@index([inviteeId])
+  @@index([status])
+  @@map("place_meeting_invites")
+}
+
+// Location sharing visibility preference
+model PlaceLocationPrivacy {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  shareLocationWithConnections  Boolean @default(false) // Show approximate area to connections
+  showOnMeetingPlaces           Boolean @default(true)  // Visible on meeting place maps
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("place_location_privacy")
+}
+
+// ============================================================================
+// VSSYL PLACE - COMMUNITIES
+// ============================================================================
+
+enum PlaceCommunityType {
+  AUTO_CLUSTER   // System-derived from shared follows/interests
+  USER_CREATED   // Manually created by a user
+}
+
+model PlaceCommunity {
+  id              String               @id @default(uuid())
+  name            String
+  description     String?
+  type            PlaceCommunityType   @default(USER_CREATED)
+  creatorId       String?              // null for AUTO_CLUSTER
+  creator         User?                @relation("PlaceCommunityCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+
+  coverImage      String?
+  tags            String[]
+  isPublic        Boolean              @default(true)
+
+  members         PlaceCommunityMember[]
+
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([type])
+  @@index([creatorId])
+  @@map("place_communities")
+}
+
+model PlaceCommunityMember {
+  id              String          @id @default(uuid())
+  communityId     String
+  community       PlaceCommunity  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role            String          @default("MEMBER") // "ADMIN" | "MEMBER"
+
+  joinedAt        DateTime        @default(now())
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("place_community_members")
+}
+
+// ============================================================================
+// VSSYL PLACE - ACTIVITY FEED
+// ============================================================================
+
+enum PlaceActivityType {
+  FOLLOWED_BUSINESS
+  UNFOLLOWED_BUSINESS
+  ADDED_CONNECTION
+  MEETING_CREATED
+  MEETING_CONFIRMED
+  TRANSACTION_COMPLETED
+  EXTERNAL_CLICK
+  COMMUNITY_JOINED
+  PLACE_SETUP_COMPLETE
+  INTEREST_ADDED
+}
+
+model PlaceActivityFeedItem {
+  id              String             @id @default(uuid())
+  userId          String
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type            PlaceActivityType
+  title           String
+  description     String?
+
+  // Polymorphic references
+  businessId      String?
+  targetUserId    String?
+  meetingId       String?
+  transactionId   String?
+  communityId     String?
+
+  metadata        Json?               // Additional context
+
+  isPrivate       Boolean             @default(false)
+
+  createdAt       DateTime            @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("place_activity_feed")
+}
+
+// ============================================================================
+// VSSYL PLACE - ANALYTICS SNAPSHOTS
+// ============================================================================
+
+model PlaceAnalyticsSnapshot {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Network metrics
+  totalNodes          Int      @default(0)
+  businessNodes       Int      @default(0)
+  userConnections     Int      @default(0)
+  totalInterests      Int      @default(0)
+
+  // Transaction metrics
+  totalTransactions   Int      @default(0)
+  totalSpent          Float    @default(0)
+  externalClicks      Int      @default(0)
+
+  // Engagement metrics
+  meetingsCreated     Int      @default(0)
+  meetingsAttended    Int      @default(0)
+  communitiesJoined   Int      @default(0)
+
+  // Top categories
+  topCategories       Json?    // [{ category: "RESTAURANT", count: 5 }]
+
+  // Period
+  periodStart         DateTime
+  periodEnd           DateTime
+
+  createdAt           DateTime @default(now())
+
+  @@index([userId])
+  @@index([periodStart])
+  @@map("place_analytics_snapshots")
 }
 

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
+import { usePlaceWebSocket } from '../hooks/usePlaceWebSocket';
 
 // ============================================================================
 // Types
@@ -17,6 +18,7 @@ export interface PlaceNode {
   label: string | null;
   color: string | null;
   pinned: boolean;
+  verified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -55,8 +57,8 @@ interface PlaceContextType {
   place: Place | null;
   loading: boolean;
   error: string | null;
-  activeTab: 'my-place' | 'explore';
-  setActiveTab: (tab: 'my-place' | 'explore') => void;
+  activeTab: 'my-place' | 'explore' | 'meetings' | 'feed' | 'analytics';
+  setActiveTab: (tab: 'my-place' | 'explore' | 'meetings' | 'feed' | 'analytics') => void;
   refreshPlace: () => Promise<void>;
   addNode: (nodeType: string, entityId: string, label?: string) => Promise<PlaceNode | null>;
   removeNode: (nodeId: string) => Promise<boolean>;
@@ -85,7 +87,7 @@ export function PlaceProvider({ children }: { children: ReactNode }) {
   const [place, setPlace] = useState<Place | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'my-place' | 'explore'>('my-place');
+  const [activeTab, setActiveTab] = useState<'my-place' | 'explore' | 'meetings' | 'feed' | 'analytics'>('my-place');
 
   const token = session?.accessToken as string | undefined;
 
@@ -115,6 +117,15 @@ export function PlaceProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, [token, refreshPlace]);
+
+  // Real-time updates via WebSocket
+  const wsEvents = useMemo(() => ({
+    onNodeAdded: () => refreshPlace(),
+    onNodeRemoved: () => refreshPlace(),
+    onConnectionAccepted: () => refreshPlace(),
+  }), [refreshPlace]);
+
+  usePlaceWebSocket({ enabled: !!token, events: wsEvents });
 
   const addNode = useCallback(async (nodeType: string, entityId: string, label?: string): Promise<PlaceNode | null> => {
     if (!token) return null;

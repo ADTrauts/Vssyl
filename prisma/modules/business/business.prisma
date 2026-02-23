@@ -80,6 +80,10 @@ model Business {
   businessStations BusinessStation[] @relation("BusinessStations")
   jobLocations JobLocation[] @relation("BusinessJobLocations")
   
+  // Vssyl Place
+  placeListing BusinessPlaceListing?
+  placeTransactions PlaceTransaction[]
+
   // Scheduling Configuration
   schedulingMode       SchedulingMode?
   schedulingStrategy   SchedulingStrategy?

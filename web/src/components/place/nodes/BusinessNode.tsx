@@ -9,6 +9,7 @@ interface BusinessNodeData {
   nodeType: string;
   color: string;
   pinned: boolean;
+  verified?: boolean;
   [key: string]: unknown;
 }
 
@@ -19,7 +20,7 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
   return (
     <div
       role="button"
-      aria-label={`Business: ${nodeData.label}`}
+      aria-label={`Business: ${nodeData.label}${nodeData.verified ? ' (verified)' : ''}`}
       tabIndex={0}
       style={{
         display: 'flex',
@@ -27,32 +28,59 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
         alignItems: 'center',
         gap: 6,
         cursor: 'pointer',
+        position: 'relative',
       }}
     >
       {/* Square node — businesses are squares in Mini Metro style */}
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 8,
-          background: nodeData.color || '#546E7A',
-          border: '3px solid rgba(255,255,255,0.9)',
-          boxShadow: `0 2px 12px ${nodeData.color || '#546E7A'}40, 0 1px 3px rgba(0,0,0,0.1)`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-        }}
-      >
-        <span style={{ fontSize: 22, color: '#fff', fontWeight: 700 }}>
-          {(nodeData.label || '?')[0].toUpperCase()}
-        </span>
+      <div style={{ position: 'relative' }}>
+        <div
+          style={{
+            width: size,
+            height: size,
+            borderRadius: 8,
+            background: nodeData.color || '#546E7A',
+            border: '3px solid rgba(255,255,255,0.9)',
+            boxShadow: `0 2px 12px ${nodeData.color || '#546E7A'}40, 0 1px 3px rgba(0,0,0,0.1)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+          }}
+        >
+          <span style={{ fontSize: 22, color: '#fff', fontWeight: 700 }}>
+            {(nodeData.label || '?')[0].toUpperCase()}
+          </span>
+        </div>
+
+        {/* Verification badge */}
+        {nodeData.verified && (
+          <div
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              background: '#16a34a',
+              border: '2px solid #fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            title="Verified business"
+          >
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Label */}

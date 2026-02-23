@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { getChatSocketService } from '../services/chatSocketService.js';
 
 function getUserId(req: Request): string | null {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,7 +45,26 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
       });
     }
 
-    res.json({ success: true, data: place });
+    // Enrich business nodes with verification status
+    const businessNodeIds = place.nodes
+      .filter(n => n.nodeType === 'BUSINESS')
+      .map(n => n.entityId);
+
+    let verifiedMap: Record<string, boolean> = {};
+    if (businessNodeIds.length > 0) {
+      const businesses = await prisma.business.findMany({
+        where: { id: { in: businessNodeIds } },
+        select: { id: true, einVerified: true },
+      });
+      verifiedMap = Object.fromEntries(businesses.map(b => [b.id, b.einVerified]));
+    }
+
+    const enrichedNodes = place.nodes.map(n => ({
+      ...n,
+      verified: n.nodeType === 'BUSINESS' ? (verifiedMap[n.entityId] ?? false) : undefined,
+    }));
+
+    res.json({ success: true, data: { ...place, nodes: enrichedNodes } });
   } catch (error: unknown) {
     const err = error as Error;
     console.error('Error fetching place:', err.message);
@@ -148,6 +168,20 @@ export async function addNode(req: Request, res: Response): Promise<void> {
       },
     });
 
+    // Sync: adding a BUSINESS node also creates a BusinessFollow
+    if (nodeType === 'BUSINESS') {
+      await prisma.businessFollow.upsert({
+        where: { userId_businessId: { userId, businessId: entityId } },
+        update: {},
+        create: { userId, businessId: entityId },
+      });
+    }
+
+    // Real-time: notify the user's other sessions
+    try {
+      getChatSocketService().broadcastPlaceEvent(userId, 'place:node:added', { nodeId: node.id, nodeType, entityId });
+    } catch { /* socket not initialized in tests */ }
+
     res.status(201).json({ success: true, data: node });
   } catch (error: unknown) {
     const err = error as Error;
@@ -228,7 +262,18 @@ export async function removeNode(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Sync: removing a BUSINESS node also removes the BusinessFollow
+    if (node.nodeType === 'BUSINESS') {
+      await prisma.businessFollow.deleteMany({
+        where: { userId, businessId: node.entityId },
+      });
+    }
+
     await prisma.placeNode.delete({ where: { id: nodeId } });
+
+    try {
+      getChatSocketService().broadcastPlaceEvent(userId, 'place:node:removed', { nodeId, nodeType: node.nodeType, entityId: node.entityId });
+    } catch { /* socket not initialized in tests */ }
 
     res.json({ success: true, message: 'Node removed' });
   } catch (error: unknown) {
@@ -308,6 +353,28 @@ export async function completeSetup(req: Request, res: Response): Promise<void> 
     const err = error as Error;
     console.error('Error completing setup:', err.message);
     res.status(500).json({ success: false, error: 'Failed to complete setup' });
+  }
+}
+
+/**
+ * GET /api/place/follow-visibility/:businessId
+ * Get whether a specific business follow is visible to others
+ */
+export async function getFollowVisibility(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const { businessId } = req.params;
+    const visibility = await prisma.placeFollowVisibility.findUnique({
+      where: { userId_businessId: { userId, businessId } },
+    });
+
+    res.json({ success: true, data: visibility || { userId, businessId, isVisible: false } });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching follow visibility:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch follow visibility' });
   }
 }
 
@@ -411,5 +478,213 @@ export async function getPlaceContextOverview(req: Request, res: Response): Prom
     const err = error as Error;
     console.error('Error fetching place context:', err.message);
     res.status(500).json({ success: false, error: 'Failed to fetch place context' });
+  }
+}
+
+// ============================================================================
+// USER CONNECTIONS
+// ============================================================================
+
+/**
+ * GET /api/place/connections
+ * Get the current user's accepted connections (for adding to Place graph)
+ */
+export async function getConnections(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const relationships = await prisma.relationship.findMany({
+      where: {
+        status: 'ACCEPTED',
+        OR: [{ senderId: userId }, { receiverId: userId }],
+      },
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+        receiver: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    const connections = relationships.map(r => {
+      const other = r.senderId === userId ? r.receiver : r.sender;
+      return { id: other.id, name: other.name, email: other.email, relationshipId: r.id, type: r.type };
+    });
+
+    res.json({ success: true, data: connections });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching connections:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch connections' });
+  }
+}
+
+/**
+ * GET /api/place/users/search?q=...
+ * Search users to connect with (for the Place "add people" feature)
+ */
+export async function searchUsers(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const q = req.query.q;
+    if (!q || typeof q !== 'string' || q.length < 2) {
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { OR: [{ name: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }] },
+          { id: { not: userId } },
+        ],
+      },
+      select: { id: true, name: true, email: true },
+      take: 10,
+    });
+
+    // Check existing relationship status
+    const relationships = await prisma.relationship.findMany({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: { in: users.map(u => u.id) } },
+          { receiverId: userId, senderId: { in: users.map(u => u.id) } },
+        ],
+      },
+    });
+
+    const statusMap: Record<string, string> = {};
+    for (const r of relationships) {
+      const otherId = r.senderId === userId ? r.receiverId : r.senderId;
+      statusMap[otherId] = r.status;
+    }
+
+    const results = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      relationshipStatus: statusMap[u.id] || null,
+    }));
+
+    res.json({ success: true, data: results });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error searching users:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to search users' });
+  }
+}
+
+/**
+ * POST /api/place/connections/:targetUserId
+ * Send a connection request to a user (creates Relationship + PlaceNode if accepted)
+ */
+export async function sendConnectionRequest(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const { targetUserId } = req.params;
+    if (targetUserId === userId) {
+      res.status(400).json({ success: false, error: 'Cannot connect with yourself' });
+      return;
+    }
+
+    const existing = await prisma.relationship.findFirst({
+      where: {
+        OR: [
+          { senderId: userId, receiverId: targetUserId },
+          { senderId: targetUserId, receiverId: userId },
+        ],
+      },
+    });
+
+    if (existing) {
+      res.status(200).json({ success: true, data: existing, message: `Connection already ${existing.status.toLowerCase()}` });
+      return;
+    }
+
+    const relationship = await prisma.relationship.create({
+      data: {
+        senderId: userId,
+        receiverId: targetUserId,
+        status: 'PENDING',
+        type: 'REGULAR',
+        message: req.body.message || null,
+      },
+    });
+
+    res.status(201).json({ success: true, data: relationship });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error sending connection request:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to send request' });
+  }
+}
+
+/**
+ * PUT /api/place/connections/:relationshipId/accept
+ * Accept a connection request (also creates PlaceNode for both users)
+ */
+export async function acceptConnection(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const { relationshipId } = req.params;
+
+    const relationship = await prisma.relationship.findUnique({ where: { id: relationshipId } });
+    if (!relationship || relationship.receiverId !== userId) {
+      res.status(404).json({ success: false, error: 'Connection request not found' });
+      return;
+    }
+
+    if (relationship.status !== 'PENDING') {
+      res.status(400).json({ success: false, error: `Connection is already ${relationship.status.toLowerCase()}` });
+      return;
+    }
+
+    const updated = await prisma.relationship.update({
+      where: { id: relationshipId },
+      data: { status: 'ACCEPTED' },
+    });
+
+    // Auto-add user nodes to each other's Place if they have one
+    const [senderPlace, receiverPlace] = await Promise.all([
+      prisma.place.findUnique({ where: { userId: relationship.senderId } }),
+      prisma.place.findUnique({ where: { userId: relationship.receiverId } }),
+    ]);
+
+    const senderUser = await prisma.user.findUnique({ where: { id: relationship.senderId }, select: { name: true } });
+    const receiverUser = await prisma.user.findUnique({ where: { id: relationship.receiverId }, select: { name: true } });
+
+    if (senderPlace) {
+      await prisma.placeNode.upsert({
+        where: { placeId_nodeType_entityId: { placeId: senderPlace.id, nodeType: 'USER', entityId: relationship.receiverId } },
+        update: {},
+        create: { placeId: senderPlace.id, nodeType: 'USER', entityId: relationship.receiverId, label: receiverUser?.name || null },
+      });
+    }
+
+    if (receiverPlace) {
+      await prisma.placeNode.upsert({
+        where: { placeId_nodeType_entityId: { placeId: receiverPlace.id, nodeType: 'USER', entityId: relationship.senderId } },
+        update: {},
+        create: { placeId: receiverPlace.id, nodeType: 'USER', entityId: relationship.senderId, label: senderUser?.name || null },
+      });
+    }
+
+    // Real-time: notify both users
+    try {
+      const socket = getChatSocketService();
+      socket.broadcastPlaceEvent(relationship.senderId, 'place:connection:accepted', { relationshipId, withUserId: relationship.receiverId });
+      socket.broadcastPlaceEvent(relationship.receiverId, 'place:connection:accepted', { relationshipId, withUserId: relationship.senderId });
+    } catch { /* socket not initialized in tests */ }
+
+    res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error accepting connection:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to accept connection' });
   }
 }

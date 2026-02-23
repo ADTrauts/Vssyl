@@ -19,7 +19,8 @@ import {
   UserCheck,
   List,
   Layers,
-  Zap
+  Zap,
+  MapPin
 } from 'lucide-react';
 import { Avatar, Button, Badge } from 'shared/components';
 import { useSafeSession } from '../../lib/useSafeSession';
@@ -49,6 +50,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
   scheduling: Clock,
   todo: Check,
   ai: Zap,
+  place: MapPin,
 };
 
 // Fallback category mapping for legacy notification types
@@ -64,6 +66,11 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'system_alert': 'system',
   'calendar_reminder': 'calendar',
   'ai_suggestion': 'ai',
+  'place_meeting_invite': 'place',
+  'place_meeting_rsvp': 'place',
+  'place_connection_request': 'place',
+  'place_connection_accepted': 'place',
+  'place_community_invite': 'place',
 };
 
 export default function NotificationsPage() {

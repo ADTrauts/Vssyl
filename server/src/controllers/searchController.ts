@@ -87,12 +87,49 @@ const memberSearchProvider: SearchProvider = {
   },
 };
 
+const placeSearchProvider: SearchProvider = {
+  moduleId: 'place',
+  moduleName: 'Place',
+  search: async (query, _userId, _filters) => {
+    if (!query || query.length < 2) return [];
+    const listings = await prisma.businessPlaceListing.findMany({
+      where: {
+        isEnabled: true,
+        isPublished: true,
+        business: { einVerified: true },
+        OR: [
+          { displayName: { contains: query, mode: 'insensitive' } },
+          { shortDescription: { contains: query, mode: 'insensitive' } },
+          { tags: { has: query.toLowerCase() } },
+          { business: { name: { contains: query, mode: 'insensitive' } } },
+        ],
+      },
+      include: { business: { select: { id: true, name: true, industry: true } } },
+      take: 10,
+    });
+    return listings.map((l) => ({
+      id: l.id,
+      title: l.displayName || l.business.name,
+      description: l.shortDescription || l.business.industry || 'Business on Vssyl Place',
+      moduleId: 'place',
+      moduleName: 'Place',
+      url: `/place?business=${l.business.id}`,
+      type: 'business_listing',
+      metadata: { businessId: l.business.id, category: l.category } as Record<string, unknown>,
+      permissions: [{ type: 'read' as const, granted: true }],
+      lastModified: l.updatedAt,
+      relevanceScore: 0.8,
+    }));
+  },
+};
+
 // Provider registry
 const searchProviders: SearchProvider[] = [
   driveSearchProvider,
   chatSearchProvider,
   dashboardSearchProvider,
   memberSearchProvider,
+  placeSearchProvider,
 ];
 
 // Refactored global search using provider registry
