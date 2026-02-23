@@ -2074,7 +2074,7 @@ export default function AIChat() {
                               </>
                             ) : (
                               <>
-                                <AIMessageContent content={item.content} textColor="text-gray-800" />
+                                <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
                                 {item.confidence !== undefined && (
                                   <div className="flex items-center space-x-2 mt-2">
                                     <div className="flex-1 bg-gray-200 rounded-full h-1.5">

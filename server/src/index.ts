@@ -117,6 +117,7 @@ import adminFixHRRouter from './routes/admin-fix-hr';
 import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
 import adminFixSubscriptionsRouter from './routes/admin-fix-subscriptions';
 import aiProviderUsageRouter from './routes/ai-provider-usage';
+import placeRouter from './routes/place';
 import { authenticateJWT } from './middleware/auth';
 import { logger } from './lib/logger';
 
@@ -861,6 +862,7 @@ app.use('/api/content-reports', contentReportsRouter);
 app.use('/api/admin/seed', authenticateJWT, adminSeedModulesRouter);
 app.use('/api', moduleAIContextRouter);
 app.use('/api/admin/logs', authenticateJWT, adminLogsRouter);
+app.use('/api/place', placeRouter); // Vssyl Place module routes (includes own auth)
 app.use('/api/hr', hrRouter); // HR module routes (includes own auth checks)
 app.use('/api/scheduling', (req, res, next) => {
   // Log ALL requests to scheduling routes for debugging

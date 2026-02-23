@@ -232,6 +232,7 @@ export class AnthropicProvider {
               ? responseObj.status
               : undefined;
       const rateLimited = httpStatus === 429 || errorMessage.toLowerCase().includes('rate limit');
+      const authError = httpStatus === 401 || httpStatus === 403 || errorMessage.toLowerCase().includes('invalid api key') || errorMessage.toLowerCase().includes('authentication');
 
       await logger.error('Anthropic processing error', {
         operation: 'anthropic_provider_error',
@@ -247,10 +248,14 @@ export class AnthropicProvider {
       });
 
       let responseText: string;
-      if (isTimeout) {
+      if (authError) {
+        responseText = 'Anthropic API key may be missing or invalid. Please check your server configuration (ANTHROPIC_API_KEY).';
+      } else if (isTimeout) {
         responseText = 'The AI request timed out. This can happen with large files or when the AI service is slow. Please try again with a smaller file or simpler query.';
       } else if (isUnavailable) {
         responseText = 'Anthropic service is temporarily unavailable. Please try again in a few moments.';
+      } else if (rateLimited) {
+        responseText = 'Anthropic rate limit reached. Please try again in a moment.';
       } else {
         responseText = 'I apologize, but I encountered an error during analysis. Please try again.';
       }

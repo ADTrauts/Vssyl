@@ -291,6 +291,16 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
                 </select>
               </div>
 
+              {/* Place Neighborhood Privacy */}
+              <div className="pt-4 border-t border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-900 mb-1">Vssyl Place — Neighborhood Privacy</h4>
+                <p className="text-xs text-gray-600 mb-3">Your neighborhood is always private by default. Business follows are hidden unless you choose to make them visible on a per-business basis within Place settings.</p>
+                <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg">
+                  <ShieldCheckIcon className="h-4 w-4 text-indigo-600 flex-shrink-0" />
+                  <span className="text-sm text-indigo-700 font-medium">Your Place neighborhood is private</span>
+                </div>
+              </div>
+
               {/* Data Processing */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

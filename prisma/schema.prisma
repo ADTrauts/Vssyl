@@ -345,6 +345,10 @@ model User {
   taskWatchers    TaskWatcher[]
   taskTimeLogs    TaskTimeLog[]
 
+  // Vssyl Place relations
+  place               Place?
+  placeFollowVisibility PlaceFollowVisibility[]
+
   @@map("users")
   @@index([userNumber])
   @@index([countryId, regionId, townId])
@@ -5656,4 +5660,121 @@ model TaskTimeLog {
   @@map("task_time_logs")
 }
 
+
+
+// ============================================================================
+// PLACE MODULE
+// ============================================================================
+
+// ============================================================================
+// VSSYL PLACE - PERSONAL MAIN STREET
+// ============================================================================
+
+model Place {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String   @default("My Place")
+  isSetupComplete Boolean @default(false)
+
+  nodes       PlaceNode[]
+  settings    PlaceSettings?
+  interests   PlaceInterest[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("places")
+}
+
+model PlaceNode {
+  id          String   @id @default(uuid())
+  placeId     String
+  place       Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  // What this node represents
+  nodeType    PlaceNodeType
+  entityId    String        // businessId or userId depending on nodeType
+
+  // Custom positioning (user-arranged layout)
+  positionX   Float?
+  positionY   Float?
+
+  // Display customization
+  label       String?       // Custom label override
+  color       String?       // Custom color override
+  pinned      Boolean  @default(false) // Pinned to position (won't move with force layout)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([placeId, nodeType, entityId])
+  @@index([placeId])
+  @@index([entityId])
+  @@map("place_nodes")
+}
+
+enum PlaceNodeType {
+  BUSINESS
+  USER
+  MEETING_PLACE
+}
+
+model PlaceSettings {
+  id                      String   @id @default(uuid())
+  placeId                 String   @unique
+  place                   Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  // Privacy
+  neighborhoodVisibility  String   @default("PRIVATE") // PRIVATE, CONNECTIONS_ONLY
+  defaultFollowVisibility Boolean  @default(false)      // false = follows hidden by default
+
+  // Layout preferences
+  layoutMode              String   @default("FORCE")    // FORCE, MANUAL, HYBRID
+  showLabels              Boolean  @default(true)
+  highContrastMode        Boolean  @default(false)
+
+  // Discovery preferences
+  showLocalSuggestions    Boolean  @default(true)
+  suggestionRadius        Int      @default(50)         // miles radius for local suggestions
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("place_settings")
+}
+
+model PlaceInterest {
+  id          String   @id @default(uuid())
+  placeId     String
+  place       Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  category    String   // "restaurants", "retail", "grocery", "digital_services", etc.
+
+  createdAt   DateTime @default(now())
+
+  @@unique([placeId, category])
+  @@index([placeId])
+  @@map("place_interests")
+}
+
+// Per-business follow visibility override (user controls which follows are visible)
+model PlaceFollowVisibility {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId      String
+
+  isVisible       Boolean  @default(false) // false = follow hidden from others
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([userId])
+  @@index([businessId])
+  @@map("place_follow_visibility")
+}
 

@@ -1257,7 +1257,7 @@ export default function AIChatDropdown({
                                 </>
                               ) : (
                                 <>
-                                  <AIMessageContent content={item.content} textColor="text-gray-800" />
+                                  <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
                                   {item.aiResponse?.actions && item.aiResponse.actions.length > 0 && (
                                     <div className="mt-2 space-y-1">
                                       {item.aiResponse.actions.map((action, index) => (

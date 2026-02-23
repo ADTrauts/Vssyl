@@ -92,6 +92,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     icon: 'check-square',
     pricingTier: 'free',
   },
+  {
+    id: 'place',
+    name: 'Vssyl Place',
+    description: 'Personal Main Street — a user-built neighborhood connecting physical and digital businesses, services, and people',
+    version: '1.0.0',
+    category: 'OTHER',
+    tags: ['place', 'neighborhood', 'connections', 'businesses', 'discovery', 'local'],
+    icon: 'map-pin',
+    pricingTier: 'free',
+  },
 ];
 
 // ============================================================================
@@ -539,6 +549,53 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           description: 'Get high priority tasks',
           endpoint: '/api/todo/ai/context/priority',
           cacheDuration: 300000, // 5 minutes
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'place',
+    moduleName: 'Vssyl Place',
+    aiContext: {
+      purpose: 'Personal Main Street — a user-built neighborhood connecting physical and digital businesses, services, and people with Mini Metro-style visualization',
+      category: 'OTHER',
+      keywords: [
+        'place', 'neighborhood', 'main street', 'business', 'follow',
+        'connection', 'local', 'discover', 'explore', 'restaurant',
+        'store', 'shop', 'service', 'node', 'map'
+      ],
+      patterns: [
+        'show (my )?place',
+        'what businesses (am I|do I) follow',
+        'how many (places|businesses|connections) (do I have|in my place)',
+        'discover (new )?(businesses|places|restaurants)',
+        'what.s in my neighborhood',
+        'local (businesses|restaurants|stores)',
+        'explore (new )?places'
+      ],
+      concepts: [
+        'personal neighborhood',
+        'business discovery',
+        'local commerce',
+        'connection network',
+        'user-curated space'
+      ],
+      entities: [
+        { name: 'Place', pluralName: 'Places', description: 'A user\'s personal Main Street / neighborhood' },
+        { name: 'Node', pluralName: 'Nodes', description: 'A business or user connection on the Main Street' },
+        { name: 'Interest', pluralName: 'Interests', description: 'A category preference for discovery' },
+      ],
+      actions: [
+        { name: 'view_place', description: 'View the user\'s personal Main Street', permissions: ['place:read'] },
+        { name: 'add_node', description: 'Add a business or connection to the neighborhood', permissions: ['place:write'] },
+        { name: 'explore_businesses', description: 'Discover new businesses and places', permissions: ['place:read'] },
+      ],
+      contextProviders: [
+        {
+          name: 'place_overview',
+          description: 'Get Place overview — node count, interests, setup status',
+          endpoint: '/api/place/ai/context/overview',
+          cacheDuration: 300000,
         },
       ],
     },

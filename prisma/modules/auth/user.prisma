@@ -140,6 +140,10 @@ model User {
   taskWatchers    TaskWatcher[]
   taskTimeLogs    TaskTimeLog[]
 
+  // Vssyl Place relations
+  place               Place?
+  placeFollowVisibility PlaceFollowVisibility[]
+
   @@map("users")
   @@index([userNumber])
   @@index([countryId, regionId, townId])

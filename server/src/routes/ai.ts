@@ -171,7 +171,9 @@ router.post('/twin', authenticateJWT, async (req, res) => {
                 reasoning: response.reasoning || null,
                 actions: JSON.parse(JSON.stringify(response.actions || [])),
                 provider: response.metadata.provider,
-                model: response.metadata.provider,
+                model: typeof (response.metadata as Record<string, unknown>)?.model === 'string'
+                  ? (response.metadata as Record<string, unknown>).model as string
+                  : response.metadata.provider,
                 tokensUsed: response.metadata.processingTime,
                 cost: 0,
                 processingTime: response.metadata.processingTime,
@@ -248,8 +250,10 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         reasoning: response.reasoning || null,
         actions: JSON.parse(JSON.stringify(response.actions || [])),
         provider: response.metadata.provider,
-        model: response.metadata.provider, // Will be enhanced when we connect real providers
-        tokensUsed: response.metadata.processingTime, // Placeholder
+        model: typeof (response.metadata as Record<string, unknown>)?.model === 'string'
+          ? (response.metadata as Record<string, unknown>).model as string
+          : response.metadata.provider,
+        tokensUsed: response.metadata.processingTime,
         cost: 0, // Will be calculated with real providers
         processingTime: response.metadata.processingTime
       }
