@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
+import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
 
 function getUserId(req: Request): string | null {
