@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { geolocationService } from '../services/geolocationService.js';
+import { geolocationService } from '../services/geolocationService';
 
 function getUserId(req: Request): string | null {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

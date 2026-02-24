@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma.js';
+import { prisma } from '../lib/prisma';
 
 function getUserId(req: Request): string | null {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

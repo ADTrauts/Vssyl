@@ -1,13 +1,13 @@
 import express from 'express';
-import { authenticateJWT } from '../middleware/auth.js';
-import * as placeController from '../controllers/placeController.js';
-import * as placeListingController from '../controllers/placeListingController.js';
-import * as placeDiscoveryController from '../controllers/placeDiscoveryController.js';
-import * as placeTransactionController from '../controllers/placeTransactionController.js';
-import * as placeAIController from '../controllers/placeAIController.js';
-import * as placeMeetingController from '../controllers/placeMeetingController.js';
-import * as placeCommunityController from '../controllers/placeCommunityController.js';
-import * as placeAnalyticsController from '../controllers/placeAnalyticsController.js';
+import { authenticateJWT } from '../middleware/auth';
+import * as placeController from '../controllers/placeController';
+import * as placeListingController from '../controllers/placeListingController';
+import * as placeDiscoveryController from '../controllers/placeDiscoveryController';
+import * as placeTransactionController from '../controllers/placeTransactionController';
+import * as placeAIController from '../controllers/placeAIController';
+import * as placeMeetingController from '../controllers/placeMeetingController';
+import * as placeCommunityController from '../controllers/placeCommunityController';
+import * as placeAnalyticsController from '../controllers/placeAnalyticsController';
 
 const router: express.Router = express.Router();
 
