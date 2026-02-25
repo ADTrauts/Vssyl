@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { LayoutDashboard, Folder, MessageSquare, Shield, Home, Briefcase, GraduationCap, Plus, Settings, Users, BarChart3, Lock, Puzzle, Brain, Calendar as CalendarIcon, CheckSquare } from 'lucide-react';
+import { LayoutDashboard, Folder, MessageSquare, Shield, Home, Briefcase, GraduationCap, Plus, Settings, Users, BarChart3, Lock, Puzzle, Brain, Calendar as CalendarIcon, CheckSquare, MapPin } from 'lucide-react';
 import GlobalTrashBin from '../../components/GlobalTrashBin';
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useWorkAuth } from '../../contexts/WorkAuthContext';
 import { BusinessConfigurationProvider } from '../../contexts/BusinessConfigurationContext';
 import WorkTab from '../../components/WorkTab';
+import PlaceContent from '../../components/place/PlaceContent';
 import { ModuleConfig } from '../../config/modules';
 import { PositionAwareModuleProvider, usePositionAwareModules } from '../../components/PositionAwareModuleProvider';
 import { toast } from 'react-hot-toast';
@@ -218,12 +219,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { getConfigForContext, getConfigForTab, loading: sidebarConfigLoading } = useSidebarCustomization();
 
   const [showWorkTab, setShowWorkTab] = useState(false);
+  const [showPlaceTab, setShowPlaceTab] = useState(false);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
 
   // Determine if sidebar should be shown
   // Hide sidebars on Work tab (both pre- and post-auth) so BrandedWorkDashboard is full-width
-  // Note: Right sidebar visibility is controlled by shouldShowSidebar, NOT by sidebarCollapsed
-  // This ensures the right sidebar always stays visible when sidebars are shown, even if left sidebar is collapsed
+  // Place tab keeps sidebars visible since it operates within the global layout
   const shouldShowSidebar = !showWorkTab;
   
   // Get right sidebar configuration
@@ -290,12 +291,20 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     if (isMobile) setSidebarCollapsed(true);
   }, [isMobile]);
 
+  const isPlaceActive = showPlaceTab;
+
   const handleTabClick = (dashboardId: string) => {
+    if (dashboardId === 'place') {
+      setShowPlaceTab(true);
+      setShowWorkTab(false);
+      return;
+    }
+    setShowPlaceTab(false);
     if (dashboardId === 'work') {
       setShowWorkTab(true);
     } else {
       setShowWorkTab(false);
-    navigateToDashboard(dashboardId);
+      navigateToDashboard(dashboardId);
     }
   };
 
@@ -675,18 +684,41 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Search functionality moved to GlobalHeaderTabs */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
-              {/* Main personal dashboard (not draggable) */}
+              {/* Vssyl Place tab (always first) */}
               <button
-                key={mainPersonalDashboard.id}
-                onClick={() => handleTabClick(mainPersonalDashboard.id)}
+                onClick={() => handleTabClick('place')}
                 style={{
-                  background: currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
-                  color: currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
+                  background: isPlaceActive ? '#fff' : '#e5e7eb',
+                  color: isPlaceActive ? '#4F46E5' : '#666',
                   border: '1px solid #ccc',
                   borderBottom: 'none',
                   borderRadius: '8px 0 0 0',
                   padding: '8px 24px 10px 24px',
                   marginLeft: 0,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  position: 'relative',
+                  cursor: 'pointer',
+                }}
+              >
+                <MapPin size={20} style={{ marginRight: 4 }} />
+                Place
+              </button>
+              {/* Main personal dashboard (not draggable) */}
+              <button
+                key={mainPersonalDashboard.id}
+                onClick={() => handleTabClick(mainPersonalDashboard.id)}
+                style={{
+                  background: !isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
+                  color: !isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
+                  border: '1px solid #ccc',
+                  borderBottom: 'none',
+                  borderRadius: '0',
+                  padding: '8px 24px 10px 24px',
+                  marginLeft: -1,
                   fontWeight: 700,
                   fontSize: 16,
                   display: 'flex',
@@ -710,8 +742,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       onClick={() => handleTabClick(dashboard.id)}
                       className={`dashboard-tab ${isDragging ? 'dragging' : ''}`}
                       style={{
-                        background: currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                        color: currentDashboardId === dashboard.id ? '#222' : '#666',
+                        background: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
+                        color: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#222' : '#666',
                         border: '1px solid #ccc',
                         borderBottom: 'none',
                         borderRadius: '0',
@@ -779,8 +811,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     key={dashboard.id}
                     onClick={() => handleTabClick(dashboard.id)}
                     style={{
-                      background: currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                      color: currentDashboardId === dashboard.id ? '#222' : '#666',
+                      background: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
+                      color: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#222' : '#666',
                       border: '1px solid #ccc',
                       borderBottom: 'none',
                       borderRadius: '0',
@@ -1172,6 +1204,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <BusinessConfigurationProvider>
               <WorkTab onSwitchToWork={handleSwitchToWork} />
             </BusinessConfigurationProvider>
+          ) : showPlaceTab ? (
+            <PlaceContent />
           ) : (
             children
           )}

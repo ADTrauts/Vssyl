@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { LayoutDashboard, Home, Briefcase, GraduationCap, Users, Brain, MapPin } from 'lucide-react';
+import { LayoutDashboard, Home, Briefcase, GraduationCap, Users, Brain } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../contexts/DashboardContext';
@@ -188,14 +188,7 @@ export default function GlobalHeaderTabs() {
   const mainPersonalDashboard = orderedPersonalDashboards[0];
   const draggableDashboards = orderedPersonalDashboards.slice(1);
 
-  const isPlaceActive = pathname?.startsWith('/place');
-
   const handleTabClick = (dashboardId: string) => {
-    if (dashboardId === 'place') {
-      setShowWorkTab(false);
-      router.push('/place');
-      return;
-    }
     if (dashboardId === 'work') {
       setShowWorkTab(true);
     } else {
@@ -276,41 +269,18 @@ export default function GlobalHeaderTabs() {
       <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
         <nav ref={tabsRef} style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
-            {/* Vssyl Place tab (always first) */}
-            <button
-              onClick={() => handleTabClick('place')}
-              style={{
-                background: isPlaceActive ? '#fff' : '#e5e7eb',
-                color: isPlaceActive ? '#4F46E5' : '#666',
-                border: '1px solid #ccc',
-                borderBottom: 'none',
-                borderRadius: '8px 0 0 0',
-                padding: '8px 24px 10px 24px',
-                marginLeft: 0,
-                fontWeight: 700,
-                fontSize: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                position: 'relative',
-                cursor: 'pointer',
-              }}
-            >
-              <MapPin size={20} style={{ marginRight: 4 }} />
-              Place
-            </button>
             {/* Main personal dashboard (not draggable) */}
             <button
               key={mainPersonalDashboard.id}
               onClick={() => handleTabClick(mainPersonalDashboard.id)}
               style={{
-                background: !workActive && !isPlaceActive && currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
-                color: !workActive && !isPlaceActive && currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
+                background: !workActive && currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
+                color: !workActive && currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
                 border: '1px solid #ccc',
                 borderBottom: 'none',
-                borderRadius: '0',
+                borderRadius: '8px 0 0 0',
                 padding: '8px 24px 10px 24px',
-                marginLeft: -1,
+                marginLeft: 0,
                 fontWeight: 700,
                 fontSize: 16,
                 display: 'flex',
@@ -328,8 +298,8 @@ export default function GlobalHeaderTabs() {
                 key={dashboard.id}
                 onClick={() => handleTabClick(dashboard.id)}
                 style={{
-                  background: !workActive && !isPlaceActive && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                  color: !workActive && !isPlaceActive && currentDashboardId === dashboard.id ? '#222' : '#666',
+                  background: !workActive && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
+                  color: !workActive && currentDashboardId === dashboard.id ? '#222' : '#666',
                   border: '1px solid #ccc',
                   borderBottom: 'none',
                   borderRadius: '0',
