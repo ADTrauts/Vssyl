@@ -21,6 +21,7 @@
     "seed:chat": "ts-node scripts/seed-chat.ts",
     "seed:modules": "ts-node scripts/seed-modules.ts",
     "seed:pricing": "ts-node src/scripts/seedPricing.ts",
+    "seed:place": "ts-node src/scripts/seedPlaceDemoData.ts",
     "ensure:calendars": "ts-node scripts/ensure-personal-calendars.ts",
     "stripe:verify": "ts-node src/scripts/verifyStripeSetup.ts",
     "stripe:sync": "ts-node src/scripts/syncStripePrices.ts",

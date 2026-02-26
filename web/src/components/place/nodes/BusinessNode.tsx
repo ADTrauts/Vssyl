@@ -13,6 +13,13 @@ interface BusinessNodeData {
   [key: string]: unknown;
 }
 
+function getInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(w => w.length > 0);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
   const nodeData = data as unknown as BusinessNodeData;
   const size = 56;
@@ -53,8 +60,8 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
             (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
           }}
         >
-          <span style={{ fontSize: 22, color: '#fff', fontWeight: 700 }}>
-            {(nodeData.label || '?')[0].toUpperCase()}
+          <span style={{ fontSize: 18, color: '#fff', fontWeight: 700, letterSpacing: 1 }}>
+            {getInitials(nodeData.label || '')}
           </span>
         </div>
 

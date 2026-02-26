@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Conversation, Message } from 'shared/types/chat';
 import { useChat } from '../../contexts/ChatContext';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -99,7 +99,8 @@ const StackableChatContainer: React.FC = () => {
   });
   
   const [dashboardUnreadCounts, setDashboardUnreadCounts] = useState<Record<string, number>>({});
-  
+  const unreadPollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Initialize selected dashboard to first personal dashboard
   useEffect(() => {
     if (chatDashboards.length > 0 && !chatState.selectedDashboardId) {
@@ -112,41 +113,54 @@ const StackableChatContainer: React.FC = () => {
     }
   }, [chatDashboards, chatState.selectedDashboardId, getDashboardType, setDashboardOverride, loadConversations]);
   
-  // Calculate unread counts per dashboard
+  // Calculate unread counts per dashboard (stops polling on 403 to avoid log spam after session expiry)
   useEffect(() => {
     const calculateUnreadCounts = async () => {
       if (!session?.accessToken || chatDashboards.length === 0) return;
-      
+
       const counts: Record<string, number> = {};
-      
+
       for (const dashboard of chatDashboards) {
         try {
           const response = await chatAPI.getConversations(session.accessToken, dashboard.id);
           const dashboardConversations = Array.isArray(response) ? response : [];
-          
+
           const unread = dashboardConversations.reduce((count, conv) => {
-            const unreadMessages = conv.messages?.filter((msg: any) => 
-              msg.senderId !== session.user?.id && 
+            const unreadMessages = conv.messages?.filter((msg: any) =>
+              msg.senderId !== session.user?.id &&
               !msg.readReceipts?.some((receipt: any) => receipt.userId === session.user?.id)
             ).length || 0;
             return count + unreadMessages;
           }, 0);
-          
+
           counts[dashboard.id] = unread;
         } catch (error) {
+          const status = (error as Error & { status?: number }).status;
+          if (status === 403) {
+            if (unreadPollIntervalRef.current) {
+              clearInterval(unreadPollIntervalRef.current);
+              unreadPollIntervalRef.current = null;
+            }
+            return;
+          }
           console.error(`Failed to load conversations for dashboard ${dashboard.id}:`, error);
           counts[dashboard.id] = 0;
         }
       }
-      
+
       setDashboardUnreadCounts(counts);
     };
-    
+
     calculateUnreadCounts();
-    // Recalculate periodically to catch new messages
-    const interval = setInterval(calculateUnreadCounts, 30000); // Update every 30 seconds
-    
-    return () => clearInterval(interval);
+    const interval = setInterval(calculateUnreadCounts, 30000);
+    unreadPollIntervalRef.current = interval;
+
+    return () => {
+      if (unreadPollIntervalRef.current) {
+        clearInterval(unreadPollIntervalRef.current);
+        unreadPollIntervalRef.current = null;
+      }
+    };
   }, [chatDashboards, session?.accessToken, session?.user?.id]);
   
   // Handle dashboard tab click

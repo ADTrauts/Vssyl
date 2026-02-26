@@ -177,9 +177,14 @@ export default function PlaceGraph() {
         minZoom={0.2}
         maxZoom={3}
         proOptions={{ hideAttribution: true }}
-        style={{ background: '#FAFBFC' }}
+        style={{ background: '#EBEEE9' }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="#E5E7EB" />
+        {/* Major road grid — wide blocks like a real street map */}
+        <Background id="major-roads" variant={BackgroundVariant.Lines} gap={200} size={2} color="#D9DDD6" />
+        {/* Minor road grid — smaller lanes between major roads */}
+        <Background id="minor-roads" variant={BackgroundVariant.Lines} gap={100} size={1} color="#E2E5DF" />
+        {/* Small intersection dots at the grid intersections */}
+        <Background id="intersections" variant={BackgroundVariant.Dots} gap={200} size={3} color="#D0D4CC" />
         <Controls
           showInteractive={false}
           style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}

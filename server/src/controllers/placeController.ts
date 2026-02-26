@@ -45,22 +45,25 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
       });
     }
 
-    // Enrich business nodes with verification status
+    // Enrich business nodes with verification status and name fallback
     const businessNodeIds = place.nodes
       .filter(n => n.nodeType === 'BUSINESS')
       .map(n => n.entityId);
 
     let verifiedMap: Record<string, boolean> = {};
+    let nameMap: Record<string, string> = {};
     if (businessNodeIds.length > 0) {
       const businesses = await prisma.business.findMany({
         where: { id: { in: businessNodeIds } },
-        select: { id: true, einVerified: true },
+        select: { id: true, name: true, einVerified: true },
       });
       verifiedMap = Object.fromEntries(businesses.map(b => [b.id, b.einVerified]));
+      nameMap = Object.fromEntries(businesses.map(b => [b.id, b.name]));
     }
 
     const enrichedNodes = place.nodes.map(n => ({
       ...n,
+      label: n.label || (n.nodeType === 'BUSINESS' ? nameMap[n.entityId] : null) || n.label,
       verified: n.nodeType === 'BUSINESS' ? (verifiedMap[n.entityId] ?? false) : undefined,
     }));
 
