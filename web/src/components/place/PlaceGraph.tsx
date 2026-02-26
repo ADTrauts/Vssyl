@@ -19,11 +19,14 @@ import '@xyflow/react/dist/style.css';
 import { usePlace, PlaceNode as PlaceNodeData } from '../../contexts/PlaceContext';
 import BusinessNode from './nodes/BusinessNode';
 import UserNode from './nodes/UserNode';
+import HouseholdNode from './nodes/HouseholdNode';
 import BusinessProfilePanel from './BusinessProfilePanel';
+import HouseholdProfilePanel from './HouseholdProfilePanel';
 
 const nodeTypes: NodeTypes = {
   business: BusinessNode,
   user: UserNode,
+  household: HouseholdNode,
 };
 
 // Mini Metro color palette
@@ -35,6 +38,7 @@ const COLORS = {
   service: '#FB8C00',
   default: '#546E7A',
   user: '#00ACC1',
+  household: '#8D6E63',
 };
 
 function getCategoryColor(label?: string | null): string {
@@ -48,15 +52,30 @@ function getCategoryColor(label?: string | null): string {
   return COLORS.default;
 }
 
+function getFlowNodeType(nodeType: string): string {
+  switch (nodeType) {
+    case 'USER': return 'user';
+    case 'HOUSEHOLD': return 'household';
+    default: return 'business';
+  }
+}
+
+function getDefaultColor(pn: PlaceNodeData): string {
+  switch (pn.nodeType) {
+    case 'USER': return COLORS.user;
+    case 'HOUSEHOLD': return COLORS.household;
+    default: return getCategoryColor(pn.label);
+  }
+}
+
 function placeNodesToFlowNodes(placeNodes: PlaceNodeData[]): Node[] {
   return placeNodes.map((pn, i) => {
-    const isUser = pn.nodeType === 'USER';
     const angle = (2 * Math.PI * i) / Math.max(placeNodes.length, 1);
     const radius = 200 + Math.random() * 100;
 
     return {
       id: pn.id,
-      type: isUser ? 'user' : 'business',
+      type: getFlowNodeType(pn.nodeType),
       position: {
         x: pn.positionX ?? Math.cos(angle) * radius + 400,
         y: pn.positionY ?? Math.sin(angle) * radius + 300,
@@ -65,7 +84,7 @@ function placeNodesToFlowNodes(placeNodes: PlaceNodeData[]): Node[] {
         label: pn.label || pn.entityId,
         entityId: pn.entityId,
         nodeType: pn.nodeType,
-        color: pn.color || (isUser ? COLORS.user : getCategoryColor(pn.label)),
+        color: pn.color || getDefaultColor(pn),
         pinned: pn.pinned,
         verified: pn.verified,
       },
@@ -88,6 +107,7 @@ function generateEdges(nodes: Node[]): Edge[] {
 export default function PlaceGraph() {
   const { place, updateNodePosition } = usePlace();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
 
   const initialNodes = useMemo(() => {
     if (!place?.nodes.length) return [];
@@ -136,7 +156,11 @@ export default function PlaceGraph() {
     if (node.id === '__center__') return;
     const data = node.data as Record<string, string>;
     if (data.nodeType === 'BUSINESS') {
+      setSelectedHouseholdId(null);
       setSelectedBusinessId(data.entityId);
+    } else if (data.nodeType === 'HOUSEHOLD') {
+      setSelectedBusinessId(null);
+      setSelectedHouseholdId(data.entityId);
     }
   }, []);
 
@@ -163,7 +187,15 @@ export default function PlaceGraph() {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }} role="application" aria-label="Your neighborhood map">
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+      }}
+      role="application"
+      aria-label="Your neighborhood map"
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -172,19 +204,16 @@ export default function PlaceGraph() {
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
+        snapToGrid
+        snapGrid={[22, 22]}
         fitView
         fitViewOptions={{ padding: 0.3 }}
         minZoom={0.2}
         maxZoom={3}
         proOptions={{ hideAttribution: true }}
-        style={{ background: '#EBEEE9' }}
+        style={{ background: '#F0F2EC' }}
       >
-        {/* Major road grid — wide blocks like a real street map */}
-        <Background id="major-roads" variant={BackgroundVariant.Lines} gap={200} size={2} color="#D9DDD6" />
-        {/* Minor road grid — smaller lanes between major roads */}
-        <Background id="minor-roads" variant={BackgroundVariant.Lines} gap={100} size={1} color="#E2E5DF" />
-        {/* Small intersection dots at the grid intersections */}
-        <Background id="intersections" variant={BackgroundVariant.Dots} gap={200} size={3} color="#D0D4CC" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={2.5} color="#C5CBBA" />
         <Controls
           showInteractive={false}
           style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
@@ -200,6 +229,13 @@ export default function PlaceGraph() {
         <BusinessProfilePanel
           businessId={selectedBusinessId}
           onClose={() => setSelectedBusinessId(null)}
+        />
+      )}
+
+      {selectedHouseholdId && (
+        <HouseholdProfilePanel
+          householdId={selectedHouseholdId}
+          onClose={() => setSelectedHouseholdId(null)}
         />
       )}
     </div>

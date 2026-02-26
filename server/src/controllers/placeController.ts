@@ -51,21 +51,41 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
       .map(n => n.entityId);
 
     let verifiedMap: Record<string, boolean> = {};
-    let nameMap: Record<string, string> = {};
+    let businessNameMap: Record<string, string> = {};
     if (businessNodeIds.length > 0) {
       const businesses = await prisma.business.findMany({
         where: { id: { in: businessNodeIds } },
         select: { id: true, name: true, einVerified: true },
       });
       verifiedMap = Object.fromEntries(businesses.map(b => [b.id, b.einVerified]));
-      nameMap = Object.fromEntries(businesses.map(b => [b.id, b.name]));
+      businessNameMap = Object.fromEntries(businesses.map(b => [b.id, b.name]));
     }
 
-    const enrichedNodes = place.nodes.map(n => ({
-      ...n,
-      label: n.label || (n.nodeType === 'BUSINESS' ? nameMap[n.entityId] : null) || n.label,
-      verified: n.nodeType === 'BUSINESS' ? (verifiedMap[n.entityId] ?? false) : undefined,
-    }));
+    // Enrich household nodes with name fallback
+    const householdNodeIds = place.nodes
+      .filter(n => n.nodeType === 'HOUSEHOLD')
+      .map(n => n.entityId);
+
+    let householdNameMap: Record<string, string> = {};
+    if (householdNodeIds.length > 0) {
+      const households = await prisma.household.findMany({
+        where: { id: { in: householdNodeIds } },
+        select: { id: true, name: true },
+      });
+      householdNameMap = Object.fromEntries(households.map(h => [h.id, h.name]));
+    }
+
+    const enrichedNodes = place.nodes.map(n => {
+      let label = n.label;
+      if (!label && n.nodeType === 'BUSINESS') label = businessNameMap[n.entityId] || null;
+      if (!label && n.nodeType === 'HOUSEHOLD') label = householdNameMap[n.entityId] || null;
+
+      return {
+        ...n,
+        label: label || n.label,
+        verified: n.nodeType === 'BUSINESS' ? (verifiedMap[n.entityId] ?? false) : undefined,
+      };
+    });
 
     res.json({ success: true, data: { ...place, nodes: enrichedNodes } });
   } catch (error: unknown) {

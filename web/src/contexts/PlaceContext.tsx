@@ -11,7 +11,7 @@ import { usePlaceWebSocket } from '../hooks/usePlaceWebSocket';
 export interface PlaceNode {
   id: string;
   placeId: string;
-  nodeType: 'BUSINESS' | 'USER' | 'MEETING_PLACE';
+  nodeType: 'BUSINESS' | 'USER' | 'HOUSEHOLD' | 'MEETING_PLACE';
   entityId: string;
   positionX: number | null;
   positionY: number | null;

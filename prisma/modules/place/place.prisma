@@ -28,7 +28,7 @@ model PlaceNode {
 
   // What this node represents
   nodeType    PlaceNodeType
-  entityId    String        // businessId or userId depending on nodeType
+  entityId    String        // businessId, userId, or householdId depending on nodeType
 
   // Custom positioning (user-arranged layout)
   positionX   Float?
@@ -51,6 +51,7 @@ model PlaceNode {
 enum PlaceNodeType {
   BUSINESS
   USER
+  HOUSEHOLD
   MEETING_PLACE
 }
 

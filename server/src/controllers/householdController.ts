@@ -2,8 +2,34 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { HouseholdRole, HouseholdType } from '@prisma/client';
 
-function hasUserId(user: any): user is { id: string } {
-  return user && typeof user.id === 'string';
+function hasUserId(user: unknown): user is { id: string } {
+  return typeof user === 'object' && user !== null && 'id' in user && typeof (user as Record<string, unknown>).id === 'string';
+}
+
+async function addHouseholdToPlace(userId: string, householdId: string, householdName: string): Promise<void> {
+  try {
+    const place = await prisma.place.findUnique({ where: { userId } });
+    if (!place) return;
+
+    await prisma.placeNode.upsert({
+      where: {
+        placeId_nodeType_entityId: {
+          placeId: place.id,
+          nodeType: 'HOUSEHOLD',
+          entityId: householdId,
+        },
+      },
+      update: { label: householdName },
+      create: {
+        placeId: place.id,
+        nodeType: 'HOUSEHOLD',
+        entityId: householdId,
+        label: householdName,
+      },
+    });
+  } catch (e) {
+    console.error('Failed to add household to Place:', e);
+  }
 }
 
 interface CreateHouseholdRequest {
@@ -172,6 +198,8 @@ export async function createHousehold(req: Request, res: Response, next: NextFun
     } catch (e) {
       console.error('Failed to auto-provision household calendar:', e);
     }
+
+    await addHouseholdToPlace(userId, household.id, data.name);
 
     res.status(201).json({ household });
     return;
@@ -411,6 +439,9 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
           }
         });
 
+        const household = await prisma.household.findUnique({ where: { id: householdId }, select: { name: true } });
+        await addHouseholdToPlace(inviteeUser.id, householdId, household?.name || 'Home');
+
         res.status(201).json({ member });
         return;
       }
@@ -434,6 +465,9 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
         }
       }
     });
+
+    const household = await prisma.household.findUnique({ where: { id: householdId }, select: { name: true } });
+    await addHouseholdToPlace(inviteeUser.id, householdId, household?.name || 'Home');
 
     res.status(201).json({ member });
     return;
