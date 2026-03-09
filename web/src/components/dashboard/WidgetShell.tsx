@@ -71,6 +71,12 @@ export default function WidgetShell({
   const meta = getWidgetMeta(widgetType);
   const Icon = meta.icon;
   const displayTitle = title || meta.label;
+  const registryEntry = WIDGET_REGISTRY[widgetType];
+  const category = registryEntry?.category ?? 'utility';
+  const shapeClass = getIconShapeClass(category);
+  const colorParts = registryEntry?.color?.split(' ') ?? [meta.color, 'bg-gray-100'];
+  const iconColorClass = colorParts[0];
+  const iconBgClass = colorParts[1] ?? 'bg-gray-100';
 
   const handleExpand = useCallback(() => {
     setIsExpanded((prev) => !prev);
