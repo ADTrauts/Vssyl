@@ -102,6 +102,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     icon: 'map-pin',
     pricingTier: 'free',
   },
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    description: 'Customizable dashboard with widgets for quick access to modules and at-a-glance information',
+    version: '1.0.0',
+    category: 'PRODUCTIVITY',
+    tags: ['dashboard', 'widgets', 'overview', 'stats', 'home'],
+    icon: 'layout-grid',
+    pricingTier: 'free',
+  },
 ];
 
 // ============================================================================
@@ -631,6 +641,66 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           description: 'Get user analytics — network size, spending, engagement level, communities, growth trends',
           endpoint: '/api/place/ai/context/analytics',
           cacheDuration: 600000,
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'dashboard',
+    moduleName: 'Dashboard',
+    aiContext: {
+      purpose: 'Customizable dashboard with widgets for quick access to modules and at-a-glance information',
+      category: 'PRODUCTIVITY',
+      keywords: [
+        'dashboard', 'widget', 'widgets', 'overview', 'home', 'stats',
+        'quick stats', 'notifications', 'activity', 'bookmarks', 'notes',
+        'layout', 'customize', 'personalize'
+      ],
+      patterns: [
+        'my dashboard',
+        'dashboard (widgets?|layout|overview)',
+        'what.s on my dashboard',
+        'how many widgets',
+        'customize (my )?dashboard',
+        'add (a )?widget',
+        'remove (a )?widget',
+        'dashboard (settings|preferences)'
+      ],
+      concepts: [
+        'dashboard customization',
+        'widget management',
+        'at-a-glance information',
+        'personalized overview',
+        'quick access'
+      ],
+      entities: [
+        { name: 'Dashboard', pluralName: 'Dashboards', description: 'A customizable dashboard tab' },
+        { name: 'Widget', pluralName: 'Widgets', description: 'A dashboard widget component' },
+      ],
+      actions: [
+        { name: 'view_dashboard', description: 'View the dashboard', permissions: ['dashboard:read'] },
+        { name: 'add_widget', description: 'Add a widget to the dashboard', permissions: ['dashboard:write'] },
+        { name: 'remove_widget', description: 'Remove a widget from the dashboard', permissions: ['dashboard:write'] },
+        { name: 'customize_layout', description: 'Customize widget layout', permissions: ['dashboard:write'] },
+      ],
+      contextProviders: [
+        {
+          name: 'dashboard_overview',
+          description: 'Get dashboard overview — widget list, layout summary, preferences',
+          endpoint: '/api/dashboards/ai/context/overview',
+          cacheDuration: 300000,
+        },
+        {
+          name: 'dashboard_quick_stats',
+          description: 'Get aggregated quick stats from all modules',
+          endpoint: '/api/dashboards/ai/context/quick-stats',
+          cacheDuration: 120000,
+        },
+        {
+          name: 'dashboard_widget_summary',
+          description: 'Get summary of widgets on the dashboard',
+          endpoint: '/api/dashboards/ai/context/widgets',
+          cacheDuration: 300000,
         },
       ],
     },

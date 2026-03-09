@@ -10,6 +10,63 @@ import { getChatSocketService } from '../services/chatSocketService';
 const TIME_FIELD_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 // ============================================================================
+// DASHBOARD SUMMARY (any employee with scheduling access)
+// ============================================================================
+
+export async function getDashboardSummary(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const businessId = (req as AuthenticatedRequest & { businessId?: string }).businessId ?? req.query.businessId;
+    if (!businessId || typeof businessId !== 'string') {
+      res.status(400).json({ error: 'businessId is required' });
+      return;
+    }
+
+    const now = new Date();
+    const inSevenDays = new Date(now);
+    inSevenDays.setDate(inSevenDays.getDate() + 7);
+
+    const [publishedSchedulesCount, openShiftsCount, upcomingShiftsCount] = await Promise.all([
+      prisma.schedule.count({
+        where: {
+          businessId,
+          status: ScheduleStatus.PUBLISHED,
+          endDate: { gte: now },
+        },
+      }),
+      prisma.scheduleShift.count({
+        where: {
+          businessId,
+          startTime: { gte: now },
+          OR: [{ employeePositionId: null }, { isOpenShift: true }],
+        },
+      }),
+      prisma.scheduleShift.count({
+        where: {
+          businessId,
+          startTime: { gte: now, lte: inSevenDays },
+        },
+      }),
+    ]);
+
+    res.json({
+      publishedSchedulesCount,
+      openShiftsCount,
+      upcomingShiftsCount,
+    });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error('Unknown error');
+    logger.error('Failed to get scheduling dashboard summary', {
+      operation: 'scheduling_dashboard_summary',
+      error: { message: err.message, stack: err.stack },
+    });
+    res.status(500).json({ error: 'Failed to load scheduling summary' });
+  }
+}
+
+// ============================================================================
 // ADMIN - Schedule Management
 // ============================================================================
 

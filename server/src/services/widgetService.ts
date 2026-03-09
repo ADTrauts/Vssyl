@@ -36,3 +36,32 @@ export async function deleteWidget(userId: string, widgetId: string) {
   if (!widget) return null;
   return prisma.widget.delete({ where: { id: widgetId } });
 }
+
+export async function batchUpdatePositions(
+  userId: string,
+  dashboardId: string,
+  positions: Array<{ widgetId: string; x: number; y: number; w: number; h: number }>
+) {
+  const dashboard = await prisma.dashboard.findFirst({ where: { id: dashboardId, userId } });
+  if (!dashboard) return null;
+
+  const widgetIds = positions.map((p) => p.widgetId);
+  const existingWidgets = await prisma.widget.findMany({
+    where: { id: { in: widgetIds }, dashboardId },
+    select: { id: true },
+  });
+  const validIds = new Set(existingWidgets.map((w) => w.id));
+
+  const updates = positions
+    .filter((p) => validIds.has(p.widgetId))
+    .map((p) =>
+      prisma.widget.update({
+        where: { id: p.widgetId },
+        data: {
+          position: { x: p.x, y: p.y, w: p.w, h: p.h } as Prisma.InputJsonValue,
+        },
+      })
+    );
+
+  return prisma.$transaction(updates);
+}

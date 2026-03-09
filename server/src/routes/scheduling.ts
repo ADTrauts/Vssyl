@@ -140,6 +140,11 @@ router.put('/team/swaps/:id/approve', checkSchedulingManagerAccess, schedulingCo
 router.put('/team/swaps/:id/deny', checkSchedulingManagerAccess, schedulingController.denyShiftSwapManager);
 
 // ============================================================================
+// DASHBOARD WIDGET (any employee with scheduling access)
+// ============================================================================
+router.get('/dashboard-summary', checkSchedulingEmployeeAccess, schedulingController.getDashboardSummary);
+
+// ============================================================================
 // EMPLOYEE ROUTES
 // Access: All business employees
 // ============================================================================

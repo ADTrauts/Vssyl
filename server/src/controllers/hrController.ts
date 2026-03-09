@@ -201,6 +201,45 @@ const resolveBusinessId = (req: Request): string | null => {
   return null;
 };
 
+/**
+ * GET /api/hr/dashboard-summary?businessId=xxx
+ * Returns counts for dashboard widget: employees, pending time-off, pending onboarding tasks.
+ */
+export const getDashboardSummary = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const businessId = resolveBusinessId(req);
+    if (!businessId) {
+      res.status(400).json({ error: 'businessId is required' });
+      return;
+    }
+
+    const [employeeCount, pendingTimeOffCount, pendingOnboardingCount] = await Promise.all([
+      prisma.employeePosition.count({
+        where: { businessId, active: true },
+      }),
+      prisma.timeOffRequest.count({
+        where: { businessId, status: TimeOffStatus.PENDING },
+      }),
+      prisma.employeeOnboardingTask.count({
+        where: {
+          businessId,
+          status: { notIn: [OnboardingTaskStatus.COMPLETED, OnboardingTaskStatus.CANCELLED] },
+        },
+      }),
+    ]);
+
+    res.json({
+      employeeCount,
+      pendingTimeOffCount,
+      pendingOnboardingCount,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to load HR summary';
+    console.error('Error fetching HR dashboard summary:', error);
+    res.status(500).json({ error: message });
+  }
+};
+
 type FieldValidationErrorDetails = {
   fieldErrors: Record<string, string[]>;
   formErrors: string[];

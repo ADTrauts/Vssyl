@@ -8,20 +8,16 @@ import {
   Clock, 
   MapPin, 
   Users, 
-  ChevronLeft, 
-  ChevronRight,
-  MoreHorizontal,
+  Settings,
   ExternalLink
 } from 'lucide-react';
-import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { Button, Badge, Spinner, Alert } from 'shared/components';
 import { calendarAPI, EventItem, Calendar as CalendarType } from '../../api/calendar';
-import { formatRelativeTime } from '../../utils/format';
 
 interface CalendarWidgetProps {
   id: string;
   config?: CalendarWidgetConfig;
   onConfigChange?: (config: CalendarWidgetConfig) => void;
-  onRemove?: () => void;
   
   // Dashboard context
   dashboardId: string;
@@ -54,8 +50,7 @@ const defaultConfig: CalendarWidgetConfig = {
 export default function CalendarWidget({ 
   id, 
   config, 
-  onConfigChange, 
-  onRemove,
+  onConfigChange,
   dashboardId,
   dashboardType,
   dashboardName
@@ -158,38 +153,6 @@ export default function CalendarWidget({
     return () => clearInterval(interval);
   }, [session?.accessToken, dashboardId, selectedCalendarId, widgetConfig.viewMode, widgetConfig.refreshInterval, calendars]);
 
-  // Get dashboard-specific title and description
-  const getDashboardSpecificInfo = () => {
-    switch (dashboardType) {
-      case 'business':
-        return {
-          title: 'Business Calendar',
-          description: 'Team meetings and business events',
-          icon: '🏢'
-        };
-      case 'educational':
-        return {
-          title: 'Academic Calendar',
-          description: 'Classes and academic deadlines',
-          icon: '🎓'
-        };
-      case 'household':
-        return {
-          title: 'Family Calendar',
-          description: 'Family events and shared schedules',
-          icon: '🏠'
-        };
-      default:
-        return {
-          title: 'Personal Calendar',
-          description: 'Your personal schedule',
-          icon: '📅'
-        };
-    }
-  };
-
-  const dashboardInfo = getDashboardSpecificInfo();
-
   // Format event time for display
   const formatEventTime = (event: CalendarEvent) => {
     if (event.allDay) return 'All day';
@@ -242,36 +205,6 @@ export default function CalendarWidget({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl">{dashboardInfo.icon}</span>
-          <div>
-            <h3 className="font-semibold text-gray-900">{dashboardInfo.title}</h3>
-            <p className="text-sm text-gray-500">{dashboardInfo.description}</p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowConfig(!showConfig)}
-            className="p-1"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onRemove}
-            className="p-1 text-red-500 hover:text-red-700"
-          >
-            ×
-          </Button>
-        </div>
-      </div>
-
       {/* Calendar Selector */}
       {widgetConfig.showCalendarSelector && calendars.length > 1 && (
         <div className="flex items-center space-x-2">
@@ -290,23 +223,34 @@ export default function CalendarWidget({
         </div>
       )}
 
-      {/* View Mode Toggle */}
-      <div className="flex items-center space-x-2">
+      {/* View Mode Toggle and Settings */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Button
+            size="sm"
+            variant={widgetConfig.viewMode === 'week' ? 'primary' : 'ghost'}
+            onClick={() => onConfigChange?.({ ...widgetConfig, viewMode: 'week' })}
+            className="text-xs"
+          >
+            Week
+          </Button>
+          <Button
+            size="sm"
+            variant={widgetConfig.viewMode === 'month' ? 'primary' : 'ghost'}
+            onClick={() => onConfigChange?.({ ...widgetConfig, viewMode: 'month' })}
+            className="text-xs"
+          >
+            Month
+          </Button>
+        </div>
         <Button
           size="sm"
-          variant={widgetConfig.viewMode === 'week' ? 'primary' : 'ghost'}
-          onClick={() => onConfigChange?.({ ...widgetConfig, viewMode: 'week' })}
-          className="text-xs"
+          variant="ghost"
+          onClick={() => setShowConfig(!showConfig)}
+          className="p-1 text-gray-600 hover:text-gray-900"
+          title="Widget settings"
         >
-          Week
-        </Button>
-        <Button
-          size="sm"
-          variant={widgetConfig.viewMode === 'month' ? 'primary' : 'ghost'}
-          onClick={() => onConfigChange?.({ ...widgetConfig, viewMode: 'month' })}
-          className="text-xs"
-        >
-          Month
+          <Settings className="w-4 h-4" />
         </Button>
       </div>
 

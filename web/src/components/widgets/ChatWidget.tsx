@@ -5,18 +5,13 @@ import { useSession } from 'next-auth/react';
 import { 
   MessageCircle, 
   Send, 
-  MoreHorizontal, 
   Users, 
-  User, 
   Plus,
-  Search,
-  Clock,
-  Trash2,
   Eye,
   Reply
 } from 'lucide-react';
-import { Card, Button, Badge, Spinner, Alert, Avatar } from 'shared/components';
-import { getConversations, getMessages } from '../../api/chat';
+import { Button, Badge, Spinner, Alert, Avatar } from 'shared/components';
+import { getConversations } from '../../api/chat';
 import { formatRelativeTime } from '../../utils/format';
 import { Conversation, Message, ReadReceipt } from 'shared/types/chat';
 
@@ -24,7 +19,6 @@ interface ChatWidgetProps {
   id: string;
   config?: ChatWidgetConfig;
   onConfigChange?: (config: ChatWidgetConfig) => void;
-  onRemove?: () => void;
   dashboardId?: string;
   dashboardType?: 'personal' | 'business' | 'educational' | 'household';
   dashboardName?: string;
@@ -60,7 +54,6 @@ export default function ChatWidget({
   id, 
   config = defaultConfig, 
   onConfigChange, 
-  onRemove,
   dashboardId,
   dashboardType,
   dashboardName
@@ -229,109 +222,50 @@ export default function ChatWidget({
 
   if (loading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="w-5 h-5" style={{ color: contextContent.color }} />
-            <span className="text-lg mr-1">{contextContent.icon}</span>
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-            {safeConfig.showUnreadCount && totalUnreadCount > 0 && (
-              <Badge size="sm" color="red">
-                {totalUnreadCount}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowConfig(!showConfig)}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
-            </button>
-            {onRemove && (
-              <button
-                onClick={onRemove}
-                className="p-1 hover:bg-red-100 rounded text-red-500"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <Spinner size={24} />
-          <span className="ml-2 text-gray-600">Loading chat data...</span>
-        </div>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Spinner size={24} />
+        <span className="ml-2 text-gray-600">Loading chat data...</span>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="w-5 h-5" style={{ color: contextContent.color }} />
-            <span className="text-lg mr-1">{contextContent.icon}</span>
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          </div>
-        </div>
-        <Alert type="error" title="Error loading chat data">
-          {error}
-        </Alert>
-      </Card>
+      <Alert type="error" title="Error loading chat data">
+        {error}
+      </Alert>
     );
   }
 
   return (
-    <Card className="p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <MessageCircle className="w-5 h-5" style={{ color: contextContent.color }} />
-          <span className="text-lg mr-1">{contextContent.icon}</span>
-          <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          {safeConfig.showUnreadCount && totalUnreadCount > 0 && (
-            <Badge size="sm" color="red">
-              {totalUnreadCount}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          {safeConfig.showQuickCompose && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setShowQuickCompose(!showQuickCompose)}
-              className="flex items-center space-x-1"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New</span>
-            </Button>
-          )}
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
-          </button>
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              className="p-1 hover:bg-red-100 rounded text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-3">
+      {/* Quick Compose toggle - show New button when config allows */}
+      {safeConfig.showQuickCompose && !showQuickCompose && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowQuickCompose(true)}
+          className="flex items-center space-x-1"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New message</span>
+        </Button>
+      )}
 
       {/* Quick Compose */}
       {showQuickCompose && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center space-x-2 mb-2">
-            <MessageCircle className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">Quick Message</span>
+        <div className="p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <MessageCircle className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Quick Message</span>
+            </div>
+            <button
+              onClick={() => setShowQuickCompose(false)}
+              className="text-xs text-gray-600 hover:text-gray-900"
+            >
+              Close
+            </button>
           </div>
           <div className="flex items-center space-x-2">
             <input
@@ -360,7 +294,7 @@ export default function ChatWidget({
 
       {/* Conversation Stats */}
       {safeConfig.showConversationStats && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4 text-gray-600" />
@@ -382,7 +316,7 @@ export default function ChatWidget({
 
       {/* Recent Conversations */}
       {safeConfig.showRecentConversations && conversations.length > 0 && (
-        <div className="mb-4">
+        <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-700">Recent Conversations</h4>
             <Button
@@ -483,9 +417,21 @@ export default function ChatWidget({
         </div>
       )}
 
+      {/* Settings toggle - at bottom, just above settings panel */}
+      {onConfigChange && (
+        <div>
+          <button
+            onClick={() => setShowConfig(!showConfig)}
+            className="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {showConfig ? 'Hide settings' : 'Settings'}
+          </button>
+        </div>
+      )}
+
       {/* Configuration Panel */}
       {showConfig && onConfigChange && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 rounded-lg">
           <h5 className="text-sm font-medium text-gray-700 mb-2">Widget Settings</h5>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
@@ -569,6 +515,6 @@ export default function ChatWidget({
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 } 

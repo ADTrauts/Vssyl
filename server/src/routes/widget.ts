@@ -39,4 +39,14 @@ router.delete(
   asyncHandler(widgetController.deleteWidget)
 );
 
+// PUT /dashboards/:dashboardId/batch-positions
+router.put(
+  '/:dashboardId/batch-positions',
+  validate([
+    param('dashboardId').isString().notEmpty(),
+    body('positions').isArray({ min: 0 }),
+  ]),
+  asyncHandler(widgetController.batchUpdatePositions)
+);
+
 export default router;

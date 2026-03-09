@@ -108,6 +108,7 @@ import { adminLogsRouter } from './routes/admin-logs';
 import adminPortalTestingRouter from './routes/admin-portal-testing';
 import hrRouter from './routes/hr';
 import schedulingRouter from './routes/scheduling';
+import activityFeedRouter from './routes/activityFeed';
 import debugModulesRouter from './routes/debug-modules';
 import debugDatabaseRouter from './routes/debug-database';
 import debugBusinessTierRouter from './routes/debug-business-tier';
@@ -802,6 +803,7 @@ app.use('/api', healthRouter);
 
 app.use('/api/dashboard', authenticateJWT, dashboardRouter);
 app.use('/api/widget', authenticateJWT, widgetRouter);
+app.use('/api/activity-feed', authenticateJWT, activityFeedRouter);
 console.log('[DEBUG] Registering /api/drive route');
 app.use('/api/drive', driveRouter);
 app.use('/api/todo', todoRouter);

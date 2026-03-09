@@ -36,3 +36,24 @@ export async function deleteWidget(token: string, id: string): Promise<void> {
   });
   if (!res.ok) throw new Error('Failed to delete widget');
 }
+
+export interface WidgetPositionUpdate {
+  widgetId: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export async function batchUpdateWidgetPositions(
+  token: string,
+  dashboardId: string,
+  positions: WidgetPositionUpdate[]
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/${dashboardId}/batch-positions`, {
+    method: 'PUT',
+    headers: authHeaders(token, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ positions }),
+  });
+  if (!res.ok) throw new Error('Failed to update widget positions');
+}

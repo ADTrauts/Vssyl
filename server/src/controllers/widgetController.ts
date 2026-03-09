@@ -67,3 +67,30 @@ export async function deleteWidget(req: Request, res: Response, next: NextFuncti
     next(err);
   }
 }
+
+export async function batchUpdatePositions(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!hasUserId(req.user)) {
+      res.sendStatus(401);
+      return;
+    }
+    const userId = req.user.id;
+    const dashboardId = req.params.dashboardId;
+    const { positions } = req.body;
+
+    if (!Array.isArray(positions)) {
+      res.status(400).json({ error: 'positions must be an array' });
+      return;
+    }
+
+    const result = await widgetService.batchUpdatePositions(userId, dashboardId, positions);
+    if (!result) {
+      res.sendStatus(404);
+      return;
+    }
+    res.json({ success: true, updated: result.length });
+    return;
+  } catch (err) {
+    next(err);
+  }
+}

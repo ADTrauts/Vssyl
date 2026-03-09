@@ -5,14 +5,12 @@ import { useSession } from 'next-auth/react';
 import { 
   CheckSquare, 
   Plus, 
-  MoreHorizontal, 
   Clock, 
   AlertCircle,
-  Trash2,
   Calendar,
-  List
+  Settings
 } from 'lucide-react';
-import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { Button, Badge, Spinner, Alert } from 'shared/components';
 import { getTasks, Task } from '../../api/todo';
 import { formatRelativeTime } from '../../utils/format';
 
@@ -20,7 +18,6 @@ interface TodoWidgetProps {
   id: string;
   config?: TodoWidgetConfig;
   onConfigChange?: (config: TodoWidgetConfig) => void;
-  onRemove?: () => void;
   
   // Dashboard context
   dashboardId: string;
@@ -52,7 +49,6 @@ export default function TodoWidget({
   id, 
   config = defaultConfig, 
   onConfigChange, 
-  onRemove,
   dashboardId,
   dashboardType,
   dashboardName
@@ -198,94 +194,30 @@ export default function TodoWidget({
 
   if (loading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <CheckSquare className="w-5 h-5" style={{ color: contextContent.color }} />
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowConfig(!showConfig)}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
-            </button>
-            {onRemove && (
-              <button
-                onClick={onRemove}
-                className="p-1 hover:bg-red-100 rounded text-red-500"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <Spinner size={24} />
-          <span className="ml-2 text-gray-600">Loading tasks...</span>
-        </div>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Spinner size={24} />
+        <span className="ml-2 text-gray-600">Loading tasks...</span>
+      </div>
     );
   }
 
   if (error) {
-    return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <CheckSquare className="w-5 h-5" style={{ color: contextContent.color }} />
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          </div>
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              className="p-1 hover:bg-red-100 rounded text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        <Alert type="error">
-          {error}
-        </Alert>
-      </Card>
-    );
+    return <Alert type="error">{error}</Alert>;
   }
 
   return (
-    <Card className="p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <CheckSquare className="w-5 h-5" style={{ color: contextContent.color }} />
-          <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => window.location.href = '/todo'}
-            className="flex items-center space-x-1"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Task</span>
-          </Button>
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
-          </button>
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              className="p-1 hover:bg-red-100 rounded text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+    <div className="space-y-3">
+      {/* New Task button - inline above task list */}
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => window.location.href = '/todo'}
+          className="flex items-center space-x-1"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Task</span>
+        </Button>
       </div>
 
       {/* Overdue Tasks */}
@@ -391,7 +323,7 @@ export default function TodoWidget({
       {tasks.length === 0 && (
         <div className="text-center py-6">
           <CheckSquare className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500 mb-3">{contextContent.emptyMessage}</p>
+          <p className="text-sm text-gray-600 mb-3">{contextContent.emptyMessage}</p>
           <Button
             size="sm"
             onClick={() => window.location.href = '/todo'}
@@ -403,7 +335,7 @@ export default function TodoWidget({
 
       {/* Configuration Panel */}
       {showConfig && onConfigChange && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 rounded-lg">
           <h5 className="text-sm font-medium text-gray-700 mb-2">Widget Settings</h5>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
@@ -460,7 +392,21 @@ export default function TodoWidget({
           </div>
         </div>
       )}
-    </Card>
+
+      {/* Settings toggle - small button at bottom */}
+      {onConfigChange && (
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={() => setShowConfig(!showConfig)}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            title={showConfig ? 'Close settings' : 'Widget settings'}
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>{showConfig ? 'Close' : 'Settings'}</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

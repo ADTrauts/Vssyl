@@ -398,6 +398,9 @@ importers:
       react-error-boundary:
         specifier: ^6.0.0
         version: 6.0.0(react@18.3.1)
+      react-grid-layout:
+        specifier: ^2.2.2
+        version: 2.2.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-hot-toast:
         specifier: ^2.5.2
         version: 2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3791,6 +3794,9 @@ packages:
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
+  fast-equals@4.0.3:
+    resolution: {integrity: sha512-G3BSX9cfKttjr+2o1O22tYMLq0DPluZnYtq1rXumE1SpL/F/SLIfHx08WYQoWSIpeMYf8sRbJ8++71+v6Pnxfg==}
+
   fast-equals@5.2.2:
     resolution: {integrity: sha512-V7/RktU11J3I36Nwq2JnZEM7tNm17eBJz+u25qdxBZeCKiX6BkVSZQjwWIr+IobgnZy+ag73tTZgZi7tr0LrBw==}
     engines: {node: '>=6.0.0'}
@@ -5283,6 +5289,12 @@ packages:
     peerDependencies:
       react: ^18.3.1
 
+  react-draggable@4.5.0:
+    resolution: {integrity: sha512-VC+HBLEZ0XJxnOxVAZsdRi8rD04Iz3SiiKOoYzamjylUcju/hP9np/aZdLHf/7WOD268WMoNJMvYfB5yAK45cw==}
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
+
   react-easy-crop@5.5.6:
     resolution: {integrity: sha512-Jw3/ozs8uXj3NpL511Suc4AHY+mLRO23rUgipXvNYKqezcFSYHxe4QXibBymkOoY6oOtLVMPO2HNPRHYvMPyTw==}
     peerDependencies:
@@ -5293,6 +5305,12 @@ packages:
     resolution: {integrity: sha512-gdlJjD7NWr0IfkPlaREN2d9uUZUlksrfOx7SX62VRerwXbMY6ftGCIZua1VG1aXFNOimhISsTq+Owp725b9SiA==}
     peerDependencies:
       react: '>=16.13.1'
+
+  react-grid-layout@2.2.2:
+    resolution: {integrity: sha512-yNo9pxQWoxHWRAwHGSVT4DEGELYPyQ7+q9lFclb5jcqeFzva63/2F72CryS/jiTIr/SBIlTaDdyjqH+ODg8oBw==}
+    peerDependencies:
+      react: '>= 16.3.0'
+      react-dom: '>= 16.3.0'
 
   react-hot-toast@2.5.2:
     resolution: {integrity: sha512-Tun3BbCxzmXXM7C+NI4qiv6lT0uwGh4oAfeJyNOjYUejTsm35mK9iCaYLGv8cBz9L5YxZLx/2ii7zsIwPtPUdw==}
@@ -5327,6 +5345,12 @@ packages:
         optional: true
       react-native:
         optional: true
+
+  react-resizable@3.1.3:
+    resolution: {integrity: sha512-liJBNayhX7qA4tBJiBD321FDhJxgGTJ07uzH5zSORXoE8h7PyEZ8mLqmosST7ppf6C4zUsbd2gzDMmBCfFp9Lw==}
+    peerDependencies:
+      react: '>= 16.3'
+      react-dom: '>= 16.3'
 
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
@@ -5427,6 +5451,9 @@ packages:
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
+
+  resize-observer-polyfill@1.5.1:
+    resolution: {integrity: sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==}
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -7872,7 +7899,7 @@ snapshots:
   '@jridgewell/trace-mapping@0.3.9':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
@@ -10084,8 +10111,8 @@ snapshots:
       '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.7.2)
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.1)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2))(eslint@8.57.1)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.1)
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
       eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.1)
@@ -10104,7 +10131,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.1):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.1
@@ -10115,21 +10142,22 @@ snapshots:
       tinyglobby: 0.2.14
       unrs-resolver: 1.9.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint@8.57.1):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
-      '@typescript-eslint/parser': 8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2)
+      '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.7.2)
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2))(eslint@8.57.1):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -10140,7 +10168,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint@8.57.1)
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -10152,7 +10180,7 @@ snapshots:
       string.prototype.trimend: 1.0.9
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.35.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.7.2)
+      '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.7.2)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
@@ -10421,6 +10449,8 @@ snapshots:
   extend@3.0.2: {}
 
   fast-deep-equal@3.1.3: {}
+
+  fast-equals@4.0.3: {}
 
   fast-equals@5.2.2: {}
 
@@ -11113,7 +11143,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.15.33
+      '@types/node': 20.19.1
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -12110,6 +12140,13 @@ snapshots:
       react: 18.3.1
       scheduler: 0.23.2
 
+  react-draggable@4.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      clsx: 2.1.1
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   react-easy-crop@5.5.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       normalize-wheel: 1.0.1
@@ -12121,6 +12158,17 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.27.6
       react: 18.3.1
+
+  react-grid-layout@2.2.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      clsx: 2.1.1
+      fast-equals: 4.0.3
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-draggable: 4.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-resizable: 3.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      resize-observer-polyfill: 1.5.1
 
   react-hot-toast@2.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -12164,6 +12212,13 @@ snapshots:
       react-is: 17.0.2
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
+
+  react-resizable@3.1.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-draggable: 4.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   react-smooth@4.0.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -12313,6 +12368,8 @@ snapshots:
   require-directory@2.1.1: {}
 
   require-from-string@2.0.2: {}
+
+  resize-observer-polyfill@1.5.1: {}
 
   resolve-from@4.0.0: {}
 

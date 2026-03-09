@@ -2,10 +2,16 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { validate } from '../middleware/validateRequest';
 import * as dashboardController from '../controllers/dashboardController';
+import * as dashboardAIContextController from '../controllers/dashboardAIContextController';
 import * as sidebarController from '../controllers/sidebarController';
 import { asyncHandler } from '../index';
 
 const router: express.Router = express.Router();
+
+// AI Context routes (must come before /:id routes to avoid matching)
+router.get('/ai/context/overview', asyncHandler(dashboardAIContextController.getDashboardOverview));
+router.get('/ai/context/quick-stats', asyncHandler(dashboardAIContextController.getDashboardQuickStats));
+router.get('/ai/context/widgets', asyncHandler(dashboardAIContextController.getDashboardWidgets));
 
 // GET /dashboards
 router.get('/', async (req, res, next) => {

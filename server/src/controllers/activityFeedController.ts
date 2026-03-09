@@ -1,0 +1,167 @@
+/**
+ * Dashboard Activity Feed API
+ * GET /api/activity-feed
+ * Aggregates recent activity from Drive, Chat, Calendar, and Todo for the authenticated user.
+ */
+
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function getUserId(req: Request): string | null {
+  const user = req.user as { id?: string; sub?: string } | undefined;
+  return user?.id ?? user?.sub ?? null;
+}
+
+export interface ActivityFeedItem {
+  id: string;
+  type: string;
+  action: string;
+  description: string;
+  module: string;
+  createdAt: string;
+  user?: { name?: string; email?: string };
+  metadata?: Record<string, unknown>;
+}
+
+const ACTION_MAP: Record<string, string> = {
+  create: 'create',
+  edit: 'edit',
+  delete: 'delete',
+  share: 'share',
+  download: 'download',
+};
+
+export async function getActivityFeed(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+
+    const limit = Math.min(parseInt((req.query.limit as string) || '20', 10) || 20, 50);
+    const dashboardId = typeof req.query.dashboardId === 'string' ? req.query.dashboardId : null;
+
+    const perSource = Math.ceil(limit / 4);
+
+    const [driveActivities, chatMessages, calendarEvents, todoTasks] = await Promise.all([
+      prisma.activity.findMany({
+        where: { userId },
+        include: {
+          file: { select: { name: true, id: true } },
+          user: { select: { name: true, email: true } },
+        },
+        orderBy: { timestamp: 'desc' },
+        take: perSource,
+      }),
+
+      prisma.message.findMany({
+        where: { senderId: userId, deletedAt: null },
+        include: {
+          conversation: { select: { name: true, id: true } },
+          sender: { select: { name: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: perSource,
+      }),
+
+      prisma.event.findMany({
+        where: {
+          calendar: {
+            members: {
+              some: { userId },
+            },
+          },
+          trashedAt: null,
+        },
+        include: {
+          calendar: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: perSource,
+      }),
+
+      prisma.task.findMany({
+        where: {
+          OR: [{ createdById: userId }, { assignedToId: userId }],
+          trashedAt: null,
+        },
+        include: {
+          createdBy: { select: { name: true, email: true } },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: perSource,
+      }),
+    ]);
+
+    const items: ActivityFeedItem[] = [];
+
+    for (const a of driveActivities) {
+      const action = ACTION_MAP[a.type] || a.type;
+      items.push({
+        id: a.id,
+        type: 'file',
+        action,
+        description: `${action === 'create' ? 'Created' : action === 'edit' ? 'Edited' : action === 'delete' ? 'Deleted' : action} ${a.file?.name ?? 'file'}`,
+        module: 'drive',
+        createdAt: a.timestamp.toISOString(),
+        user: a.user ? { name: a.user.name ?? undefined, email: a.user.email ?? undefined } : undefined,
+        metadata: { fileId: a.fileId, fileName: a.file?.name },
+      });
+    }
+
+    for (const m of chatMessages) {
+      const convName = m.conversation?.name || 'Conversation';
+      const preview = m.content.slice(0, 60) + (m.content.length > 60 ? '…' : '');
+      items.push({
+        id: m.id,
+        type: 'message',
+        action: 'message',
+        description: `Message in ${convName}: ${preview}`,
+        module: 'chat',
+        createdAt: m.createdAt.toISOString(),
+        user: m.sender ? { name: m.sender.name ?? undefined, email: m.sender.email ?? undefined } : undefined,
+        metadata: { conversationId: m.conversationId },
+      });
+    }
+
+    for (const e of calendarEvents) {
+      items.push({
+        id: e.id,
+        type: 'event',
+        action: 'create',
+        description: `Event: ${e.title}${e.calendar?.name ? ` (${e.calendar.name})` : ''}`,
+        module: 'calendar',
+        createdAt: e.createdAt.toISOString(),
+        metadata: { eventId: e.id, startAt: e.startAt.toISOString() },
+      });
+    }
+
+    for (const t of todoTasks) {
+      const verb = t.status === 'DONE' ? 'Completed' : t.updatedAt > t.createdAt ? 'Updated' : 'Created';
+      items.push({
+        id: t.id,
+        type: 'task',
+        action: t.status === 'DONE' ? 'complete' : 'create',
+        description: `${verb}: ${t.title}`,
+        module: 'todo',
+        createdAt: (t.completedAt ?? t.updatedAt).toISOString(),
+        user: t.createdBy ? { name: t.createdBy.name ?? undefined, email: t.createdBy.email ?? undefined } : undefined,
+        metadata: { taskId: t.id, status: t.status },
+      });
+    }
+
+    items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const activities = items.slice(0, limit);
+
+    res.json({ activities });
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.error('Activity feed failed', {
+      operation: 'activity_feed',
+      error: { message: error.message, stack: error.stack },
+    });
+    res.status(500).json({ error: 'Failed to load activity feed' });
+  }
+}

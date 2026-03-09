@@ -4,17 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { 
   Folder, 
-  File, 
   Upload, 
-  MoreHorizontal, 
   Star, 
   Clock, 
   HardDrive,
   Eye,
   Download,
-  Trash2
+  Settings
 } from 'lucide-react';
-import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { Button, Badge, Spinner, Alert } from 'shared/components';
 import { listFiles, listFolders, uploadFile } from '../../api/drive';
 import { formatBytes, formatRelativeTime } from '../../utils/format';
 
@@ -22,9 +20,8 @@ interface DriveWidgetProps {
   id: string;
   config?: DriveWidgetConfig;
   onConfigChange?: (config: DriveWidgetConfig) => void;
-  onRemove?: () => void;
   
-  // NEW: Full dashboard context
+  // Full dashboard context
   dashboardId: string;
   dashboardType: 'personal' | 'business' | 'educational' | 'household';
   dashboardName: string;
@@ -94,7 +91,6 @@ export default function DriveWidget({
   id, 
   config = defaultConfig, 
   onConfigChange, 
-  onRemove,
   dashboardId,
   dashboardType,
   dashboardName
@@ -115,47 +111,6 @@ export default function DriveWidget({
   const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
-
-  // Context-aware widget content
-  const getContextSpecificContent = () => {
-    // Ensure dashboardName is always a string
-    const safeDashboardName = dashboardName || 'My Dashboard';
-    
-    switch (dashboardType) {
-      case 'household':
-        return {
-          title: `${safeDashboardName} Family File Hub`,
-          emptyMessage: "No family files yet. Share photos, documents, and memories!",
-          sections: ['Family Photos', 'Shared Documents', 'Family Activity'],
-          color: '#f59e0b', // Yellow theme
-          icon: '🏠'
-        };
-      case 'business':
-        return {
-          title: `${safeDashboardName} Work File Hub`,
-          emptyMessage: "No work files yet. Upload documents and collaborate with your team!",
-          sections: ['Recent Projects', 'Team Documents', 'Business Files'],
-          color: '#3b82f6', // Blue theme
-          icon: '💼'
-        };
-      case 'educational':
-        return {
-          title: `${safeDashboardName} School File Hub`,
-          emptyMessage: "No school files yet. Upload assignments and course materials!",
-          sections: ['Assignments', 'Course Materials', 'Study Documents'],
-          color: '#10b981', // Green theme
-          icon: '🎓'
-        };
-      default:
-        return {
-          title: 'My Personal File Hub',
-          emptyMessage: "No personal files yet. Upload your first document!",
-          sections: ['Recent Files', 'Personal Documents', 'My Activity'],
-          color: '#6366f1', // Purple theme
-          icon: '📁'
-        };
-    }
-  };
 
   // Load drive data with context awareness
   useEffect(() => {
@@ -305,122 +260,25 @@ export default function DriveWidget({
     return 'File';
   };
 
-  const contextContent = getContextSpecificContent();
-
   if (loading) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <HardDrive className="w-5 h-5" style={{ color: contextContent.color }} />
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowConfig(!showConfig)}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <MoreHorizontal className="w-4 h-4 text-gray-500" />
-            </button>
-            {onRemove && (
-              <button
-                onClick={onRemove}
-                className="p-1 hover:bg-red-100 rounded text-red-500"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <Spinner size={24} />
-          <span className="ml-2 text-gray-600">Loading {dashboardName || 'File Hub'} files...</span>
-        </div>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <Spinner size={24} />
+        <span className="ml-2 text-gray-600">Loading files...</span>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <HardDrive className="w-5 h-5" style={{ color: contextContent.color }} />
-            <h3 className="font-semibold text-gray-900">{contextContent.title}</h3>
-          </div>
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              className="p-1 hover:bg-red-100 rounded text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        <Alert type="error">
-          {error}
-        </Alert>
-      </Card>
+      <Alert type="error">
+        {error}
+      </Alert>
     );
   }
 
   return (
-    <Card className="p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <Folder className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-gray-900">
-            {isHouseholdContext ? 'Family File Hub' : 'File Hub'}
-          </h3>
-          {isHouseholdContext && (
-            <Badge size="sm" color="blue" className="flex items-center space-x-1">
-              <span>🏠</span>
-              <span>Family</span>
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center space-x-2">
-          {safeConfig.showUploadButton && (
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                className="hidden"
-                onChange={handleUpload}
-                disabled={uploading}
-              />
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={uploading}
-                className="flex items-center space-x-1"
-              >
-                {uploading ? (
-                  <Spinner size={16} />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
-                <span>Upload</span>
-              </Button>
-            </label>
-          )}
-          <button
-            onClick={() => setShowConfig(!showConfig)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
-            <MoreHorizontal className="w-4 h-4 text-gray-500" />
-          </button>
-          {onRemove && (
-            <button
-              onClick={onRemove}
-              className="p-1 hover:bg-red-100 rounded text-red-500"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
+    <div className="space-y-3">
       {/* Storage Usage */}
       {safeConfig.showStorageUsage && storageUsage && (
         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
@@ -439,7 +297,7 @@ export default function DriveWidget({
               style={{ width: `${Math.min(storageUsage.percentage, 100)}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-gray-600 mt-1">
             <span>{storageUsage.percentage.toFixed(1)}% used</span>
             <span>{formatBytes(storageUsage.total - storageUsage.used)} available</span>
           </div>
@@ -514,20 +372,48 @@ export default function DriveWidget({
       )}
 
       {/* Recent Files */}
-      {safeConfig.showRecentFiles && recentFiles.length > 0 && (
-        <div className="mb-4">
+      {safeConfig.showRecentFiles && (recentFiles.length > 0 || recentFolders.length > 0) && (
+        <div>
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-gray-700">Recent Files</h4>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => window.location.href = '/drive'}
-            >
-              View All
-            </Button>
+            <div className="flex items-center gap-2">
+              {safeConfig.showUploadButton && (
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleUpload}
+                    disabled={uploading}
+                  />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={uploading}
+                    className="flex items-center space-x-1"
+                  >
+                    {uploading ? (
+                      <Spinner size={16} />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    <span>Upload</span>
+                  </Button>
+                </label>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.location.href = '/drive'}
+              >
+                View All
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
-            {recentFiles.map((file) => (
+            {recentFiles.length === 0 ? (
+              <p className="text-sm text-gray-600 py-2">No files yet</p>
+            ) : (
+              recentFiles.map((file) => (
               <div
                 key={file.id}
                 className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
@@ -550,7 +436,7 @@ export default function DriveWidget({
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-2 text-xs text-gray-600">
                     <span>{getFileTypeName(file.type)}</span>
                     <span>•</span>
                     <span>{formatBytes(file.size)}</span>
@@ -579,7 +465,8 @@ export default function DriveWidget({
                   </button>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
@@ -607,7 +494,7 @@ export default function DriveWidget({
                       <Star className="w-3 h-3 text-yellow-500 fill-current" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     Updated {formatRelativeTime(new Date(folder.updatedAt), { addSuffix: true })}
                   </p>
                 </div>
@@ -621,13 +508,52 @@ export default function DriveWidget({
       {recentFiles.length === 0 && recentFolders.length === 0 && (
         <div className="text-center py-6">
           <Folder className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500 mb-3">No files or folders yet</p>
-          <Button
-            size="sm"
-            onClick={() => window.location.href = '/drive'}
+          <p className="text-sm text-gray-700 mb-3">No files or folders yet</p>
+          <div className="flex items-center justify-center gap-2">
+            {safeConfig.showUploadButton && (
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleUpload}
+                  disabled={uploading}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={uploading}
+                  className="flex items-center space-x-1"
+                >
+                  {uploading ? (
+                    <Spinner size={16} />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  <span>Upload</span>
+                </Button>
+              </label>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => window.location.href = '/drive'}
+            >
+              Browse Drive
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Settings toggle at bottom */}
+      {onConfigChange && (
+        <div className="pt-2 border-t border-gray-100">
+          <button
+            onClick={() => setShowConfig(!showConfig)}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900"
           >
-            Upload Files
-          </Button>
+            <Settings className="w-3.5 h-3.5" />
+            <span>{showConfig ? 'Hide settings' : 'Settings'}</span>
+          </button>
         </div>
       )}
 
@@ -737,6 +663,6 @@ export default function DriveWidget({
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 } 

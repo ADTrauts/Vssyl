@@ -278,6 +278,11 @@ router.get('/team/time-off/calendar',
 );
 
 // ============================================================================
+// DASHBOARD WIDGET (any employee with HR access)
+// ============================================================================
+router.get('/dashboard-summary', checkEmployeeAccess, hrController.getDashboardSummary);
+
+// ============================================================================
 // EMPLOYEE ROUTES (Self-Service)
 // Route: /api/hr/me/*
 // Access: All business employees
