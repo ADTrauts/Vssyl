@@ -48,6 +48,10 @@ router.post('/report/:businessId', placeListingController.reportListing);
 // Business admin listing management
 router.get('/listing/:businessId', placeListingController.getListing);
 router.post('/listing/:businessId', placeListingController.upsertListing);
+router.post('/listing/:businessId/cover', placeListingController.multerCoverUpload, placeListingController.uploadCoverImage);
+router.delete('/listing/:businessId/cover', placeListingController.deleteCoverImage);
+router.post('/listing/:businessId/avatar', placeListingController.multerAvatarUpload, placeListingController.uploadAvatarImage);
+router.delete('/listing/:businessId/avatar', placeListingController.deleteAvatarImage);
 router.post('/listing/:businessId/links', placeListingController.addInteractionLink);
 router.put('/listing/:businessId/links/:linkId', placeListingController.updateInteractionLink);
 router.delete('/listing/:businessId/links/:linkId', placeListingController.deleteInteractionLink);

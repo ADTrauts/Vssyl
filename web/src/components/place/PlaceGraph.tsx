@@ -87,6 +87,7 @@ function placeNodesToFlowNodes(placeNodes: PlaceNodeData[]): Node[] {
         color: pn.color || getDefaultColor(pn),
         pinned: pn.pinned,
         verified: pn.verified,
+        imageUrl: pn.imageUrl ?? undefined,
       },
       draggable: true,
     };

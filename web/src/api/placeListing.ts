@@ -20,6 +20,7 @@ export interface PlaceListing {
   displayName: string | null;
   shortDescription: string | null;
   coverImage: string | null;
+  avatarImage: string | null;
   category: string;
   tags: string[];
   nodeColor: string | null;
@@ -60,8 +61,15 @@ export async function upsertListing(businessId: string, payload: Record<string, 
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Failed to save listing');
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    let msg = data.error || 'Failed to save listing';
+    if (data.details && typeof data.details === 'object') {
+      const first = Object.entries(data.details)[0] as [string, string[]] | undefined;
+      if (first) msg += ` (${first[0]}: ${first[1]?.[0] || 'invalid'})`;
+    }
+    throw new Error(msg);
+  }
   return data.data;
 }
 
@@ -93,6 +101,54 @@ export async function deleteLink(businessId: string, linkId: string, token: stri
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error('Failed to delete link');
+}
+
+export async function uploadCoverImage(businessId: string, file: File, token: string): Promise<{ coverImage: string }> {
+  const formData = new FormData();
+  formData.append('cover', file);
+  const res = await fetch(`/api/place/listing/${businessId}/cover`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload cover image');
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+export async function deleteCoverImage(businessId: string, token: string): Promise<void> {
+  const res = await fetch(`/api/place/listing/${businessId}/cover`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error('Failed to remove cover image');
+}
+
+export async function uploadAvatarImage(businessId: string, file: File, token: string): Promise<{ avatarImage: string }> {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const res = await fetch(`/api/place/listing/${businessId}/avatar`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to upload avatar image');
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+export async function deleteAvatarImage(businessId: string, token: string): Promise<void> {
+  const res = await fetch(`/api/place/listing/${businessId}/avatar`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error('Failed to remove avatar image');
 }
 
 export async function explorePlaces(params: { category?: string; search?: string; limit?: number; offset?: number }, token: string): Promise<{ data: PlaceListingWithBusiness[]; pagination: { total: number; limit: number; offset: number } }> {

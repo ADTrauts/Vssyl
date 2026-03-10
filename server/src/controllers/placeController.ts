@@ -45,20 +45,36 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
       });
     }
 
-    // Enrich business nodes with verification status and name fallback
+    // Enrich business nodes with verification status, name, and image (cover or logo)
     const businessNodeIds = place.nodes
       .filter(n => n.nodeType === 'BUSINESS')
       .map(n => n.entityId);
 
     let verifiedMap: Record<string, boolean> = {};
     let businessNameMap: Record<string, string> = {};
+    let businessImageMap: Record<string, string | null> = {};
     if (businessNodeIds.length > 0) {
-      const businesses = await prisma.business.findMany({
-        where: { id: { in: businessNodeIds } },
-        select: { id: true, name: true, einVerified: true },
-      });
+      const [businesses, listings] = await Promise.all([
+        prisma.business.findMany({
+          where: { id: { in: businessNodeIds } },
+          select: { id: true, name: true, einVerified: true, logo: true },
+        }),
+        prisma.businessPlaceListing.findMany({
+          where: { businessId: { in: businessNodeIds } },
+          select: { businessId: true, coverImage: true, avatarImage: true },
+        }),
+      ]);
       verifiedMap = Object.fromEntries(businesses.map(b => [b.id, b.einVerified]));
       businessNameMap = Object.fromEntries(businesses.map(b => [b.id, b.name]));
+      const logoByBiz = Object.fromEntries(businesses.map(b => [b.id, b.logo]));
+      const listingByBiz = Object.fromEntries((listings || []).map(l => [l.businessId, l]));
+      businessImageMap = Object.fromEntries(
+        businessNodeIds.map(id => {
+          const listing = listingByBiz[id];
+          const img = listing ? (listing.avatarImage ?? listing.coverImage) : null;
+          return [id, img || logoByBiz[id] || null];
+        })
+      );
     }
 
     // Enrich household nodes with name fallback
@@ -84,6 +100,7 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
         ...n,
         label: label || n.label,
         verified: n.nodeType === 'BUSINESS' ? (verifiedMap[n.entityId] ?? false) : undefined,
+        imageUrl: n.nodeType === 'BUSINESS' ? (businessImageMap[n.entityId] ?? null) : undefined,
       };
     });
 

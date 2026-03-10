@@ -137,7 +137,8 @@ model BusinessPlaceListing {
   // Display info (overrides or supplements Business model fields)
   displayName     String?       // Override business name for Place
   shortDescription String?      // Brief tagline for the "building"
-  coverImage      String?       // Cover/hero image URL
+  coverImage      String?       // Cover/hero image URL (header banner)
+  avatarImage     String?       // Thumbnail/avatar for card and map node (optional; falls back to coverImage then business.logo)
   category        PlaceCategory @default(OTHER)
   tags            String[]      // Freeform tags for search
 

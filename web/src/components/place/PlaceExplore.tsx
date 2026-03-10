@@ -64,7 +64,13 @@ function SuggestionCard({
         (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
       }}
     >
-      <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
+      {listing.coverImage ? (
+        <div style={{ height: 72, overflow: 'hidden' }}>
+          <img src={listing.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      ) : (
+        <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
+      )}
       <div style={{ padding: 16 }}>
         {/* Dismiss / not interested */}
         <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 4 }}>
@@ -102,10 +108,10 @@ function SuggestionCard({
           </div>
         )}
 
-        {/* Business info */}
+        {/* Business info — thumb: avatar, then cover, then logo */}
         <div style={{ display: 'flex', alignItems: 'start', gap: 12, marginBottom: 10 }}>
-          {listing.business.logo ? (
-            <img src={listing.business.logo} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
+          {(listing.avatarImage ?? listing.coverImage ?? listing.business.logo) ? (
+            <img src={listing.avatarImage ?? listing.coverImage ?? listing.business.logo ?? ''} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
           ) : (
             <div style={{
               width: 40, height: 40, borderRadius: 8,
@@ -192,11 +198,17 @@ function ListingCard({
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = '#C7D2FE'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; }}
     >
-      <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
+      {listing.coverImage ? (
+        <div style={{ height: 80, overflow: 'hidden' }}>
+          <img src={listing.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      ) : (
+        <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
+      )}
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'start', gap: 12, marginBottom: 12 }}>
-          {listing.business.logo ? (
-            <img src={listing.business.logo} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
+          {(listing.avatarImage ?? listing.coverImage ?? listing.business.logo) ? (
+            <img src={listing.avatarImage ?? listing.coverImage ?? listing.business.logo ?? ''} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
           ) : (
             <div style={{
               width: 44, height: 44, borderRadius: 8, background: listing.nodeColor || '#6366f1',

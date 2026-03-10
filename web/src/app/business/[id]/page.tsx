@@ -28,8 +28,10 @@ import {
   Folder,
   MessageSquare,
   Calendar,
-  UserCheck
+  UserCheck,
+  MapPin
 } from 'lucide-react';
+import { PlaceListingEditor } from '@/components/place/PlaceListingEditor';
 
 interface Business {
   id: string;
@@ -202,6 +204,7 @@ const truncateDescription = (value?: string) => {
       { id: 'modules', label: 'Modules', icon: Package },
       { id: 'people', label: 'People & Access', icon: Users },
       { id: 'branding', label: 'Branding', icon: Palette },
+      { id: 'place', label: 'Vssyl Place', icon: MapPin },
       { id: 'ai', label: 'AI & Insights', icon: Brain },
     ];
 
@@ -742,6 +745,21 @@ const truncateDescription = (value?: string) => {
                     <ArrowRight className="ml-auto h-4 w-4" />
                   </Button>
                 </Card>
+              </section>
+
+              <section id="place" className="scroll-mt-24 space-y-6">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Vssyl Place</h2>
+                  <p className="text-sm text-gray-600">
+                    Manage how your business appears on Vssyl Place — the personal Main Street where users discover and connect with businesses.
+                  </p>
+                </div>
+
+                <PlaceListingEditor
+                  businessId={businessId}
+                  token={session?.accessToken as string | undefined}
+                  compact
+                />
               </section>
 
               <section id="ai" className="scroll-mt-24 space-y-6">

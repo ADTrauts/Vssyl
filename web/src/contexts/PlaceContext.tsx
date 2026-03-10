@@ -19,6 +19,8 @@ export interface PlaceNode {
   color: string | null;
   pinned: boolean;
   verified?: boolean;
+  /** Business node: Place listing cover image or business logo for the map marker */
+  imageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -120,10 +120,20 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
 
         {profile && (
           <div className="p-5 space-y-5">
-            {/* Cover / logo */}
+            {/* Cover image (Place listing hero) */}
+            {profile.coverImage && (
+              <div className="-mx-5 -mt-5 mb-2">
+                <img
+                  src={profile.coverImage}
+                  alt=""
+                  className="w-full h-32 object-cover border-b border-gray-100"
+                />
+              </div>
+            )}
+            {/* Logo / name — thumbnail uses avatar, then cover, then business logo */}
             <div className="flex items-start gap-4">
-              {profile.business.logo ? (
-                <img src={profile.business.logo} alt="" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
+              {(profile.avatarImage ?? profile.coverImage ?? profile.business.logo) ? (
+                <img src={profile.avatarImage ?? profile.coverImage ?? profile.business.logo ?? ''} alt="" className="w-14 h-14 rounded-lg object-cover border border-gray-200 ring-2 ring-white shadow" />
               ) : (
                 <div className="w-14 h-14 rounded-lg bg-indigo-100 flex items-center justify-center text-xl font-bold text-indigo-600">
                   {(profile.displayName || profile.business.name).charAt(0).toUpperCase()}

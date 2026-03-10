@@ -10,6 +10,7 @@ interface BusinessNodeData {
   color: string;
   pinned: boolean;
   verified?: boolean;
+  imageUrl?: string | null;
   [key: string]: unknown;
 }
 
@@ -38,19 +39,20 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
         position: 'relative',
       }}
     >
-      {/* Square node — businesses are squares in Mini Metro style */}
+      {/* Square node — businesses are squares in Mini Metro style; show cover/logo when available */}
       <div style={{ position: 'relative' }}>
         <div
           style={{
             width: size,
             height: size,
             borderRadius: 8,
-            background: nodeData.color || '#546E7A',
+            background: nodeData.imageUrl ? 'transparent' : (nodeData.color || '#546E7A'),
             border: '3px solid rgba(255,255,255,0.9)',
             boxShadow: `0 2px 12px ${nodeData.color || '#546E7A'}40, 0 1px 3px rgba(0,0,0,0.1)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            overflow: 'hidden',
             transition: 'transform 0.15s ease, box-shadow 0.15s ease',
           }}
           onMouseEnter={(e) => {
@@ -60,9 +62,21 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
             (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
           }}
         >
-          <span style={{ fontSize: 18, color: '#fff', fontWeight: 700, letterSpacing: 1 }}>
-            {getInitials(nodeData.label || '')}
-          </span>
+          {nodeData.imageUrl ? (
+            <img
+              src={nodeData.imageUrl}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : (
+            <span style={{ fontSize: 18, color: '#fff', fontWeight: 700, letterSpacing: 1 }}>
+              {getInitials(nodeData.label || '')}
+            </span>
+          )}
         </div>
 
         {/* Verification badge */}
