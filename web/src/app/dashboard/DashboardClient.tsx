@@ -23,6 +23,7 @@ import DriveWidget from '../../components/widgets/DriveWidget';
 import ChatWidget from '../../components/widgets/ChatWidget';
 import CalendarWidget from '../../components/widgets/CalendarWidget';
 import TodoWidget from '../../components/widgets/TodoWidget';
+import NotesWidget from '../../components/widgets/NotesWidget';
 import QuickStatsWidget from '../../components/widgets/QuickStatsWidget';
 import NotificationsWidget from '../../components/widgets/NotificationsWidget';
 import QuickNotesWidget from '../../components/widgets/QuickNotesWidget';
@@ -105,6 +106,15 @@ function WidgetContentRenderer({
     case 'todo':
       return (
         <TodoWidget
+          id={widget.id}
+          config={widgetConfig}
+          onConfigChange={onConfigChange}
+          {...dashboardContext}
+        />
+      );
+    case 'notes':
+      return (
+        <NotesWidget
           id={widget.id}
           config={widgetConfig}
           onConfigChange={onConfigChange}

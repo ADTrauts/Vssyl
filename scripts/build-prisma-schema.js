@@ -187,6 +187,7 @@ function buildSchema() {
     'hr',
     'scheduling',
     'todo',
+    'notes',
     'place'
   ];
   

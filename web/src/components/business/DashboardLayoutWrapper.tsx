@@ -19,7 +19,8 @@ import {
   LogOut,
   Package,
   Brain,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 import GlobalTrashBin from '../GlobalTrashBin';
 import { COLORS, getBrandColor } from 'shared/utils/brandColors';
@@ -64,6 +65,7 @@ const MODULE_ICONS = {
   analytics: BarChart3,
   ai: Brain,
   calendar: Calendar,
+  notes: FileText,
 };
 
 function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperProps) {

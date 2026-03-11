@@ -93,6 +93,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     pricingTier: 'free',
   },
   {
+    id: 'notes',
+    name: 'Notes',
+    description: 'Rich text notes with tags, search, and organization',
+    version: '1.0.0',
+    category: 'PRODUCTIVITY',
+    tags: ['notes', 'journal', 'ideas', 'writing'],
+    icon: 'file-text',
+    pricingTier: 'free',
+  },
+  {
     id: 'place',
     name: 'Vssyl Place',
     description: 'Personal Main Street — a user-built neighborhood connecting physical and digital businesses, services, and people',
@@ -558,6 +568,60 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           name: 'priority_tasks',
           description: 'Get high priority tasks',
           endpoint: '/api/todo/ai/context/priority',
+          cacheDuration: 300000, // 5 minutes
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'notes',
+    moduleName: 'Notes',
+    aiContext: {
+      purpose: 'Rich text notes with tags, search, and organization for personal and business use',
+      category: 'PRODUCTIVITY',
+      keywords: [
+        'note',
+        'notes',
+        'journal',
+        'ideas',
+        'meeting notes',
+        'writing',
+        'jot down',
+        'memo',
+        'scratch',
+        'pinned notes',
+        'my notes',
+      ],
+      patterns: [
+        'show my notes',
+        'what did I write about',
+        'pinned notes',
+        'recent notes',
+        'my (latest |recent )?notes',
+        'notes (about|on)',
+        'search (my )?notes',
+      ],
+      concepts: ['note taking', 'journaling', 'ideas', 'meeting notes', 'organization'],
+      entities: [
+        { name: 'Note', pluralName: 'Notes', description: 'A note with title, content, and optional tags' },
+      ],
+      actions: [
+        { name: 'create_note', description: 'Create a new note', permissions: ['notes:write'] },
+        { name: 'update_note', description: 'Update an existing note', permissions: ['notes:write'] },
+        { name: 'delete_note', description: 'Delete a note', permissions: ['notes:delete'] },
+        { name: 'list_notes', description: 'List user notes', permissions: ['notes:read'] },
+      ],
+      contextProviders: [
+        {
+          name: 'recent_notes',
+          description: 'Get user\'s most recent notes (title, tags, pinned, last updated)',
+          endpoint: '/api/notes/ai/context/recent',
+          cacheDuration: 300000, // 5 minutes
+        },
+        {
+          name: 'pinned_notes',
+          description: 'Get user\'s pinned notes',
+          endpoint: '/api/notes/ai/context/pinned',
           cacheDuration: 300000, // 5 minutes
         },
       ],

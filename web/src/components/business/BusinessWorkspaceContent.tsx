@@ -27,6 +27,7 @@ import AIWidget from '../widgets/AIWidget';
 import ChatModuleWrapper from '../chat/ChatModuleWrapper';
 import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
+import { NotesModule } from '../notes/NotesModule';
 import DriveSidebar from '../../app/drive/DriveSidebar';
 import CalendarListSidebar from '../calendar/CalendarListSidebar';
 import HRLayout from '../hr/HRLayout';
@@ -643,6 +644,13 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
             dashboardId={business.id}
             dashboardType="business"
             dashboardName={business.name}
+          />
+        );
+      case 'notes':
+        return (
+          <NotesModule
+            dashboardId={businessDashboardId}
+            businessId={business.id}
           />
         );
       default:

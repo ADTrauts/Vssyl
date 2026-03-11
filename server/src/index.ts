@@ -20,6 +20,7 @@ import fileRouter from './routes/file';
 import folderRouter from './routes/folder';
 import driveRouter from './routes/drive';
 import todoRouter from './routes/todo';
+import notesRouter from './routes/notes';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
 import educationalRouter from './routes/educational';
@@ -51,6 +52,7 @@ import { initializeChatSocketService } from './services/chatSocketService';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
+import { seedNotesModuleOnStartup } from './startup/seedNotesModule';
 import { seedSchedulingModuleOnStartup } from './startup/seedSchedulingModule';
 import cron from 'node-cron';
 import { dispatchDueReminders } from './services/reminderService';
@@ -807,6 +809,7 @@ app.use('/api/activity-feed', authenticateJWT, activityFeedRouter);
 console.log('[DEBUG] Registering /api/drive route');
 app.use('/api/drive', driveRouter);
 app.use('/api/todo', todoRouter);
+app.use('/api/notes', notesRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
@@ -1201,6 +1204,7 @@ const server = httpServer.listen(port, () => {
   try {
     await seedHRModuleOnStartup();
     await seedTodoModuleOnStartup();
+    await seedNotesModuleOnStartup();
     await seedSchedulingModuleOnStartup();
   } catch (e) {
     console.error('Module seed failed (non-critical):', e);

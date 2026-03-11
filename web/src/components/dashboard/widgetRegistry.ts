@@ -3,6 +3,7 @@ import {
   Folder,
   Calendar,
   CheckSquare,
+  FileText,
   Sparkles,
   Bell,
   BarChart3,
@@ -109,6 +110,15 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
     color: 'text-violet-600 bg-violet-100',
     category: 'productivity',
     moduleId: 'todo',
+  },
+  notes: {
+    id: 'notes',
+    name: 'Notes',
+    description: 'Notes with tags, search, and organization',
+    icon: FileText,
+    color: 'text-slate-600 bg-slate-100',
+    category: 'productivity',
+    moduleId: 'notes',
   },
   ai: {
     id: 'ai',

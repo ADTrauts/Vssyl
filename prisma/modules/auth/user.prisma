@@ -140,6 +140,13 @@ model User {
   taskWatchers    TaskWatcher[]
   taskTimeLogs    TaskTimeLog[]
 
+  // Notes Module relations
+  notesCreated       Note[]       @relation("NoteCreator")
+  notesUpdated       Note[]       @relation("NoteUpdater")
+  noteFoldersCreated NoteFolder[] @relation("NoteFolderCreator")
+  noteSharesReceived NoteShare[]  @relation("NoteShareRecipient")
+  noteSharesGiven    NoteShare[]  @relation("NoteShareSharer")
+
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]

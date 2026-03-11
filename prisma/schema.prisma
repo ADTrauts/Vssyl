@@ -345,6 +345,13 @@ model User {
   taskWatchers    TaskWatcher[]
   taskTimeLogs    TaskTimeLog[]
 
+  // Notes Module relations
+  notesCreated       Note[]       @relation("NoteCreator")
+  notesUpdated       Note[]       @relation("NoteUpdater")
+  noteFoldersCreated NoteFolder[] @relation("NoteFolderCreator")
+  noteSharesReceived NoteShare[]  @relation("NoteShareRecipient")
+  noteSharesGiven    NoteShare[]  @relation("NoteShareSharer")
+
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]
@@ -5674,6 +5681,99 @@ model TaskTimeLog {
   @@map("task_time_logs")
 }
 
+
+
+// ============================================================================
+// NOTES MODULE
+// ============================================================================
+
+// ============================================================================
+// NOTES MODULE
+// ============================================================================
+
+model NoteFolder {
+  id          String   @id @default(uuid())
+  name        String
+
+  // Context & Scoping (MANDATORY - multi-tenant isolation)
+  dashboardId String
+  businessId  String?  // Null = personal, set = business
+
+  // Optional parent for nested folders
+  parentId    String?
+  parent      NoteFolder?  @relation("NoteFolderParent", fields: [parentId], references: [id])
+  children    NoteFolder[] @relation("NoteFolderParent")
+
+  notes       Note[]
+
+  createdById String
+  createdBy   User     @relation("NoteFolderCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([dashboardId, businessId])
+  @@index([createdById])
+  @@index([parentId])
+  @@map("note_folders")
+}
+
+model Note {
+  id              String   @id @default(uuid())
+  title           String
+  content         String   // Rich text (markdown or plain for MVP)
+
+  // Context & Scoping (MANDATORY - multi-tenant isolation)
+  dashboardId     String
+  businessId      String?  // Null = personal, set = business
+
+  // Organization
+  folderId        String?
+  folder          NoteFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tags            String[] @default([])
+  pinned          Boolean  @default(false)
+
+  // Ownership
+  createdById     String
+  createdBy       User     @relation("NoteCreator", fields: [createdById], references: [id])
+  updatedById     String?
+  updatedBy       User?    @relation("NoteUpdater", fields: [updatedById], references: [id])
+
+  // Sharing
+  shares          NoteShare[]
+
+  // Soft delete
+  deletedAt       DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([dashboardId, businessId])
+  @@index([createdById])
+  @@index([deletedAt])
+  @@index([pinned])
+  @@index([folderId])
+  @@map("notes")
+}
+
+model NoteShare {
+  id               String   @id @default(uuid())
+  noteId           String
+  note             Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  sharedWithUserId String
+  sharedWith       User     @relation("NoteShareRecipient", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+  sharedById       String
+  sharedBy         User     @relation("NoteShareSharer", fields: [sharedById], references: [id], onDelete: Cascade)
+  role             String   // "viewer" | "editor"
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([noteId, sharedWithUserId])
+  @@index([sharedWithUserId])
+  @@index([noteId])
+  @@map("note_shares")
+}
 
 
 // ============================================================================

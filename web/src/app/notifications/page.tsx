@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   MessageSquare,
   Folder,
+  FileText,
   Users,
   Building,
   AlertCircle,
@@ -41,6 +42,7 @@ interface NotificationCategory {
 const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
   chat: MessageSquare,
   drive: Folder,
+  notes: FileText,
   members: Users,
   business: Building,
   hr: UserCheck,
@@ -71,6 +73,7 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'place_connection_request': 'place',
   'place_connection_accepted': 'place',
   'place_community_invite': 'place',
+  'notes_shared': 'notes',
 };
 
 export default function NotificationsPage() {
