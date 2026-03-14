@@ -79,6 +79,8 @@ export interface BusinessMember {
   } | null;
   connectionStatus: 'none' | 'pending' | 'accepted' | 'declined' | 'blocked';
   relationshipId: string | null;
+  /** ISO date string; set by backend from User.lastActiveAt for colleague presence */
+  lastActive?: string | null;
 }
 
 export interface BusinessInvitation {
@@ -213,6 +215,23 @@ export const inviteEmployee = async (
 export const getBusinessMembers = async (businessId: string): Promise<{ members: BusinessMember[] }> => {
   return authenticatedApiCall(`/api/member/business/${businessId}/members`, {
     method: 'GET',
+  });
+};
+
+export const getPinnedColleagues = async (businessId: string): Promise<{ pinnedUserIds: string[] }> => {
+  return authenticatedApiCall(`/api/member/business/${businessId}/pinned`, { method: 'GET' });
+};
+
+export const pinColleague = async (businessId: string, pinnedUserId: string): Promise<{ pinned: boolean; pinnedUserId: string }> => {
+  return authenticatedApiCall(`/api/member/business/${businessId}/pinned`, {
+    method: 'POST',
+    body: JSON.stringify({ pinnedUserId }),
+  });
+};
+
+export const unpinColleague = async (businessId: string, pinnedUserId: string): Promise<{ unpinned: boolean; pinnedUserId: string }> => {
+  return authenticatedApiCall(`/api/member/business/${businessId}/pinned/${encodeURIComponent(pinnedUserId)}`, {
+    method: 'DELETE',
   });
 };
 

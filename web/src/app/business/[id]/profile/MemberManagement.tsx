@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Button, Avatar, Badge, Toast, Spinner, Input } from 'shared/components';
-import { businessAPI } from '@/api/business';
+import { updateEmployeeRole, removeEmployee } from '@/api/member';
 
 interface Member {
   id: string;
@@ -59,16 +59,12 @@ export function MemberManagement({ businessId, members, currentUserId, canManage
   const handleSave = async (member: Member) => {
     setLoading(true);
     try {
-      const result = await businessAPI.updateBusinessMember(businessId, member.user.id, { role: role as Member['role'] });
-      if (result.success) {
-        setToast({ type: 'success', message: 'Member updated successfully!' });
-        setEditingMemberId(null);
-        onMemberUpdate();
-      } else {
-        setToast({ type: 'error', message: 'Failed to update member' });
-      }
+      await updateEmployeeRole(member.id, role as Member['role']);
+      setToast({ type: 'success', message: 'Member updated successfully!' });
+      setEditingMemberId(null);
+      onMemberUpdate();
     } catch (err) {
-      setToast({ type: 'error', message: 'An unexpected error occurred' });
+      setToast({ type: 'error', message: err instanceof Error ? err.message : 'Failed to update member' });
     } finally {
       setLoading(false);
     }
@@ -77,15 +73,11 @@ export function MemberManagement({ businessId, members, currentUserId, canManage
   const handleRemove = async (member: Member) => {
     setRemovingMemberId(member.id);
     try {
-      const result = await businessAPI.removeBusinessMember(businessId, member.user.id);
-      if (result.success) {
-        setToast({ type: 'success', message: 'Member removed successfully!' });
-        onMemberUpdate();
-      } else {
-        setToast({ type: 'error', message: 'Failed to remove member' });
-      }
+      await removeEmployee(member.id);
+      setToast({ type: 'success', message: 'Member removed successfully!' });
+      onMemberUpdate();
     } catch (err) {
-      setToast({ type: 'error', message: 'An unexpected error occurred' });
+      setToast({ type: 'error', message: err instanceof Error ? err.message : 'Failed to remove member' });
     } finally {
       setRemovingMemberId(null);
     }

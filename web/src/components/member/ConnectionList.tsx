@@ -1,26 +1,36 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Avatar, Badge, Button, Card, Spinner, Input, Checkbox } from 'shared/components';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { Avatar, Badge, Button, Card, Spinner, Checkbox } from 'shared/components';
 import { getConnections, Connection, removeConnection, bulkRemoveConnections } from '../../api/member';
-import { Search, Filter, X, Building2, UserMinus, MessageSquare, Calendar, Users, Trash2 } from 'lucide-react';
-import { BulkActionBar, BulkAction } from './BulkActionBar';
+import { getHouseholds, type Household } from '../../api/household';
+import { getUserFollowing } from '../../api/business';
+import { Trash2, Building2, Users, MapPin } from 'lucide-react';
+import { BulkActionBar } from './BulkActionBar';
 import toast from 'react-hot-toast';
+
+export type ConnectionFilterType = 'all' | 'colleague' | 'regular' | 'household' | 'businesses';
 
 interface ConnectionListProps {
   className?: string;
 }
 
 export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }) => {
+  const { data: session } = useSession();
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [households, setHouseholds] = useState<Household[]>([]);
+  const [following, setFollowing] = useState<Array<{ id: string; name: string; description?: string | null; followedAt: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'colleague' | 'regular'>('all');
+  const [filter, setFilter] = useState<ConnectionFilterType>('all');
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [selectedConnections, setSelectedConnections] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
 
   const loadConnections = async () => {
+    if (filter === 'household' || filter === 'businesses') return;
     try {
       setLoading(true);
       setError(null);
@@ -34,9 +44,58 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
     }
   };
 
+  const loadHouseholds = async () => {
+    if (!session?.accessToken) {
+      setLoading(false);
+      setHouseholds([]);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const list = await getHouseholds(session.accessToken);
+      setHouseholds(list);
+    } catch (err) {
+      console.error('Error loading households:', err);
+      setError('Failed to load households');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFollowing = async () => {
+    if (!session?.accessToken) {
+      setLoading(false);
+      setFollowing([]);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getUserFollowing(session.accessToken);
+      const list = res.following ?? [];
+      // Normalize to flat shape (backend returns { id, name, description, followedAt })
+      setFollowing(
+        list.map((f: { id?: string; name?: string; description?: string | null; followedAt: string; business?: { id: string; name: string } }) => ({
+          id: f.id ?? f.business?.id ?? '',
+          name: f.name ?? f.business?.name ?? '',
+          description: f.description ?? null,
+          followedAt: f.followedAt,
+        }))
+      );
+    } catch (err) {
+      console.error('Error loading followed businesses:', err);
+      setError('Failed to load followed businesses');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadConnections();
-  }, [filter]);
+    if (filter === 'household') loadHouseholds();
+    else if (filter === 'businesses') loadFollowing();
+    else loadConnections();
+  }, [filter, session?.accessToken]);
 
   const handleRemoveConnection = async (connectionId: string, userName: string) => {
     if (!window.confirm(`Remove connection with ${userName}?`)) return;
@@ -120,6 +179,12 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
     return type === 'COLLEAGUE' ? 'blue' : 'gray';
   };
 
+  const handleRetry = () => {
+    if (filter === 'household') loadHouseholds();
+    else if (filter === 'businesses') loadFollowing();
+    else loadConnections();
+  };
+
   if (loading) {
     return (
       <div className={`flex justify-center items-center py-8 ${className}`}>
@@ -132,7 +197,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
     return (
       <div className={`text-center py-8 ${className}`}>
         <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={loadConnections} variant="secondary">
+        <Button onClick={handleRetry} variant="secondary">
           Try Again
         </Button>
       </div>
@@ -142,16 +207,18 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
   return (
     <div className={className}>
       {/* Filter Tabs */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1">
+      <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1 flex-wrap gap-1">
         {[
-          { key: 'all', label: 'All Connections' },
-          { key: 'colleague', label: 'Colleagues' },
-          { key: 'regular', label: 'Personal' },
+          { key: 'all' as const, label: 'ALL' },
+          { key: 'regular' as const, label: 'Personal' },
+          { key: 'household' as const, label: 'Household' },
+          { key: 'businesses' as const, label: 'Following' },
+          { key: 'colleague' as const, label: 'Colleagues' },
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilter(tab.key as any)}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            onClick={() => setFilter(tab.key)}
+            className={`flex-1 min-w-0 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               filter === tab.key
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
@@ -162,6 +229,94 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
         ))}
       </div>
 
+      {/* Household view */}
+      {filter === 'household' && (
+        <div className="space-y-4">
+          {households.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <Users className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No households yet</h3>
+              <p className="text-gray-600 mb-4">
+                Create or join a household from the Home tab to see members here.
+              </p>
+            </div>
+          ) : (
+            households.map((h) => (
+              <Card key={h.id} className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="w-5 h-5 text-gray-600" />
+                  <h3 className="font-medium text-gray-900">{h.name}</h3>
+                  {h.isPrimary && (
+                    <Badge color="blue">Primary</Badge>
+                  )}
+                </div>
+                <ul className="space-y-2 pl-7">
+                  {h.members?.map((m) => (
+                    <li key={m.id} className="flex items-center gap-2 text-sm text-gray-700">
+                      <Avatar
+                        src={undefined}
+                        nameOrEmail={m.user?.name ?? m.user?.email}
+                        size={24}
+                      />
+                      <span>{m.user?.name ?? m.user?.email}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Businesses / Following view */}
+      {filter === 'businesses' && (
+        <div className="space-y-4">
+          {following.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No businesses followed</h3>
+              <p className="text-gray-600 mb-4">
+                Follow businesses on Vssyl Place to see them here.
+              </p>
+              <Link
+                href="/place"
+                className="inline-flex items-center px-4 py-2 rounded font-semibold bg-gray-200 text-gray-900 hover:bg-gray-300"
+              >
+                Explore Place
+              </Link>
+            </div>
+          ) : (
+            following.map((b) => (
+              <Card key={b.id} className="p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-gray-900">{b.name}</h3>
+                  {b.description && (
+                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{b.description}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Following since {new Date(b.followedAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <Link
+                  href={`/place?tab=my-place&highlight=${encodeURIComponent(b.id)}`}
+                  className="inline-flex items-center px-2 py-1 text-sm rounded font-semibold bg-gray-200 text-gray-900 hover:bg-gray-300"
+                >
+                  <MapPin className="w-4 h-4 mr-1" />
+                  View on Place
+                </Link>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Connections list (all / colleague / personal) */}
+      {filter !== 'household' && filter !== 'businesses' && (
+        <>
       {/* Bulk Action Bar */}
       <BulkActionBar
         selectedCount={selectedConnections.size}
@@ -193,7 +348,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
             {filter === 'all' 
               ? "You haven't made any connections yet. Start by searching for users to connect with."
               : filter === 'colleague'
-              ? "You don't have any colleague connections yet."
+              ? "You don't have any current colleagues. Colleagues are people you're connected with who are still in a business with you."
               : "You don't have any personal connections yet."
             }
           </p>
@@ -267,6 +422,8 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
             </Card>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

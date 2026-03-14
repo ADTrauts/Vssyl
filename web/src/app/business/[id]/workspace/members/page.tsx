@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { Card, Button, Spinner, Alert, Avatar, Badge } from 'shared/components';
+import { getBusinessMembers, getPinnedColleagues, pinColleague, unpinColleague, sendConnectionRequest, type BusinessMember } from '@/api/member';
+import toast from 'react-hot-toast';
 import { 
   Users, 
   Plus, 
@@ -12,31 +14,13 @@ import {
   Filter,
   MoreVertical,
   Mail,
-  Phone,
-  MapPin,
-  Calendar,
   Shield,
   UserCheck,
-  UserX
+  UserX,
+  UserPlus,
+  Pin,
+  PinOff
 } from 'lucide-react';
-
-interface BusinessMember {
-  id: string;
-  role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
-  title?: string;
-  department?: string;
-  canInvite: boolean;
-  canManage: boolean;
-  canBilling: boolean;
-  joinedAt: string;
-  lastActive?: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-}
 
 export default function WorkMembersPage() {
   const params = useParams();
@@ -49,6 +33,26 @@ export default function WorkMembersPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'department'>('list');
+  const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
+  const [pinnedUserIds, setPinnedUserIds] = useState<Set<string>>(new Set());
+  const [pinLoadingUserId, setPinLoadingUserId] = useState<string | null>(null);
+
+  const currentUserId = session?.user?.id ?? (session?.user as { id?: string })?.id ?? null;
+
+  const handleAddPersonalConnection = async (userId: string, name: string) => {
+    if (!userId || connectingUserId) return;
+    setConnectingUserId(userId);
+    try {
+      await sendConnectionRequest(userId);
+      toast.success(`Connection request sent to ${name || 'this member'}`);
+      await loadBusinessMembers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send connection request');
+    } finally {
+      setConnectingUserId(null);
+    }
+  };
 
   useEffect(() => {
     if (businessId && session?.accessToken) {
@@ -57,102 +61,46 @@ export default function WorkMembersPage() {
   }, [businessId, session?.accessToken]);
 
   const loadBusinessMembers = async () => {
+    if (!businessId) return;
     try {
       setLoading(true);
       setError(null);
-
-      // TODO: Replace with actual API call to get business members
-      // const response = await businessAPI.getBusinessMembers(businessId);
-      
-      // Mock data for now
-      const mockMembers: BusinessMember[] = [
-        {
-          id: '1',
-          role: 'ADMIN',
-          title: 'CEO',
-          department: 'Executive',
-          canInvite: true,
-          canManage: true,
-          canBilling: true,
-          joinedAt: '2023-01-15T00:00:00Z',
-          lastActive: '2024-01-15T10:30:00Z',
-          user: {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@company.com'
-          }
-        },
-        {
-          id: '2',
-          role: 'MANAGER',
-          title: 'Project Manager',
-          department: 'Engineering',
-          canInvite: true,
-          canManage: true,
-          canBilling: false,
-          joinedAt: '2023-03-20T00:00:00Z',
-          lastActive: '2024-01-15T09:15:00Z',
-          user: {
-            id: '2',
-            name: 'Jane Smith',
-            email: 'jane@company.com'
-          }
-        },
-        {
-          id: '3',
-          role: 'EMPLOYEE',
-          title: 'Software Developer',
-          department: 'Engineering',
-          canInvite: false,
-          canManage: false,
-          canBilling: false,
-          joinedAt: '2023-06-10T00:00:00Z',
-          lastActive: '2024-01-15T08:45:00Z',
-          user: {
-            id: '3',
-            name: 'Mike Johnson',
-            email: 'mike@company.com'
-          }
-        },
-        {
-          id: '4',
-          role: 'EMPLOYEE',
-          title: 'Marketing Specialist',
-          department: 'Marketing',
-          canInvite: false,
-          canManage: false,
-          canBilling: false,
-          joinedAt: '2023-08-05T00:00:00Z',
-          lastActive: '2024-01-14T16:20:00Z',
-          user: {
-            id: '4',
-            name: 'Sarah Wilson',
-            email: 'sarah@company.com'
-          }
-        },
-        {
-          id: '5',
-          role: 'EMPLOYEE',
-          title: 'Sales Representative',
-          department: 'Sales',
-          canInvite: false,
-          canManage: false,
-          canBilling: false,
-          joinedAt: '2023-09-12T00:00:00Z',
-          lastActive: '2024-01-14T14:30:00Z',
-          user: {
-            id: '5',
-            name: 'David Brown',
-            email: 'david@company.com'
-          }
-        }
-      ];
-
-      setMembers(mockMembers);
+      const [membersRes, pinnedRes] = await Promise.all([
+        getBusinessMembers(businessId),
+        getPinnedColleagues(businessId),
+      ]);
+      setMembers(membersRes.members ?? []);
+      setPinnedUserIds(new Set(pinnedRes.pinnedUserIds ?? []));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load business members');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTogglePin = async (member: BusinessMember) => {
+    const userId = member.user.id;
+    if (userId === currentUserId || pinLoadingUserId) return;
+    setPinLoadingUserId(userId);
+    try {
+      const isPinned = pinnedUserIds.has(userId);
+      if (isPinned) {
+        await unpinColleague(businessId, userId);
+        setPinnedUserIds((prev) => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        toast.success(`Unpinned ${member.user.name ?? member.user.email}`);
+      } else {
+        await pinColleague(businessId, userId);
+        setPinnedUserIds((prev) => new Set(Array.from(prev).concat(userId)));
+        toast.success(`Pinned ${member.user.name ?? member.user.email}`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update pin');
+    } finally {
+      setPinLoadingUserId(null);
     }
   };
 
@@ -191,7 +139,8 @@ export default function WorkMembersPage() {
   };
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = member.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const name = member.user.name ?? member.user.email ?? '';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (member.title && member.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
                          (member.department && member.department.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -206,14 +155,25 @@ export default function WorkMembersPage() {
     admins: members.filter(m => m.role === 'ADMIN').length,
     managers: members.filter(m => m.role === 'MANAGER').length,
     employees: members.filter(m => m.role === 'EMPLOYEE').length,
-    active: members.filter(m => {
-      if (!m.lastActive) return false;
-      const lastActive = new Date(m.lastActive);
-      const now = new Date();
-      const diffInHours = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
-      return diffInHours < 24;
-    }).length
+    active: 0, // API does not return lastActive; can be added later
   };
+
+  // Pinned first for list; split for "People I work with most" section
+  const pinnedMembers = filteredMembers.filter((m) => pinnedUserIds.has(m.user.id));
+  const unpinnedMembers = filteredMembers.filter((m) => !pinnedUserIds.has(m.user.id));
+  const membersPinnedFirst = [...pinnedMembers, ...unpinnedMembers];
+
+  // Group by department for org chart view (department from member or job)
+  const getMemberDepartment = (m: BusinessMember) =>
+    m.department ?? (m.job as { department?: { name?: string } } | undefined)?.department?.name ?? 'No department';
+  const membersByDepartment = viewMode === 'department'
+    ? filteredMembers.reduce<Record<string, BusinessMember[]>>((acc, m) => {
+        const dept = getMemberDepartment(m);
+        if (!acc[dept]) acc[dept] = [];
+        acc[dept].push(m);
+        return acc;
+      }, {})
+    : {};
 
   if (loading) {
     return (
@@ -306,8 +266,8 @@ export default function WorkMembersPage() {
           </div>
 
         {/* Search and Filters */}
-        <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div className="flex items-center space-x-4 flex-wrap">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
@@ -328,22 +288,157 @@ export default function WorkMembersPage() {
                   <option value="MANAGER">Managers</option>
                   <option value="EMPLOYEE">Employees</option>
                 </select>
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                    className={`px-3 py-2 text-sm font-medium ${viewMode === 'list' ? 'bg-gray-200 text-gray-900' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('department')}
+                    className={`px-3 py-2 text-sm font-medium ${viewMode === 'department' ? 'bg-gray-200 text-gray-900' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    By department
+                  </button>
+                </div>
               </div>
             </div>
 
           {/* Members List */}
           <Card className="p-6">
           <div className="space-y-4">
-                  {filteredMembers.map((member) => (
+                  {viewMode === 'department' ? (
+                    Object.entries(membersByDepartment)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([dept, deptMembers]) => (
+                        <div key={dept}>
+                          <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b border-gray-200 pb-1">
+                            {dept}
+                          </h3>
+                          <div className="space-y-2 pl-2">
+                            {deptMembers.map((member) => (
+                              <div
+                                key={member.id}
+                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <Avatar size={40} nameOrEmail={member.user.name ?? member.user.email} />
+                                  <div>
+                                    <div className="flex items-center space-x-2">
+                                      <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
+                                      <Badge className={getRoleColor(member.role)}>
+                                        {getRoleDisplayName(member.role)}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{member.user.email}</p>
+                                    {member.title && <p className="text-sm text-gray-500">{member.title}</p>}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-600">
+                                    Joined {new Date(member.joinedAt).toLocaleDateString()}
+                                  </span>
+                                  {currentUserId && member.user.id !== currentUserId && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleTogglePin(member)}
+                                        disabled={pinLoadingUserId === member.user.id}
+                                        title={pinnedUserIds.has(member.user.id) ? 'Unpin' : 'Pin (people I work with most)'}
+                                      >
+                                        {pinLoadingUserId === member.user.id ? (
+                                          <Spinner size={14} />
+                                        ) : pinnedUserIds.has(member.user.id) ? (
+                                          <PinOff className="w-4 h-4 text-gray-600" />
+                                        ) : (
+                                          <Pin className="w-4 h-4 text-gray-500" />
+                                        )}
+                                      </Button>
+                                      {member.connectionStatus === 'none' && (
+                                        <Button
+                                          variant="secondary"
+                                          size="sm"
+                                          onClick={() => handleAddPersonalConnection(member.user.id, member.user.name ?? member.user.email)}
+                                          disabled={connectingUserId === member.user.id}
+                                        >
+                                          {connectingUserId === member.user.id ? (
+                                            <Spinner size={14} />
+                                          ) : (
+                                            <>
+                                              <UserPlus className="w-4 h-4 mr-1" />
+                                              Add as personal connection
+                                            </>
+                                            )}
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                  <>
+                    {pinnedMembers.length > 0 && (
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2">People I work with most</h3>
+                        <div className="space-y-2">
+                          {pinnedMembers.map((member) => (
+                            <div
+                              key={member.id}
+                              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 bg-amber-50/50"
+                            >
+                              <div className="flex items-center space-x-4">
+                                <Avatar size={48} nameOrEmail={member.user.name ?? member.user.email} />
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                    <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
+                                    <Badge className={getRoleColor(member.role)}>{getRoleDisplayName(member.role)}</Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600">{member.user.email}</p>
+                                  {member.title && <p className="text-sm text-gray-500">{member.title}</p>}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className="text-right">
+                                  <p className="text-sm text-gray-600">Last active</p>
+                                  <p className="text-sm font-medium text-gray-900">{getLastActiveText(member.lastActive ?? undefined)}</p>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => handleTogglePin(member)} disabled={pinLoadingUserId === member.user.id} title="Unpin">
+                                  {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : <PinOff className="w-4 h-4 text-gray-600" />}
+                                </Button>
+                                <Button variant="ghost" size="sm"><Mail className="w-4 h-4" /></Button>
+                                {currentUserId && member.user.id !== currentUserId && member.connectionStatus === 'none' && (
+                                  <Button variant="secondary" size="sm" onClick={() => handleAddPersonalConnection(member.user.id, member.user.name ?? member.user.email)} disabled={connectingUserId === member.user.id}>
+                                    <UserPlus className="w-4 h-4 mr-1" /> Add as personal connection
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {unpinnedMembers.length > 0 && (
+                      <div>
+                        {pinnedMembers.length > 0 && <h3 className="text-sm font-semibold text-gray-700 mb-2">All members</h3>}
+                        <div className="space-y-2">
+                          {unpinnedMembers.map((member) => (
               <div
                 key={member.id}
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex items-center space-x-4">
-                  <Avatar size={48} nameOrEmail={member.user.name} />
+                  <Avatar size={48} nameOrEmail={member.user.name ?? member.user.email} />
                           <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-medium text-gray-900">{member.user.name}</h3>
+                      <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
                       <Badge className={getRoleColor(member.role)}>
                           {getRoleDisplayName(member.role)}
                         </Badge>
@@ -362,7 +457,7 @@ export default function WorkMembersPage() {
                   <div className="text-right">
                     <p className="text-sm text-gray-600">Last active</p>
                     <p className="text-sm font-medium text-gray-900">
-                      {getLastActiveText(member.lastActive)}
+                      {getLastActiveText(member.lastActive ?? undefined)}
               </p>
             </div>
                   
@@ -377,6 +472,36 @@ export default function WorkMembersPage() {
                     <Button variant="ghost" size="sm">
                       <Mail className="w-4 h-4" />
                     </Button>
+                    {currentUserId && member.user.id !== currentUserId && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTogglePin(member)}
+                          disabled={pinLoadingUserId === member.user.id}
+                          title={pinnedUserIds.has(member.user.id) ? 'Unpin' : 'Pin (people I work with most)'}
+                        >
+                          {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : pinnedUserIds.has(member.user.id) ? <PinOff className="w-4 h-4 text-gray-600" /> : <Pin className="w-4 h-4 text-gray-500" />}
+                        </Button>
+                        {member.connectionStatus === 'none' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleAddPersonalConnection(member.user.id, member.user.name ?? member.user.email)}
+                        disabled={connectingUserId === member.user.id}
+                      >
+                        {connectingUserId === member.user.id ? (
+                          <Spinner size={14} />
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Add as personal connection
+                          </>
+                        )}
+                      </Button>
+                        )}
+                      </>
+                    )}
                     {hasPermission('members', 'manage') && (
                       <Button variant="ghost" size="sm">
                         <MoreVertical className="w-4 h-4" />
@@ -386,7 +511,11 @@ export default function WorkMembersPage() {
                                 </div>
                                 </div>
             ))}
-                    </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                  )}
           
           {filteredMembers.length === 0 && (
               <div className="text-center py-12">
@@ -408,6 +537,7 @@ export default function WorkMembersPage() {
               )}
         </div>
       )}
+          </div>
             </Card>
                 </div>
                 </div>

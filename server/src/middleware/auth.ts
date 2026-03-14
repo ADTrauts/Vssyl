@@ -152,6 +152,12 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
     const authRequest = req as AuthenticatedRequest;
     authRequest.user = user;
 
+    // Update lastActiveAt for colleague presence (fire-and-forget)
+    void prisma.user.update({
+      where: { id: decoded.sub },
+      data: { lastActiveAt: new Date() },
+    }).catch(() => { /* non-fatal */ });
+
     // Handle impersonation if present
     // Optimization: Only check impersonation if token is provided AND user is admin
     // This avoids unnecessary database queries for non-admin users or when no impersonation token exists

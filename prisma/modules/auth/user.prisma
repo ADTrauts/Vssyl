@@ -21,7 +21,8 @@ model User {
   stripeCustomerId String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+  lastActiveAt    DateTime? // Updated on authenticated activity for colleague presence
+
   // User Numbering System
   userNumber      String?  @unique // e.g., "1-06-201-00023"
   country         Country? @relation(fields: [countryId], references: [id])
@@ -76,6 +77,8 @@ model User {
   relationshipsSent Relationship[] @relation("RelationshipSender")
   relationshipsReceived Relationship[] @relation("RelationshipReceiver")
   businessFollows BusinessFollow[]
+  pinnedColleagues PinnedColleague[] @relation("PinnedColleaguePinner")
+  pinnedByColleagues PinnedColleague[] @relation("PinnedColleagueTarget")
   moduleInstallations ModuleInstallation[] @relation("ModuleUser")
   moduleSubmissions ModuleSubmission[] @relation("ModuleSubmitter")
   moduleSubmissionReviews ModuleSubmission[] @relation("ModuleSubmissionReviewer")

@@ -226,7 +226,8 @@ model User {
   stripeCustomerId String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+  lastActiveAt    DateTime? // Updated on authenticated activity for colleague presence
+
   // User Numbering System
   userNumber      String?  @unique // e.g., "1-06-201-00023"
   country         Country? @relation(fields: [countryId], references: [id])
@@ -281,6 +282,8 @@ model User {
   relationshipsSent Relationship[] @relation("RelationshipSender")
   relationshipsReceived Relationship[] @relation("RelationshipReceiver")
   businessFollows BusinessFollow[]
+  pinnedColleagues PinnedColleague[] @relation("PinnedColleaguePinner")
+  pinnedByColleagues PinnedColleague[] @relation("PinnedColleagueTarget")
   moduleInstallations ModuleInstallation[] @relation("ModuleUser")
   moduleSubmissions ModuleSubmission[] @relation("ModuleSubmitter")
   moduleSubmissionReviews ModuleSubmission[] @relation("ModuleSubmissionReviewer")
@@ -816,6 +819,9 @@ model Business {
   placeListing BusinessPlaceListing?
   placeTransactions PlaceTransaction[]
 
+  // Pinned colleagues (people I work with most)
+  pinnedColleagues PinnedColleague[]
+
   // Scheduling Configuration
   schedulingMode       SchedulingMode?
   schedulingStrategy   SchedulingStrategy?
@@ -938,6 +944,21 @@ model BusinessMember {
   @@index([userId])
   @@index([jobId])
   @@map("business_members")
+}
+
+model PinnedColleague {
+  id           String   @id @default(uuid())
+  userId       String   // user who pinned
+  businessId   String
+  pinnedUserId String   // colleague who is pinned
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  user         User     @relation("PinnedColleaguePinner", fields: [userId], references: [id], onDelete: Cascade)
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  pinnedUser   User     @relation("PinnedColleagueTarget", fields: [pinnedUserId], references: [id], onDelete: Cascade)
+  @@unique([userId, businessId, pinnedUserId])
+  @@index([userId, businessId])
+  @@map("pinned_colleagues")
 }
 
 model BusinessInvitation {

@@ -13,6 +13,9 @@ import {
   // Business employee management APIs
   inviteEmployee,
   getBusinessMembers,
+  getPinnedColleagues,
+  pinColleague,
+  unpinColleague,
   updateEmployeeRole,
   removeEmployee,
   getBusinessInvitations,
@@ -46,6 +49,9 @@ router.post('/connections/bulk/requests', bulkUpdateConnectionRequests);
 // Business Employee Management Routes
 router.post('/business/:businessId/invite', inviteEmployee);
 router.get('/business/:businessId/members', getBusinessMembers);
+router.get('/business/:businessId/pinned', getPinnedColleagues);
+router.post('/business/:businessId/pinned', pinColleague);
+router.delete('/business/:businessId/pinned/:pinnedUserId', unpinColleague);
 router.put('/business/members/:memberId/role', updateEmployeeRole);
 router.delete('/business/members/:memberId', removeEmployee);
 router.get('/business/:businessId/invitations', getBusinessInvitations);

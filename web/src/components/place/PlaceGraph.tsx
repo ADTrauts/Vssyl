@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -105,10 +105,28 @@ function generateEdges(nodes: Node[]): Edge[] {
   }));
 }
 
-export default function PlaceGraph() {
+interface PlaceGraphProps {
+  /** When set, open the business profile panel for this business (deep link from Connections > Following). */
+  highlightBusinessId?: string;
+}
+
+export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
   const { place, updateNodePosition } = usePlace();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
+  const hasAppliedHighlight = useRef(false);
+
+  // Deep link: open business panel when highlightBusinessId matches a node
+  useEffect(() => {
+    if (!highlightBusinessId || !place?.nodes.length || hasAppliedHighlight.current) return;
+    const hasNode = place.nodes.some(
+      (n) => n.nodeType === 'BUSINESS' && n.entityId === highlightBusinessId
+    );
+    if (hasNode) {
+      hasAppliedHighlight.current = true;
+      setSelectedBusinessId(highlightBusinessId);
+    }
+  }, [highlightBusinessId, place?.nodes]);
 
   const initialNodes = useMemo(() => {
     if (!place?.nodes.length) return [];

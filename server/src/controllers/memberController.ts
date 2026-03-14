@@ -512,12 +512,10 @@ export const getConnections = async (req: Request, res: Response) => {
           },
         },
       },
-      take: Number(limit) || 20,
-      skip: Number(offset) || 0,
       orderBy: { updatedAt: 'desc' },
     });
 
-    const connections = relationships.map(rel => {
+    let connections = relationships.map(rel => {
       const otherUser = rel.senderId === currentUserId ? rel.receiver : rel.sender;
 
       return {
@@ -534,7 +532,29 @@ export const getConnections = async (req: Request, res: Response) => {
       };
     });
 
-    res.json({ connections });
+    // Colleagues = current colleagues only: other user must be active member of a business I'm in
+    if (type === 'colleague') {
+      const myBusinessIds = await prisma.businessMember.findMany({
+        where: { userId: currentUserId, isActive: true },
+        select: { businessId: true },
+      }).then(rows => rows.map(r => r.businessId));
+
+      const currentColleagueUserIds = myBusinessIds.length > 0
+        ? await prisma.businessMember.findMany({
+            where: { businessId: { in: myBusinessIds }, isActive: true, userId: { not: currentUserId } },
+            select: { userId: true },
+            distinct: ['userId'],
+          }).then(rows => new Set(rows.map(r => r.userId)))
+        : new Set<string>();
+
+      connections = connections.filter(c => currentColleagueUserIds.has(c.user.id));
+    }
+
+    const take = Number(limit) || 20;
+    const skip = Number(offset) || 0;
+    const paginated = connections.slice(skip, skip + take);
+
+    res.json({ connections: paginated });
   } catch (error) {
     await logger.error('Failed to get connections', {
       operation: 'member_get_connections',
@@ -805,6 +825,7 @@ export const getBusinessMembers = async (req: Request, res: Response) => {
             name: true,
             email: true,
             createdAt: true,
+            lastActiveAt: true,
           },
         },
         job: {
@@ -834,6 +855,7 @@ export const getBusinessMembers = async (req: Request, res: Response) => {
           ...member,
           connectionStatus: relationship ? relationship.status.toLowerCase() : 'none',
           relationshipId: relationship?.id || null,
+          lastActive: member.user.lastActiveAt ? member.user.lastActiveAt.toISOString() : null,
         };
       })
     );
@@ -846,6 +868,98 @@ export const getBusinessMembers = async (req: Request, res: Response) => {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       }
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/** GET /api/member/business/:businessId/pinned - list pinned colleague user IDs for current user */
+export const getPinnedColleagues = async (req: Request, res: Response) => {
+  try {
+    const businessId = req.params.businessId;
+    const currentUserId = req.user?.id;
+    if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const member = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId, userId: currentUserId } },
+    });
+    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+
+    const pinned = await prisma.pinnedColleague.findMany({
+      where: { userId: currentUserId, businessId },
+      orderBy: { order: 'asc' },
+      select: { pinnedUserId: true },
+    });
+    res.json({ pinnedUserIds: pinned.map((p) => p.pinnedUserId) });
+  } catch (error) {
+    await logger.error('Failed to get pinned colleagues', {
+      operation: 'member_get_pinned_colleagues',
+      error: { message: error instanceof Error ? error.message : 'Unknown error' },
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/** POST /api/member/business/:businessId/pinned - pin a colleague */
+export const pinColleague = async (req: Request, res: Response) => {
+  try {
+    const businessId = req.params.businessId;
+    const currentUserId = req.user?.id;
+    const body = req.body as { pinnedUserId?: string };
+    const pinnedUserId = body?.pinnedUserId;
+    if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
+    if (!pinnedUserId || typeof pinnedUserId !== 'string') return res.status(400).json({ error: 'pinnedUserId is required' });
+
+    const member = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId, userId: currentUserId } },
+    });
+    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+
+    const isColleague = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId, userId: pinnedUserId } },
+    });
+    if (!isColleague?.isActive) return res.status(400).json({ error: 'User is not a member of this business' });
+    if (pinnedUserId === currentUserId) return res.status(400).json({ error: 'Cannot pin yourself' });
+
+    const existing = await prisma.pinnedColleague.findUnique({
+      where: { userId_businessId_pinnedUserId: { userId: currentUserId, businessId, pinnedUserId } },
+    });
+    if (existing) return res.json({ pinned: true, pinnedUserId });
+
+    const count = await prisma.pinnedColleague.count({ where: { userId: currentUserId, businessId } });
+    await prisma.pinnedColleague.create({
+      data: { userId: currentUserId, businessId, pinnedUserId, order: count },
+    });
+    res.status(201).json({ pinned: true, pinnedUserId });
+  } catch (error) {
+    await logger.error('Failed to pin colleague', {
+      operation: 'member_pin_colleague',
+      error: { message: error instanceof Error ? error.message : 'Unknown error' },
+    });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/** DELETE /api/member/business/:businessId/pinned/:pinnedUserId - unpin a colleague */
+export const unpinColleague = async (req: Request, res: Response) => {
+  try {
+    const { businessId, pinnedUserId } = req.params;
+    const currentUserId = req.user?.id;
+    if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const member = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId, userId: currentUserId } },
+    });
+    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+
+    await prisma.pinnedColleague.deleteMany({
+      where: { userId: currentUserId, businessId, pinnedUserId },
+    });
+    res.json({ unpinned: true, pinnedUserId });
+  } catch (error) {
+    await logger.error('Failed to unpin colleague', {
+      operation: 'member_unpin_colleague',
+      error: { message: error instanceof Error ? error.message : 'Unknown error' },
     });
     res.status(500).json({ error: 'Internal server error' });
   }

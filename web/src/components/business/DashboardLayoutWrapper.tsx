@@ -383,9 +383,13 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
     // Update URL to show the module in the main content area
     // Extract businessId from pathname if business is null
     const businessId = business?.id || pathname?.split('/business/')[1]?.split('/')[0] || '';
-    if (businessId) {
-      router.push(`/business/${businessId}/workspace?module=${moduleId}`);
+    if (!businessId) return;
+    // Members: route to dedicated workspace members page
+    if (moduleId === 'members') {
+      router.push(`/business/${businessId}/workspace/members`);
+      return;
     }
+    router.push(`/business/${businessId}/workspace?module=${moduleId}`);
   };
 
   const handleSwitchToPersonal = () => {
@@ -396,7 +400,11 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const pathSegments = afterWorkspace.split('/').filter(Boolean);
   const pathModule = pathSegments[0] || null;
   const hasNestedSegments = pathSegments.length > 1;
+  // When on /workspace/members, current module is 'members'
   const currentModule = pathModule || getCurrentModule();
+  // Display name for sidebar: in business context show "Members" for members module
+  const getModuleDisplayName = (moduleId: string, name: string) =>
+    isBusinessContext && moduleId === 'members' ? 'Members' : name;
   const shouldRenderNestedRoute = hasNestedSegments;
 
   // Show loading state while session is being determined
@@ -490,7 +498,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                         }}
                       >
                         <Icon size={22} />
-                        <span>{m.name}</span>
+                        <span>{getModuleDisplayName(m.id, m.name)}</span>
                           </button>
                         </li>
                       );
@@ -529,6 +537,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                           onModuleClick={navigateToModule}
                           activeModuleId={currentModule || undefined}
                           textColor={textColor}
+                          getModuleDisplayName={getModuleDisplayName}
                         />
                       ))}
 
@@ -558,7 +567,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                               }}
                             >
                               <Icon size={22} />
-                              <span>{module.name}</span>
+                              <span>{getModuleDisplayName(module.id, module.name)}</span>
                       </button>
                     </li>
                   );
@@ -683,7 +692,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                   transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
                 }}
                 onClick={() => navigateToModule(module.id)}
-                title={module.name}
+                title={getModuleDisplayName(module.id, module.name)}
               >
                 <Icon size={22} />
               </button>
@@ -724,7 +733,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                       transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
                     }}
                     onClick={() => navigateToModule(module.id)}
-                    title={module.name}
+                    title={getModuleDisplayName(module.id, module.name)}
                   >
                     <Icon size={22} />
                   </button>

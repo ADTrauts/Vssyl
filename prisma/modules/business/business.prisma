@@ -84,6 +84,9 @@ model Business {
   placeListing BusinessPlaceListing?
   placeTransactions PlaceTransaction[]
 
+  // Pinned colleagues (people I work with most)
+  pinnedColleagues PinnedColleague[]
+
   // Scheduling Configuration
   schedulingMode       SchedulingMode?
   schedulingStrategy   SchedulingStrategy?
@@ -206,6 +209,21 @@ model BusinessMember {
   @@index([userId])
   @@index([jobId])
   @@map("business_members")
+}
+
+model PinnedColleague {
+  id           String   @id @default(uuid())
+  userId       String   // user who pinned
+  businessId   String
+  pinnedUserId String   // colleague who is pinned
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  user         User     @relation("PinnedColleaguePinner", fields: [userId], references: [id], onDelete: Cascade)
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  pinnedUser   User     @relation("PinnedColleagueTarget", fields: [pinnedUserId], references: [id], onDelete: Cascade)
+  @@unique([userId, businessId, pinnedUserId])
+  @@index([userId, businessId])
+  @@map("pinned_colleagues")
 }
 
 model BusinessInvitation {

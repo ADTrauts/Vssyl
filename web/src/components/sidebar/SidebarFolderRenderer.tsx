@@ -27,6 +27,8 @@ interface SidebarFolderRendererProps {
   onModuleClick: (moduleId: string) => void;
   activeModuleId?: string;
   textColor?: string;
+  /** Override display name (e.g. "Members" for members in business context) */
+  getModuleDisplayName?: (moduleId: string, name: string) => string;
 }
 
 export function SidebarFolderRenderer({
@@ -36,6 +38,7 @@ export function SidebarFolderRenderer({
   onModuleClick,
   activeModuleId,
   textColor = '#fff',
+  getModuleDisplayName = (_, name) => name,
 }: SidebarFolderRendererProps) {
   // Get modules in this folder
   const folderModules = folder.modules
@@ -113,7 +116,7 @@ export function SidebarFolderRenderer({
                   }}
                 >
                   <Icon size={18} />
-                  <span>{module.name}</span>
+                  <span>{getModuleDisplayName(module.id, module.name)}</span>
                 </button>
               </li>
             );

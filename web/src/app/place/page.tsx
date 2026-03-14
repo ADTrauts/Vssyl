@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MapPin, Compass, Users, Settings, Receipt, Zap, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { usePlace } from '../../contexts/PlaceContext';
@@ -12,9 +13,23 @@ import PlaceActivityFeed from '../../components/place/PlaceActivityFeed';
 import PlaceAnalyticsDashboard from '../../components/place/PlaceAnalyticsDashboard';
 import PlacePrivacySettings from '../../components/place/PlacePrivacySettings';
 
+const PLACE_TABS = ['my-place', 'explore', 'meetings', 'feed', 'analytics'] as const;
+
 export default function PlacePage() {
+  const searchParams = useSearchParams();
   const { place, loading, activeTab, setActiveTab } = usePlace();
   const [showPrivacy, setShowPrivacy] = useState(false);
+
+  // Deep link: sync tab and highlight from URL on load
+  useEffect(() => {
+    if (!searchParams) return;
+    const tab = searchParams.get('tab');
+    if (tab && (PLACE_TABS as readonly string[]).includes(tab)) {
+      setActiveTab(tab as (typeof PLACE_TABS)[number]);
+    }
+  }, [searchParams, setActiveTab]);
+
+  const highlightBusinessId = searchParams?.get('highlight') ?? undefined;
 
   if (loading) {
     return (
@@ -216,7 +231,7 @@ export default function PlacePage() {
           activeTab === 'feed' ? 'Activity feed' : 'Analytics insights'
         }
       >
-        {activeTab === 'my-place' && <PlaceGraph />}
+        {activeTab === 'my-place' && <PlaceGraph highlightBusinessId={highlightBusinessId} />}
         {activeTab === 'explore' && <PlaceExplore />}
         {activeTab === 'meetings' && <PlaceMeetings />}
         {activeTab === 'feed' && <PlaceActivityFeed />}
