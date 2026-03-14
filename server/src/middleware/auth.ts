@@ -137,7 +137,8 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
       regionId: true,
       townId: true,
       locationDetectedAt: true,
-      locationUpdatedAt: true
+      locationUpdatedAt: true,
+      lastActiveAt: true
     } as const;
 
     const user = await prisma.user.findUnique({
