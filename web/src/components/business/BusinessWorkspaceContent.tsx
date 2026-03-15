@@ -637,11 +637,14 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
         return <BusinessAnalyticsWidget />;
       case 'members':
         return <BusinessMembersWidget />;
+      case 'connections':
+        // Business context: "Connections" → same as Members (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
+        return <BusinessMembersWidget />;
       case 'ai':
         return (
           <AIWidget
             id="business-ai"
-            dashboardId={business.id}
+            dashboardId={businessDashboardId ?? undefined}
             dashboardType="business"
             dashboardName={business.name}
           />

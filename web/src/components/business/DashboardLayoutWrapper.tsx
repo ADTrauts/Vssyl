@@ -135,6 +135,11 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
 
   const modules = getAvailableModules();
 
+  // In business workspace, only show dashboard + modules installed for this business (per core rules: "Employees only see business-enabled modules")
+  const displayModules = isBusinessContext
+    ? modules.filter((m) => m.id === 'dashboard' || (m as { businessModule?: boolean }).businessModule === true)
+    : modules;
+
   // Load business data client-side if prop is null
   useEffect(() => {
     async function loadBusiness() {
@@ -389,6 +394,11 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
       router.push(`/business/${businessId}/workspace/members`);
       return;
     }
+    // In business context, "Connections" → Members (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
+    if (moduleId === 'connections') {
+      router.push(`/business/${businessId}/workspace/members`);
+      return;
+    }
     router.push(`/business/${businessId}/workspace?module=${moduleId}`);
   };
 
@@ -402,9 +412,9 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const hasNestedSegments = pathSegments.length > 1;
   // When on /workspace/members, current module is 'members'
   const currentModule = pathModule || getCurrentModule();
-  // Display name for sidebar: in business context show "Members" for members module
+  // Display name for sidebar: in business context show "Members" for members and connections (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
   const getModuleDisplayName = (moduleId: string, name: string) =>
-    isBusinessContext && moduleId === 'members' ? 'Members' : name;
+    isBusinessContext && (moduleId === 'members' || moduleId === 'connections') ? 'Members' : name;
   const shouldRenderNestedRoute = hasNestedSegments;
 
   // Show loading state while session is being determined
@@ -475,7 +485,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                 {(() => {
                   // If no config exists, show flat list (fallback)
                   if (!leftSidebarConfig) {
-                    return modules.map(m => {
+                    return displayModules.map(m => {
                   const Icon = MODULE_ICONS[m.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
                   const isActive = currentModule === m.id;
                   return (
@@ -532,7 +542,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                             ...folder,
                             collapsed: collapsedFolders.has(folder.id),
                           }}
-                          modules={modules}
+                          modules={displayModules}
                           onToggleCollapse={handleToggleCollapse}
                           onModuleClick={navigateToModule}
                           activeModuleId={currentModule || undefined}
@@ -543,7 +553,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
 
                       {/* Loose Modules */}
                       {sortedLooseModules.map(moduleRef => {
-                        const module = modules.find(m => m.id === moduleRef.id);
+                        const module = displayModules.find(m => m.id === moduleRef.id);
                         if (!module) return null;
                         const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
                         const isActive = currentModule === module.id;
@@ -669,7 +679,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           opacity: 1,
         }}>
           {/* Fixed Top: Dashboard */}
-          {modules.filter(m => m.id === 'dashboard').map(module => {
+          {displayModules.filter(m => m.id === 'dashboard').map(module => {
             const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
             const isActive = currentModule === module.id;
             return (
@@ -708,8 +718,8 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
               .map(m => m.id) || [];
             
             return pinnedModuleIds
-              .map(id => modules.find(m => m.id === id))
-              .filter((module): module is typeof modules[0] => module !== undefined)
+              .map(id => displayModules.find(m => m.id === id))
+              .filter((module): module is typeof displayModules[0] => module !== undefined)
               .map(module => {
                 const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
                 const isActive = currentModule === module.id;
@@ -746,10 +756,10 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           
           {/* Fixed Bottom: AI Assistant, Modules, Trash */}
           <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') ? 'text-white' : 'text-gray-300'}`}
+            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? 'text-white' : 'text-gray-300'}`}
             style={{
-              background: pathname?.startsWith('/ai-chat') ? '#9333ea' : 'transparent',
-              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#cbd5e1',
+              background: pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? '#9333ea' : 'transparent',
+              color: pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? '#fff' : '#cbd5e1',
               border: 'none',
               outline: 'none',
               cursor: 'pointer',
@@ -764,10 +774,15 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
             }}
             onClick={() => {
               try {
-                router.push('/ai-chat');
+                // Stay in business context: open in-workspace AI (conversations scoped to business dashboard)
+                if (effectiveBusiness?.id) {
+                  router.push(`/business/${effectiveBusiness.id}/workspace?module=ai`);
+                } else {
+                  router.push('/ai-chat');
+                }
               } catch (error) {
                 console.error('Error navigating to AI chat:', error);
-                window.location.href = '/ai-chat';
+                window.location.href = effectiveBusiness?.id ? `/business/${effectiveBusiness.id}/workspace?module=ai` : '/ai-chat';
               }
             }}
             title="AI Chat"
