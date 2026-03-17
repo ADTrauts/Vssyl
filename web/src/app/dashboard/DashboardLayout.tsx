@@ -31,6 +31,7 @@ import { DragEndEvent } from '@dnd-kit/core';
 import { SidebarCustomizationModal } from '../../components/sidebar/SidebarCustomizationModal';
 import { SidebarCustomizationProvider, useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { SidebarFolderRenderer } from '../../components/sidebar/SidebarFolderRenderer';
+import type { LeftSidebarConfig } from '../../types/sidebar';
 
 // Add CSS styles for enhanced drag and drop UX
 const dragStyles = `
@@ -245,6 +246,34 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       setCollapsedFolders(new Set());
     }
   }, [dashboardTabId, leftSidebarConfig, getConfigForTab]);
+
+  // Default left sidebar config when none is saved (so home/new tabs use same folder-based sidebar as Place/main)
+  const defaultLeftSidebarConfig: LeftSidebarConfig | null = useMemo(() => {
+    const defaultFolders = [
+      {
+        id: 'core-apps',
+        name: 'Core Apps',
+        icon: 'grid',
+        modules: [
+          { id: 'drive', order: 0 },
+          { id: 'chat', order: 1 },
+          { id: 'calendar', order: 2 },
+        ],
+        collapsed: false,
+        order: 0,
+      },
+    ];
+    const modulesNotInFolders = modules.filter(m => !defaultFolders.some(f => f.modules.some(fm => fm.id === m.id)));
+    const dashboardModule = modulesNotInFolders.find(m => m.id === 'dashboard');
+    const otherModules = modulesNotInFolders.filter(m => m.id !== 'dashboard');
+    const looseModules: Array<{ id: string; order: number }> = [];
+    if (dashboardModule) looseModules.push({ id: dashboardModule.id, order: 0 });
+    otherModules.forEach((m, idx) => looseModules.push({ id: m.id, order: idx + 1 }));
+    return { folders: defaultFolders, looseModules };
+  }, [modules]);
+
+  // Use saved config when available, otherwise default (ensures all tabs get folder-based sidebar)
+  const effectiveLeftSidebarConfig = leftSidebarConfig ?? defaultLeftSidebarConfig;
   
   // Get right sidebar modules in correct order: Dashboard (top) -> Pinned -> AI/Modules/Trash (bottom)
   const getRightSidebarModules = useMemo(() => {
@@ -1033,50 +1062,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     // Show no modules when selecting business
                     null
                   ) : (
-                    // Show personal modules with folder organization
+                    // Show personal modules with folder organization (saved config or default so all tabs use same sidebar style)
                     (() => {
                       // Wait for config to load before showing anything (prevents flash of old content)
                       if (sidebarConfigLoading && !leftSidebarConfig) {
                         return null; // Don't render anything while loading
                       }
 
-                      // If no config exists after loading, show flat list (fallback)
-                      if (!leftSidebarConfig) {
-                        return modules.map(m => {
-                      const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[m.id] || LayoutDashboard;
-                      const isActive = pathname?.startsWith(`/${m.id}`);
-                      return (
-                        <li key={m.id} style={{ marginBottom: 8 }}>
-                          <button
-                            onClick={() => navigateToModule(m.id)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: '10px 12px',
-                              borderRadius: 8,
-                              background: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                              color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : '#fff',
-                              textDecoration: 'none',
-                              gap: 12,
-                              border: 'none',
-                              cursor: 'pointer',
-                              width: '100%',
-                              textAlign: 'left',
-                            }}
-                          >
-                            <Icon size={22} />
-                            <span>{m.name}</span>
-                          </button>
-                        </li>
-                      );
-                        });
-                      }
+                      // Use effective config (saved or default) so home/new tabs get folder-based sidebar like Place/main
+                      const config = effectiveLeftSidebarConfig;
+                      if (!config) return null;
 
                       // Render with folders and loose modules interleaved (same logic as customizer)
-                      const sortedFolders = [...leftSidebarConfig.folders].sort((a, b) => a.order - b.order);
+                      const sortedFolders = [...config.folders].sort((a, b) => a.order - b.order);
                       
                       // Sort loose modules, ensuring dashboard is always first
-                      const sortedLooseModules = [...leftSidebarConfig.looseModules].sort((a, b) => {
+                      const sortedLooseModules = [...config.looseModules].sort((a, b) => {
                         // Dashboard always comes first (order -1)
                         if (a.id === 'dashboard') return -1;
                         if (b.id === 'dashboard') return 1;

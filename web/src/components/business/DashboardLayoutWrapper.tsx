@@ -34,6 +34,7 @@ import { usePositionAwareModules } from '../PositionAwareModuleProvider';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { SidebarCustomizationModal } from '../sidebar/SidebarCustomizationModal';
 import { SidebarFolderRenderer } from '../sidebar/SidebarFolderRenderer';
+import type { LeftSidebarConfig } from '../../types/sidebar';
 import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 import { businessAPI } from '../../api/business';
 
@@ -139,6 +140,32 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const displayModules = isBusinessContext
     ? modules.filter((m) => m.id === 'dashboard' || (m as { businessModule?: boolean }).businessModule === true)
     : modules;
+
+  // Default left sidebar config when none is saved (business: Communication folder; keeps same folder-based sidebar)
+  const defaultLeftSidebarConfig: LeftSidebarConfig | null = React.useMemo(() => {
+    const defaultFolders = [
+      {
+        id: 'communication',
+        name: 'Communication',
+        icon: 'message-square',
+        modules: [
+          { id: 'chat', order: 0 },
+          { id: 'calendar', order: 1 },
+        ],
+        collapsed: false,
+        order: 0,
+      },
+    ];
+    const modulesNotInFolders = displayModules.filter(m => !defaultFolders.some(f => f.modules.some(fm => fm.id === m.id)));
+    const dashboardModule = modulesNotInFolders.find(m => m.id === 'dashboard');
+    const otherModules = modulesNotInFolders.filter(m => m.id !== 'dashboard');
+    const looseModules: Array<{ id: string; order: number }> = [];
+    if (dashboardModule) looseModules.push({ id: dashboardModule.id, order: 0 });
+    otherModules.forEach((m, idx) => looseModules.push({ id: m.id, order: idx + 1 }));
+    return { folders: defaultFolders, looseModules };
+  }, [displayModules]);
+
+  const effectiveLeftSidebarConfig = leftSidebarConfig ?? defaultLeftSidebarConfig;
 
   // Load business data client-side if prop is null
   useEffect(() => {
@@ -483,41 +510,13 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
             <nav>
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {(() => {
-                  // If no config exists, show flat list (fallback)
-                  if (!leftSidebarConfig) {
-                    return displayModules.map(m => {
-                  const Icon = MODULE_ICONS[m.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
-                  const isActive = currentModule === m.id;
-                  return (
-                    <li key={m.id} style={{ marginBottom: 8 }}>
-                      <button
-                        onClick={() => navigateToModule(m.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '10px 12px',
-                          borderRadius: 8,
-                          background: isActive ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                          color: isBusinessContext ? getSidebarStyles().color : '#fff',
-                          textDecoration: 'none',
-                          gap: 12,
-                          border: 'none',
-                          cursor: 'pointer',
-                          width: '100%',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <Icon size={22} />
-                        <span>{getModuleDisplayName(m.id, m.name)}</span>
-                          </button>
-                        </li>
-                      );
-                    });
-                  }
+                  // Use effective config (saved or default) so all tabs use same folder-based sidebar
+                  const config = effectiveLeftSidebarConfig;
+                  if (!config) return null;
 
-                  // Render with folders
-                  const sortedFolders = [...leftSidebarConfig.folders].sort((a, b) => a.order - b.order);
-                  const sortedLooseModules = [...leftSidebarConfig.looseModules].sort((a, b) => a.order - b.order);
+                  // Render with folders and loose modules
+                  const sortedFolders = [...config.folders].sort((a, b) => a.order - b.order);
+                  const sortedLooseModules = [...config.looseModules].sort((a, b) => a.order - b.order);
                   const textColor = isBusinessContext ? getSidebarStyles().color : '#fff';
 
                   const handleToggleCollapse = (folderId: string) => {
