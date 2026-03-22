@@ -1071,7 +1071,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
                       // Use effective config (saved or default) so home/new tabs get folder-based sidebar like Place/main
                       const config = effectiveLeftSidebarConfig;
-                      if (!config) return null;
+                      if (!config || !Array.isArray(config.folders) || !Array.isArray(config.looseModules)) return null;
 
                       // Render with folders and loose modules interleaved (same logic as customizer)
                       const sortedFolders = [...config.folders].sort((a, b) => a.order - b.order);
@@ -1696,9 +1696,11 @@ function DashboardLayoutWithModules({ children }: { children: React.ReactNode })
   
   return (
     <SidebarCustomizationProvider availableModules={availableModules}>
-      <DashboardLayoutInner>
-        {children}
-      </DashboardLayoutInner>
+      <ClientOnlyWrapper>
+        <DashboardLayoutInner>
+          {children}
+        </DashboardLayoutInner>
+      </ClientOnlyWrapper>
     </SidebarCustomizationProvider>
   );
 }

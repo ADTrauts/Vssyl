@@ -156,7 +156,7 @@ export default function AIWidget({
         createdAt: string;
         confidence: number;
         reasoning: string;
-        actions?: string[];
+        actions?: (string | Record<string, unknown>)[];
         userFeedback?: {
           rating: number;
           comment?: string;
@@ -167,7 +167,36 @@ export default function AIWidget({
         {},
         session?.accessToken
       );
-      
+
+      const normalizeAction = (raw: string | Record<string, unknown>): AIAction => {
+        if (typeof raw === 'string') {
+          return {
+            id: Math.random().toString(),
+            type: 'action',
+            module: 'ai',
+            operation: raw,
+            parameters: {},
+            requiresApproval: false,
+            affectedUsers: [],
+            reasoning: '',
+            status: 'pending'
+          };
+        }
+        const obj = raw as { description?: string; type?: string; module?: string; requiresApproval?: boolean; peopleAffected?: string[] };
+        const operationText = typeof obj.description === 'string' ? obj.description : (typeof (raw as { operation?: string }).operation === 'string' ? (raw as { operation: string }).operation : 'Action');
+        return {
+          id: Math.random().toString(),
+          type: (obj.type as string) || 'action',
+          module: (obj.module as string) || 'ai',
+          operation: operationText,
+          parameters: {},
+          requiresApproval: Boolean(obj.requiresApproval),
+          affectedUsers: Array.isArray(obj.peopleAffected) ? obj.peopleAffected : [],
+          reasoning: '',
+          status: 'pending'
+        };
+      };
+
       const formattedConversations = response.data.map(item => ({
         id: item.id,
         userQuery: item.userQuery,
@@ -175,17 +204,7 @@ export default function AIWidget({
         timestamp: new Date(item.createdAt),
         confidence: item.confidence,
         reasoning: item.reasoning,
-        actions: (item.actions || []).map(actionString => ({
-          id: Math.random().toString(),
-          type: 'action',
-          module: 'ai',
-          operation: actionString,
-          parameters: {} as Record<string, unknown>,
-          requiresApproval: false,
-          affectedUsers: [],
-          reasoning: '',
-          status: 'pending' as const
-        })),
+        actions: (item.actions || []).map(normalizeAction),
         feedback: item.userFeedback ? {
           rating: item.userFeedback.rating,
           comment: item.userFeedback.comment,
@@ -573,7 +592,7 @@ export default function AIWidget({
                               {conversation.actions.map((action, index) => (
                                 <div key={index} className="flex items-center justify-between bg-blue-50 rounded px-2 py-1">
                                   <span className="text-xs text-blue-700">
-                                    {action.type}: {action.operation}
+                                    {action.type}: {typeof action.operation === 'string' ? action.operation : String((action.operation as Record<string, unknown>)?.description ?? 'Action')}
                                   </span>
                                   {action.requiresApproval && (
                                     <Badge size="sm" className="bg-yellow-100 text-yellow-800">Approval Required</Badge>
