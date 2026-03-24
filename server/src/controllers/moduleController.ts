@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, ModuleCategory } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -20,6 +20,19 @@ function asRecordJson(value: unknown): Record<string, unknown> {
   }
   return {};
 }
+
+/** Must match `ModuleCategory` in prisma schema */
+const VALID_MODULE_CATEGORIES = new Set([
+  'PRODUCTIVITY',
+  'COMMUNICATION',
+  'ANALYTICS',
+  'DEVELOPMENT',
+  'ENTERTAINMENT',
+  'EDUCATION',
+  'FINANCE',
+  'HEALTH',
+  'OTHER',
+]);
 
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
@@ -966,7 +979,8 @@ export const submitModule = async (req: Request, res: Response) => {
       dependencies,
       permissions,
       readme,
-      license
+      license,
+      screenshots: screenshotsBody,
     } = req.body;
 
     // Validate required fields
@@ -974,6 +988,20 @@ export const submitModule = async (req: Request, res: Response) => {
       return res.status(400).json({ 
         success: false, 
         error: 'Missing required fields: name, description, version, category' 
+      });
+    }
+
+    if (typeof category !== 'string' || !VALID_MODULE_CATEGORIES.has(category)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid category. Use one of: ${[...VALID_MODULE_CATEGORIES].join(', ')}`,
+      });
+    }
+
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Manifest is required and must be a JSON object',
       });
     }
 
@@ -1000,13 +1028,19 @@ export const submitModule = async (req: Request, res: Response) => {
     }
 
     // Create the module
+    const screenshots =
+      Array.isArray(screenshotsBody) && screenshotsBody.every((s: unknown) => typeof s === 'string')
+        ? (screenshotsBody as string[])
+        : [];
+
     const module = await prisma.module.create({
       data: {
         name,
         description,
         version,
-        category,
+        category: category as ModuleCategory,
         tags: tags || [],
+        screenshots,
         manifest,
         dependencies: dependencies || [],
         permissions: permissions || [],
@@ -1064,9 +1098,36 @@ export const submitModule = async (req: Request, res: Response) => {
         },
       },
     });
-  } catch (error) {
-    console.error('Error submitting module:', error);
-    res.status(500).json({ success: false, error: 'Failed to submit module' });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Error submitting module:', err);
+    void logger.error('Error submitting module', {
+      operation: 'submit_module',
+      error: { message: err.message, stack: err.stack },
+    });
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2021' || error.code === 'P2022') {
+        return res.status(503).json({
+          success: false,
+          error:
+            'Database is missing required tables or columns. Deploy the latest migrations, then retry.',
+          code: error.code,
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to submit module',
+        code: error.code,
+      });
+    }
+
+    const exposeMessage = process.env.NODE_ENV !== 'production';
+    res.status(500).json({
+      success: false,
+      error: exposeMessage ? err.message : 'Failed to submit module',
+      ...(exposeMessage && { stack: err.stack }),
+    });
   }
 };
 
