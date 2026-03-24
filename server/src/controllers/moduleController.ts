@@ -1858,10 +1858,15 @@ export const initModuleArtifactUpload = async (req: Request, res: Response) => {
       });
     }
 
-    if (!contentType.includes('zip')) {
+    const lowerName = fileName.toLowerCase();
+    const looksLikeZip =
+      contentType.includes('zip') ||
+      contentType.includes('x-zip-compressed') ||
+      lowerName.endsWith('.zip');
+    if (!looksLikeZip) {
       return res.status(400).json({
         success: false,
-        error: 'Only ZIP artifacts are supported for now',
+        error: 'Only ZIP artifacts are supported (use a .zip file or application/zip content type)',
       });
     }
 
@@ -1892,8 +1897,7 @@ export const initModuleArtifactUpload = async (req: Request, res: Response) => {
 
     const signedUpload = await storageService.getSignedUploadUrl(objectPath, contentType, 15 * 60);
 
-    // Use `as any` until prisma client is regenerated with new models.
-    await (prisma as any).moduleUploadSession.create({
+    await prisma.moduleUploadSession.create({
       data: {
         id: uploadSessionId,
         moduleId,
@@ -1917,13 +1921,35 @@ export const initModuleArtifactUpload = async (req: Request, res: Response) => {
         expiresAt: signedUpload.expiresAt,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     await logger.error('Failed to initialize module artifact upload', {
       operation: 'module_artifact_upload_init',
       error: { message: err.message, stack: err.stack },
     });
-    return res.status(500).json({ success: false, error: 'Failed to initialize artifact upload' });
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2021' || error.code === 'P2022') {
+        return res.status(503).json({
+          success: false,
+          error:
+            'Database is missing module upload tables. Apply the latest Prisma migrations on this environment.',
+          code: error.code,
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to initialize artifact upload',
+        code: error.code,
+      });
+    }
+
+    const expose = process.env.NODE_ENV !== 'production';
+    return res.status(500).json({
+      success: false,
+      error: expose ? err.message : 'Failed to initialize artifact upload',
+      ...(expose && { stack: err.stack }),
+    });
   }
 };
 
@@ -1947,7 +1973,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       return res.status(400).json({ success: false, error: 'version and manifest are required' });
     }
 
-    const session = await (prisma as any).moduleUploadSession.findUnique({
+    const session = await prisma.moduleUploadSession.findUnique({
       where: { id: uploadSessionId },
     });
 
@@ -1960,7 +1986,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
     }
 
     if (new Date(session.expiresAt).getTime() < Date.now()) {
-      await (prisma as any).moduleUploadSession.update({
+      await prisma.moduleUploadSession.update({
         where: { id: uploadSessionId },
         data: { status: 'EXPIRED' },
       });
@@ -1992,7 +2018,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       select: { id: true, name: true, version: true },
     });
 
-    const moduleVersion = await (prisma as any).moduleVersion.upsert({
+    const moduleVersion = await prisma.moduleVersion.upsert({
       where: { moduleId_version: { moduleId, version } },
       update: {
         status: 'READY_FOR_REVIEW',
@@ -2008,7 +2034,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       },
     });
 
-    const artifact = await (prisma as any).moduleArtifact.upsert({
+    const artifact = await prisma.moduleArtifact.upsert({
       where: { moduleVersionId: moduleVersion.id },
       update: {
         bucket: session.bucket,
@@ -2035,7 +2061,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       },
     });
 
-    await (prisma as any).moduleUploadSession.update({
+    await prisma.moduleUploadSession.update({
       where: { id: uploadSessionId },
       data: { status: 'FINALIZED' },
     });
@@ -2051,12 +2077,34 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
         scanSummary: baseline.scanSummary,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     await logger.error('Failed to finalize module artifact upload', {
       operation: 'module_artifact_upload_finalize',
       error: { message: err.message, stack: err.stack },
     });
-    return res.status(500).json({ success: false, error: 'Failed to finalize artifact upload' });
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2021' || error.code === 'P2022') {
+        return res.status(503).json({
+          success: false,
+          error:
+            'Database is missing module artifact tables. Apply the latest Prisma migrations on this environment.',
+          code: error.code,
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to finalize artifact upload',
+        code: error.code,
+      });
+    }
+
+    const expose = process.env.NODE_ENV !== 'production';
+    return res.status(500).json({
+      success: false,
+      error: expose ? err.message : 'Failed to finalize artifact upload',
+      ...(expose && { stack: err.stack }),
+    });
   }
 };
