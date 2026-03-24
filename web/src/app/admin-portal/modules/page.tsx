@@ -25,8 +25,22 @@ import {
   Star,
   Package,
   Brain,
-  Zap
+  Zap,
+  History
 } from 'lucide-react';
+
+interface ModuleVersionRow {
+  id: string;
+  version: string;
+  status: string;
+  isCurrent: boolean;
+  createdAt: string;
+  artifact: {
+    scanStatus: string;
+    sha256: string;
+    sizeBytes: number;
+  } | null;
+}
 
 interface ModuleSubmission {
   id: string;
@@ -150,6 +164,20 @@ export default function AdminModulesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([]);
+
+  const [versionByModuleId, setVersionByModuleId] = useState<
+    Record<string, ModuleVersionRow[] | 'loading' | 'error'>
+  >({});
+  const [promotePreviousModal, setPromotePreviousModal] = useState<{
+    moduleId: string;
+    moduleName: string;
+  } | null>(null);
+  const [promoteRowModal, setPromoteRowModal] = useState<{
+    moduleId: string;
+    moduleName: string;
+    version: string;
+  } | null>(null);
+  const [promoteLoading, setPromoteLoading] = useState(false);
   
   // AI Context Status state
   const [aiContextLoading, setAiContextLoading] = useState(false);
@@ -526,6 +554,64 @@ export default function AdminModulesPage() {
       setError('Failed to perform bulk action. Please try again.');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const canPromotePrevious = (versions: ModuleVersionRow[]): boolean => {
+    if (versions.length < 2) return false;
+    const currentIdx = versions.findIndex(v => v.isCurrent);
+    if (currentIdx === -1 || currentIdx >= versions.length - 1) return false;
+    const previous = versions[currentIdx + 1];
+    return previous.artifact?.scanStatus === 'PASSED';
+  };
+
+  const loadModuleVersions = useCallback(async (moduleId: string) => {
+    setVersionByModuleId(prev => ({ ...prev, [moduleId]: 'loading' }));
+    setError(null);
+    const res = await adminApiService.getModuleVersions(moduleId);
+    if (res.error) {
+      setVersionByModuleId(prev => ({ ...prev, [moduleId]: 'error' }));
+      setError(res.error);
+      return;
+    }
+    const list = res.data?.versions ?? [];
+    setVersionByModuleId(prev => ({ ...prev, [moduleId]: list }));
+  }, []);
+
+  const confirmPromotePrevious = async () => {
+    if (!promotePreviousModal) return;
+    setPromoteLoading(true);
+    setError(null);
+    const mid = promotePreviousModal.moduleId;
+    try {
+      const res = await adminApiService.promotePreviousModuleVersion(mid);
+      if (res.error) throw new Error(res.error);
+      setPromotePreviousModal(null);
+      await loadData();
+      await loadModuleVersions(mid);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Promotion failed');
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
+
+  const confirmPromoteVersion = async () => {
+    if (!promoteRowModal) return;
+    setPromoteLoading(true);
+    setError(null);
+    const mid = promoteRowModal.moduleId;
+    const ver = promoteRowModal.version;
+    try {
+      const res = await adminApiService.promoteModuleVersion(mid, ver);
+      if (res.error) throw new Error(res.error);
+      setPromoteRowModal(null);
+      await loadData();
+      await loadModuleVersions(mid);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Promotion failed');
+    } finally {
+      setPromoteLoading(false);
     }
   };
 
@@ -927,6 +1013,118 @@ export default function AdminModulesPage() {
                       </Button>
                     </div>
                   )}
+
+                  {submission.status === 'APPROVED' && (
+                    <div className="pt-4 border-t border-gray-200 mt-4 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <History className="w-4 h-4 text-gray-700" />
+                          Version history & rollback
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => loadModuleVersions(submission.module.id)}
+                            disabled={versionByModuleId[submission.module.id] === 'loading'}
+                          >
+                            {versionByModuleId[submission.module.id] === undefined
+                              ? 'Load version history'
+                              : 'Refresh versions'}
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            disabled={
+                              promoteLoading ||
+                              versionByModuleId[submission.module.id] === 'loading' ||
+                              versionByModuleId[submission.module.id] === 'error' ||
+                              versionByModuleId[submission.module.id] === undefined ||
+                              !Array.isArray(versionByModuleId[submission.module.id]) ||
+                              !canPromotePrevious(versionByModuleId[submission.module.id] as ModuleVersionRow[])
+                            }
+                            onClick={() =>
+                              setPromotePreviousModal({
+                                moduleId: submission.module.id,
+                                moduleName: submission.module.name,
+                              })
+                            }
+                          >
+                            Promote previous version
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-700">
+                        Promoting marks the chosen artifact-backed version as current for the marketplace. Requires a
+                        passed artifact scan.
+                      </p>
+
+                      {versionByModuleId[submission.module.id] === 'loading' && (
+                        <div className="flex justify-center py-4">
+                          <Spinner size={28} />
+                        </div>
+                      )}
+                      {versionByModuleId[submission.module.id] === 'error' && (
+                        <p className="text-sm text-gray-700">Could not load versions. Try again.</p>
+                      )}
+                      {Array.isArray(versionByModuleId[submission.module.id]) &&
+                        (versionByModuleId[submission.module.id] as ModuleVersionRow[]).length === 0 && (
+                          <p className="text-sm text-gray-700">
+                            No artifact versions on file yet. Versions appear after a developer uploads and finalizes a
+                            build.
+                          </p>
+                        )}
+                      {Array.isArray(versionByModuleId[submission.module.id]) &&
+                        (versionByModuleId[submission.module.id] as ModuleVersionRow[]).length > 0 && (
+                          <div className="overflow-x-auto rounded border border-gray-200">
+                            <table className="min-w-full text-sm">
+                              <thead className="bg-gray-50 text-left text-gray-700">
+                                <tr>
+                                  <th className="px-3 py-2 font-medium">Version</th>
+                                  <th className="px-3 py-2 font-medium">Status</th>
+                                  <th className="px-3 py-2 font-medium">Current</th>
+                                  <th className="px-3 py-2 font-medium">Scan</th>
+                                  <th className="px-3 py-2 font-medium">Uploaded</th>
+                                  <th className="px-3 py-2 font-medium">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(versionByModuleId[submission.module.id] as ModuleVersionRow[]).map(row => (
+                                  <tr key={row.id} className="border-t border-gray-100">
+                                    <td className="px-3 py-2 text-gray-900 font-mono">{row.version}</td>
+                                    <td className="px-3 py-2 text-gray-700">{row.status}</td>
+                                    <td className="px-3 py-2 text-gray-700">{row.isCurrent ? 'Yes' : '—'}</td>
+                                    <td className="px-3 py-2 text-gray-700">
+                                      {row.artifact?.scanStatus ?? '—'}
+                                    </td>
+                                    <td className="px-3 py-2 text-gray-700">{formatDate(row.createdAt)}</td>
+                                    <td className="px-3 py-2">
+                                      {!row.isCurrent &&
+                                        row.artifact?.scanStatus === 'PASSED' && (
+                                          <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            disabled={promoteLoading}
+                                            onClick={() =>
+                                              setPromoteRowModal({
+                                                moduleId: submission.module.id,
+                                                moduleName: submission.module.name,
+                                                version: row.version,
+                                              })
+                                            }
+                                          >
+                                            Promote
+                                          </Button>
+                                        )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -994,6 +1192,60 @@ export default function AdminModulesPage() {
                 'Approve Module'
               ) : (
                 'Reject Module'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!promotePreviousModal} onClose={() => !promoteLoading && setPromotePreviousModal(null)}>
+        <div className="p-6 max-w-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Promote previous version</h2>
+          {promotePreviousModal && (
+            <p className="text-sm text-gray-700 mb-4">
+              This will archive the current published version and make the immediately previous scanned version the
+              active one for <strong>{promotePreviousModal.moduleName}</strong>. Continue?
+            </p>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setPromotePreviousModal(null)} disabled={promoteLoading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={confirmPromotePrevious} disabled={promoteLoading}>
+              {promoteLoading ? (
+                <>
+                  <Spinner size={16} />
+                  Promoting…
+                </>
+              ) : (
+                'Confirm promote'
+              )}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!promoteRowModal} onClose={() => !promoteLoading && setPromoteRowModal(null)}>
+        <div className="p-6 max-w-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Promote this version</h2>
+          {promoteRowModal && (
+            <p className="text-sm text-gray-700 mb-4">
+              Set version <strong className="font-mono">{promoteRowModal.version}</strong> as the current published
+              version for <strong>{promoteRowModal.moduleName}</strong>?
+            </p>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setPromoteRowModal(null)} disabled={promoteLoading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={confirmPromoteVersion} disabled={promoteLoading}>
+              {promoteLoading ? (
+                <>
+                  <Spinner size={16} />
+                  Promoting…
+                </>
+              ) : (
+                'Confirm promote'
               )}
             </Button>
           </div>

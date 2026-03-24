@@ -26,6 +26,13 @@ export interface DeleteResult {
   error?: string;
 }
 
+export interface SignedUploadUrlResult {
+  url: string;
+  method: 'PUT';
+  expiresAt: string;
+  requiredHeaders: Record<string, string>;
+}
+
 export class StorageService {
   private static instance: StorageService;
   private config: StorageConfig;
@@ -255,6 +262,38 @@ export class StorageService {
       // For local storage, return the public URL (served through backend)
       return this.getPublicUrl(filePath);
     }
+  }
+
+  /**
+   * Get a signed URL for uploading a file directly to storage.
+   * Only supported for GCS provider.
+   */
+  async getSignedUploadUrl(
+    filePath: string,
+    contentType: string,
+    expiresInSeconds: number = 900
+  ): Promise<SignedUploadUrlResult> {
+    if (this.config.provider !== 'gcs' || !this.bucket) {
+      throw new Error('Signed upload URLs are only supported when STORAGE_PROVIDER=gcs');
+    }
+
+    const file = this.bucket.file(filePath);
+    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+    const [url] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'write',
+      expires: expiresAt,
+      contentType,
+    });
+
+    return {
+      url,
+      method: 'PUT',
+      expiresAt: expiresAt.toISOString(),
+      requiredHeaders: {
+        'Content-Type': contentType,
+      },
+    };
   }
 
   /**

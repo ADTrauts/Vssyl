@@ -78,8 +78,11 @@ export default function RunModulePage() {
         </div>
 
         <Card className="p-0">
-          <ModuleHost 
+          <ModuleHost
             entryUrl={config.frontend.entryUrl}
+            bundleRuntime={Boolean(config.frontend.bundleRuntime)}
+            bundleEntryPath={config.frontend.entryPath || 'index.html'}
+            artifactSignedUrl={config.artifactAccess?.signedUrl}
             moduleName={config.name}
             settings={config.settings}
           />

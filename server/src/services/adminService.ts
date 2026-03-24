@@ -2050,13 +2050,55 @@ export class AdminService {
         }
       });
 
-      // If approved, update module status
+      const latestVersion = await prisma.moduleVersion.findFirst({
+        where: { moduleId: submission.moduleId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // If approved, publish latest scanned version
       if (action === 'approve') {
+        if (latestVersion) {
+          const artifact = await prisma.moduleArtifact.findUnique({
+            where: { moduleVersionId: latestVersion.id },
+            select: { scanStatus: true },
+          });
+          if (!artifact || artifact.scanStatus !== 'PASSED') {
+            throw new Error('Module artifact scan must pass before approval');
+          }
+
+          await prisma.moduleVersion.updateMany({
+            where: { moduleId: submission.moduleId, isCurrent: true },
+            data: { isCurrent: false, status: 'ARCHIVED' },
+          });
+
+          await prisma.moduleVersion.update({
+            where: { id: latestVersion.id },
+            data: {
+              status: 'PUBLISHED',
+              isCurrent: true,
+              approvedBy: adminId,
+              approvedAt: new Date(),
+              reviewNotes: reviewNotes || undefined,
+            },
+          });
+        }
+
         await prisma.module.update({
           where: { id: submission.moduleId },
           data: {
-            status: 'APPROVED'
-          }
+            status: 'APPROVED',
+            version: latestVersion?.version || submission.module.version,
+          },
+        });
+      } else if (latestVersion) {
+        await prisma.moduleVersion.update({
+          where: { id: latestVersion.id },
+          data: {
+            status: 'REJECTED',
+            rejectedBy: adminId || null,
+            rejectedAt: new Date(),
+            reviewNotes: reviewNotes || undefined,
+          },
         });
       }
 
@@ -2114,6 +2156,203 @@ export class AdminService {
         }
       });
       throw new Error('Failed to perform bulk module action');
+    }
+  }
+
+  static async promoteModuleVersion(
+    moduleId: string,
+    version: string,
+    adminId: string
+  ): Promise<{
+    moduleId: string;
+    version: string;
+    previousCurrentVersion: string;
+  }> {
+    try {
+      const moduleRecord = await prisma.module.findUnique({
+        where: { id: moduleId },
+        select: { id: true, name: true, version: true },
+      });
+      if (!moduleRecord) {
+        throw new Error('Module not found');
+      }
+
+      const targetVersion = await prisma.moduleVersion.findUnique({
+        where: { moduleId_version: { moduleId, version } },
+        select: { id: true, version: true, isCurrent: true },
+      });
+      if (!targetVersion) {
+        throw new Error('Target version not found for this module');
+      }
+
+      const targetArtifact = await prisma.moduleArtifact.findUnique({
+        where: { moduleVersionId: targetVersion.id },
+        select: { scanStatus: true },
+      });
+      if (!targetArtifact || targetArtifact.scanStatus !== 'PASSED') {
+        throw new Error('Target version artifact scan must pass before promotion');
+      }
+
+      await prisma.$transaction(async tx => {
+        await tx.moduleVersion.updateMany({
+          where: { moduleId, isCurrent: true },
+          data: { isCurrent: false, status: 'ARCHIVED' },
+        });
+
+        await tx.moduleVersion.update({
+          where: { id: targetVersion.id },
+          data: {
+            isCurrent: true,
+            status: 'PUBLISHED',
+            approvedBy: adminId,
+            approvedAt: new Date(),
+          },
+        });
+
+        await tx.module.update({
+          where: { id: moduleId },
+          data: {
+            status: 'APPROVED',
+            version: targetVersion.version,
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: adminId,
+            action: 'MODULE_PROMOTE_PREVIOUS_VERSION',
+            details: JSON.stringify({
+              moduleId,
+              moduleName: moduleRecord.name,
+              promotedVersion: targetVersion.version,
+              previousCurrentVersion: moduleRecord.version,
+            }),
+            timestamp: new Date(),
+          },
+        });
+      });
+
+      return {
+        moduleId,
+        version: targetVersion.version,
+        previousCurrentVersion: moduleRecord.version,
+      };
+    } catch (error) {
+      await logger.error('Failed to promote module version', {
+        operation: 'admin_promote_module_version',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      throw new Error(error instanceof Error ? error.message : 'Failed to promote module version');
+    }
+  }
+
+  static async getModuleVersions(moduleId: string): Promise<
+    Array<{
+      id: string;
+      version: string;
+      status: string;
+      isCurrent: boolean;
+      createdAt: string;
+      artifact: {
+        scanStatus: string;
+        sha256: string;
+        sizeBytes: number;
+      } | null;
+    }>
+  > {
+    try {
+      const moduleExists = await prisma.module.findUnique({
+        where: { id: moduleId },
+        select: { id: true },
+      });
+      if (!moduleExists) {
+        throw new Error('Module not found');
+      }
+
+      const rows = await prisma.moduleVersion.findMany({
+        where: { moduleId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          artifact: {
+            select: { scanStatus: true, sha256: true, sizeBytes: true },
+          },
+        },
+      });
+
+      return rows.map(r => ({
+        id: r.id,
+        version: r.version,
+        status: r.status,
+        isCurrent: r.isCurrent,
+        createdAt: r.createdAt.toISOString(),
+        artifact: r.artifact
+          ? {
+              scanStatus: r.artifact.scanStatus,
+              sha256: r.artifact.sha256,
+              sizeBytes: r.artifact.sizeBytes,
+            }
+          : null,
+      }));
+    } catch (error) {
+      await logger.error('Failed to get module versions', {
+        operation: 'admin_get_module_versions',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      throw new Error(error instanceof Error ? error.message : 'Failed to get module versions');
+    }
+  }
+
+  static async promotePreviousModuleVersion(
+    moduleId: string,
+    adminId: string
+  ): Promise<{
+    moduleId: string;
+    version: string;
+    previousCurrentVersion: string;
+  }> {
+    try {
+      const versions = await prisma.moduleVersion.findMany({
+        where: { moduleId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          artifact: { select: { scanStatus: true } },
+        },
+      });
+
+      if (versions.length < 2) {
+        throw new Error('No previous version available to promote');
+      }
+
+      const currentIdx = versions.findIndex(v => v.isCurrent);
+      if (currentIdx === -1) {
+        throw new Error('No current version is set for this module');
+      }
+
+      const previous = versions[currentIdx + 1];
+      if (!previous) {
+        throw new Error('No previous version available to promote');
+      }
+
+      if (!previous.artifact || previous.artifact.scanStatus !== 'PASSED') {
+        throw new Error('Previous version artifact scan must pass before promotion');
+      }
+
+      return this.promoteModuleVersion(moduleId, previous.version, adminId);
+    } catch (error) {
+      await logger.error('Failed to promote previous module version', {
+        operation: 'admin_promote_previous_module_version',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      throw new Error(error instanceof Error ? error.message : 'Failed to promote previous module version');
     }
   }
 

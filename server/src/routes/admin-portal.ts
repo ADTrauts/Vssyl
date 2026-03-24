@@ -2314,6 +2314,136 @@ router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: R
   }
 });
 
+router.get('/modules/:moduleId/versions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { moduleId } = req.params;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const versions = await AdminService.getModuleVersions(moduleId);
+
+    await logger.info('Admin retrieved module versions', {
+      operation: 'admin_get_module_versions',
+      adminId: adminUser.id,
+      moduleId,
+    });
+
+    res.json({
+      success: true,
+      data: { versions },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get module versions';
+    const status = message === 'Module not found' ? 404 : 500;
+    await logger.error('Failed to get module versions', {
+      operation: 'admin_get_module_versions',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(status).json({ error: message });
+  }
+});
+
+router.post(
+  '/modules/:moduleId/versions/promote-previous',
+  authenticateJWT,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { moduleId } = req.params;
+      const adminUser = req.user;
+
+      if (!adminUser) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const result = await AdminService.promotePreviousModuleVersion(moduleId, adminUser.id);
+
+      await logger.info('Admin promoted previous module version', {
+        operation: 'admin_promote_previous_module_version',
+        adminId: adminUser.id,
+        moduleId,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to promote previous module version';
+      const status =
+        message === 'Module not found'
+          ? 404
+          : /No previous|must pass|No current/.test(message)
+            ? 400
+            : 500;
+      await logger.error('Failed to promote previous module version', {
+        operation: 'admin_promote_previous_module_version',
+        moduleId: req.params.moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
+router.post(
+  '/modules/:moduleId/versions/:version/promote',
+  authenticateJWT,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { moduleId, version } = req.params;
+      const adminUser = req.user;
+
+      if (!adminUser) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const result = await AdminService.promoteModuleVersion(moduleId, version, adminUser.id);
+
+      await logger.info('Admin promoted module version', {
+        operation: 'admin_promote_module_version',
+        adminId: adminUser.id,
+        moduleId,
+        version,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to promote module version';
+      const status =
+        message === 'Module not found' || message === 'Target version not found for this module'
+          ? 404
+          : /must pass/.test(message)
+            ? 400
+            : 500;
+      await logger.error('Failed to promote module version', {
+        operation: 'admin_promote_module_version',
+        moduleId: req.params.moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
 router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const adminUser = req.user;

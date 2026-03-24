@@ -8,6 +8,7 @@ import {
   PlaceNodeType,
   PlaceTransactionStatus,
   PlaceTransactionType,
+  Role,
 } from '@prisma/client';
 import { hash } from 'bcrypt';
 
@@ -25,6 +26,14 @@ async function ensureTestUsers() {
   for (const u of usersToEnsure) {
     const existing = await prisma.user.findUnique({ where: { email: u.email } });
     if (existing) {
+      if (u.email === MAIN_USER_EMAIL && existing.role !== Role.ADMIN) {
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: { role: Role.ADMIN },
+        });
+        // eslint-disable-next-line no-console
+        console.log(`✅ Promoted ${MAIN_USER_EMAIL} to platform ADMIN (admin portal access)`);
+      }
       createdUsers.push({ email: existing.email, id: existing.id });
       // eslint-disable-next-line no-console
       console.log(`ℹ️  User already exists: ${existing.email}`);
@@ -38,6 +47,7 @@ async function ensureTestUsers() {
         name: u.name,
         password: passwordHash,
         emailVerified: new Date(),
+        role: u.email === MAIN_USER_EMAIL ? Role.ADMIN : Role.USER,
       },
     });
 

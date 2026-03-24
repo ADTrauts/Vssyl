@@ -136,10 +136,31 @@ export interface ModuleRuntimeConfig {
   name: string;
   version: string;
   runtime: { apiVersion: string };
-  frontend: { entryUrl: string };
+  frontend: {
+    entryUrl: string;
+    /** Relative path inside the zip when running from artifact (no hosted entryUrl). */
+    entryPath?: string;
+    /** When true, load the published zip via `artifactAccess.signedUrl` and mount the HTML entry in an iframe (blob URL). */
+    bundleRuntime?: boolean;
+  };
   permissions: string[];
   settings: Record<string, unknown>;
   accessContext?: { scope: 'personal' | 'business'; businessId?: string };
+  /** Present when the current published module version has a stored artifact (e.g. GCS zip). */
+  artifactAccess?: {
+    signedUrl: string;
+    expiresAt: string;
+    sha256: string;
+    contentType: string;
+  };
+  runtimeResolution?: {
+    source: 'artifact_version' | 'legacy_manifest';
+    moduleVersionId?: string;
+    semver: string;
+    legacyHostedFallback?: boolean;
+    bundleRuntime?: boolean;
+    bundleEntryPath?: string;
+  };
 }
 
 // Get installed modules for current user
@@ -245,6 +266,26 @@ export const configureModule = async (
   return response.data;
 };
 
+/** Response from POST /api/modules/submit (includes nested module for follow-up upload). */
+export interface SubmitModuleResult {
+  message: string;
+  submission: {
+    id: string;
+    moduleId: string;
+    status: string;
+    module: {
+      id: string;
+      name: string;
+      version: string;
+    };
+  };
+  submissionPolicy?: {
+    hostedUrlOnlyDeprecation: 'soft';
+    message: string;
+    mandatoryArtifactCutoffDays: number;
+  };
+}
+
 // Submit a module
 export const submitModule = async (moduleData: {
   name: string;
@@ -257,13 +298,113 @@ export const submitModule = async (moduleData: {
   permissions: string[];
   readme: string;
   license: string;
-}): Promise<{ message: string; submission: ModuleSubmission }> => {
-  const response = await authenticatedApiCall<{ success: boolean; data: { message: string; submission: ModuleSubmission } }>('/api/modules/submit', {
+}): Promise<SubmitModuleResult> => {
+  const response = await authenticatedApiCall<{ success: boolean; data: SubmitModuleResult }>('/api/modules/submit', {
     method: 'POST',
     body: JSON.stringify(moduleData),
   });
   return response.data;
 };
+
+/** Hard limit aligned with server (see moduleController init upload). */
+export const MAX_MODULE_ARTIFACT_BYTES = 500 * 1024 * 1024;
+
+export interface InitModuleArtifactUploadResult {
+  uploadSessionId: string;
+  signedUploadUrl: string;
+  method: string;
+  requiredHeaders: Record<string, string>;
+  objectPath: string;
+  expiresAt: string;
+}
+
+/** Request GCS signed PUT URL for a module version artifact (ZIP). */
+export async function initModuleArtifactUpload(
+  moduleId: string,
+  params: { version: string; fileName: string; contentType: string; sizeBytes: number }
+): Promise<InitModuleArtifactUploadResult> {
+  const response = await authenticatedApiCall<{ success: boolean; data: InitModuleArtifactUploadResult }>(
+    `/api/modules/${encodeURIComponent(moduleId)}/uploads/init`,
+    {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }
+  );
+  return response.data;
+}
+
+/** After direct upload to GCS, persist artifact + version rows. */
+export async function finalizeModuleArtifactUpload(
+  moduleId: string,
+  uploadSessionId: string,
+  body: {
+    version: string;
+    manifest: Record<string, unknown>;
+    permissions: string[];
+    dependencies: string[];
+  }
+): Promise<{ message?: string; moduleVersionId?: string; artifactId?: string; scanStatus?: string }> {
+  const response = await authenticatedApiCall<{
+    success: boolean;
+    data: { message?: string; moduleVersionId?: string; artifactId?: string; scanStatus?: string };
+  }>(
+    `/api/modules/${encodeURIComponent(moduleId)}/uploads/${encodeURIComponent(uploadSessionId)}/finalize`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+  );
+  return response.data;
+}
+
+/**
+ * Upload a ZIP to GCS using signed URL from init, then finalize metadata.
+ * Uses a long timeout for the PUT (large bundles).
+ */
+export async function uploadModuleArtifactZip(
+  moduleId: string,
+  file: File,
+  version: string,
+  manifest: Record<string, unknown>,
+  permissions: string[],
+  dependencies: string[]
+): Promise<void> {
+  if (file.size > MAX_MODULE_ARTIFACT_BYTES) {
+    throw new Error('Artifact exceeds 500 MB limit');
+  }
+  const contentType = file.type && file.type.includes('zip') ? file.type : 'application/zip';
+  const init = await initModuleArtifactUpload(moduleId, {
+    version,
+    fileName: file.name,
+    contentType,
+    sizeBytes: file.size,
+  });
+
+  const controller = new AbortController();
+  const putTimeout = setTimeout(() => controller.abort(), 600_000); // 10 min for large zips
+
+  try {
+    const putRes = await fetch(init.signedUploadUrl, {
+      method: init.method || 'PUT',
+      headers: init.requiredHeaders,
+      body: file,
+      signal: controller.signal,
+    });
+    if (!putRes.ok) {
+      const t = await putRes.text().catch(() => '');
+      throw new Error(`Storage upload failed (${putRes.status})${t ? `: ${t.slice(0, 200)}` : ''}`);
+    }
+  } finally {
+    clearTimeout(putTimeout);
+  }
+
+  await finalizeModuleArtifactUpload(moduleId, init.uploadSessionId, {
+    version,
+    manifest,
+    permissions,
+    dependencies,
+  });
+}
 
 // Get module submissions (admin only)
 export const getModuleSubmissions = async (): Promise<ModuleSubmission[]> => {

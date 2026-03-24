@@ -748,6 +748,56 @@ class AdminApiService {
     });
   }
 
+  async getModuleVersions(moduleId: string): Promise<
+    ApiResponse<{
+      versions: Array<{
+        id: string;
+        version: string;
+        status: string;
+        isCurrent: boolean;
+        createdAt: string;
+        artifact: {
+          scanStatus: string;
+          sha256: string;
+          sizeBytes: number;
+        } | null;
+      }>;
+    }>
+  > {
+    return this.makeRequest(`/modules/${encodeURIComponent(moduleId)}/versions`, {
+      method: 'GET',
+    });
+  }
+
+  async promotePreviousModuleVersion(moduleId: string): Promise<
+    ApiResponse<{
+      moduleId: string;
+      version: string;
+      previousCurrentVersion: string;
+    }>
+  > {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/versions/promote-previous`,
+      { method: 'POST' }
+    );
+  }
+
+  async promoteModuleVersion(
+    moduleId: string,
+    version: string
+  ): Promise<
+    ApiResponse<{
+      moduleId: string;
+      version: string;
+      previousCurrentVersion: string;
+    }>
+  > {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/versions/${encodeURIComponent(version)}/promote`,
+      { method: 'POST' }
+    );
+  }
+
   async bulkModuleAction(
     submissionIds: string[], 
     action: 'approve' | 'reject'

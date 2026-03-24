@@ -11,9 +11,12 @@ import {
   submitModule,
   getModuleSubmissions,
   reviewModuleSubmission,
+  promoteModuleVersion,
   getUserSubmissions,
   linkModuleToBusiness,
-  getBusinessModules
+  getBusinessModules,
+  initModuleArtifactUpload,
+  finalizeModuleArtifactUpload
 } from '../controllers/moduleController';
 
 const router: express.Router = express.Router();
@@ -27,8 +30,30 @@ router.get('/marketplace', getMarketplaceModules);
 // Get module categories
 router.get('/categories', getModuleCategories);
 
-// Get module details
-router.get('/:moduleId', getModuleDetails);
+// Submit a module
+router.post('/submit', submitModule);
+
+// Get module submissions (admin only)
+router.get('/submissions', getModuleSubmissions);
+
+// Get user's submissions
+router.get('/user/submissions', getUserSubmissions);
+
+// Review a module submission (admin only)
+router.post('/submissions/:submissionId/review', reviewModuleSubmission);
+
+// Promote a previous version to current published (admin only)
+router.post('/:moduleId/versions/:version/promote', promoteModuleVersion);
+
+// Link module to business
+router.post('/link-business', linkModuleToBusiness);
+
+// Get modules for a specific business
+router.get('/business/:businessId', getBusinessModules);
+
+// Artifact upload flow
+router.post('/:moduleId/uploads/init', initModuleArtifactUpload);
+router.post('/:moduleId/uploads/:uploadSessionId/finalize', finalizeModuleArtifactUpload);
 
 // Get module runtime config
 router.get('/:moduleId/runtime', getModuleRuntimeConfig);
@@ -42,22 +67,7 @@ router.delete('/:moduleId/uninstall', uninstallModule);
 // Configure a module
 router.put('/:moduleId/configure', configureModule);
 
-// Submit a module
-router.post('/submit', submitModule);
-
-// Get module submissions (admin only)
-router.get('/submissions', getModuleSubmissions);
-
-// Get user's submissions
-router.get('/user/submissions', getUserSubmissions);
-
-// Review a module submission (admin only)
-router.post('/submissions/:submissionId/review', reviewModuleSubmission);
-
-// Link module to business
-router.post('/link-business', linkModuleToBusiness);
-
-// Get modules for a specific business
-router.get('/business/:businessId', getBusinessModules);
+// Get module details
+router.get('/:moduleId', getModuleDetails);
 
 export default router; 

@@ -3,7 +3,11 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Input, Textarea, Badge, Alert, Spinner } from 'shared/components';
-import { submitModule } from '../../../api/modules';
+import {
+  submitModule,
+  uploadModuleArtifactZip,
+  MAX_MODULE_ARTIFACT_BYTES,
+} from '../../../api/modules';
 import BusinessCreationModal from '../../../components/BusinessCreationModal';
 import { 
   Upload, 
@@ -92,6 +96,8 @@ export default function SubmitModulePage() {
   const [tagInput, setTagInput] = useState('');
   const [permissionInput, setPermissionInput] = useState('');
   const [dependencyInput, setDependencyInput] = useState('');
+  const [artifactFile, setArtifactFile] = useState<File | null>(null);
+  const [artifactUploadLabel, setArtifactUploadLabel] = useState<string | null>(null);
 
   const addTag = () => {
     if (tagInput.trim() && !submission.tags.includes(tagInput.trim())) {
@@ -186,14 +192,28 @@ export default function SubmitModulePage() {
     }
   };
 
+  const isValidArtifactZip = (file: File | null): boolean => {
+    if (!file || file.size <= 0 || file.size > MAX_MODULE_ARTIFACT_BYTES) return false;
+    const nameOk = file.name.toLowerCase().endsWith('.zip');
+    const typeOk =
+      !file.type ||
+      file.type.includes('zip') ||
+      file.type === 'application/x-zip-compressed';
+    return nameOk && typeOk;
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
         return submission.name.trim() !== '' && 
                submission.description.trim() !== '' && 
                submission.category !== '';
-      case 2:
+      case 2: {
+        if (artifactFile) {
+          return isValidArtifactZip(artifactFile);
+        }
         return isValidHttpsUrl(submission.manifest.frontend?.entryUrl || '');
+      }
       case 3:
         return submission.readme.trim() !== '' && 
                submission.license !== '';
@@ -249,17 +269,30 @@ export default function SubmitModulePage() {
       };
 
       const response = await submitModule(submissionData);
-      
+      const moduleId = response.submission.module.id;
+
+      if (artifactFile) {
+        setArtifactUploadLabel('Uploading artifact to secure storage…');
+        await uploadModuleArtifactZip(
+          moduleId,
+          artifactFile,
+          submission.version,
+          submissionData.manifest as unknown as Record<string, unknown>,
+          submission.manifest.permissions,
+          submission.manifest.dependencies
+        );
+        setArtifactUploadLabel(null);
+      }
+
       setSuccess(true);
       setSubmittedModuleName(submission.name);
-      
-      // Extract module ID from the response for business linking
-      const moduleId = response?.submission?.id;
-      setSubmittedModuleId(moduleId || null);
+      setSubmittedModuleId(moduleId);
       setShowBusinessModal(true);
     } catch (err) {
       console.error('Error submitting module:', err);
-      setError('Failed to submit module. Please try again.');
+      setArtifactUploadLabel(null);
+      const msg = err instanceof Error ? err.message : 'Failed to submit module. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -362,10 +395,40 @@ export default function SubmitModulePage() {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Configuration</h3>
+
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-gray-900">Artifact upload (recommended)</p>
+          <p className="mt-1 text-sm text-gray-700">
+            Upload your module as a <strong>.zip</strong> (max 500 MB). After you submit, we store it securely in
+            Google Cloud Storage for review and publishing. Hosted-URL-only submissions are deprecated and will be
+            phased out—use a zip when possible.
+          </p>
+          <div className="mt-3">
+            <input
+              type="file"
+              accept=".zip,application/zip,application/x-zip-compressed"
+              className="block w-full text-sm text-gray-700 file:mr-3 file:rounded file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                setArtifactFile(f);
+              }}
+            />
+            {artifactFile && (
+              <p className="mt-2 text-sm text-gray-700">
+                Selected: {artifactFile.name} ({(artifactFile.size / (1024 * 1024)).toFixed(2)} MB)
+              </p>
+            )}
+            {artifactFile && !isValidArtifactZip(artifactFile) && (
+              <p className="mt-2 text-sm text-red-700">
+                Use a .zip file under 500 MB. Content-Type should be zip-based.
+              </p>
+            )}
+          </div>
+        </div>
         
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Hosted Bundle URL (HTTPS) *
+            Hosted bundle URL (HTTPS){!artifactFile ? ' *' : ' (optional if zip uploaded)'}
           </label>
           <Input
             value={submission.manifest.frontend?.entryUrl || ''}
@@ -377,9 +440,13 @@ export default function SubmitModulePage() {
               }
             }))}
             placeholder="https://your-cdn.com/your-module/index.html"
-            required
+            required={!artifactFile}
           />
-          <p className="text-xs text-gray-500 mt-1">Provide a publicly accessible HTTPS URL to your module's entry HTML.</p>
+          <p className="text-xs text-gray-700 mt-1">
+            {artifactFile
+              ? 'Optional: iframe runtime still uses an HTTPS entry URL when provided. You can add this later before approval if needed.'
+              : 'Provide a publicly accessible HTTPS URL to your module\'s entry HTML (legacy path).'}
+          </p>
         </div>
 
         <div className="mb-6">
@@ -680,7 +747,9 @@ export default function SubmitModulePage() {
               {loading ? (
                 <>
                   <Spinner size={16} />
-                  {currentStep === 3 ? 'Submitting...' : 'Loading...'}
+                  {currentStep === 3
+                    ? artifactUploadLabel || 'Submitting...'
+                    : 'Loading...'}
                 </>
               ) : currentStep === 3 ? (
                 'Submit Module'

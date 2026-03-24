@@ -44,6 +44,8 @@ model Module {
   developerRevenue DeveloperRevenue[]
   businessInstallations BusinessModuleInstallation[]
   businessSubscriptions BusinessModuleSubscription[]
+  versions      ModuleVersion[]
+  uploadSessions ModuleUploadSession[]
   aiContextRegistry ModuleAIContextRegistry?
   aiPerformanceMetrics ModuleAIPerformanceMetric[]
 
@@ -146,4 +148,67 @@ model ModuleReview {
   @@index([moduleId])
   @@index([reviewerId])
   @@map("module_reviews")
+}
+
+model ModuleVersion {
+  id            String   @id @default(uuid())
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId      String
+  version       String
+  status        ModuleVersionStatus @default(DRAFT)
+  manifestSnapshot Json
+  submittedBy   String
+  approvedBy    String?
+  rejectedBy    String?
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  reviewNotes   String?
+  isCurrent     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  artifact      ModuleArtifact?
+
+  @@unique([moduleId, version])
+  @@index([moduleId, status])
+  @@index([moduleId, isCurrent])
+  @@map("module_versions")
+}
+
+model ModuleArtifact {
+  id            String   @id @default(uuid())
+  moduleVersion ModuleVersion @relation(fields: [moduleVersionId], references: [id], onDelete: Cascade)
+  moduleVersionId String @unique
+  bucket        String
+  objectPath    String
+  contentType   String
+  sizeBytes     Int
+  sha256        String
+  uploadedBy    String
+  uploadedAt    DateTime @default(now())
+  scanStatus    ModuleScanStatus @default(PENDING)
+  scanSummary   Json?
+
+  @@index([scanStatus])
+  @@index([uploadedBy])
+  @@map("module_artifacts")
+}
+
+model ModuleUploadSession {
+  id            String   @id @default(uuid())
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId      String
+  targetVersion String
+  uploaderId    String
+  bucket        String
+  objectPath    String
+  status        ModuleUploadSessionStatus @default(INITIATED)
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([moduleId, status])
+  @@index([uploaderId])
+  @@index([expiresAt])
+  @@map("module_upload_sessions")
 }

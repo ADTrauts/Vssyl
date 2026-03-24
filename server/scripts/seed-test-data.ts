@@ -93,6 +93,42 @@ async function seedTestData() {
       },
     });
 
+    /** Canonical local tester (same email/password as `server/src/scripts/seedPlaceDemoData.ts`). */
+    const placeTesterPassword = await bcrypt.hash('password123', 10);
+    const placeTester = await prisma.user.upsert({
+      where: { email: 'place.tester@vssyl.local' },
+      /** Platform ADMIN so local QA can use `/admin-portal` (module review, etc.). */
+      update: { role: 'ADMIN' },
+      create: {
+        email: 'place.tester@vssyl.local',
+        password: placeTesterPassword,
+        name: 'Vssyl Place Tester',
+        role: 'ADMIN',
+        emailVerified: new Date(),
+      },
+    });
+
+    await prisma.businessMember.upsert({
+      where: {
+        businessId_userId: {
+          businessId: testBusiness.id,
+          userId: placeTester.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: placeTester.id,
+        businessId: testBusiness.id,
+        role: 'ADMIN',
+        title: 'Place Tester',
+        department: 'QA',
+        isActive: true,
+        canInvite: true,
+        canManage: true,
+        canBilling: true,
+      },
+    });
+
     // Also add admin user as a member of the business
     const adminUser = await prisma.user.findUnique({
       where: { email: 'admin@blockonblock.com' },
@@ -291,12 +327,13 @@ async function seedTestData() {
 
     console.log('\n🎉 Test data seeding completed successfully!');
     console.log('\n📋 Summary of created data:');
-    console.log(`  - Users: ${testUser.email}, ${businessUser.email}`);
+    console.log(`  - Users: ${placeTester.email} (recommended), ${testUser.email}, ${businessUser.email}`);
     console.log(`  - Business: ${testBusiness.name} (${testBusiness.id})`);
     console.log(`  - Dashboards: Business Dashboard, Personal Dashboard`);
     console.log(`  - Widgets: Chat, Drive, Personal Chat`);
     console.log(`  - Conversation: Welcome to Test Business`);
     console.log('\n🔐 Test credentials:');
+    console.log(`  Primary local tester: ${placeTester.email} / password123`);
     console.log(`  Business User: ${businessUser.email} / business123`);
     console.log(`  Test User: ${testUser.email} / test123`);
     console.log(`  Admin: admin@blockonblock.com / admin123`);

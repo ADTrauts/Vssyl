@@ -20,6 +20,7 @@ import {
 import {
   PolicyEnforcementResult
 } from '../../../shared/dist/types/policies';
+import { validateModuleHostedUrl } from './moduleHostedUrlValidation';
 
 /**
  * Module Security Service
@@ -178,44 +179,8 @@ export class ModuleSecurityService extends EventEmitter {
    * Validate module URL for security compliance
    */
   private async validateModuleUrl(submissionData: Record<string, unknown>): Promise<{isValid: boolean; errors: string[]; warnings: string[]}> {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    try {
-      const manifest = submissionData.manifest as Record<string, unknown>;
-      const frontend = manifest?.frontend as Record<string, unknown>;
-      const entryUrl = frontend?.entryUrl as string;
-
-      if (!entryUrl || typeof entryUrl !== 'string') {
-        errors.push('manifest.frontend.entryUrl is required');
-        return { isValid: false, errors, warnings };
-      }
-
-      const parsed = new URL(entryUrl);
-      
-      // Check HTTPS requirement
-      if (parsed.protocol !== 'https:') {
-        errors.push('frontend.entryUrl must use HTTPS');
-      }
-
-      // Check for localhost (development only)
-      const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(parsed.hostname);
-      if (isLocalhost) {
-        warnings.push('Localhost URLs are only allowed for development');
-      }
-
-      // Check for suspicious domains
-      const suspiciousDomains = ['bit.ly', 'tinyurl.com', 'short.link'];
-      if (suspiciousDomains.some(domain => parsed.hostname.includes(domain))) {
-        warnings.push('URL shortening services are not recommended');
-      }
-
-      return { isValid: errors.length === 0, errors, warnings };
-
-    } catch (error) {
-      errors.push('Invalid frontend.entryUrl format');
-      return { isValid: false, errors, warnings };
-    }
+    const manifest = submissionData.manifest as Record<string, unknown> | undefined;
+    return validateModuleHostedUrl(manifest);
   }
 
   /**

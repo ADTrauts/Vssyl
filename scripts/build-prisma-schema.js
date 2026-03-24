@@ -121,6 +121,32 @@ enum ModuleCategory {
   OTHER
 }
 
+enum ModuleVersionStatus {
+  DRAFT
+  UPLOADED
+  SCANNING
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ModuleScanStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+}
+
+enum ModuleUploadSessionStatus {
+  INITIATED
+  UPLOADING
+  FINALIZED
+  EXPIRED
+  ABORTED
+}
+
 enum AIRequestStatus {
   PENDING
   APPROVED

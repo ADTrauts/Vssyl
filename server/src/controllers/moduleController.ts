@@ -1,14 +1,25 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { ModuleSecurityService } from '../services/moduleSecurityService';
 import { initializeHrScheduleForBusiness } from '../services/hrScheduleService';
+import { storageService } from '../services/storageService';
+import { runBaselineZipScan } from '../services/moduleArtifactBaselineScan';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
   return (req as AuthenticatedRequest).user;
 };
+
+function asRecordJson(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
 
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
@@ -1033,18 +1044,25 @@ export const submitModule = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ 
-      success: true, 
-      data: { 
+    res.json({
+      success: true,
+      data: {
         message: 'Module submitted successfully for review',
         submission,
         securityValidation: {
           securityScore: securityValidation.securityScore,
           status: securityValidation.validationDetails.securityStatus,
           warnings: securityValidation.warnings,
-          recommendations: securityValidation.recommendations
-        }
-      } 
+          recommendations: securityValidation.recommendations,
+        },
+        /** Phase 4 Day 0 — soft deprecation (see THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md). */
+        submissionPolicy: {
+          hostedUrlOnlyDeprecation: 'soft' as const,
+          message:
+            'Hosted-URL-only module delivery is deprecated. Prefer uploading a zip artifact after submit (GCS pipeline). Mandatory artifact cutoff per platform policy.',
+          mandatoryArtifactCutoffDays: 90,
+        },
+      },
     });
   } catch (error) {
     console.error('Error submitting module:', error);
@@ -1186,13 +1204,50 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
       }
     });
 
-    // If approved, update module status and sync AI context
+    // If approved/rejected, update module version status when available
+    const latestVersion = await prisma.moduleVersion.findFirst({
+      where: {
+        moduleId: submission.moduleId,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
     if (action === 'approve') {
+      if (latestVersion) {
+        const artifact = await prisma.moduleArtifact.findUnique({
+          where: { moduleVersionId: latestVersion.id },
+          select: { scanStatus: true },
+        });
+        if (!artifact || artifact.scanStatus !== 'PASSED') {
+          return res.status(400).json({
+            success: false,
+            error: 'Module artifact scan must pass before approval',
+          });
+        }
+
+        await prisma.moduleVersion.updateMany({
+          where: { moduleId: submission.moduleId, isCurrent: true },
+          data: { isCurrent: false, status: 'ARCHIVED' },
+        });
+
+        await prisma.moduleVersion.update({
+          where: { id: latestVersion.id },
+          data: {
+            status: 'PUBLISHED',
+            isCurrent: true,
+            approvedBy: user.id,
+            approvedAt: new Date(),
+            reviewNotes: reviewNotes || undefined,
+          },
+        });
+      }
+
       await prisma.module.update({
         where: { id: submission.moduleId },
         data: {
-          status: 'APPROVED'
-        }
+          status: 'APPROVED',
+          version: latestVersion?.version || submission.module.version,
+        },
       });
 
       // Sync module AI context to registry (non-blocking)
@@ -1205,6 +1260,16 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
         console.error(`⚠️  Failed to sync AI context for module ${submission.module.name}:`, syncError);
         console.error('   Module is approved, but AI context may need manual sync');
       }
+    } else if (latestVersion) {
+      await prisma.moduleVersion.update({
+        where: { id: latestVersion.id },
+        data: {
+          status: 'REJECTED',
+          rejectedBy: user.id,
+          rejectedAt: new Date(),
+          reviewNotes: reviewNotes || undefined,
+        },
+      });
     }
 
     res.json({ 
@@ -1217,6 +1282,115 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error reviewing module submission:', error);
     res.status(500).json({ success: false, error: 'Failed to review module submission' });
+  }
+};
+
+// Promote a previous module version to current (admin only)
+export const promoteModuleVersion = async (req: Request, res: Response) => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    if (user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Admin access required' });
+    }
+
+    const { moduleId, version } = req.params;
+    if (!moduleId || !version) {
+      return res.status(400).json({ success: false, error: 'moduleId and version are required' });
+    }
+
+    const moduleRecord = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: { id: true, name: true, version: true },
+    });
+    if (!moduleRecord) {
+      return res.status(404).json({ success: false, error: 'Module not found' });
+    }
+
+    const targetVersion = await prisma.moduleVersion.findUnique({
+      where: { moduleId_version: { moduleId, version } },
+      select: { id: true, version: true, isCurrent: true },
+    });
+    if (!targetVersion) {
+      return res.status(404).json({ success: false, error: 'Target version not found for this module' });
+    }
+
+    const targetArtifact = await prisma.moduleArtifact.findUnique({
+      where: { moduleVersionId: targetVersion.id },
+      select: { scanStatus: true },
+    });
+    if (!targetArtifact || targetArtifact.scanStatus !== 'PASSED') {
+      return res.status(400).json({ success: false, error: 'Target version artifact scan must pass before promotion' });
+    }
+
+    if (targetVersion.isCurrent) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          message: `Version ${version} is already the current published version`,
+          moduleId,
+          version,
+        },
+      });
+    }
+
+    await prisma.$transaction(async tx => {
+      await tx.moduleVersion.updateMany({
+        where: { moduleId, isCurrent: true },
+        data: { isCurrent: false, status: 'ARCHIVED' },
+      });
+
+      await tx.moduleVersion.update({
+        where: { id: targetVersion.id },
+        data: {
+          isCurrent: true,
+          status: 'PUBLISHED',
+          approvedBy: user.id,
+          approvedAt: new Date(),
+        },
+      });
+
+      await tx.module.update({
+        where: { id: moduleId },
+        data: {
+          status: 'APPROVED',
+          version: targetVersion.version,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'MODULE_PROMOTE_PREVIOUS_VERSION',
+          details: JSON.stringify({
+            moduleId,
+            moduleName: moduleRecord.name,
+            promotedVersion: targetVersion.version,
+            previousCurrentVersion: moduleRecord.version,
+          }),
+          timestamp: new Date(),
+        },
+      });
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        message: `Promoted version ${version} successfully`,
+        moduleId,
+        version,
+      },
+    });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to promote module version', {
+      operation: 'module_promote_previous_version',
+      error: { message: err.message, stack: err.stack },
+    });
+    return res.status(500).json({ success: false, error: 'Failed to promote module version' });
   }
 };
 
@@ -1436,35 +1610,392 @@ export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const manifest: any = (module as any).manifest || {};
-    const runtime = manifest.runtime || {};
-    const frontend = manifest.frontend || {};
-    const entryUrl = frontend.entryUrl;
+    const currentPublished = await prisma.moduleVersion.findFirst({
+      where: {
+        moduleId,
+        isCurrent: true,
+        status: 'PUBLISHED',
+      },
+      include: { artifact: true },
+    });
 
-    if (!entryUrl || typeof entryUrl !== 'string') {
-      return res.status(400).json({ success: false, error: 'Module manifest missing frontend.entryUrl' });
+    const legacyManifestRecord = asRecordJson(module.manifest);
+    const snapshotManifestRecord = currentPublished
+      ? asRecordJson(currentPublished.manifestSnapshot)
+      : {};
+
+    const runtimeSource: 'artifact_version' | 'legacy_manifest' = currentPublished
+      ? 'artifact_version'
+      : 'legacy_manifest';
+
+    /** Prefer published snapshot; fall back to module.manifest for hosted-only modules. */
+    const effectiveManifest =
+      currentPublished && Object.keys(snapshotManifestRecord).length > 0
+        ? snapshotManifestRecord
+        : legacyManifestRecord;
+
+    const runtimeSection = asRecordJson(effectiveManifest.runtime);
+    const frontendSection = asRecordJson(effectiveManifest.frontend);
+
+    let entryUrl: string | undefined =
+      typeof frontendSection.entryUrl === 'string' ? frontendSection.entryUrl.trim() : undefined;
+
+    const legacyFrontendOnly = asRecordJson(legacyManifestRecord.frontend);
+    const legacyEntryUrl =
+      typeof legacyFrontendOnly.entryUrl === 'string' ? legacyFrontendOnly.entryUrl.trim() : undefined;
+
+    if (!entryUrl && currentPublished && legacyEntryUrl) {
+      entryUrl = legacyEntryUrl;
     }
 
-    // Build a sanitized runtime config response
+    let bundleRuntime = false;
+    let bundleEntryPath = 'index.html';
+    if (!entryUrl && currentPublished?.artifact) {
+      if (currentPublished.artifact.scanStatus !== 'PASSED') {
+        return res.status(503).json({
+          success: false,
+          error: 'Module artifact scan must pass before this module can run from the bundle',
+        });
+      }
+      bundleRuntime = true;
+      const ep = frontendSection.entryPath;
+      if (typeof ep === 'string' && ep.trim()) {
+        bundleEntryPath = ep.trim().replace(/^\/+/u, '');
+      }
+    }
+
+    if (!entryUrl && !bundleRuntime) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Module manifest missing frontend.entryUrl. Add an HTTPS entry URL or provide a passing zip artifact with an HTML entry (use frontend.entryPath inside the manifest when needed).',
+      });
+    }
+
+    const resolvedVersion = currentPublished ? currentPublished.version : module.version;
+
+    const permissionsFromManifest = effectiveManifest.permissions;
+    const permissions = Array.isArray(permissionsFromManifest)
+      ? (permissionsFromManifest as string[])
+      : Array.isArray(module.permissions)
+        ? module.permissions
+        : [];
+
+    const settings =
+      effectiveManifest.settings && typeof effectiveManifest.settings === 'object'
+        ? (effectiveManifest.settings as Record<string, unknown>)
+        : {};
+
+    let artifactAccess:
+      | {
+          signedUrl: string;
+          expiresAt: string;
+          sha256: string;
+          contentType: string;
+        }
+      | undefined;
+
+    if (currentPublished?.artifact) {
+      try {
+        const expiresInSeconds = 900;
+        const signedUrl = await storageService.getSignedUrl(
+          currentPublished.artifact.objectPath,
+          expiresInSeconds
+        );
+        artifactAccess = {
+          signedUrl,
+          expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString(),
+          sha256: currentPublished.artifact.sha256,
+          contentType: currentPublished.artifact.contentType,
+        };
+      } catch (signErr: unknown) {
+        const err = signErr instanceof Error ? signErr : new Error(String(signErr));
+        await logger.warn('Failed to sign module artifact for runtime', {
+          operation: 'get_module_runtime_config',
+          moduleId,
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+    }
+
+    if (bundleRuntime && !artifactAccess) {
+      return res.status(503).json({
+        success: false,
+        error: 'Module bundle is not available (artifact URL could not be signed). Try again shortly.',
+      });
+    }
+
     const runtimeConfig = {
       id: module.id,
-      name: (module as any).name,
-      version: (module as any).version,
+      name: module.name,
+      version: resolvedVersion,
       runtime: {
-        apiVersion: typeof runtime.apiVersion === 'string' ? runtime.apiVersion : 'v1',
+        apiVersion:
+          typeof runtimeSection.apiVersion === 'string' ? runtimeSection.apiVersion : 'v1',
       },
       frontend: {
-        entryUrl,
+        entryUrl: entryUrl || '',
+        entryPath: bundleRuntime ? bundleEntryPath : undefined,
+        bundleRuntime,
       },
-      permissions: Array.isArray((module as any).permissions) ? (module as any).permissions : [],
-      settings: manifest.settings && typeof manifest.settings === 'object' ? manifest.settings : {},
+      permissions,
+      settings,
       accessContext: { scope, businessId: scope === 'business' ? businessId : undefined },
+      artifactAccess,
+      runtimeResolution: {
+        source: runtimeSource,
+        moduleVersionId: currentPublished?.id,
+        semver: resolvedVersion,
+        legacyHostedFallback:
+          runtimeSource === 'artifact_version' &&
+          Boolean(legacyEntryUrl && entryUrl && entryUrl === legacyEntryUrl),
+        bundleRuntime,
+        bundleEntryPath: bundleRuntime ? bundleEntryPath : undefined,
+      },
     };
 
     return res.json({ success: true, data: runtimeConfig });
-  } catch (error) {
-    console.error('Error getting module runtime config:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Error getting module runtime config', {
+      operation: 'get_module_runtime_config',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ success: false, error: 'Failed to get module runtime config' });
+  }
+};
+
+// Initialize direct-to-GCS upload for module artifacts
+export const initModuleArtifactUpload = async (req: Request, res: Response) => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { moduleId } = req.params;
+    const { version, fileName, contentType, sizeBytes } = req.body as {
+      version?: string;
+      fileName?: string;
+      contentType?: string;
+      sizeBytes?: number;
+    };
+
+    if (!version || !fileName || !contentType || typeof sizeBytes !== 'number') {
+      return res.status(400).json({
+        success: false,
+        error: 'version, fileName, contentType, and sizeBytes are required',
+      });
+    }
+
+    const maxSizeBytes = 500 * 1024 * 1024; // 500MB hard limit
+    if (sizeBytes <= 0 || sizeBytes > maxSizeBytes) {
+      return res.status(400).json({
+        success: false,
+        error: 'Artifact size exceeds allowed limit',
+        maxSizeBytes,
+      });
+    }
+
+    if (!contentType.includes('zip')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Only ZIP artifacts are supported for now',
+      });
+    }
+
+    const module = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: { id: true, developerId: true, name: true },
+    });
+
+    if (!module) {
+      return res.status(404).json({ success: false, error: 'Module not found' });
+    }
+
+    if (module.developerId !== user.id && user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Only the module developer can upload artifacts' });
+    }
+
+    if (storageService.getProvider() !== 'gcs' || !storageService.isGCSConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Artifact upload requires configured Google Cloud Storage',
+      });
+    }
+
+    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const objectPath = `modules/${moduleId}/versions/${version}/${Date.now()}-${safeName}`;
+    const uploadSessionId = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const signedUpload = await storageService.getSignedUploadUrl(objectPath, contentType, 15 * 60);
+
+    // Use `as any` until prisma client is regenerated with new models.
+    await (prisma as any).moduleUploadSession.create({
+      data: {
+        id: uploadSessionId,
+        moduleId,
+        targetVersion: version,
+        uploaderId: user.id,
+        bucket: process.env.GOOGLE_CLOUD_STORAGE_BUCKET || '',
+        objectPath,
+        status: 'INITIATED',
+        expiresAt,
+      },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        uploadSessionId,
+        signedUploadUrl: signedUpload.url,
+        method: signedUpload.method,
+        requiredHeaders: signedUpload.requiredHeaders,
+        objectPath,
+        expiresAt: signedUpload.expiresAt,
+      },
+    });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to initialize module artifact upload', {
+      operation: 'module_artifact_upload_init',
+      error: { message: err.message, stack: err.stack },
+    });
+    return res.status(500).json({ success: false, error: 'Failed to initialize artifact upload' });
+  }
+};
+
+// Finalize a GCS upload and persist artifact/version metadata
+export const finalizeModuleArtifactUpload = async (req: Request, res: Response) => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { moduleId, uploadSessionId } = req.params;
+    const { version, manifest, permissions, dependencies } = req.body as {
+      version?: string;
+      manifest?: Record<string, unknown>;
+      permissions?: string[];
+      dependencies?: string[];
+    };
+
+    if (!version || !manifest || typeof manifest !== 'object') {
+      return res.status(400).json({ success: false, error: 'version and manifest are required' });
+    }
+
+    const session = await (prisma as any).moduleUploadSession.findUnique({
+      where: { id: uploadSessionId },
+    });
+
+    if (!session || session.moduleId !== moduleId) {
+      return res.status(404).json({ success: false, error: 'Upload session not found' });
+    }
+
+    if (session.uploaderId !== user.id && user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied for this upload session' });
+    }
+
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
+      await (prisma as any).moduleUploadSession.update({
+        where: { id: uploadSessionId },
+        data: { status: 'EXPIRED' },
+      });
+      return res.status(400).json({ success: false, error: 'Upload session expired' });
+    }
+
+    const exists = await storageService.fileExists(session.objectPath);
+    if (!exists) {
+      return res.status(400).json({ success: false, error: 'Artifact not found in storage for this session' });
+    }
+
+    const fileBuffer = await storageService.getFileBuffer(session.objectPath);
+    const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    const sizeBytes = fileBuffer.length;
+
+    const baseline = runBaselineZipScan(fileBuffer, { objectPath: session.objectPath });
+    const scanStatus = baseline.scanStatus;
+    const scanSummary = baseline.scanSummary as Prisma.InputJsonValue;
+
+    const updatedModule = await prisma.module.update({
+      where: { id: moduleId },
+      data: {
+        version,
+        manifest: manifest as Prisma.InputJsonValue,
+        permissions: Array.isArray(permissions) ? permissions : [],
+        dependencies: Array.isArray(dependencies) ? dependencies : [],
+        status: 'PENDING',
+      },
+      select: { id: true, name: true, version: true },
+    });
+
+    const moduleVersion = await (prisma as any).moduleVersion.upsert({
+      where: { moduleId_version: { moduleId, version } },
+      update: {
+        status: 'READY_FOR_REVIEW',
+        manifestSnapshot: manifest as Prisma.InputJsonValue,
+        submittedBy: user.id,
+      },
+      create: {
+        moduleId,
+        version,
+        status: 'READY_FOR_REVIEW',
+        manifestSnapshot: manifest as Prisma.InputJsonValue,
+        submittedBy: user.id,
+      },
+    });
+
+    const artifact = await (prisma as any).moduleArtifact.upsert({
+      where: { moduleVersionId: moduleVersion.id },
+      update: {
+        bucket: session.bucket,
+        objectPath: session.objectPath,
+        contentType: 'application/zip',
+        sizeBytes,
+        sha256,
+        uploadedBy: user.id,
+        uploadedAt: new Date(),
+        scanStatus,
+        scanSummary,
+      },
+      create: {
+        moduleVersionId: moduleVersion.id,
+        bucket: session.bucket,
+        objectPath: session.objectPath,
+        contentType: 'application/zip',
+        sizeBytes,
+        sha256,
+        uploadedBy: user.id,
+        uploadedAt: new Date(),
+        scanStatus,
+        scanSummary,
+      },
+    });
+
+    await (prisma as any).moduleUploadSession.update({
+      where: { id: uploadSessionId },
+      data: { status: 'FINALIZED' },
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        message: 'Module artifact upload finalized',
+        module: updatedModule,
+        moduleVersionId: moduleVersion.id,
+        artifactId: artifact.id,
+        scanStatus: artifact.scanStatus,
+        scanSummary: baseline.scanSummary,
+      },
+    });
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to finalize module artifact upload', {
+      operation: 'module_artifact_upload_finalize',
+      error: { message: err.message, stack: err.stack },
+    });
+    return res.status(500).json({ success: false, error: 'Failed to finalize artifact upload' });
   }
 };
