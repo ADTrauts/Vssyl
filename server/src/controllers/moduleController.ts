@@ -34,6 +34,50 @@ const VALID_MODULE_CATEGORIES = new Set([
   'OTHER',
 ]);
 
+/** Safe hints for production clients when artifact upload init fails (GCS signing vs DB). */
+function classifyArtifactUploadInitError(err: Error): { errorCode: string; hint: string } {
+  const msg = err.message;
+  const lower = msg.toLowerCase();
+  if (/does not exist|relation .* does not exist|table .* does not exist/i.test(msg)) {
+    return {
+      errorCode: 'DB_SCHEMA_MISSING',
+      hint: 'Run prisma migrate deploy on the production database.',
+    };
+  }
+  if (
+    /sign|signblob|iamcredentials|token creator|does not have permission to sign|cannot sign/i.test(msg) ||
+    (lower.includes('pem') && lower.includes('invalid'))
+  ) {
+    return {
+      errorCode: 'GCS_SIGNING_FAILED',
+      hint:
+        'Cloud Run needs permission to create GCS V4 signed URLs: grant the runtime service account Storage access on the bucket and signing capability (e.g. roles/storage.objectAdmin on the bucket; roles/iam.serviceAccountTokenCreator on the service account for signBlob).',
+    };
+  }
+  if (/bucket|does not exist|not found|404|no such/i.test(lower) && /storage|gcs|bucket/i.test(lower)) {
+    return {
+      errorCode: 'GCS_BUCKET_OR_OBJECT',
+      hint: 'Verify GOOGLE_CLOUD_STORAGE_BUCKET and GOOGLE_CLOUD_PROJECT_ID point to an existing bucket.',
+    };
+  }
+  if (/permission|denied|forbidden|403|access denied/i.test(lower)) {
+    return {
+      errorCode: 'GCS_PERMISSION_DENIED',
+      hint: 'Grant the Cloud Run runtime service account roles/storage.objectAdmin (or equivalent) on the bucket.',
+    };
+  }
+  if (/default credentials|metadata|application default credentials|could not refresh/i.test(lower)) {
+    return {
+      errorCode: 'GCP_CREDENTIALS',
+      hint: 'Ensure Cloud Run uses a service account with Storage access (ADC on Cloud Run).',
+    };
+  }
+  return {
+    errorCode: 'UPLOAD_INIT_FAILED',
+    hint: 'Check server logs for operation module_artifact_upload_init.',
+  };
+}
+
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
   try {
@@ -1935,20 +1979,28 @@ export const initModuleArtifactUpload = async (req: Request, res: Response) => {
           error:
             'Database is missing module upload tables. Apply the latest Prisma migrations on this environment.',
           code: error.code,
+          errorCode: 'DB_SCHEMA_MISSING',
+          hint: 'Run prisma migrate deploy against the production DATABASE_URL.',
         });
       }
       return res.status(500).json({
         success: false,
         error: 'Failed to initialize artifact upload',
         code: error.code,
+        errorCode: `PRISMA_${error.code}`,
+        hint:
+          'Database error while creating upload session. Confirm migrations are applied and module_upload_sessions exists.',
       });
     }
 
     const expose = process.env.NODE_ENV !== 'production';
+    const classified = classifyArtifactUploadInitError(err);
     return res.status(500).json({
       success: false,
       error: expose ? err.message : 'Failed to initialize artifact upload',
-      ...(expose && { stack: err.stack }),
+      errorCode: classified.errorCode,
+      hint: classified.hint,
+      ...(expose && { detail: err.message, stack: err.stack }),
     });
   }
 };

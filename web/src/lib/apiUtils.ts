@@ -237,7 +237,11 @@ export async function authenticatedApiCall<T>(
 
       const hasBackendMessage = errorData && (errorData.error || errorData.message || errorData.details);
       let errorMessage: string;
-      if (hasBackendMessage) {
+      if (errorData && typeof errorData === 'object' && 'hint' in errorData && (errorData as { hint?: string }).hint) {
+        const ed = errorData as { error?: string; hint: string; errorCode?: string; code?: string };
+        const prefix = ed.errorCode || ed.code ? `[${ed.errorCode || ed.code}] ` : '';
+        errorMessage = `${prefix}${ed.error || 'Request failed'} — ${ed.hint}`;
+      } else if (hasBackendMessage) {
         errorMessage = errorData.error || errorData.message || errorData.details || 'Server error. Please try again later.';
       } else if (response.status === 502 || response.status === 503 || response.status === 504) {
         errorMessage = response.status === 504
