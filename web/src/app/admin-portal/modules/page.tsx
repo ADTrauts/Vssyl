@@ -426,45 +426,61 @@ export default function AdminModulesPage() {
     setProviderTestResults({});
 
     const results: Record<string, { success: boolean; error?: string; data?: unknown }> = {};
+    let cachedBusinessId: string | undefined;
+
+    const getDefaultBusinessId = async (): Promise<string | undefined> => {
+      if (cachedBusinessId) return cachedBusinessId;
+      try {
+        const response = await fetch('/api/business', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) return undefined;
+        const payload = await response.json();
+        const businesses = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.businesses)
+            ? payload.businesses
+            : Array.isArray(payload?.data?.businesses)
+              ? payload.data.businesses
+              : [];
+        const firstBusinessId = businesses.find((b: unknown) => {
+          if (!b || typeof b !== 'object') return false;
+          return 'id' in b && typeof (b as { id?: unknown }).id === 'string';
+        }) as { id: string } | undefined;
+        if (firstBusinessId?.id && firstBusinessId.id.length > 0) {
+          cachedBusinessId = firstBusinessId.id;
+          return firstBusinessId.id;
+        }
+      } catch {
+        // No-op: businessId fallback is best-effort for provider tests
+      }
+      return undefined;
+    };
 
     // Test each context provider endpoint
     for (const provider of module.aiContext.contextProviders) {
       try {
         const endpoint = provider.endpoint;
-        
-        // Endpoints are stored as `/api/calendar/ai/context/upcoming` etc.
-        // The Next.js proxy expects `/api/...` so we need to use the endpoint as-is
-        // But if it doesn't start with `/api/`, we need to add it
-        let testUrl: string;
-        if (endpoint.startsWith('/api/')) {
-          // Already has /api/ prefix, use as-is
-          testUrl = endpoint;
-        } else if (endpoint.startsWith('/')) {
-          // Starts with / but not /api/, add /api prefix
-          testUrl = `/api${endpoint}`;
-        } else {
-          // No leading slash, add both
-          testUrl = `/api/${endpoint}`;
-        }
-        
-        // Note: Most context providers require a businessId query parameter
-        // For testing, we'll try without it first and show the error if needed
-        const response = await fetch(testUrl, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+        let response = await adminApiService.testModuleAIProvider(endpoint);
 
-        if (response.ok) {
-          const data = await response.json();
-          results[provider.name] = { success: true, data };
+        if (response.error && response.error.toLowerCase().includes('businessid is required')) {
+          const fallbackBusinessId = await getDefaultBusinessId();
+          if (fallbackBusinessId) {
+            response = await adminApiService.testModuleAIProvider(endpoint, fallbackBusinessId);
+          }
+        }
+
+        if (response.error) {
+          results[provider.name] = {
+            success: false,
+            error: response.error,
+          };
         } else {
-          const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-          results[provider.name] = { 
-            success: false, 
-            error: errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}` 
+          results[provider.name] = {
+            success: true,
+            data: response.data,
           };
         }
       } catch (error) {
@@ -621,6 +637,19 @@ export default function AdminModulesPage() {
     const list = res.data?.versions ?? [];
     setVersionByModuleId(prev => ({ ...prev, [moduleId]: list }));
   }, []);
+
+  const openSubmissionDetails = useCallback(
+    (submission: ModuleSubmission, forceVersionRefresh = false) => {
+      setSelectedSubmissionDetails(submission);
+      setShowSubmissionDetailsModal(true);
+
+      const existing = versionByModuleId[submission.module.id];
+      if (forceVersionRefresh || existing === undefined || existing === 'error') {
+        loadModuleVersions(submission.module.id);
+      }
+    },
+    [loadModuleVersions, versionByModuleId]
+  );
 
   const confirmPromotePrevious = async () => {
     if (!promotePreviousModal) return;
@@ -1082,10 +1111,7 @@ export default function AdminModulesPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => {
-                          setSelectedSubmissionDetails(submission);
-                          setShowSubmissionDetailsModal(true);
-                        }}
+                        onClick={() => openSubmissionDetails(submission)}
                       >
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
@@ -1093,7 +1119,7 @@ export default function AdminModulesPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => loadModuleVersions(submission.module.id)}
+                        onClick={() => openSubmissionDetails(submission, true)}
                       >
                         <Shield className="w-4 h-4 mr-2" />
                         Security Scan
@@ -1101,10 +1127,10 @@ export default function AdminModulesPage() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => window.open(`/modules/run/${submission.module.id}`, '_blank', 'noopener,noreferrer')}
+                        disabled
                       >
                         <Code className="w-4 h-4 mr-2" />
-                        Open Sandbox
+                        Sandbox After Approval
                       </Button>
                     </div>
                   )}
@@ -1322,6 +1348,36 @@ export default function AdminModulesPage() {
                 </div>
               </div>
 
+              <div className="rounded border border-gray-200 dark:border-slate-700 p-3">
+                <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-2">Version scan history</p>
+                {selectedSubmissionDetails && versionByModuleId[selectedSubmissionDetails.module.id] === 'loading' && (
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <Spinner size={16} />
+                    <span>Loading version scan details...</span>
+                  </div>
+                )}
+                {selectedSubmissionDetails && versionByModuleId[selectedSubmissionDetails.module.id] === 'error' && (
+                  <p className="text-gray-700 dark:text-gray-300">Could not load version scans. Try Security Scan again.</p>
+                )}
+                {selectedSubmissionDetails &&
+                  Array.isArray(versionByModuleId[selectedSubmissionDetails.module.id]) &&
+                  (versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).length === 0 && (
+                    <p className="text-gray-700 dark:text-gray-300">No version scans recorded yet.</p>
+                  )}
+                {selectedSubmissionDetails &&
+                  Array.isArray(versionByModuleId[selectedSubmissionDetails.module.id]) &&
+                  (versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).length > 0 && (
+                    <div className="space-y-1">
+                      {(versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).map((row) => (
+                        <div key={row.id} className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                          <span className="font-mono text-xs">{row.version}</span>
+                          <span className="text-xs">{row.artifact?.scanStatus || 'NOT_AVAILABLE'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
+
               <div>
                 <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-2">Declared permissions</p>
                 <div className="flex flex-wrap gap-2">
@@ -1339,9 +1395,10 @@ export default function AdminModulesPage() {
                 <Button
                   variant="secondary"
                   onClick={() => window.open(`/modules/run/${selectedSubmissionDetails.module.id}`, '_blank', 'noopener,noreferrer')}
+                  disabled={selectedSubmissionDetails.status !== 'APPROVED'}
                 >
                   <Code className="w-4 h-4 mr-2" />
-                  Open Sandbox
+                  {selectedSubmissionDetails.status === 'APPROVED' ? 'Open Sandbox' : 'Sandbox After Approval'}
                 </Button>
                 <Button variant="secondary" onClick={() => setShowSubmissionDetailsModal(false)}>
                   Close

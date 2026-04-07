@@ -736,6 +736,40 @@ class AdminApiService {
     }
   }
 
+  async testModuleAIProvider(endpoint: string, businessId?: string): Promise<ApiResponse<any>> {
+    try {
+      const headers = await this.getAuthHeaders();
+
+      let testUrl: string;
+      if (endpoint.startsWith('/api/')) {
+        testUrl = endpoint;
+      } else if (endpoint.startsWith('/')) {
+        testUrl = `/api${endpoint}`;
+      } else {
+        testUrl = `/api/${endpoint}`;
+      }
+
+      if (businessId && !/[\?&]businessId=/.test(testUrl)) {
+        testUrl += `${testUrl.includes('?') ? '&' : '?'}businessId=${encodeURIComponent(businessId)}`;
+      }
+
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        return { error: payload.error || payload.message || `HTTP ${response.status}` };
+      }
+
+      return { data: payload };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   async reviewModuleSubmission(
     submissionId: string, 
     action: 'approve' | 'reject', 
