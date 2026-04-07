@@ -37,13 +37,13 @@ export const ShareLinkModal: React.FC<ShareLinkModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 shadow-xl">
+      <div className="bg-white dark:bg-slate-900 rounded-lg w-full max-w-md mx-4 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Share Link Generated</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-full transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -60,22 +60,22 @@ export const ShareLinkModal: React.FC<ShareLinkModalProps> = ({
           </div>
 
           {/* Item Info */}
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             <span className="font-medium">{itemName}</span>
             <span className="text-gray-400"> ({itemType})</span>
           </div>
 
           {/* Share Link */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Shareable Link</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Shareable Link</label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+              <div className="flex-1 flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md">
                 <LinkIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                 <input
                   type="text"
                   value={shareLink}
                   readOnly
-                  className="flex-1 bg-transparent text-sm text-gray-700 focus:outline-none cursor-text"
+                  className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none cursor-text"
                   onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
               </div>
@@ -98,7 +98,7 @@ export const ShareLinkModal: React.FC<ShareLinkModalProps> = ({
           </div>
 
           {/* Instructions */}
-          <div className="text-xs text-gray-500 bg-gray-50 rounded-md p-3">
+          <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 rounded-md p-3">
             <p className="font-medium mb-1">What happens next?</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Copy the link above</li>
@@ -109,7 +109,7 @@ export const ShareLinkModal: React.FC<ShareLinkModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 p-4 border-t bg-gray-50">
+        <div className="flex justify-end gap-2 p-4 border-t bg-gray-50 dark:bg-slate-800">
           <Button
             onClick={onClose}
             variant="secondary"

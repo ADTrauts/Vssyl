@@ -255,7 +255,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
   const getTrendIcon = (trend: string, change: number) => {
     if (trend === 'up' && change > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
     if (trend === 'down' || change < 0) return <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />;
-    return <Activity className="w-4 h-4 text-gray-600" />;
+    return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
   };
 
   const getAlertIcon = (type: string) => {
@@ -281,7 +281,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading enhanced dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading enhanced dashboard...</p>
         </div>
       </Card>
     );
@@ -297,8 +297,8 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
               <BarChart3 className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Enterprise Dashboard</h1>
-              <p className="text-gray-600">Advanced business intelligence and analytics</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Enterprise Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">Advanced business intelligence and analytics</p>
             </div>
           </div>
           
@@ -343,7 +343,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
         </div>
         
         {/* Last Updated */}
-        <div className="flex items-center gap-2 mt-4 text-sm text-gray-500">
+        <div className="flex items-center gap-2 mt-4 text-sm text-gray-500 dark:text-gray-400">
           <Clock className="w-4 h-4" />
           <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
         </div>
@@ -368,16 +368,16 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
             </div>
             
             <div className="mb-2">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {typeof metric.value === 'number' ? metric.value.toLocaleString() : metric.value}
-                <span className="text-sm text-gray-500">{metric.unit}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{metric.unit}</span>
               </div>
-              <div className="text-sm text-gray-600">{metric.name}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{metric.name}</div>
             </div>
             
             {metric.target && (
               <div className="mt-2">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                   <span>Target</span>
                   <span>{((Number(metric.value) / metric.target) * 100).toFixed(0)}%</span>
                 </div>
@@ -398,7 +398,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
       {/* Recent Alerts */}
       {recentAlerts.length > 0 && (
         <Card className="p-4">
-          <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             Recent Alerts & Notifications
           </h3>
@@ -416,7 +416,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">{alert.title}</h4>
                       <div className="flex items-center gap-2">
-                        <Badge className="px-2 py-1 text-xs bg-white border border-gray-200 text-gray-700 rounded-full">
+                        <Badge className="px-2 py-1 text-xs bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-full">
                           {alert.module}
                         </Badge>
                         <span className="text-xs opacity-75">
@@ -446,7 +446,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Module Usage Overview */}
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Module Usage Today</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Module Usage Today</h3>
               <div className="space-y-4">
                 {[
                   { name: 'Drive', usage: 87, icon: <FolderOpen className="w-4 h-4 text-blue-600" />, sessions: 234 },
@@ -457,17 +457,17 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
                   <div key={module.name} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {module.icon}
-                      <span className="font-medium text-gray-900">{module.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{module.name}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <div className="text-sm text-gray-600">{module.sessions} sessions</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{module.sessions} sessions</div>
                       <div className="w-20 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${module.usage}%` }}
                         />
                       </div>
-                      <div className="text-sm font-medium text-gray-900 w-8">{module.usage}%</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8">{module.usage}%</div>
                     </div>
                   </div>
                 ))}
@@ -476,7 +476,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
 
             {/* Top Performers */}
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Top Performing Teams</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Top Performing Teams</h3>
               <div className="space-y-3">
                 {[
                   { name: 'Sales Team', score: 94, trend: '+8%', members: 23 },
@@ -484,18 +484,18 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
                   { name: 'Marketing', score: 87, trend: '+5%', members: 18 },
                   { name: 'Finance', score: 85, trend: '+3%', members: 12 }
                 ].map((team, index) => (
-                  <div key={team.name} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div key={team.name} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-600">
                         {index + 1}
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{team.name}</div>
-                        <div className="text-xs text-gray-500">{team.members} members</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{team.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{team.members} members</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-gray-900">{team.score}%</div>
+                      <div className="font-bold text-gray-900 dark:text-gray-100">{team.score}%</div>
                       <div className="text-xs text-green-600">{team.trend}</div>
                     </div>
                   </div>
@@ -524,8 +524,8 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
           <Card className="p-6">
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Team Collaboration Analytics</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Team Collaboration Analytics</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Get insights into team collaboration patterns, communication effectiveness, and cross-functional project success.
               </p>
               <Button>
@@ -542,8 +542,8 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
             <Card className="p-6">
               <div className="text-center py-8">
                 <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Compliance & Security Dashboard</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Compliance & Security Dashboard</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Monitor compliance across all modules, track audit trails, and manage security policies.
                 </p>
                 <Button>
@@ -560,7 +560,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h3 className="font-medium text-gray-900">Quick Actions</h3>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Quick Actions</h3>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="secondary">
                 <Plus className="w-3 h-3 mr-1" />
@@ -577,7 +577,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
             </div>
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Globe className="w-4 h-4" />
             <span>Enterprise Dashboard v2.1</span>
           </div>

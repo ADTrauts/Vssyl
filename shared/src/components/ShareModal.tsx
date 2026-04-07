@@ -324,13 +324,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Share {item.type === 'file' ? 'file' : 'folder'}</h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-full"
             aria-label="Close"
           >
             <XMarkIcon className="w-5 h-5" />
@@ -383,7 +383,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <div className="space-y-6">
               {/* Email sharing (legacy) */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Share by email</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Share by email</h3>
                 <form onSubmit={handleEmailSubmit} className="mb-4">
                   <div className="flex gap-2">
                     <input
@@ -415,7 +415,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
               {/* User search */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Search and share with users</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Search and share with users</h3>
                 <div className="relative mb-4">
                   <div className="flex gap-2">
                     <div className="relative flex-1">
@@ -440,7 +440,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                   
                   {/* Search results */}
                   {searching && (
-                    <div className="mt-2 text-sm text-gray-500">Searching...</div>
+                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">Searching...</div>
                   )}
                   
                   {searchResults.length > 0 && (
@@ -448,13 +448,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       {searchResults.map((user) => (
                         <div
                           key={user.id}
-                          className="flex items-center justify-between p-3 hover:bg-gray-50 border-b last:border-b-0"
+                          className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 border-b last:border-b-0"
                         >
                                                      <div className="flex items-center space-x-3">
                              <Avatar nameOrEmail={user.name || user.email} size={32} />
                             <div>
                               <div className="font-medium">{user.name || 'No name'}</div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                               {user.organization && (
                                 <div className="text-xs text-gray-400">
                                   {user.organization.name} • {user.organization.role}
@@ -489,7 +489,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {activeTab === 'business' && currentDashboard?.type === 'business' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Share with business team</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Share with business team</h3>
                 <div className="flex gap-2 mb-4">
                   <select
                     value={permission}
@@ -509,7 +509,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 </div>
 
                 {loadingBusinessMembers ? (
-                  <div className="text-sm text-gray-500">Loading team members...</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Loading team members...</div>
                 ) : (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
                     {businessMembers.map((member) => (
@@ -538,7 +538,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                            <Avatar nameOrEmail={member.user.name || member.user.email} size={32} />
                           <div>
                             <div className="font-medium">{member.user.name || 'No name'}</div>
-                            <div className="text-sm text-gray-500">{member.user.email}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{member.user.email}</div>
                             {member.title && (
                               <div className="text-xs text-gray-400">{member.title}</div>
                             )}
@@ -559,17 +559,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           {activeTab === 'link' && (
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">Get shareable link</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Get shareable link</h3>
                 {currentShareLink ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                      <div className="flex-1 flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md">
                         <LinkIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                         <input
                           type="text"
                           value={currentShareLink}
                           readOnly
-                          className="flex-1 bg-transparent text-sm text-gray-700 focus:outline-none cursor-text"
+                          className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-300 focus:outline-none cursor-text"
                           onClick={(e) => (e.target as HTMLInputElement).select()}
                         />
                       </div>
@@ -581,7 +581,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                         Copy link
                       </button>
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Anyone with the link can view this {item.type}
                     </p>
                   </div>
@@ -590,12 +590,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     <button
                       onClick={handleCopyLink}
                       disabled={loading}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 border rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     >
                       <LinkIcon className="w-5 h-5" />
                       Generate and copy link
                     </button>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Generate a shareable link for this {item.type}
                     </p>
                   </div>
@@ -606,13 +606,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
           {/* Current sharees */}
           <div className="mt-8 border-t pt-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">People with access</h3>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">People with access</h3>
             {loadingPermissions ? (
-              <div className="text-sm text-gray-500">Loading...</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
             ) : !Array.isArray(permissions) ? (
-              <div className="text-sm text-gray-500">Failed to load permissions</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Failed to load permissions</div>
             ) : permissions.length === 0 ? (
-              <div className="text-sm text-gray-500">No one has access yet</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">No one has access yet</div>
             ) : (
               <div className="space-y-2">
                 {permissions.map((perm) => (
@@ -621,7 +621,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                        <Avatar nameOrEmail={perm.user.name || perm.user.email} size={32} />
                       <div className="flex-1">
                         <div className="font-medium">{perm.user.name}</div>
-                        <div className="text-sm text-gray-500">{perm.user.email}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{perm.user.email}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

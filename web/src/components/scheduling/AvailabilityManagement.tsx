@@ -96,7 +96,7 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
       <select
         value={hour}
         onChange={(e) => handleHourChange(Number(e.target.value))}
-        className="px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:border-blue-400"
+        className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring focus:border-blue-400"
       >
         {hourOptions.map((h) => (
           <option key={h} value={h}>
@@ -105,13 +105,13 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
         ))}
       </select>
 
-      <span className="text-gray-600 font-medium">:</span>
+      <span className="text-gray-600 dark:text-gray-400 font-medium">:</span>
 
       {/* Minute Select */}
       <select
         value={minute}
         onChange={(e) => handleMinuteChange(Number(e.target.value))}
-        className="px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:border-blue-400"
+        className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring focus:border-blue-400"
       >
         {minuteOptions.map((m) => (
           <option key={m} value={m}>
@@ -121,7 +121,7 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
       </select>
 
       {/* AM/PM Toggle */}
-      <div className="flex border border-gray-300 rounded-md overflow-hidden">
+      <div className="flex border border-gray-300 dark:border-slate-600 rounded-md overflow-hidden">
         <button
           type="button"
           onClick={() => handleAmPmChange('AM')}
@@ -410,8 +410,8 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">My Availability</h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">My Availability</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 Set your recurring weekly availability pattern (e.g., "Available Monday-Friday 9am-5pm" or "Only work mornings on Tuesdays")
               </p>
             </div>
@@ -435,12 +435,12 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
         <Card className="mb-6">
           <div className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Calendar className="h-5 w-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Upcoming Time-Off Requests</h3>
+              <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Upcoming Time-Off Requests</h3>
             </div>
             <div className="space-y-2">
               {getUpcomingPTO().map((pto) => (
-                <div key={pto.id} className="flex items-center gap-3 text-sm p-2 bg-gray-50 rounded">
+                <div key={pto.id} className="flex items-center gap-3 text-sm p-2 bg-gray-50 dark:bg-slate-800 rounded">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
                     pto.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                     pto.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -448,11 +448,11 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                   }`}>
                     {pto.type}
                   </span>
-                  <span className="text-gray-700">
+                  <span className="text-gray-700 dark:text-gray-300">
                     {format(new Date(pto.startDate), 'MMM d')} - {format(new Date(pto.endDate), 'MMM d, yyyy')}
                   </span>
                   {pto.status === 'PENDING' && (
-                    <span className="text-xs text-gray-500">(Pending approval)</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">(Pending approval)</span>
                   )}
                   {pto.status === 'APPROVED' && (
                     <span className="text-xs text-green-600 font-medium">✓ Approved</span>
@@ -467,7 +467,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
       {/* Vertical Days List */}
       <div className="space-y-4">
         <div className="mb-2">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Set your recurring weekly availability. These preferences apply every week.
           </p>
         </div>
@@ -488,8 +488,8 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                 {/* Day Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <div className="font-medium text-lg text-gray-900">{day.label}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="font-medium text-lg text-gray-900 dark:text-gray-100">{day.label}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       Recurring weekly availability
                     </div>
                   </div>
@@ -507,16 +507,16 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
 
                 {/* Editing Mode */}
                 {isEditing ? (
-                  <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="space-y-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
                     <div className="flex items-center gap-2 mb-2">
                       <input
                         type="checkbox"
                         id={`cannotWork-${day.value}`}
                         checked={formData.cannotWork}
                         onChange={(e) => updateDayFormData(day.value, { cannotWork: e.target.checked })}
-                        className="rounded border-gray-300"
+                        className="rounded border-gray-300 dark:border-slate-600"
                       />
-                      <label htmlFor={`cannotWork-${day.value}`} className="text-sm font-medium text-gray-700">
+                      <label htmlFor={`cannotWork-${day.value}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Can't work this day at all
                       </label>
                     </div>
@@ -525,7 +525,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                       <>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                               Start Time
                             </label>
                             <TimePicker12Hour
@@ -534,7 +534,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                               End Time
                             </label>
                             <TimePicker12Hour
@@ -545,7 +545,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Availability Type
                           </label>
                           <select
@@ -553,7 +553,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                             onChange={(e) => updateDayFormData(day.value, { 
                               availabilityType: e.target.value as 'AVAILABLE' | 'UNAVAILABLE' | 'PREFERRED' 
                             })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100"
                           >
                             {AVAILABILITY_TYPES.map(type => (
                               <option key={type.value} value={type.value}>{type.label}</option>
@@ -564,7 +564,7 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Notes (optional)
                       </label>
                       <Textarea
@@ -603,16 +603,16 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                           >
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-1">
-                                <Clock className="h-4 w-4 text-gray-600" />
+                                <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                                 <span className="font-medium text-sm">
                                   {formatTime(av.startTime)} - {formatTime(av.endTime)}
                                 </span>
-                                <span className="text-xs px-2 py-0.5 rounded bg-white/50">
+                                <span className="text-xs px-2 py-0.5 rounded bg-white dark:bg-slate-900/50">
                                   {typeConfig?.label}
                                 </span>
                               </div>
                               {av.notes && (
-                                <div className="text-sm text-gray-600 mt-1 italic">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 italic">
                                   {av.notes}
                                 </div>
                               )}
@@ -620,14 +620,14 @@ export default function AvailabilityManagement({ businessId }: AvailabilityManag
                             <div className="flex items-center gap-1 ml-4">
                               <button
                                 onClick={() => handleStartEdit(day.value, av)}
-                                className="p-1.5 hover:bg-white/50 rounded transition-colors"
+                                className="p-1.5 hover:bg-white dark:bg-slate-900/50 rounded transition-colors"
                                 title="Edit"
                               >
-                                <Edit className="h-4 w-4 text-gray-600" />
+                                <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                               </button>
                               <button
                                 onClick={() => handleDelete(av.id)}
-                                className="p-1.5 hover:bg-white/50 rounded text-red-600 transition-colors"
+                                className="p-1.5 hover:bg-white dark:bg-slate-900/50 rounded text-red-600 transition-colors"
                                 title="Delete"
                               >
                                 <Trash2 className="h-4 w-4" />

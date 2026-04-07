@@ -236,8 +236,8 @@ export default function SchedulingDashboard({
     <div className="h-full overflow-y-auto p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Scheduling Dashboard</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Scheduling Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-1">
           {isAdmin && 'Overview of all schedules and workforce planning'}
           {isManager && 'Overview of your team schedules and coverage'}
           {isEmployee && 'Your schedule overview and upcoming shifts'}
@@ -251,8 +251,8 @@ export default function SchedulingDashboard({
             <Card className="p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total Schedules</p>
-                  <p className="text-2xl font-semibold text-gray-900">{totalSchedules}</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Total Schedules</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalSchedules}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <Calendar className="h-5 w-5 text-blue-500" />
@@ -263,8 +263,8 @@ export default function SchedulingDashboard({
             <Card className="p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Published</p>
-                  <p className="text-2xl font-semibold text-gray-900">{publishedSchedules}</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Published</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{publishedSchedules}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -275,8 +275,8 @@ export default function SchedulingDashboard({
             <Card className="p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Draft</p>
-                  <p className="text-2xl font-semibold text-gray-900">{draftSchedules}</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Draft</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{draftSchedules}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <AlertCircle className="h-5 w-5 text-yellow-500" />
@@ -290,8 +290,8 @@ export default function SchedulingDashboard({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Pending Swaps</p>
-                <p className="text-2xl font-semibold text-gray-900">{pendingSwaps}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Pending Swaps</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{pendingSwaps}</p>
               </div>
               <div className="flex-shrink-0">
                 <Users className="h-5 w-5 text-purple-500" />
@@ -305,8 +305,8 @@ export default function SchedulingDashboard({
             <Card className="p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Hours This Week</p>
-                  <p className="text-2xl font-semibold text-gray-900">{totalHoursThisWeek.toFixed(1)}</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Hours This Week</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalHoursThisWeek.toFixed(1)}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <Clock className="h-5 w-5 text-blue-500" />
@@ -317,8 +317,8 @@ export default function SchedulingDashboard({
             <Card className="p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Upcoming Shifts</p>
-                  <p className="text-2xl font-semibold text-gray-900">{upcomingShifts.length}</p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Upcoming Shifts</p>
+                  <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{upcomingShifts.length}</p>
                 </div>
                 <div className="flex-shrink-0">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -331,8 +331,8 @@ export default function SchedulingDashboard({
         <Card className="p-4 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Open Shifts</p>
-              <p className="text-2xl font-semibold text-gray-900">{openShifts}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Open Shifts</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{openShifts}</p>
             </div>
             <div className="flex-shrink-0">
               <AlertCircle className="h-5 w-5 text-orange-500" />
@@ -377,7 +377,7 @@ export default function SchedulingDashboard({
       <Card className="mb-6">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Current Schedule</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Current Schedule</h2>
             <div className="flex items-center space-x-2">
               <Button
                 variant="secondary"
@@ -423,21 +423,21 @@ export default function SchedulingDashboard({
       {upcomingShifts.length > 0 && (
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Shifts</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Upcoming Shifts</h2>
             <div className="space-y-3">
               {upcomingShifts.map((shift) => (
-                <div key={shift.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={shift.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium text-sm">
                         {safeFormatDate(shift.startTime, 'MMM d, yyyy', 'Invalid date')}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {safeFormatDate(shift.startTime, 'HH:mm', '--')} - {safeFormatDate(shift.endTime, 'HH:mm', '--')}
                       </p>
                     </div>
                     {getShiftPositionTitle(shift) && (
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                      <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded">
                         {getShiftPositionTitle(shift)}
                       </span>
                     )}

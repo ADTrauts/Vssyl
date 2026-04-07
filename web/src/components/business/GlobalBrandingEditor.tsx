@@ -75,14 +75,14 @@ interface ColorPickerProps {
 function ColorPicker({ label, value, onChange, description }: ColorPickerProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      {description && <p className="text-xs text-gray-500 mb-2">{description}</p>}
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
+      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{description}</p>}
       <div className="flex items-center space-x-3">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-12 rounded border border-gray-300 cursor-pointer"
+          className="w-12 h-12 rounded border border-gray-300 dark:border-slate-600 cursor-pointer"
         />
         <Input
           type="text"
@@ -129,8 +129,8 @@ export default function GlobalBrandingEditor({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Global Business Branding</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Global Business Branding</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             These settings apply across your entire business workspace - front page, dashboards, emails, and reports
           </p>
         </div>
@@ -152,14 +152,14 @@ export default function GlobalBrandingEditor({
               <ImageIcon className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900">Company Logo</h4>
-              <p className="text-sm text-gray-600">Your logo appears throughout the platform</p>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100">Company Logo</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Your logo appears throughout the platform</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Logo URL</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Logo URL</label>
               <Input
                 type="url"
                 value={branding.logoUrl || branding.logo || ''}
@@ -170,8 +170,8 @@ export default function GlobalBrandingEditor({
 
             {(branding.logoUrl || branding.logo) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Preview</label>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview</label>
+                <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
                   <img
                     src={branding.logoUrl || branding.logo}
                     alt="Company Logo"
@@ -188,21 +188,21 @@ export default function GlobalBrandingEditor({
 
         {/* Color Presets */}
         <Card className="p-6">
-          <h4 className="font-semibold text-gray-900 mb-3">Quick Color Presets</h4>
-          <p className="text-sm text-gray-600 mb-4">Choose a preset to quickly apply a coordinated color scheme</p>
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Quick Color Presets</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Choose a preset to quickly apply a coordinated color scheme</p>
           <div className="grid grid-cols-4 gap-3">
             {Object.entries(COLOR_PRESETS).map(([name, preset]) => (
               <button
                 key={name}
                 onClick={() => handleApplyPreset(name as keyof typeof COLOR_PRESETS)}
-                className="p-3 border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-colors text-left"
+                className="p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-400 transition-colors text-left"
               >
                 <div className="flex space-x-1 mb-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.primaryColor }} />
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.secondaryColor }} />
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.accentColor }} />
                 </div>
-                <p className="text-xs font-medium text-gray-900 capitalize">{name}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 capitalize">{name}</p>
               </button>
             ))}
           </div>
@@ -215,8 +215,8 @@ export default function GlobalBrandingEditor({
               <Palette className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h4 className="font-semibold text-gray-900">Brand Colors</h4>
-              <p className="text-sm text-gray-600">Define your company's color palette</p>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100">Brand Colors</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Define your company's color palette</p>
             </div>
           </div>
 
@@ -256,13 +256,13 @@ export default function GlobalBrandingEditor({
 
         {/* Typography */}
         <Card className="p-6">
-          <h4 className="font-semibold text-gray-900 mb-4">Typography</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Typography</h4>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Font Family</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Font Family</label>
             <select
               value={branding.fontFamily || 'Inter'}
               onChange={(e) => onChange({ ...branding, fontFamily: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="Inter">Inter (Default)</option>
               <option value="Poppins">Poppins</option>
@@ -275,8 +275,8 @@ export default function GlobalBrandingEditor({
             </select>
 
             {/* Font Preview */}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600 mb-2">Preview:</p>
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Preview:</p>
               <h3
                 className="text-2xl font-bold mb-2"
                 style={{ fontFamily: branding.fontFamily || 'Inter' }}
@@ -284,7 +284,7 @@ export default function GlobalBrandingEditor({
                 Your Business Name
               </h3>
               <p
-                className="text-sm text-gray-600"
+                className="text-sm text-gray-600 dark:text-gray-400"
                 style={{ fontFamily: branding.fontFamily || 'Inter' }}
               >
                 This is how your text will appear with the selected font across all business pages.
@@ -295,8 +295,8 @@ export default function GlobalBrandingEditor({
 
         {/* Advanced: Custom CSS */}
         <Card className="p-6">
-          <h4 className="font-semibold text-gray-900 mb-2">Advanced: Custom CSS</h4>
-          <p className="text-sm text-gray-600 mb-4">
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Advanced: Custom CSS</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Add custom CSS for advanced styling (optional - for developers only)
           </p>
           <textarea
@@ -304,13 +304,13 @@ export default function GlobalBrandingEditor({
             onChange={(e) => onChange({ ...branding, customCSS: e.target.value })}
             placeholder="/* Custom CSS here */"
             rows={6}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500"
           />
         </Card>
 
         {/* Live Preview */}
         <Card className="p-6 bg-gradient-to-br from-blue-50 to-purple-50">
-          <h4 className="font-semibold text-gray-900 mb-4">Live Preview</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Live Preview</h4>
           <div
             className="p-6 rounded-lg shadow-lg"
             style={{

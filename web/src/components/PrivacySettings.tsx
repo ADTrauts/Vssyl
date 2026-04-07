@@ -203,8 +203,8 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Privacy & Data Rights</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Privacy & Data Rights</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage your privacy settings and exercise your data rights
           </p>
         </div>
@@ -224,7 +224,7 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
       )}
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'settings', label: 'Privacy Settings', icon: ShieldCheckIcon },
@@ -254,20 +254,20 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
       {/* Privacy Settings Tab */}
       {activeTab === 'settings' && settings && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Privacy Preferences</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Privacy Preferences</h3>
             </div>
             <div className="p-6 space-y-6">
               {/* Profile Visibility */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Profile Visibility
                 </label>
                 <select
                   value={settings.profileVisibility}
                   onChange={(e) => setSettings(prev => prev ? { ...prev, profileVisibility: e.target.value as any } : null)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="PUBLIC">Public</option>
                   <option value="PRIVATE">Private</option>
@@ -277,13 +277,13 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
               {/* Activity Visibility */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Activity Visibility
                 </label>
                 <select
                   value={settings.activityVisibility}
                   onChange={(e) => setSettings(prev => prev ? { ...prev, activityVisibility: e.target.value as any } : null)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="PUBLIC">Public</option>
                   <option value="PRIVATE">Private</option>
@@ -292,9 +292,9 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
               </div>
 
               {/* Place Neighborhood Privacy */}
-              <div className="pt-4 border-t border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-900 mb-1">Vssyl Place — Neighborhood Privacy</h4>
-                <p className="text-xs text-gray-600 mb-3">Your neighborhood is always private by default. Business follows are hidden unless you choose to make them visible on a per-business basis within Place settings.</p>
+              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Vssyl Place — Neighborhood Privacy</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Your neighborhood is always private by default. Business follows are hidden unless you choose to make them visible on a per-business basis within Place settings.</p>
                 <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg">
                   <ShieldCheckIcon className="h-4 w-4 text-indigo-600 flex-shrink-0" />
                   <span className="text-sm text-indigo-700 font-medium">Your Place neighborhood is private</span>
@@ -305,8 +305,8 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Allow Data Processing</h4>
-                    <p className="text-sm text-gray-500">Allow us to process your data for service improvement</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Allow Data Processing</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Allow us to process your data for service improvement</p>
                   </div>
                   <button
                     onClick={() => setSettings(prev => prev ? { ...prev, allowDataProcessing: !prev.allowDataProcessing } : null)}
@@ -324,8 +324,8 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Marketing Emails</h4>
-                    <p className="text-sm text-gray-500">Receive marketing and promotional emails</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Marketing Emails</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Receive marketing and promotional emails</p>
                   </div>
                   <button
                     onClick={() => setSettings(prev => prev ? { ...prev, allowMarketingEmails: !prev.allowMarketingEmails } : null)}
@@ -343,8 +343,8 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Analytics</h4>
-                    <p className="text-sm text-gray-500">Allow analytics and usage tracking</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Analytics</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Allow analytics and usage tracking</p>
                   </div>
                   <button
                     onClick={() => setSettings(prev => prev ? { ...prev, allowAnalytics: !prev.allowAnalytics } : null)}
@@ -362,8 +362,8 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900">Audit Logs</h4>
-                    <p className="text-sm text-gray-500">Keep audit logs of your activities</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Audit Logs</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Keep audit logs of your activities</p>
                   </div>
                   <button
                     onClick={() => setSettings(prev => prev ? { ...prev, allowAuditLogs: !prev.allowAuditLogs } : null)}
@@ -382,7 +382,7 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
               {/* Data Retention */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Data Retention Period (days)
                 </label>
                 <Input
@@ -392,7 +392,7 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
                   min="1"
                   max="3650"
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   How long to keep your data (1-3650 days, default: 7 years)
                 </p>
               </div>
@@ -418,32 +418,32 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
       {/* Consent Management Tab */}
       {activeTab === 'consent' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Consent History</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Consent History</h3>
             </div>
             <div className="p-6">
               {consents.length === 0 ? (
                 <div className="text-center py-8">
                   <DocumentTextIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No consent history found.</p>
+                  <p className="text-gray-500 dark:text-gray-400">No consent history found.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {consents.map((consent) => (
                     <div
                       key={consent.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg"
                     >
                       <div>
                         <div className="flex items-center space-x-2">
-                          <h4 className="font-medium text-gray-900">{consent.consentType}</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">{consent.consentType}</h4>
                           <Badge color={consent.granted ? 'green' : 'red'}>
                             {consent.granted ? 'Granted' : 'Revoked'}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-500">Version: {consent.version}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Version: {consent.version}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {consent.granted ? 'Granted' : 'Revoked'} on{' '}
                           {format(new Date(consent.grantedAt || consent.revokedAt || consent.createdAt), 'PPP')}
                         </p>
@@ -482,12 +482,12 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
       {activeTab === 'data' && (
         <div className="space-y-6">
           {/* Data Export */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Data Portability</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Data Portability</h3>
             </div>
             <div className="p-6">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Download all your personal data in a machine-readable format (JSON).
               </p>
               <Button
@@ -505,9 +505,9 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
           </div>
 
           {/* Data Deletion */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Right to be Forgotten</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Right to be Forgotten</h3>
             </div>
             <div className="p-6">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -534,16 +534,16 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
 
           {/* Deletion Requests */}
           {deletionRequests.length > 0 && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Deletion Requests</h3>
+            <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Deletion Requests</h3>
               </div>
               <div className="p-6">
                 <div className="space-y-4">
                   {deletionRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg"
                     >
                       <div>
                         <div className="flex items-center space-x-2">
@@ -555,16 +555,16 @@ export default function PrivacySettings({ className = '' }: PrivacySettingsProps
                             {request.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Requested on {format(new Date(request.requestedAt), 'PPP')}
                         </p>
                         {request.reason && (
-                          <p className="text-sm text-gray-600 mt-1">Reason: {request.reason}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Reason: {request.reason}</p>
                         )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <ClockIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
                           {format(new Date(request.requestedAt), 'PPp')}
                         </span>
                       </div>

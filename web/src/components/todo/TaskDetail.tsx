@@ -435,9 +435,9 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
   }
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
+    <div className="w-full h-full bg-white dark:bg-slate-900 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b flex items-center justify-between bg-gray-50">
+      <div className="p-4 border-b flex items-center justify-between bg-gray-50 dark:bg-slate-800">
         <h2 className="text-xl font-bold">Task Details</h2>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="w-5 h-5" />
@@ -470,13 +470,13 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
         <div className="space-y-2">
           {task.dueDate && (
             <div className="flex items-center gap-2 text-sm">
-              <Calendar className="w-4 h-4 text-gray-500" />
+              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             </div>
           )}
           {task.assignedTo && (
             <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-gray-500" />
+              <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <Avatar 
                 src={task.assignedTo.image || undefined} 
                 nameOrEmail={task.assignedTo.name || task.assignedTo.email}
@@ -487,13 +487,13 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           )}
           {task.category && (
             <div className="flex items-center gap-2 text-sm">
-              <Tag className="w-4 h-4 text-gray-500" />
+              <Tag className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span>{task.category}</span>
             </div>
           )}
           {task.timeEstimate && (
             <div className="flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4 text-gray-500" />
+              <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               <span>Estimate: {task.timeEstimate} minutes</span>
             </div>
           )}
@@ -502,7 +502,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
         {/* Description */}
         <div>
           <h4 className="font-semibold mb-2">Description</h4>
-          <p className="text-sm text-gray-600 whitespace-pre-wrap">
+          <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
             {task.description || 'No description'}
           </p>
         </div>
@@ -514,7 +514,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               <ListChecks className="w-4 h-4" />
               Subtasks
               {task.subtasks && task.subtasks.length > 0 && (
-                <span className="text-sm font-normal text-gray-500">
+                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
                   ({task.subtasks.filter((st: Task) => st.status === 'DONE').length}/{task.subtasks.length})
                 </span>
               )}
@@ -608,7 +608,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           
           {/* Subtasks List - In one box with indented items */}
           {task.subtasks && task.subtasks.length > 0 && (
-            <div className="bg-gray-50 rounded border border-gray-200 p-3 space-y-1">
+            <div className="bg-gray-50 dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-3 space-y-1">
               {task.subtasks.map((subtask: Task) => {
                 const isCompleted = subtask.status === 'DONE';
                 const isEditing = editingSubtaskId === subtask.id;
@@ -839,14 +839,14 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               {task.attachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded"
+                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded"
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <Paperclip className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">{attachment.name}</div>
                       {attachment.size && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {(attachment.size / 1024).toFixed(1)} KB
                         </div>
                       )}
@@ -907,7 +907,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               ))}
             </div>
           ) : (
-            <div className="text-sm text-gray-500">No attachments</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">No attachments</div>
           )}
         </div>
 
@@ -939,13 +939,13 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                 return (
                   <div
                     key={link?.id || fileDetail.id}
-                    className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded"
+                    className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded"
                   >
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <File className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <File className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{fileDetail.name}</div>
-                        <div className="text-xs text-gray-500">{fileDetail.type}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{fileDetail.type}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -985,7 +985,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               })}
             </div>
           ) : (
-            <div className="text-sm text-gray-500">No linked files</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">No linked files</div>
           )}
         </div>
 
@@ -1007,7 +1007,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           </div>
 
           {showAddDependency && (
-            <div className="mb-3 p-2 bg-gray-50 rounded border">
+            <div className="mb-3 p-2 bg-gray-50 dark:bg-slate-800 rounded border">
               <div className="flex gap-2 mb-2">
                 <div className="flex-1 relative">
                   <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
@@ -1016,7 +1016,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                     value={dependencySearch}
                     onChange={(e) => setDependencySearch(e.target.value)}
                     placeholder="Search tasks..."
-                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -1025,12 +1025,12 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                   {availableTasks.map((t) => (
                     <div
                       key={t.id}
-                      className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded hover:bg-gray-50 cursor-pointer"
+                      className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer"
                       onClick={() => handleAddDependency(t.id)}
                     >
                       <div className="flex-1">
                         <div className="font-medium text-sm">{t.title}</div>
-                        <div className="text-xs text-gray-500">{t.status}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{t.status}</div>
                       </div>
                       <Button variant="ghost" size="sm">
                         <Plus className="w-3 h-3" />
@@ -1043,13 +1043,13 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           )}
 
           {isLoadingDependencies ? (
-            <div className="text-sm text-gray-500">Loading dependencies...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading dependencies...</div>
           ) : (
             <div className="space-y-3">
               {/* Depends On */}
               {dependencies.dependsOn.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Depends On:</div>
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Depends On:</div>
                   <div className="space-y-1">
                     {dependencies.dependsOn.map((dep) => (
                       <div
@@ -1058,7 +1058,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                       >
                         <div className="flex-1">
                           <div className="font-medium text-sm">{dep.dependsOn?.title || 'Unknown Task'}</div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
                             Status: {dep.dependsOn?.status || 'Unknown'}
                             {dep.dependsOn?.status !== 'DONE' && (
                               <span className="ml-2 text-orange-600 flex items-center gap-1">
@@ -1085,7 +1085,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               {/* Blocked By */}
               {dependencies.blockedBy.length > 0 && (
                 <div>
-                  <div className="text-xs font-medium text-gray-600 mb-1">Blocked By:</div>
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Blocked By:</div>
                   <div className="space-y-1">
                     {dependencies.blockedBy.map((dep) => (
                       <div
@@ -1094,7 +1094,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                       >
                         <div className="flex-1">
                           <div className="font-medium text-sm">{dep.task?.title || 'Unknown Task'}</div>
-                          <div className="text-xs text-gray-600">Status: {dep.task?.status || 'Unknown'}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Status: {dep.task?.status || 'Unknown'}</div>
                         </div>
                         <Button
                           variant="ghost"
@@ -1111,7 +1111,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               )}
 
               {dependencies.dependsOn.length === 0 && dependencies.blockedBy.length === 0 && (
-                <div className="text-sm text-gray-500 text-center py-2">
+                <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
                   No dependencies
                 </div>
               )}
@@ -1134,7 +1134,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
             )}
           </div>
           {loadingEvents ? (
-            <div className="text-sm text-gray-500">Loading events...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading events...</div>
           ) : linkedEvents.length > 0 ? (
             <div className="space-y-2">
               {linkedEvents.map((event) => (
@@ -1144,7 +1144,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                 >
                   <div className="flex-1">
                     <div className="font-medium text-sm">{event.title}</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
                       {new Date(event.startAt).toLocaleString()}
                     </div>
                   </div>
@@ -1168,7 +1168,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
               ))}
             </div>
           ) : (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {task.dueDate
                 ? 'No calendar events linked. Click "Create Event" to create one.'
                 : 'Add a due date to create a calendar event.'}
@@ -1218,7 +1218,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">{commentItem.user.name || commentItem.user.email}</span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {new Date(commentItem.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -1272,7 +1272,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{commentItem.content}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{commentItem.content}</p>
                     )}
                   </div>
                 </div>

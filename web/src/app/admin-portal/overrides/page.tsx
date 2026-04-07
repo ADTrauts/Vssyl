@@ -152,16 +152,16 @@ export default function AdminOverridesPage() {
 
   const getTierBadgeClass = (tier: string): string => {
     switch (tier) {
-      case 'free': return 'bg-gray-100 text-gray-800';
+      case 'free': return 'bg-gray-100 dark:bg-slate-700 text-gray-800';
       case 'business_basic': return 'bg-blue-100 text-blue-800';
       case 'business_advanced': return 'bg-yellow-100 text-yellow-800';
       case 'enterprise': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 dark:bg-slate-700 text-gray-800';
     }
   };
 
   const getRoleBadgeClass = (role: string): string => {
-    return role === 'ADMIN' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
+    return role === 'ADMIN' ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-slate-700 text-gray-800';
   };
 
   // Filter users based on search
@@ -189,11 +189,11 @@ export default function AdminOverridesPage() {
         <div className="flex items-center space-x-3 mb-6">
           <Shield className="w-8 h-8 text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Overrides</h1>
-            <p className="text-sm text-gray-500">Manually manage user roles and business tiers</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Overrides</h1>
+            <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Manually manage user roles and business tiers</p>
           </div>
         </div>
-        <div className="mt-4 text-center text-gray-500">
+        <div className="mt-4 text-center text-gray-700 dark:text-gray-300 dark:text-gray-400">
           <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
           Loading...
         </div>
@@ -206,8 +206,8 @@ export default function AdminOverridesPage() {
       <div className="flex items-center space-x-3 mb-6">
         <Shield className="w-8 h-8 text-blue-600" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Overrides</h1>
-          <p className="text-sm text-gray-500">Manually manage user roles and business tiers for testing and special cases</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Overrides</h1>
+          <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Manually manage user roles and business tiers for testing and special cases</p>
         </div>
       </div>
 
@@ -230,14 +230,14 @@ export default function AdminOverridesPage() {
 
       {/* User Management */}
       <Card>
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-gray-600" />
-                <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
+                <Users className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">User Management</h2>
               </div>
-              <p className="mt-1 text-sm text-gray-500">Grant or revoke admin access</p>
+              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Grant or revoke admin access</p>
             </div>
             <div className="relative">
               <input
@@ -245,12 +245,12 @@ export default function AdminOverridesPage() {
                 placeholder="Search users..."
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-64 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {userSearch && (
                 <button
                   onClick={() => setUserSearch('')}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-2.5 text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 >
                   ×
                 </button>
@@ -258,45 +258,45 @@ export default function AdminOverridesPage() {
             </div>
           </div>
           {userSearch && (
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
               Found {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
             </div>
           )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-slate-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   User
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Stats
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-700 dark:text-gray-300 dark:text-gray-400">
                     {userSearch ? `No users found matching "${userSearch}"` : 'No users found'}
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user.name || 'No name'}
                       </div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">{user.email}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -304,7 +304,7 @@ export default function AdminOverridesPage() {
                       {user.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
                     {user._count.businesses} businesses · {user._count.subscriptions} subscriptions
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -333,14 +333,14 @@ export default function AdminOverridesPage() {
 
       {/* Business Tier Management */}
       <Card>
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-gray-600" />
-                <h2 className="text-xl font-semibold text-gray-900">Business Tier Management</h2>
+                <Building2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Business Tier Management</h2>
               </div>
-              <p className="mt-1 text-sm text-gray-500">Set business subscription tiers without payment</p>
+              <p className="mt-1 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Set business subscription tiers without payment</p>
             </div>
             <div className="relative">
               <input
@@ -348,12 +348,12 @@ export default function AdminOverridesPage() {
                 placeholder="Search businesses..."
                 value={businessSearch}
                 onChange={(e) => setBusinessSearch(e.target.value)}
-                className="w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-64 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {businessSearch && (
                 <button
                   onClick={() => setBusinessSearch('')}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-2.5 text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 >
                   ×
                 </button>
@@ -361,45 +361,45 @@ export default function AdminOverridesPage() {
             </div>
           </div>
           {businessSearch && (
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
               Found {filteredBusinesses.length} business{filteredBusinesses.length !== 1 ? 'es' : ''}
             </div>
           )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-slate-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Business
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Current Tier
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Info
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wider">
                   Set Tier
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200">
               {filteredBusinesses.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-700 dark:text-gray-300 dark:text-gray-400">
                     {businessSearch ? `No businesses found matching "${businessSearch}"` : 'No businesses found'}
                   </td>
                 </tr>
               ) : (
                 filteredBusinesses.map((business) => (
-                <tr key={business.id} className="hover:bg-gray-50">
+                <tr key={business.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {business.name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
                         {business.industry || 'No industry'} · {business.size || 'No size'}
                       </div>
                     </div>
@@ -412,14 +412,14 @@ export default function AdminOverridesPage() {
                       <span className="ml-2 text-xs text-green-600">✓ Active Sub</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
                     {business.memberCount} members · EIN: {business.ein || 'None'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={() => setBusinessTier(business.id, business.name, 'free')}
-                        className="px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                        className="px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                       >
                         Free
                       </button>

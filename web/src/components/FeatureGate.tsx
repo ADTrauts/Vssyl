@@ -39,7 +39,7 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     return (
       <div className="flex items-center justify-center p-4">
         <LoadingSpinner size="sm" />
-        <span className="ml-2 text-sm text-gray-600">Checking access...</span>
+        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Checking access...</span>
       </div>
     );
   }
@@ -64,10 +64,10 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
   }
 
   return (
-    <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+    <div className="p-4 bg-gray-100 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-700">
       <div className="text-center">
-        <div className="text-gray-600 mb-2">🔒 Feature Locked</div>
-        <p className="text-sm text-gray-500">
+        <div className="text-gray-600 dark:text-gray-400 mb-2">🔒 Feature Locked</div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           This feature requires a higher subscription tier.
         </p>
         {accessInfo?.reason && (
@@ -155,9 +155,9 @@ export const FeatureList: React.FC<FeatureListProps> = ({
   // Implementation would show a list of features with their access status
   return (
     <div className="space-y-2">
-      <h4 className="font-medium text-gray-900">Available Features</h4>
+      <h4 className="font-medium text-gray-900 dark:text-gray-100">Available Features</h4>
       {/* Feature list implementation */}
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-500 dark:text-gray-400">
         Feature list for {module} module
       </div>
     </div>

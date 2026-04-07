@@ -201,9 +201,9 @@ export default function UserAutocomplete({
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (suggestions.length > 0 || loading) && (
-        <div className="absolute z-10 bg-white border border-gray-200 rounded shadow w-full mt-1 max-h-64 overflow-y-auto">
+        <div className="absolute z-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded shadow w-full mt-1 max-h-64 overflow-y-auto">
           {loading && (
-            <div className="p-3 text-center text-gray-500">
+            <div className="p-3 text-center text-gray-500 dark:text-gray-400">
               <Spinner size={16} />
               <div className="mt-1">Searching...</div>
             </div>
@@ -229,7 +229,7 @@ export default function UserAutocomplete({
                     {getConnectionStatusBadge(user)}
                   </div>
                   
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                     <span className="truncate">{user.email}</span>
                     {user.organization && (
                       <>

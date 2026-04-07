@@ -402,13 +402,13 @@ export default function BusinessSettingsPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 p-6 space-y-6 bg-white border-b">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
+      <div className="flex-shrink-0 p-6 space-y-6 bg-white dark:bg-slate-800 border-b dark:border-slate-700">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Business Settings</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Business Settings</h1>
+            <p className="text-gray-700 dark:text-gray-300 mt-2">
               Configure your business profile, branding, and preferences
             </p>
             {!canManage && (
@@ -427,7 +427,7 @@ export default function BusinessSettingsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-200 dark:border-slate-700">
           <nav className="flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -440,7 +440,7 @@ export default function BusinessSettingsPage() {
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                     isActive
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -459,7 +459,7 @@ export default function BusinessSettingsPage() {
         {activeTab === 'profile' && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Business Profile</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Business Profile</h2>
               <div className="flex items-center space-x-3">
                 <Avatar 
                   src={business.logo} 
@@ -478,7 +478,7 @@ export default function BusinessSettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Business Name *
                 </label>
                 <input
@@ -499,7 +499,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Industry
                 </label>
                 <input
@@ -514,7 +514,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Company Size
                 </label>
                 <select
@@ -535,7 +535,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Website
                 </label>
                 <input
@@ -557,7 +557,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Phone
                 </label>
                 <input
@@ -579,7 +579,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email
                 </label>
                 <input
@@ -601,7 +601,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description
                 </label>
                 <textarea
@@ -631,11 +631,11 @@ export default function BusinessSettingsPage() {
         {/* Branding Settings */}
         {activeTab === 'branding' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Branding & Appearance</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Branding & Appearance</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Primary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -667,7 +667,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Secondary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -699,7 +699,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Accent Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -731,7 +731,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Font Family
                 </label>
                 <select
@@ -750,7 +750,7 @@ export default function BusinessSettingsPage() {
                 </select>
                 {brandingForm.fontFamily && (
                   <p 
-                    className="mt-2 text-sm text-gray-600"
+                    className="mt-2 text-sm text-gray-600 dark:text-gray-400"
                     style={{ fontFamily: brandingForm.fontFamily }}
                   >
                     {FONT_OPTIONS.find(f => f.value === brandingForm.fontFamily)?.preview}
@@ -759,7 +759,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Custom CSS
                 </label>
                 <textarea
@@ -789,13 +789,13 @@ export default function BusinessSettingsPage() {
         {/* Security Settings */}
         {activeTab === 'security' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Security & Access</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Security & Access</h2>
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Single Sign-On (SSO)</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Single Sign-On (SSO)</h3>
+                <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Configure SSO to allow your team to sign in with your organization's identity provider.
                   </p>
                   <Button variant="secondary" disabled={!canManage}>
@@ -806,9 +806,9 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Two-Factor Authentication</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Two-Factor Authentication</h3>
+                <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Require two-factor authentication for all team members.
                   </p>
                   <Button variant="secondary" disabled={!canManage}>
@@ -819,12 +819,12 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Session Management</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Session Management</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">Session Timeout</p>
-                      <p className="text-sm text-gray-500">Automatically sign out inactive users</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Session Timeout</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Automatically sign out inactive users</p>
                     </div>
                     <select 
                       className={`px-3 py-2 border border-gray-300 rounded-lg ${
@@ -846,35 +846,35 @@ export default function BusinessSettingsPage() {
         {/* Billing Settings */}
         {activeTab === 'billing' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Business Billing & Subscription</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Business Billing & Subscription</h2>
             
             <div className="space-y-6">
               {/* Enterprise Plan Overview */}
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Enterprise Plan</h3>
-                    <p className="text-gray-600">Per-user pricing for your business team</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Enterprise Plan</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Per-user pricing for your business team</p>
                   </div>
                   <Badge color="blue">Business</Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-white p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">Team Members</p>
-                    <p className="text-2xl font-bold text-gray-900">{business?.members?.length || 0}</p>
+                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Team Members</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{business?.members?.length || 0}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">Cost per User</p>
-                    <p className="text-2xl font-bold text-gray-900">$25-50</p>
-                    <p className="text-xs text-gray-500">per month</p>
+                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Cost per User</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">$25-50</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">per month</p>
                   </div>
-                  <div className="bg-white p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">Estimated Total</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Estimated Total</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       ${((business?.members?.length || 0) * 35).toFixed(0)}
                     </p>
-                    <p className="text-xs text-gray-500">per month</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">per month</p>
                   </div>
                 </div>
                 
@@ -890,49 +890,49 @@ export default function BusinessSettingsPage() {
 
               {/* Enterprise Features */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Enterprise Features Included</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Enterprise Features Included</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Enterprise Modules</p>
-                        <p className="text-sm text-gray-600">Access to all business-grade modules</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Enterprise Modules</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Access to all business-grade modules</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Org Chart & Permissions</p>
-                        <p className="text-sm text-gray-600">Advanced team management</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Org Chart & Permissions</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Advanced team management</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Advanced Analytics</p>
-                        <p className="text-sm text-gray-600">Business intelligence & insights</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Advanced Analytics</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Business intelligence & insights</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Priority Support</p>
-                        <p className="text-sm text-gray-600">24/7 business support</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">Priority Support</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">24/7 business support</p>
                       </div>
                     </div>
                   </div>
@@ -945,16 +945,16 @@ export default function BusinessSettingsPage() {
         {/* Notifications Settings */}
         {activeTab === 'notifications' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Notification Preferences</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Notification Preferences</h2>
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Email Notifications</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Email Notifications</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">New member invitations</p>
-                      <p className="text-sm text-gray-500">Get notified when someone invites a new member</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">New member invitations</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when someone invites a new member</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -965,8 +965,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">File sharing</p>
-                      <p className="text-sm text-gray-500">Get notified when files are shared with you</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">File sharing</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when files are shared with you</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -977,8 +977,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">Security alerts</p>
-                      <p className="text-sm text-gray-500">Get notified about security-related events</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Security alerts</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified about security-related events</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -991,12 +991,12 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">In-App Notifications</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">In-App Notifications</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">Real-time updates</p>
-                      <p className="text-sm text-gray-500">Show notifications for real-time activity</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Real-time updates</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Show notifications for real-time activity</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -1007,8 +1007,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">Sound notifications</p>
-                      <p className="text-sm text-gray-500">Play sound for new notifications</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">Sound notifications</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Play sound for new notifications</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -1068,15 +1068,15 @@ export default function BusinessSettingsPage() {
                   nameOrEmail={business.name}
                 />
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Upload a new logo for {business.name}
               </p>
             </div>
             
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
               <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-2">Drop your logo here or click to browse</p>
-              <p className="text-sm text-gray-500 mb-4">PNG, JPG up to 5MB</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">Drop your logo here or click to browse</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">PNG, JPG up to 5MB</p>
               <input
                 ref={fileInputRef}
                 type="file"

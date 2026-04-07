@@ -249,8 +249,8 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
       <Card className="w-full max-w-2xl">
         <div className="text-center p-4">
           <Bot className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-          <h3 className="text-gray-600 font-semibold">AI Assistant Unavailable</h3>
-          <p className="text-gray-500">{error}</p>
+          <h3 className="text-gray-600 dark:text-gray-400 font-semibold">AI Assistant Unavailable</h3>
+          <p className="text-gray-500 dark:text-gray-400">{error}</p>
         </div>
       </Card>
     );
@@ -277,7 +277,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
               <Avatar className="h-10 w-10" nameOrEmail="AI Assistant" />
               <div>
                 <h3 className="text-lg font-semibold">{businessAI.name}</h3>
-                <p className="text-gray-600">{businessAI.description}</p>
+                <p className="text-gray-600 dark:text-gray-400">{businessAI.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -325,7 +325,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
           <div ref={chatScrollRef} className="h-64 px-4 overflow-y-auto">
             <div className="space-y-4">
               {chatHistory.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                   <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p>Start a conversation with your AI assistant</p>
                   <p className="text-sm">Try asking about documents, emails, or project help</p>
@@ -355,14 +355,14 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
                     {message.type === 'ai' && (
                       <div className="mt-2 space-y-2">
                         {message.confidence && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             Confidence: {(message.confidence * 100).toFixed(0)}%
                           </div>
                         )}
                         
                         {message.suggestedActions && message.suggestedActions.length > 0 && (
                           <div className="space-y-1">
-                            <p className="text-xs text-gray-500">Suggested actions:</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Suggested actions:</p>
                             {message.suggestedActions.map((action, index) => (
                               <div key={index} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
                                 {action}
@@ -408,7 +408,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
               {isTyping && (
                 <div className="flex gap-3 justify-start">
                   <Avatar className="h-8 w-8" nameOrEmail="AI" />
-                  <div className="bg-gray-100 rounded-lg px-3 py-2">
+                  <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
@@ -445,7 +445,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
             </Button>
           </div>
           {/* Character counter */}
-          <div className="text-xs text-gray-500 mt-1 text-right">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
             {currentQuery.length} characters
           </div>
         </div>

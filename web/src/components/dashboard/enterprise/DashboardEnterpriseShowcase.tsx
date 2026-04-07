@@ -60,22 +60,22 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
     preview: (
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-4 rounded-lg">
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-white p-3 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-slate-900 p-3 rounded-lg shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs text-gray-500">Revenue Growth</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Revenue Growth</div>
               <TrendingUp className="w-3 h-3 text-green-600" />
             </div>
             <div className="text-lg font-bold text-green-600">+24.5%</div>
           </div>
-          <div className="bg-white p-3 rounded-lg shadow-sm">
+          <div className="bg-white dark:bg-slate-900 p-3 rounded-lg shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-xs text-gray-500">Active Users</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Active Users</div>
               <Users className="w-3 h-3 text-blue-600" />
             </div>
             <div className="text-lg font-bold text-blue-600">1,247</div>
           </div>
         </div>
-        <div className="bg-white p-2 rounded text-xs text-gray-600">
+        <div className="bg-white dark:bg-slate-900 p-2 rounded text-xs text-gray-600 dark:text-gray-400">
           📊 Real-time business metrics with predictive insights
         </div>
       </div>
@@ -100,7 +100,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
         <div className="space-y-2 mb-3">
           {['Drive', 'Chat', 'Calendar'].map((module, i) => (
             <div key={module} className="flex items-center justify-between">
-              <div className="text-xs text-gray-600">{module}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">{module}</div>
               <div className="w-16 bg-gray-200 rounded-full h-1">
                 <div 
                   className="bg-green-500 h-1 rounded-full" 
@@ -111,7 +111,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
             </div>
           ))}
         </div>
-        <div className="bg-white p-2 rounded text-xs text-gray-600">
+        <div className="bg-white dark:bg-slate-900 p-2 rounded text-xs text-gray-600 dark:text-gray-400">
           🔄 Cross-module productivity correlation: +34% efficiency
         </div>
       </div>
@@ -137,7 +137,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
           <Sparkles className="w-4 h-4 text-purple-600" />
           <div className="text-xs font-medium text-purple-700">AI Insight</div>
         </div>
-        <div className="bg-white p-3 rounded-lg shadow-sm text-xs text-gray-700">
+        <div className="bg-white dark:bg-slate-900 p-3 rounded-lg shadow-sm text-xs text-gray-700 dark:text-gray-300">
           <div className="font-medium mb-1">🎯 Opportunity Detected</div>
           <div>Teams using integrated workflows show 45% better outcomes</div>
         </div>
@@ -165,12 +165,12 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
       <div className="bg-gradient-to-br from-orange-50 to-red-50 p-4 rounded-lg">
         <div className="grid grid-cols-2 gap-2 mb-3">
           {['Chart', 'Table', 'Gauge', 'Map'].map(type => (
-            <div key={type} className="bg-white p-2 rounded text-center text-xs border-2 border-dashed border-gray-200">
+            <div key={type} className="bg-white dark:bg-slate-900 p-2 rounded text-center text-xs border-2 border-dashed border-gray-200 dark:border-slate-700">
               {type}
             </div>
           ))}
         </div>
-        <div className="bg-white p-2 rounded text-xs text-gray-600">
+        <div className="bg-white dark:bg-slate-900 p-2 rounded text-xs text-gray-600 dark:text-gray-400">
           🎨 Build custom visualizations with any data source
         </div>
       </div>
@@ -198,7 +198,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
             { name: 'SOX', score: 94, status: 'compliant' },
             { name: 'HIPAA', score: 89, status: 'review' }
           ].map(comp => (
-            <div key={comp.name} className="flex items-center justify-between bg-white p-2 rounded">
+            <div key={comp.name} className="flex items-center justify-between bg-white dark:bg-slate-900 p-2 rounded">
               <div className="text-xs font-medium">{comp.name}</div>
               <div className="flex items-center gap-2">
                 <div className="text-xs">{comp.score}%</div>
@@ -209,7 +209,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
             </div>
           ))}
         </div>
-        <div className="bg-white p-2 rounded text-xs text-gray-600">
+        <div className="bg-white dark:bg-slate-900 p-2 rounded text-xs text-gray-600 dark:text-gray-400">
           🛡️ Automated compliance monitoring across all modules
         </div>
       </div>
@@ -233,12 +233,12 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs">👤</div>
-          <div className="text-xs text-gray-600">John is editing...</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400">John is editing...</div>
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
         </div>
-        <div className="bg-white p-3 rounded-lg shadow-sm">
-          <div className="text-xs text-gray-700 mb-1">💬 Sarah: "Great insights on Q3!"</div>
-          <div className="text-xs text-gray-500">📍 Annotation on Revenue Chart</div>
+        <div className="bg-white dark:bg-slate-900 p-3 rounded-lg shadow-sm">
+          <div className="text-xs text-gray-700 dark:text-gray-300 mb-1">💬 Sarah: "Great insights on Q3!"</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">📍 Annotation on Revenue Chart</div>
         </div>
         <div className="mt-2 text-xs text-blue-600">
           👥 3 collaborators active
@@ -291,8 +291,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             </div>
             <Sparkles className="w-6 h-6 text-purple-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Enterprise Dashboard Features</h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Enterprise Dashboard Features</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
             Unlock powerful business intelligence, AI-driven insights, and advanced analytics 
             to transform how your organization makes data-driven decisions.
           </p>
@@ -320,8 +320,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
       {/* Category Filters */}
       <Card className="p-4">
         <div className="flex items-center gap-2 mb-4">
-          <Settings className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Filter by Category:</span>
+          <Settings className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Category:</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -379,8 +379,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
                 </Badge>
               </div>
               
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-gray-600 text-sm mb-4">{feature.description}</p>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{feature.title}</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{feature.description}</p>
               
               {/* Feature Preview */}
               <div className="mb-4">
@@ -390,10 +390,10 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
               {isSelected && (
                 <div className="space-y-4 border-t pt-4">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Key Benefits:</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Key Benefits:</h4>
                     <ul className="space-y-1">
                       {feature.benefits.map((benefit, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                        <li key={index} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
                           <span>{benefit}</span>
                         </li>
@@ -426,8 +426,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Increase Productivity</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Increase Productivity</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               AI-powered insights help teams work 40% more efficiently with data-driven decisions.
             </p>
           </div>
@@ -436,8 +436,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             <div className="p-3 bg-green-100 rounded-full w-fit mx-auto mb-3">
               <Shield className="w-6 h-6 text-green-600" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Ensure Compliance</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Ensure Compliance</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Automated compliance monitoring and reporting keep your organization secure and audit-ready.
             </p>
           </div>
@@ -446,8 +446,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             <div className="p-3 bg-purple-100 rounded-full w-fit mx-auto mb-3">
               <Brain className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="font-bold text-gray-900 mb-2">Smart Insights</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Smart Insights</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Machine learning algorithms surface hidden patterns and opportunities in your data.
             </p>
           </div>
@@ -459,7 +459,7 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             Start Enterprise Trial
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
             14-day free trial • No credit card required • Full feature access
           </p>
         </div>
@@ -468,8 +468,8 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
       {/* ROI Calculator */}
       <Card className="p-6">
         <div className="text-center mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Enterprise Dashboard ROI</h3>
-          <p className="text-gray-600">See how enterprise features impact your bottom line</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Enterprise Dashboard ROI</h3>
+          <p className="text-gray-600 dark:text-gray-400">See how enterprise features impact your bottom line</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -479,10 +479,10 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
             { metric: 'Compliance Cost', value: '-$50K/year', description: 'Reduced audit costs' },
             { metric: 'Productivity Gain', value: '+25%', description: 'Team efficiency' }
           ].map(item => (
-            <div key={item.metric} className="text-center p-4 bg-gray-50 rounded-lg">
+            <div key={item.metric} className="text-center p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="text-2xl font-bold text-blue-600 mb-1">{item.value}</div>
-              <div className="font-medium text-gray-900 mb-1">{item.metric}</div>
-              <div className="text-xs text-gray-500">{item.description}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">{item.metric}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{item.description}</div>
             </div>
           ))}
         </div>
@@ -491,12 +491,12 @@ export const DashboardEnterpriseShowcase: React.FC<DashboardEnterpriseShowcasePr
       {/* Upgrade Prompt */}
       {showUpgradePrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowUpgradePrompt(false)}>
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold">Upgrade Required</h3>
               <button 
                 onClick={() => setShowUpgradePrompt(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
               >
                 ×
               </button>

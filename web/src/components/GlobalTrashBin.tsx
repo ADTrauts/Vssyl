@@ -275,12 +275,12 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
             }}
           >
           {/* Header */}
-          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
             <div className="flex items-center gap-2">
-              <Trash2 size={16} className="text-gray-600" />
-              <h3 className="font-medium text-gray-900">Trash</h3>
+              <Trash2 size={16} className="text-gray-600 dark:text-gray-400" />
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">Trash</h3>
               {itemCount > 0 && (
-                <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
+                <span className="bg-gray-200 text-gray-700 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
                   {itemCount} items
                 </span>
               )}
@@ -291,7 +291,7 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
                   e.stopPropagation();
                   setIsPanelExpanded(!isPanelExpanded);
                 }}
-                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 title={isPanelExpanded ? "Minimize" : "Expand"}
               >
                 {isPanelExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -299,7 +299,7 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
               {itemCount > 0 && (
                 <button
                   onClick={handleEmptyTrash}
-                  className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
                   title="Empty trash"
                 >
                   <X size={14} />
@@ -307,7 +307,7 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
               )}
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                 title="Close"
               >
                 <X size={14} />
@@ -318,11 +318,11 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
           {/* Content */}
           <div className={`overflow-y-auto ${isPanelExpanded ? 'max-h-[520px]' : 'max-h-64'}`}>
             {loading ? (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 Loading...
               </div>
             ) : itemCount === 0 ? (
-              <div className="p-6 text-center text-gray-500">
+              <div className="p-6 text-center text-gray-500 dark:text-gray-400">
                 <Trash2 size={32} className="mx-auto mb-2 text-gray-300" />
                 <p className="text-sm">Trash is empty</p>
                 <p className="text-xs text-gray-400 mt-1">
@@ -341,14 +341,14 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
                       {/* Module Header */}
                       <button
                         onClick={() => toggleModule(moduleId)}
-                        className="w-full flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg transition-colors text-left"
+                        className="w-full flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors text-left"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-400">
                             {isModuleExpanded ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
                           </span>
-                          <span className="text-sm font-semibold text-gray-700">{moduleName}</span>
-                          <span className="text-xs text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-full">
+                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{moduleName}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded-full">
                             {moduleItemCount}
                           </span>
                         </div>
@@ -360,17 +360,17 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
                           {items.map((item) => (
                             <div
                               key={item.id}
-                              className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                              className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg transition-colors"
                             >
                               {/* Item Icon */}
                               <span className="text-lg">{getItemIcon(item.type)}</span>
                               
                               {/* Item Details */}
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                   {item.name}
                                 </p>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
                                   {formatDate(item.trashedAt)}
                                 </p>
                               </div>
@@ -379,14 +379,14 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => handleRestore(item)}
-                                  className="p-1 text-gray-500 hover:text-green-600 transition-colors"
+                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 transition-colors"
                                   title="Restore"
                                 >
                                   <RotateCcw size={14} />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(item)}
-                                  className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
                                   title="Delete permanently"
                                 >
                                   <X size={14} />
@@ -405,8 +405,8 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
 
           {/* Footer */}
           {itemCount > 0 && (
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
-              <p className="text-xs text-gray-500 text-center">
+            <div className="p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                 Items will be permanently deleted after 30 days
               </p>
             </div>

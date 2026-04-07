@@ -122,7 +122,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading session...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading session...</p>
         </div>
       </div>
     );
@@ -133,7 +133,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="text-red-600 text-xl mb-2">Authentication Required</div>
-          <p className="text-gray-600">Please log in to access user management.</p>
+          <p className="text-gray-700 dark:text-gray-300">Please log in to access user management.</p>
         </div>
       </div>
     );
@@ -144,7 +144,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading users...</p>
         </div>
       </div>
     );
@@ -154,8 +154,8 @@ export default function UserManagement() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage platform users and permissions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">Manage platform users and permissions</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex">
@@ -174,8 +174,8 @@ export default function UserManagement() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="text-gray-600 mt-2">Manage platform users and permissions</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+        <p className="text-gray-700 dark:text-gray-300 mt-2">Manage platform users and permissions</p>
       </div>
 
       {/* Filters */}
@@ -183,13 +183,13 @@ export default function UserManagement() {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search users by email, name, or Vssyl ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 dark:placeholder:text-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function UserManagement() {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Roles</option>
               <option value="ADMIN">Admin</option>
@@ -219,26 +219,26 @@ export default function UserManagement() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-900">User</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Vssyl ID</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Role</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Activity</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
+              <tr className="border-b border-gray-200 dark:border-slate-700">
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">User</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Vssyl ID</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Role</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Status</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Activity</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-gray-100">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users?.map((user) => (
-                <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr key={user.id} className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                   <td className="py-4 px-4">
                     <div>
-                      <div className="font-medium text-gray-900">{user.name || 'No name'}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{user.name || 'No name'}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">{user.userNumber}</code>
+                    <code className="text-sm bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded">{user.userNumber}</code>
                   </td>
                   <td className="py-4 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
@@ -251,7 +251,7 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="py-4 px-4">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
                       <div>{user._count?.businesses || 0} businesses</div>
                       <div>{user._count?.files || 0} files</div>
                     </div>
@@ -265,7 +265,7 @@ export default function UserManagement() {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                      <button className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors">
                         <MoreVertical className="w-4 h-4" />
                       </button>
                     </div>
@@ -279,21 +279,21 @@ export default function UserManagement() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
               Page {currentPage} of {totalPages}
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -305,30 +305,30 @@ export default function UserManagement() {
       {/* Impersonation Modal */}
       {showImpersonateModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-slate-900 dark:bg-slate-800 rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Impersonate User
             </h3>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   You are about to impersonate:
                 </p>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <div className="font-medium">{selectedUser.name || 'No name'}</div>
-                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
-                  <div className="text-sm text-gray-500">Vssyl ID: {selectedUser.userNumber}</div>
+                <div className="bg-gray-50 dark:bg-slate-800 dark:bg-slate-700 p-3 rounded-lg">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">{selectedUser.name || 'No name'}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">{selectedUser.email}</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Vssyl ID: {selectedUser.userNumber}</div>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Reason (optional)
                 </label>
                 <textarea
                   value={impersonateReason}
                   onChange={(e) => setImpersonateReason(e.target.value)}
                   placeholder="e.g., Debugging user issue, Customer support..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 dark:placeholder:text-gray-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={3}
                 />
               </div>
@@ -339,7 +339,7 @@ export default function UserManagement() {
                     setSelectedUser(null);
                     setImpersonateReason('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700"
                 >
                   Cancel
                 </button>

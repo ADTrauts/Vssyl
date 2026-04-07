@@ -185,7 +185,7 @@ export default function SchedulingTeamContent({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-600">Loading team schedules...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading team schedules...</p>
         </div>
       </div>
     );
@@ -211,8 +211,8 @@ export default function SchedulingTeamContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Team Schedules</p>
-                <p className="text-2xl font-semibold text-gray-900">{schedules.length}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Team Schedules</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{schedules.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <Calendar className="h-5 w-5 text-blue-500" />
@@ -223,8 +223,8 @@ export default function SchedulingTeamContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Scheduled This Week</p>
-                <p className="text-2xl font-semibold text-gray-900">{uniqueEmployees.size}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Scheduled This Week</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{uniqueEmployees.size}</p>
               </div>
               <div className="flex-shrink-0">
                 <Users className="h-5 w-5 text-green-500" />
@@ -235,8 +235,8 @@ export default function SchedulingTeamContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Open Shifts</p>
-                <p className="text-2xl font-semibold text-gray-900">{openShiftsThisWeek}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Open Shifts</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{openShiftsThisWeek}</p>
               </div>
               <div className="flex-shrink-0">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
@@ -247,8 +247,8 @@ export default function SchedulingTeamContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Pending Swaps</p>
-                <p className="text-2xl font-semibold text-gray-900">{pendingSwaps.length}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Pending Swaps</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{pendingSwaps.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <Clock className="h-5 w-5 text-yellow-500" />
@@ -261,7 +261,7 @@ export default function SchedulingTeamContent({
         <Card className="mb-6">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Team Schedule</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Team Schedule</h2>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="secondary"
@@ -314,7 +314,7 @@ export default function SchedulingTeamContent({
           {pendingSwaps.length === 0 ? (
             <Card className="p-6 text-center">
               <CheckCircle2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No pending swap requests</p>
+              <p className="text-gray-600 dark:text-gray-400">No pending swap requests</p>
             </Card>
           ) : (
             pendingSwaps.map((swap) => (
@@ -324,7 +324,7 @@ export default function SchedulingTeamContent({
                     <p className="font-medium">
                       {swap.requestedBy.name} wants to swap with {swap.requestedTo?.name || 'TBD'}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Shift: {safeFormatDate(swap.originalShift?.startTime, 'MMM d, yyyy HH:mm', '--')}
                     </p>
                   </div>

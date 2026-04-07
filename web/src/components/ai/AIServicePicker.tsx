@@ -72,7 +72,7 @@ export default function AIServicePicker({
       <div className={`relative ${className}`} ref={dropdownRef}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-md transition-colors"
           title={selectedProvider.description}
         >
           <Icon className="h-3.5 w-3.5" />
@@ -81,7 +81,7 @@ export default function AIServicePicker({
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[180px]">
+          <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[180px]">
             {PROVIDER_OPTIONS.map((option) => {
               const OptionIcon = option.icon;
               return (
@@ -100,7 +100,7 @@ export default function AIServicePicker({
                   <OptionIcon className="h-4 w-4" />
                   <div className="flex-1">
                     <div className="font-medium">{option.label}</div>
-                    <div className="text-xs text-gray-500">{option.description}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>
                   </div>
                   {value === option.value && (
                     <div className="h-2 w-2 rounded-full bg-purple-600" />
@@ -118,7 +118,7 @@ export default function AIServicePicker({
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
       >
         <Icon className="h-4 w-4" />
         <span>{selectedProvider.label}</span>
@@ -126,7 +126,7 @@ export default function AIServicePicker({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[220px]">
+        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[220px]">
           {PROVIDER_OPTIONS.map((option) => {
             const OptionIcon = option.icon;
             return (
@@ -145,7 +145,7 @@ export default function AIServicePicker({
                 <OptionIcon className="h-5 w-5" />
                 <div className="flex-1">
                   <div className="font-medium">{option.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{option.description}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{option.description}</div>
                 </div>
                 {value === option.value && (
                   <div className="h-2 w-2 rounded-full bg-purple-600" />

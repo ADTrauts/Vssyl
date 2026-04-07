@@ -137,7 +137,7 @@ export default function UpgradeFlow({
         {step === 'select' && (
           <>
             <div>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
                 Choose a new plan. Your subscription will be updated immediately, and Stripe will automatically prorate any charges.
               </p>
             </div>
@@ -175,7 +175,7 @@ export default function UpgradeFlow({
                     <p>
                       Stripe will automatically calculate and apply prorated charges for the remainder of your current billing period.
                     </p>
-                    <p className="text-xs text-gray-600 mt-2">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                       If you're upgrading, you'll be charged the difference. If you're downgrading, you'll receive a credit.
                     </p>
                   </div>
@@ -188,7 +188,7 @@ export default function UpgradeFlow({
                     <p>
                       Downgrading to the Free plan will cancel your paid subscription at the end of your current billing period.
                     </p>
-                    <p className="text-xs text-gray-600 mt-2">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                       You'll retain access to all paid features until then.
                     </p>
                   </div>
@@ -200,17 +200,17 @@ export default function UpgradeFlow({
                   <h4 className="font-semibold mb-3">Plan Summary</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Current Plan:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Current Plan:</span>
                       <span className="font-medium capitalize">{currentTier.replace('_', ' ')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">New Plan:</span>
+                      <span className="text-gray-600 dark:text-gray-400">New Plan:</span>
                       <span className="font-medium capitalize">{selectedTier.replace('_', ' ')}</span>
                     </div>
                     {currentTier !== 'free' && selectedTier !== 'free' && (
                       <div className="flex justify-between pt-2 border-t">
-                        <span className="text-gray-600">Proration:</span>
-                        <span className="font-medium text-gray-700">Calculated by Stripe</span>
+                        <span className="text-gray-600 dark:text-gray-400">Proration:</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Calculated by Stripe</span>
                       </div>
                     )}
                   </div>

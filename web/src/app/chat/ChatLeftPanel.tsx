@@ -236,12 +236,12 @@ export default function ChatLeftPanel({
   if (loading) {
     return (
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
             <button
               onClick={onToggleCollapse}
-              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+              className="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -250,7 +250,7 @@ export default function ChatLeftPanel({
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-500">Loading conversations...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading conversations...</p>
           </div>
         </div>
       </div>
@@ -260,12 +260,12 @@ export default function ChatLeftPanel({
   if (error) {
     return (
       <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
             <button
               onClick={onToggleCollapse}
-              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+              className="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -289,20 +289,20 @@ export default function ChatLeftPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Conversations</h2>
           <div className="flex items-center space-x-1">
             <button
               onClick={() => setShowNewChatModal(true)}
-              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+              className="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded"
               aria-label="New conversation"
             >
               <Plus className="w-4 h-4" />
             </button>
             <button
               onClick={onToggleCollapse}
-              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+              className="p-1 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 rounded"
               aria-label="Toggle panel"
             >
               <MoreVertical className="w-4 h-4" />
@@ -312,9 +312,9 @@ export default function ChatLeftPanel({
       </div>
 
       {/* Search */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 w-4 h-4" />
           <Input
             type="text"
             placeholder="Search conversations..."
@@ -326,14 +326,14 @@ export default function ChatLeftPanel({
       </div>
 
       {/* Filters */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => onFiltersChange([])}
             className={`px-3 py-1 text-xs rounded-full transition-colors ${
               panelState.activeFilters.length === 0
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
             All
@@ -343,7 +343,7 @@ export default function ChatLeftPanel({
             className={`px-3 py-1 text-xs rounded-full transition-colors ${
               panelState.activeFilters.includes('DIRECT')
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
             Direct
@@ -353,7 +353,7 @@ export default function ChatLeftPanel({
             className={`px-3 py-1 text-xs rounded-full transition-colors ${
               panelState.activeFilters.includes('GROUP')
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
             Groups
@@ -365,9 +365,9 @@ export default function ChatLeftPanel({
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-            <MessageCircle className="w-12 h-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <MessageCircle className="w-12 h-12 text-gray-500 dark:text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No conversations</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               {panelState.searchQuery ? 'No conversations match your search.' : 'Start a new conversation to get started.'}
             </p>
             {!panelState.searchQuery && (
@@ -378,7 +378,7 @@ export default function ChatLeftPanel({
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-slate-700">
             {filteredConversations.map((conversation) => {
               const otherUser = getOtherParticipant(conversation);
               const lastMessage = getLastMessage(conversation);
@@ -412,7 +412,7 @@ export default function ChatLeftPanel({
                 >
                   <button
                     onClick={() => onConversationSelect(conversation)}
-                    className={`w-full text-left p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                    className={`w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors border-b border-gray-100 dark:border-slate-700 ${
                       isActive ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     }`}
                   >
@@ -435,12 +435,12 @@ export default function ChatLeftPanel({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className={`font-medium truncate ${
-                            unread ? 'text-gray-900 font-semibold' : 'text-gray-900'
+                            unread ? 'text-gray-900 dark:text-gray-100 font-semibold' : 'text-gray-900 dark:text-gray-100'
                           }`}>
                             {getConversationName(conversation)}
                           </span>
                           {lastMessage && (
-                            <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                            <span className="text-xs text-gray-600 dark:text-gray-400 flex-shrink-0 ml-2">
                               {formatDate(lastMessage.createdAt)}
                             </span>
                           )}
@@ -448,7 +448,7 @@ export default function ChatLeftPanel({
                         
                         <div className="flex items-center justify-between">
                           <p className={`text-sm truncate ${
-                            unread ? 'text-gray-900 font-medium' : 'text-gray-600'
+                            unread ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-700 dark:text-gray-300'
                           }`}>
                             {lastMessage?.content || 'No messages yet'}
                           </p>
@@ -459,8 +459,8 @@ export default function ChatLeftPanel({
                         
                         {conversation.type === 'GROUP' && (
                           <div className="flex items-center mt-1">
-                            <Users className="w-3 h-3 text-gray-400 mr-1" />
-                            <span className="text-xs text-gray-500">
+                            <Users className="w-3 h-3 text-gray-500 dark:text-gray-400 mr-1" />
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
                               {conversation.participants?.length || 0} members
                             </span>
                           </div>
@@ -485,11 +485,11 @@ export default function ChatLeftPanel({
         <div className="space-y-4">
           {/* Conversation Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Conversation Type
             </label>
             <div className="flex space-x-4">
-              <label className="flex items-center">
+              <label className="flex items-center text-gray-700 dark:text-gray-300">
                 <input
                   type="radio"
                   name="conversationType"
@@ -499,7 +499,7 @@ export default function ChatLeftPanel({
                 />
                 <span className="text-sm">Direct Message</span>
               </label>
-              <label className="flex items-center">
+              <label className="flex items-center text-gray-700 dark:text-gray-300">
                 <input
                   type="radio"
                   name="conversationType"
@@ -515,7 +515,7 @@ export default function ChatLeftPanel({
           {/* Group Name (for group chats) */}
           {selectedUsers.length > 1 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Group Name
               </label>
               <Input
@@ -529,7 +529,7 @@ export default function ChatLeftPanel({
 
           {/* User Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Users
             </label>
             <UserAutocomplete
@@ -544,18 +544,18 @@ export default function ChatLeftPanel({
           {/* Selected Users */}
           {selectedUsers.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Selected Users ({selectedUsers.length})
               </label>
               <div className="space-y-2">
                 {selectedUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div key={user.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-700 rounded">
                     <div className="flex items-center space-x-2">
                       <Avatar
                         nameOrEmail={user.name || user.email}
                         size={24}
                       />
-                      <span className="text-sm">{user.name || user.email}</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">{user.name || user.email}</span>
                     </div>
                     <button
                       onClick={() => setSelectedUsers(selectedUsers.filter(u => u.id !== user.id))}

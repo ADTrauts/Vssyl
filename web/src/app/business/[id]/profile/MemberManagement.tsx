@@ -38,7 +38,7 @@ const ROLE_OPTIONS = [
 function FormGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
       {children}
     </div>
   );
@@ -86,24 +86,24 @@ export function MemberManagement({ businessId, members, currentUserId, canManage
   return (
     <Card>
       <div className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Members</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Business Members</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Joined</th>
                 {canManage && <th className="px-4 py-2" />}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100">
               {members.map((member) => (
                 <tr key={member.id}>
                   <td className="px-4 py-2 flex items-center gap-2">
                     <Avatar src={undefined} nameOrEmail={member.user.name || member.user.email} size={32} />
-                    <span className="font-medium text-gray-900">{member.user.name || member.user.email}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{member.user.name || member.user.email}</span>
                     {member.user.id === currentUserId && (
                       <Badge color="blue">You</Badge>
                     )}
@@ -113,7 +113,7 @@ export function MemberManagement({ businessId, members, currentUserId, canManage
                       <select
                         value={role}
                         onChange={e => setRole(e.target.value as Member['role'])}
-                        className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-2 py-1 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={loading}
                       >
                         {ROLE_OPTIONS.map(opt => (
@@ -121,11 +121,11 @@ export function MemberManagement({ businessId, members, currentUserId, canManage
                         ))}
                       </select>
                     ) : (
-                      <span className="capitalize text-gray-700">{member.role.toLowerCase()}</span>
+                      <span className="capitalize text-gray-700 dark:text-gray-300">{member.role.toLowerCase()}</span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-gray-700">{member.user.email}</td>
-                  <td className="px-4 py-2 text-gray-500 text-sm">{new Date(member.joinedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{member.user.email}</td>
+                  <td className="px-4 py-2 text-gray-500 dark:text-gray-400 text-sm">{new Date(member.joinedAt).toLocaleDateString()}</td>
                   {canManage && (
                     <td className="px-4 py-2">
                       {editingMemberId === member.id ? (

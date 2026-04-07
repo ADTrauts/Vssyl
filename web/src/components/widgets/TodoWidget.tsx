@@ -196,7 +196,7 @@ export default function TodoWidget({
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size={24} />
-        <span className="ml-2 text-gray-600">Loading tasks...</span>
+        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading tasks...</span>
       </div>
     );
   }
@@ -259,7 +259,7 @@ export default function TodoWidget({
       {safeConfig.showUpcomingTasks && upcomingTasks.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-700">Upcoming Tasks</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Upcoming Tasks</h4>
             <Button
               size="sm"
               variant="ghost"
@@ -272,7 +272,7 @@ export default function TodoWidget({
             {upcomingTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                className="flex items-start space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg cursor-pointer"
                 onClick={() => window.location.href = `/todo?task=${task.id}`}
               >
                 <div className="flex-shrink-0 mt-0.5">
@@ -298,7 +298,7 @@ export default function TodoWidget({
                       {task.status.replace('_', ' ')}
                     </Badge>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500 mt-1">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {task.dueDate && (
                       <>
                         <Calendar className="w-3 h-3" />
@@ -323,7 +323,7 @@ export default function TodoWidget({
       {tasks.length === 0 && (
         <div className="text-center py-6">
           <CheckSquare className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-600 mb-3">{contextContent.emptyMessage}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{contextContent.emptyMessage}</p>
           <Button
             size="sm"
             onClick={() => window.location.href = '/todo'}
@@ -335,8 +335,8 @@ export default function TodoWidget({
 
       {/* Configuration Panel */}
       {showConfig && onConfigChange && (
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <h5 className="text-sm font-medium text-gray-700 mb-2">Widget Settings</h5>
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Widget Settings</h5>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
               <input
@@ -348,7 +348,7 @@ export default function TodoWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show upcoming tasks</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show upcoming tasks</span>
             </label>
             <label className="flex items-center space-x-2">
               <input
@@ -360,7 +360,7 @@ export default function TodoWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show overdue tasks</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show overdue tasks</span>
             </label>
             <label className="flex items-center space-x-2">
               <input
@@ -372,10 +372,10 @@ export default function TodoWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show priority badges</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show priority badges</span>
             </label>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Max tasks to show:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Max tasks to show:</span>
               <select
                 value={safeConfig.maxTasksToShow}
                 onChange={(e) => onConfigChange({
@@ -398,7 +398,7 @@ export default function TodoWidget({
         <div className="flex justify-end pt-1">
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
             title={showConfig ? 'Close settings' : 'Widget settings'}
           >
             <Settings className="w-3.5 h-3.5" />

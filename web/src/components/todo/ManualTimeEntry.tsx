@@ -60,7 +60,7 @@ export function ManualTimeEntry({ taskId, onSave, onCancel }: ManualTimeEntryPro
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-gray-900">Add Manual Time Entry</h3>
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Add Manual Time Entry</h3>
         <Button
           variant="ghost"
           size="sm"
@@ -73,7 +73,7 @@ export function ManualTimeEntry({ taskId, onSave, onCancel }: ManualTimeEntryPro
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Started At
           </label>
           <Input
@@ -85,7 +85,7 @@ export function ManualTimeEntry({ taskId, onSave, onCancel }: ManualTimeEntryPro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Duration (minutes)
           </label>
           <Input
@@ -98,7 +98,7 @@ export function ManualTimeEntry({ taskId, onSave, onCancel }: ManualTimeEntryPro
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Description (optional)
           </label>
           <Textarea

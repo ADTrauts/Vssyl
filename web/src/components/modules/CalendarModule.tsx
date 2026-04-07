@@ -422,7 +422,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
           </div>
           <div className="flex items-center space-x-2">
             {/* Modern View Switcher */}
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 flex space-x-1">
+            <div className="bg-white dark:bg-slate-900/20 backdrop-blur-sm rounded-lg p-1 flex space-x-1">
               <button
                 onClick={() => setViewMode('month')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -457,7 +457,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
             {/* Modern Create Button */}
             <button
               onClick={handleCreateEvent}
-              className="bg-white text-blue-600 px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
+              className="bg-white dark:bg-slate-900 text-blue-600 px-5 py-2.5 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
               <span>New Event</span>
@@ -467,7 +467,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
       </div>
 
       {/* Modern Search and Navigation Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
         <div className="flex items-center justify-between">
           {/* Modern Search */}
           <div className="relative flex-1 max-w-md">
@@ -477,7 +477,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:bg-slate-900 transition-all text-sm font-medium"
             />
           </div>
           
@@ -485,14 +485,14 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
           <div className="flex items-center space-x-3">
             <button
               onClick={handlePreviousPeriod}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
               aria-label="Previous period"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             <div className="px-6 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 {viewMode === 'month' && currentDate.toLocaleDateString('en-US', { 
                   month: 'long', 
                   year: 'numeric' 
@@ -513,15 +513,15 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
             
             <button
               onClick={handleNextPeriod}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
               aria-label="Next period"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="ml-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+              className="ml-2 px-4 py-2 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
             >
               Today
             </button>
@@ -542,18 +542,18 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
 
       {/* Modern Calendar Grid */}
       {viewMode === 'month' && (
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
           {/* Modern Calendar Header */}
-          <div className="grid grid-cols-7 gap-px bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+          <div className="grid grid-cols-7 gap-px bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200 dark:border-slate-700">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="bg-white p-4 text-center">
-                <span className="text-sm font-bold text-gray-700 tracking-wider uppercase">{day}</span>
+              <div key={day} className="bg-white dark:bg-slate-900 p-4 text-center">
+                <span className="text-sm font-bold text-gray-700 dark:text-gray-300 tracking-wider uppercase">{day}</span>
               </div>
             ))}
           </div>
 
           {/* Modern Calendar Days */}
-          <div className="grid grid-cols-7 gap-px bg-gray-100">
+          <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700">
             {getDaysInMonth(currentDate).map((date, index) => {
               const isToday = date && 
                 date.getDate() === new Date().getDate() &&
@@ -610,7 +610,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
                           );
                         })}
                         {getEventsForDate(date).length > 3 && (
-                          <div className="text-xs text-gray-500 text-center py-1 bg-gray-50 rounded-lg font-medium">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1 bg-gray-50 dark:bg-slate-800 rounded-lg font-medium">
                             +{getEventsForDate(date).length - 3} more
                           </div>
                         )}
@@ -625,13 +625,13 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
       )}
 
       {/* Modern Upcoming Events Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
             <span>Upcoming Events</span>
           </h3>
-          <div className="text-sm font-medium text-gray-500">
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
             Next {filteredEvents.filter(event => new Date(event.occurrenceStartAt || event.startAt) > new Date()).slice(0, 5).length} events
           </div>
         </div>
@@ -660,10 +660,10 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
                     <CalendarIcon className="w-6 h-6" style={{ color: eventColor }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 transition-colors">
                       {event.title}
                     </p>
-                    <div className="flex items-center space-x-3 text-sm text-gray-600 mt-1.5">
+                    <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400 mt-1.5">
                       <span className="flex items-center space-x-1 font-medium">
                         <Clock className="w-4 h-4" />
                         <span>{formatTime(event.occurrenceStartAt || event.startAt, event.timezone)}</span>
@@ -693,11 +693,11 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
             })}
           {filteredEvents.filter(event => new Date(event.occurrenceStartAt || event.startAt) > new Date()).length === 0 && (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CalendarIcon className="w-8 h-8 text-gray-400" />
               </div>
-              <p className="text-gray-600 font-medium">No upcoming events</p>
-              <p className="text-gray-500 text-sm mt-1">Create your first event to get started</p>
+              <p className="text-gray-600 dark:text-gray-400 font-medium">No upcoming events</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Create your first event to get started</p>
             </div>
           )}
         </div>
@@ -717,7 +717,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modern Header with Gradient */}
@@ -736,7 +736,7 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
                     <CalendarIcon className="w-7 h-7 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                       {selectedEvent.title}
                     </h2>
                     <div className="flex items-center space-x-2">
@@ -759,10 +759,10 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
                     setShowEventModal(false);
                     setSelectedEvent(null);
                   }}
-                  className="p-2 hover:bg-white/50 rounded-xl transition-all"
+                  className="p-2 hover:bg-white dark:bg-slate-900/50 rounded-xl transition-all"
                 >
                   <span className="sr-only">Close</span>
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -771,8 +771,8 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
 
             <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-180px)]">
               {selectedEvent.description && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <p className="text-gray-700 leading-relaxed">{selectedEvent.description}</p>
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{selectedEvent.description}</p>
                 </div>
               )}
 
@@ -826,19 +826,19 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
 
               {/* Attendees Section */}
               {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
                   <div className="flex items-center space-x-2 mb-4">
-                    <Users className="w-5 h-5 text-gray-600" />
-                    <h4 className="text-sm font-bold text-gray-900">
+                    <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">
                       Attendees ({selectedEvent.attendees.length})
                     </h4>
                   </div>
                   <div className="space-y-3">
                     {selectedEvent.attendees.map((attendee, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg transition-colors">
                         <div className="flex items-center space-x-3">
                           <Avatar size={32} nameOrEmail={attendee.email || attendee.userId || 'Unknown'} />
-                          <span className="text-sm font-medium text-gray-900">{attendee.email || attendee.userId}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{attendee.email || attendee.userId}</span>
                         </div>
                         {attendee.response && (
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -871,13 +871,13 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
             </div>
 
             {/* Modern Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
               <button
                 onClick={() => {
                   setShowEventModal(false);
                   setSelectedEvent(null);
                 }}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
               >
                 Close
               </button>

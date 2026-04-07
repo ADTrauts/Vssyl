@@ -69,33 +69,33 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
       case 'LEARNING':
         return 'text-green-600 bg-green-100';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700';
     }
   };
 
   const getFeedbackIcon = (rating: number | null | undefined) => {
-    if (rating === null || rating === undefined) return <AlertCircle className="w-4 h-4 text-gray-400" />;
+    if (rating === null || rating === undefined) return <AlertCircle className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />;
     if (rating >= 8) return <CheckCircle className="w-4 h-4 text-green-500" />;
     if (rating >= 6) return <AlertCircle className="w-4 h-4 text-yellow-500" />;
     return <XCircle className="w-4 h-4 text-red-500" />;
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Reasoning Viewer</h3>
+    <div className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 ${className}`}>
+      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">AI Reasoning Viewer</h3>
         
         {/* Search Input */}
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 dark:text-gray-300 dark:text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Search by session ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <button
@@ -119,31 +119,31 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
       {selectedSession && (
         <div className="p-6 space-y-6">
           {/* Session Header */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <Brain className="w-5 h-5 text-gray-600" />
-                <h4 className="font-semibold text-gray-900">Session Information</h4>
+                <Brain className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100">Session Information</h4>
               </div>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
                 {selectedSession.totalInteractions} interactions
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Session ID:</span>
+                <span className="text-gray-700 dark:text-gray-300">Session ID:</span>
                 <span className="ml-2 font-mono text-xs">{selectedSession.sessionId}</span>
               </div>
               <div>
-                <span className="text-gray-600">User:</span>
+                <span className="text-gray-700 dark:text-gray-300">User:</span>
                 <span className="ml-2 font-medium">{selectedSession.user.name || selectedSession.user.email}</span>
               </div>
               <div>
-                <span className="text-gray-600">Started:</span>
+                <span className="text-gray-700 dark:text-gray-300">Started:</span>
                 <span className="ml-2 font-medium">{formatDate(selectedSession.session[0]?.createdAt || '')}</span>
               </div>
               <div>
-                <span className="text-gray-600">Last Activity:</span>
+                <span className="text-gray-700 dark:text-gray-300">Last Activity:</span>
                 <span className="ml-2 font-medium">{formatDate(selectedSession.session[selectedSession.session.length - 1]?.createdAt || '')}</span>
               </div>
             </div>
@@ -151,13 +151,13 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
 
           {/* Conversation Flow */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
               Conversation Flow
             </h4>
             
             {selectedSession.session.map((interaction, index) => (
-              <div key={interaction.id} className="border border-gray-200 rounded-lg p-4">
+              <div key={interaction.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                 {/* Interaction Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -165,13 +165,13 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getInteractionTypeColor(interaction.interactionType)}`}>
                       {interaction.interactionType}
                     </span>
-                    <span className="text-sm text-gray-500">#{index + 1}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">#{index + 1}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getConfidenceColor(interaction.confidence)}`}>
                       {Math.round(interaction.confidence * 100)}%
                     </span>
-                    <span className="text-xs text-gray-500">{formatDate(interaction.createdAt)}</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">{formatDate(interaction.createdAt)}</span>
                   </div>
                 </div>
 
@@ -179,10 +179,10 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                 <div className="mb-3">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700">User Query</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">User Query</span>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-900">{interaction.userQuery}</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{interaction.userQuery}</p>
                   </div>
                 </div>
 
@@ -190,10 +190,10 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                 <div className="mb-3">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700">AI Response</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Response</span>
                   </div>
                   <div className="bg-green-50 rounded-lg p-3">
-                    <p className="text-sm text-gray-900">{interaction.aiResponse}</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{interaction.aiResponse}</p>
                   </div>
                 </div>
 
@@ -202,10 +202,10 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Brain className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-700">AI Reasoning</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Reasoning</span>
                     </div>
                     <div className="bg-purple-50 rounded-lg p-3">
-                      <p className="text-sm text-gray-900">{interaction.reasoning}</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{interaction.reasoning}</p>
                     </div>
                   </div>
                 )}
@@ -215,10 +215,10 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Zap className="w-4 h-4 text-orange-600" />
-                      <span className="text-sm font-medium text-gray-700">Actions Taken</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Actions Taken</span>
                     </div>
                     <div className="bg-orange-50 rounded-lg p-3">
-                      <pre className="text-xs text-gray-900 whitespace-pre-wrap">
+                      <pre className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                         {JSON.stringify(interaction.actions, null, 2)}
                       </pre>
                     </div>
@@ -229,11 +229,11 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                 {interaction.context && (
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Context Used</span>
+                      <MessageSquare className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Context Used</span>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <pre className="text-xs text-gray-900 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                    <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
+                      <pre className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap max-h-32 overflow-y-auto">
                         {JSON.stringify(interaction.context, null, 2)}
                       </pre>
                     </div>
@@ -241,7 +241,7 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                 )}
 
                 {/* Technical Details */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-600 bg-gray-50 rounded-lg p-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
                   <div>
                     <span className="font-medium">Provider:</span>
                     <span className="ml-1">{interaction.provider}</span>
@@ -262,15 +262,15 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
 
                 {/* User Feedback */}
                 {(interaction.userFeedback || interaction.feedbackRating !== null) && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
                     <div className="flex items-center gap-2 mb-2">
                       {getFeedbackIcon(interaction.feedbackRating)}
-                      <span className="text-sm font-medium text-gray-700">User Feedback</span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">User Feedback</span>
                     </div>
                     <div className="bg-yellow-50 rounded-lg p-3">
                       {interaction.feedbackRating !== null && (
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm text-gray-600">Rating:</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Rating:</span>
                           <div className="flex">
                             {[...Array(10)].map((_, i) => (
                               <div
@@ -285,7 +285,7 @@ export default function AIReasoningViewer({ className = '' }: AIReasoningViewerP
                         </div>
                       )}
                       {interaction.userFeedback && (
-                        <p className="text-sm text-gray-900">{interaction.userFeedback}</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{interaction.userFeedback}</p>
                       )}
                     </div>
                   </div>

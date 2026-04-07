@@ -143,8 +143,8 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Notifications</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Notifications</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {groups.length} notification groups
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
       {filters && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">Quick Filters</h3>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Filters</h3>
             {getActiveFiltersCount() > 0 && (
               <Button
                 variant="ghost"
@@ -228,8 +228,8 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
         {groups.length === 0 ? (
           <div className="text-center py-8">
             <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
-            <p className="text-gray-600">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No notifications</h3>
+            <p className="text-gray-600 dark:text-gray-400">
               {getActiveFiltersCount() > 0 
                 ? 'Try adjusting your filters'
                 : 'You\'re all caught up!'
@@ -250,7 +250,7 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-2">
                     {getTypeIcon(group.type)}
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {advancedService.formatGroupTitle(group)}
                     </span>
                     <Badge 
@@ -264,11 +264,11 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
                     )}
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     {group.latestNotification.body || group.latestNotification.title}
                   </p>
                   
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>{advancedService.getTimeAgo(group.updatedAt)}</span>
                     {group.count > 1 && (
                       <span>{group.count} notifications</span>
@@ -282,7 +282,7 @@ export default function NotificationGroupList({ className = '' }: NotificationGr
                       variant="ghost"
                       size="sm"
                       onClick={() => handleMarkAsRead(group.id)}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </Button>

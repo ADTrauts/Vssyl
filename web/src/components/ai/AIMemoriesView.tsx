@@ -129,7 +129,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
   if (error) {
     return (
       <Card className="p-6">
-        <p className="text-gray-700 mb-4">{error}</p>
+        <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
         <Button onClick={loadData} variant="secondary">
           Retry
         </Button>
@@ -139,7 +139,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
 
   return (
     <div className="space-y-6">
-      <p className="text-gray-700 text-sm">
+      <p className="text-gray-700 dark:text-gray-300 text-sm">
         Your Digital Life Twin uses the following to personalize answers. You can edit or add more in
         Custom Context and Personality Profile.
       </p>
@@ -147,8 +147,8 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       {isEmpty ? (
         <Card className="p-8 text-center">
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nothing saved yet</h3>
-          <p className="text-gray-700 mb-6 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Nothing saved yet</h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-md mx-auto">
             Chat with your AI or add instructions in Custom Context to build what it knows about you.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -168,12 +168,12 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
           {hasAnyContext && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Facts & preferences</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Facts & preferences</h3>
                 <Button
                   onClick={() => onNavigateToTab('context')}
                   variant="ghost"
                   size="sm"
-                  className="text-gray-700"
+                  className="text-gray-700 dark:text-gray-300"
                 >
                   Edit in Custom Context
                 </Button>
@@ -185,7 +185,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                   const { label, icon: Icon } = CONTEXT_TYPE_LABELS[type] ?? CONTEXT_TYPE_LABELS.fact;
                   return (
                     <div key={type}>
-                      <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3">
                         <Icon className="w-4 h-4 text-purple-600" />
                         {label}
                       </h4>
@@ -193,10 +193,10 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                         {items.map((item) => (
                           <li
                             key={item.id}
-                            className="p-3 bg-gray-50 rounded-lg border border-gray-100"
+                            className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100"
                           >
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-gray-900 text-sm">{item.title}</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{item.title}</span>
                               {item.source === 'user' && (
                                 <Badge size="sm" color="blue">You added</Badge>
                               )}
@@ -204,7 +204,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                                 <Badge size="sm" color="green">Saved from a conversation</Badge>
                               )}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                               {item.content}
                             </div>
                           </li>
@@ -220,21 +220,21 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
           {/* Personality summary */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Personality</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personality</h3>
               <Button
                 onClick={() => onNavigateToTab('personality')}
                 variant="ghost"
                 size="sm"
-                className="text-gray-700"
+                className="text-gray-700 dark:text-gray-300"
               >
                 Edit in Personality Profile
               </Button>
             </div>
             {hasPersonality ? (
-              <div className="space-y-2 text-sm text-gray-700">
+              <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 {personality.data?.traits && Object.keys(personality.data.traits).length > 0 && (
                   <p>
-                    <span className="font-medium text-gray-900">Traits:</span>{' '}
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Traits:</span>{' '}
                     {Object.entries(personality.data.traits)
                       .slice(0, 4)
                       .map(([k, v]) => `${k.replace(/([A-Z])/g, ' $1').trim()}: ${v}`)
@@ -243,19 +243,19 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                 )}
                 {personality.data?.communicationStyle && (
                   <p>
-                    <span className="font-medium text-gray-900">Communication:</span>{' '}
+                    <span className="font-medium text-gray-900 dark:text-gray-100">Communication:</span>{' '}
                     {String(personality.data.communicationStyle)}
                   </p>
                 )}
                 {personality.lastUpdated && (
-                  <p className="text-xs text-gray-600 mt-2">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
                     Last updated: {new Date(personality.lastUpdated).toLocaleDateString()}
                   </p>
                 )}
               </div>
             ) : (
               <div>
-                <p className="text-gray-600 text-sm mb-3">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
                   No personality profile yet. Set one so the AI can match your style.
                 </p>
                 <Button onClick={() => onNavigateToTab('personality')} variant="secondary" size="sm">
@@ -268,7 +268,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
 
           {/* Learned patterns */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-4">
               <Sparkles className="w-5 h-5 text-purple-600" />
               Learned patterns
             </h3>
@@ -277,14 +277,14 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                 {patterns.map((p) => (
                   <li
                     key={p.id}
-                    className="p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-700"
+                    className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 text-sm text-gray-700 dark:text-gray-300"
                   >
                     {p.description}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 No patterns yet. Keep using the AI and it will learn your habits over time.
               </p>
             )}

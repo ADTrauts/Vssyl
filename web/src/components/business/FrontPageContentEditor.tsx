@@ -87,7 +87,7 @@ function AnnouncementEditor({ announcement, onSave, onCancel }: AnnouncementEdit
     <Card className="p-4 border-2 border-blue-500 bg-blue-50">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="font-semibold text-gray-900">
+          <h4 className="font-semibold text-gray-900 dark:text-gray-100">
             {announcement ? 'Edit Announcement' : 'New Announcement'}
           </h4>
           <button
@@ -95,12 +95,12 @@ function AnnouncementEditor({ announcement, onSave, onCancel }: AnnouncementEdit
             onClick={onCancel}
             className="p-1 hover:bg-blue-100 rounded"
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title *</label>
           <Input
             type="text"
             value={formData.title}
@@ -113,7 +113,7 @@ function AnnouncementEditor({ announcement, onSave, onCancel }: AnnouncementEdit
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Content *</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content *</label>
           <Textarea
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -127,11 +127,11 @@ function AnnouncementEditor({ announcement, onSave, onCancel }: AnnouncementEdit
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
             <select
               value={formData.priority}
               onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -141,7 +141,7 @@ function AnnouncementEditor({ announcement, onSave, onCancel }: AnnouncementEdit
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Expires At (Optional)
             </label>
             <Input
@@ -226,8 +226,8 @@ export default function FrontPageContentEditor({
               <MessageSquare className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Welcome Message</h3>
-              <p className="text-sm text-gray-600">Greeting shown when employees open the front page</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome Message</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Greeting shown when employees open the front page</p>
             </div>
           </div>
 
@@ -253,8 +253,8 @@ export default function FrontPageContentEditor({
               <ImageIcon className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Hero Image</h3>
-              <p className="text-sm text-gray-600">Background or banner image for the front page</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hero Image</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Background or banner image for the front page</p>
             </div>
           </div>
 
@@ -267,8 +267,8 @@ export default function FrontPageContentEditor({
 
           {content.heroImage && (
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
-              <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</p>
+              <div className="relative w-full h-40 bg-gray-100 dark:bg-slate-700 rounded-lg overflow-hidden">
                 <img
                   src={content.heroImage}
                   alt="Hero"
@@ -290,8 +290,8 @@ export default function FrontPageContentEditor({
                 <AlertCircle className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Company Announcements</h3>
-                <p className="text-sm text-gray-600">Important updates and news for your team</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Company Announcements</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Important updates and news for your team</p>
               </div>
             </div>
             <Button
@@ -324,17 +324,17 @@ export default function FrontPageContentEditor({
               content.companyAnnouncements.map((announcement) => (
                 <div
                   key={announcement.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                  className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-gray-300 dark:border-slate-600 transition-colors"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-semibold text-gray-900">{announcement.title}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{announcement.title}</h4>
                         <PriorityBadge priority={announcement.priority} />
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{announcement.content}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{announcement.content}</p>
                       {announcement.expiresAt && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Expires: {new Date(announcement.expiresAt).toLocaleString()}
                         </p>
                       )}
@@ -359,10 +359,10 @@ export default function FrontPageContentEditor({
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center py-8 bg-gray-50 dark:bg-slate-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600">
                 <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">No announcements yet</p>
-                <p className="text-sm text-gray-500 mt-1">Click "Add Announcement" to create one</p>
+                <p className="text-gray-600 dark:text-gray-400">No announcements yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Click "Add Announcement" to create one</p>
               </div>
             )}
           </div>

@@ -126,19 +126,19 @@ function WeekInner() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold">Calendar — Week</h1>
             <div className="ml-2 grid grid-cols-4 gap-2 text-xs">
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/day">Day</a>
-              <a className="px-2 py-1 border rounded text-center bg-gray-100" href="/calendar/week">Week</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/month">Month</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/year">Year</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/day">Day</a>
+              <a className="px-2 py-1 border rounded text-center bg-gray-100 dark:bg-slate-700" href="/calendar/week">Week</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/month">Month</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/year">Year</a>
             </div>
             <div className="flex items-center gap-1 ml-3">
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate()-7))}>{'<'}</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(new Date())}>Today</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate()+7))}>{'>'}</button>
-              <div className="ml-2 text-sm text-gray-600">Week of {viewDate.toLocaleDateString()}</div>
+              <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">Week of {viewDate.toLocaleDateString()}</div>
             </div>
           </div>
-          <div className="text-sm text-gray-500">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
         </div>
 
         <div className="flex items-center gap-2 mb-2">

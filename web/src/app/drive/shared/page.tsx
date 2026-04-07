@@ -261,7 +261,7 @@ const SharedPageContent = () => {
   });
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Drive Sidebar */}
       <DriveSidebar 
         onNewFolder={handleCreateFolder} 
@@ -303,8 +303,8 @@ const SharedPageContent = () => {
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Back to all shared items
               </Button>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{specificItem.name}</h1>
-              <p className="text-gray-600">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{specificItem.name}</h1>
+              <p className="text-gray-700 dark:text-gray-300">
                 {specificItem.type === 'file' ? 'Shared file' : 'Shared folder'}
                 {specificItem.permission && (
                   <span className={`ml-2 text-xs px-2 py-1 rounded-full ${
@@ -318,7 +318,7 @@ const SharedPageContent = () => {
               </p>
             </div>
             
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-6">
               <div className="flex items-start gap-4 mb-6">
                 {specificItem.type === 'file' ? (
                   <DocumentIcon className="w-16 h-16 text-blue-500 flex-shrink-0" />
@@ -326,8 +326,8 @@ const SharedPageContent = () => {
                   <FolderIcon className="w-16 h-16 text-yellow-500 flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">{specificItem.name}</h2>
-                  <div className="space-y-2 text-sm text-gray-600">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{specificItem.name}</h2>
+                  <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                     {specificItem.type === 'file' && specificItem.size && (
                       <p><strong>Size:</strong> {formatFileSize(specificItem.size)}</p>
                     )}
@@ -364,8 +364,8 @@ const SharedPageContent = () => {
               )}
               
               {specificItem.type === 'folder' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-900">
+                <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-200">
                     This is a shared folder. Navigate to your Drive to view its contents.
                   </p>
                 </div>
@@ -375,15 +375,15 @@ const SharedPageContent = () => {
         ) : (
           <div className="p-6">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Shared with me</h1>
-              <p className="text-gray-600">Files and folders that others have shared with you</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Shared with me</h1>
+              <p className="text-gray-700 dark:text-gray-300">Files and folders that others have shared with you</p>
             </div>
 
             {allSharedItems.length === 0 ? (
               <div className="text-center py-12">
-                <UserGroupIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No shared items</h3>
-                <p className="text-gray-600 mb-6">
+                <UserGroupIcon className="w-16 h-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No shared items</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-6">
                   When others share files or folders with you, they will appear here.
                 </p>
               </div>
@@ -397,7 +397,7 @@ const SharedPageContent = () => {
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'list' 
                     ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
                 aria-label="List view"
               >
@@ -408,7 +408,7 @@ const SharedPageContent = () => {
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'grid' 
                     ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
                 aria-label="Grid view"
               >
@@ -419,21 +419,21 @@ const SharedPageContent = () => {
 
           {/* Content */}
           {viewMode === 'list' ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
               <table className="w-full text-left">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
                   <tr>
-                    <th className="p-4 text-sm font-semibold text-gray-600">Name</th>
-                    <th className="p-4 text-sm font-semibold text-gray-600">Type</th>
-                    <th className="p-4 text-sm font-semibold text-gray-600">Permission</th>
-                    <th className="p-4 text-sm font-semibold text-gray-600">Size</th>
-                    <th className="p-4 text-sm font-semibold text-gray-600">Shared</th>
+                    <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
+                    <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Type</th>
+                    <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Permission</th>
+                    <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Size</th>
+                    <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Shared</th>
                   </tr>
                 </thead>
                 <tbody>
                   {allSharedItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
-                      <td className="p-4 font-medium text-gray-800 flex items-center gap-2">
+                    <tr key={item.id} className="border-b border-gray-200 dark:border-slate-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-slate-700">
+                      <td className="p-4 font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
                         {item.type === 'file' ? (
                           <DocumentIcon className="w-5 h-5 text-blue-500" />
                         ) : (
@@ -441,7 +441,7 @@ const SharedPageContent = () => {
                         )}
                         {item.name}
                       </td>
-                      <td className="p-4 text-gray-600 capitalize">{item.type}</td>
+                      <td className="p-4 text-gray-700 dark:text-gray-300 capitalize">{item.type}</td>
                       <td className="p-4">
                         <span className={`text-xs px-2 py-1 rounded-full ${
                           item.permission === 'edit' 
@@ -451,10 +451,10 @@ const SharedPageContent = () => {
                           {item.permission}
                         </span>
                       </td>
-                      <td className="p-4 text-gray-600">
+                      <td className="p-4 text-gray-700 dark:text-gray-300">
                         {item.type === 'file' ? formatFileSize(item.size || 0) : '-'}
                       </td>
-                      <td className="p-4 text-gray-600">
+                      <td className="p-4 text-gray-700 dark:text-gray-300">
                         {formatDate(item.updatedAt || new Date())}
                       </td>
                     </tr>
@@ -467,7 +467,7 @@ const SharedPageContent = () => {
               {/* Shared Files */}
               {sharedFiles.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <DocumentIcon className="w-5 h-5" />
                     Shared Files ({sharedFiles.length})
                   </h2>
@@ -475,7 +475,7 @@ const SharedPageContent = () => {
                     {sharedFiles.map((file) => (
                       <div
                         key={file.id}
-                        className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+                        className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow duration-200"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <DocumentIcon className="w-8 h-8 text-blue-500 flex-shrink-0" />
@@ -487,9 +487,9 @@ const SharedPageContent = () => {
                             {file.permission}
                           </span>
                         </div>
-                        <h3 className="font-medium text-gray-900 mb-1 truncate">{file.name}</h3>
-                        <p className="text-sm text-gray-500 mb-2">{formatFileSize(file.size || 0)}</p>
-                        <p className="text-xs text-gray-400">Shared {formatDate(file.updatedAt || new Date())}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1 truncate">{file.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{formatFileSize(file.size || 0)}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Shared {formatDate(file.updatedAt || new Date())}</p>
                       </div>
                     ))}
                   </div>
@@ -499,7 +499,7 @@ const SharedPageContent = () => {
               {/* Shared Folders */}
               {sharedFolders.length > 0 && (
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <FolderIcon className="w-5 h-5" />
                     Shared Folders ({sharedFolders.length})
                   </h2>
@@ -507,7 +507,7 @@ const SharedPageContent = () => {
                     {sharedFolders.map((folder) => (
                       <div
                         key={folder.id}
-                        className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200"
+                        className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition-shadow duration-200"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <FolderIcon className="w-8 h-8 text-yellow-500 flex-shrink-0" />
@@ -519,8 +519,8 @@ const SharedPageContent = () => {
                             {folder.permission}
                           </span>
                         </div>
-                        <h3 className="font-medium text-gray-900 mb-1 truncate">{folder.name}</h3>
-                        <p className="text-xs text-gray-400">Shared {formatDate(folder.updatedAt || new Date())}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1 truncate">{folder.name}</h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Shared {formatDate(folder.updatedAt || new Date())}</p>
                       </div>
                     ))}
                   </div>

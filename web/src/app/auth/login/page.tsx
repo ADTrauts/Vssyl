@@ -126,7 +126,7 @@ export default function LoginPage() {
         <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
           Sign in to your account
         </h2>
-        <p className="text-center text-base text-gray-600">
+        <p className="text-center text-base text-gray-600 dark:text-gray-400">
           Or{" "}
           <Link
             href="/auth/register"
@@ -140,7 +140,7 @@ export default function LoginPage() {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="rounded-lg shadow-sm space-y-4">
           <div>
-            <label htmlFor="email" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email address
             </label>
             <input
@@ -149,7 +149,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 text-base"
               style={{
                 '--tw-ring-color': COLORS.infoBlue,
                 '--tw-border-opacity': '1',
@@ -162,7 +162,7 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Password
             </label>
             <input
@@ -171,7 +171,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 text-base"
               style={{
                 '--tw-ring-color': COLORS.infoBlue,
                 '--tw-border-opacity': '1',

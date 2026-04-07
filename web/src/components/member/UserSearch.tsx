@@ -201,7 +201,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
         {/* Recent Searches */}
         {recentSearches.length > 0 && !query && (
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-gray-500 mr-2">Recent:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Recent:</span>
             {recentSearches.map((search, index) => (
               <button
                 key={index}
@@ -209,7 +209,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
                   setQuery(search);
                   handleSearch();
                 }}
-                className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-md transition-colors"
+                className="text-sm bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 px-2 py-1 rounded-md transition-colors"
               >
                 {search}
               </button>
@@ -221,7 +221,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
         {showFilters && (
           <Card className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-gray-900">Search Filters</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">Search Filters</h3>
               {hasActiveFilters && (
                 <Button
                   onClick={clearFilters}
@@ -236,13 +236,13 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
             </div>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Organization
                   </label>
                   <select
                     value={filters.organization}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('organization', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">All Organizations</option>
                     {organizations.map(org => (
@@ -251,13 +251,13 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Role
                   </label>
                   <select
                     value={filters.role}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('role', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">All Roles</option>
                     <option value="ADMIN">Admin</option>
@@ -269,13 +269,13 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Connection Type
                   </label>
                   <select
                     value={filters.connectionType}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('connectionType', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Types</option>
                     <option value="colleague">Colleagues</option>
@@ -295,7 +295,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
               Search Results ({filteredUsers.length})
             </h3>
             {hasActiveFilters && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 Filtered from {users.length} results
               </span>
             )}
@@ -313,7 +313,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
                     <div className="font-medium">
                       {user.name || 'No name'}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {user.email}
                     </div>
                     {user.organization && (
@@ -322,7 +322,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
                           <Building2 className="w-3 h-3" />
                           {user.organization.name}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {user.organization.role}
                         </span>
                       </div>
@@ -351,7 +351,7 @@ export const UserSearch: React.FC<UserSearchProps> = ({ onConnectionRequest }) =
       )}
 
       {query && !searching && filteredUsers.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           {hasActiveFilters ? (
             <div>
               <p>No users found matching your search and filters</p>

@@ -79,17 +79,17 @@ export default function RegisterPage() {
           <h2 className="text-2xl font-extrabold mb-2" style={{ color: COLORS.neutralDark }}>
             Welcome to Vssyl!
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Your account has been created successfully. Here's your unique Vssyl ID:
           </p>
           
           {userNumber && (
-            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mb-6">
               <UserNumberDisplay userNumber={userNumber} />
             </div>
           )}
           
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             You'll be redirected to your dashboard in a few seconds...
           </p>
           
@@ -113,14 +113,14 @@ export default function RegisterPage() {
         <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
           Create your account
         </h2>
-        <p className="text-center text-sm text-gray-600 mt-2">
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
           You'll receive a unique Vssyl ID for identification
         </p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="rounded-lg shadow-sm space-y-4">
           <div>
-            <label htmlFor="name" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name
             </label>
             <input
@@ -128,14 +128,14 @@ export default function RegisterPage() {
               name="name"
               type="text"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
               placeholder="Full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email address
             </label>
             <input
@@ -144,14 +144,14 @@ export default function RegisterPage() {
               type="email"
               autoComplete="email"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Password
             </label>
             <input
@@ -160,7 +160,7 @@ export default function RegisterPage() {
               type="password"
               autoComplete="new-password"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

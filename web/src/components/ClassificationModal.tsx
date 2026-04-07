@@ -175,20 +175,20 @@ export default function ClassificationModal({
       <div className="space-y-6">
         {/* Current Classification */}
         {classification && (
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Current Classification</h3>
+          <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Current Classification</h3>
             <div className="flex items-center space-x-2">
               <Badge color={getSensitivityColor(classification.sensitivity)}>
                 {getSensitivityLabel(classification.sensitivity)}
               </Badge>
               {classification.expiresAt && (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   Expires: {new Date(classification.expiresAt).toLocaleDateString()}
                 </span>
               )}
             </div>
             {classification.notes && (
-              <p className="text-sm text-gray-600 mt-2">{classification.notes}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{classification.notes}</p>
             )}
           </div>
         )}
@@ -211,11 +211,11 @@ export default function ClassificationModal({
         {/* Classification Form */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sensitivity Level</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivity Level</label>
             <select
               value={formData.sensitivity}
               onChange={(e) => setFormData({ ...formData, sensitivity: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PUBLIC">Public</option>
               <option value="INTERNAL">Internal</option>
@@ -225,21 +225,21 @@ export default function ClassificationModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires At (optional)</label>
             <input
               type="date"
               value={formData.expiresAt}
               onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
               placeholder="Add notes about this classification..."
             />
@@ -249,18 +249,18 @@ export default function ClassificationModal({
         {/* Templates */}
         {templates.length > 0 && (
           <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Quick Templates</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Templates</h3>
             <div className="grid grid-cols-1 gap-2">
               {templates.map((template) => (
                 <button
                   key={template.id}
                   onClick={() => handleTemplateSelect(template)}
-                  className="text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="text-left p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-gray-900">{template.name}</div>
-                      <div className="text-sm text-gray-600">{template.description}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{template.name}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{template.description}</div>
                     </div>
                     <Badge color={getSensitivityColor(template.sensitivity)}>
                       {getSensitivityLabel(template.sensitivity)}

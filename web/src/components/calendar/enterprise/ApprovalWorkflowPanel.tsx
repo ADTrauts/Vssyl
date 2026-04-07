@@ -445,7 +445,7 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
       case 'rejected': return <XCircle className="w-4 h-4 text-red-600" />;
       case 'pending': return <Clock className="w-4 h-4 text-yellow-600" />;
       case 'timeout': return <AlertTriangle className="w-4 h-4 text-orange-600" />;
-      default: return <Clock className="w-4 h-4 text-gray-600" />;
+      default: return <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -472,7 +472,7 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading approval data...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading approval data...</p>
         </div>
       </Card>
     );
@@ -482,15 +482,15 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
     <FeatureGate feature="calendar_approval_workflows" businessId={businessId}>
       <Card className={`${className}`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <CheckCircle className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Approval Workflows</h2>
-                <p className="text-gray-600">Manage meeting approval processes and workflows</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Approval Workflows</h2>
+                <p className="text-gray-600 dark:text-gray-400">Manage meeting approval processes and workflows</p>
               </div>
             </div>
             
@@ -548,7 +548,7 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -560,7 +560,7 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                 <select
                   value={priorityFilter}
                   onChange={(e) => setPriorityFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">All Priorities</option>
                   <option value="low">Low</option>
@@ -577,11 +577,11 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                   const currentStep = request.approvalWorkflow.steps[request.currentStep - 1];
                   
                   return (
-                    <Card key={request.id} className="p-4 border border-gray-200">
+                    <Card key={request.id} className="p-4 border border-gray-200 dark:border-slate-700">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-medium text-gray-900">{request.eventTitle}</h3>
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100">{request.eventTitle}</h3>
                             <Badge className={`px-2 py-1 text-xs border rounded-full ${meetingTypeConfig.color}`}>
                               {meetingTypeConfig.label}
                             </Badge>
@@ -593,23 +593,23 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                             </Badge>
                           </div>
                           
-                          <p className="text-sm text-gray-600 mb-2">{request.eventDescription}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{request.eventDescription}</p>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <span className="text-gray-500">Requester:</span>
+                              <span className="text-gray-500 dark:text-gray-400">Requester:</span>
                               <div className="font-medium">{request.requesterName}</div>
                             </div>
                             <div>
-                              <span className="text-gray-500">Date:</span>
+                              <span className="text-gray-500 dark:text-gray-400">Date:</span>
                               <div className="font-medium">{request.eventDate.toLocaleDateString()}</div>
                             </div>
                             <div>
-                              <span className="text-gray-500">Duration:</span>
+                              <span className="text-gray-500 dark:text-gray-400">Duration:</span>
                               <div className="font-medium">{request.eventDuration} hours</div>
                             </div>
                             <div>
-                              <span className="text-gray-500">Cost:</span>
+                              <span className="text-gray-500 dark:text-gray-400">Cost:</span>
                               <div className="font-medium">${request.estimatedCost}</div>
                             </div>
                           </div>
@@ -628,7 +628,7 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                       
                       {/* Approval Steps */}
                       <div className="border-t pt-4">
-                        <h4 className="font-medium text-gray-900 mb-3">Approval Progress</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Approval Progress</h4>
                         <div className="flex items-center gap-4">
                           {request.approvalWorkflow.steps.map((step, index) => (
                             <div key={step.id} className="flex items-center gap-2">
@@ -696,13 +696,13 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
           {activeTab === 'workflows' && (
             <div className="space-y-4">
               {workflows.map(workflow => (
-                <Card key={workflow.id} className="p-4 border border-gray-200">
+                <Card key={workflow.id} className="p-4 border border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <Switch checked={workflow.enabled} onChange={() => {}} />
                       <div>
-                        <h3 className="font-medium text-gray-900">{workflow.name}</h3>
-                        <p className="text-sm text-gray-600">{workflow.description}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{workflow.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{workflow.description}</p>
                       </div>
                       {workflow.isDefault && (
                         <Badge className="px-2 py-1 text-xs bg-blue-50 text-blue-600 border border-blue-200 rounded-full">
@@ -718,17 +718,17 @@ export const ApprovalWorkflowPanel: React.FC<ApprovalWorkflowPanelProps> = ({
                   
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Triggers:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Triggers:</span>
                       <div className="font-medium">
                         {workflow.triggers.meetingTypes.join(', ')}
                       </div>
                     </div>
                     <div>
-                      <span className="text-gray-500">Steps:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Steps:</span>
                       <div className="font-medium">{workflow.steps.length} approval steps</div>
                     </div>
                     <div>
-                      <span className="text-gray-500">Timeout Action:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Timeout Action:</span>
                       <div className="font-medium capitalize">{workflow.escalationRules.timeoutAction}</div>
                     </div>
                   </div>

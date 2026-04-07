@@ -254,48 +254,48 @@ const TemplateEditor: React.FC<{
   return (
     <Card className="p-6 border border-blue-100 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           {template.id ? 'Edit Onboarding Template' : 'Create Onboarding Template'}
         </h3>
         <button
           type="button"
           onClick={onCancel}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
         >
-          <X className="w-4 h-4 text-gray-600" />
+          <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Template Name</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Template Name</label>
           <input
             type="text"
             value={template.name}
             onChange={(e) => updateTemplate({ name: e.target.value })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Ex: Corporate Onboarding"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Template Owner (User ID)</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Template Owner (User ID)</label>
           <input
             type="text"
             value={template.ownerUserId ?? ''}
             onChange={(e) => updateTemplate({ ownerUserId: e.target.value || null })}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Optional - assign template owner"
           />
         </div>
       </div>
 
       <div className="space-y-2 mt-4">
-        <label className="text-sm font-medium text-gray-700">Description</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
         <textarea
           value={template.description ?? ''}
           onChange={(e) => updateTemplate({ description: e.target.value })}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={3}
           placeholder="Describe when to use this template, who it's for, and any notes for HR admins."
         />
@@ -307,9 +307,9 @@ const TemplateEditor: React.FC<{
             type="checkbox"
             checked={template.isDefault ?? false}
             onChange={(e) => updateTemplate({ isDefault: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm text-gray-700">Set as default template</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Set as default template</span>
         </label>
 
         <label className="inline-flex items-center space-x-2">
@@ -317,15 +317,15 @@ const TemplateEditor: React.FC<{
             type="checkbox"
             checked={template.isActive ?? true}
             onChange={(e) => updateTemplate({ isActive: e.target.checked })}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm text-gray-700">Template active</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Template active</span>
         </label>
       </div>
 
       <div className="mt-6">
         <div className="flex items-center justify-between">
-          <h4 className="text-md font-medium text-gray-900">Task Sequence</h4>
+          <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Task Sequence</h4>
           <Button variant="secondary" size="sm" onClick={addTask}>
             <Plus className="w-4 h-4 mr-1" />
             Add Task
@@ -340,27 +340,27 @@ const TemplateEditor: React.FC<{
           )}
 
           {template.tasks.map((task, index) => (
-            <Card key={task.id ?? index} className="p-4 border border-gray-200">
+            <Card key={task.id ?? index} className="p-4 border border-gray-200 dark:border-slate-700">
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
                   <div className="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0">
                     <div className="flex-1">
-                      <label className="text-sm font-medium text-gray-700">Task Title</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Task Title</label>
                       <input
                         type="text"
                         value={task.title}
                         onChange={(e) => updateTask(index, { title: e.target.value })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Ex: Submit I-9 documents"
                       />
                     </div>
                     <div className="w-32">
-                      <label className="text-sm font-medium text-gray-700">Order</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                       <input
                         type="number"
                         value={task.orderIndex ?? index}
                         onChange={(e) => updateTask(index, { orderIndex: Number(e.target.value) })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         min={0}
                       />
                     </div>
@@ -368,11 +368,11 @@ const TemplateEditor: React.FC<{
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Task Type</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Task Type</label>
                       <select
                         value={task.taskType ?? 'CUSTOM'}
                         onChange={(e) => updateTask(index, { taskType: e.target.value as OnboardingTaskType })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {TASK_TYPE_OPTIONS.map((option) => (
                           <option key={option} value={option}>
@@ -383,11 +383,11 @@ const TemplateEditor: React.FC<{
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Owner</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Owner</label>
                       <select
                         value={task.ownerType ?? 'EMPLOYEE'}
                         onChange={(e) => updateTask(index, { ownerType: e.target.value as OnboardingTaskOwnerType })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {OWNER_TYPE_OPTIONS.map((option) => (
                           <option key={option} value={option}>
@@ -398,21 +398,21 @@ const TemplateEditor: React.FC<{
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Due Offset (days)</label>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Due Offset (days)</label>
                       <input
                         type="number"
                         value={task.dueOffsetDays ?? 0}
                         onChange={(e) => updateTask(index, { dueOffsetDays: Number(e.target.value) })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
 
-                  <label className="text-sm font-medium text-gray-700">Description</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                   <textarea
                     value={task.description ?? ''}
                     onChange={(e) => updateTask(index, { description: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={2}
                     placeholder="Add task instructions or links for the assignee."
                   />
@@ -423,9 +423,9 @@ const TemplateEditor: React.FC<{
                         type="checkbox"
                         checked={task.requiresApproval ?? false}
                         onChange={(e) => updateTask(index, { requiresApproval: e.target.checked })}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">Requires approval</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Requires approval</span>
                     </label>
 
                     <label className="inline-flex items-center space-x-2">
@@ -433,9 +433,9 @@ const TemplateEditor: React.FC<{
                         type="checkbox"
                         checked={task.requiresDocument ?? false}
                         onChange={(e) => updateTask(index, { requiresDocument: e.target.checked })}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">Requires document upload</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Requires document upload</span>
                     </label>
                   </div>
                 </div>
@@ -1192,12 +1192,12 @@ export default function OnboardingModuleSettings({
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 border border-gray-200">
+      <Card className="p-6 border border-gray-200 dark:border-slate-700">
         <div className="flex flex-col space-y-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Module Ownership</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Ownership</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Define who governs onboarding and how employee journeys are managed.
               </p>
             </div>
@@ -1205,7 +1205,7 @@ export default function OnboardingModuleSettings({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Primary module owner (User ID)</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Primary module owner (User ID)</label>
               <input
                 type="text"
                 value={onboardingConfig.ownerUserId ?? ''}
@@ -1215,13 +1215,13 @@ export default function OnboardingModuleSettings({
                     ownerUserId: e.target.value || null
                   }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Assign the HR point person responsible for onboarding"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Owner role</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Owner role</label>
               <select
                 value={onboardingConfig.ownerRole ?? 'HR_ADMIN'}
                 onChange={(e) =>
@@ -1230,7 +1230,7 @@ export default function OnboardingModuleSettings({
                     ownerRole: e.target.value as OnboardingModuleConfig['ownerRole']
                   }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="HR_ADMIN">HR Admin</option>
                 <option value="BUSINESS_ADMIN">Business Admin</option>
@@ -1242,7 +1242,7 @@ export default function OnboardingModuleSettings({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Owner notes</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Owner notes</label>
             <textarea
               value={onboardingConfig.ownerNotes ?? ''}
               onChange={(e) =>
@@ -1251,7 +1251,7 @@ export default function OnboardingModuleSettings({
                   ownerNotes: e.target.value || null
                 }))
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
               placeholder="Document how onboarding decisions are made, escalation paths, or policy references."
             />
@@ -1269,9 +1269,9 @@ export default function OnboardingModuleSettings({
                       buddyProgramEnabled: e.target.checked
                     }))
                   }
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Enable buddy program</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Enable buddy program</span>
               </label>
 
               {onboardingConfig.buddyProgramEnabled && (
@@ -1283,7 +1283,7 @@ export default function OnboardingModuleSettings({
                       buddySelectionStrategy: e.target.value as OnboardingModuleConfig['buddySelectionStrategy']
                     }))
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="manager_recommended">Manager recommends buddy</option>
                   <option value="auto_assign">Auto-assign by department</option>
@@ -1293,7 +1293,7 @@ export default function OnboardingModuleSettings({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Time-off preset (days)</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Time-off preset (days)</label>
               <input
                 type="number"
                 value={onboardingConfig.timeOffPresetDays ?? 0}
@@ -1303,10 +1303,10 @@ export default function OnboardingModuleSettings({
                     timeOffPresetDays: Number(e.target.value)
                   }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Automatically sets initial PTO for new hires. Advanced accrual rules will override this baseline.
               </p>
             </div>
@@ -1314,12 +1314,12 @@ export default function OnboardingModuleSettings({
         </div>
       </Card>
 
-      <Card className="p-6 border border-gray-200">
+      <Card className="p-6 border border-gray-200 dark:border-slate-700">
         <div className="flex flex-col space-y-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Onboarding Templates</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Onboarding Templates</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Manage template playbooks that drive onboarding journeys for different roles or locations.
               </p>
             </div>
@@ -1352,16 +1352,16 @@ export default function OnboardingModuleSettings({
           ) : (
             <div className="grid grid-cols-1 gap-4">
               {templates.map((template) => (
-                <Card key={template.id} className="p-4 border border-gray-200">
+                <Card key={template.id} className="p-4 border border-gray-200 dark:border-slate-700">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-3 md:space-y-0">
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-md font-semibold text-gray-900">{template.name}</h4>
+                        <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">{template.name}</h4>
                         {template.isDefault && <Badge color="blue">Default</Badge>}
                         {!template.isActive && <Badge color="gray">Archived</Badge>}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{template.description || 'No description provided.'}</p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{template.description || 'No description provided.'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         {template.taskTemplates.length} tasks • Updated{' '}
                         {new Date(template.updatedAt).toLocaleDateString()}
                       </p>
@@ -1391,7 +1391,7 @@ export default function OnboardingModuleSettings({
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Default template for new hires</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Default template for new hires</label>
             <select
               value={onboardingConfig.defaultTemplateId ?? ''}
               onChange={(e) =>
@@ -1400,7 +1400,7 @@ export default function OnboardingModuleSettings({
                   defaultTemplateId: e.target.value || null
                 }))
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select default template</option>
               {templates
@@ -1427,12 +1427,12 @@ export default function OnboardingModuleSettings({
         </div>
       </Card>
 
-      <Card className="p-6 border border-gray-200">
+      <Card className="p-6 border border-gray-200 dark:border-slate-700">
         <div className="space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Onboarding Checklists</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Onboarding Checklists</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Configure what every new hire needs before their first day. These lists power task templates and
                 automated reminders.
               </p>
@@ -1449,9 +1449,9 @@ export default function OnboardingModuleSettings({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-            <Card className="p-4 border border-gray-200">
+            <Card className="p-4 border border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-md font-medium text-gray-900">Documents</h4>
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Documents</h4>
                 <Button
                   type="button"
                   size="sm"
@@ -1465,17 +1465,17 @@ export default function OnboardingModuleSettings({
               </div>
               <ul className="space-y-2">
                 {onboardingConfig.documentChecklist.length === 0 && (
-                  <li className="text-sm text-gray-500">No documents configured yet.</li>
+                  <li className="text-sm text-gray-500 dark:text-gray-400">No documents configured yet.</li>
                 )}
                 {onboardingConfig.documentChecklist.map((item) => (
                   <li key={item.id} className="flex items-start justify-between text-sm space-x-3">
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900">{item.title}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{item.title}</span>
                       {item.description && (
-                        <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
                       )}
                       {item.driveFileId && (
-                        <div className="mt-1 flex items-center space-x-2 text-xs text-gray-500">
+                        <div className="mt-1 flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                           <span className="text-gray-400">{renderDocumentIcon(item.driveFileType)}</span>
                           {item.driveFileUrl ? (
                             <a
@@ -1500,9 +1500,9 @@ export default function OnboardingModuleSettings({
                           onChange={(e) =>
                             handleToggleRequired('documentChecklist', item.id, e.target.checked)
                           }
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-xs text-gray-500">Required</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Required</span>
                       </label>
                       <button
                         type="button"
@@ -1517,9 +1517,9 @@ export default function OnboardingModuleSettings({
               </ul>
             </Card>
 
-            <Card className="p-4 border border-gray-200">
+            <Card className="p-4 border border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-md font-medium text-gray-900">Equipment</h4>
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Equipment</h4>
                 <Button
                   type="button"
                   size="sm"
@@ -1533,16 +1533,16 @@ export default function OnboardingModuleSettings({
               </div>
               <ul className="space-y-2">
                 {onboardingConfig.equipmentList.length === 0 && (
-                  <li className="text-sm text-gray-500">No equipment configured yet.</li>
+                  <li className="text-sm text-gray-500 dark:text-gray-400">No equipment configured yet.</li>
                 )}
                 {onboardingConfig.equipmentList.map((item) => (
                   <li key={item.id} className="flex items-start justify-between text-sm space-x-3">
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900">{item.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
                       {item.description && (
-                        <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {item.sku && <span>SKU: {item.sku}</span>}
                         {item.instructions && <span>{item.instructions}</span>}
                       </div>
@@ -1555,9 +1555,9 @@ export default function OnboardingModuleSettings({
                           onChange={(e) =>
                             handleToggleRequired('equipmentList', item.id, e.target.checked)
                           }
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-xs text-gray-500">Required</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Required</span>
                       </label>
                       <button
                         type="button"
@@ -1572,9 +1572,9 @@ export default function OnboardingModuleSettings({
               </ul>
             </Card>
 
-            <Card className="p-4 border border-gray-200">
+            <Card className="p-4 border border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-md font-medium text-gray-900">Uniforms</h4>
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Uniforms</h4>
                 <Button
                   type="button"
                   size="sm"
@@ -1588,16 +1588,16 @@ export default function OnboardingModuleSettings({
               </div>
               <ul className="space-y-2">
                 {onboardingConfig.uniformOptions.length === 0 && (
-                  <li className="text-sm text-gray-500">No uniforms configured yet.</li>
+                  <li className="text-sm text-gray-500 dark:text-gray-400">No uniforms configured yet.</li>
                 )}
                 {onboardingConfig.uniformOptions.map((item) => (
                   <li key={item.id} className="flex items-start justify-between text-sm space-x-3">
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900">{item.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
                       {item.description && (
-                        <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {item.color && <span>Color: {item.color}</span>}
                         {item.sizes && item.sizes.length > 0 && (
                           <span>Sizes: {item.sizes.join(', ')}</span>
@@ -1612,9 +1612,9 @@ export default function OnboardingModuleSettings({
                           onChange={(e) =>
                             handleToggleRequired('uniformOptions', item.id, e.target.checked)
                           }
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-xs text-gray-500">Required</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Required</span>
                       </label>
                       <button
                         type="button"
@@ -1629,9 +1629,9 @@ export default function OnboardingModuleSettings({
               </ul>
             </Card>
 
-            <Card className="p-4 border border-gray-200">
+            <Card className="p-4 border border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-md font-medium text-gray-900">Custom Actions</h4>
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Custom Actions</h4>
                 <Button
                   type="button"
                   size="sm"
@@ -1645,15 +1645,15 @@ export default function OnboardingModuleSettings({
               </div>
               <ul className="space-y-2">
                 {onboardingConfig.customActions.length === 0 && (
-                  <li className="text-sm text-gray-500">No custom checklists configured yet.</li>
+                  <li className="text-sm text-gray-500 dark:text-gray-400">No custom checklists configured yet.</li>
                 )}
                 {onboardingConfig.customActions.map((item) => (
                   <li key={item.id} className="flex flex-col space-y-2 rounded border border-gray-100 p-3">
                     <div className="flex items-start justify-between space-x-3">
                       <div className="flex-1">
-                        <span className="font-medium text-gray-900">{item.name}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
                         {item.description && (
-                          <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
                         )}
                       </div>
                       <div className="flex items-center space-x-2 pt-1">
@@ -1664,9 +1664,9 @@ export default function OnboardingModuleSettings({
                             onChange={(e) =>
                               handleToggleRequired('customActions', item.id, e.target.checked)
                             }
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-xs text-gray-500">Required</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Required</span>
                         </label>
                         <button
                           type="button"
@@ -1680,7 +1680,7 @@ export default function OnboardingModuleSettings({
                     {item.actions.length > 0 && (
                       <ul className="space-y-1 pl-4">
                         {item.actions.map((action) => (
-                          <li key={action.id} className="text-xs text-gray-600 leading-5">
+                          <li key={action.id} className="text-xs text-gray-600 dark:text-gray-400 leading-5">
                             • {action.label}
                           </li>
                         ))}
@@ -1694,60 +1694,60 @@ export default function OnboardingModuleSettings({
         </div>
       </Card>
 
-      <Card className="p-6 border border-gray-200">
+      <Card className="p-6 border border-gray-200 dark:border-slate-700">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Equipment Library</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Equipment Library</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Build a reusable catalog of equipment assignments. You can attach these items to onboarding checklists and reuse them across templates.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Equipment name</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Equipment name</label>
               <input
                 type="text"
                 value={newEquipmentItem.name}
                 onChange={(event) =>
                   setNewEquipmentItem((prev) => ({ ...prev, name: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={'e.g. 15" MacBook Pro'}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">SKU / Asset tag</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">SKU / Asset tag</label>
               <input
                 type="text"
                 value={newEquipmentItem.sku}
                 onChange={(event) =>
                   setNewEquipmentItem((prev) => ({ ...prev, sku: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Optional identifier"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea
                 value={newEquipmentItem.description}
                 onChange={(event) =>
                   setNewEquipmentItem((prev) => ({ ...prev, description: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={2}
                 placeholder="Notes about model, condition, or provisioning steps."
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Handling instructions</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Handling instructions</label>
               <textarea
                 value={newEquipmentItem.instructions}
                 onChange={(event) =>
                   setNewEquipmentItem((prev) => ({ ...prev, instructions: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={2}
                 placeholder="Optional setup steps or care instructions."
               />
@@ -1761,19 +1761,19 @@ export default function OnboardingModuleSettings({
 
           <div className="space-y-3">
             {onboardingConfig.equipmentLibrary.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 No equipment saved yet. Add items to reuse them across onboarding checklists.
               </p>
             ) : (
-              <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
+              <ul className="divide-y divide-gray-200 border border-gray-200 dark:border-slate-700 rounded-md">
                 {onboardingConfig.equipmentLibrary.map((item) => (
                   <li key={item.id} className="px-4 py-3 flex items-start justify-between">
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
                       {item.description && (
-                        <p className="text-xs text-gray-600">{item.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{item.description}</p>
                       )}
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                         {item.sku && <span>SKU: {item.sku}</span>}
                         {item.instructions && <span>{item.instructions}</span>}
                       </div>
@@ -1795,72 +1795,72 @@ export default function OnboardingModuleSettings({
         </div>
       </Card>
 
-      <Card className="p-6 border border-gray-200">
+      <Card className="p-6 border border-gray-200 dark:border-slate-700">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Uniform Catalog</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Uniform Catalog</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Track company apparel and sizing information. Attach catalog items to onboarding checklists so employees know what to expect.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Uniform piece</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Uniform piece</label>
               <input
                 type="text"
                 value={newUniformItem.name}
                 onChange={(event) =>
                   setNewUniformItem((prev) => ({ ...prev, name: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. Branded Hoodie"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Color</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
               <input
                 type="text"
                 value={newUniformItem.color}
                 onChange={(event) =>
                   setNewUniformItem((prev) => ({ ...prev, color: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Optional color"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea
                 value={newUniformItem.description}
                 onChange={(event) =>
                   setNewUniformItem((prev) => ({ ...prev, description: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={2}
                 placeholder="Material, branding, or usage notes."
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Available sizes</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Available sizes</label>
               <input
                 type="text"
                 value={newUniformItem.sizes}
                 onChange={(event) =>
                   setNewUniformItem((prev) => ({ ...prev, sizes: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Comma separated (e.g. XS, S, M, L, XL)"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-700">Notes</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
               <textarea
                 value={newUniformItem.notes}
                 onChange={(event) =>
                   setNewUniformItem((prev) => ({ ...prev, notes: event.target.value }))
                 }
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={2}
                 placeholder="Care instructions or fitting guidance."
               />
@@ -1874,26 +1874,26 @@ export default function OnboardingModuleSettings({
 
           <div className="space-y-3">
             {onboardingConfig.uniformLibrary.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 No uniforms saved yet. Add catalog entries to connect them to onboarding flows.
               </p>
             ) : (
-              <ul className="divide-y divide-gray-200 border border-gray-200 rounded-md">
+              <ul className="divide-y divide-gray-200 border border-gray-200 dark:border-slate-700 rounded-md">
                 {onboardingConfig.uniformLibrary.map((item) => (
                   <li key={item.id} className="px-4 py-3 flex items-start justify-between">
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         {item.color && <span>Color: {item.color}</span>}
                         {item.sizes.length > 0 && (
                           <span>Sizes: {item.sizes.join(', ')}</span>
                         )}
                       </div>
                       {item.description && (
-                        <p className="text-xs text-gray-600">{item.description}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{item.description}</p>
                       )}
                       {item.notes && (
-                        <p className="text-xs text-gray-500">Notes: {item.notes}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Notes: {item.notes}</p>
                       )}
                     </div>
                     <Button
@@ -1925,7 +1925,7 @@ export default function OnboardingModuleSettings({
         {checklistDialog && (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {CHECKLIST_SECTION_LABELS[checklistDialog.section].nameLabel}
               </label>
               <input
@@ -1938,14 +1938,14 @@ export default function OnboardingModuleSettings({
                     prev ? { ...prev, name: value } : prev
                   );
                 }}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter a name"
                 autoFocus
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {CHECKLIST_SECTION_LABELS[checklistDialog.section].descriptionLabel}
               </label>
               <textarea
@@ -1956,7 +1956,7 @@ export default function OnboardingModuleSettings({
                     prev ? { ...prev, description: value } : prev
                   );
                 }}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 placeholder="Add additional details"
               />
@@ -1965,7 +1965,7 @@ export default function OnboardingModuleSettings({
             {checklistDialog.section === 'documentChecklist' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">Document</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Document</label>
                   <div className="flex items-center space-x-2">
                     <input
                       ref={documentUploadInputRef}
@@ -1992,11 +1992,11 @@ export default function OnboardingModuleSettings({
                   </Alert>
                 )}
 
-                <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-gray-50">
+                <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                   {documentLibraryLoading ? (
                     <div className="flex items-center justify-center py-6">
                       <Spinner size={16} />
-                      <span className="ml-2 text-xs text-gray-500">Loading documents…</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Loading documents…</span>
                     </div>
                   ) : documentLibrary?.files && documentLibrary.files.length > 0 ? (
                     <ul className="divide-y divide-gray-200">
@@ -2012,7 +2012,7 @@ export default function OnboardingModuleSettings({
                               }`}
                             >
                               <span className="flex items-center space-x-2">
-                                <span className="text-gray-500">{renderDocumentIcon(file.type)}</span>
+                                <span className="text-gray-500 dark:text-gray-400">{renderDocumentIcon(file.type)}</span>
                                 <span className="text-sm text-gray-800">{file.name}</span>
                               </span>
                               {isSelected ? (
@@ -2028,7 +2028,7 @@ export default function OnboardingModuleSettings({
                       })}
                     </ul>
                   ) : (
-                    <div className="px-3 py-4 text-xs text-gray-500">
+                    <div className="px-3 py-4 text-xs text-gray-500 dark:text-gray-400">
                       No documents available yet. Upload a document to add it to your onboarding checklist.
                     </div>
                   )}
@@ -2065,10 +2065,10 @@ export default function OnboardingModuleSettings({
             {checklistDialog.section === 'equipmentList' && (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select from equipment library</label>
-                  <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-gray-50">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select from equipment library</label>
+                  <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                     {onboardingConfig.equipmentLibrary.length === 0 ? (
-                      <div className="px-3 py-4 text-xs text-gray-500">
+                      <div className="px-3 py-4 text-xs text-gray-500 dark:text-gray-400">
                         No equipment items saved yet. Add items in the Equipment Library to reuse them here.
                       </div>
                     ) : (
@@ -2086,7 +2086,7 @@ export default function OnboardingModuleSettings({
                               >
                                 <span className="flex flex-col">
                                   <span className="text-sm text-gray-800">{item.name}</span>
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {[item.sku, item.description].filter(Boolean).join(' • ')}
                                   </span>
                                 </span>
@@ -2117,7 +2117,7 @@ export default function OnboardingModuleSettings({
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">SKU / Asset tag</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">SKU / Asset tag</label>
                     <input
                       type="text"
                       value={checklistDialog.sku ?? ''}
@@ -2128,12 +2128,12 @@ export default function OnboardingModuleSettings({
                             : prev
                         )
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Optional identifier"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Instructions</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Instructions</label>
                     <textarea
                       value={checklistDialog.instructions ?? ''}
                       onChange={(event) =>
@@ -2143,7 +2143,7 @@ export default function OnboardingModuleSettings({
                             : prev
                         )
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows={2}
                       placeholder="Optional setup or delivery notes."
                     />
@@ -2155,10 +2155,10 @@ export default function OnboardingModuleSettings({
             {checklistDialog.section === 'uniformOptions' && (
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select from uniform catalog</label>
-                  <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-gray-50">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select from uniform catalog</label>
+                  <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                     {onboardingConfig.uniformLibrary.length === 0 ? (
-                      <div className="px-3 py-4 text-xs text-gray-500">
+                      <div className="px-3 py-4 text-xs text-gray-500 dark:text-gray-400">
                         No catalog entries yet. Add uniforms in the Uniform Catalog to reuse them here.
                       </div>
                     ) : (
@@ -2176,7 +2176,7 @@ export default function OnboardingModuleSettings({
                               >
                                 <span className="flex flex-col">
                                   <span className="text-sm text-gray-800">{item.name}</span>
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {[item.color, item.sizes.join(', ')].filter(Boolean).join(' • ')}
                                   </span>
                                 </span>
@@ -2207,7 +2207,7 @@ export default function OnboardingModuleSettings({
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Color</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
                     <input
                       type="text"
                       value={checklistDialog.color ?? ''}
@@ -2218,12 +2218,12 @@ export default function OnboardingModuleSettings({
                             : prev
                         )
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Optional color"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-medium text-gray-700">Sizes</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sizes</label>
                     <input
                       type="text"
                       value={checklistDialog.uniformSizesText ?? ''}
@@ -2234,7 +2234,7 @@ export default function OnboardingModuleSettings({
                             : prev
                         )
                       }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Comma separated sizes (e.g. XS, S, M, L)"
                     />
                   </div>
@@ -2245,7 +2245,7 @@ export default function OnboardingModuleSettings({
             {checklistDialog.section === 'customActions' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-gray-700">Actions</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Actions</label>
                   <Button
                     type="button"
                     size="sm"
@@ -2265,13 +2265,13 @@ export default function OnboardingModuleSettings({
                         onChange={(event) =>
                           handleCustomActionLabelChange(action.id, event.target.value)
                         }
-                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder={`Action ${index + 1}`}
                       />
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomActionField(action.id)}
-                        className="rounded p-1 text-gray-400 hover:text-gray-600"
+                        className="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                         disabled={checklistDialog.actions.length === 1}
                         aria-label="Remove action"
                       >
@@ -2280,7 +2280,7 @@ export default function OnboardingModuleSettings({
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   List the specific actions or steps the admin wants to capture for this custom checklist item.
                 </p>
               </div>
@@ -2295,9 +2295,9 @@ export default function OnboardingModuleSettings({
                     prev ? { ...prev, required: event.target.checked } : prev
                   )
                 }
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Mark as required</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Mark as required</span>
             </label>
 
             {checklistDialogError && (

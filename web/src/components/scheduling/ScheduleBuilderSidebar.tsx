@@ -156,9 +156,9 @@ function DraggableResourceCard({ id, label, subLabel, type, data }: DraggableRes
           <Icon className={`w-3 h-3 ${type === 'station' ? 'text-purple-600' : type === 'position' ? 'text-amber-600' : 'text-blue-600'}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-900 truncate">{label}</p>
+          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{label}</p>
           {subLabel && (
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
               {subLabel}
             </p>
           )}
@@ -495,7 +495,7 @@ export default function ScheduleBuilderSidebar({
         {isCollapsed ? (
           <button
             onClick={onBack}
-            className="w-full flex items-center justify-center text-gray-700 hover:text-gray-900 transition-colors p-2 rounded hover:bg-gray-100"
+            className="w-full flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700"
             title={backButtonText}
           >
             <ArrowLeft className="w-5 h-5" />
@@ -503,7 +503,7 @@ export default function ScheduleBuilderSidebar({
         ) : (
           <button
             onClick={onBack}
-            className="flex items-center text-gray-700 hover:text-gray-900 transition-colors"
+            className="flex items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             <span className="text-sm font-medium whitespace-nowrap">{backButtonText}</span>
@@ -525,25 +525,25 @@ export default function ScheduleBuilderSidebar({
           <ChevronDown className="w-4 h-4 ml-2" />
         </Button>
         {unpublishedShiftsCount > 0 && (
-          <p className="text-xs text-gray-600 text-center -mt-2">
+          <p className="text-xs text-gray-600 dark:text-gray-400 text-center -mt-2">
             {unpublishedShiftsCount} shift{unpublishedShiftsCount !== 1 ? 's' : ''}
           </p>
         )}
 
         {/* Build Tools Section */}
         <div>
-          <div className="bg-gray-100 px-4 py-2 mb-2">
-            <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Build tools</h3>
+          <div className="bg-gray-100 dark:bg-slate-700 px-4 py-2 mb-2">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">Build tools</h3>
           </div>
-          <div className="space-y-0 bg-white rounded-lg border border-gray-200">
+          <div className="space-y-0 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700">
             {/* Employees Build Tools */}
-            <div className="border-b border-gray-200 last:border-b-0">
+            <div className="border-b border-gray-200 dark:border-slate-700 last:border-b-0">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 onClick={() => setShowEmployeesBuildTools(!showEmployeesBuildTools)}
               >
                 <div className="flex items-center">
-                  <User className="w-4 h-4 mr-2 text-gray-500" />
+                  <User className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
                   <span>Employees</span>
                 </div>
                 {showEmployeesBuildTools ? (
@@ -556,7 +556,7 @@ export default function ScheduleBuilderSidebar({
                 <div className="border-t border-gray-100 px-4 pb-3">
                   <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
                     {employees.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-2">No employees yet</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 py-2">No employees yet</p>
                     ) : (
                       employees.map((employee) => (
                         <DraggableResourceCard
@@ -572,7 +572,7 @@ export default function ScheduleBuilderSidebar({
                   </div>
                   <button
                     onClick={() => {/* TODO: Add employee functionality */}}
-                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 rounded flex items-center justify-center space-x-1"
+                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 dark:border-slate-700 rounded flex items-center justify-center space-x-1"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add</span>
@@ -582,13 +582,13 @@ export default function ScheduleBuilderSidebar({
             </div>
 
             {/* Positions Build Tools */}
-            <div className="border-b border-gray-200 last:border-b-0">
+            <div className="border-b border-gray-200 dark:border-slate-700 last:border-b-0">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 onClick={() => setShowPositionsBuildTools(!showPositionsBuildTools)}
               >
                 <div className="flex items-center">
-                  <Briefcase className="w-4 h-4 mr-2 text-gray-500" />
+                  <Briefcase className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
                   <span>Positions</span>
                 </div>
                 {showPositionsBuildTools ? (
@@ -601,7 +601,7 @@ export default function ScheduleBuilderSidebar({
                 <div className="border-t border-gray-100 px-4 pb-3">
                   <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
                     {buildPositions.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-2">No positions yet</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 py-2">No positions yet</p>
                     ) : (
                       buildPositions.map((position) => (
                         <DraggableResourceCard
@@ -617,7 +617,7 @@ export default function ScheduleBuilderSidebar({
                   </div>
                   <button
                     onClick={() => {/* TODO: Add employee functionality */}}
-                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 rounded flex items-center justify-center space-x-1"
+                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 dark:border-slate-700 rounded flex items-center justify-center space-x-1"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add</span>
@@ -627,13 +627,13 @@ export default function ScheduleBuilderSidebar({
             </div>
 
             {/* Stations Build Tools */}
-            <div className="border-b border-gray-200 last:border-b-0">
+            <div className="border-b border-gray-200 dark:border-slate-700 last:border-b-0">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 onClick={() => setShowStationsBuildTools(!showStationsBuildTools)}
               >
                 <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+                  <MapPin className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
                   <span>Stations</span>
                 </div>
                 {showStationsBuildTools ? (
@@ -646,7 +646,7 @@ export default function ScheduleBuilderSidebar({
                 <div className="border-t border-gray-100 px-4 pb-3">
                   <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
                     {buildStations.length === 0 ? (
-                      <p className="text-xs text-gray-500 py-2">No stations yet</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 py-2">No stations yet</p>
                     ) : (
                       buildStations.map((station) => (
                         <DraggableResourceCard
@@ -662,7 +662,7 @@ export default function ScheduleBuilderSidebar({
                   </div>
                   <button
                     onClick={() => setShowAddStationModal(true)}
-                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 rounded flex items-center justify-center space-x-1"
+                    className="w-full mt-2 px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 border border-gray-200 dark:border-slate-700 rounded flex items-center justify-center space-x-1"
                   >
                     <Plus className="w-3 h-3" />
                     <span>Add</span>
@@ -675,15 +675,15 @@ export default function ScheduleBuilderSidebar({
 
         {/* More Tools Section */}
         <div>
-          <div className="bg-gray-100 px-4 py-2 mb-2">
-            <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">More tools</h3>
+          <div className="bg-gray-100 dark:bg-slate-700 px-4 py-2 mb-2">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">More tools</h3>
           </div>
-          <div className="space-y-0 bg-white rounded-lg border border-gray-200">
+          <div className="space-y-0 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700">
             {/* Forecast Tools */}
-            <div className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+            <div className="border-b border-gray-200 dark:border-slate-700 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center">
-                <BarChart3 className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="text-sm text-gray-700">Forecast tools</span>
+                <BarChart3 className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">Forecast tools</span>
               </div>
               <Switch
                 checked={forecastToolsEnabled}
@@ -692,13 +692,13 @@ export default function ScheduleBuilderSidebar({
             </div>
 
             {/* Display Options */}
-            <div className="border-b border-gray-200 last:border-b-0">
+            <div className="border-b border-gray-200 dark:border-slate-700 last:border-b-0">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 onClick={() => setShowDisplayOptions(!showDisplayOptions)}
               >
                 <div className="flex items-center">
-                  <Settings className="w-4 h-4 mr-2 text-gray-500" />
+                  <Settings className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
                   <span>Display options</span>
                 </div>
                 {showDisplayOptions ? (
@@ -710,13 +710,13 @@ export default function ScheduleBuilderSidebar({
             </div>
 
             {/* Task Lists */}
-            <div className="border-b border-gray-200 last:border-b-0">
+            <div className="border-b border-gray-200 dark:border-slate-700 last:border-b-0">
               <button
-                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 onClick={() => setShowTaskLists(!showTaskLists)}
               >
                 <div className="flex items-center">
-                  <List className="w-4 h-4 mr-2 text-gray-500" />
+                  <List className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
                   <span>Task lists</span>
                 </div>
                 {showTaskLists ? (
@@ -747,7 +747,7 @@ export default function ScheduleBuilderSidebar({
             </Alert>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Title *</label>
             <Input
               value={positionFormData.title}
               onChange={(e) => setPositionFormData({ ...positionFormData, title: e.target.value })}
@@ -755,7 +755,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Description</label>
             <Textarea
               value={positionFormData.description}
               onChange={(e) => setPositionFormData({ ...positionFormData, description: e.target.value })}
@@ -764,11 +764,11 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Organizational Tier *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Organizational Tier *</label>
             <select
               value={positionFormData.tierId}
               onChange={(e) => setPositionFormData({ ...positionFormData, tierId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900"
             >
               <option value="">Select a tier</option>
               {tiers.map((tier) => (
@@ -776,11 +776,11 @@ export default function ScheduleBuilderSidebar({
               ))}
             </select>
             {tiers.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">No organizational tiers available. Create tiers in the settings first.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">No organizational tiers available. Create tiers in the settings first.</p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Max Occupants</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Max Occupants</label>
             <Input
               type="number"
               value={positionFormData.maxOccupants}
@@ -791,7 +791,7 @@ export default function ScheduleBuilderSidebar({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Default Start Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Default Start Time</label>
               <Input
                 type="time"
                 value={positionFormData.defaultStartTime}
@@ -799,7 +799,7 @@ export default function ScheduleBuilderSidebar({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Default End Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Default End Time</label>
               <Input
                 type="time"
                 value={positionFormData.defaultEndTime}
@@ -842,7 +842,7 @@ export default function ScheduleBuilderSidebar({
             </Alert>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Name *</label>
             <Input
               value={stationFormData.name}
               onChange={(e) => setStationFormData({ ...stationFormData, name: e.target.value })}
@@ -850,11 +850,11 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Station Type *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Station Type *</label>
             <select
               value={stationFormData.stationType}
               onChange={(e) => setStationFormData({ ...stationFormData, stationType: e.target.value as typeof stationFormData.stationType })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900"
             >
               <option value="BOH">Back of House</option>
               <option value="FOH">Front of House</option>
@@ -865,7 +865,7 @@ export default function ScheduleBuilderSidebar({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Description</label>
             <Textarea
               value={stationFormData.description}
               onChange={(e) => setStationFormData({ ...stationFormData, description: e.target.value })}
@@ -874,7 +874,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Color</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Color</label>
             <Input
               type="color"
               value={stationFormData.color || '#3b82f6'}
@@ -885,7 +885,7 @@ export default function ScheduleBuilderSidebar({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Default Start Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Default Start Time</label>
               <Input
                 type="time"
                 value={stationFormData.defaultStartTime}
@@ -893,7 +893,7 @@ export default function ScheduleBuilderSidebar({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Default End Time</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Default End Time</label>
               <Input
                 type="time"
                 value={stationFormData.defaultEndTime}
@@ -937,7 +937,7 @@ export default function ScheduleBuilderSidebar({
             </Alert>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Name *</label>
             <Input
               value={jobLocationFormData.name}
               onChange={(e) => setJobLocationFormData({ ...jobLocationFormData, name: e.target.value })}
@@ -945,7 +945,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Description</label>
             <Textarea
               value={jobLocationFormData.description}
               onChange={(e) => setJobLocationFormData({ ...jobLocationFormData, description: e.target.value })}
@@ -954,7 +954,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Phone</label>
             <Input
               value={jobLocationFormData.phone}
               onChange={(e) => setJobLocationFormData({ ...jobLocationFormData, phone: e.target.value })}
@@ -962,7 +962,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Email</label>
             <Input
               type="email"
               value={jobLocationFormData.email}
@@ -971,7 +971,7 @@ export default function ScheduleBuilderSidebar({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Notes</label>
             <Textarea
               value={jobLocationFormData.notes}
               onChange={(e) => setJobLocationFormData({ ...jobLocationFormData, notes: e.target.value })}

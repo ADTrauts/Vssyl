@@ -125,11 +125,11 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
             <UserCheck className="w-8 h-8 text-blue-600" />
             <span>Human Resources</span>
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             {isAdmin && 'Manage your team and HR operations'}
             {isManager && 'Manage your team members'}
             {isEmployee && 'Your personal HR portal'}
@@ -148,8 +148,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalEmployees}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Employees</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalEmployees}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -161,8 +161,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.pendingTimeOff}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Requests</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.pendingTimeOff}</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-orange-600" />
@@ -174,8 +174,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Active Today</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.activeToday}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Today</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.activeToday}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -187,8 +187,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Upcoming Reviews</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.upcomingReviews}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Upcoming Reviews</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.upcomingReviews}</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -208,8 +208,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Manage Employees</h3>
-                    <p className="text-sm text-gray-600">View, add, and edit employee records</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Manage Employees</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">View, add, and edit employee records</p>
                   </div>
                 </div>
                 <Button variant="secondary" className="w-full">
@@ -226,8 +226,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                     <Calendar className="w-6 h-6 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Time-Off Requests</h3>
-                    <p className="text-sm text-gray-600">Review and approve pending requests</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Time-Off Requests</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Review and approve pending requests</p>
                   </div>
                 </div>
                 <Button variant="secondary" className="w-full">
@@ -248,8 +248,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                     <Users className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">My Team</h3>
-                    <p className="text-sm text-gray-600">View and manage your direct reports</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">My Team</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">View and manage your direct reports</p>
                   </div>
                 </div>
                 <Button variant="secondary" className="w-full">
@@ -266,8 +266,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                     <Calendar className="w-6 h-6 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Approve Requests</h3>
-                    <p className="text-sm text-gray-600">Review team time-off requests</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Approve Requests</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Review team time-off requests</p>
                   </div>
                 </div>
                 <Button variant="secondary" className="w-full">
@@ -286,8 +286,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                 <UserCheck className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">My Profile</h3>
-                <p className="text-sm text-gray-600">View and update your personal information</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">My Profile</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">View and update your personal information</p>
               </div>
             </div>
             <Button variant="secondary" className="w-full">
@@ -304,8 +304,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                 <Calendar className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Request Time Off</h3>
-                <p className="text-sm text-gray-600">Submit vacation or sick leave requests</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Request Time Off</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Submit vacation or sick leave requests</p>
               </div>
             </div>
             <Button variant="secondary" className="w-full">
@@ -322,8 +322,8 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
                 <Clock className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">My Attendance</h3>
-                <p className="text-sm text-gray-600">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">My Attendance</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Track clock-ins, clock-outs, and attendance history
                 </p>
               </div>
@@ -348,11 +348,11 @@ export default function HRWorkspaceLanding({ businessId }: { businessId: string 
             <Briefcase className="w-6 h-6 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">HR Module Framework Active</h3>
-            <p className="text-gray-700 mb-3">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">HR Module Framework Active</h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-3">
               The HR module infrastructure is now operational! Core features are being developed and will be released incrementally:
             </p>
-            <ul className="space-y-1 text-sm text-gray-600">
+            <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
               <li className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 <span>✅ Employee directory and profiles</span>

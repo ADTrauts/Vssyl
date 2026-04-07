@@ -185,7 +185,7 @@ export default function NotificationSettingsPage() {
 
   if (!mounted || status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -194,21 +194,21 @@ export default function NotificationSettingsPage() {
   if (!session?.user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
           <div className="flex items-center space-x-3">
-            <Settings className="w-6 h-6 text-gray-600" />
+            <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" />
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Notification Settings</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Notification Settings</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Configure how you receive notifications
               </p>
             </div>
@@ -217,20 +217,20 @@ export default function NotificationSettingsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900 mb-2">Notification Channels</h2>
-            <p className="text-sm text-gray-600">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700">
+          <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Notification Channels</h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Choose how you want to receive notifications for each type of activity.
             </p>
           </div>
 
           {preferences.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
+            <div className="p-6 text-center text-gray-600 dark:text-gray-400">
               <p>No notification preferences available. Install modules to configure notifications.</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 dark:divide-slate-700">
               {preferences.map((preference) => {
               const Icon = preference.icon;
               return (
@@ -238,34 +238,34 @@ export default function NotificationSettingsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
                       <div className="flex-shrink-0">
-                        <Icon className="w-6 h-6 text-gray-500" />
+                        <Icon className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-base font-medium text-gray-900">
+                        <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">
                           {preference.label}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                           {preference.description}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">In-app</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">In-app</span>
                         <Switch
                           checked={preference.inApp}
                           onChange={() => handleTogglePreference(preference.id, 'inApp')}
                         />
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">Email</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Email</span>
                         <Switch
                           checked={preference.email}
                           onChange={() => handleTogglePreference(preference.id, 'email')}
                         />
                       </div>
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">Push</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Push</span>
                         <Switch
                           checked={preference.push}
                           onChange={() => handleTogglePreference(preference.id, 'push')}
@@ -280,12 +280,12 @@ export default function NotificationSettingsPage() {
           )}
 
           {/* Do Not Disturb Section */}
-          <div className="p-6 border-t border-gray-200 bg-gray-50">
+          <div className="p-6 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
             <DoNotDisturbSettings />
           </div>
 
           {/* Quiet Hours Section */}
-          <div className="p-6 border-t border-gray-200">
+          <div className="p-6 border-t border-gray-200 dark:border-slate-700">
             <QuietHoursSettings />
           </div>
         </div>
@@ -317,12 +317,12 @@ export default function NotificationSettingsPage() {
       </div>
 
       {/* Push Notification Settings */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <Bell className="w-6 h-6 text-blue-600" />
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Push Notifications</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Push Notifications</h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Receive notifications even when the app is closed
             </p>
           </div>
@@ -332,12 +332,12 @@ export default function NotificationSettingsPage() {
       </div>
 
       {/* Email Notification Settings */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <Mail className="w-6 h-6 text-blue-600" />
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Email Notifications</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Email Notifications</h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               Receive notifications via email for important events
             </p>
           </div>

@@ -34,12 +34,12 @@ export default function TestImpersonation() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Impersonation Test</h1>
-        <p className="text-gray-600 mt-2">Test the user impersonation functionality</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Impersonation Test</h1>
+        <p className="text-gray-700 dark:text-gray-300 mt-2">Test the user impersonation functionality</p>
       </div>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Status</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Status</h2>
         
         {isImpersonating ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -83,35 +83,35 @@ export default function TestImpersonation() {
       {/* Mock Developer Features */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-3">Mock Developer Features (Preview)</h3>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
           Quick links to verify the new business-scoped Developer Portal and module flows.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Link href="/modules/submit" className="flex items-center p-3 border rounded hover:bg-gray-50">
+          <Link href="/modules/submit" className="flex items-center p-3 border rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
             <Rocket className="w-4 h-4 mr-2" /> Submit a Module
             <ArrowRight className="w-4 h-4 ml-auto" />
           </Link>
-          <Link href="/developer-portal" className="flex items-center p-3 border rounded hover:bg-gray-50">
+          <Link href="/developer-portal" className="flex items-center p-3 border rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
             <Code className="w-4 h-4 mr-2" /> Open Developer Portal (Global)
             <ArrowRight className="w-4 h-4 ml-auto" />
           </Link>
-          <Link href="/business/create" className="flex items-center p-3 border rounded hover:bg-gray-50">
+          <Link href="/business/create" className="flex items-center p-3 border rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
             <Box className="w-4 h-4 mr-2" /> Create a Business
             <ArrowRight className="w-4 h-4 ml-auto" />
           </Link>
-          <Link href="/business" className="flex items-center p-3 border rounded hover:bg-gray-50">
+          <Link href="/business" className="flex items-center p-3 border rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
             <Wrench className="w-4 h-4 mr-2" /> Manage Businesses (Select to open Workspace)
             <ArrowRight className="w-4 h-4 ml-auto" />
           </Link>
         </div>
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-3">
           Tip: After submitting a module, you’ll be prompted to create or link a business. The business workspace shows a Developer Portal quick action and a Modules section.
         </p>
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Test Instructions</h2>
-        <div className="space-y-3 text-sm text-gray-600">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Test Instructions</h2>
+        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-start space-x-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
             <div>
@@ -140,7 +140,7 @@ export default function TestImpersonation() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Technical Details</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Technical Details</h2>
         <div className="space-y-2 text-sm">
           <div><strong>Test User ID:</strong> {testUserId}</div>
           <div><strong>Test User Email:</strong> {testUserEmail}</div>

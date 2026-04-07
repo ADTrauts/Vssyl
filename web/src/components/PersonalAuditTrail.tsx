@@ -206,8 +206,8 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Audit Trail</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Audit Trail</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Track your activity and data access across the platform
           </p>
         </div>
@@ -244,45 +244,45 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-4">
             <div className="flex items-center">
               <ChartBarIcon className="w-8 h-8 text-blue-500 mr-3" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Actions</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalActions}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Actions</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalActions}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-4">
             <div className="flex items-center">
               <ClockIcon className="w-8 h-8 text-green-500 mr-3" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Recent Activity</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.recentActivity}</p>
-                <p className="text-xs text-gray-500">Last 7 days</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Recent Activity</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.recentActivity}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Last 7 days</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-4">
             <div className="flex items-center">
               <DocumentIcon className="w-8 h-8 text-purple-500 mr-3" />
               <div>
-                <p className="text-sm font-medium text-gray-600">File Actions</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">File Actions</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats.resourceBreakdown.find(r => r.resourceType === 'FILE')?.count || 0}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-4">
             <div className="flex items-center">
               <ChatBubbleLeftIcon className="w-8 h-8 text-orange-500 mr-3" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Message Actions</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Message Actions</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {stats.resourceBreakdown.find(r => r.resourceType === 'CONVERSATION')?.count || 0}
                 </p>
               </div>
@@ -292,9 +292,9 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 flex items-center">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
             <FunnelIcon className="w-5 h-5 mr-2" />
             Filters
           </h3>
@@ -302,13 +302,13 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Action Type
               </label>
               <select
                 value={filters.action}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({ ...prev, action: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Actions</option>
                 <option value="FILE_UPLOADED">File Uploaded</option>
@@ -322,13 +322,13 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Resource Type
               </label>
               <select
                 value={filters.resourceType}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({ ...prev, resourceType: e.target.value }))}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Resources</option>
                 <option value="FILE">Files</option>
@@ -339,7 +339,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Start Date
               </label>
               <Input
@@ -350,7 +350,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 End Date
               </label>
               <Input
@@ -363,13 +363,13 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
 
           <div className="flex justify-between items-center mt-4">
             <div className="flex items-center space-x-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Sort By:
               </label>
               <select
                 value={filters.sortBy}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({ ...prev, sortBy: e.target.value }))}
-                className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="timestamp">Timestamp</option>
                 <option value="action">Action</option>
@@ -379,7 +379,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
               <select
                 value={filters.sortOrder}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({ ...prev, sortOrder: e.target.value as 'asc' | 'desc' }))}
-                className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="block px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
@@ -412,11 +412,11 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
       )}
 
       {/* Audit Logs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium text-gray-900">Activity Log</h3>
-            <span className="text-sm font-normal text-gray-500">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Activity Log</h3>
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
               {total} total actions
             </span>
           </div>
@@ -429,17 +429,17 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
           ) : auditLogs.length === 0 ? (
             <div className="text-center py-8">
               <ChartBarIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No audit logs found for the selected filters.</p>
+              <p className="text-gray-500 dark:text-gray-400">No audit logs found for the selected filters.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {auditLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                 >
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
                       {getActionIcon(log.action)}
                     </div>
                   </div>
@@ -456,7 +456,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
                       )}
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {log.details && typeof log.details === 'object' && log.details !== null && 'fileName' in log.details && (
                         <span>File: {(log.details as any).fileName}</span>
                       )}
@@ -465,7 +465,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
                       )}
                     </p>
                     
-                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center">
                         <CalendarIcon className="w-3 h-3 mr-1" />
                         {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
@@ -483,7 +483,7 @@ export default function PersonalAuditTrail({ className = '' }: PersonalAuditTrai
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
                 Showing page {page} of {totalPages}
               </div>
               <div className="flex space-x-2">

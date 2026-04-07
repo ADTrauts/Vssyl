@@ -207,7 +207,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
   return (
     <div className={className}>
       {/* Filter Tabs */}
-      <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1 flex-wrap gap-1">
+      <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 flex-wrap gap-1">
         {[
           { key: 'all' as const, label: 'ALL' },
           { key: 'regular' as const, label: 'Personal' },
@@ -234,11 +234,11 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
         <div className="space-y-4">
           {households.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
                 <Users className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No households yet</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No households yet</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Create or join a household from the Home tab to see members here.
               </p>
             </div>
@@ -246,15 +246,15 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
             households.map((h) => (
               <Card key={h.id} className="p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="w-5 h-5 text-gray-600" />
-                  <h3 className="font-medium text-gray-900">{h.name}</h3>
+                  <Building2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{h.name}</h3>
                   {h.isPrimary && (
                     <Badge color="blue">Primary</Badge>
                   )}
                 </div>
                 <ul className="space-y-2 pl-7">
                   {h.members?.map((m) => (
-                    <li key={m.id} className="flex items-center gap-2 text-sm text-gray-700">
+                    <li key={m.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                       <Avatar
                         src={undefined}
                         nameOrEmail={m.user?.name ?? m.user?.email}
@@ -275,16 +275,16 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
         <div className="space-y-4">
           {following.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
                 <Building2 className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No businesses followed</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No businesses followed</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Follow businesses on Vssyl Place to see them here.
               </p>
               <Link
                 href="/place"
-                className="inline-flex items-center px-4 py-2 rounded font-semibold bg-gray-200 text-gray-900 hover:bg-gray-300"
+                className="inline-flex items-center px-4 py-2 rounded font-semibold bg-gray-200 text-gray-900 dark:text-gray-100 hover:bg-gray-300"
               >
                 Explore Place
               </Link>
@@ -293,17 +293,17 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
             following.map((b) => (
               <Card key={b.id} className="p-4 flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-900">{b.name}</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{b.name}</h3>
                   {b.description && (
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{b.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{b.description}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Following since {new Date(b.followedAt).toLocaleDateString()}
                   </p>
                 </div>
                 <Link
                   href={`/place?tab=my-place&highlight=${encodeURIComponent(b.id)}`}
-                  className="inline-flex items-center px-2 py-1 text-sm rounded font-semibold bg-gray-200 text-gray-900 hover:bg-gray-300"
+                  className="inline-flex items-center px-2 py-1 text-sm rounded font-semibold bg-gray-200 text-gray-900 dark:text-gray-100 hover:bg-gray-300"
                 >
                   <MapPin className="w-4 h-4 mr-1" />
                   View on Place
@@ -338,13 +338,13 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
       {/* Connections List */}
       {connections.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No connections yet</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No connections yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filter === 'all' 
               ? "You haven't made any connections yet. Start by searching for users to connect with."
               : filter === 'colleague'
@@ -356,12 +356,12 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
       ) : (
         <div className="space-y-4">
           {/* Select All Row */}
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <Checkbox
               checked={selectedConnections.size === connections.length && connections.length > 0}
               onChange={(e) => handleSelectAll(e.target.checked)}
             />
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Select All ({connections.length})
             </span>
           </div>
@@ -381,7 +381,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
                   />
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-medium text-gray-900">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">
                         {connection.user.name || 'Unknown User'}
                       </h3>
                       <Badge
@@ -390,16 +390,16 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
                         {getConnectionTypeLabel(connection.type)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       {connection.user.email}
                     </p>
                     {connection.user.organization && (
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {connection.user.organization.name}
                         </span>
                         <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500 capitalize">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                           {connection.user.organization.role.toLowerCase()}
                         </span>
                       </div>

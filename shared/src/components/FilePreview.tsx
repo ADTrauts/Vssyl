@@ -101,7 +101,7 @@ const TextPreview: React.FC<PreviewProps> = ({ url, onError }) => {
   }
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
+    <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
       <pre className="text-sm font-mono whitespace-pre-wrap break-words">{content}</pre>
     </div>
   );
@@ -149,7 +149,7 @@ const VideoPreview: React.FC<PreviewProps> = ({ url, onError }) => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="relative bg-gray-50 rounded-lg overflow-hidden">
+    <div className="relative bg-gray-50 dark:bg-slate-800 rounded-lg overflow-hidden">
       <video
         ref={videoRef}
         src={url}
@@ -190,7 +190,7 @@ const AudioPreview: React.FC<PreviewProps> = ({ url, onError }) => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="p-4 bg-gray-50 rounded-lg">
+    <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
       <audio
         ref={audioRef}
         src={url}
@@ -251,10 +251,10 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           // Temporarily disable PDF preview to avoid build issues
           // Users can still download and view PDFs
           return (
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="text-center">
-                <div className="text-gray-500 text-4xl mb-2">📄</div>
-                <p className="text-sm text-gray-600 mb-3">PDF Preview</p>
+                <div className="text-gray-500 dark:text-gray-400 text-4xl mb-2">📄</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">PDF Preview</p>
                 <a 
                   href={file.url} 
                   download 

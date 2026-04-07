@@ -256,7 +256,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <Package className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Current Plan</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Your current subscription and billing information
                   </p>
                   
@@ -265,7 +265,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-lg font-semibold capitalize">{subscription.tier.replace('_', ' ')} Plan</h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             {getCurrentPlanPriceLabel(subscription.tier)}
                           </p>
                         </div>
@@ -281,11 +281,11 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                       
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-600">Billing Period:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Billing Period:</span>
                           <p>{formatDate(subscription.currentPeriodStart)} - {formatDate(subscription.currentPeriodEnd)}</p>
                         </div>
                         <div>
-                          <span className="text-gray-600">Auto-renewal:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Auto-renewal:</span>
                           <p>{subscription.cancelAtPeriodEnd ? 'Cancelled' : 'Active'}</p>
                         </div>
                       </div>
@@ -332,15 +332,15 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <div className="text-center py-4">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <Shield className="h-8 w-8 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">Admin Account</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Admin Account</h3>
                       </div>
-                      <p className="text-gray-600 mb-2">You have unlimited access to all features</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-2">You have unlimited access to all features</p>
                       <Badge color="blue" className="mt-2">Unlimited Access</Badge>
                     </div>
                   ) : (
                     <div className="text-center py-4">
                       <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">No active subscription found</p>
+                      <p className="text-gray-600 dark:text-gray-400">No active subscription found</p>
                       <Button 
                         className="mt-2"
                         onClick={async () => {
@@ -379,7 +379,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <Settings className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Feature Access</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Features available with your current plan
                   </p>
                   
@@ -388,7 +388,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                       <div key={feature.name} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <h4 className="font-medium">{feature.name}</h4>
-                          <p className="text-sm text-gray-600">{feature.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{feature.description}</p>
                         </div>
                         <Badge className="bg-blue-100 text-blue-800">
                           {feature.requiredTier} Tier
@@ -474,7 +474,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <Settings className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Module Subscriptions</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Manage your module subscriptions and billing
                   </p>
                   
@@ -485,7 +485,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-semibold">{sub.module.name}</h4>
-                              <p className="text-sm text-gray-600">{sub.module.description}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{sub.module.description}</p>
                             </div>
                             <div className="flex items-center gap-2">
                               <Badge className={getTierColor(sub.tier)}>
@@ -516,7 +516,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                   ) : (
                     <div className="text-center py-8">
                       <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No module subscriptions</p>
+                      <p className="text-gray-600 dark:text-gray-400">No module subscriptions</p>
                       <Button className="mt-2">Browse Modules</Button>
                     </div>
                   )}
@@ -533,7 +533,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <TrendingUp className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Usage Analytics</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     Monitor your usage across all modules
                   </p>
                   
@@ -551,7 +551,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm text-gray-600">No usage data available</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">No usage data available</p>
                           )}
                         </div>
                       </div>
@@ -575,7 +575,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm text-gray-600">No module usage data available</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">No module usage data available</p>
                           )}
                         </div>
                       </div>
@@ -583,7 +583,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                   ) : (
                     <div className="text-center py-8">
                       <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No usage data available</p>
+                      <p className="text-gray-600 dark:text-gray-400">No usage data available</p>
                     </div>
                   )}
                 </div>
@@ -599,7 +599,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <FileText className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Invoice History</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                     View and download your billing invoices
                   </p>
                   
@@ -610,7 +610,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                           <div className="flex items-center justify-between">
                             <div>
                               <h4 className="font-semibold">Invoice #{invoice.id.slice(0, 8)}</h4>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 dark:text-gray-400">
                                 {formatDate(invoice.createdAt)}
                               </p>
                             </div>
@@ -637,7 +637,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                   ) : (
                     <div className="text-center py-8">
                       <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No invoices found</p>
+                      <p className="text-gray-600 dark:text-gray-400">No invoices found</p>
                     </div>
                   )}
                 </div>

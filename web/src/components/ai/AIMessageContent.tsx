@@ -42,7 +42,7 @@ export default function AIMessageContent({
         </p>
       ),
       strong: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-        <strong className="font-semibold text-gray-900" {...props}>{children}</strong>
+        <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props}>{children}</strong>
       ),
       a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
         <a href={href} className="text-purple-600 underline hover:text-purple-700" target={href?.startsWith('http') ? '_blank' : undefined} rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined} {...props}>
@@ -50,16 +50,16 @@ export default function AIMessageContent({
         </a>
       ),
       ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 my-2" {...props}>{children}</ul>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ul>
       ),
       ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 my-2" {...props}>{children}</ol>
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ol>
       ),
       li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
         <li className="pl-1" {...props}>{children}</li>
       ),
       code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-        <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
+        <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
       ),
     };
     return (

@@ -52,7 +52,7 @@ export default function AIModelPicker({
   if (provider === 'auto') {
     return (
       <div className={`text-sm text-gray-600 ${className}`}>
-        {showLabel && <span className="font-medium text-gray-700 block mb-1">Model</span>}
+        {showLabel && <span className="font-medium text-gray-700 dark:text-gray-300 block mb-1">Model</span>}
         <span>Auto (model chosen by system)</span>
       </div>
     );
@@ -61,7 +61,7 @@ export default function AIModelPicker({
   if (providerModels.length === 0) {
     return (
       <div className={`text-sm text-gray-600 ${className}`}>
-        {showLabel && <span className="font-medium text-gray-700 block mb-1">Model</span>}
+        {showLabel && <span className="font-medium text-gray-700 dark:text-gray-300 block mb-1">Model</span>}
         <span>Default</span>
       </div>
     );
@@ -73,14 +73,14 @@ export default function AIModelPicker({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-md transition-colors"
           title={selectedModel?.description}
         >
           {showLabel && <span className="font-medium">{selectedLabel}</span>}
           <ChevronDown className="h-3 w-3" />
         </button>
         {isOpen && (
-          <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px]">
+          <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[200px]">
             {providerModels.map((model) => (
               <button
                 key={model.id}
@@ -95,9 +95,9 @@ export default function AIModelPicker({
               >
                 <div className="flex-1 min-w-0">
                   <span className="font-medium block">{model.label}</span>
-                  <span className="text-xs text-gray-600 block truncate">{model.description}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 block truncate">{model.description}</span>
                   {(model.queryCost ?? 1) > 1 && (
-                    <span className="text-xs text-gray-500 block">Uses {model.queryCost} queries</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 block">Uses {model.queryCost} queries</span>
                   )}
                 </div>
                 {value === model.id && (
@@ -120,18 +120,18 @@ export default function AIModelPicker({
         </div>
       )}
       {showLabel && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
       )}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full text-left"
+        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors w-full text-left"
       >
         <span className="flex-1">{selectedLabel}</span>
         <ChevronDown className="h-4 w-4" />
       </button>
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[220px]">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[220px]">
           {providerModels.map((model) => (
             <button
               key={model.id}
@@ -146,13 +146,13 @@ export default function AIModelPicker({
             >
               <div className="flex-1 min-w-0">
                 <span className="font-medium block">{model.label}</span>
-                <span className="text-xs text-gray-600 block">{model.description}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 block">{model.description}</span>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {model.costTier === 'premium' && (
-                    <span className="text-xs text-gray-500">Premium</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Premium</span>
                   )}
                   {(model.queryCost ?? 1) > 1 && (
-                    <span className="text-xs text-gray-600">Uses {model.queryCost} queries per request</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Uses {model.queryCost} queries per request</span>
                   )}
                 </div>
               </div>

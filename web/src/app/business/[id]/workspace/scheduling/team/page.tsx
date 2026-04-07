@@ -28,7 +28,7 @@ export default function ManagerTeamSchedulingPage() {
   return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center">
-        <p className="text-gray-600">Redirecting to scheduling module...</p>
+        <p className="text-gray-600 dark:text-gray-400">Redirecting to scheduling module...</p>
       </div>
     </div>
   );

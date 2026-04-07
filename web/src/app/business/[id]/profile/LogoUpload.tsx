@@ -58,7 +58,7 @@ export function LogoUpload({ currentLogo, businessName, onUpload, onRemove, canE
   return (
     <Card>
       <div className="p-6 flex flex-col items-center">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Business Logo</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Business Logo</h2>
         <Avatar src={currentLogo} alt={businessName} size={80} nameOrEmail={businessName} />
         {canEdit ? (
           <div className="mt-4 flex flex-col items-center gap-2 w-full">
@@ -89,7 +89,7 @@ export function LogoUpload({ currentLogo, businessName, onUpload, onRemove, canE
             )}
           </div>
         ) : (
-          <div className="mt-4 text-gray-500 text-sm text-center">
+          <div className="mt-4 text-gray-500 dark:text-gray-400 text-sm text-center">
             You don't have permission to change the logo.
           </div>
         )}

@@ -171,25 +171,25 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
 
       {requests.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No pending requests</h3>
-          <p className="text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No pending requests</h3>
+          <p className="text-gray-600 dark:text-gray-400">
             You don't have any pending connection requests at the moment.
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {/* Select All Row */}
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <Checkbox
               checked={selectedRequests.size === requests.length && requests.length > 0}
               onChange={(e) => handleSelectAll(e.target.checked)}
             />
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Select All ({requests.length})
             </span>
           </div>
@@ -209,7 +209,7 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
                   />
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="font-medium text-gray-900">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">
                         {request.sender.name || 'Unknown User'}
                       </h3>
                       <Badge
@@ -218,23 +218,23 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
                         {getRequestTypeLabel(request.type)}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                       {request.sender.email}
                     </p>
                     {request.sender.organization && (
                       <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {request.sender.organization.name}
                         </span>
                         <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500 capitalize">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                           {request.sender.organization.role.toLowerCase()}
                         </span>
                       </div>
                     )}
                     {request.message && (
-                      <div className="bg-gray-50 rounded-lg p-3 mb-2">
-                        <p className="text-sm text-gray-700 italic">
+                      <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3 mb-2">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 italic">
                           "{request.message}"
                         </p>
                       </div>

@@ -154,15 +154,15 @@ export default function PhotoUpload({
           <IconComponent className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600">{description}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
         </div>
       </div>
 
       {/* Current Photo Display */}
       {currentPhoto && (
         <div className="relative">
-          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
+          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-slate-700">
             <img
               src={currentPhoto}
               alt={title}
@@ -220,10 +220,10 @@ export default function PhotoUpload({
             )}
             
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 PNG, JPG, GIF up to 5MB
               </p>
             </div>
@@ -253,7 +253,7 @@ export default function PhotoUpload({
       )}
 
       {/* Guidelines */}
-      <div className="text-xs text-gray-500 space-y-1">
+      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
         <p><strong>Personal Photo:</strong> Use for casual contexts, personal dashboards, and social features.</p>
         <p><strong>Business Photo:</strong> Use for professional contexts, business workspaces, and work-related features.</p>
         <p>Photos should be clear, well-lit, and appropriate for the context.</p>

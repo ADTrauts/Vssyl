@@ -298,6 +298,20 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
     }
     const businessId = businessIdParam as string | undefined;
 
+    if (scope === 'business') {
+      if (!businessId) {
+        return res.status(400).json({ success: false, error: 'businessId is required for business scope' });
+      }
+
+      const membership = await prisma.businessMember.findFirst({
+        where: { businessId, userId: user.id, isActive: true },
+      });
+
+      if (!membership) {
+        return res.status(403).json({ success: false, error: 'Access denied for this business' });
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: any = {
       status: 'APPROVED'
@@ -336,6 +350,10 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
         developer: { select: { id: true, name: true, email: true } },
         installations: scope === 'personal' ? { where: { userId: user.id } } : false,
         businessInstallations: scope === 'business' && businessId ? { where: { businessId } } : false,
+        businessSubscriptions:
+          scope === 'business' && businessId
+            ? { where: { businessId, status: 'active' } }
+            : false,
         subscriptions:
           scope === 'personal'
             ? { where: { userId: user.id, status: 'active' } }
@@ -386,8 +404,14 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
         isProprietary: module.isProprietary,
         revenueSplit: module.revenueSplit,
         // Subscription status
-        subscriptionStatus: (module as any).subscriptions?.[0]?.status || null,
-        subscriptionAmount: (module as any).subscriptions?.[0]?.amount || null,
+        subscriptionStatus:
+          scope === 'business'
+            ? (module as any).businessSubscriptions?.[0]?.status || null
+            : (module as any).subscriptions?.[0]?.status || null,
+        subscriptionAmount:
+          scope === 'business'
+            ? (module as any).businessSubscriptions?.[0]?.amount || null
+            : (module as any).subscriptions?.[0]?.amount || null,
         // Built-in module indicator
         isBuiltIn: isBuiltInModule,
       };
@@ -1551,64 +1575,171 @@ export const linkModuleToBusiness = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { moduleId, businessId } = req.body;
+    const moduleId =
+      typeof req.body?.moduleId === 'string' ? req.body.moduleId.trim() : '';
+    const businessId =
+      typeof req.body?.businessId === 'string' ? req.body.businessId.trim() : '';
 
     if (!moduleId || !businessId) {
       return res.status(400).json({ success: false, error: 'Module ID and Business ID are required' });
     }
 
-    // Verify the module exists and belongs to the user
-    const module = await prisma.module.findFirst({
-      where: {
-        id: moduleId,
-        developerId: user.id
-      }
+    // Verify the module exists, then enforce developer ownership
+    const module = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: { id: true, name: true, developerId: true, businessId: true },
     });
 
     if (!module) {
-      return res.status(404).json({ success: false, error: 'Module not found or access denied' });
+      return res.status(404).json({ success: false, error: 'Module not found' });
     }
 
-    // Verify the business exists and user has access
+    if (module.developerId !== user.id && user.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied for this module' });
+    }
+
+    // Upload/link policy: any active business member (including employees) can link modules.
     const businessMember = await prisma.businessMember.findFirst({
       where: {
-        businessId: businessId,
+        businessId,
         userId: user.id,
-        isActive: true
+        isActive: true,
       },
       include: {
-        business: true
-      }
+        business: true,
+      },
     });
 
     if (!businessMember) {
-      return res.status(404).json({ success: false, error: 'Business not found or access denied' });
+      return res.status(403).json({ success: false, error: 'Access denied for this business' });
     }
 
-    // Update the module to link it to the business
-    const updatedModule = await prisma.module.update({
-      where: {
-        id: moduleId
-      },
-      data: {
-        businessId: businessId
-      },
-      include: {
-        business: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
+    // Ensure linked business is designated for developer module workflows.
+    const markDeveloperBusiness = async () => {
+      await (prisma as any).business.update({
+        where: { id: businessId },
+        data: {
+          isDeveloperBusiness: true,
+          developerBusinessLinkedAt: new Date(),
+          developerBusinessLinkedBy: user.id,
+        },
+      });
+    };
 
-    res.json({ 
-      success: true, 
+    // Idempotent behavior: if already linked to this business, return success without changing state.
+    if (module.businessId === businessId) {
+      const currentBusiness = await (prisma as any).business.findUnique({
+        where: { id: businessId },
+        select: { isDeveloperBusiness: true },
+      });
+      if (!currentBusiness?.isDeveloperBusiness) {
+        await markDeveloperBusiness();
+      }
+
+      try {
+        await prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            action: 'MODULE_LINK_BUSINESS_NOOP',
+            details: JSON.stringify({
+              moduleId,
+              moduleName: module.name,
+              businessId,
+              businessName: businessMember.business.name,
+              reason: 'already_linked',
+            }),
+            timestamp: new Date(),
+          },
+        });
+      } catch (auditError: unknown) {
+        const err = auditError instanceof Error ? auditError : new Error(String(auditError));
+        await logger.warn('Audit logging failed for module business link noop', {
+          operation: 'module_link_business',
+          moduleId,
+          businessId,
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          message: 'Module is already linked to this business',
+          module: {
+            id: module.id,
+            businessId,
+            business: {
+              id: businessMember.business.id,
+              name: businessMember.business.name,
+              isDeveloperBusiness: true,
+            },
+          },
+        },
+      });
+    }
+
+    const previousBusinessId = module.businessId ?? null;
+
+    // Update module linkage and business designation in one transaction.
+    const [, updatedModule] = await (prisma as any).$transaction([
+      (prisma as any).business.update({
+        where: { id: businessId },
+        data: {
+          isDeveloperBusiness: true,
+          developerBusinessLinkedAt: new Date(),
+          developerBusinessLinkedBy: user.id,
+        },
+      }),
+      prisma.module.update({
+        where: {
+          id: moduleId,
+        },
+        data: {
+          businessId,
+        },
+        include: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'MODULE_LINK_BUSINESS',
+          details: JSON.stringify({
+            moduleId,
+            moduleName: module.name,
+            previousBusinessId,
+            linkedBusinessId: businessId,
+            linkedBusinessName: businessMember.business.name,
+            developerBusinessDesignated: true,
+          }),
+          timestamp: new Date(),
+        },
+      });
+    } catch (auditError: unknown) {
+      const err = auditError instanceof Error ? auditError : new Error(String(auditError));
+      await logger.warn('Audit logging failed for module business link', {
+        operation: 'module_link_business',
+        moduleId,
+        businessId,
+        error: { message: err.message, stack: err.stack },
+      });
+    }
+
+    res.json({
+      success: true,
       data: {
         message: 'Module linked to business successfully',
-        module: updatedModule
-      }
+        module: updatedModule,
+      },
     });
   } catch (error) {
     console.error('Error linking module to business:', error);
@@ -1680,11 +1811,33 @@ export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
     const scope = (req.query.scope as 'personal' | 'business') || 'personal';
     const businessId = req.query.businessId as string | undefined;
 
+    if (scope !== 'personal' && scope !== 'business') {
+      return res.status(400).json({ success: false, error: 'scope must be personal or business' });
+    }
+
+    if (scope === 'business') {
+      if (!businessId) {
+        return res.status(400).json({ success: false, error: 'businessId is required for business scope' });
+      }
+
+      const membership = await prisma.businessMember.findFirst({
+        where: { businessId, userId: user.id, isActive: true },
+      });
+
+      if (!membership) {
+        return res.status(403).json({ success: false, error: 'Access denied for this business' });
+      }
+    }
+
     const module = await prisma.module.findUnique({
       where: { id: moduleId },
       include: {
         installations: scope === 'personal' ? { where: { userId: user.id }, take: 1 } : false,
         businessInstallations: scope === 'business' && businessId ? { where: { businessId }, take: 1 } : false,
+        businessSubscriptions:
+          scope === 'business' && businessId
+            ? { where: { businessId, status: 'active' }, take: 1 }
+            : false,
         subscriptions:
           scope === 'personal'
             ? { where: { userId: user.id, status: 'active' }, take: 1 }
@@ -1709,7 +1862,10 @@ export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
 
     // For paid modules, ensure an active subscription exists
     if (module.pricingTier && module.pricingTier !== 'free') {
-      const hasActiveSubscription = Boolean((module as any).subscriptions?.length);
+      const hasActiveSubscription =
+        scope === 'business'
+          ? Boolean((module as any).businessSubscriptions?.length)
+          : Boolean((module as any).subscriptions?.length);
       if (!hasActiveSubscription) {
         return res.status(402).json({ success: false, error: 'Active subscription required' });
       }

@@ -989,7 +989,7 @@ export default function AIChatDropdown({
   return createPortal(
     <div
       ref={dropdownRef}
-      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden flex flex-col"
+      className="fixed z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col"
       style={{
         top: position.top,
         left: position.left,
@@ -999,11 +999,11 @@ export default function AIChatDropdown({
       }}
     >
       {/* Header */}
-      <div className="p-4 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+      <div className="p-4 border-b border-gray-100 bg-gray-50 dark:bg-slate-800 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Brain className="h-5 w-5 text-purple-600" />
-            <span className="text-sm font-medium text-gray-700">AI Assistant</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Assistant</span>
             <Sparkles className="h-4 w-4 text-yellow-500" />
           </div>
           
@@ -1052,7 +1052,7 @@ export default function AIChatDropdown({
             </Button>
             <button
               onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600"
+              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
             >
               <X className="h-4 w-4" />
             </button>
@@ -1098,7 +1098,7 @@ export default function AIChatDropdown({
           {/* Quick Actions for To-Do Module - Always visible */}
           {effectiveModuleContext?.module === 'todo' && conversation.length > 0 && (
             <div className="px-4 pt-4 pb-2 border-b border-gray-100">
-              <p className="text-xs font-medium text-gray-700 mb-2">Quick actions:</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Quick actions:</p>
               <div className="flex flex-wrap gap-2">
                 {TODO_PROMPTS.map((prompt, idx) => {
                   const Icon = prompt.icon;
@@ -1107,7 +1107,7 @@ export default function AIChatDropdown({
                       key={idx}
                       onClick={() => handleTodoPrompt(prompt)}
                       disabled={isAILoading}
-                      className="text-xs px-3 py-1.5 bg-white rounded-md border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors text-gray-900 flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-xs px-3 py-1.5 bg-white dark:bg-slate-900 rounded-md border border-gray-200 dark:border-slate-700 hover:border-purple-300 hover:bg-purple-50 transition-colors text-gray-900 dark:text-gray-100 flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Icon className="w-3 h-3 text-purple-500" />
                       <span>{prompt.text}</span>
@@ -1137,12 +1137,12 @@ export default function AIChatDropdown({
                 <div className="h-8 w-8 mx-auto text-purple-600 mb-3">
                   <Spinner size={32} />
                 </div>
-                <p className="text-gray-500 text-sm">Loading conversations...</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading conversations...</p>
               </div>
             ) : conversation.length === 0 ? (
               <div className="text-center py-8">
                 <Brain className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500 text-sm">What's on your mind today?</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">What's on your mind today?</p>
                 <p className="text-gray-400 text-xs mt-1">
                   I can help schedule meetings, organize files, analyze data, and more
                 </p>
@@ -1150,7 +1150,7 @@ export default function AIChatDropdown({
                 {/* Scheduling-specific prompts */}
                 {moduleContext?.module === 'scheduling' && (
                   <div className="mt-6 space-y-2">
-                    <p className="text-xs text-gray-500 mb-3">Quick actions for scheduling:</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Quick actions for scheduling:</p>
                     {SCHEDULING_PROMPTS.map((prompt, idx) => {
                       const Icon = prompt.icon;
                       return (
@@ -1158,10 +1158,10 @@ export default function AIChatDropdown({
                           key={idx}
                           onClick={() => handleSchedulingPrompt(prompt)}
                           disabled={isAILoading}
-                          className="w-full text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors text-sm text-gray-900 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full text-left p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-purple-300 hover:bg-purple-50 transition-colors text-sm text-gray-900 dark:text-gray-100 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Icon className="w-4 h-4 text-purple-500" />
-                          <span className="text-gray-900">{prompt.text}</span>
+                          <span className="text-gray-900 dark:text-gray-100">{prompt.text}</span>
                         </button>
                       );
                     })}
@@ -1171,7 +1171,7 @@ export default function AIChatDropdown({
                 {/* To-Do module-specific prompts */}
                 {effectiveModuleContext?.module === 'todo' && (
                   <div className="mt-6 space-y-2">
-                    <p className="text-xs font-medium text-gray-700 mb-3">Quick actions for tasks:</p>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Quick actions for tasks:</p>
                     {/* Debug: Uncomment to verify moduleContext */}
                     {/* {console.log('TODO Module detected, showing prompts', moduleContext)} */}
                     {TODO_PROMPTS.map((prompt, idx) => {
@@ -1181,10 +1181,10 @@ export default function AIChatDropdown({
                           key={idx}
                           onClick={() => handleTodoPrompt(prompt)}
                           disabled={isAILoading}
-                          className="w-full text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-colors text-sm text-gray-900 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full text-left p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-purple-300 hover:bg-purple-50 transition-colors text-sm text-gray-900 dark:text-gray-100 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Icon className="w-4 h-4 text-purple-500" />
-                          <span className="text-gray-900">{prompt.text}</span>
+                          <span className="text-gray-900 dark:text-gray-100">{prompt.text}</span>
                         </button>
                       );
                     })}
@@ -1222,7 +1222,7 @@ export default function AIChatDropdown({
                     
                     {item.type === 'ai' && (
                       <div className="flex justify-start">
-                        <div className="bg-gray-100 rounded-lg px-3 py-2 max-w-sm">
+                        <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-sm">
                           <div className="flex items-start space-x-2">
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
@@ -1242,9 +1242,9 @@ export default function AIChatDropdown({
                                     }}
                                   />
                                   {item.fileIssues && item.fileIssues.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200">
-                                      <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
-                                      <ul className="text-xs text-gray-600 space-y-0.5">
+                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                                         {item.fileIssues.map((issue: FileIssue, i: number) => (
                                           <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
                                         ))}
@@ -1252,7 +1252,7 @@ export default function AIChatDropdown({
                                     </div>
                                   )}
                                   {item.usedVisionParts && (
-                                    <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                   )}
                                 </>
                               ) : (
@@ -1275,14 +1275,14 @@ export default function AIChatDropdown({
                                     </div>
                                   )}
                                   {item.confidence !== undefined && (
-                                    <p className="text-xs text-gray-600 mt-1">
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                       Confidence: {Math.round(item.confidence * 100)}%
                                     </p>
                                   )}
                                   {item.fileIssues && item.fileIssues.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200">
-                                      <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
-                                      <ul className="text-xs text-gray-600 space-y-0.5">
+                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                                         {item.fileIssues.map((issue: FileIssue, i: number) => (
                                           <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
                                         ))}
@@ -1290,7 +1290,7 @@ export default function AIChatDropdown({
                                     </div>
                                   )}
                                   {item.usedVisionParts && (
-                                    <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                   )}
                                 </>
                               )}
@@ -1307,7 +1307,7 @@ export default function AIChatDropdown({
             
             {isAILoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-3 py-2">
+                <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2">
                   <AIThinkingIndicator message="Thinking..." iconSize={16} />
                 </div>
               </div>
@@ -1319,7 +1319,7 @@ export default function AIChatDropdown({
             <div className="px-4 pt-3 pb-2 border-t border-gray-100 bg-gradient-to-br from-purple-50 to-blue-50">
               <div className="flex items-center gap-1.5 mb-2">
                 <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                <span className="text-xs font-semibold text-gray-700 uppercase">AI Suggestions</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">AI Suggestions</span>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {aiSuggestions.map((s) => {
@@ -1327,11 +1327,11 @@ export default function AIChatDropdown({
                   return (
                     <div
                       key={s.id}
-                      className="rounded-lg border border-purple-200 bg-white/80 p-2 text-left shadow-sm"
+                      className="rounded-lg border border-purple-200 bg-white dark:bg-slate-900/80 p-2 text-left shadow-sm"
                     >
-                      <p className="text-xs font-medium text-gray-900 line-clamp-1">{s.title}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{s.title}</p>
                       {s.body && (
-                        <p className="text-xs text-gray-600 mt-0.5 line-clamp-1">{s.body}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">{s.body}</p>
                       )}
                       <div className="mt-1.5 flex gap-1">
                         <Button
@@ -1373,9 +1373,9 @@ export default function AIChatDropdown({
               <div className="mb-2">
                 <div className="flex items-center gap-2">
                   <Spinner size={12} />
-                  <span className="text-xs text-gray-700">Uploading…</span>
+                  <span className="text-xs text-gray-700 dark:text-gray-300">Uploading…</span>
                   {uploadProgress != null && uploadProgress >= 0 && (
-                    <span className="text-xs text-gray-600">{uploadProgress}%</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{uploadProgress}%</span>
                   )}
                 </div>
                 <div className="mt-1 h-1 w-full max-w-[200px] bg-gray-200 rounded-full overflow-hidden">
@@ -1408,23 +1408,23 @@ export default function AIChatDropdown({
                     </button>
                   </div>
                 ))}
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-gray-600 dark:text-gray-400">
                   {attachedFiles.length}/{MAX_ATTACHMENTS} files
                 </span>
               </div>
             )}
 
             {/* Compact Input Bar */}
-            <div className="flex items-center gap-2 border border-gray-300 rounded-2xl px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
+            <div className="flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-2xl px-3 py-2 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
               {/* Paperclip Button */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Attach files"
               >
-                <Paperclip className="h-4 w-4 text-gray-500" />
+                <Paperclip className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
               
               {/* Hidden File Input */}
@@ -1462,7 +1462,7 @@ export default function AIChatDropdown({
             </div>
             
             {/* Helper Text */}
-            <p className="text-xs text-gray-500 text-center mt-1.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1.5">
               Press Enter to send • Up to {MAX_ATTACHMENTS} files
             </p>
           </div>
@@ -1470,20 +1470,20 @@ export default function AIChatDropdown({
 
         {/* History Sidebar */}
         {showHistory && (
-          <div className="w-2/5 border-l border-gray-200 bg-gray-50 flex flex-col">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Conversations</h3>
+          <div className="w-2/5 border-l border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Recent Conversations</h3>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {isLoadingConversations ? (
                 <div className="text-center py-8">
                   <Spinner size={24} />
-                  <p className="text-sm text-gray-500 mt-2">Loading conversations...</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading conversations...</p>
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="text-center py-8">
                   <History className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500">No conversations yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No conversations yet</p>
                   <p className="text-xs text-gray-400 mt-1">Start chatting to see your history here</p>
                 </div>
               ) : (
@@ -1525,7 +1525,7 @@ export default function AIChatDropdown({
                               }
                             }}
                             autoFocus
-                            className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
@@ -1543,7 +1543,7 @@ export default function AIChatDropdown({
                               setRenamingConversationId(null);
                               setRenameValue('');
                             }}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -1551,8 +1551,8 @@ export default function AIChatDropdown({
                       ) : (
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{conv.title}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.title}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -1565,16 +1565,16 @@ export default function AIChatDropdown({
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                               >
-                                <MoreVertical className="h-3 w-3 text-gray-600" />
+                                <MoreVertical className="h-3 w-3 text-gray-600 dark:text-gray-400" />
                               </button>
                               {conversationMenuOpen === conv.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleShareConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Share2 className="h-4 w-4" />
                                     <span>Share</span>
@@ -1586,7 +1586,7 @@ export default function AIChatDropdown({
                                       setRenamingConversationId(conv.id);
                                       setConversationMenuOpen(null);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Edit className="h-4 w-4" />
                                     <span>Rename</span>
@@ -1596,7 +1596,7 @@ export default function AIChatDropdown({
                                       e.stopPropagation();
                                       handlePinConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Pin className="h-4 w-4" />
                                     <span>{conv.isPinned ? 'Unpin' : 'Pin'} chat</span>
@@ -1606,7 +1606,7 @@ export default function AIChatDropdown({
                                       e.stopPropagation();
                                       handleArchiveConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Archive className="h-4 w-4" />
                                     <span>{conv.isArchived ? 'Unarchive' : 'Archive'}</span>

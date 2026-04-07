@@ -410,7 +410,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
   const getTrendIcon = (value: number) => {
     if (value > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
     if (value < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Activity className="w-4 h-4 text-gray-600" />;
+    return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
   };
 
   const getInsightIcon = (type: string) => {
@@ -419,7 +419,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
       case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
       case 'insight': return <Eye className="w-4 h-4 text-purple-600" />;
       case 'recommendation': return <Target className="w-4 h-4 text-green-600" />;
-      default: return <Activity className="w-4 h-4 text-gray-600" />;
+      default: return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -437,7 +437,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading cross-module analytics...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading cross-module analytics...</p>
         </div>
       </Card>
     );
@@ -454,8 +454,8 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                 <BarChart3 className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Cross-Module Analytics</h2>
-                <p className="text-gray-600">Unified insights across Drive, Chat, Calendar, and Dashboard</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Cross-Module Analytics</h2>
+                <p className="text-gray-600 dark:text-gray-400">Unified insights across Drive, Chat, Calendar, and Dashboard</p>
               </div>
             </div>
             
@@ -463,7 +463,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
               <select
                 value={selectedTimeframe}
                 onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
@@ -522,13 +522,13 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                     <div className={`p-2 rounded-lg ${config.color}`}>
                       {config.icon}
                     </div>
-                    <h3 className="font-medium text-gray-900">{config.name}</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{config.name}</h3>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div className="text-2xl font-bold text-gray-900">{module.activeUsers.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">Active Users</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{module.activeUsers.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
                       <div className="flex items-center gap-1 mt-1">
                         {getTrendIcon(module.trends.userGrowth)}
                         <span className="text-sm font-medium text-green-600">
@@ -537,8 +537,8 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                       </div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-gray-900">{module.totalSessions.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">Sessions</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{module.totalSessions.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Sessions</div>
                       <div className="flex items-center gap-1 mt-1">
                         {getTrendIcon(module.trends.engagementGrowth)}
                         <span className="text-sm font-medium text-green-600">
@@ -550,25 +550,25 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                   
                   <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
                     <div>
-                      <div className="text-gray-500">Collaboration</div>
+                      <div className="text-gray-500 dark:text-gray-400">Collaboration</div>
                       <div className="font-medium">{module.collaborationScore}%</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Productivity</div>
+                      <div className="text-gray-500 dark:text-gray-400">Productivity</div>
                       <div className="font-medium">{module.productivityIndex}%</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Compliance</div>
+                      <div className="text-gray-500 dark:text-gray-400">Compliance</div>
                       <div className="font-medium">{module.complianceScore}%</div>
                     </div>
                   </div>
                   
                   <div className="border-t pt-3">
-                    <div className="text-sm text-gray-600 mb-2">Enterprise Feature Adoption</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Enterprise Feature Adoption</div>
                     <div className="space-y-2">
                       {module.enterpriseFeatureUsage.slice(0, 2).map((feature, index) => (
                         <div key={index} className="flex justify-between text-sm">
-                          <span className="text-gray-700">{feature.featureName}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{feature.featureName}</span>
                           <span className="font-medium">{feature.adoptionRate}%</span>
                         </div>
                       ))}
@@ -576,11 +576,11 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                   </div>
                   
                   <div className="border-t pt-3 mt-3">
-                    <div className="text-sm text-gray-600 mb-2">Cost Breakdown</div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Cost Breakdown</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       ${module.costMetrics.totalCost.toLocaleString()}/month
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       ${module.costMetrics.userCost}/user/month
                     </div>
                   </div>
@@ -596,40 +596,40 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
             {crossModuleInsights.map(insight => (
               <Card key={insight.id} className="p-4">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 bg-gray-100 rounded-lg">
+                  <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-lg">
                     {getInsightIcon(insight.type)}
                   </div>
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-medium text-gray-900">{insight.title}</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{insight.title}</h3>
                       <Badge className={`px-2 py-1 text-xs border rounded-full ${getImpactColor(insight.impact)}`}>
                         {insight.impact} impact
                       </Badge>
-                      <Badge className="px-2 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-200 rounded-full">
+                      <Badge className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700 rounded-full">
                         {insight.type}
                       </Badge>
                     </div>
                     
-                    <p className="text-gray-600 mb-3">{insight.description}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-3">{insight.description}</p>
                     
                     <div className="grid grid-cols-3 gap-4 mb-4">
                       <div>
-                        <div className="text-sm text-gray-500">Current Score</div>
-                        <div className="text-lg font-bold text-gray-900">{insight.metrics.current}%</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Current Score</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{insight.metrics.current}%</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">Potential Score</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Potential Score</div>
                         <div className="text-lg font-bold text-green-600">{insight.metrics.potential}%</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">Improvement</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Improvement</div>
                         <div className="text-lg font-bold text-blue-600">+{insight.metrics.improvement}%</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm text-gray-600">Affected Modules:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Affected Modules:</span>
                       {insight.modules.map(moduleId => {
                         const config = MODULE_CONFIGS[moduleId as keyof typeof MODULE_CONFIGS];
                         return (
@@ -641,8 +641,8 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                     </div>
                     
                     <div className="mb-3">
-                      <div className="text-sm font-medium text-gray-900 mb-2">Action Items:</div>
-                      <ul className="text-sm text-gray-600 space-y-1">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Action Items:</div>
+                      <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                         {insight.actionItems.map((item, index) => (
                           <li key={index} className="flex items-start gap-2">
                             <CheckCircle className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
@@ -652,7 +652,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                       </ul>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <Clock className="w-3 h-3" />
                       <span>Estimated timeframe: {insight.timeframe}</span>
                     </div>
@@ -670,12 +670,12 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
               <Card key={journey.userId} className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-medium text-gray-900">{journey.userName}</h3>
-                    <p className="text-sm text-gray-600">{journey.department}</p>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{journey.userName}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{journey.department}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">Overall Productivity</div>
-                    <div className="text-lg font-bold text-gray-900">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Overall Productivity</div>
+                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
                       {Math.round(journey.moduleUsage.reduce((sum, mod) => sum + mod.productivityScore, 0) / journey.moduleUsage.length)}%
                     </div>
                   </div>
@@ -685,7 +685,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                   {journey.moduleUsage.map(usage => {
                     const config = MODULE_CONFIGS[usage.module as keyof typeof MODULE_CONFIGS];
                     return (
-                      <div key={usage.module} className="p-3 border border-gray-200 rounded-lg">
+                      <div key={usage.module} className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <div className={`p-1 rounded ${config.color}`}>
                             {config.icon}
@@ -694,15 +694,15 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Time:</span>
+                            <span className="text-gray-600 dark:text-gray-400">Time:</span>
                             <span className="font-medium">{usage.timeSpent}min</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Actions:</span>
+                            <span className="text-gray-600 dark:text-gray-400">Actions:</span>
                             <span className="font-medium">{usage.actionsPerformed}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Productivity:</span>
+                            <span className="text-gray-600 dark:text-gray-400">Productivity:</span>
                             <span className="font-medium">{usage.productivityScore}%</span>
                           </div>
                         </div>
@@ -712,16 +712,16 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                 </div>
                 
                 <div>
-                  <div className="text-sm font-medium text-gray-900 mb-2">Common Usage Patterns:</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Common Usage Patterns:</div>
                   <div className="space-y-2">
                     {journey.crossModulePatterns.map((pattern, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800 rounded">
                         <div className="flex items-center gap-2">
                           <Activity className="w-3 h-3 text-gray-400" />
-                          <span className="text-sm text-gray-700">{pattern.pattern}</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{pattern.pattern}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-gray-600">×{pattern.frequency}</span>
+                          <span className="text-gray-600 dark:text-gray-400">×{pattern.frequency}</span>
                           <span className="font-medium text-green-600">{pattern.efficiency}% efficient</span>
                         </div>
                       </div>
@@ -737,20 +737,20 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
         {activeView === 'compliance' && complianceOverview && (
           <div className="space-y-6">
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Overall Compliance Score</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Overall Compliance Score</h3>
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-600 mb-2">{complianceOverview.overallScore}%</div>
-                <div className="text-sm text-gray-600">Cross-module compliance average</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Cross-module compliance average</div>
               </div>
             </Card>
             
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Module Compliance Breakdown</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Module Compliance Breakdown</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {complianceOverview.moduleCompliance.map(module => {
                   const config = MODULE_CONFIGS[module.module as keyof typeof MODULE_CONFIGS];
                   return (
-                    <div key={module.module} className="p-3 border border-gray-200 rounded-lg">
+                    <div key={module.module} className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                       <div className="flex items-center gap-2 mb-3">
                         <div className={`p-1 rounded ${config.color}`}>
                           {config.icon}
@@ -759,17 +759,17 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Score:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Score:</span>
                           <span className="font-medium">{module.score}%</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Issues:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Issues:</span>
                           <span className={`font-medium ${module.criticalIssues > 0 ? 'text-red-600' : 'text-green-600'}`}>
                             {module.criticalIssues}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Last Audit:</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Last Audit:</span>
                           <span className="font-medium text-xs">{module.lastAudit.toLocaleDateString()}</span>
                         </div>
                       </div>
@@ -780,12 +780,12 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
             </Card>
             
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 mb-4">Risk Areas</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Risk Areas</h3>
               <div className="space-y-3">
                 {complianceOverview.riskAreas.map((risk, index) => (
-                  <div key={index} className="p-3 border border-gray-200 rounded-lg">
+                  <div key={index} className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{risk.area}</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{risk.area}</h4>
                       <Badge className={`px-2 py-1 text-xs border rounded-full ${
                         risk.riskLevel === 'high' ? 'bg-red-50 text-red-600 border-red-200' :
                         risk.riskLevel === 'medium' ? 'bg-yellow-50 text-yellow-600 border-yellow-200' :
@@ -794,9 +794,9 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                         {risk.riskLevel} risk
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{risk.recommendation}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{risk.recommendation}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">Affected modules:</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Affected modules:</span>
                       {risk.affectedModules.map(moduleId => {
                         const config = MODULE_CONFIGS[moduleId as keyof typeof MODULE_CONFIGS];
                         return (

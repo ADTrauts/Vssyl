@@ -301,10 +301,10 @@ export default function SubmitModulePage() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Module Name *
             </label>
             <Input
@@ -316,7 +316,7 @@ export default function SubmitModulePage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Version *
             </label>
             <Input
@@ -329,7 +329,7 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Description *
           </label>
           <Textarea
@@ -342,14 +342,14 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Category *
           </label>
           <select
             value={submission.category}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSubmission(prev => ({ ...prev, category: e.target.value }))}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select a category</option>
             {CATEGORIES.map(category => (
@@ -359,7 +359,7 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Tags
           </label>
           <div className="flex gap-2 mb-2">
@@ -394,11 +394,11 @@ export default function SubmitModulePage() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Configuration</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Module Configuration</h3>
 
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-gray-900">Artifact upload (recommended)</p>
-          <p className="mt-1 text-sm text-gray-700">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Artifact upload (recommended)</p>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
             Upload your module as a <strong>.zip</strong> (max 500 MB). After you submit, we store it securely in
             Google Cloud Storage for review and publishing. Hosted-URL-only submissions are deprecated and will be
             phased out—use a zip when possible.
@@ -407,14 +407,14 @@ export default function SubmitModulePage() {
             <input
               type="file"
               accept=".zip,application/zip,application/x-zip-compressed"
-              className="block w-full text-sm text-gray-700 file:mr-3 file:rounded file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5"
+              className="block w-full text-sm text-gray-700 dark:text-gray-300 file:mr-3 file:rounded file:border file:border-gray-300 dark:border-slate-600 file:bg-white dark:bg-slate-900 file:px-3 file:py-1.5"
               onChange={(e) => {
                 const f = e.target.files?.[0] ?? null;
                 setArtifactFile(f);
               }}
             />
             {artifactFile && (
-              <p className="mt-2 text-sm text-gray-700">
+              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
                 Selected: {artifactFile.name} ({(artifactFile.size / (1024 * 1024)).toFixed(2)} MB)
               </p>
             )}
@@ -427,7 +427,7 @@ export default function SubmitModulePage() {
         </div>
         
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Hosted bundle URL (HTTPS){!artifactFile ? ' *' : ' (optional if zip uploaded)'}
           </label>
           <Input
@@ -442,7 +442,7 @@ export default function SubmitModulePage() {
             placeholder="https://your-cdn.com/your-module/index.html"
             required={!artifactFile}
           />
-          <p className="text-xs text-gray-700 mt-1">
+          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
             {artifactFile
               ? 'Optional: iframe runtime still uses an HTTPS entry URL when provided. You can add this later before approval if needed.'
               : 'Provide a publicly accessible HTTPS URL to your module\'s entry HTML (legacy path).'}
@@ -450,7 +450,7 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Entry Point *
           </label>
           <Input
@@ -465,7 +465,7 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Required Permissions
           </label>
           <div className="flex gap-2 mb-2">
@@ -496,7 +496,7 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Dependencies
           </label>
           <div className="flex gap-2 mb-2">
@@ -517,7 +517,7 @@ export default function SubmitModulePage() {
                 {dependency}
                 <button
                   onClick={() => removeDependency(dependency)}
-                  className="ml-1 text-gray-600 hover:text-gray-800"
+                  className="ml-1 text-gray-600 dark:text-gray-400 hover:text-gray-800"
                 >
                   ×
                 </button>
@@ -527,10 +527,10 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Module Icon
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
             <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
             <input
               type="file"
@@ -546,10 +546,10 @@ export default function SubmitModulePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Screenshots
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
             <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
             <input
               type="file"
@@ -590,10 +590,10 @@ export default function SubmitModulePage() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Documentation & Legal</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Documentation & Legal</h3>
         
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             README *
           </label>
           <Textarea
@@ -606,14 +606,14 @@ export default function SubmitModulePage() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             License *
           </label>
           <select
             value={submission.license}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSubmission(prev => ({ ...prev, license: e.target.value }))}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {LICENSE_OPTIONS.map(license => (
               <option key={license} value={license}>{license}</option>
@@ -647,7 +647,7 @@ export default function SubmitModulePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -661,8 +661,8 @@ export default function SubmitModulePage() {
               Back to Modules
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Submit Module</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Submit Module</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Share your module with the community
           </p>
         </div>
@@ -719,7 +719,7 @@ export default function SubmitModulePage() {
           <Alert type="success" title="Success" className="mb-6">
             <div className="flex items-center">
               <CheckCircle className="w-5 h-5 mr-2" />
-              Module submitted successfully! Setting up business profile...
+              Module submitted successfully! Next, link it to a business where you are an active member.
             </div>
           </Alert>
         )}
@@ -731,7 +731,7 @@ export default function SubmitModulePage() {
           {currentStep === 3 && renderStep3()}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-slate-700">
             <Button
               variant="secondary"
               onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}

@@ -143,12 +143,12 @@ export default function BusinessCreationModal({
   const renderChoiceMode = () => (
     <div className="text-center">
       <Building2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
         {moduleName ? `Great! "${moduleName}" is ready for review.` : 'Module Submitted Successfully!'}
       </h2>
-      <p className="text-gray-600 mb-6">
+      <p className="text-gray-600 dark:text-gray-400 mb-6">
         To access analytics and manage your module, you'll need a business profile. 
-        Would you like to create a new business or link to an existing one?
+        You can create a new business or link this module to an existing business where you are an active member.
       </p>
       
       <div className="space-y-4">
@@ -186,8 +186,8 @@ export default function BusinessCreationModal({
     <div>
       <div className="text-center mb-6">
         <Building2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Business</h2>
-        <p className="text-gray-600">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create Your Business</h2>
+        <p className="text-gray-600 dark:text-gray-400">
           Set up your business profile to manage your module and access analytics
         </p>
       </div>
@@ -201,7 +201,7 @@ export default function BusinessCreationModal({
       <form onSubmit={handleCreateBusiness} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Business Name *
             </label>
             <Input
@@ -214,14 +214,14 @@ export default function BusinessCreationModal({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Industry
             </label>
             <select
               name="industry"
               value={formData.industry}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Industry</option>
               <option value="technology">Technology</option>
@@ -237,14 +237,14 @@ export default function BusinessCreationModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Company Size
             </label>
             <select
               name="size"
               value={formData.size}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Size</option>
               <option value="1-10">1-10 employees</option>
@@ -256,7 +256,7 @@ export default function BusinessCreationModal({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Website
             </label>
             <Input
@@ -270,7 +270,7 @@ export default function BusinessCreationModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Description
           </label>
           <textarea
@@ -279,7 +279,7 @@ export default function BusinessCreationModal({
             onChange={handleInputChange}
             placeholder="Brief description of your business..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -315,9 +315,9 @@ export default function BusinessCreationModal({
     <div>
       <div className="text-center mb-4">
         <Link className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Link to Existing Business</h2>
-        <p className="text-gray-600">
-          Choose an existing business to link your module for analytics and management.
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Link to Existing Business</h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Choose an existing business where you are an active member to link this module for analytics and management.
         </p>
       </div>
 
@@ -335,14 +335,14 @@ export default function BusinessCreationModal({
         ) : (
           <>
             {businesses.length === 0 ? (
-              <div className="p-4 bg-gray-50 rounded-md text-sm text-gray-600">
+              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-md text-sm text-gray-600 dark:text-gray-400">
                 You have no businesses yet. Create a new one instead.
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Business</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Business</label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={selectedBusinessId}
                   onChange={(e) => setSelectedBusinessId(e.target.value)}
                 >
@@ -396,8 +396,8 @@ export default function BusinessCreationModal({
   const renderSuccessMode = () => (
     <div className="text-center">
       <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Business Created!</h2>
-      <p className="text-gray-600 mb-4">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Business Created!</h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
         Your business "{formData.name}" has been successfully created. 
         You'll be redirected to your business workspace shortly.
       </p>

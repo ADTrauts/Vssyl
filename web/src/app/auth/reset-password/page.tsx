@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
           <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
             Invalid Reset Link
           </h2>
-          <p className="text-center text-base text-gray-600">
+          <p className="text-center text-base text-gray-600 dark:text-gray-400">
             This password reset link is invalid or has expired.
           </p>
         </div>
@@ -94,14 +94,14 @@ export default function ResetPasswordPage() {
         <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
           Set new password
         </h2>
-        <p className="text-center text-base text-gray-600">
+        <p className="text-center text-base text-gray-600 dark:text-gray-400">
           Please enter your new password below.
         </p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="rounded-lg shadow-sm space-y-4">
           <div>
-            <label htmlFor="password" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               New password
             </label>
             <input
@@ -110,7 +110,7 @@ export default function ResetPasswordPage() {
               type="password"
               autoComplete="new-password"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
               placeholder="New password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -118,7 +118,7 @@ export default function ResetPasswordPage() {
             />
           </div>
           <div>
-            <label htmlFor="confirm-password" className="block text-base font-medium text-gray-700 mb-1">
+            <label htmlFor="confirm-password" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
               Confirm new password
             </label>
             <input
@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
               type="password"
               autoComplete="new-password"
               required
-              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+              className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
               placeholder="Confirm new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

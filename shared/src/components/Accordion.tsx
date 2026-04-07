@@ -30,13 +30,13 @@ export const Accordion: React.FC<AccordionProps> = ({ items, multiple = false })
       {items.map((item, idx) => (
         <div key={idx} className="mb-2 border rounded">
           <button
-            className="w-full text-left px-4 py-2 font-semibold bg-gray-100 hover:bg-gray-200 rounded-t"
+            className="w-full text-left px-4 py-2 font-semibold bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 rounded-t"
             onClick={() => toggle(idx)}
           >
             {item.title}
           </button>
           {openIndexes.includes(idx) && (
-            <div className="px-4 py-2 bg-white rounded-b border-t">
+            <div className="px-4 py-2 bg-white dark:bg-slate-900 rounded-b border-t">
               {item.content}
             </div>
           )}

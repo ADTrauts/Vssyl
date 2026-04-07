@@ -359,7 +359,7 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
       case 'offline':
         return <XCircle className="w-4 h-4 text-red-600" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-600" />;
+        return <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -395,7 +395,7 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading resources...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading resources...</p>
         </div>
       </Card>
     );
@@ -405,15 +405,15 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
     <FeatureGate feature="calendar_resource_booking" businessId={businessId}>
       <Card className={`${className}`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <MapPin className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Resource Booking</h2>
-                <p className="text-gray-600">Book conference rooms, equipment, and shared resources</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Resource Booking</h2>
+                <p className="text-gray-600 dark:text-gray-400">Book conference rooms, equipment, and shared resources</p>
               </div>
             </div>
             
@@ -477,7 +477,7 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                 <select
                   value={selectedResourceType}
                   onChange={(e) => setSelectedResourceType(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Types</option>
                   {RESOURCE_TYPES.map(type => (
@@ -488,7 +488,7 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                 <select
                   value={attendeeCount}
                   onChange={(e) => setAttendeeCount(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value={1}>1 person</option>
                   <option value={5}>2-5 people</option>
@@ -501,13 +501,13 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                   type="datetime-local"
                   value={bookingDate.toISOString().slice(0, 16)}
                   onChange={(e) => setBookingDate(new Date(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* Amenities Filter */}
               <div className="flex flex-wrap gap-2">
-                <span className="text-sm font-medium text-gray-700 mr-2">Amenities:</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mr-2">Amenities:</span>
                 {AMENITIES.map(amenity => (
                   <label key={amenity.id} className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -520,9 +520,9 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                           setSelectedAmenities(prev => prev.filter(a => a !== amenity.id));
                         }
                       }}
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-slate-600"
                     />
-                    <span className="text-sm text-gray-600 flex items-center gap-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                       {amenity.icon}
                       {amenity.label}
                     </span>
@@ -533,37 +533,37 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
               {/* Resources Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredResources.map(resource => (
-                  <Card key={resource.id} className="p-4 border border-gray-200">
+                  <Card key={resource.id} className="p-4 border border-gray-200 dark:border-slate-700">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {RESOURCE_TYPES.find(t => t.value === resource.type)?.icon}
-                        <h3 className="font-medium text-gray-900">{resource.name}</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{resource.name}</h3>
                       </div>
                       <div className="flex items-center gap-1">
                         {getAvailabilityIndicator(resource)}
-                        <span className="text-xs text-gray-500 capitalize">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
                           {resource.availability}
                         </span>
                       </div>
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-3">{resource.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{resource.description}</p>
                     
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600">{resource.location}</span>
+                        <span className="text-gray-600 dark:text-gray-400">{resource.location}</span>
                       </div>
                       {resource.capacity && (
                         <div className="flex items-center gap-2 text-sm">
                           <Users className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600">Capacity: {resource.capacity}</span>
+                          <span className="text-gray-600 dark:text-gray-400">Capacity: {resource.capacity}</span>
                         </div>
                       )}
                       {resource.hourlyRate && (
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-600">${resource.hourlyRate}/hour</span>
+                          <span className="text-gray-600 dark:text-gray-400">${resource.hourlyRate}/hour</span>
                         </div>
                       )}
                     </div>
@@ -571,12 +571,12 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                     {/* Amenities */}
                     <div className="flex flex-wrap gap-1 mb-4">
                       {resource.amenities.slice(0, 3).map((amenity, index) => (
-                        <Badge key={index} className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                        <Badge key={index} className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded">
                           {amenity}
                         </Badge>
                       ))}
                       {resource.amenities.length > 3 && (
-                        <Badge className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                        <Badge className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded">
                           +{resource.amenities.length - 3} more
                         </Badge>
                       )}
@@ -617,13 +617,13 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
               {bookings.map(booking => {
                 const resource = resources.find(r => r.id === booking.resourceId);
                 return (
-                  <Card key={booking.id} className="p-4 border border-gray-200">
+                  <Card key={booking.id} className="p-4 border border-gray-200 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         {resource && RESOURCE_TYPES.find(t => t.value === resource.type)?.icon}
                         <div>
-                          <h3 className="font-medium text-gray-900">{booking.title}</h3>
-                          <p className="text-sm text-gray-600">{resource?.name}</p>
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100">{booking.title}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{resource?.name}</p>
                         </div>
                       </div>
                       
@@ -645,23 +645,23 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <div className="text-gray-500 mb-1">Date & Time</div>
-                        <div className="text-gray-900">
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Date & Time</div>
+                        <div className="text-gray-900 dark:text-gray-100">
                           {booking.startTime.toLocaleDateString()}<br />
                           {booking.startTime.toLocaleTimeString()} - {booking.endTime.toLocaleTimeString()}
                         </div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Attendees</div>
-                        <div className="text-gray-900">{booking.attendeeCount} people</div>
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Attendees</div>
+                        <div className="text-gray-900 dark:text-gray-100">{booking.attendeeCount} people</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Setup</div>
-                        <div className="text-gray-900">{booking.setup}</div>
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Setup</div>
+                        <div className="text-gray-900 dark:text-gray-100">{booking.setup}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Cost</div>
-                        <div className="text-gray-900">${booking.cost || 0}</div>
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Cost</div>
+                        <div className="text-gray-900 dark:text-gray-100">${booking.cost || 0}</div>
                       </div>
                     </div>
                   </Card>
@@ -675,8 +675,8 @@ export const ResourceBookingPanel: React.FC<ResourceBookingPanelProps> = ({
             <div className="space-y-4">
               <div className="text-center py-8">
                 <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Resource Management</h3>
-                <p className="text-gray-600 mb-4">Manage resource inventory, policies, and availability</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Resource Management</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">Manage resource inventory, policies, and availability</p>
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Resource

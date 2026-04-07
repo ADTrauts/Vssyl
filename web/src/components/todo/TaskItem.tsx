@@ -209,7 +209,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
             ref={dragHandleRef}
             {...attributes}
             {...listeners}
-            className="cursor-grab active:cursor-grabbing mt-1 text-gray-400 hover:text-gray-600"
+            className="cursor-grab active:cursor-grabbing mt-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -249,7 +249,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
 
           {/* Description - only show in list view */}
           {!isCompact && task.description && (
-            <p className="text-xs text-gray-600 mb-1.5 line-clamp-2">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1.5 line-clamp-2">
               {task.description}
             </p>
           )}
@@ -375,7 +375,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
                   nameOrEmail={task.assignedTo.name || task.assignedTo.email}
                   size={24}
                 />
-                <span className="text-sm text-gray-600">{task.assignedTo.name || task.assignedTo.email}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{task.assignedTo.name || task.assignedTo.email}</span>
               </div>
             )}
 
@@ -405,7 +405,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
             
             {/* Dropdown Menu */}
             {showMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]">
                 {isCompleted && onReopen && (
                   <button
                     onClick={(e) => {
@@ -413,7 +413,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
                       onReopen();
                       setShowMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                   >
                     <RotateCcw className="w-4 h-4" />
                     <span>Reopen Task</span>
@@ -426,7 +426,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
                       onEdit();
                       setShowMenu(false);
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                   >
                     <Edit className="w-4 h-4" />
                     <span>Edit Task</span>
@@ -435,7 +435,7 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
                 {onDelete && (
                   <>
                     {(onEdit || (isCompleted && onReopen)) && (
-                      <div className="my-1 border-t border-gray-200" />
+                      <div className="my-1 border-t border-gray-200 dark:border-slate-700" />
                     )}
                     <button
                       onClick={(e) => {

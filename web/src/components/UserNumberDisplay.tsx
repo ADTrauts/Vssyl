@@ -32,9 +32,9 @@ export default function UserNumberDisplay({
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       {showLabel && (
-        <span className="text-sm font-medium text-gray-700">Vssyl ID:</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Vssyl ID:</span>
       )}
-      <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+      <span className="font-mono text-sm bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded">
         {userNumber}
       </span>
       <button

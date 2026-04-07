@@ -608,7 +608,7 @@ export function LeftSidebarCustomizer({
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Left Sidebar</h3>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Left Sidebar</h3>
           {!showNewFolderInput && (
             <Button
               variant="secondary"
@@ -623,7 +623,7 @@ export function LeftSidebarCustomizer({
         </div>
 
         {showNewFolderInput && (
-          <div className="flex items-center gap-2 p-2 border border-gray-200 rounded">
+          <div className="flex items-center gap-2 p-2 border border-gray-200 dark:border-slate-700 rounded">
             <input
               type="text"
               value={newFolderName}
@@ -637,7 +637,7 @@ export function LeftSidebarCustomizer({
                 }
               }}
               placeholder="Folder name"
-              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+              className="flex-1 px-2 py-1 border border-gray-300 dark:border-slate-600 rounded text-sm"
               autoFocus
             />
             <Button
@@ -663,7 +663,7 @@ export function LeftSidebarCustomizer({
         <div className="space-y-2 max-h-[500px] overflow-y-auto">
           {/* Top drop zone for moving modules out of folders */}
           <LooseModulesDropZone>
-            <div className="text-xs text-gray-400 text-center py-2 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+            <div className="text-xs text-gray-400 text-center py-2 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
               Drop modules here to remove from folders
             </div>
           </LooseModulesDropZone>
@@ -757,8 +757,8 @@ export function LeftSidebarCustomizer({
           {/* Available Modules Section */}
           {availableModulesList.length > 0 && (
             <div className="mt-4 space-y-2">
-              <div className="text-xs font-semibold text-gray-500 px-2 py-1">Available Modules</div>
-              <div className="p-2 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 py-1">Available Modules</div>
+              <div className="p-2 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
                 <SortableContext
                   items={availableModulesList.map(m => `available-module-${m.id}`)}
                   strategy={verticalListSortingStrategy}
@@ -781,7 +781,7 @@ export function LeftSidebarCustomizer({
           )}
         </div>
 
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
           💡 Drag modules to reorder or move into folders
         </p>
       </div>
@@ -805,9 +805,9 @@ export function LeftSidebarCustomizer({
               const folder = currentTabConfig.folders.find(f => f.id === folderId);
               if (folder) {
                 return (
-                  <div className="bg-white border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
-                    <Folder size={18} className="text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">{folder.name}</span>
+                  <div className="bg-white dark:bg-slate-900 border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
+                    <Folder size={18} className="text-gray-600 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{folder.name}</span>
                   </div>
                 );
               }
@@ -817,9 +817,9 @@ export function LeftSidebarCustomizer({
               if (module) {
                 const Icon = MODULE_ICONS[module.id] || LayoutDashboard;
                 return (
-                  <div className="bg-white border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
-                    <Icon size={18} className="text-gray-600" />
-                    <span className="text-sm font-medium text-gray-700">{module.name}</span>
+                  <div className="bg-white dark:bg-slate-900 border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
+                    <Icon size={18} className="text-gray-600 dark:text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{module.name}</span>
                   </div>
                 );
               }

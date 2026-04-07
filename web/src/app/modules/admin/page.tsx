@@ -138,7 +138,7 @@ export default function AdminModulesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -152,8 +152,8 @@ export default function AdminModulesPage() {
               Back to Modules
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Module Review</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Module Review</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Review and manage module submissions
           </p>
         </div>
@@ -164,8 +164,8 @@ export default function AdminModulesPage() {
             <div className="flex items-center">
               <Clock className="w-8 h-8 text-yellow-500 mr-4" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Review</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {submissions.filter(s => s.status === 'pending').length}
                 </p>
               </div>
@@ -176,8 +176,8 @@ export default function AdminModulesPage() {
             <div className="flex items-center">
               <CheckCircle className="w-8 h-8 text-green-500 mr-4" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Approved</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Approved</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {submissions.filter(s => s.status === 'approved').length}
                 </p>
               </div>
@@ -188,8 +188,8 @@ export default function AdminModulesPage() {
             <div className="flex items-center">
               <XCircle className="w-8 h-8 text-red-500 mr-4" />
               <div>
-                <p className="text-sm font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Rejected</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {submissions.filter(s => s.status === 'rejected').length}
                 </p>
               </div>
@@ -213,8 +213,8 @@ export default function AdminModulesPage() {
         ) : submissions.length === 0 ? (
           <Card className="p-8 text-center">
             <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions</h3>
-            <p className="text-gray-600">There are no module submissions to review.</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No submissions</h3>
+            <p className="text-gray-600 dark:text-gray-400">There are no module submissions to review.</p>
           </Card>
         ) : (
           <div className="space-y-6">
@@ -227,13 +227,13 @@ export default function AdminModulesPage() {
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {submission.name}
                         </h3>
                         {getStatusBadge(submission.status)}
                       </div>
-                      <p className="text-gray-600 mb-2">{submission.description}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <p className="text-gray-600 dark:text-gray-400 mb-2">{submission.description}</p>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>v{submission.version}</span>
                         <span>{submission.category}</span>
                         <span>by {submission.developer.name}</span>
@@ -247,7 +247,7 @@ export default function AdminModulesPage() {
 
                 {/* Action Buttons */}
                 {submission.status === 'pending' && (
-                  <div className="flex space-x-3 pt-4 border-t border-gray-200">
+                  <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                     <Button
                       variant="primary"
                       size="sm"
@@ -281,23 +281,23 @@ export default function AdminModulesPage() {
         {/* Review Modal */}
         <Modal open={showReviewModal} onClose={() => setShowReviewModal(false)}>
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               {reviewAction === 'approve' ? 'Approve' : 'Reject'} Module
             </h2>
             
             {selectedSubmission && (
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                   Reviewing: <strong>{selectedSubmission.name}</strong>
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Submitted by: {selectedSubmission.developer.name} ({selectedSubmission.developer.email})
                 </p>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Review Notes {reviewAction === 'reject' && '*'}
               </label>
               <textarea
@@ -308,7 +308,7 @@ export default function AdminModulesPage() {
                   : 'Please provide a reason for rejection...'
                 }
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required={reviewAction === 'reject'}
               />
             </div>

@@ -364,7 +364,7 @@ export default function HRAttendancePage() {
     <div className="p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Attendance Settings</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
           Configure attendance policies and monitor usage for your organization.
         </p>
       </div>
@@ -411,7 +411,7 @@ export default function HRAttendancePage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Attendance Policies</h2>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Policies control how attendance is tracked, including grace periods and geolocation
               requirements.
             </p>
@@ -434,7 +434,7 @@ export default function HRAttendancePage() {
             {policiesError}
           </Alert>
         ) : policies.length === 0 ? (
-          <div className="border rounded-lg bg-white">
+          <div className="border rounded-lg bg-white dark:bg-slate-900">
             <EmptyState
               icon="🗂️"
               title="No Attendance Policies"
@@ -442,9 +442,9 @@ export default function HRAttendancePage() {
             />
             </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border bg-white">
+          <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-slate-800">
                 <tr>
                   <Th>Name</Th>
                   <Th>Timezone</Th>
@@ -460,11 +460,11 @@ export default function HRAttendancePage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {policies.map((policy) => (
-                  <tr key={policy.id} className="hover:bg-gray-50">
+                  <tr key={policy.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                     <Td>
-                      <div className="font-medium text-gray-900">{policy.name}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{policy.name}</div>
                       {policy.description && (
-                        <div className="text-sm text-gray-500">{policy.description}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{policy.description}</div>
                       )}
                     </Td>
                     <Td>{policy.timezone ?? 'UTC'}</Td>
@@ -474,7 +474,7 @@ export default function HRAttendancePage() {
                           ? policy.workingDays.map((day) => (
                               <span
                                 key={day}
-                                className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700"
+                                className="rounded bg-gray-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-gray-700 dark:text-gray-300"
                               >
                                 {day.slice(0, 3)}
                               </span>
@@ -533,20 +533,20 @@ export default function HRAttendancePage() {
       {/* Drawer / Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+          <div className="w-full max-w-2xl rounded-lg bg-white dark:bg-slate-900 shadow-xl">
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div>
                 <h3 className="text-lg font-semibold">
                   {formMode === 'create' ? 'Create Attendance Policy' : 'Edit Attendance Policy'}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Define how attendance should be tracked for this business.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={closeForm}
-                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                className="rounded-full p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 hover:text-gray-700 dark:hover:text-gray-300"
                 aria-label="Close"
               >
                 ✕
@@ -688,7 +688,7 @@ export default function HRAttendancePage() {
                         type="checkbox"
                         checked={form.workingDays.includes(day.value)}
                         onChange={() => handleWorkingDayToggle(day.value)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
                       <span>{day.label}</span>
                     </label>
@@ -697,7 +697,7 @@ export default function HRAttendancePage() {
               </Field>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
                     type="checkbox"
                     checked={form.requireGeolocation}
@@ -707,31 +707,31 @@ export default function HRAttendancePage() {
                         requireGeolocation: event.target.checked
                       }))
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
                   Require geolocation for clock-ins
                 </label>
 
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
                     type="checkbox"
                     checked={form.isDefault}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, isDefault: event.target.checked }))
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
                   Set as default policy
                 </label>
 
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <input
                     type="checkbox"
                     checked={form.active}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, active: event.target.checked }))
                     }
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
                   Policy is active
                 </label>
@@ -754,7 +754,7 @@ export default function HRAttendancePage() {
               <button
                 type="button"
                 onClick={closeForm}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-300 dark:border-slate-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                 disabled={formSubmitting}
               >
                 Cancel
@@ -805,10 +805,10 @@ function OverviewCard({
   description: string;
 }) {
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <div className="text-sm font-medium text-gray-500">{title}</div>
-      <div className="mt-2 text-3xl font-semibold text-gray-900">{value}</div>
-      <div className="mt-1 text-sm text-gray-500">{description}</div>
+    <div className="rounded-lg border bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</div>
+      <div className="mt-2 text-3xl font-semibold text-gray-900 dark:text-gray-100">{value}</div>
+      <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</div>
     </div>
   );
 }
@@ -834,7 +834,7 @@ function Td({ children, className }: { children: ReactNode; className?: string }
 
 function Field({ label, children, required }: { label: string; children: ReactNode; required?: boolean }) {
   return (
-    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+    <label className="flex flex-col gap-1 text-sm font-medium text-gray-700 dark:text-gray-300">
       <span>
         {label}
         {required ? <span className="ml-1 text-red-500">*</span> : null}

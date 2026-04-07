@@ -1304,15 +1304,15 @@ export default function AIChat() {
   const regularConversations = filteredConversations.filter(c => !c.isPinned);
 
   return (
-    <div className="h-full flex bg-gray-50">
+    <div className="h-full flex bg-gray-50 dark:bg-slate-800">
       {/* Sidebar - Conversations List */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className="w-80 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         {/* Sidebar Header */}
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
               <Brain className="h-6 w-6 text-purple-600" />
-              <h1 className="text-xl font-bold text-gray-900">AI Assistant</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">AI Assistant</h1>
             </div>
             <Button
               onClick={handleNewConversation}
@@ -1332,14 +1332,14 @@ export default function AIChat() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
 
           {/* Archive Toggle */}
           <button
             onClick={() => setShowArchived(!showArchived)}
-            className="mt-3 w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="mt-3 w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
           >
             <Archive className="h-4 w-4" />
             <span>{showArchived ? 'Show Active' : 'Show Archived'}</span>
@@ -1353,7 +1353,7 @@ export default function AIChat() {
           )}
           {!loadingSuggestions && aiSuggestions.length > 0 && (
             <div className="mt-3 border-t border-gray-100 pt-3">
-              <div className="px-2 py-1 text-xs font-semibold text-gray-600 uppercase flex items-center gap-1">
+              <div className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase flex items-center gap-1">
                 <Sparkles className="h-3.5 w-3" />
                 AI Suggestions
               </div>
@@ -1363,11 +1363,11 @@ export default function AIChat() {
                   return (
                     <div
                       key={s.id}
-                      className="rounded-lg border border-gray-200 bg-gray-50/80 p-2 text-left"
+                      className="rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 p-2 text-left"
                     >
-                      <p className="text-sm font-medium text-gray-900 line-clamp-1">{s.title}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{s.title}</p>
                       {s.body && (
-                        <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{s.body}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">{s.body}</p>
                       )}
                       <div className="mt-2 flex gap-1">
                         <Button
@@ -1445,7 +1445,7 @@ export default function AIChat() {
               {/* Pinned Conversations */}
               {pinnedConversations.length > 0 && (
                 <div className="py-2">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                     Pinned
                   </div>
                   {pinnedConversations.map((conv) => (
@@ -1485,7 +1485,7 @@ export default function AIChat() {
                               }
                             }}
                             autoFocus
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
@@ -1503,7 +1503,7 @@ export default function AIChat() {
                               setRenamingConversationId(null);
                               setRenameValue('');
                             }}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -1513,11 +1513,11 @@ export default function AIChat() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2">
                               <Pin className="h-3 w-3 text-purple-600 flex-shrink-0" />
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {conv.title}
                               </p>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -1530,16 +1530,16 @@ export default function AIChat() {
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                                <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                               </button>
                               {conversationMenuOpen === conv.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleShareConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Share2 className="h-4 w-4" />
                                     <span>Share</span>
@@ -1551,7 +1551,7 @@ export default function AIChat() {
                                       setRenamingConversationId(conv.id);
                                       setConversationMenuOpen(null);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Edit className="h-4 w-4" />
                                     <span>Rename</span>
@@ -1561,7 +1561,7 @@ export default function AIChat() {
                                       e.stopPropagation();
                                       handlePinConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Pin className="h-4 w-4" />
                                     <span>{conv.isPinned ? 'Unpin' : 'Pin'} chat</span>
@@ -1571,7 +1571,7 @@ export default function AIChat() {
                                       e.stopPropagation();
                                       handleArchiveConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Archive className="h-4 w-4" />
                                     <span>{conv.isArchived ? 'Unarchive' : 'Archive'}</span>
@@ -1601,7 +1601,7 @@ export default function AIChat() {
               {regularConversations.length > 0 && (
                 <div className="py-2">
                   {pinnedConversations.length > 0 && (
-                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                       Recent
                     </div>
                   )}
@@ -1642,7 +1642,7 @@ export default function AIChat() {
                               }
                             }}
                             autoFocus
-                            className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-slate-600 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             onClick={(e) => e.stopPropagation()}
                           />
                           <button
@@ -1660,7 +1660,7 @@ export default function AIChat() {
                               setRenamingConversationId(null);
                               setRenameValue('');
                             }}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -1668,10 +1668,10 @@ export default function AIChat() {
                       ) : (
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                               {conv.title}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
                             </p>
                           </div>
@@ -1684,16 +1684,16 @@ export default function AIChat() {
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-600" />
+                                <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                               </button>
                               {conversationMenuOpen === conv.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleShareConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Share2 className="h-4 w-4" />
                                     <span>Share</span>
@@ -1705,7 +1705,7 @@ export default function AIChat() {
                                       setRenamingConversationId(conv.id);
                                       setConversationMenuOpen(null);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Edit className="h-4 w-4" />
                                     <span>Rename</span>
@@ -1715,7 +1715,7 @@ export default function AIChat() {
                                       e.stopPropagation();
                                       handlePinConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Pin className="h-4 w-4" />
                                     <span>{conv.isPinned ? 'Unpin' : 'Pin'} chat</span>
@@ -1725,7 +1725,7 @@ export default function AIChat() {
                                       e.stopPropagation();
                                       handleArchiveConversation(conv.id);
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                                   >
                                     <Archive className="h-4 w-4" />
                                     <span>{conv.isArchived ? 'Unarchive' : 'Archive'}</span>
@@ -1755,7 +1755,7 @@ export default function AIChat() {
               {filteredConversations.length === 0 && !isLoadingConversations && (
                 <div className="text-center py-12 px-4">
                   <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     {searchQuery ? 'No conversations found' : 'No conversations yet'}
                   </p>
                   <p className="text-gray-400 text-xs mt-1">
@@ -1771,12 +1771,12 @@ export default function AIChat() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
           {selectedConversation ? (
             <>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{selectedConversation.title}</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedConversation.title}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedConversation.messageCount} messages
                 </p>
               </div>
@@ -1794,23 +1794,23 @@ export default function AIChat() {
                 <div className="relative">
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
               >
-                <MoreVertical className="h-5 w-5 text-gray-600" />
+                <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               </button>
               
               {showMoreMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-10">
                   <button
                     onClick={() => currentConversationId && handlePinConversation(currentConversationId)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                   >
                     <Pin className="h-4 w-4" />
                     <span>{selectedConversation.isPinned ? 'Unpin' : 'Pin'}</span>
                   </button>
                   <button
                     onClick={() => currentConversationId && handleArchiveConversation(currentConversationId)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
                   >
                     <Archive className="h-4 w-4" />
                     <span>{selectedConversation.isArchived ? 'Unarchive' : 'Archive'}</span>
@@ -1830,8 +1830,8 @@ export default function AIChat() {
           ) : (
             <>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
-                <p className="text-sm text-gray-500">Start a new conversation</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Assistant</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Start a new conversation</p>
               </div>
               <div className="flex items-center gap-3">
                 <AIProviderModelPicker
@@ -1867,10 +1867,10 @@ export default function AIChat() {
           {conversation.length === 0 && !selectedConversation ? (
             <div className="text-center py-16">
               <Brain className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 What's on your mind today?
               </h3>
-              <p className="text-gray-500 max-w-md mx-auto">
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                 Ask me anything about your digital life. I can help you schedule meetings, 
                 organize files, analyze data, and much more.
               </p>
@@ -1906,17 +1906,17 @@ export default function AIChat() {
                   
                   {item.type === 'ai' && (
                     <div className="flex justify-start">
-                      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 max-w-2xl">
+                      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-3 max-w-2xl">
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             {item.generatedImage ? (
                               <>
-                                <p className="text-sm text-gray-700 mb-2">{item.content}</p>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{item.content}</p>
                                 <img
                                   src={item.generatedImage.url}
                                   alt="Generated"
-                                  className="rounded-lg max-w-full max-h-80 object-contain border border-gray-200"
+                                  className="rounded-lg max-w-full max-h-80 object-contain border border-gray-200 dark:border-slate-700"
                                 />
                                 <div className="mt-2 flex items-center gap-2">
                                   {item.generatedImage.fileId ? (
@@ -1969,24 +1969,24 @@ export default function AIChat() {
                               </>
                             ) : item.extractedDocument ? (
                               <>
-                                <p className="text-sm text-gray-700 mb-2">{item.content}</p>
-                                <div className="text-sm space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                                  <p><span className="font-medium text-gray-700">Vendor:</span> {item.extractedDocument.vendor}</p>
-                                  <p><span className="font-medium text-gray-700">Amount:</span> {item.extractedDocument.currency || ''} {item.extractedDocument.amount}</p>
-                                  {item.extractedDocument.date && <p><span className="font-medium text-gray-700">Date:</span> {item.extractedDocument.date}</p>}
-                                  {item.extractedDocument.category && <p><span className="font-medium text-gray-700">Category:</span> {item.extractedDocument.category}</p>}
-                                  {item.extractedDocument.invoiceNumber && <p><span className="font-medium text-gray-700">Invoice #:</span> {item.extractedDocument.invoiceNumber}</p>}
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{item.content}</p>
+                                <div className="text-sm space-y-2 border border-gray-200 dark:border-slate-700 rounded-lg p-3 bg-gray-50 dark:bg-slate-800">
+                                  <p><span className="font-medium text-gray-700 dark:text-gray-300">Vendor:</span> {item.extractedDocument.vendor}</p>
+                                  <p><span className="font-medium text-gray-700 dark:text-gray-300">Amount:</span> {item.extractedDocument.currency || ''} {item.extractedDocument.amount}</p>
+                                  {item.extractedDocument.date && <p><span className="font-medium text-gray-700 dark:text-gray-300">Date:</span> {item.extractedDocument.date}</p>}
+                                  {item.extractedDocument.category && <p><span className="font-medium text-gray-700 dark:text-gray-300">Category:</span> {item.extractedDocument.category}</p>}
+                                  {item.extractedDocument.invoiceNumber && <p><span className="font-medium text-gray-700 dark:text-gray-300">Invoice #:</span> {item.extractedDocument.invoiceNumber}</p>}
                                   {item.extractedDocument.lineItems && item.extractedDocument.lineItems.length > 0 && (
                                     <div className="mt-2">
-                                      <p className="font-medium text-gray-700 mb-1">Line items</p>
-                                      <ul className="list-disc list-inside text-gray-600 space-y-0.5">
+                                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Line items</p>
+                                      <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-0.5">
                                         {item.extractedDocument.lineItems.map((line, i) => (
                                           <li key={i}>{line.description}: {line.amount}</li>
                                         ))}
                                       </ul>
                                     </div>
                                   )}
-                                  {item.extractedDocument.notes && <p className="text-gray-600 italic">{item.extractedDocument.notes}</p>}
+                                  {item.extractedDocument.notes && <p className="text-gray-600 dark:text-gray-400 italic">{item.extractedDocument.notes}</p>}
                                 </div>
                                 {!expenseCreatedIds.includes(item.id) ? (
                                   <Button
@@ -2039,7 +2039,7 @@ export default function AIChat() {
                                     )}
                                   </Button>
                                 ) : (
-                                  <p className="text-sm text-gray-600 mt-2">Expense saved</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Expense saved</p>
                                 )}
                               </>
                             ) : item.structured ? (
@@ -2059,9 +2059,9 @@ export default function AIChat() {
                                   }}
                                 />
                                 {item.fileIssues && item.fileIssues.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
-                                    <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
-                                    <ul className="text-xs text-gray-600 space-y-0.5">
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                                       {item.fileIssues.map((issue, i) => (
                                         <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
                                       ))}
@@ -2069,7 +2069,7 @@ export default function AIChat() {
                                   </div>
                                 )}
                                 {item.usedVisionParts && (
-                                  <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                 )}
                               </>
                             ) : (
@@ -2086,15 +2086,15 @@ export default function AIChat() {
                                         style={{ width: `${item.confidence * 100}%` }}
                                       />
                                     </div>
-                                    <span className="text-xs text-gray-600">
+                                    <span className="text-xs text-gray-600 dark:text-gray-400">
                                       {Math.round(item.confidence * 100)}%
                                     </span>
                                   </div>
                                 )}
                                 {item.fileIssues && item.fileIssues.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200">
-                                    <p className="text-xs font-medium text-gray-700 mb-1">Attachment issues</p>
-                                    <ul className="text-xs text-gray-600 space-y-0.5">
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                                       {item.fileIssues.map((issue: FileIssue, i: number) => (
                                         <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
                                       ))}
@@ -2102,7 +2102,7 @@ export default function AIChat() {
                                   </div>
                                 )}
                                 {item.usedVisionParts && (
-                                  <p className="mt-2 text-xs text-gray-500 italic">Image used in this reply</p>
+                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                 )}
                               </>
                             )}
@@ -2111,7 +2111,7 @@ export default function AIChat() {
                                 <button
                                   type="button"
                                   onClick={() => handlePlayTTS(item)}
-                                  className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-purple-600"
+                                  className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
                                   title="Listen"
                                 >
                                   {playingAudioId === item.id ? (
@@ -2136,7 +2136,7 @@ export default function AIChat() {
           
           {(isAILoading || isGeneratingImage) && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 max-w-2xl">
+              <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-3 max-w-2xl">
                 <div className="flex items-start space-x-3">
                   <AIThinkingIndicator message={isGeneratingImage ? 'Generating image...' : 'Thinking...'} iconSize={20} />
                 </div>
@@ -2148,23 +2148,23 @@ export default function AIChat() {
         {/* Generate image modal */}
         {showGenerateImageModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowGenerateImageModal(false)}>
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-gray-900">Generate image</h3>
-              <p className="text-sm text-gray-600">Describe the image you want. Uses DALL·E 3 (OpenAI).</p>
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Generate image</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Describe the image you want. Uses DALL·E 3 (OpenAI).</p>
               <textarea
                 value={generateImagePrompt}
                 onChange={(e) => setGenerateImagePrompt(e.target.value)}
                 placeholder="e.g. A modern logo for a coffee shop"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 rows={3}
               />
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Size</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Size</label>
                   <select
                     value={generateImageSize}
                     onChange={(e) => setGenerateImageSize(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="1024x1024">1024×1024</option>
                     <option value="1024x1792">1024×1792</option>
@@ -2172,11 +2172,11 @@ export default function AIChat() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Quality</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Quality</label>
                   <select
                     value={generateImageQuality}
                     onChange={(e) => setGenerateImageQuality(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="standard">Standard</option>
                     <option value="hd">HD</option>
@@ -2196,22 +2196,22 @@ export default function AIChat() {
         {/* Edit image modal (Phase 8) */}
         {showEditImageModal && attachedFiles.length === 1 && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowEditImageModal(false)}>
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-gray-900">Edit image</h3>
-              <p className="text-sm text-gray-600">Describe the edit (e.g. &quot;Remove background&quot;, &quot;Crop to square&quot;). Result will be saved to Drive.</p>
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl max-w-md w-full mx-4 p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit image</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Describe the edit (e.g. &quot;Remove background&quot;, &quot;Crop to square&quot;). Result will be saved to Drive.</p>
               <textarea
                 value={editImagePrompt}
                 onChange={(e) => setEditImagePrompt(e.target.value)}
                 placeholder="e.g. Remove background"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                 rows={3}
               />
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Background</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Background</label>
                 <select
                   value={editImageBackground}
                   onChange={(e) => setEditImageBackground(e.target.value as 'auto' | 'transparent' | 'opaque')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="auto">Auto</option>
                   <option value="transparent">Transparent</option>
@@ -2229,16 +2229,16 @@ export default function AIChat() {
         )}
 
         {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-6 pb-24">
+      <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-3">
           {/* Upload progress bar */}
           {isUploadingFiles && (
             <div className="mb-2">
               <div className="flex items-center gap-2">
                 <Spinner size={14} />
-                <span className="text-sm text-gray-700">Uploading…</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Uploading…</span>
                 {uploadProgress != null && uploadProgress >= 0 && (
-                  <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{uploadProgress}%</span>
                 )}
               </div>
               <div className="mt-1 h-1.5 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
@@ -2271,33 +2271,33 @@ export default function AIChat() {
                   </button>
                 </div>
               ))}
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 {attachedFiles.length}/{MAX_ATTACHMENTS} files
               </span>
             </div>
           )}
 
           {/* Compact Input Bar */}
-          <div className="flex items-center gap-2 border border-gray-300 rounded-2xl px-4 py-3 bg-white focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
+          <div className="flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
             {/* Paperclip Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
             >
-              <Paperclip className="h-5 w-5 text-gray-500" />
+              <Paperclip className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
             {/* Generate image button */}
             <button
               type="button"
               onClick={() => setShowGenerateImageModal(true)}
               disabled={isAILoading || isGeneratingImage}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Generate image"
             >
-              <ImageIcon className="h-5 w-5 text-gray-500" />
+              <ImageIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
             {/* Edit image button (Phase 8) - when exactly one file attached */}
             {attachedFiles.length === 1 && (
@@ -2305,10 +2305,10 @@ export default function AIChat() {
                 type="button"
                 onClick={() => setShowEditImageModal(true)}
                 disabled={isAILoading || isEditingImage}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Edit image (e.g. remove background)"
               >
-                <Edit className="h-5 w-5 text-gray-500" />
+                <Edit className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               </button>
             )}
             {/* Voice input (record → transcribe → add to message) */}
@@ -2363,7 +2363,7 @@ export default function AIChat() {
           </div>
           
           {/* Helper Text */}
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             Press Enter to send • Up to {MAX_ATTACHMENTS} files • Large files (500KB+) summarized only
           </p>
         </div>

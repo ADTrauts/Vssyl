@@ -129,8 +129,8 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
             <Shield className="w-8 h-8 text-purple-600" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Enterprise File Hub Features</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Enterprise File Hub Features</h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Professional-grade file management with advanced security and compliance
             </p>
           </div>
@@ -138,10 +138,10 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
         
         <div className="flex items-center justify-center gap-2 mb-6">
           <FeatureBadge tier="enterprise" hasAccess={false} />
-          <span className="text-gray-600">•</span>
-          <span className="text-sm text-gray-600">Starting at $99/month</span>
-          <span className="text-gray-600">•</span>
-          <span className="text-sm text-gray-600">14-day free trial</span>
+          <span className="text-gray-600 dark:text-gray-400">•</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Starting at $99/month</span>
+          <span className="text-gray-600 dark:text-gray-400">•</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">14-day free trial</span>
         </div>
         
         {onUpgrade && (
@@ -162,7 +162,7 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
             showUpgradePrompt={false}
             fallback={
               <Card 
-                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 border-dashed border-gray-200 hover:border-purple-300"
+                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-purple-300"
               >
                 <div onClick={() => handleFeatureClick(feature.id)}>
                 <div className="text-center">
@@ -171,18 +171,18 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
                   </div>
                   
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{feature.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{feature.name}</h3>
                     <Lock className="w-4 h-4 text-purple-600" />
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-4">{feature.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{feature.description}</p>
                   
                   {expandedFeature === feature.id && (
                     <div className="mb-4">
-                      <h4 className="font-medium text-gray-900 mb-2 text-left">What you get:</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-left">What you get:</h4>
                       <ul className="text-left space-y-1">
                         {feature.benefits.slice(0, 3).map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                             <span>{benefit}</span>
                           </li>
@@ -212,11 +212,11 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
                 </div>
                 
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{feature.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{feature.name}</h3>
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 </div>
                 
-                <p className="text-gray-600 text-sm mb-4">{feature.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{feature.description}</p>
                 
                 <div className="flex items-center justify-center gap-2 text-green-600 font-medium">
                   <span>Available</span>
@@ -231,10 +231,10 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
       {/* Enterprise Benefits Summary */}
       <Card className="p-8 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Complete Enterprise File Management
           </h3>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
             Get all enterprise File Hub features plus advanced analytics, compliance reporting, 
             and AI-powered insights to protect your business data and meet regulatory requirements.
           </p>
@@ -242,19 +242,19 @@ export const DriveEnterpriseShowcase: React.FC<DriveEnterpriseShowcaseProps> = (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">99.9%</div>
-              <div className="text-sm text-gray-600">Uptime SLA</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Uptime SLA</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">SOC 2</div>
-              <div className="text-sm text-gray-600">Compliance</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Compliance</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">24/7</div>
-              <div className="text-sm text-gray-600">Support</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Support</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">∞</div>
-              <div className="text-sm text-gray-600">Storage</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Storage</div>
             </div>
           </div>
           

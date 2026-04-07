@@ -94,14 +94,14 @@ function WidgetPreview({ widget, theme }: { widget: Widget; theme: ThemeConfig }
         </div>
         {widget.description && (
           <p
-            className="text-sm text-gray-600"
+            className="text-sm text-gray-600 dark:text-gray-400"
             style={{ fontFamily: theme.bodyFont || 'Inter' }}
           >
             {widget.description}
           </p>
         )}
-        <div className="mt-3 h-20 bg-gray-100 rounded flex items-center justify-center">
-          <p className="text-xs text-gray-500">Widget Content</p>
+        <div className="mt-3 h-20 bg-gray-100 dark:bg-slate-700 rounded flex items-center justify-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">Widget Content</p>
         </div>
       </div>
     </div>
@@ -144,13 +144,13 @@ export default function FrontPagePreview({
             <Eye className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Live Preview</h3>
-            <p className="text-sm text-gray-600">See how your front page will look</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Live Preview</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">See how your front page will look</p>
           </div>
         </div>
 
         {/* View Mode Selector */}
-        <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-700 rounded-lg p-1">
           <button
             onClick={() => setViewMode('desktop')}
             className={`p-2 rounded transition-colors ${
@@ -188,7 +188,7 @@ export default function FrontPagePreview({
       </div>
 
       {/* Preview Container */}
-      <div className="bg-gray-100 rounded-lg p-6 min-h-[600px] overflow-auto">
+      <div className="bg-gray-100 dark:bg-slate-700 rounded-lg p-6 min-h-[600px] overflow-auto">
         <div className={getContainerClass()}>
           <div
             style={{
@@ -227,7 +227,7 @@ export default function FrontPagePreview({
                   Welcome Back!
                 </h2>
                 <p
-                  className="text-gray-600"
+                  className="text-gray-600 dark:text-gray-400"
                   style={{ fontFamily: theme.bodyFont || 'Inter' }}
                 >
                   {welcomeMessage}
@@ -245,7 +245,7 @@ export default function FrontPagePreview({
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 mb-2">No visible widgets</p>
+                  <p className="text-gray-500 dark:text-gray-400 mb-2">No visible widgets</p>
                   <p className="text-sm text-gray-400">Add and enable widgets to see them here</p>
                 </div>
               )}

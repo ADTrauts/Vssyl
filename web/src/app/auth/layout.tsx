@@ -3,7 +3,7 @@ import React from "react";
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-100 to-indigo-100">
-      <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-10 px-4 sm:px-6 bg-white rounded-xl shadow-lg border border-neutral-200">
+      <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-10 px-4 sm:px-6 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-neutral-200">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">
           <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">

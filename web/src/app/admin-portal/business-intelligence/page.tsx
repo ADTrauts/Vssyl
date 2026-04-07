@@ -181,7 +181,7 @@ export default function BusinessIntelligencePage() {
   const getGrowthIcon = (rate: number) => {
     if (rate > 0) return <ArrowUp className="w-4 h-4 text-green-500" />;
     if (rate < 0) return <ArrowDown className="w-4 h-4 text-red-500" />;
-    return <Minus className="w-4 h-4 text-gray-700" />;
+    return <Minus className="w-4 h-4 text-gray-700 dark:text-gray-300" />;
   };
 
   const getInsightIcon = (type: string) => {
@@ -217,8 +217,8 @@ export default function BusinessIntelligencePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Intelligence</h1>
-          <p className="text-gray-600">Business metrics, predictive insights, A/B testing, and strategic reporting</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Intelligence</h1>
+          <p className="text-gray-700 dark:text-gray-300">Business metrics, predictive insights, A/B testing, and strategic reporting</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -250,7 +250,7 @@ export default function BusinessIntelligencePage() {
           <select
             value={filters.dateRange}
             onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -261,7 +261,7 @@ export default function BusinessIntelligencePage() {
           <select
             value={filters.userType}
             onChange={(e) => setFilters(prev => ({ ...prev, userType: e.target.value }))}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="all">All Users</option>
             <option value="premium">Premium Users</option>
@@ -272,7 +272,7 @@ export default function BusinessIntelligencePage() {
           <select
             value={filters.metricType}
             onChange={(e) => setFilters(prev => ({ ...prev, metricType: e.target.value }))}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value="all">All Metrics</option>
             <option value="growth">Growth Metrics</option>
@@ -317,13 +317,13 @@ export default function BusinessIntelligencePage() {
                   <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {data.userGrowth.totalUsers.toLocaleString()}
                   </p>
                   <div className="flex items-center mt-1">
                     {getGrowthIcon(data.userGrowth.growthRate)}
-                    <span className="text-sm text-gray-600 ml-1">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 ml-1">
                       {data.userGrowth.growthRate > 0 ? '+' : ''}{data.userGrowth.growthRate}%
                     </span>
                   </div>
@@ -337,13 +337,13 @@ export default function BusinessIntelligencePage() {
                   <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">MRR</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">MRR</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     ${data.revenueMetrics.monthlyRecurringRevenue.toLocaleString()}
                   </p>
                   <div className="flex items-center mt-1">
                     {getGrowthIcon(data.revenueMetrics.revenueGrowth)}
-                    <span className="text-sm text-gray-600 ml-1">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 ml-1">
                       {data.revenueMetrics.revenueGrowth > 0 ? '+' : ''}{data.revenueMetrics.revenueGrowth}%
                     </span>
                   </div>
@@ -357,11 +357,11 @@ export default function BusinessIntelligencePage() {
                   <Activity className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Active Users</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Users</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {data.userGrowth.activeUsers.toLocaleString()}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     {((data.userGrowth.activeUsers / data.userGrowth.totalUsers) * 100).toFixed(1)}% of total
                   </p>
                 </div>
@@ -374,11 +374,11 @@ export default function BusinessIntelligencePage() {
                   <TrendingUp className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">ARPU</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">ARPU</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     ${data.revenueMetrics.averageRevenuePerUser}
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     Per user per month
                   </p>
                 </div>
@@ -389,7 +389,7 @@ export default function BusinessIntelligencePage() {
           {/* Predictive Insights */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Predictive Insights</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Predictive Insights</h2>
               <Badge color="blue" size="sm">
                 AI-Powered
               </Badge>
@@ -397,14 +397,14 @@ export default function BusinessIntelligencePage() {
             
             <div className="space-y-4">
               {data.predictiveInsights.map((insight, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{insight.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
-                        <p className="text-sm text-gray-700 mt-2">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{insight.title}</h3>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{insight.description}</p>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
                           <strong>Recommended Action:</strong> {insight.recommendedAction}
                         </p>
                       </div>
@@ -413,7 +413,7 @@ export default function BusinessIntelligencePage() {
                       <Badge color={getImpactColor(insight.impact)} size="sm">
                         {insight.impact} impact
                       </Badge>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
                         {insight.confidence}% confidence
                       </span>
                     </div>
@@ -425,21 +425,21 @@ export default function BusinessIntelligencePage() {
 
           {/* A/B Testing */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">A/B Testing</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">A/B Testing</h2>
             
             <div className="space-y-4">
               {data.abTests.map((test) => (
-                <div key={test.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={test.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-gray-900">{test.name}</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{test.name}</h3>
                     <Badge color={getTestStatusColor(test.status)} size="sm">
                       {test.status}
                     </Badge>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <h4 className="font-medium text-gray-900 mb-2">{test.variantA.name}</h4>
+                    <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{test.variantA.name}</h4>
                       <div className="space-y-1 text-sm">
                         <p>Users: {test.variantA.users.toLocaleString()}</p>
                         <p>Conversion: {test.variantA.conversionRate}%</p>
@@ -447,8 +447,8 @@ export default function BusinessIntelligencePage() {
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <h4 className="font-medium text-gray-900 mb-2">{test.variantB.name}</h4>
+                    <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{test.variantB.name}</h4>
                       <div className="space-y-1 text-sm">
                         <p>Users: {test.variantB.users.toLocaleString()}</p>
                         <p>Conversion: {test.variantB.conversionRate}%</p>
@@ -471,13 +471,13 @@ export default function BusinessIntelligencePage() {
 
           {/* User Segments */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">User Segments</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">User Segments</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {data.userSegments.map((segment) => (
-                <div key={segment.id} className="border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-medium text-gray-900 mb-2">{segment.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{segment.criteria}</p>
+                <div key={segment.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">{segment.name}</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{segment.criteria}</p>
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -502,17 +502,17 @@ export default function BusinessIntelligencePage() {
 
           {/* Competitive Analysis */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Competitive Analysis</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Competitive Analysis</h2>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-medium text-gray-900 mb-4">Market Position</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Market Position</h3>
                 <Badge color="green" size="lg">
                   {data.competitiveAnalysis.marketPosition}
                 </Badge>
                 
                 <div className="mt-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Opportunities</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Opportunities</h4>
                   <ul className="space-y-2">
                     {data.competitiveAnalysis.opportunities.map((opportunity, index) => (
                       <li key={index} className="flex items-center text-sm">
@@ -525,13 +525,13 @@ export default function BusinessIntelligencePage() {
               </div>
               
               <div>
-                <h3 className="font-medium text-gray-900 mb-4">Key Competitors</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Key Competitors</h3>
                 <div className="space-y-4">
                   {data.competitiveAnalysis.keyCompetitors.map((competitor, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-3">
+                    <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">{competitor.name}</h4>
-                        <span className="text-sm text-gray-600">{competitor.marketShare}% market share</span>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{competitor.name}</h4>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{competitor.marketShare}% market share</span>
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -539,7 +539,7 @@ export default function BusinessIntelligencePage() {
                           <p className="font-medium text-green-600 mb-1">Strengths</p>
                           <ul className="space-y-1">
                             {competitor.strengths.map((strength, idx) => (
-                              <li key={idx} className="text-gray-600">• {strength}</li>
+                              <li key={idx} className="text-gray-700 dark:text-gray-300">• {strength}</li>
                             ))}
                           </ul>
                         </div>
@@ -547,7 +547,7 @@ export default function BusinessIntelligencePage() {
                           <p className="font-medium text-red-600 mb-1">Weaknesses</p>
                           <ul className="space-y-1">
                             {competitor.weaknesses.map((weakness, idx) => (
-                              <li key={idx} className="text-gray-600">• {weakness}</li>
+                              <li key={idx} className="text-gray-700 dark:text-gray-300">• {weakness}</li>
                             ))}
                           </ul>
                         </div>
@@ -561,9 +561,9 @@ export default function BusinessIntelligencePage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <BarChart3 className="w-12 h-12 mx-auto text-gray-600 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No data available</h3>
-          <p className="text-gray-700">Business intelligence data will appear here once available.</p>
+          <BarChart3 className="w-12 h-12 mx-auto text-gray-700 dark:text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No data available</h3>
+          <p className="text-gray-700 dark:text-gray-300">Business intelligence data will appear here once available.</p>
         </div>
       )}
     </div>

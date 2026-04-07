@@ -311,7 +311,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   console.log('New chat clicked');
                 }}
               >
-                <div className="w-4 h-4 border border-gray-300 rounded flex items-center justify-center">
+                <div className="w-4 h-4 border border-gray-300 dark:border-slate-600 rounded flex items-center justify-center">
                   <Plus className="w-3 h-3 text-gray-300" />
                 </div>
               </button>
@@ -395,7 +395,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <div className="flex-1 overflow-y-auto">
                   {filteredConversations.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <MessageSquare className="w-12 h-12 text-gray-500 mb-3" />
+                      <MessageSquare className="w-12 h-12 text-gray-500 dark:text-gray-400 mb-3" />
                       <p className="text-sm text-gray-400">
                         {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
                       </p>
@@ -423,14 +423,14 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
   if (width === 'thin') {
     return (
-      <div className="fixed right-0 top-16 bg-white border-l border-gray-200 z-30 w-16 transition-all duration-300" style={{ height: 'calc(100vh - 64px)' }}>
+      <div className="fixed right-0 top-16 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 z-30 w-16 transition-all duration-300" style={{ height: 'calc(100vh - 64px)' }}>
         <div className="p-2 space-y-2">
           <button
             onClick={onToggleSidebar}
-            className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
+            className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
             title="Expand sidebar"
           >
-            <MessageSquare className="w-5 h-5 text-gray-600" />
+            <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           
           {filteredConversations.map(conv => (
@@ -448,17 +448,17 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   }
 
   return (
-    <div className="fixed right-0 top-16 h-full bg-white border-l border-gray-200 z-30 w-80 transition-all duration-300">
+    <div className="fixed right-0 top-16 h-full bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 z-30 w-80 transition-all duration-300">
       <div className="p-4 h-full flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Messaging</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Messaging</h2>
           <button
             onClick={onToggleSidebar}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
             title="Collapse sidebar"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
@@ -470,9 +470,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             placeholder="Search messages"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
-          <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+          <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400">
             <Filter className="w-4 h-4" />
           </button>
         </div>
@@ -528,7 +528,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           {filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
               </p>
             </div>

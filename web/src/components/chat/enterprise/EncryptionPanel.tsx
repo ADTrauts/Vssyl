@@ -361,7 +361,7 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading encryption data...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading encryption data...</p>
         </div>
       </Card>
     );
@@ -371,15 +371,15 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
     <FeatureGate feature="chat_e2e_encryption" businessId={businessId}>
       <Card className={`${className}`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Lock className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">End-to-End Encryption</h2>
-                <p className="text-gray-600">Secure message encryption and key management</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">End-to-End Encryption</h2>
+                <p className="text-gray-600 dark:text-gray-400">Secure message encryption and key management</p>
               </div>
             </div>
             
@@ -456,16 +456,16 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
 
               {/* Encryption Levels */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Encryption Levels</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Encryption Levels</h3>
                 <div className="space-y-4">
                   {ENCRYPTION_LEVELS.map((level, index) => (
-                    <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                      <div className="p-2 bg-white rounded">
+                    <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                      <div className="p-2 bg-white dark:bg-slate-900 rounded">
                         {level.icon}
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">{level.label}</div>
-                        <div className="text-sm text-gray-600">{level.description}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{level.label}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{level.description}</div>
                       </div>
                       <CheckCircle className="w-5 h-5 text-green-600" />
                     </div>
@@ -475,11 +475,11 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
 
               {/* Backup Status */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Key Backup Status</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Key Backup Status</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{stats.backupStatus.total}</div>
-                    <div className="text-sm text-gray-600">Total Keys</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.backupStatus.total}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Keys</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">{stats.backupStatus.successful}</div>
@@ -527,13 +527,13 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
               {/* Keys List */}
               <div className="space-y-3">
                 {encryptionKeys.map(key => (
-                  <Card key={key.id} className="p-4 border border-gray-200">
+                  <Card key={key.id} className="p-4 border border-gray-200 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <Key className="w-5 h-5 text-gray-400" />
                         <div>
-                          <h3 className="font-medium text-gray-900">{key.name}</h3>
-                          <div className="text-sm text-gray-600">
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100">{key.name}</h3>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
                             {key.algorithm} • Created {key.createdAt.toLocaleDateString()}
                           </div>
                         </div>
@@ -552,22 +552,22 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
                     
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                       <div>
-                        <div className="text-gray-500 mb-1">Type</div>
-                        <div className="text-gray-900 capitalize">{key.type}</div>
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Type</div>
+                        <div className="text-gray-900 dark:text-gray-100 capitalize">{key.type}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Usage Count</div>
-                        <div className="text-gray-900">{key.usageCount.toLocaleString()}</div>
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Usage Count</div>
+                        <div className="text-gray-900 dark:text-gray-100">{key.usageCount.toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Last Used</div>
-                        <div className="text-gray-900">
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Last Used</div>
+                        <div className="text-gray-900 dark:text-gray-100">
                           {key.lastUsed ? key.lastUsed.toLocaleDateString() : 'Never'}
                         </div>
                       </div>
                       <div>
-                        <div className="text-gray-500 mb-1">Expires</div>
-                        <div className="text-gray-900">
+                        <div className="text-gray-500 dark:text-gray-400 mb-1">Expires</div>
+                        <div className="text-gray-900 dark:text-gray-100">
                           {key.expiresAt ? key.expiresAt.toLocaleDateString() : 'Never'}
                         </div>
                       </div>
@@ -575,9 +575,9 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
                     
                     {/* Fingerprint */}
                     <div className="mb-3">
-                      <div className="text-gray-500 text-sm mb-1">Fingerprint</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">Fingerprint</div>
                       <div className="flex items-center gap-2">
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                        <code className="text-xs bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded font-mono">
                           {key.fingerprint}
                         </code>
                         <Button
@@ -629,13 +629,13 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
           {activeTab === 'policies' && (
             <div className="space-y-4">
               {encryptionPolicies.map(policy => (
-                <Card key={policy.id} className="p-4 border border-gray-200">
+                <Card key={policy.id} className="p-4 border border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <Switch checked={policy.enabled} onChange={() => {}} />
                       <div>
-                        <h3 className="font-medium text-gray-900">{policy.name}</h3>
-                        <p className="text-sm text-gray-600">{policy.description}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{policy.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{policy.description}</p>
                       </div>
                     </div>
                     
@@ -646,20 +646,20 @@ export const EncryptionPanel: React.FC<EncryptionPanelProps> = ({
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <div className="text-gray-500 mb-1">Channels</div>
-                      <div className="text-gray-900">{policy.channels.length} channels</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Channels</div>
+                      <div className="text-gray-900 dark:text-gray-100">{policy.channels.length} channels</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Key Rotation</div>
-                      <div className="text-gray-900">{policy.keyRotationDays} days</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Key Rotation</div>
+                      <div className="text-gray-900 dark:text-gray-100">{policy.keyRotationDays} days</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Plaintext Search</div>
-                      <div className="text-gray-900">{policy.allowPlaintextSearch ? 'Yes' : 'No'}</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Plaintext Search</div>
+                      <div className="text-gray-900 dark:text-gray-100">{policy.allowPlaintextSearch ? 'Yes' : 'No'}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Compliance Mode</div>
-                      <div className="text-gray-900">{policy.complianceMode ? 'Yes' : 'No'}</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Compliance Mode</div>
+                      <div className="text-gray-900 dark:text-gray-100">{policy.complianceMode ? 'Yes' : 'No'}</div>
                     </div>
                   </div>
                 </Card>

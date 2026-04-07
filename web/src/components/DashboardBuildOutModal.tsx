@@ -282,20 +282,20 @@ export default function DashboardBuildOutModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Build Out Your Dashboard
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Choose modules for "{dashboardName}"
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -304,7 +304,7 @@ export default function DashboardBuildOutModal({
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* View Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+          <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 mb-6">
             <button
               onClick={() => setView('quick-setup')}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -338,10 +338,10 @@ export default function DashboardBuildOutModal({
           {view === 'quick-setup' ? (
             <div>
               <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Choose a Quick Setup
                 </h3>
-                <p className="text-gray-600 text-sm">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Get started quickly with pre-configured module combinations
                 </p>
               </div>
@@ -350,7 +350,7 @@ export default function DashboardBuildOutModal({
                 {quickSetupOptions.map((option) => (
                   <Card
                     key={option.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors border-2 border-transparent hover:border-blue-200"
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors border-2 border-transparent hover:border-blue-200"
                   >
                     <div 
                       className="p-6" 
@@ -361,10 +361,10 @@ export default function DashboardBuildOutModal({
                         {option.icon}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 mb-1">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
                           {option.name}
                         </h4>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                           {option.description}
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -373,7 +373,7 @@ export default function DashboardBuildOutModal({
                             return (
                               <span
                                 key={moduleId}
-                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
+                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-800"
                               >
                                 {getModuleIcon(moduleId)}
                                 <span className="ml-1">{module?.name || moduleId}</span>
@@ -389,7 +389,7 @@ export default function DashboardBuildOutModal({
               </div>
 
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Or choose your own modules with custom selection
                 </p>
                 <Button
@@ -403,10 +403,10 @@ export default function DashboardBuildOutModal({
           ) : (
             <div>
               <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Select Modules
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Choose the modules you want to include in your dashboard
                 </p>
 
@@ -418,7 +418,7 @@ export default function DashboardBuildOutModal({
                     placeholder="Search modules..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -426,7 +426,7 @@ export default function DashboardBuildOutModal({
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <span className="ml-3 text-gray-600">Loading modules...</span>
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading modules...</span>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -451,8 +451,8 @@ export default function DashboardBuildOutModal({
                               {getModuleIcon(module.name)}
                             </div>
                             <div>
-                              <h4 className="font-medium text-gray-900">{module.name}</h4>
-                              <p className="text-xs text-gray-600">{module.category}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{module.category}</p>
                             </div>
                           </div>
                           {isSelected && (
@@ -462,11 +462,11 @@ export default function DashboardBuildOutModal({
                           )}
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                           {getModuleDescription(module.name)}
                         </p>
                         
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           v{module.version} • {module.developer}
                         </div>
                         </div>
@@ -479,7 +479,7 @@ export default function DashboardBuildOutModal({
               {filteredModules.length === 0 && !loading && (
                 <div className="text-center py-12">
                   <Puzzle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-600">No modules found matching your search</p>
+                  <p className="text-gray-600 dark:text-gray-400">No modules found matching your search</p>
                 </div>
               )}
             </div>
@@ -487,8 +487,8 @@ export default function DashboardBuildOutModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {view === 'custom' && selectedModules.size > 0 && (
               <span>{selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected</span>
             )}

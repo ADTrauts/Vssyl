@@ -37,6 +37,7 @@ import { SidebarFolderRenderer } from '../sidebar/SidebarFolderRenderer';
 import type { LeftSidebarConfig } from '../../types/sidebar';
 import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 import { businessAPI } from '../../api/business';
+import { useThemeColors } from '../../hooks/useThemeColors';
 
 interface Business {
   id: string;
@@ -108,8 +109,10 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const effectiveBusiness = business || localBusiness;
   
   const { currentBranding, isBusinessContext, getSidebarStyles, getHeaderStyles } = useGlobalBranding();
+  const { isDark } = useThemeColors();
   const { getFilteredModules } = usePositionAwareModules();
   const { getConfigForContext, getConfigForTab } = useSidebarCustomization();
+  const mutedTextColor = isDark ? '#cbd5e1' : '#6b7280';
   
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
@@ -449,7 +452,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
         <Spinner size={32} />
-        <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Verifying session...</p>
+        <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Verifying session...</p>
       </div>
     );
   }
@@ -487,7 +490,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
               borderRadius: '50%',
               background: '#444',
               color: '#fff',
-              border: '1px solid #555',
+              border: `1px solid ${isDark ? '#475569' : '#555'}`,
               cursor: 'pointer',
               zIndex: 1000,
               display: 'flex',
@@ -592,7 +595,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                 style={{ 
                   width: '100%', 
                   background: 'none', 
-                  border: '1px solid #555', 
+                  border: `1px solid ${isDark ? '#475569' : '#555'}`, 
                   color: isBusinessContext ? getSidebarStyles().color : '#fff', 
                   padding: '8px 0', 
                   borderRadius: 6, 
@@ -615,7 +618,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           {dashboardLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
               <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Setting up workspace...</p>
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Setting up workspace...</p>
             </div>
           ) : dashboardError ? (
             <div style={{ padding: '1.5rem' }}>
@@ -626,12 +629,12 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           ) : !businessDashboardId ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
               <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Initializing business workspace...</p>
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Initializing business workspace...</p>
             </div>
           ) : businessLoading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
               <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Loading business information...</p>
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
             </div>
           ) : businessError ? (
             <div style={{ padding: '1.5rem' }}>
@@ -642,7 +645,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           ) : !effectiveBusiness ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
               <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>Loading business information...</p>
+              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
             </div>
           ) : shouldRenderNestedRoute ? (
             <>{children}</>

@@ -196,8 +196,8 @@ export default function PhotoCropModal({ open, imageFile = null, imageUrl = null
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-gray-700">Zoom</div>
-            <div className="text-xs text-gray-500">{Math.round(zoom * 100)}%</div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Zoom</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{Math.round(zoom * 100)}%</div>
           </div>
           <input
             type="range"
@@ -210,8 +210,8 @@ export default function PhotoCropModal({ open, imageFile = null, imageUrl = null
           />
 
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium text-gray-700">Rotation</div>
-            <div className="text-xs text-gray-500">{rotation}°</div>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Rotation</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{rotation}°</div>
           </div>
           <div className="flex items-center gap-3">
             <input

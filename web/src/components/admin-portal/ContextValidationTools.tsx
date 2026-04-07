@@ -48,7 +48,7 @@ export default function ContextValidationTools({ className = '' }: ContextValida
       case 'INFO':
         return <Info className="w-4 h-4 text-blue-500" />;
       default:
-        return <Info className="w-4 h-4 text-gray-500" />;
+        return <Info className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />;
     }
   };
 
@@ -63,7 +63,7 @@ export default function ContextValidationTools({ className = '' }: ContextValida
       case 'INFO':
         return 'text-blue-700 bg-blue-100 border-blue-200';
       default:
-        return 'text-gray-700 bg-gray-100 border-gray-200';
+        return 'text-gray-700 bg-gray-100 dark:bg-slate-700 border-gray-200 dark:border-slate-700';
     }
   };
 
@@ -76,7 +76,7 @@ export default function ContextValidationTools({ className = '' }: ContextValida
       case 'WARN':
         return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700';
     }
   };
 
@@ -85,21 +85,21 @@ export default function ContextValidationTools({ className = '' }: ContextValida
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Context Validation Tools</h3>
+    <div className={`bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 ${className}`}>
+      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Context Validation Tools</h3>
         
         {/* Search Input */}
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 dark:text-gray-300 dark:text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Enter user ID to validate context..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleValidation()}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <button
@@ -145,7 +145,7 @@ export default function ContextValidationTools({ className = '' }: ContextValida
 
           {/* Validation Checks */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Validation Checks</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100">Validation Checks</h4>
             
             {validationResult.checks.map((check, index) => (
               <div
@@ -165,32 +165,32 @@ export default function ContextValidationTools({ className = '' }: ContextValida
           </div>
 
           {/* Summary Statistics */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-900 mb-3">Summary</h4>
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Summary</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">
                   {validationResult.checks.filter(c => c.status === 'PASS').length}
                 </div>
-                <div className="text-gray-600">Passed</div>
+                <div className="text-gray-700 dark:text-gray-300">Passed</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600">
                   {validationResult.checks.filter(c => c.status === 'FAIL').length}
                 </div>
-                <div className="text-gray-600">Failed</div>
+                <div className="text-gray-700 dark:text-gray-300">Failed</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">
                   {validationResult.checks.filter(c => c.status === 'WARN').length}
                 </div>
-                <div className="text-gray-600">Warnings</div>
+                <div className="text-gray-700 dark:text-gray-300">Warnings</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">
                   {validationResult.checks.filter(c => c.status === 'INFO').length}
                 </div>
-                <div className="text-gray-600">Info</div>
+                <div className="text-gray-700 dark:text-gray-300">Info</div>
               </div>
             </div>
           </div>

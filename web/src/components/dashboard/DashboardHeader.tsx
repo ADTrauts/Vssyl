@@ -44,7 +44,7 @@ function StatPill({ icon: Icon, count, label, href }: { icon: React.ElementType;
   return (
     <a
       href={href}
-      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+      className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 hover:border-gray-300 dark:border-slate-600 transition-colors shadow-sm"
       title={`${count} ${label}`}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -71,10 +71,10 @@ export default function DashboardHeader({
     <div className="flex items-center justify-between px-4 py-4 sm:px-6">
       <div className="min-w-0 flex items-center gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 truncate">
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
             {greeting}, {firstName}
           </h1>
-          <p className="text-sm text-gray-600 mt-0.5">{dateStr}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{dateStr}</p>
         </div>
 
         {/* Stats pills */}
@@ -104,7 +104,7 @@ export default function DashboardHeader({
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {isSaving && (
-          <span className="flex items-center gap-1.5 text-xs text-gray-600">
+          <span className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             Saving...
           </span>

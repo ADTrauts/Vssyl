@@ -59,7 +59,7 @@ export default function ImpersonationTest() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading users...</p>
         </div>
       </div>
     );
@@ -69,13 +69,13 @@ export default function ImpersonationTest() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Impersonation Test</h1>
-        <p className="text-gray-600 mt-2">Test the user impersonation functionality</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Impersonation Test</h1>
+        <p className="text-gray-700 dark:text-gray-300 mt-2">Test the user impersonation functionality</p>
       </div>
 
       {/* Current Status */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Status</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Current Status</h2>
         {isImpersonating && currentSession ? (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center space-x-3">
@@ -115,14 +115,14 @@ export default function ImpersonationTest() {
 
       {/* User List */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Users</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Available Users</h2>
         <div className="space-y-3">
           {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+            <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
               <div>
                 <div className="font-medium">{user.name || 'No name'}</div>
-                <div className="text-sm text-gray-500">{user.email}</div>
-                <div className="text-xs text-gray-400">Vssyl ID: {user.userNumber}</div>
+                <div className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">{user.email}</div>
+                <div className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">Vssyl ID: {user.userNumber}</div>
               </div>
               <button
                 onClick={() => handleImpersonate(user)}
@@ -139,8 +139,8 @@ export default function ImpersonationTest() {
 
       {/* Instructions */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">How to Test</h2>
-        <div className="space-y-3 text-sm text-gray-600">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">How to Test</h2>
+        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-start space-x-2">
             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
             <div>

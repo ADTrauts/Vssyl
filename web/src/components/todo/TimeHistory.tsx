@@ -68,8 +68,8 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
       {/* Summary */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">Time Tracking</h3>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Time Tracking</h3>
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
             <div>
               <span className="font-medium">Total:</span> {formatDuration(timeData.totalTime)}
             </div>
@@ -121,21 +121,21 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
                   <Clock className="w-4 h-4 text-gray-400" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {formatDuration(log.duration)}
                       </span>
                       {log.isActive && (
                         <Badge className="bg-red-100 text-red-700 text-xs">Active</Badge>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {formatDate(log.startedAt)}
                       {log.user && (
                         <span className="ml-2">by {log.user.name || log.user.email}</span>
                       )}
                     </div>
                     {log.description && (
-                      <div className="text-sm text-gray-600 mt-1">{log.description}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{log.description}</div>
                     )}
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
           ))}
         </div>
       ) : (
-        <Card className="p-4 text-center text-sm text-gray-500">
+        <Card className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
           No time logged yet. Start a timer or add manual time entry.
         </Card>
       )}

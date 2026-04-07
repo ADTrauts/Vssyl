@@ -168,18 +168,18 @@ export function TaskCalendar({
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
         {/* Calendar Header */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100 border-b border-gray-200">
+        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
           {weekDays.map(day => (
-            <div key={day} className="bg-white p-3 text-center">
-              <span className="text-sm font-semibold text-gray-700">{day}</span>
+            <div key={day} className="bg-white dark:bg-slate-900 p-3 text-center">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{day}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100">
+        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700">
           {days.map((date, index) => {
             const { tasks: dayTasks, events: dayEvents } = getItemsForDate(date);
             const isCurrentDay = isToday(date);
@@ -256,7 +256,7 @@ export function TaskCalendar({
                         </div>
                       ))}
                       {(dayTasks.length + dayEvents.length) > 3 && (
-                        <div className="text-xs text-gray-500 text-center pt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-1">
                           +{dayTasks.length + dayEvents.length - 3} more
                         </div>
                       )}
@@ -277,9 +277,9 @@ export function TaskCalendar({
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
         {/* Week Header */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100 border-b border-gray-200">
+        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700 border-b border-gray-200 dark:border-slate-700">
           {weekDays.map((day, index) => {
             const dayDate = days[index];
             const isCurrentDay = isToday(dayDate);
@@ -293,7 +293,7 @@ export function TaskCalendar({
                   ${isCurrentDay ? 'bg-blue-50 border-b-2 border-blue-500' : ''}
                 `}
               >
-                <div className="text-xs font-medium text-gray-500 mb-1">{day}</div>
+                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{day}</div>
                 <div className={`text-lg font-semibold ${isCurrentDay ? 'text-blue-700' : 'text-gray-900'}`}>
                   {dayDate.getDate()}
                 </div>
@@ -308,7 +308,7 @@ export function TaskCalendar({
         </div>
 
         {/* Week Content */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100 min-h-[400px]">
+        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700 min-h-[400px]">
           {days.map((day, index) => {
             const { tasks: dayTasks, events: dayEvents } = getItemsForDate(day);
             const isCurrentDay = isToday(day);
@@ -411,15 +411,15 @@ export function TaskCalendar({
     }
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
         {/* Day Header */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {dayTasks.length} tasks, {dayEvents.length} events
               </p>
             </div>
@@ -437,13 +437,13 @@ export function TaskCalendar({
         <div className="overflow-y-auto max-h-[600px]">
           <div className="grid grid-cols-[80px_1fr]">
             {/* Time Column */}
-            <div className="border-r border-gray-200">
+            <div className="border-r border-gray-200 dark:border-slate-700">
               {timeSlots.map(hour => (
                 <div
                   key={hour}
                   className="h-16 border-b border-gray-100 flex items-start justify-end pr-2 pt-1"
                 >
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
                   </span>
                 </div>
@@ -518,7 +518,7 @@ export function TaskCalendar({
   return (
     <div className="flex flex-col h-full">
       {/* Calendar Controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+      <div className="flex items-center justify-between p-4 border-b bg-gray-50 dark:bg-slate-800">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={handlePrevious}>
             <ChevronLeft className="w-4 h-4" />
@@ -529,7 +529,7 @@ export function TaskCalendar({
           <Button variant="ghost" size="sm" onClick={handleNext}>
             <ChevronRight className="w-4 h-4" />
           </Button>
-          <h2 className="text-lg font-semibold text-gray-900 ml-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 ml-4">
             {formatDateHeader(currentDate)}
           </h2>
         </div>

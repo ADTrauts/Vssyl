@@ -237,48 +237,48 @@ export default function OnboardingTemplatesPage() {
         <div className="p-6">
           <Card className="p-6 border border-blue-100 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {editingTemplate.id ? 'Edit Onboarding Template' : 'Create Onboarding Template'}
               </h3>
               <button
                 type="button"
                 onClick={handleCancel}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
               >
-                <X className="w-4 h-4 text-gray-600" />
+                <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Template Name</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Template Name</label>
                 <input
                   type="text"
                   value={editingTemplate.name}
                   onChange={(e) => updateTemplate({ name: e.target.value })}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Ex: Corporate Onboarding"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Template Owner (User ID)</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Template Owner (User ID)</label>
                 <input
                   type="text"
                   value={editingTemplate.ownerUserId ?? ''}
                   onChange={(e) => updateTemplate({ ownerUserId: e.target.value || null })}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Optional - assign template owner"
                 />
               </div>
             </div>
 
             <div className="space-y-2 mt-4">
-              <label className="text-sm font-medium text-gray-700">Description</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea
                 value={editingTemplate.description ?? ''}
                 onChange={(e) => updateTemplate({ description: e.target.value || null })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 placeholder="Describe when to use this template, who it's for, and any notes for HR admins."
               />
@@ -290,9 +290,9 @@ export default function OnboardingTemplatesPage() {
                   type="checkbox"
                   checked={editingTemplate.isDefault ?? false}
                   onChange={(e) => updateTemplate({ isDefault: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Set as default template</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Set as default template</span>
               </label>
 
               <label className="inline-flex items-center space-x-2">
@@ -300,15 +300,15 @@ export default function OnboardingTemplatesPage() {
                   type="checkbox"
                   checked={editingTemplate.isActive ?? true}
                   onChange={(e) => updateTemplate({ isActive: e.target.checked })}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">Template active</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Template active</span>
               </label>
             </div>
 
             <div className="mt-6">
               <div className="flex items-center justify-between">
-                <h4 className="text-md font-medium text-gray-900">Task Sequence</h4>
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Task Sequence</h4>
                 <Button variant="secondary" size="sm" onClick={addTask}>
                   <Plus className="w-4 h-4 mr-1" />
                   Add Task
@@ -323,27 +323,27 @@ export default function OnboardingTemplatesPage() {
                 )}
 
                 {editingTemplate.tasks.map((task, index) => (
-                  <Card key={task.id ?? index} className="p-4 border border-gray-200">
+                  <Card key={task.id ?? index} className="p-4 border border-gray-200 dark:border-slate-700">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
                         <div className="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0">
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-700">Task Title</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Task Title</label>
                             <input
                               type="text"
                               value={task.title}
                               onChange={(e) => updateTask(index, { title: e.target.value })}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="Ex: Submit I-9 documents"
                             />
                           </div>
                           <div className="w-32">
-                            <label className="text-sm font-medium text-gray-700">Order</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Order</label>
                             <input
                               type="number"
                               value={task.orderIndex ?? index}
                               onChange={(e) => updateTask(index, { orderIndex: Number(e.target.value) })}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                               min={0}
                             />
                           </div>
@@ -351,11 +351,11 @@ export default function OnboardingTemplatesPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <div>
-                            <label className="text-sm font-medium text-gray-700">Task Type</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Task Type</label>
                             <select
                               value={task.taskType ?? 'CUSTOM'}
                               onChange={(e) => updateTask(index, { taskType: e.target.value as OnboardingTaskType })}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                               {TASK_TYPE_OPTIONS.map((option) => (
                                 <option key={option} value={option}>
@@ -366,11 +366,11 @@ export default function OnboardingTemplatesPage() {
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-gray-700">Owner</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Owner</label>
                             <select
                               value={task.ownerType ?? 'EMPLOYEE'}
                               onChange={(e) => updateTask(index, { ownerType: e.target.value as OnboardingTaskOwnerType })}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                               {OWNER_TYPE_OPTIONS.map((option) => (
                                 <option key={option} value={option}>
@@ -381,21 +381,21 @@ export default function OnboardingTemplatesPage() {
                           </div>
 
                           <div>
-                            <label className="text-sm font-medium text-gray-700">Due Offset (days)</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Due Offset (days)</label>
                             <input
                               type="number"
                               value={task.dueOffsetDays ?? 0}
                               onChange={(e) => updateTask(index, { dueOffsetDays: Number(e.target.value) || null })}
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         </div>
 
-                        <label className="text-sm font-medium text-gray-700">Description</label>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
                         <textarea
                           value={task.description ?? ''}
                           onChange={(e) => updateTask(index, { description: e.target.value || null })}
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           rows={2}
                           placeholder="Add task instructions or links for the assignee."
                         />
@@ -406,9 +406,9 @@ export default function OnboardingTemplatesPage() {
                               type="checkbox"
                               checked={task.requiresApproval ?? false}
                               onChange={(e) => updateTask(index, { requiresApproval: e.target.checked })}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm text-gray-700">Requires approval</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Requires approval</span>
                           </label>
 
                           <label className="inline-flex items-center space-x-2">
@@ -416,9 +416,9 @@ export default function OnboardingTemplatesPage() {
                               type="checkbox"
                               checked={task.requiresDocument ?? false}
                               onChange={(e) => updateTask(index, { requiresDocument: e.target.checked })}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                             />
-                            <span className="text-sm text-gray-700">Requires document upload</span>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">Requires document upload</span>
                           </label>
                         </div>
                       </div>
@@ -462,8 +462,8 @@ export default function OnboardingTemplatesPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Onboarding Templates</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Onboarding Templates</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Manage onboarding templates for your business
             </p>
           </div>
@@ -475,7 +475,7 @@ export default function OnboardingTemplatesPage() {
 
         {templates.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-gray-600 mb-4">No onboarding templates found.</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">No onboarding templates found.</p>
             <Button onClick={handleCreateNew}>
               <Plus className="w-4 h-4 mr-2" />
               Create Your First Template
@@ -488,7 +488,7 @@ export default function OnboardingTemplatesPage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{template.name}</h3>
                       {template.isDefault && (
                         <Badge color="blue">Default</Badge>
                       )}
@@ -500,12 +500,12 @@ export default function OnboardingTemplatesPage() {
                       )}
                     </div>
                     {template.description && (
-                      <p className="text-sm text-gray-600 mb-3">{template.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{template.description}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
                   <span>{template.taskTemplates?.length || 0} tasks</span>
                   <span>
                     {template.isActive ? (
@@ -522,7 +522,7 @@ export default function OnboardingTemplatesPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+                <div className="flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-slate-700">
                   <Button
                     variant="ghost"
                     size="sm"

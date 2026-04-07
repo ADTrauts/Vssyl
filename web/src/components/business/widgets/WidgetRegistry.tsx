@@ -149,7 +149,7 @@ export function WidgetContainer({
                 {title}
               </h3>
               {description && (
-                <p className="text-sm text-gray-600 mt-0.5">{description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{description}</p>
               )}
             </div>
           </div>
@@ -170,7 +170,7 @@ export function WidgetLoading({ message = 'Loading...' }: { message?: string }) 
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
     </div>
   );
 }
@@ -204,7 +204,7 @@ export function WidgetEmpty({ message, icon = '📭' }: { message: string; icon?
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <span className="text-4xl mb-3">{icon}</span>
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
     </div>
   );
 }

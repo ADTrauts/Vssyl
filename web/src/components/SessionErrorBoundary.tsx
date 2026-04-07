@@ -75,7 +75,7 @@ export class SessionErrorBoundary extends Component<Props, State> {
                          this.state.error?.message.includes('403');
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800 p-4">
           <div className="max-w-md w-full">
             <Alert
               type={isAuthError ? "warning" : "error"}

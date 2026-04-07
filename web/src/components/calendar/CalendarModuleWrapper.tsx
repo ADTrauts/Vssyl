@@ -56,10 +56,10 @@ export const CalendarModuleWrapper: React.FC<CalendarModuleWrapperProps> = ({
     return (
       <Suspense 
         fallback={
-          <div className="flex items-center justify-center bg-gray-50 h-full">
+          <div className="flex items-center justify-center bg-gray-50 dark:bg-slate-800 h-full">
             <div className="text-center">
               <Spinner size={32} />
-              <p className="mt-4 text-sm text-gray-600">Loading enterprise calendar...</p>
+              <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading enterprise calendar...</p>
             </div>
           </div>
         }

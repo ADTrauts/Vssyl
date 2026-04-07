@@ -72,12 +72,12 @@ export default function TransactionHistoryPage() {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/place" className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-700" />
+        <Link href="/place" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Transaction History</h1>
-          <p className="text-sm text-gray-600">Your interactions and purchases on Vssyl Place</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Transaction History</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Your interactions and purchases on Vssyl Place</p>
         </div>
       </div>
 
@@ -87,29 +87,29 @@ export default function TransactionHistoryPage() {
           <Card>
             <div className="p-4 text-center">
               <Receipt className="w-5 h-5 text-indigo-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{summary.totalTransactions}</p>
-              <p className="text-xs text-gray-600">Total Interactions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.totalTransactions}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Total Interactions</p>
             </div>
           </Card>
           <Card>
             <div className="p-4 text-center">
               <DollarSign className="w-5 h-5 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">${summary.totalSpent.toFixed(2)}</p>
-              <p className="text-xs text-gray-600">Total Spent</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${summary.totalSpent.toFixed(2)}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Total Spent</p>
             </div>
           </Card>
           <Card>
             <div className="p-4 text-center">
               <ShoppingBag className="w-5 h-5 text-orange-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{summary.purchaseCount}</p>
-              <p className="text-xs text-gray-600">Purchases</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.purchaseCount}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Purchases</p>
             </div>
           </Card>
           <Card>
             <div className="p-4 text-center">
               <MousePointerClick className="w-5 h-5 text-blue-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{summary.externalClickCount}</p>
-              <p className="text-xs text-gray-600">External Visits</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{summary.externalClickCount}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">External Visits</p>
             </div>
           </Card>
         </div>
@@ -121,13 +121,13 @@ export default function TransactionHistoryPage() {
           <div className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp className="w-4 h-4 text-indigo-600" />
-              <h2 className="text-sm font-semibold text-gray-900">Most Visited</h2>
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Most Visited</h2>
             </div>
             <div className="flex flex-wrap gap-3">
               {summary.topBusinesses.map(tb => (
-                <div key={tb.business.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200">
-                  <span className="text-sm font-medium text-gray-900">{tb.business.name}</span>
-                  <span className="text-xs text-gray-600">{tb.interactionCount}x</span>
+                <div key={tb.business.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{tb.business.name}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{tb.interactionCount}x</span>
                 </div>
               ))}
             </div>
@@ -154,16 +154,16 @@ export default function TransactionHistoryPage() {
 
       {/* Transaction list */}
       {transactions.length === 0 ? (
-        <div className="text-center py-16 text-gray-700">
+        <div className="text-center py-16 text-gray-700 dark:text-gray-300">
           <Receipt className="w-10 h-10 mx-auto mb-3 text-gray-400" />
           <p className="text-lg font-semibold">No transactions yet</p>
-          <p className="text-sm text-gray-600 mt-1">Your purchases and interactions will appear here.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Your purchases and interactions will appear here.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-gray-600">{total} transaction{total !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">{total} transaction{total !== 1 ? 's' : ''}</p>
           {transactions.map(tx => (
-            <div key={tx.id} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+            <div key={tx.id} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-gray-300 dark:border-slate-600 transition-colors">
               {/* Icon */}
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                 tx.type === 'PURCHASE' ? 'bg-green-50' : tx.type === 'EXTERNAL_CLICK' ? 'bg-blue-50' : 'bg-purple-50'
@@ -180,27 +180,27 @@ export default function TransactionHistoryPage() {
               {/* Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 truncate">{tx.business.name}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{tx.business.name}</span>
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${STATUS_COLORS[tx.status]}15`, color: STATUS_COLORS[tx.status] }}>
                     {tx.status.toLowerCase()}
                   </span>
                 </div>
-                <p className="text-xs text-gray-600 truncate">{tx.description || TYPE_LABELS[tx.type]}</p>
-                <p className="text-xs text-gray-600">{new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{tx.description || TYPE_LABELS[tx.type]}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">{new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
               </div>
 
               {/* Amount */}
               {tx.amount && (
-                <span className="text-sm font-semibold text-gray-900">${tx.amount.toFixed(2)}</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">${tx.amount.toFixed(2)}</span>
               )}
 
               {/* Privacy toggle */}
               <button
                 onClick={() => handleTogglePrivacy(tx)}
-                className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+                className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
                 title={tx.isPrivate ? 'Private' : 'Visible'}
               >
-                {tx.isPrivate ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-700" />}
+                {tx.isPrivate ? <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <Eye className="w-4 h-4 text-gray-700 dark:text-gray-300" />}
               </button>
             </div>
           ))}

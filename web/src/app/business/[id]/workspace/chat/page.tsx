@@ -267,13 +267,13 @@ export default function WorkChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="container mx-auto px-6 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Work Chat</h1>
-            <p className="text-gray-600">Business team communication</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Work Chat</h1>
+            <p className="text-gray-600 dark:text-gray-400">Business team communication</p>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="secondary" size="sm">
@@ -299,7 +299,7 @@ export default function WorkChatPage() {
                     placeholder="Search conversations..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -319,17 +319,17 @@ export default function WorkChatPage() {
                       <div className="flex items-center space-x-3">
                         <div className="relative">
                           {conversation.type === 'channel' ? (
-                            <Hash className="w-5 h-5 text-gray-500" />
+                            <Hash className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                           ) : conversation.type === 'group' ? (
-                            <Users className="w-5 h-5 text-gray-500" />
+                            <Users className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                           ) : (
                             <Avatar size={20} nameOrEmail={conversation.name} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">{conversation.name}</h3>
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{conversation.name}</h3>
                           {conversation.lastMessage && (
-                            <p className="text-sm text-gray-500 truncate">
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                               {conversation.lastMessage.sender.name}: {conversation.lastMessage.content}
                             </p>
                           )}
@@ -358,19 +358,19 @@ export default function WorkChatPage() {
               {currentConversation ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200">
+                  <div className="p-4 border-b border-gray-200 dark:border-slate-700">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         {currentConversation.type === 'channel' ? (
-                          <Hash className="w-5 h-5 text-gray-500" />
+                          <Hash className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         ) : currentConversation.type === 'group' ? (
-                          <Users className="w-5 h-5 text-gray-500" />
+                          <Users className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         ) : (
                           <Avatar size={32} nameOrEmail={currentConversation.name} />
                         )}
                         <div>
-                          <h2 className="font-semibold text-gray-900">{currentConversation.name}</h2>
-                          <p className="text-sm text-gray-500">
+                          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{currentConversation.name}</h2>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
                             {currentConversation.participants.length} member{currentConversation.participants.length !== 1 ? 's' : ''}
                           </p>
                         </div>
@@ -393,19 +393,19 @@ export default function WorkChatPage() {
                         <Avatar size={32} nameOrEmail={message.sender.name} />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <h4 className="font-medium text-gray-900">{message.sender.name}</h4>
-                            <span className="text-xs text-gray-500">
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">{message.sender.name}</h4>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               {new Date(message.timestamp).toLocaleTimeString()}
                             </span>
                           </div>
-                          <p className="text-gray-700 mt-1">{message.content}</p>
+                          <p className="text-gray-700 dark:text-gray-300 mt-1">{message.content}</p>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200">
+                  <div className="p-4 border-t border-gray-200 dark:border-slate-700">
                     <div className="flex items-center space-x-3">
                       <Button variant="ghost" size="sm">
                         <Paperclip className="w-4 h-4" />
@@ -416,7 +416,7 @@ export default function WorkChatPage() {
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyPress={handleKeyPress}
                           placeholder="Type a message..."
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                           rows={2}
                         />
                       </div>
@@ -433,8 +433,8 @@ export default function WorkChatPage() {
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-                    <p className="text-gray-600">Choose a conversation from the sidebar to start chatting</p>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Select a conversation</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Choose a conversation from the sidebar to start chatting</p>
                   </div>
                 </div>
               )}

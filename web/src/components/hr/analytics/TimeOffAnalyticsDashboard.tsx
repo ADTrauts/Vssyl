@@ -117,8 +117,8 @@ export default function TimeOffAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Requests</p>
-              <p className="text-2xl font-semibold text-gray-900">{analytics.overview.totalRequests}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Requests</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.totalRequests}</p>
             </div>
             <Calendar className="w-8 h-8 text-blue-500" />
           </div>
@@ -127,8 +127,8 @@ export default function TimeOffAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Pending</p>
-              <p className="text-2xl font-semibold text-gray-900">{analytics.overview.pendingRequests}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.pendingRequests}</p>
             </div>
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
@@ -137,8 +137,8 @@ export default function TimeOffAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Approved</p>
-              <p className="text-2xl font-semibold text-gray-900">{analytics.overview.approvedRequests}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Approved</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.approvedRequests}</p>
             </div>
             <CheckCircle2 className="w-8 h-8 text-green-500" />
           </div>
@@ -147,8 +147,8 @@ export default function TimeOffAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Denied</p>
-              <p className="text-2xl font-semibold text-gray-900">{analytics.overview.deniedRequests}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Denied</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.deniedRequests}</p>
             </div>
             <XCircle className="w-8 h-8 text-red-500" />
           </div>
@@ -158,12 +158,12 @@ export default function TimeOffAnalyticsDashboard({
       {/* Approval Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Approval Performance</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Approval Performance</h3>
           <div className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-700">Average Approval Time</span>
-                <span className="text-lg font-semibold text-gray-900">
+                <span className="text-sm text-gray-700 dark:text-gray-300">Average Approval Time</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {analytics.approval.averageApprovalTimeHours > 0
                     ? `${analytics.approval.averageApprovalTimeHours.toFixed(1)} hours`
                     : 'N/A'}
@@ -184,10 +184,10 @@ export default function TimeOffAnalyticsDashboard({
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Request Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">Approved</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Approved</span>
               <Badge color="green" size="sm">
                 {analytics.overview.approvedRequests} ({analytics.overview.totalRequests > 0
                   ? Math.round((analytics.overview.approvedRequests / analytics.overview.totalRequests) * 100)
@@ -195,7 +195,7 @@ export default function TimeOffAnalyticsDashboard({
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">Pending</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Pending</span>
               <Badge color="yellow" size="sm">
                 {analytics.overview.pendingRequests} ({analytics.overview.totalRequests > 0
                   ? Math.round((analytics.overview.pendingRequests / analytics.overview.totalRequests) * 100)
@@ -203,7 +203,7 @@ export default function TimeOffAnalyticsDashboard({
               </Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">Denied</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Denied</span>
               <Badge color="red" size="sm">
                 {analytics.overview.deniedRequests} ({analytics.overview.totalRequests > 0
                   ? Math.round((analytics.overview.deniedRequests / analytics.overview.totalRequests) * 100)
@@ -217,13 +217,13 @@ export default function TimeOffAnalyticsDashboard({
       {/* Usage by Type */}
       {analytics.usage.byType.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage by Type</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Usage by Type</h3>
           <div className="space-y-3">
             {analytics.usage.byType.map((item) => (
               <div key={item.type}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{item.type}</span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.type}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {item.daysUsed} days ({item.requests} requests)
                   </span>
                 </div>
@@ -244,13 +244,13 @@ export default function TimeOffAnalyticsDashboard({
       {/* Usage by Department */}
       {analytics.usage.byDepartment.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Usage by Department</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Usage by Department</h3>
           <div className="space-y-3">
             {analytics.usage.byDepartment.map((item) => (
               <div key={item.department}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{item.department}</span>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.department}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {item.daysUsed} days ({item.employees} employees)
                   </span>
                 </div>

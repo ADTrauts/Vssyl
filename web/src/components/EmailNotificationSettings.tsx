@@ -143,7 +143,7 @@ export default function EmailNotificationSettings({ className = '' }: EmailNotif
           {getStatusIcon()}
           <div>
             <h3 className="text-lg font-semibold">Email Notifications</h3>
-            <p className="text-sm text-gray-600">{getStatusText()}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{getStatusText()}</p>
           </div>
         </div>
       </div>
@@ -162,10 +162,10 @@ export default function EmailNotificationSettings({ className = '' }: EmailNotif
 
       <div className="space-y-4">
         {status.configured && status.available && (
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div>
               <h4 className="font-medium">Test Email Service</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Send a test email to verify the service is working
               </p>
             </div>
@@ -189,10 +189,10 @@ export default function EmailNotificationSettings({ className = '' }: EmailNotif
           <Alert type="warning" title="Email Service Not Configured">
             <p className="mb-2">Email notifications are not configured. To enable email notifications, add SMTP configuration to your environment variables.</p>
             <details className="mt-2">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+              <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100">
                 Show configuration details
               </summary>
-              <pre className="mt-2 p-2 bg-gray-100 rounded text-sm overflow-x-auto">
+              <pre className="mt-2 p-2 bg-gray-100 dark:bg-slate-700 rounded text-sm overflow-x-auto">
 {`SMTP_HOST=your-smtp-host
 SMTP_PORT=587
 SMTP_USER=your-email@example.com

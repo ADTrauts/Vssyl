@@ -446,7 +446,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
             {hasEnterprise && (pendingApprovals > 0 || resourceAlerts > 0 || complianceAlerts > 0) && (
               <button
                 onClick={() => setShowEnterprisePanel(true)}
-                className="relative p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-xl transition-all"
+                className="relative p-3 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 backdrop-blur-sm rounded-xl transition-all"
               >
                 <Settings className="w-5 h-5 text-white" />
                 {(pendingApprovals + resourceAlerts + complianceAlerts) > 0 && (
@@ -466,7 +466,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
                       setActiveEnterpriseTab('analytics');
                       setShowEnterprisePanel(true);
                     }}
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-medium transition-all flex items-center space-x-2"
+                    className="px-4 py-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 backdrop-blur-sm text-white rounded-lg font-medium transition-all flex items-center space-x-2"
                   >
                     <BarChart3 className="w-4 h-4" />
                     <span>Analytics</span>
@@ -479,7 +479,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
                       setActiveEnterpriseTab('resources');
                       setShowEnterprisePanel(true);
                     }}
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-medium transition-all flex items-center space-x-2"
+                    className="px-4 py-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 backdrop-blur-sm text-white rounded-lg font-medium transition-all flex items-center space-x-2"
                   >
                     <MapPin className="w-4 h-4" />
                     <span>Resources</span>
@@ -501,7 +501,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
       </div>
 
       {/* Modern Search and Navigation Bar */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
         <div className="flex items-center justify-between">
           {/* Premium Search */}
           <div className="relative flex-1 max-w-md">
@@ -511,7 +511,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all text-sm font-medium"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white dark:bg-slate-900 transition-all text-sm font-medium"
             />
           </div>
           
@@ -519,14 +519,14 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
           <div className="flex items-center space-x-3">
             <button
               onClick={handlePreviousPeriod}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
               aria-label="Previous period"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             <div className="px-6 py-2 bg-gradient-to-r from-slate-50 to-amber-50 rounded-lg border border-amber-200">
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 {viewMode === 'month' && currentDate.toLocaleDateString('en-US', { 
                   month: 'long', 
                   year: 'numeric' 
@@ -547,15 +547,15 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
             
             <button
               onClick={handleNextPeriod}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
               aria-label="Next period"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
             
             <button
               onClick={() => setCurrentDate(new Date())}
-              className="ml-2 px-4 py-2 bg-gradient-to-r from-slate-100 to-amber-100 hover:from-slate-200 hover:to-amber-200 text-gray-900 rounded-lg text-sm font-medium transition-colors border border-amber-200"
+              className="ml-2 px-4 py-2 bg-gradient-to-r from-slate-100 to-amber-100 hover:from-slate-200 hover:to-amber-200 text-gray-900 dark:text-gray-100 rounded-lg text-sm font-medium transition-colors border border-amber-200"
             >
               Today
             </button>
@@ -593,18 +593,18 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
 
       {/* Premium Enterprise Calendar Grid */}
       {viewMode === 'month' && (
-        <div className="bg-white rounded-2xl shadow-lg border border-amber-200 overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-amber-200 overflow-hidden">
           {/* Premium Calendar Header */}
           <div className="grid grid-cols-7 gap-px bg-gradient-to-r from-slate-100 via-amber-50 to-slate-100 border-b border-amber-200">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="bg-white p-4 text-center">
+              <div key={day} className="bg-white dark:bg-slate-900 p-4 text-center">
                 <span className="text-sm font-bold text-slate-800 tracking-wider uppercase">{day}</span>
               </div>
             ))}
           </div>
 
           {/* Premium Calendar Days */}
-          <div className="grid grid-cols-7 gap-px bg-gray-100">
+          <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-slate-700">
             {getDaysInMonth(currentDate).map((date, index) => {
               const isToday = date && 
                 date.getDate() === new Date().getDate() &&
@@ -687,7 +687,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
 
       {/* Enterprise Panel */}
       {showEnterprisePanel && hasEnterprise && (
-        <div className="bg-white rounded-2xl shadow-lg border border-amber-200 p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-amber-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
               <div className="w-1 h-6 bg-gradient-to-b from-amber-500 to-amber-600 rounded-full"></div>
@@ -695,9 +695,9 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
             </h3>
             <button
               onClick={() => setShowEnterprisePanel(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
             >
-              <span className="text-2xl text-gray-500">×</span>
+              <span className="text-2xl text-gray-500 dark:text-gray-400">×</span>
             </button>
           </div>
           
@@ -755,7 +755,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
       {selectedEvent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Premium Enterprise Header */}
@@ -801,7 +801,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
                 </div>
                 <button
                   onClick={() => setSelectedEvent(null)}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-all"
+                  className="p-2 hover:bg-white dark:bg-slate-900/10 rounded-xl transition-all"
                 >
                   <span className="sr-only">Close</span>
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -889,19 +889,19 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
 
               {/* Attendees */}
               {selectedEvent.attendees && selectedEvent.attendees.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
                   <div className="flex items-center space-x-2 mb-4">
-                    <Users className="w-5 h-5 text-gray-600" />
-                    <h4 className="text-sm font-bold text-gray-900">
+                    <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">
                       Attendees ({selectedEvent.attendees.length})
                     </h4>
                   </div>
                   <div className="space-y-3">
                     {selectedEvent.attendees.map((attendee, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg transition-colors">
                         <div className="flex items-center space-x-3">
                           <Avatar size={32} nameOrEmail={attendee.email || attendee.userId || 'Unknown'} />
-                          <span className="text-sm font-medium text-gray-900">{attendee.email || attendee.userId}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{attendee.email || attendee.userId}</span>
                         </div>
                         {attendee.response && (
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -991,7 +991,7 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setSelectedEvent(null)}
-                  className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
                 >
                   Close
                 </button>

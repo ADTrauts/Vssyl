@@ -96,7 +96,7 @@ export default function OnboardingCalendarIntegration({
   if (!hasCalendar) {
     return (
       <Alert type="info" title="Calendar module not installed">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Install the Calendar module to sync onboarding meetings and training to your calendar.
         </p>
       </Alert>

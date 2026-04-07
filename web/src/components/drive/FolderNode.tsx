@@ -49,9 +49,9 @@ const FolderNode: React.FC<FolderNodeProps> = ({
             onClick={(e) => onExpandToggle(folder, e)}
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-gray-500" />
+              <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
             )}
           </button>
         ) : (
@@ -63,7 +63,7 @@ const FolderNode: React.FC<FolderNodeProps> = ({
           {isExpanded ? (
             <FolderOpen className="w-4 h-4 text-blue-500" />
           ) : (
-            <Folder className="w-4 h-4 text-gray-500" />
+            <Folder className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           )}
         </div>
 

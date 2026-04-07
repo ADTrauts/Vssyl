@@ -170,19 +170,19 @@ export function AISchedulingSuggestions({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-gray-200 shadow-xl z-40 flex flex-col">
+    <div className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 shadow-xl z-40 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
         <div className="flex items-center space-x-2">
           <Calendar className="w-5 h-5" />
           <h3 className="font-semibold">AI Scheduling Suggestions</h3>
           {suggestions.length > 0 && (
-            <Badge className="bg-white text-blue-600">{suggestions.length}</Badge>
+            <Badge className="bg-white dark:bg-slate-900 text-blue-600">{suggestions.length}</Badge>
           )}
         </div>
         <button
           onClick={onClose}
-          className="text-white hover:bg-white/20 rounded p-1 transition-colors"
+          className="text-white hover:bg-white dark:bg-slate-900/20 rounded p-1 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
@@ -197,10 +197,10 @@ export function AISchedulingSuggestions({
         ) : suggestions.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               No scheduling suggestions available.
             </p>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               AI will analyze your tasks and calendar to suggest optimal due dates.
             </p>
           </div>
@@ -244,12 +244,12 @@ export function AISchedulingSuggestions({
                     <div className="space-y-2">
                       {/* Task Title */}
                       <div className="flex items-start justify-between">
-                        <h4 className="font-medium text-sm text-gray-900 flex-1">
+                        <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 flex-1">
                           {suggestion.taskTitle}
                         </h4>
                         <button
                           onClick={() => toggleExpanded(suggestion.taskId)}
-                          className="text-gray-400 hover:text-gray-600 ml-2"
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 ml-2"
                         >
                           {isExpanded ? (
                             <ChevronUp className="w-4 h-4" />
@@ -262,7 +262,7 @@ export function AISchedulingSuggestions({
                       {/* Date Change */}
                       <div className="space-y-1">
                         {suggestion.currentDueDate && (
-                          <div className="flex items-center text-xs text-gray-600">
+                          <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
                             <span className="line-through mr-2">
                               {formatDate(suggestion.currentDueDate)}
                             </span>
@@ -270,17 +270,17 @@ export function AISchedulingSuggestions({
                         )}
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-3 h-3 text-blue-500" />
-                          <span className="font-medium text-sm text-gray-900">
+                          <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                             {formatDate(suggestion.suggestedDueDate)}
                           </span>
                           {suggestion.suggestedStartDate && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               at {formatTime(suggestion.suggestedStartDate)}
                             </span>
                           )}
                         </div>
                         {daysUntil >= 0 && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {daysUntil === 0 ? 'Today' : `${daysUntil} day${daysUntil !== 1 ? 's' : ''} from now`}
                           </div>
                         )}
@@ -310,7 +310,7 @@ export function AISchedulingSuggestions({
                       {/* Confidence Score */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600">Confidence</span>
+                          <span className="text-gray-600 dark:text-gray-400">Confidence</span>
                           <span className={getConfidenceColor(suggestion.confidence)}>
                             {Math.round(suggestion.confidence * 100)}%
                           </span>
@@ -331,12 +331,12 @@ export function AISchedulingSuggestions({
 
                       {/* Reasoning (Expandable) */}
                       {isExpanded && (
-                        <div className="pt-2 border-t border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">{suggestion.reasoning}</p>
+                        <div className="pt-2 border-t border-gray-200 dark:border-slate-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">{suggestion.reasoning}</p>
                           {suggestion.factors && suggestion.factors.length > 0 && (
                             <div className="space-y-1">
-                              <p className="text-xs font-medium text-gray-700">Factors:</p>
-                              <ul className="text-xs text-gray-600 space-y-1">
+                              <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Factors:</p>
+                              <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                                 {suggestion.factors.map((factor, idx) => (
                                   <li key={idx} className="flex items-start">
                                     <span className="mr-2">•</span>
@@ -390,7 +390,7 @@ export function AISchedulingSuggestions({
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
         <Button
           onClick={loadSuggestions}
           disabled={loading}

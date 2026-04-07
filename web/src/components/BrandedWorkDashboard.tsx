@@ -237,7 +237,7 @@ export default function BrandedWorkDashboard({
 
   return (
     <BusinessBrandingProvider initialBranding={branding}>
-      <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+      <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
         {/* Header - Fixed */}
         <div className="flex-shrink-0">
           <BrandedHeader
@@ -266,16 +266,16 @@ export default function BrandedWorkDashboard({
         <main className="flex-1 overflow-y-auto p-8">
           {/* AI Assistant - Welcome & Daily Briefing */}
           <div className="max-w-4xl mx-auto mb-12">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-blue-100 dark:border-slate-600 p-6">
               <div className="flex items-start space-x-4">
                 <div className="p-3 bg-blue-500 rounded-xl">
                   <Brain className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     {getGreeting()} Your AI Assistant is ready
                   </h2>
-                  <p className="text-gray-600 mb-4">
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
                     Get personalized insights, company announcements, schedule optimization, and daily task recommendations tailored for your role.
                   </p>
                   <EmployeeAIAssistant businessId={businessId} />
@@ -289,13 +289,13 @@ export default function BrandedWorkDashboard({
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
               <Briefcase className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3">
               Welcome to {business.name}
             </h1>
-            <p className="text-xl text-gray-600 mb-2">
+            <p className="text-xl text-gray-700 dark:text-gray-300 mb-2">
               Your business workspace is ready
             </p>
-            <p className="text-gray-500 max-w-2xl mx-auto">
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Choose how you'd like to access your business tools and collaborate with your team.
             </p>
           </div>
@@ -303,8 +303,8 @@ export default function BrandedWorkDashboard({
           {/* Primary Action - Main Workspace */}
           <div className="max-w-4xl mx-auto mb-12">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Get Started</h2>
-              <p className="text-gray-600">Jump into your full business workspace with all tools and features</p>
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Get Started</h2>
+              <p className="text-gray-700 dark:text-gray-300">Jump into your full business workspace with all tools and features</p>
             </div>
             
             {availableModules.filter(m => m.id === 'dashboard').map((module) => (
@@ -319,10 +319,10 @@ export default function BrandedWorkDashboard({
                       <module.icon className="w-8 h-8 text-white" />
                     </div>
                     <div className="text-center">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                         Enter Workspace
                       </h3>
-                      <p className="text-gray-600 mb-4">
+                      <p className="text-gray-700 dark:text-gray-300 mb-4">
                         Access your complete business dashboard with all modules and tools
                       </p>
                       <div className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-700">
@@ -339,8 +339,8 @@ export default function BrandedWorkDashboard({
           {/* Quick Access Modules */}
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Quick Access</h3>
-              <p className="text-gray-600">Jump directly to specific tools</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Quick Access</h3>
+              <p className="text-gray-700 dark:text-gray-300">Jump directly to specific tools</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {availableModules.filter(m => ['drive', 'chat', 'calendar'].includes(m.id)).map((module) => (
@@ -351,13 +351,13 @@ export default function BrandedWorkDashboard({
                 >
                   <BrandedCard className="p-6 hover:shadow-lg transition-all duration-200 group-hover:-translate-y-1">
                     <div className="text-center">
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4 group-hover:bg-blue-100 transition-colors">
-                        <module.icon className="w-6 h-6 text-gray-600 group-hover:text-blue-600" />
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-lg mb-4 group-hover:bg-blue-100 transition-colors">
+                        <module.icon className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-blue-600" />
                       </div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                         {module.name}
                       </h4>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                         {module.id === 'drive' ? 'Files and documents' : 
                          module.id === 'chat' ? 'Team communication' : 
                          'Schedule and events'}
@@ -376,8 +376,8 @@ export default function BrandedWorkDashboard({
           {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).length > 0 && (
             <div className="max-w-6xl mx-auto mt-12">
               <div className="text-center mb-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">More Tools</h3>
-                <p className="text-gray-600">Additional modules available for your business</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">More Tools</h3>
+                <p className="text-gray-700 dark:text-gray-300">Additional modules available for your business</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).map((module) => (
@@ -386,20 +386,20 @@ export default function BrandedWorkDashboard({
                     className="cursor-pointer group"
                     onClick={() => handleModuleClick(module.id)}
                   >
-                    <BrandedCard className="p-4 hover:shadow-md transition-all duration-200 border border-gray-200 group-hover:border-gray-300">
+                    <BrandedCard className="p-4 hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-slate-700 group-hover:border-gray-300 dark:border-slate-600">
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">
-                          <module.icon className="w-5 h-5 text-gray-600" />
+                        <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-lg group-hover:bg-gray-200 transition-colors">
+                          <module.icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">
                             {module.name}
                           </h4>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             Access {module.name.toLowerCase()}
                           </p>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                        <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
                       </div>
                     </BrandedCard>
                   </div>
@@ -416,10 +416,10 @@ export default function BrandedWorkDashboard({
                   <div className="text-gray-400 mb-4">
                     <Briefcase className="w-16 h-16 mx-auto" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                     No modules available
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-700 dark:text-gray-300 mb-6">
                     Your business administrator hasn't enabled any modules yet. Core modules (Drive, Chat, Calendar) should be automatically installed.
                   </p>
                   <Alert type="info" title="For Administrators">
@@ -431,11 +431,11 @@ export default function BrandedWorkDashboard({
 
             {/* Module Status Info */}
             {configuration && (
-              <div className="bg-white rounded-lg border p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
+              <div className="bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-600 p-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Module Status
                 </h4>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-700 dark:text-gray-300">
                   <p>Enabled: {getEnabledModules().length} modules</p>
                   <p>Total: {configuration.enabledModules.length} modules</p>
                   <p>Auto-sync: {configuration.settings.autoSync ? 'Enabled' : 'Disabled'}</p>

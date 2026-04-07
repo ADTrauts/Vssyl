@@ -245,7 +245,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
             <button
               onClick={handleRefreshAccounts}
               disabled={loading}
-              className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50"
+              className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-md transition-colors disabled:opacity-50"
               title="Refresh accounts"
             >
               <RotateCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -254,7 +254,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
           </div>
 
           {/* Personal Account */}
-          <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+          <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer transition-colors"
                onClick={handleSwitchToPersonal}>
             <div className="flex items-center space-x-4">
               <Avatar
@@ -263,11 +263,11 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                 size={48}
               />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {session?.user?.name || 'Personal Account'}
                 </h3>
-                <p className="text-sm text-gray-600">{session?.user?.email}</p>
-                <p className="text-xs text-gray-500 mt-1">Personal workspace</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{session?.user?.email}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Personal workspace</p>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />
             </div>
@@ -282,11 +282,11 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Admin Portal
                   </h3>
-                  <p className="text-sm text-gray-600">System administration</p>
-                  <p className="text-xs text-gray-500 mt-1">Full platform access</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">System administration</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Full platform access</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
@@ -295,7 +295,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
 
           {/* Business Accounts */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
               <Building2 className="w-4 h-4 mr-2" />
               Business Accounts
             </h4>
@@ -306,7 +306,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                 {businesses.map((business) => (
                   <div
                     key={business.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors group"
+                    className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer transition-colors group"
                     onClick={() => handleSwitchToBusiness(business)}
                   >
                     <div className="flex items-center space-x-4">
@@ -314,18 +314,18 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                         <Building2 className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {business.name}
                         </h3>
-                        <p className="text-sm text-gray-600">EIN: {business.ein}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">EIN: {business.ein}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {getRoleDisplayName(getUserRole(business))} • {business._count?.members || business.members?.length || 0} members
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={(event) => handleManageBusiness(business, event)}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                           title="Manage Business"
                         >
                           <Settings className="w-4 h-4" />
@@ -349,7 +349,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
 
           {/* Educational Institutions */}
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
               <GraduationCap className="w-4 h-4 mr-2" />
               Educational Institutions
             </h4>
@@ -360,7 +360,7 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                 {institutions.map((institution) => (
                   <div
                     key={institution.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer transition-colors"
                     onClick={() => handleSwitchToInstitution(institution)}
                   >
                     <div className="flex items-center space-x-4">
@@ -368,13 +368,13 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                         <GraduationCap className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {institution.name}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {getInstitutionTypeDisplay(institution.type)}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {getRoleDisplayName(getInstitutionUserRole(institution))} • {institution.members.length} members
                         </p>
                       </div>

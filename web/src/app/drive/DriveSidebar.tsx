@@ -18,6 +18,7 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import FolderTree from '../../components/drive/FolderTree';
 import { useDroppable } from '@dnd-kit/core';
 import { useDriveWebSocket } from '../../hooks/useDriveWebSocket';
+import { useTheme } from '../../hooks/useTheme';
 
 interface DriveSidebarProps {
   onNewFolder: () => void;
@@ -94,7 +95,17 @@ const getContextIcon = (type: string) => {
   }
 };
 
-const getContextColor = (type: string, active: boolean = false) => {
+const getContextColor = (type: string, active: boolean = false, isDark: boolean = false) => {
+  if (isDark) {
+    const darkColors = {
+      household: { bg: active ? '#422006' : 'transparent', text: active ? '#fde68a' : '#cbd5e1', border: '#f59e0b' },
+      business: { bg: active ? '#172554' : 'transparent', text: active ? '#bfdbfe' : '#cbd5e1', border: '#3b82f6' },
+      educational: { bg: active ? '#022c22' : 'transparent', text: active ? '#a7f3d0' : '#cbd5e1', border: '#10b981' },
+      personal: { bg: active ? '#0c4a6e' : 'transparent', text: active ? '#bae6fd' : '#cbd5e1', border: '#6366f1' }
+    };
+    return darkColors[type as keyof typeof darkColors] || darkColors.personal;
+  }
+
   const colors = {
     household: { bg: active ? '#fef3c7' : 'transparent', text: active ? '#92400e' : '#6b7280', border: '#f59e0b' },
     business: { bg: active ? '#dbeafe' : 'transparent', text: active ? '#1e40af' : '#6b7280', border: '#3b82f6' },
@@ -212,6 +223,7 @@ export default function DriveSidebar({
   selectedFolderId,
   lockedDashboardId
 }: DriveSidebarProps) {
+  const { isDark } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -287,6 +299,10 @@ export default function DriveSidebar({
   // Storage usage state (only for personal drives)
   const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
   const [isLoadingStorage, setIsLoadingStorage] = useState(false);
+  const hoverBg = isDark ? '#334155' : '#f3f4f6';
+  const newButtonBg = isDark ? '#1e293b' : '#e0f2fe';
+  const newButtonHoverBg = isDark ? '#334155' : '#bae6fd';
+  const newButtonText = isDark ? '#bae6fd' : '#0369a1';
 
   // Calculate total storage across all personal dashboards
   const loadPersonalStorage = useCallback(async () => {
@@ -624,32 +640,33 @@ export default function DriveSidebar({
   };
 
   return (
-    <aside style={styles.sidebar}>
+    <aside style={{ ...styles.sidebar, background: isDark ? '#0f172a' : styles.sidebar.background, borderRight: isDark ? '1px solid #334155' : styles.sidebar.borderRight }}>
       {/* New Button */}
       <div style={{ marginBottom: 4, position: 'relative' }}>
         <button
           ref={buttonRef}
-          style={styles.newButton}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#bae6fd'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e0f2fe'}
+          style={{ ...styles.newButton, background: newButtonBg, color: newButtonText }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = newButtonHoverBg}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = newButtonBg}
           onClick={() => setDropdownOpen(v => !v)}
         >
           <PlusIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
           <span>New</span>
         </button>
         {dropdownOpen && (
-          <div ref={dropdownRef} style={styles.dropdown}>
+          <div ref={dropdownRef} style={{ ...styles.dropdown, background: isDark ? '#1e293b' : styles.dropdown.background, border: isDark ? '1px solid #334155' : styles.dropdown.border }}>
             {dropdownItems.map((item, index) => (
               <button
                 key={item.label}
                 style={{
                   ...styles.dropdownItem,
+                  color: isDark ? '#e2e8f0' : styles.dropdownItem.color,
                   opacity: item.disabled ? 0.5 : 1,
                   cursor: item.disabled ? 'not-allowed' : 'pointer',
                 }}
                 onClick={() => !item.disabled && handleDropdownItemClick(index)}
                 disabled={item.disabled}
-                onMouseEnter={e => !item.disabled && (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                onMouseEnter={e => !item.disabled && (e.currentTarget.style.backgroundColor = hoverBg)}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 <item.icon style={{ width: 20, height: 20 }} />
@@ -662,9 +679,9 @@ export default function DriveSidebar({
 
       {/* Context Drives Section */}
       <section style={styles.driveSection}>
-        <h3 style={styles.sectionHeader}>Your File Hubs</h3>
+        <h3 style={{ ...styles.sectionHeader, color: isDark ? '#94a3b8' : styles.sectionHeader.color }}>Your File Hubs</h3>
         {contextDrives.map((drive) => {
-          const colorScheme = getContextColor(drive.type, drive.active);
+          const colorScheme = getContextColor(drive.type, drive.active, isDark);
           const isExpanded = expandedDrives.has(drive.dashboardId);
           const hasFolders = folderTrees[drive.dashboardId] && folderTrees[drive.dashboardId].length > 0;
           
@@ -678,7 +695,7 @@ export default function DriveSidebar({
               <div
                 style={{
                   ...styles.driveItem,
-                  background: isRootDropTarget && isOverRoot ? '#dbeafe' : colorScheme.bg,
+                  background: isRootDropTarget && isOverRoot ? (isDark ? '#1e3a8a' : '#dbeafe') : colorScheme.bg,
                   color: colorScheme.text,
                   fontWeight: drive.active ? 600 : 500,
                   borderLeft: drive.active ? `3px solid ${colorScheme.border}` : 'none',
@@ -687,7 +704,7 @@ export default function DriveSidebar({
                   justifyContent: 'space-between',
                 }}
                 onClick={(e) => handleDriveClick(drive, e)}
-                onMouseEnter={e => !drive.active && (e.currentTarget.style.backgroundColor = '#f3f4f6')}
+                onMouseEnter={e => !drive.active && (e.currentTarget.style.backgroundColor = hoverBg)}
                 onMouseLeave={e => !drive.active && (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
@@ -728,25 +745,25 @@ export default function DriveSidebar({
       </section>
 
       {/* Divider */}
-      <hr style={styles.divider} />
+      <hr style={{ ...styles.divider, borderTop: isDark ? '1px solid #334155' : styles.divider.borderTop }} />
 
       {/* Utility Folders Section */}
       <section style={styles.utilitySection}>
-        <h3 style={styles.sectionHeader}>Quick Access</h3>
+        <h3 style={{ ...styles.sectionHeader, color: isDark ? '#94a3b8' : styles.sectionHeader.color }}>Quick Access</h3>
         {utilityFolders.map((folder) => (
           <Link key={folder.label} href={folder.href} style={{ textDecoration: 'none' }}>
             <div
               style={{
                 ...styles.utilityItem,
-                background: folder.isTrash ? '#fee2e2' : 'transparent',
-                color: folder.isTrash ? '#b91c1c' : '#374151',
+                background: folder.isTrash ? (isDark ? '#7f1d1d' : '#fee2e2') : 'transparent',
+                color: folder.isTrash ? (isDark ? '#fecaca' : '#b91c1c') : (isDark ? '#cbd5e1' : '#374151'),
                 fontWeight: 500,
-                border: folder.isTrash ? '2px solid #ef4444' : undefined,
+                border: folder.isTrash ? `2px solid ${isDark ? '#ef4444' : '#ef4444'}` : undefined,
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = folder.isTrash ? '#fecaca' : '#f3f4f6')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = folder.isTrash ? '#fee2e2' : 'transparent')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = folder.isTrash ? (isDark ? '#991b1b' : '#fecaca') : hoverBg)}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = folder.isTrash ? (isDark ? '#7f1d1d' : '#fee2e2') : 'transparent')}
             >
-              <folder.icon style={{ width: 20, height: 20, color: folder.isTrash ? '#b91c1c' : '#374151' }} />
+              <folder.icon style={{ width: 20, height: 20, color: folder.isTrash ? (isDark ? '#fecaca' : '#b91c1c') : (isDark ? '#cbd5e1' : '#374151') }} />
               <span>{folder.label}</span>
             </div>
           </Link>
@@ -757,18 +774,18 @@ export default function DriveSidebar({
       {currentDashboard && getDashboardType(currentDashboard) === 'personal' && (
         <div style={{
           padding: '12px',
-          background: '#f8fafc',
+          background: isDark ? '#1e293b' : '#f8fafc',
           borderRadius: '8px',
           marginTop: 'auto',
-          border: '1px solid #e5e7eb'
+          border: isDark ? '1px solid #334155' : '1px solid #e5e7eb'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Download style={{ width: 16, height: 16, color: '#6b7280' }} />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>Storage</span>
+              <Download style={{ width: 16, height: 16, color: isDark ? '#94a3b8' : '#6b7280' }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: isDark ? '#e2e8f0' : '#374151' }}>Storage</span>
             </div>
             {!isLoadingStorage && (
-              <span style={{ fontSize: '11px', color: '#6b7280' }}>
+              <span style={{ fontSize: '11px', color: isDark ? '#94a3b8' : '#6b7280' }}>
                 {formatFileSize(storageUsage.used)} / {formatFileSize(storageUsage.total)}
               </span>
             )}
@@ -777,7 +794,7 @@ export default function DriveSidebar({
             <>
               <div style={{
                 width: '100%',
-                background: '#e5e7eb',
+                background: isDark ? '#334155' : '#e5e7eb',
                 borderRadius: '4px',
                 height: '6px',
                 overflow: 'hidden'
@@ -792,7 +809,7 @@ export default function DriveSidebar({
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: isDark ? '#94a3b8' : '#9ca3af', marginTop: '4px' }}>
                 <span>{((storageUsage.used / storageUsage.total) * 100).toFixed(1)}% used</span>
                 <span>{formatFileSize(storageUsage.total - storageUsage.used)} available</span>
               </div>

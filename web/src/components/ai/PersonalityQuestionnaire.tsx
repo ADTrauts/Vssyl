@@ -462,15 +462,15 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
     return (
       <div key={question.id} className="space-y-4">
         <div>
-          <h4 className="text-lg font-medium text-gray-900">{question.question}</h4>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">{question.question}</h4>
           {question.description && (
-            <p className="text-sm text-gray-600 mt-1">{question.description}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{question.description}</p>
           )}
         </div>
 
         {question.type === 'scale' && question.scale && (
           <div className="space-y-3">
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
               <span>{question.scale.labels[0]}</span>
               <span>{question.scale.labels[1]}</span>
             </div>
@@ -504,7 +504,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
                   onChange={(e) => handleAnswer(question.id, e.target.value)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700">{option}</span>
+                <span className="text-gray-700 dark:text-gray-300">{option}</span>
               </label>
             ))}
           </div>
@@ -520,8 +520,8 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
         <div className="flex items-center justify-center mb-4">
           <Brain className="h-12 w-12 text-blue-600 mr-3" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Set Up Your Digital Life Twin</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Set Up Your Digital Life Twin</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Help us understand you so your AI can represent you perfectly
             </p>
           </div>
@@ -534,7 +534,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {answeredQuestions} of {totalQuestions} questions answered
         </p>
       </div>
@@ -576,8 +576,8 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
           <div className="flex items-center justify-center mb-4">
             <currentSectionData.icon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{currentSectionData.title}</h2>
-              <p className="text-gray-600">{currentSectionData.description}</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{currentSectionData.title}</h2>
+              <p className="text-gray-600 dark:text-gray-400">{currentSectionData.description}</p>
             </div>
           </div>
         </div>
@@ -646,7 +646,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
       </div>
 
       {/* Section Preview */}
-      <div className="mt-8 text-center text-sm text-gray-500">
+      <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
         {currentSection + 1} of {questionSections.length} sections •{' '}
         {currentSectionData.questions.length} questions in this section
       </div>

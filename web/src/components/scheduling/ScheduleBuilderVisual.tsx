@@ -1316,7 +1316,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
   }
 
   const content = (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-slate-800">
         {/* Error Message */}
         {errorMessage && (
           <div className="flex-shrink-0 p-3 bg-red-50 border-b border-red-200">
@@ -1327,7 +1327,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
         )}
         
         {/* Toolbar */}
-        <div className="flex-shrink-0 p-4 bg-white border-b border-gray-200">
+        <div className="flex-shrink-0 p-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
             <div>
               {viewMode === 'week' && schedule ? (() => {
@@ -1336,16 +1336,16 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                 const visibleWeekStart = startOfWeek(scheduleStartDate, { weekStartsOn });
                 const visibleWeekEnd = addDays(visibleWeekStart, 6);
                 return (
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                     {format(visibleWeekStart, 'MMM d')} - {format(visibleWeekEnd, 'MMM d, yyyy')}
                   </h2>
                 );
               })() : viewMode === 'day' && schedule ? (
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {format(addDays(parseISO(schedule.startDate), currentDayOffset), 'EEEE, MMMM d, yyyy')}
                 </h2>
               ) : (
-                <h2 className="text-xl font-semibold text-gray-900">{schedule.name}</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{schedule.name}</h2>
               )}
             </div>
             <div className="flex items-center space-x-2">
@@ -1360,8 +1360,8 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
             <div className="flex items-center space-x-4">
               {/* Layout Mode Toggle */}
               <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">Layout:</label>
-                <div className="flex rounded-lg border border-gray-300 p-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Layout:</label>
+                <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 p-1">
                   <button
                     onClick={() => setLayoutMode('employee')}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -1390,8 +1390,8 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
               {/* View Mode Toggle */}
               <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium text-gray-700">View:</label>
-                <div className="flex rounded-lg border border-gray-300 p-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View:</label>
+                <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 p-1">
                   <button
                     onClick={() => setViewMode('week')}
                     className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -1420,12 +1420,12 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                     <button
                       onClick={() => setCurrentDayOffset(Math.max(0, currentDayOffset - 1))}
                       disabled={currentDayOffset === 0}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Previous day"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <span className="text-sm font-medium text-gray-700 min-w-[100px] text-center">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[100px] text-center">
                       {format(addDays(parseISO(schedule.startDate), currentDayOffset), 'EEE MMM d')}
                     </span>
                     <button
@@ -1440,7 +1440,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                         (parseISO(schedule.endDate).getTime() - parseISO(schedule.startDate).getTime()) / 
                         (1000 * 60 * 60 * 24)
                       ) - 1}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Next day"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -1622,7 +1622,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
               <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Assign to */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Assign to
                   </label>
                 <div className="relative">
@@ -1663,7 +1663,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                         });
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Unassigned</option>
                     {employees.map(emp => {
@@ -1680,18 +1680,18 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
                 {/* Shift Color - Dropdown with Color Grid */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Shift Color
                   </label>
                 <div className="relative" data-color-picker>
                   <button
                     type="button"
                     onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
+                    className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       <div
-                        className="w-4 h-4 rounded-full border border-gray-300"
+                        className="w-4 h-4 rounded-full border border-gray-300 dark:border-slate-600"
                         style={{ backgroundColor: selectedShift?.color || shiftColor || '#d1d5db' }}
                       />
                       <span>{selectedShift?.color || shiftColor ? 'Custom' : 'Default'}</span>
@@ -1701,7 +1701,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                   
                   {/* Color Picker Dropdown */}
                   {showColorPicker && (
-                    <div className="absolute z-50 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg p-4" data-color-picker>
+                    <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg p-4" data-color-picker>
                       {/* Color Grid */}
                       <div className="grid grid-cols-10 gap-2 mb-3">
                         {[
@@ -1725,7 +1725,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                                 });
                               }
                             }}
-                            className="w-8 h-8 rounded border border-gray-200 hover:scale-110 hover:z-10 transition-transform cursor-pointer"
+                            className="w-8 h-8 rounded border border-gray-200 dark:border-slate-700 hover:scale-110 hover:z-10 transition-transform cursor-pointer"
                             style={{ backgroundColor: color }}
                             title={color}
                           />
@@ -1744,7 +1744,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                             });
                           }
                         }}
-                        className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded border border-gray-300"
+                        className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded border border-gray-300 dark:border-slate-600"
                       >
                         CLEAR COLOR
                       </button>
@@ -1755,7 +1755,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
                 {/* Time (Required) - Single line with inline inputs */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Time *
                   </label>
                   <div className="flex items-center gap-2">
@@ -1770,13 +1770,13 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                             : ''
                         }
                         readOnly
-                        className="pl-10 cursor-not-allowed bg-gray-50 text-sm"
+                        className="pl-10 cursor-not-allowed bg-gray-50 dark:bg-slate-800 text-sm"
                       />
                       <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     </div>
                     {/* Start time input - inline */}
                     <div className="flex items-center gap-1">
-                      <label className="text-xs text-gray-500 whitespace-nowrap">Start:</label>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Start:</label>
                       <Input
                         type="time"
                         value={selectedShift.startTime ? format(parseISO(selectedShift.startTime), 'HH:mm') : ''}
@@ -1795,7 +1795,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                     </div>
                     {/* End time input - inline */}
                     <div className="flex items-center gap-1">
-                      <label className="text-xs text-gray-500 whitespace-nowrap">End:</label>
+                      <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">End:</label>
                       <Input
                         type="time"
                         value={selectedShift.endTime ? format(parseISO(selectedShift.endTime), 'HH:mm') : ''}
@@ -1817,7 +1817,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
                 {/* Position */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Position
                   </label>
                 <div className="relative">
@@ -1831,7 +1831,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                         });
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Position</option>
                     {positionOptions.map(pos => (
@@ -1846,7 +1846,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
                 {/* Station */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Station
                   </label>
                 <div className="relative">
@@ -1859,7 +1859,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                         });
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Station</option>
                     {stations.map(station => (
@@ -1884,23 +1884,23 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                       Add a break
                     </Button>
                   ) : (
-                    <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-900">Break</label>
+                        <label className="text-sm font-medium text-gray-900 dark:text-gray-100">Break</label>
                         <button
                           onClick={() => {
                             setHasBreak(false);
                             setBreakStartTime('');
                             setBreakEndTime('');
                           }}
-                          className="text-xs text-gray-500 hover:text-gray-700"
+                          className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                         >
                           Remove
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs text-gray-700 mb-1">Start</label>
+                          <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">Start</label>
                           <Input
                             type="time"
                             value={breakStartTime}
@@ -1909,7 +1909,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-700 mb-1">End</label>
+                          <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1">End</label>
                           <Input
                             type="time"
                             value={breakEndTime}
@@ -1924,7 +1924,7 @@ const [currentDayOffset, setCurrentDayOffset] = useState(0); // Offset from sche
 
                 {/* Notes - Compact single line input */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     Notes
                   </label>
                   <Input

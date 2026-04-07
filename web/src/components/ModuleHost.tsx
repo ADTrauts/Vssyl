@@ -144,8 +144,8 @@ export default function ModuleHost({
     return (
       <div className="p-4">
         <Alert type="error" title="Could not load module bundle">
-          <p className="text-gray-700 text-sm">{bundleError}</p>
-          <p className="text-gray-700 text-sm mt-2">
+          <p className="text-gray-700 dark:text-gray-300 text-sm">{bundleError}</p>
+          <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">
             If this persists, the storage bucket may need CORS allowing GET from this app origin, or the bundle may be
             invalid.
           </p>
@@ -156,7 +156,7 @@ export default function ModuleHost({
 
   if (bundleRuntime && (bundleLoading || !bundleSrc)) {
     return (
-      <div className="flex items-center justify-center gap-2 py-16 text-gray-700">
+      <div className="flex items-center justify-center gap-2 py-16 text-gray-700 dark:text-gray-300">
         <Spinner size={24} />
         <span>Unpacking module…</span>
       </div>

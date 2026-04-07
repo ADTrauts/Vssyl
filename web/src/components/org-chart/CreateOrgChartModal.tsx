@@ -105,17 +105,17 @@ export function CreateOrgChartModal({ isOpen, onClose, onCreate }: CreateOrgChar
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             Choose Your Organization Structure
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Select an industry template to get started quickly, or create a custom structure
           </p>
         </div>
 
         {/* Industry Selection */}
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Industry Template
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,14 +132,14 @@ export function CreateOrgChartModal({ isOpen, onClose, onCreate }: CreateOrgChar
                 <div className="flex items-start space-x-3">
                   <div className="text-2xl">{template.icon}</div>
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
                       {template.name}
                     </h4>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {template.description}
                     </p>
                     {template.id !== 'custom' && (
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                         <span className="flex items-center">
                           <Users className="w-3 h-3 mr-1" />
                           {template.tiers} tiers
@@ -160,7 +160,7 @@ export function CreateOrgChartModal({ isOpen, onClose, onCreate }: CreateOrgChar
         {/* Custom Name Input */}
         {selectedIndustry === 'custom' && (
           <div>
-            <label htmlFor="customName" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="customName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Organization Name
             </label>
             <Input
@@ -175,27 +175,27 @@ export function CreateOrgChartModal({ isOpen, onClose, onCreate }: CreateOrgChar
 
         {/* Template Preview */}
         {selectedTemplate && selectedIndustry !== 'custom' && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
               <Zap className="w-4 h-4 mr-2 text-yellow-500" />
               What's Included
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {selectedTemplate.features.map((feature, index) => (
-                <div key={index} className="flex items-center text-sm text-gray-600">
+                <div key={index} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <div className="w-2 h-2 bg-blue-400 rounded-full mr-2" />
                   {feature}
                 </div>
               ))}
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Organizational Tiers:</span>
-                <span className="font-medium text-gray-900">{selectedTemplate.tiers}</span>
+                <span className="text-gray-600 dark:text-gray-400">Organizational Tiers:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{selectedTemplate.tiers}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Departments:</span>
-                <span className="font-medium text-gray-900">{selectedTemplate.departments}</span>
+                <span className="text-gray-600 dark:text-gray-400">Departments:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{selectedTemplate.departments}</span>
               </div>
             </div>
           </div>
@@ -228,7 +228,7 @@ export function CreateOrgChartModal({ isOpen, onClose, onCreate }: CreateOrgChar
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
           <Button
             variant="secondary"
             onClick={handleClose}

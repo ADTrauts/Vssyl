@@ -163,7 +163,7 @@ export default function PushNotificationSettings({ className = '' }: PushNotific
           {getStatusIcon()}
           <div>
             <h3 className="text-lg font-semibold">Push Notifications</h3>
-            <p className="text-sm text-gray-600">{getStatusText()}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{getStatusText()}</p>
           </div>
         </div>
       </div>
@@ -182,10 +182,10 @@ export default function PushNotificationSettings({ className = '' }: PushNotific
 
       <div className="space-y-4">
         {status.supported && status.permission !== 'denied' && (
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div>
               <h4 className="font-medium">Enable Push Notifications</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Receive notifications even when the app is closed
               </p>
             </div>
@@ -224,10 +224,10 @@ export default function PushNotificationSettings({ className = '' }: PushNotific
         )}
 
         {status.supported && status.subscribed && (
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div>
               <h4 className="font-medium">Test Push Notification</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Send a test notification to verify everything is working
               </p>
             </div>
@@ -250,7 +250,7 @@ export default function PushNotificationSettings({ className = '' }: PushNotific
         {!status.supported && (
           <Alert type="warning" title="Browser Not Supported">
             <p>Your browser doesn't support push notifications. Please use a modern browser like Chrome, Firefox, or Safari.</p>
-            <p className="text-sm mt-2 text-gray-600">
+            <p className="text-sm mt-2 text-gray-600 dark:text-gray-400">
               Note: Service worker registration may take a moment. If you just enabled push notifications, wait a few seconds and refresh the page.
             </p>
           </Alert>

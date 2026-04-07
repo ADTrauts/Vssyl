@@ -108,9 +108,9 @@ export function ApplicationLogsViewer({
       case 'info':
         return <Info className="w-4 h-4 text-blue-500" />;
       case 'debug':
-        return <Bug className="w-4 h-4 text-gray-500" />;
+        return <Bug className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500" />;
+        return <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -136,7 +136,7 @@ export function ApplicationLogsViewer({
       case 'vssyl-web':
         return <Monitor className="w-4 h-4 text-blue-500" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500" />;
+        return <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -153,7 +153,7 @@ export function ApplicationLogsViewer({
     return (
       <div className="flex items-center justify-center p-8">
         <Spinner size={48} />
-        <span className="ml-2 text-gray-600">Loading application logs...</span>
+        <span className="ml-2 text-gray-700 dark:text-gray-300">Loading application logs...</span>
       </div>
     );
   }
@@ -164,7 +164,7 @@ export function ApplicationLogsViewer({
       <Card className="p-4">
         <div className="flex items-center space-x-4">
           <div className="flex-1 flex items-center space-x-2">
-            <Search className="w-5 h-5 text-gray-400" />
+            <Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             <Input
               placeholder="Search logs..."
               value={searchTerm}
@@ -196,10 +196,10 @@ export function ApplicationLogsViewer({
 
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Level
                 </label>
                 <select
@@ -208,7 +208,7 @@ export function ApplicationLogsViewer({
                     ...filters,
                     level: e.target.value === 'all' ? undefined : e.target.value as LogFilters['level']
                   })}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
                 >
                   <option value="all">All Levels</option>
                   <option value="error">Error</option>
@@ -218,7 +218,7 @@ export function ApplicationLogsViewer({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Service
                 </label>
                 <select
@@ -227,7 +227,7 @@ export function ApplicationLogsViewer({
                     ...filters,
                     service: e.target.value === 'all' ? undefined : e.target.value as LogFilters['service']
                   })}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
                 >
                   <option value="all">All Services</option>
                   <option value="vssyl-server">Backend</option>
@@ -235,7 +235,7 @@ export function ApplicationLogsViewer({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Time Range
                 </label>
                 <select
@@ -266,7 +266,7 @@ export function ApplicationLogsViewer({
                       startDate
                     });
                   }}
-                  className="w-full p-2 border border-gray-300 rounded-md"
+                  className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
                 >
                   <option value="1h">Last Hour</option>
                   <option value="24h">Last 24 Hours</option>
@@ -289,9 +289,9 @@ export function ApplicationLogsViewer({
 
       {/* Logs List */}
       <Card className="p-0">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Application Logs</h3>
-          <p className="text-sm text-gray-600">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Application Logs</h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             {logs.length} log entries found
             {autoRefresh && (
               <span className="ml-2 text-green-600">
@@ -301,11 +301,11 @@ export function ApplicationLogsViewer({
           </p>
         </div>
 
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-gray-200 dark:divide-slate-700">
           {logs.map((log) => (
             <div
               key={log.id}
-              className="p-4 hover:bg-gray-50 cursor-pointer"
+              className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
               onClick={() => {
                 setSelectedLog(log);
                 onLogClick?.(log);
@@ -320,19 +320,19 @@ export function ApplicationLogsViewer({
                     <Badge className={getLevelColor(log.level)}>
                       {log.level.toUpperCase()}
                     </Badge>
-                    <div className="flex items-center space-x-1 text-gray-500">
+                    <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
                       {getServiceIcon(log.service)}
                       <span className="text-sm">{log.service}</span>
                     </div>
-                    <div className="flex items-center space-x-1 text-gray-500">
+                    <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm">{formatTimestamp(log.timestamp)}</span>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mb-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                     {truncateMessage(log.message)}
                   </p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
                     {log.metadata?.operation ? (
                       <span>Operation: {log.metadata.operation as string}</span>
                     ) : null}
@@ -356,8 +356,8 @@ export function ApplicationLogsViewer({
 
         {logs.length === 0 && !loading && (
           <div className="p-8 text-center">
-            <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No logs found matching your criteria</p>
+            <Activity className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">No logs found matching your criteria</p>
           </div>
         )}
       </Card>
@@ -373,7 +373,7 @@ export function ApplicationLogsViewer({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Level
                 </label>
                 <Badge className={getLevelColor(selectedLog.level)}>
@@ -381,7 +381,7 @@ export function ApplicationLogsViewer({
                 </Badge>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Service
                 </label>
                 <div className="flex items-center space-x-2">
@@ -390,35 +390,35 @@ export function ApplicationLogsViewer({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Timestamp
                 </label>
-                <p className="text-sm text-gray-900">{formatTimestamp(selectedLog.timestamp)}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{formatTimestamp(selectedLog.timestamp)}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Environment
                 </label>
-                <p className="text-sm text-gray-900">{selectedLog.environment}</p>
+                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedLog.environment}</p>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Message
               </label>
-              <div className="p-3 bg-gray-50 rounded-md">
-                <p className="text-sm text-gray-900">{selectedLog.message}</p>
+              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-md">
+                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedLog.message}</p>
               </div>
             </div>
 
             {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Metadata
                 </label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <pre className="text-xs text-gray-900 overflow-auto">
+                <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-md">
+                  <pre className="text-xs text-gray-900 dark:text-gray-100 overflow-auto">
                     {JSON.stringify(selectedLog.metadata, null, 2)}
                   </pre>
                 </div>

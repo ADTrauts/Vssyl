@@ -12,7 +12,7 @@ export default function BusinessAIAdminPage() {
   const businessId = params?.id as string;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="container mx-auto px-6 py-6">
         <div className="mb-4">
           <Breadcrumbs
@@ -24,7 +24,7 @@ export default function BusinessAIAdminPage() {
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">AI Control Center</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Control Center</h1>
           <Button
             variant="secondary"
             onClick={() => router.push(`/business/${businessId}`)}

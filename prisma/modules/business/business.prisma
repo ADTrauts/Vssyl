@@ -15,6 +15,9 @@ model Business {
   email       String?
   logo        String?  // URL to logo image
   description String?
+  isDeveloperBusiness         Boolean   @default(false)
+  developerBusinessLinkedAt   DateTime?
+  developerBusinessLinkedBy   String?
   branding    Json?    // Business branding configuration (colors, fonts, etc.)
   // Billing fields
   tier            String   @default("free") // 'free', 'standard', 'enterprise'
@@ -99,6 +102,7 @@ model Business {
                                   // }
 
   @@index([ein])
+  @@index([isDeveloperBusiness])
   @@index([schedulingMode])
   @@map("businesses")
 }

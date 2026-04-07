@@ -551,13 +551,13 @@ export default function AIChatModule({
   }
 
   return (
-    <div className="flex h-full bg-white">
+    <div className="flex h-full bg-white dark:bg-slate-900">
       {/* Sidebar */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
+      <div className="w-80 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-gray-900 flex items-center">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
               <Brain className="h-6 w-6 mr-2 text-purple-600" />
               AI Assistant
             </h1>
@@ -580,7 +580,7 @@ export default function AIChatModule({
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             />
           </div>
 
@@ -634,7 +634,7 @@ export default function AIChatModule({
           {/* Pinned Conversations */}
           {pinnedConversations.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center">
                 <Pin className="h-4 w-4 mr-1" />
                 Pinned
               </h3>
@@ -651,8 +651,8 @@ export default function AIChatModule({
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{conv.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -662,7 +662,7 @@ export default function AIChatModule({
                             e.stopPropagation();
                             handlePinConversation(conv.id);
                           }}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                         >
                           <Pin className="h-3 w-3" />
                         </button>
@@ -671,7 +671,7 @@ export default function AIChatModule({
                             e.stopPropagation();
                             setShowMoreMenu(conv.id);
                           }}
-                          className="p-1 text-gray-400 hover:text-gray-600"
+                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                         >
                           <MoreVertical className="h-3 w-3" />
                         </button>
@@ -685,7 +685,7 @@ export default function AIChatModule({
 
           {/* Recent Conversations */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center">
               <MessageSquare className="h-4 w-4 mr-1" />
               Recent
             </h3>
@@ -702,8 +702,8 @@ export default function AIChatModule({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{conv.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -713,7 +713,7 @@ export default function AIChatModule({
                           e.stopPropagation();
                           handlePinConversation(conv.id);
                         }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                       >
                         <Pin className="h-3 w-3" />
                       </button>
@@ -722,7 +722,7 @@ export default function AIChatModule({
                           e.stopPropagation();
                           setShowMoreMenu(conv.id);
                         }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                       >
                         <MoreVertical className="h-3 w-3" />
                       </button>
@@ -737,7 +737,7 @@ export default function AIChatModule({
           {filteredConversations.length === 0 && (
             <div className="text-center py-8">
               <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 {showArchived ? 'No archived conversations' : 'No conversations yet'}
               </p>
               {!showArchived && (
@@ -759,11 +759,11 @@ export default function AIChatModule({
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
         {selectedConversation && (
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{selectedConversation.title}</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedConversation.title}</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedConversation.messageCount} messages • Created {new Date(selectedConversation.createdAt).toLocaleDateString()}
                 </p>
               </div>
@@ -817,8 +817,8 @@ export default function AIChatModule({
           {conversation.length === 0 ? (
             <div className="text-center py-12">
               <Brain className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">What's on your mind today?</h3>
-              <p className="text-gray-500 mb-6">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">What's on your mind today?</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
                 I can help you with tasks, answer questions, and assist with your digital life.
               </p>
               <Button
@@ -861,7 +861,7 @@ export default function AIChatModule({
                   
                   {item.type === 'ai' && (
                     <div className="flex justify-start">
-                      <div className="bg-gray-100 rounded-lg px-4 py-2 max-w-2xl">
+                      <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-4 py-2 max-w-2xl">
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
@@ -908,7 +908,7 @@ export default function AIChatModule({
                                 {item.confidence !== undefined && (
                                   <div className="mt-2">
                                     <div className="flex items-center space-x-2">
-                                      <span className="text-xs text-gray-600">Confidence:</span>
+                                      <span className="text-xs text-gray-600 dark:text-gray-400">Confidence:</span>
                                       <div className="flex-1 bg-gray-200 rounded-full h-2">
                                         <div
                                           className={`h-2 rounded-full ${
@@ -918,7 +918,7 @@ export default function AIChatModule({
                                           style={{ width: `${item.confidence * 100}%` }}
                                         />
                                       </div>
-                                      <span className="text-xs text-gray-600">
+                                      <span className="text-xs text-gray-600 dark:text-gray-400">
                                         {Math.round(item.confidence * 100)}%
                                       </span>
                                     </div>
@@ -939,7 +939,7 @@ export default function AIChatModule({
           
           {isAILoading && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-lg px-4 py-2">
+              <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-4 py-2">
                 <AIThinkingIndicator message="Thinking..." iconSize={20} />
               </div>
             </div>
@@ -947,15 +947,15 @@ export default function AIChatModule({
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
           {/* Upload progress bar */}
           {isUploadingFiles && (
             <div className="mb-2">
               <div className="flex items-center gap-2">
                 <Spinner size={14} />
-                <span className="text-sm text-gray-700">Uploading…</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Uploading…</span>
                 {uploadProgress != null && uploadProgress >= 0 && (
-                  <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{uploadProgress}%</span>
                 )}
               </div>
               <div className="mt-1 h-1.5 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
@@ -988,23 +988,23 @@ export default function AIChatModule({
                   </button>
                 </div>
               ))}
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 {attachedFiles.length}/{MAX_ATTACHMENTS} files
               </span>
             </div>
           )}
 
           {/* Compact Input Bar */}
-          <div className="flex items-center gap-2 border border-gray-300 rounded-2xl px-4 py-3 bg-white focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
+          <div className="flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
             {/* Paperclip Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
             >
-              <Paperclip className="h-5 w-5 text-gray-500" />
+              <Paperclip className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
             
             {/* Hidden File Input */}
@@ -1042,7 +1042,7 @@ export default function AIChatModule({
           </div>
           
           {/* Helper Text */}
-          <p className="text-xs text-gray-500 text-center mt-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
             Press Enter to send • Up to {MAX_ATTACHMENTS} files • Large files (500KB+) summarized only
           </p>
         </div>

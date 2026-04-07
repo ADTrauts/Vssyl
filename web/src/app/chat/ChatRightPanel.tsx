@@ -319,7 +319,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
   // If no conversation is selected, show placeholder
   if (!panelState.activeConversationId) {
     return (
-      <div className="p-4 h-full flex flex-col items-center justify-center text-gray-500">
+      <div className="p-4 h-full flex flex-col items-center justify-center text-gray-600 dark:text-gray-400">
         <Hash size={48} className="mb-4" />
         <h3 className="text-lg font-semibold">Conversation Details</h3>
         <p className="text-sm text-center">Select a conversation to see its details.</p>
@@ -330,10 +330,10 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
   // If panel is collapsed, show minimal content
   if (!panelState.rightPanelExpanded) {
     return (
-      <div className="h-full flex flex-col bg-white border-l border-gray-200">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700">
         {/* Collapsed Header */}
-        <div className="p-2 border-b border-gray-200 flex items-center justify-center">
-          <button onClick={onToggleCollapse} className="p-1 rounded-full hover:bg-gray-100">
+        <div className="p-2 border-b border-gray-200 dark:border-slate-700 flex items-center justify-center">
+          <button onClick={onToggleCollapse} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700">
             <ChevronLeft size={16} />
           </button>
         </div>
@@ -341,8 +341,8 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
         {/* Collapsed Content */}
         <div className="flex-1 flex flex-col items-center justify-center p-2">
           <div className="text-center">
-            <Users size={24} className="mx-auto mb-2 text-gray-400" />
-            <p className="text-xs text-gray-500 truncate w-full">
+            <Users size={24} className="mx-auto mb-2 text-gray-500 dark:text-gray-400" />
+            <p className="text-xs text-gray-600 dark:text-gray-400 truncate w-full">
               {getConversationName()}
             </p>
           </div>
@@ -354,20 +354,20 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
   // If a thread is active, show thread view
   if (panelState.activeThreadId) {
     return (
-      <div className="h-full flex flex-col bg-white border-l border-gray-200">
+      <div className="h-full flex flex-col bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => onThreadSelect?.(null)}
-              className="p-1 rounded-full hover:bg-gray-100"
+              className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700"
               title="Back to conversation"
             >
               <ChevronLeft size={16} />
             </button>
             <div>
-              <h3 className="font-semibold text-lg">Thread</h3>
-              <p className="text-sm text-gray-500">Replies</p>
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Thread</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Replies</p>
             </div>
           </div>
         </div>
@@ -376,7 +376,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading && <p>Loading thread...</p>}
           {error && <p className="text-red-500">{error}</p>}
-          {!loading && threadMessages.length === 0 && <p>This thread has no replies yet.</p>}
+          {!loading && threadMessages.length === 0 && <p className="text-gray-700 dark:text-gray-300">This thread has no replies yet.</p>}
           
           {threadMessages.map(message => (
             <div key={message.id} className="flex items-start gap-3">
@@ -388,16 +388,16 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
               <div className="flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="font-bold text-sm">{message.sender?.name || message.sender?.email}</span>
-                  <span className="text-xs text-gray-500">{formatMessageTime(message.createdAt)}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{formatMessageTime(message.createdAt)}</span>
                 </div>
-                <p className="text-sm text-gray-800">{message.content}</p>
+                <p className="text-sm text-gray-800 dark:text-gray-200">{message.content}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700">
           <div className="relative">
             <input
               type="text"
@@ -405,7 +405,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Reply..."
-              className="w-full pl-3 pr-10 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button onClick={handleSendMessage} className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600">
               <Send size={16} />
@@ -418,25 +418,25 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
 
   // Show conversation details view
   return (
-    <div className="h-full flex flex-col bg-white border-l border-gray-200">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-lg">{getConversationName()}</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{getConversationName()}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             {conversation?.type === 'DIRECT' ? 'Direct message' : `${conversation?.participants?.length || 0} members`}
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-slate-700">
         <button
           onClick={() => setActiveTab('participants')}
           className={`flex-1 px-4 py-2 text-sm font-medium ${
             activeTab === 'participants'
               ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
           <Users className="w-4 h-4 inline mr-2" />
@@ -447,7 +447,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
           className={`flex-1 px-4 py-2 text-sm font-medium ${
             activeTab === 'files'
               ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
           <Paperclip className="w-4 h-4 inline mr-2" />
@@ -458,7 +458,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
           className={`flex-1 px-4 py-2 text-sm font-medium ${
             activeTab === 'threads'
               ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
           }`}
         >
           <MessageSquare className="w-4 h-4 inline mr-2" />
@@ -471,7 +471,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
             className={`flex-1 px-4 py-2 text-sm font-medium ${
               activeTab === 'enterprise'
                 ? 'text-purple-600 border-b-2 border-purple-600'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             <Shield className="w-4 h-4 inline mr-2" />
@@ -514,7 +514,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
                           </span>
                           {getRoleIcon(participant.role)}
                         </div>
-                        <p className="text-xs text-gray-500">{participant.user?.email}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{participant.user?.email}</p>
                       </div>
                     </div>
                     <Badge color={participant.isActive ? 'green' : 'gray'}>
@@ -529,14 +529,14 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
             {activeTab === 'files' && (
               <div className="p-4 space-y-3">
                 {getUniqueFiles().length === 0 ? (
-                  <p className="text-center text-gray-500">No files shared in this conversation</p>
+                  <p className="text-center text-gray-600 dark:text-gray-400">No files shared in this conversation</p>
                 ) : (
                   getUniqueFiles().map((file) => (
-                    <div key={file.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div key={file.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
                       <span className="text-lg">{getFileIcon(file.type)}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{file.name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
                           {formatFileSize(file.size)} • {formatDate(file.lastReferenced)}
                         </p>
                       </div>
@@ -551,34 +551,34 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
             {activeTab === 'threads' && (
               <div className="p-4 space-y-3">
                 {loadingThreads ? (
-                  <p className="text-center text-gray-500">Loading threads...</p>
+                  <p className="text-center text-gray-600 dark:text-gray-400">Loading threads...</p>
                 ) : threadsError ? (
                   <p className="text-center text-red-500">{threadsError}</p>
                 ) : threads.length === 0 ? (
-                  <p className="text-center text-gray-500">No threads in this conversation</p>
+                  <p className="text-center text-gray-600 dark:text-gray-400">No threads in this conversation</p>
                 ) : (
                   threads.map((thread) => (
                     <div
                       key={thread.id}
-                      className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="p-3 bg-gray-50 dark:bg-slate-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
                       onClick={() => onThreadSelect?.(thread.id)}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <MessageSquare className="w-4 h-4 text-gray-400" />
+                          <MessageSquare className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           <span className="text-sm font-medium">
                             {thread.name || `Thread ${thread.id.slice(0, 8)}`}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
                           {thread.lastMessageAt ? formatDate(thread.lastMessageAt) : formatDate(thread.createdAt)}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
                         {thread.participants?.length || 0} participants
                       </p>
                       {thread.messages && thread.messages.length > 0 && (
-                        <p className="text-sm text-gray-800 truncate">
+                        <p className="text-sm text-gray-800 dark:text-gray-200 truncate">
                           {thread.messages[thread.messages.length - 1]?.content || 'No content'}
                         </p>
                       )}
@@ -592,7 +592,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
             {activeTab === 'enterprise' && hasEnterprise && (
               <div className="p-4 space-y-4">
                 <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
                     <Shield className="w-5 h-5 text-purple-600" />
                     <span>Enterprise Features</span>
                   </h3>
@@ -600,39 +600,39 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
                   {/* Enterprise Panels */}
                   <div className="space-y-4">
                     {/* Message Retention */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                       <details className="group">
-                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                        <summary className="cursor-pointer p-3 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-between">
                           <span className="font-medium text-sm">Message Retention</span>
                           <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
                         </summary>
-                        <div className="p-3 bg-white">
+                        <div className="p-3 bg-white dark:bg-slate-800">
                           <MessageRetentionPanel />
                         </div>
                       </details>
                     </div>
                     
                     {/* Content Moderation */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                       <details className="group">
-                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                        <summary className="cursor-pointer p-3 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-between">
                           <span className="font-medium text-sm">Content Moderation</span>
                           <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
                         </summary>
-                        <div className="p-3 bg-white">
+                        <div className="p-3 bg-white dark:bg-slate-800">
                           <ContentModerationPanel />
                         </div>
                       </details>
                     </div>
                     
                     {/* Encryption */}
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                       <details className="group">
-                        <summary className="cursor-pointer p-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between">
+                        <summary className="cursor-pointer p-3 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-between">
                           <span className="font-medium text-sm">Encryption Settings</span>
                           <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
                         </summary>
-                        <div className="p-3 bg-white">
+                        <div className="p-3 bg-white dark:bg-slate-800">
                           <EncryptionPanel />
                         </div>
                       </details>

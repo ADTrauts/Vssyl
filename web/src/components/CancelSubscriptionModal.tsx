@@ -75,8 +75,8 @@ export default function CancelSubscriptionModal({
               <div className="flex items-start gap-3">
                 <Gift className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">Wait! We'd hate to see you go</h3>
-                  <p className="text-sm text-gray-700 mb-4">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Wait! We'd hate to see you go</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                     Stay with us and get 20% off your next 3 months. We're constantly improving and would love to have you as part of our community.
                   </p>
                   <div className="flex gap-3">
@@ -101,7 +101,7 @@ export default function CancelSubscriptionModal({
                   Cancelling your subscription will stop future charges, but you'll retain access to all paid features until{' '}
                   <span className="font-semibold">{formatDate(currentPeriodEnd)}</span>.
                 </p>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   After that date, your account will be downgraded to the Free tier.
                 </p>
               </div>
@@ -110,15 +110,15 @@ export default function CancelSubscriptionModal({
             <Card>
               <div className="p-4 space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Current Plan:</span>
+                  <span className="text-gray-600 dark:text-gray-400">Current Plan:</span>
                   <span className="font-medium capitalize">{currentTier.replace('_', ' ')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Access Until:</span>
+                  <span className="text-gray-600 dark:text-gray-400">Access Until:</span>
                   <span className="font-medium">{formatDate(currentPeriodEnd)}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t">
-                  <span className="text-gray-600">After Cancellation:</span>
+                  <span className="text-gray-600 dark:text-gray-400">After Cancellation:</span>
                   <span className="font-medium">Downgrade to Free tier</span>
                 </div>
               </div>

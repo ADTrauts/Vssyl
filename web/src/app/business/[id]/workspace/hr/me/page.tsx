@@ -482,34 +482,34 @@ export default function EmployeeSelfService() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">My HR</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
           View and manage your employee information
         </p>
       </div>
       
       {/* Employee Profile Card */}
-      <div className="bg-white border rounded-lg p-6 mb-6">
+      <div className="bg-white dark:bg-slate-900 border rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">My Profile</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-gray-600">Name</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Name</label>
             <p className="font-medium">{employeeData?.user.name}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Email</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Email</label>
             <p className="font-medium">{employeeData?.user.email}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Position</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Position</label>
             <p className="font-medium">{employeeData?.position.title}</p>
           </div>
           <div>
-            <label className="text-sm text-gray-600">Department</label>
+            <label className="text-sm text-gray-600 dark:text-gray-400">Department</label>
             <p className="font-medium">{employeeData?.position.department?.name || 'N/A'}</p>
           </div>
           {employeeData?.hrProfile?.hireDate && (
             <div>
-              <label className="text-sm text-gray-600">Hire Date</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400">Hire Date</label>
               <p className="font-medium">
                 {new Date(employeeData.hrProfile.hireDate).toLocaleDateString()}
               </p>
@@ -517,7 +517,7 @@ export default function EmployeeSelfService() {
           )}
           {employeeData?.hrProfile?.employeeType && (
             <div>
-              <label className="text-sm text-gray-600">Employment Type</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400">Employment Type</label>
               <p className="font-medium">
                 {employeeData.hrProfile.employeeType.replace('_', ' ')}
               </p>
@@ -527,11 +527,11 @@ export default function EmployeeSelfService() {
       </div>
       
       {onboardingFeatureEnabled && (
-        <div className="bg-white border rounded-lg p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-semibold">Onboarding</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Track your onboarding tasks and milestones.
               </p>
             </div>
@@ -589,7 +589,7 @@ export default function EmployeeSelfService() {
                   : 'Clock In'}
               </button>
             ) : (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 Clock in/out available on Enterprise
               </span>
             )}
@@ -617,7 +617,7 @@ export default function EmployeeSelfService() {
             </div>
           ) : (
             <div className="border rounded">
-              <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+              <div className="grid grid-cols-12 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm font-medium">
                 <div className="col-span-3">Date</div>
                 <div className="col-span-2">Clock In</div>
                 <div className="col-span-2">Clock Out</div>
@@ -640,7 +640,7 @@ export default function EmployeeSelfService() {
                         {badge.label}
                       </span>
                     </div>
-                    <div className="col-span-1 text-right text-xs text-gray-500">
+                    <div className="col-span-1 text-right text-xs text-gray-500 dark:text-gray-400">
                       {record.clockInMethod || record.clockOutMethod
                         ? record.clockOutMethod || record.clockInMethod
                         : '—'}
@@ -669,20 +669,20 @@ export default function EmployeeSelfService() {
           </div>
           <div className="grid grid-cols-3 gap-4 mb-3 text-sm">
             <div className="border rounded p-3">
-              <div className="text-gray-500">PTO Remaining</div>
+              <div className="text-gray-500 dark:text-gray-400">PTO Remaining</div>
               <div className="text-xl font-semibold">{balance?.pto ?? 0}</div>
             </div>
             <div className="border rounded p-3">
-              <div className="text-gray-500">Sick</div>
+              <div className="text-gray-500 dark:text-gray-400">Sick</div>
               <div className="text-xl font-semibold">{balance?.sick ?? 0}</div>
             </div>
             <div className="border rounded p-3">
-              <div className="text-gray-500">Personal</div>
+              <div className="text-gray-500 dark:text-gray-400">Personal</div>
               <div className="text-xl font-semibold">{balance?.personal ?? 0}</div>
             </div>
           </div>
           <div className="border rounded">
-            <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+            <div className="grid grid-cols-12 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm font-medium">
               <div className="col-span-3">Type</div>
               <div className="col-span-4">Dates</div>
               <div className="col-span-3">Status</div>
@@ -711,7 +711,7 @@ export default function EmployeeSelfService() {
                       {r.status}
                     </span>
                   </div>
-                  <div className="col-span-2 text-gray-500">{new Date(r.requestedAt).toLocaleDateString()}</div>
+                  <div className="col-span-2 text-gray-500 dark:text-gray-400">{new Date(r.requestedAt).toLocaleDateString()}</div>
                   <div className="col-span-2 text-right">
                     {r.status === 'PENDING' && (
                       <button
@@ -723,7 +723,7 @@ export default function EmployeeSelfService() {
                       </button>
                     )}
                     {r.managerNote && (
-                      <div className="text-xs text-gray-500 mt-1" title={r.managerNote}>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1" title={r.managerNote}>
                         Note: {r.managerNote.substring(0, 20)}...
                       </div>
                     )}
@@ -738,10 +738,10 @@ export default function EmployeeSelfService() {
         <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
           <div className="text-3xl mb-3">💵</div>
           <h3 className="text-lg font-semibold mb-2">Pay Stubs</h3>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
             View your pay history and download pay stubs
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Feature coming soon
           </p>
         </div>
@@ -750,10 +750,10 @@ export default function EmployeeSelfService() {
         <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
           <div className="text-3xl mb-3">🏥</div>
           <h3 className="text-lg font-semibold mb-2">My Benefits</h3>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
             View and manage your benefits enrollment
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Feature coming soon
           </p>
         </div>
@@ -762,10 +762,10 @@ export default function EmployeeSelfService() {
         <div className="border rounded-lg p-6 hover:shadow-lg transition-shadow">
           <div className="text-3xl mb-3">⭐</div>
           <h3 className="text-lg font-semibold mb-2">My Reviews</h3>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
             View your performance reviews and goals
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Feature coming soon
           </p>
         </div>
@@ -773,7 +773,7 @@ export default function EmployeeSelfService() {
 
       {showRequest && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-lg p-5">
             <div className="text-lg font-semibold mb-3">New Time-Off Request</div>
             
             {validationError && (

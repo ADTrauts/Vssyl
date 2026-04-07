@@ -202,27 +202,27 @@ export default function SchedulingAIAssistant({
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-96 bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col max-h-[600px]">
+    <div className="fixed bottom-4 right-4 z-50 w-96 bg-white dark:bg-slate-900 rounded-lg shadow-2xl border border-gray-200 dark:border-slate-700 flex flex-col max-h-[600px]">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
         <div className="flex items-center space-x-2">
           <Sparkles className="w-5 h-5" />
           <h3 className="font-semibold">Schedule AI Assistant</h3>
         </div>
         <button
           onClick={() => setIsMinimized(true)}
-          className="text-white hover:bg-white/20 rounded p-1 transition-colors"
+          className="text-white hover:bg-white dark:bg-slate-900/20 rounded p-1 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-slate-800">
         {messages.length === 0 ? (
           <div className="text-center py-8">
             <Brain className="w-12 h-12 text-blue-500 mx-auto mb-3 opacity-50" />
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Ask me to generate schedules, suggest assignments, or optimize your schedule!
             </p>
             
@@ -234,7 +234,7 @@ export default function SchedulingAIAssistant({
                   <button
                     key={idx}
                     onClick={() => handleSuggestedPrompt(prompt.text, prompt.action)}
-                    className="w-full text-left p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm flex items-center space-x-2"
+                    className="w-full text-left p-3 bg-white dark:bg-slate-900 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm flex items-center space-x-2"
                   >
                     <Icon className="w-4 h-4 text-blue-500" />
                     <span>{prompt.text}</span>
@@ -273,7 +273,7 @@ export default function SchedulingAIAssistant({
               >
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 {msg.metadata?.action === 'generate_schedule' && msg.metadata?.result && (
-                  <div className="mt-2 pt-2 border-t border-gray-200">
+                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                     <Badge color="blue">
                       {msg.metadata.result.created} shifts created
                     </Badge>
@@ -289,7 +289,7 @@ export default function SchedulingAIAssistant({
             <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-3">
+            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-3">
               <Spinner size={16} />
             </div>
           </div>
@@ -298,7 +298,7 @@ export default function SchedulingAIAssistant({
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-b-lg">
         <div className="flex items-end space-x-2">
           <textarea
             ref={inputRef}
@@ -311,7 +311,7 @@ export default function SchedulingAIAssistant({
               }
             }}
             placeholder="Ask me to generate a schedule, suggest assignments..."
-            className="flex-1 py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+            className="flex-1 py-2 px-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
             rows={1}
             style={{ minHeight: '36px', maxHeight: '100px' }}
             disabled={isLoading}

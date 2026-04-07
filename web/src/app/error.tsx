@@ -25,12 +25,12 @@ export default function Error({ error, reset }: ErrorProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 items-center justify-center">
+    <div className="flex h-screen w-full bg-gray-50 dark:bg-slate-800 items-center justify-center">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Something went wrong!
         </h2>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
           An error occurred while loading this page.
         </p>
         <div className="flex gap-4 justify-center">

@@ -182,10 +182,10 @@ const MessageItem = React.memo(({
               nameOrEmail={message.sender?.name || message.sender?.email || 'Unknown'}
               size={24}
             />
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {message.sender?.name || 'Unknown'}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               {formatTime(message.createdAt)}
             </span>
           </div>
@@ -194,7 +194,7 @@ const MessageItem = React.memo(({
         <div className={`relative group ${isOwnMessage ? 'text-right' : 'text-left'}`}>
           {/* Reply Indicator */}
           {isReplyingTo && (
-            <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+            <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-300">
               <span className="font-medium">Replying to:</span> {message.content?.substring(0, 50)}...
             </div>
           )}
@@ -203,7 +203,7 @@ const MessageItem = React.memo(({
             className={`inline-block px-2 py-1.5 rounded-lg ${
               isOwnMessage
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-900'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-gray-100'
             }`}
             role="article"
             aria-label={`Message from ${message.sender?.name || 'Unknown'}: ${message.content}`}
@@ -266,7 +266,7 @@ const MessageItem = React.memo(({
                                   e.stopPropagation();
                                   onFilePreview(file);
                                 }}
-                                className="p-2 bg-white bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100"
+                                className="p-2 bg-white dark:bg-slate-900 bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100"
                                 aria-label={`Preview image: ${file.file.name}`}
                               >
                                 <Search className="w-4 h-4" />
@@ -276,16 +276,16 @@ const MessageItem = React.memo(({
                                   e.stopPropagation();
                                   onFileDownload(file);
                                 }}
-                                className="p-2 bg-white bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100"
+                                className="p-2 bg-white dark:bg-slate-900 bg-opacity-90 rounded-full shadow-lg hover:bg-opacity-100"
                                 aria-label={`Download image: ${file.file.name}`}
                               >
                                 <Download className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
-                          <div className="px-3 py-2 bg-white bg-opacity-90">
-                            <p className="text-xs font-medium text-gray-900 truncate">{file.file.name}</p>
-                            <p className="text-xs text-gray-500">
+                          <div className="px-3 py-2 bg-white dark:bg-slate-800 bg-opacity-90">
+                            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">{file.file.name}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
                               {(file.file.size / 1024).toFixed(1)} KB
                             </p>
                           </div>
@@ -304,27 +304,27 @@ const MessageItem = React.memo(({
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {file.file.name}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                 {isPDF ? 'PDF Document' : 'Document'} • {(file.file.size / 1024).toFixed(1)} KB
                               </p>
                             </div>
                             <div className="flex space-x-1">
                               <button
                                 onClick={() => onFilePreview(file)}
-                                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
                                 aria-label={`Preview file: ${file.file.name}`}
                               >
-                                <Search className="w-4 h-4 text-gray-600" />
+                                <Search className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                               </button>
                               <button
                                 onClick={() => onFileDownload(file)}
-                                className="p-2 hover:bg-gray-100 rounded transition-colors"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
                                 aria-label={`Download file: ${file.file.name}`}
                               >
-                                <Download className="w-4 h-4 text-gray-600" />
+                                <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                               </button>
                             </div>
                           </div>
@@ -339,14 +339,14 @@ const MessageItem = React.memo(({
                           <div className="flex space-x-1">
                             <button
                               onClick={() => onFilePreview(file)}
-                              className="p-1 hover:bg-white hover:bg-opacity-20 rounded"
+                              className="p-1 hover:bg-white dark:bg-slate-900 hover:bg-opacity-20 rounded"
                               aria-label={`Preview file: ${file.file.name}`}
                             >
                               <Search className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => onFileDownload(file)}
-                              className="p-1 hover:bg-white hover:bg-opacity-20 rounded"
+                              className="p-1 hover:bg-white dark:bg-slate-900 hover:bg-opacity-20 rounded"
                               aria-label={`Download file: ${file.file.name}`}
                             >
                               <Download className="w-3 h-3" />
@@ -372,8 +372,8 @@ const MessageItem = React.memo(({
                     }
                     className={`px-2 py-1 rounded-full text-xs transition-colors ${
                       reaction.hasReacted
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
                     }`}
                   >
                     <span className="mr-1">{reaction.emoji}</span>
@@ -385,13 +385,13 @@ const MessageItem = React.memo(({
             
             {/* Quick Reactions */}
             {showQuickReactionsFor === message.id && (
-              <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10">
+              <div className="absolute bottom-full left-0 mb-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-10">
                 <div className="flex space-x-1">
                   {QUICK_REACTIONS.map((emoji) => (
                     <button
                       key={emoji}
                       onClick={() => onQuickReaction(message.id, emoji)}
-                      className="p-1 hover:bg-gray-100 rounded transition-colors"
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
                     >
                       <span className="text-lg">{emoji}</span>
                     </button>
@@ -405,14 +405,14 @@ const MessageItem = React.memo(({
               <div className="flex space-x-1">
                 <button
                   onClick={() => onReply(message)}
-                  className="p-1 bg-white bg-opacity-90 rounded shadow-sm hover:bg-opacity-100"
+                  className="p-1 bg-white dark:bg-slate-900 bg-opacity-90 rounded shadow-sm hover:bg-opacity-100"
                   aria-label="Reply to message"
                 >
                   <Reply className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => setShowQuickReactionsFor(showQuickReactionsFor === message.id ? null : message.id)}
-                  className="p-1 bg-white bg-opacity-90 rounded shadow-sm hover:bg-opacity-100"
+                  className="p-1 bg-white dark:bg-slate-900 bg-opacity-90 rounded shadow-sm hover:bg-opacity-100"
                   aria-label="Add reaction"
                 >
                   <Smile className="w-3 h-3" />
@@ -424,7 +424,7 @@ const MessageItem = React.memo(({
         
         {isOwnMessage && (
           <div className="flex items-center justify-end space-x-2 mt-1">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               {formatTime(message.createdAt)}
             </span>
           </div>
@@ -434,7 +434,7 @@ const MessageItem = React.memo(({
       {/* Context Menu */}
       {showContextMenu && (
         <div 
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]"
+          className="fixed z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]"
           style={{ 
             left: contextMenuPosition.x, 
             top: contextMenuPosition.y,
@@ -446,7 +446,7 @@ const MessageItem = React.memo(({
               onReply(message);
               setShowContextMenu(false);
             }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2"
+            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
           >
             <Reply className="w-4 h-4" />
             <span>Reply</span>
@@ -458,7 +458,7 @@ const MessageItem = React.memo(({
                 setShowClassificationModal(true);
                 setShowContextMenu(false);
               }}
-              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2"
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
             >
               <Shield className="w-4 h-4" />
               <span>Classify</span>
@@ -469,7 +469,7 @@ const MessageItem = React.memo(({
               onDeleteMessage(message);
               setShowContextMenu(false);
             }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 text-red-600"
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2 text-red-600 dark:text-red-400"
           >
             <Trash2 className="w-4 h-4" />
             <span>Delete</span>
@@ -1028,7 +1028,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   const getThreadIndicator = useCallback((message: Message) => {
     if (message.replyToId) {
       return (
-        <div className="text-xs text-gray-500 mb-1">
+        <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
           <Reply className="w-3 h-3 inline mr-1" />
           Replying to message
         </div>
@@ -1059,13 +1059,13 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
     return (
       <div className="flex flex-col h-full">
         {/* Thread Header */}
-        <div className="flex items-center p-4 border-b bg-white flex-shrink-0">
-          <button onClick={() => onThreadSelect(null)} className="mr-2 p-1 rounded hover:bg-gray-100" title="Back to conversation">
+        <div className="flex items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+          <button onClick={() => onThreadSelect(null)} className="mr-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700" title="Back to conversation">
             <ChevronLeft size={20} />
           </button>
           <div className="flex-1">
-            <div className="font-semibold text-lg">{thread?.name || `Thread ${thread?.id?.slice(0, 8)}`}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-semibold text-lg text-gray-900 dark:text-gray-100">{thread?.name || `Thread ${thread?.id?.slice(0, 8)}`}</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               {thread?.participants?.length || 0} participants • Last activity: {thread?.lastMessageAt ? formatTime(thread.lastMessageAt) : ''}
             </div>
           </div>
@@ -1073,7 +1073,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         {/* Thread Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {loadingThreadMessages ? <Spinner /> :
-            threadMessages.length === 0 ? <p className="text-gray-500">No messages in this thread.</p> :
+            threadMessages.length === 0 ? <p className="text-gray-600 dark:text-gray-400">No messages in this thread.</p> :
             threadMessages.map(message => (
               <MessageItem
                 key={message.id}
@@ -1102,16 +1102,16 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
           <div ref={messagesEndRef} />
         </div>
         {/* Thread Input */}
-        <div className="p-4 border-t bg-white flex-shrink-0">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
           {/* File Reference Banner from Drive */}
           {fileReference && !selectedFiles.some(f => f.id === fileReference.fileId) && (
-            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <FileText className="w-5 h-5 text-blue-600" />
                   <div>
-                    <p className="text-sm font-medium text-blue-900">File from Drive</p>
-                    <p className="text-xs text-blue-700">{fileReference.fileName}</p>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-200">File from Drive</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">{fileReference.fileName}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -1137,7 +1137,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
           
           {/* Reply Indicator */}
           {replyToMessage && (
-            <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+            <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-300">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Replying to: {replyToMessage.content?.substring(0, 50)}...</span>
                 <button onClick={() => setReplyToMessage(null)} className="text-blue-600 hover:text-blue-800">
@@ -1149,20 +1149,20 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
           
           {/* Selected Files */}
           {selectedFiles.length > 0 && (
-            <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+            <div className="mb-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Attachments ({selectedFiles.length})</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments ({selectedFiles.length})</span>
                 <button
                   onClick={() => setSelectedFiles([])}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-2">
                 {selectedFiles.map((file) => (
-                  <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                    <span className="text-sm text-gray-700">{file.name}</span>
+                  <div key={file.id} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
                     <button
                       onClick={() => removeSelectedFile(file.id)}
                       className="text-red-500 hover:text-red-700"
@@ -1182,7 +1182,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
                 onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Type a message..."
-                className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={1}
                 style={{ minHeight: '44px', maxHeight: '120px' }}
                 aria-label="Message input"
@@ -1198,7 +1198,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
               {/* File Upload Button */}
               <button
                 onClick={() => setShowFileUpload(!showFileUpload)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 aria-label="Attach files"
                 aria-expanded={showFileUpload}
                 aria-controls="file-upload-panel"
@@ -1210,7 +1210,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
               {/* Emoji Picker Button */}
               <button
                 onClick={() => setShowMessageEmojiPicker(!showMessageEmojiPicker)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 aria-label="Add emoji"
                 disabled={isSending}
               >
@@ -1235,7 +1235,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
 
           {/* Emoji Picker */}
           {showMessageEmojiPicker && (
-            <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg shadow-lg">
+          <div className="mt-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
               <div className="grid grid-cols-8 gap-1">
                 {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰'].map((emoji) => (
                   <button
@@ -1244,7 +1244,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
                       setNewMessage(prev => prev + emoji);
                       setShowMessageEmojiPicker(false);
                     }}
-                    className="p-1 hover:bg-gray-100 rounded text-center transition-colors"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-center transition-colors"
                   >
                     <span className="text-lg">{emoji}</span>
                   </button>
@@ -1271,10 +1271,10 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   return (
     <div className="flex flex-col h-full">
       {/* Main Conversation Header */}
-      <div className="flex items-center p-4 border-b bg-white flex-shrink-0">
-        <div className="flex-1 font-semibold text-lg">{activeConversation?.name || 'Conversation'}</div>
+      <div className="flex items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+        <div className="flex-1 font-semibold text-lg text-gray-900 dark:text-gray-100">{activeConversation?.name || 'Conversation'}</div>
         {onToggleRightPanel && (
-          <button onClick={onToggleRightPanel} className="ml-2 p-1 rounded hover:bg-gray-100" title="Show details">
+          <button onClick={onToggleRightPanel} className="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700" title="Show details">
             <ChevronRight size={20} />
           </button>
         )}
@@ -1282,11 +1282,11 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
       
       {/* File Activity Notifications Banner */}
       {fileNotifications.length > 0 && (
-        <div className="bg-blue-50 border-b border-blue-200 p-3 space-y-2">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800 p-3 space-y-2">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
               <Folder className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">Recent file activity</span>
+              <span className="text-sm font-medium text-blue-900 dark:text-blue-200">Recent file activity</span>
             </div>
             <button
               onClick={() => setFileNotifications([])}
@@ -1301,12 +1301,12 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
             return (
               <div
                 key={notification.id || notification.createdAt}
-                className="flex items-center justify-between p-2 bg-white rounded border border-blue-200 hover:bg-blue-50 transition-colors"
+                className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900 truncate">{notification.title}</p>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{notification.title}</p>
                   {notification.body && (
-                    <p className="text-xs text-gray-600 truncate">{notification.body}</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 truncate">{notification.body}</p>
                   )}
                 </div>
                 {(fileId || folderId) && (
@@ -1331,13 +1331,13 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
       )}
         {/* File Reference Banner from Drive */}
         {fileReference && !selectedFiles.some(f => f.id === fileReference.fileId) && (
-          <div className="p-4 bg-blue-50 border-b border-blue-200">
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border-b border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <FileText className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-sm font-medium text-blue-900">File from Drive</p>
-                  <p className="text-xs text-blue-700">{fileReference.fileName}</p>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-200">File from Drive</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">{fileReference.fileName}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -1364,7 +1364,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         {/* Main Conversation Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {isLoading ? <Spinner /> :
-          messages.length === 0 ? <p className="text-gray-500">No messages yet.</p> :
+          messages.length === 0 ? <p className="text-gray-600 dark:text-gray-400">No messages yet.</p> :
           messages.map(message => (
             <MessageItem
               key={message.id}
@@ -1393,7 +1393,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         <div ref={messagesEndRef} />
       </div>
       {/* Main Conversation Input - Fixed at bottom */}
-      <div className="p-4 border-t bg-white flex-shrink-0">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
         {/* Reply Indicator */}
         {replyToMessage && (
           <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
@@ -1408,20 +1408,20 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         
         {/* Selected Files */}
         {selectedFiles.length > 0 && (
-          <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+          <div className="mb-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Attachments ({selectedFiles.length})</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments ({selectedFiles.length})</span>
               <button
                 onClick={() => setSelectedFiles([])}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-2">
               {selectedFiles.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                  <span className="text-sm text-gray-700">{file.name}</span>
+                <div key={file.id} className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded border">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
                   <button
                     onClick={() => removeSelectedFile(file.id)}
                     className="text-red-500 hover:text-red-700"
@@ -1441,7 +1441,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
-              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={1}
               style={{ minHeight: '44px', maxHeight: '120px' }}
               aria-label="Message input"
@@ -1457,7 +1457,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
             {/* File Upload Button */}
             <button
               onClick={() => setShowFileUpload(!showFileUpload)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               aria-label="Attach files"
               aria-expanded={showFileUpload}
               aria-controls="file-upload-panel"
@@ -1469,7 +1469,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
             {/* Emoji Picker Button */}
             <button
               onClick={() => setShowMessageEmojiPicker(!showMessageEmojiPicker)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               aria-label="Add emoji"
               disabled={isSending}
             >
@@ -1494,7 +1494,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
 
         {/* Emoji Picker */}
         {showMessageEmojiPicker && (
-          <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg shadow-lg">
+          <div className="mt-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
             <div className="grid grid-cols-8 gap-1">
               {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰'].map((emoji) => (
                 <button
@@ -1503,7 +1503,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
                     setNewMessage(prev => prev + emoji);
                     setShowMessageEmojiPicker(false);
                   }}
-                  className="p-1 hover:bg-gray-100 rounded text-center transition-colors"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded text-center transition-colors"
                 >
                   <span className="text-lg">{emoji}</span>
                 </button>

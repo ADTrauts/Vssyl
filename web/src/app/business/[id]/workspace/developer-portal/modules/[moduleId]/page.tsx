@@ -72,7 +72,7 @@ export default function ModuleDetailsPage() {
           <Button variant="secondary" onClick={() => history.back()}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">Module Details</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Module Details</h1>
           <Badge color="blue">{analytics?.moduleName || moduleId}</Badge>
         </div>
       </div>
@@ -81,19 +81,19 @@ export default function ModuleDetailsPage() {
         <h2 className="text-lg font-semibold mb-4">Analytics</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <p className="text-gray-600">Monthly Revenue</p>
+            <p className="text-gray-600 dark:text-gray-400">Monthly Revenue</p>
             <p className="font-semibold">{formatCurrency(analytics?.monthlyRevenue)}</p>
           </div>
           <div>
-            <p className="text-gray-600">Active Subs</p>
+            <p className="text-gray-600 dark:text-gray-400">Active Subs</p>
             <p className="font-semibold">{analytics?.activeSubscriptions || 0}</p>
           </div>
           <div>
-            <p className="text-gray-600">Installations</p>
+            <p className="text-gray-600 dark:text-gray-400">Installations</p>
             <p className="font-semibold">{analytics?.totalInstallations || 0}</p>
           </div>
           <div>
-            <p className="text-gray-600">Avg Rating</p>
+            <p className="text-gray-600 dark:text-gray-400">Avg Rating</p>
             <p className="font-semibold">{(analytics?.averageRating || 0).toFixed(1)}</p>
           </div>
         </div>
@@ -102,15 +102,15 @@ export default function ModuleDetailsPage() {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Pricing</h2>
-          <Settings className="w-4 h-4 text-gray-500" />
+          <Settings className="w-4 h-4 text-gray-500 dark:text-gray-400" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Base Price (USD)</label>
+            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Base Price (USD)</label>
             <input className="w-full p-2 border rounded" value={base} onChange={(e) => setBase(e.target.value)} placeholder="0.00" />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Enterprise Price (USD)</label>
+            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Enterprise Price (USD)</label>
             <input className="w-full p-2 border rounded" value={enterprise} onChange={(e) => setEnterprise(e.target.value)} placeholder="0.00" />
           </div>
           <div className="flex items-end">

@@ -609,7 +609,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Data Retention & Governance</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Data Retention & Governance</h2>
         <div className="flex space-x-2">
           <Button onClick={() => setActiveTab('policies')} variant={activeTab === 'policies' ? 'primary' : 'secondary'}>
             Policies
@@ -671,7 +671,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           {policy.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{policy.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{policy.description}</p>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="font-medium">Resource Type:</span> {policy.resourceType}
@@ -724,23 +724,23 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">{status.resourceCounts.files}</div>
-                    <div className="text-sm text-gray-600">Files</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Files</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">{status.resourceCounts.messages}</div>
-                    <div className="text-sm text-gray-600">Messages</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Messages</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">{status.resourceCounts.conversations}</div>
-                    <div className="text-sm text-gray-600">Conversations</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Conversations</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-orange-600">{status.resourceCounts.auditLogs}</div>
-                    <div className="text-sm text-gray-600">Audit Logs</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Audit Logs</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-red-600">{status.resourceCounts.classifications}</div>
-                    <div className="text-sm text-gray-600">Classifications</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Classifications</div>
                   </div>
                 </div>
               </Card>
@@ -750,10 +750,10 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                 <h4 className="font-semibold mb-4">Active Policies</h4>
                 <div className="space-y-2">
                   {status.policies.filter(p => p.isActive).map((policy) => (
-                    <div key={policy.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div key={policy.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-800 rounded">
                       <div>
                         <span className="font-medium">{policy.name}</span>
-                        <span className="text-sm text-gray-600 ml-2">({policy.resourceType})</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 ml-2">({policy.resourceType})</span>
                       </div>
                       <Button size="sm" onClick={() => handleTriggerCleanup(policy.resourceType)}>
                         Cleanup
@@ -764,7 +764,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
               </Card>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No retention status available
             </div>
           )}
@@ -797,11 +797,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           {classification.sensitivity}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">ID: {classification.resourceId}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">ID: {classification.resourceId}</p>
                       {classification.notes && (
-                        <p className="text-sm text-gray-600 mb-2">{classification.notes}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{classification.notes}</p>
                       )}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Classified: {new Date(classification.classifiedAt).toLocaleDateString()}
                         {classification.expiresAt && (
                           <span className="ml-4">Expires: {new Date(classification.expiresAt).toLocaleDateString()}</span>
@@ -842,11 +842,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           {backup.status}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{backup.backupPath}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{backup.backupPath}</p>
                       {backup.notes && (
-                        <p className="text-sm text-gray-600 mb-2">{backup.notes}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{backup.notes}</p>
                       )}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Created: {new Date(backup.createdAt).toLocaleDateString()}
                         <span className="ml-4">Size: {(backup.backupSize / 1024 / 1024).toFixed(2)} MB</span>
                         <span className="ml-4">Expires: {new Date(backup.expiresAt).toLocaleDateString()}</span>
@@ -887,7 +887,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                         </Badge>
                         <Badge color="blue">Priority: {rule.priority}</Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{rule.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{rule.description}</p>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="font-medium">Resource Type:</span> {rule.resourceType}
@@ -896,7 +896,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           <span className="font-medium">Sensitivity:</span> {rule.sensitivity}
                         </div>
                         <div>
-                          <span className="font-medium">Pattern:</span> <code className="bg-gray-100 px-1 rounded">{rule.pattern}</code>
+                          <span className="font-medium">Pattern:</span> <code className="bg-gray-100 dark:bg-slate-700 px-1 rounded">{rule.pattern}</code>
                         </div>
                       </div>
                     </div>
@@ -942,11 +942,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           {template.sensitivity}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{template.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{template.description}</p>
                       {template.notes && (
-                        <p className="text-sm text-gray-600 mb-2">{template.notes}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{template.notes}</p>
                       )}
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {template.expiresIn ? `Expires in ${template.expiresIn} days` : 'No expiration'}
                       </div>
                     </div>
@@ -971,11 +971,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
           <Card className="p-4">
             <h4 className="font-semibold mb-4">Selected Items</h4>
             {bulkItems.length === 0 ? (
-              <p className="text-gray-500">No items selected for bulk classification</p>
+              <p className="text-gray-500 dark:text-gray-400">No items selected for bulk classification</p>
             ) : (
               <div className="space-y-2">
                 {bulkItems.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-800 rounded">
                     <span>{item.resourceType}: {item.resourceId}</span>
                     <Button size="sm" variant="secondary" onClick={() => removeBulkItem(index)}>
                       Remove
@@ -990,8 +990,8 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             <h4 className="font-semibold mb-4">Quick Add Items</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource Type</label>
+                <select className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md">
                   <option value="file">File</option>
                   <option value="message">Message</option>
                   <option value="conversation">Conversation</option>
@@ -999,11 +999,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Resource ID</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource ID</label>
                 <input
                   type="text"
                   placeholder="Enter resource ID"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                 />
               </div>
             </div>
@@ -1035,11 +1035,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                           {classification.sensitivity}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">ID: {classification.resourceId}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">ID: {classification.resourceId}</p>
                       {classification.notes && (
-                        <p className="text-sm text-gray-600 mb-2">{classification.notes}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{classification.notes}</p>
                       )}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Expires: {classification.expiresAt ? new Date(classification.expiresAt).toLocaleDateString() : 'No expiration'}
                       </div>
                     </div>
@@ -1059,29 +1059,29 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
             <input
               type="text"
               value={policyForm.name}
               onChange={(e) => setPolicyForm({ ...policyForm, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
               value={policyForm.description}
               onChange={(e) => setPolicyForm({ ...policyForm, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource Type</label>
             <select
               value={policyForm.resourceType}
               onChange={(e) => setPolicyForm({ ...policyForm, resourceType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Resource Type</option>
               <option value="file">File</option>
@@ -1092,31 +1092,31 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Retention Period (days)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Retention Period (days)</label>
             <input
               type="number"
               value={policyForm.retentionPeriod}
               onChange={(e) => setPolicyForm({ ...policyForm, retentionPeriod: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Archive After (days)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Archive After (days)</label>
               <input
                 type="number"
                 value={policyForm.archiveAfter || ''}
                 onChange={(e) => setPolicyForm({ ...policyForm, archiveAfter: e.target.value ? parseInt(e.target.value) : undefined })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Delete After (days)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delete After (days)</label>
               <input
                 type="number"
                 value={policyForm.deleteAfter || ''}
                 onChange={(e) => setPolicyForm({ ...policyForm, deleteAfter: e.target.value ? parseInt(e.target.value) : undefined })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1127,7 +1127,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
               onChange={(e) => setPolicyForm({ ...policyForm, isActive: e.target.checked })}
               className="mr-2"
             />
-            <label className="text-sm font-medium text-gray-700">Active</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
           </div>
           <div className="flex justify-end space-x-2">
             <Button variant="secondary" onClick={() => setShowPolicyModal(false)}>
@@ -1148,11 +1148,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource Type</label>
             <select
               value={classificationForm.resourceType}
               onChange={(e) => setClassificationForm({ ...classificationForm, resourceType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Resource Type</option>
               <option value="file">File</option>
@@ -1162,20 +1162,20 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Resource ID</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource ID</label>
             <input
               type="text"
               value={classificationForm.resourceId}
               onChange={(e) => setClassificationForm({ ...classificationForm, resourceId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sensitivity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivity</label>
             <select
               value={classificationForm.sensitivity}
               onChange={(e) => setClassificationForm({ ...classificationForm, sensitivity: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PUBLIC">Public</option>
               <option value="INTERNAL">Internal</option>
@@ -1184,20 +1184,20 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires At (optional)</label>
             <input
               type="datetime-local"
               value={classificationForm.expiresAt || ''}
               onChange={(e) => setClassificationForm({ ...classificationForm, expiresAt: e.target.value || undefined })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
             <textarea
               value={classificationForm.notes}
               onChange={(e) => setClassificationForm({ ...classificationForm, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
@@ -1220,11 +1220,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Backup Type</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Backup Type</label>
             <select
               value={backupForm.backupType}
               onChange={(e) => setBackupForm({ ...backupForm, backupType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="database">Database</option>
               <option value="files">Files</option>
@@ -1233,11 +1233,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
             <textarea
               value={backupForm.notes}
               onChange={(e) => setBackupForm({ ...backupForm, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
@@ -1260,40 +1260,40 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
             <input
               type="text"
               value={ruleForm.name}
               onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
               value={ruleForm.description}
               onChange={(e) => setRuleForm({ ...ruleForm, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Pattern (Regex)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pattern (Regex)</label>
             <input
               type="text"
               value={ruleForm.pattern}
               onChange={(e) => setRuleForm({ ...ruleForm, pattern: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter regex pattern"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resource Type</label>
               <select
                 value={ruleForm.resourceType}
                 onChange={(e) => setRuleForm({ ...ruleForm, resourceType: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Resource Type</option>
                 <option value="file">File</option>
@@ -1303,11 +1303,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sensitivity</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivity</label>
               <select
                 value={ruleForm.sensitivity}
                 onChange={(e) => setRuleForm({ ...ruleForm, sensitivity: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="PUBLIC">Public</option>
                 <option value="INTERNAL">Internal</option>
@@ -1318,12 +1318,12 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
               <input
                 type="number"
                 value={ruleForm.priority}
                 onChange={(e) => setRuleForm({ ...ruleForm, priority: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex items-center mt-6">
@@ -1333,7 +1333,7 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
                 onChange={(e) => setRuleForm({ ...ruleForm, isActive: e.target.checked })}
                 className="mr-2"
               />
-              <label className="text-sm font-medium text-gray-700">Active</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</label>
             </div>
           </div>
           <div className="flex justify-end space-x-2">
@@ -1355,30 +1355,30 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
             <input
               type="text"
               value={templateForm.name}
               onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
             <textarea
               value={templateForm.description}
               onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sensitivity</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivity</label>
               <select
                 value={templateForm.sensitivity}
                 onChange={(e) => setTemplateForm({ ...templateForm, sensitivity: e.target.value as any })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="PUBLIC">Public</option>
                 <option value="INTERNAL">Internal</option>
@@ -1387,22 +1387,22 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Expires In (days)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires In (days)</label>
               <input
                 type="number"
                 value={templateForm.expiresIn || ''}
                 onChange={(e) => setTemplateForm({ ...templateForm, expiresIn: e.target.value ? parseInt(e.target.value) : undefined })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Leave empty for no expiration"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
             <textarea
               value={templateForm.notes}
               onChange={(e) => setTemplateForm({ ...templateForm, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
@@ -1425,11 +1425,11 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sensitivity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensitivity</label>
             <select
               value={bulkForm.sensitivity}
               onChange={(e) => setBulkForm({ ...bulkForm, sensitivity: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PUBLIC">Public</option>
               <option value="INTERNAL">Internal</option>
@@ -1438,24 +1438,24 @@ export default function RetentionManagementDashboard({ className = '' }: Retenti
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Expires At (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expires At (optional)</label>
             <input
               type="datetime-local"
               value={bulkForm.expiresAt}
               onChange={(e) => setBulkForm({ ...bulkForm, expiresAt: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
             <textarea
               value={bulkForm.notes}
               onChange={(e) => setBulkForm({ ...bulkForm, notes: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows={3}
             />
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             This will classify {bulkItems.length} items as {bulkForm.sensitivity}
           </div>
           <div className="flex justify-end space-x-2">

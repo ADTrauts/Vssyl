@@ -478,8 +478,8 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Enterprise File Hub Error</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Enterprise File Hub Error</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <div className="space-y-2">
             <Button onClick={loadEnhancedFiles} variant="primary">
               Try Again
@@ -499,11 +499,11 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
       {!currentFolder && breadcrumbs.length === 0 && (
         <div className="flex items-center justify-between mb-6">
         <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
               {currentDashboard ? `${currentDashboard.name} File Hub` : 'Enterprise File Hub'}
               <span className="ml-3 px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full border border-purple-200">Enterprise</span>
             </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
               Advanced file management with enterprise features
           </p>
         </div>
@@ -526,9 +526,9 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
               <Download className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">Enterprise Storage</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Enterprise Storage</span>
             </div>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {formatFileSize(storageUsage.used)} / {formatFileSize(storageUsage.total)}
             </span>
           </div>
@@ -538,7 +538,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
               style={{ width: `${Math.min((storageUsage.used / storageUsage.total) * 100, 100)}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
             <span>{((storageUsage.used / storageUsage.total) * 100).toFixed(1)}% used</span>
             <span>{formatFileSize(storageUsage.total - storageUsage.used)} available</span>
           </div>
@@ -693,7 +693,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           <select
             value={fileTypeFilter}
             onChange={(e) => setFileTypeFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="">All Types</option>
             <option value="documents">📝 Documents</option>
@@ -706,7 +706,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size' | 'type')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="name">Name</option>
             <option value="date">Date Modified</option>
@@ -716,7 +716,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
             title={`Sort ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`}
           >
             {sortOrder === 'asc' ? '↑' : '↓'}
@@ -726,7 +726,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
             <select
               value={classificationFilter}
               onChange={(e) => setClassificationFilter(e.target.value)}
-              className="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-48 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">All Classifications</option>
               <option value="public">Public</option>
@@ -809,7 +809,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
                 {item.type === 'folder' ? (
                   <Folder className="w-8 h-8 text-blue-500" />
                 ) : (
-                  <File className="w-8 h-8 text-gray-500" />
+                  <File className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                 )}
                 {item.starred && (
                   <Star className="w-4 h-4 text-yellow-500 ml-2" />
@@ -817,8 +817,8 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
               </div>
               
               <div className={`flex-1 ${viewMode === 'grid' ? '' : 'mr-4'}`}>
-                <div className="font-medium text-gray-900 truncate">{item.name}</div>
-                <div className="text-sm text-gray-500">
+                <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {item.type === 'file' && item.size && (
                     <span>{(item.size / 1024 / 1024).toFixed(1)} MB • </span>
                   )}

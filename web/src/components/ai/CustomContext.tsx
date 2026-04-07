@@ -296,8 +296,8 @@ export default function CustomContext() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Custom Context</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Custom Context</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Add custom instructions and context to help your AI understand your preferences and workflows
           </p>
         </div>
@@ -340,12 +340,12 @@ export default function CustomContext() {
         >
           <div className="flex items-center gap-3">
             {expandedSections.has('personal') ? (
-              <ChevronDown className="w-5 h-5 text-gray-500" />
+              <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             ) : (
-              <ChevronRight className="w-5 h-5 text-gray-500" />
+              <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             )}
-            <User className="w-5 h-5 text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Personal Context</h3>
+            <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Context</h3>
             <Badge color="blue" size="sm">
               {getContextsByScope('personal').length}
             </Badge>
@@ -355,7 +355,7 @@ export default function CustomContext() {
         {expandedSections.has('personal') && (
           <div className="mt-4 space-y-3">
             {getContextsByScope('personal').length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <p>No personal context entries yet.</p>
                 <Button
                   variant="ghost"
@@ -413,12 +413,12 @@ export default function CustomContext() {
           >
             <div className="flex items-center gap-3">
               {expandedSections.has('business') ? (
-                <ChevronDown className="w-5 h-5 text-gray-500" />
+                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-gray-500" />
+                <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
-              <Building2 className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Business Context</h3>
+              <Building2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Context</h3>
               <Badge color="green" size="sm">
                 {getContextsByScope('business').length}
               </Badge>
@@ -432,13 +432,13 @@ export default function CustomContext() {
                   ctx => ctx.scope === 'business' && ctx.scopeId === business.id
                 );
                 return (
-                  <div key={business.id} className="border-l-2 border-gray-200 pl-4">
+                  <div key={business.id} className="border-l-2 border-gray-200 dark:border-slate-700 pl-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">{business.name}</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{business.name}</h4>
                       <Badge color="gray" size="sm">{businessContexts.length}</Badge>
                     </div>
                     {businessContexts.length === 0 ? (
-                      <p className="text-sm text-gray-500">No context entries for this business.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this business.</p>
                     ) : (
                       <div className="space-y-2">
                         {businessContexts.map(context => (
@@ -489,12 +489,12 @@ export default function CustomContext() {
           >
             <div className="flex items-center gap-3">
               {expandedSections.has('personal-modules') ? (
-                <ChevronDown className="w-5 h-5 text-gray-500" />
+                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-gray-500" />
+                <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
-              <Puzzle className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Personal Module Context</h3>
+              <Puzzle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Module Context</h3>
               <Badge color="blue" size="sm">
                 {getContextsByScope('module').filter(ctx => 
                   personalModules.some(m => m.id === ctx.moduleId)
@@ -510,11 +510,11 @@ export default function CustomContext() {
                   !ctx.scopeId // Personal module contexts don't have scopeId
                 );
                 return (
-                  <div key={module.id} className="border-l-2 border-gray-200 pl-4">
+                  <div key={module.id} className="border-l-2 border-gray-200 dark:border-slate-700 pl-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         {getModuleIcon(module.id)}
-                        <h4 className="font-medium text-gray-900">{module.name}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge color="gray" size="sm">{moduleContexts.length}</Badge>
@@ -534,7 +534,7 @@ export default function CustomContext() {
                       </div>
                     </div>
                     {moduleContexts.length === 0 ? (
-                      <p className="text-sm text-gray-500">No context entries for this module.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this module.</p>
                     ) : (
                       <div className="space-y-2">
                         {moduleContexts.map(context => (
@@ -569,12 +569,12 @@ export default function CustomContext() {
           >
             <div className="flex items-center gap-3">
               {expandedSections.has('business-modules') ? (
-                <ChevronDown className="w-5 h-5 text-gray-500" />
+                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-gray-500" />
+                <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
-              <Puzzle className="w-5 h-5 text-gray-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Business Module Context</h3>
+              <Puzzle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Module Context</h3>
               <Badge color="blue" size="sm">
                 {getContextsByScope('module').filter(ctx => 
                   ctx.scopeId && businesses.some(b => b.id === ctx.scopeId)
@@ -596,9 +596,9 @@ export default function CustomContext() {
                 }
                 
                 return (
-                  <div key={business.id} className="border-l-2 border-gray-200 pl-4">
+                  <div key={business.id} className="border-l-2 border-gray-200 dark:border-slate-700 pl-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">{business.name}</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{business.name}</h4>
                       <Badge color="gray" size="sm">
                         {businessModuleContexts.length} context entries
                       </Badge>
@@ -613,7 +613,7 @@ export default function CustomContext() {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 {getModuleIcon(module.id)}
-                                <h5 className="font-medium text-gray-700">{module.name}</h5>
+                                <h5 className="font-medium text-gray-700 dark:text-gray-300">{module.name}</h5>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge color="gray" size="sm">{moduleContexts.length}</Badge>
@@ -634,7 +634,7 @@ export default function CustomContext() {
                               </div>
                             </div>
                             {moduleContexts.length === 0 ? (
-                              <p className="text-sm text-gray-500">No context entries for this module.</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this module.</p>
                             ) : (
                               <div className="space-y-2">
                                 {moduleContexts.map(context => (
@@ -697,11 +697,11 @@ function ContextEntry({
   onDelete: () => void;
 }) {
   return (
-    <Card className="p-4 hover:bg-gray-50 transition-colors">
+    <Card className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-medium text-gray-900">{context.title}</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">{context.title}</h4>
             <Badge 
               color={
                 context.contextType === 'instruction' ? 'blue' :
@@ -716,7 +716,7 @@ function ContextEntry({
               <Badge color="gray" size="sm">Inactive</Badge>
             )}
           </div>
-          <p className="text-sm text-gray-600 mb-2">{context.content}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{context.content}</p>
           {context.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {context.tags.map(tag => (
@@ -834,7 +834,7 @@ function AddContextModal({
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {context ? 'Edit Context' : 'Add Context'}
             </h3>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -845,13 +845,13 @@ function AddContextModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Scope Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Scope
               </label>
               <select
                 value={selectedScope}
                 onChange={(e) => setSelectedScope(e.target.value as typeof selectedScope)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
               >
                 <option value="personal">Personal</option>
                 <option value="business">Business</option>
@@ -863,13 +863,13 @@ function AddContextModal({
             {/* Business Selection */}
             {selectedScope === 'business' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Business
                 </label>
                 <select
                   value={selectedBusinessId || ''}
                   onChange={(e) => setSelectedBusinessId(e.target.value || null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                   required
                 >
                   <option value="">Select a business</option>
@@ -885,7 +885,7 @@ function AddContextModal({
             {/* Business Selection for Module Scope */}
             {selectedScope === 'module' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Business (Optional - leave empty for personal module context)
                 </label>
                 <select
@@ -894,7 +894,7 @@ function AddContextModal({
                     setSelectedBusinessId(e.target.value || null);
                     setSelectedModuleId(null); // Reset module when business changes
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                 >
                   <option value="">Personal (No Business)</option>
                   {businesses.map(business => (
@@ -909,13 +909,13 @@ function AddContextModal({
             {/* Module Selection */}
             {selectedScope === 'module' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Module
                 </label>
                 <select
                   value={selectedModuleId || ''}
                   onChange={(e) => setSelectedModuleId(e.target.value || null)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                   required
                   disabled={availableModules.length === 0}
                 >
@@ -933,7 +933,7 @@ function AddContextModal({
                   ))}
                 </select>
                 {availableModules.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {selectedBusinessId 
                       ? 'This business has no modules installed. Install modules from the Modules page.'
                       : 'You have no personal modules installed. Install modules from the Modules page.'}
@@ -944,13 +944,13 @@ function AddContextModal({
 
             {/* Context Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Context Type
               </label>
               <select
                 value={contextType}
                 onChange={(e) => setContextType(e.target.value as typeof contextType)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
               >
                 <option value="instruction">Instruction</option>
                 <option value="fact">Fact</option>
@@ -961,14 +961,14 @@ function AddContextModal({
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Title
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                 required
                 placeholder="e.g., Always organize PDFs in Documents folder"
               />
@@ -976,13 +976,13 @@ function AddContextModal({
 
             {/* Content */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Content
               </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                 rows={4}
                 required
                 placeholder="Describe what the AI should remember..."
@@ -991,7 +991,7 @@ function AddContextModal({
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tags
               </label>
               <div className="flex gap-2 mb-2">
@@ -1005,7 +1005,7 @@ function AddContextModal({
                       handleAddTag();
                     }
                   }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                   placeholder="Add a tag and press Enter"
                 />
                 <Button type="button" variant="secondary" onClick={handleAddTag}>
@@ -1032,7 +1032,7 @@ function AddContextModal({
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Priority: {priority}
               </label>
               <input
@@ -1043,7 +1043,7 @@ function AddContextModal({
                 onChange={(e) => setPriority(Number(e.target.value))}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                 <span>Low</span>
                 <span>Medium</span>
                 <span>High</span>
@@ -1059,7 +1059,7 @@ function AddContextModal({
                 onChange={(e) => setActive(e.target.checked)}
                 className="w-4 h-4"
               />
-              <label htmlFor="active" className="text-sm font-medium text-gray-700">
+              <label htmlFor="active" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Active (AI will use this context)
               </label>
             </div>
@@ -1114,7 +1114,7 @@ function SuggestionBubble({
         {/* Close button */}
         <button
           onClick={onDismiss}
-          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
           aria-label="Dismiss suggestion"
         >
           <X className="w-4 h-4" />
@@ -1124,9 +1124,9 @@ function SuggestionBubble({
         <div className="pr-6">
           <div className="flex items-start gap-2 mb-2">
             <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <h4 className="font-semibold text-gray-900">{title}</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
           </div>
-          <p className="text-sm text-gray-700 mb-3">{content}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{content}</p>
           {action && onAction && (
             <Button
               size="sm"

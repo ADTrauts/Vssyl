@@ -109,7 +109,7 @@ export default function OrgChartPage() {
         <Card>
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Org Chart</h2>
-            <p className="text-gray-600">{error}</p>
+            <p className="text-gray-600 dark:text-gray-400">{error}</p>
             <Button onClick={loadOrgChartData} className="mt-4">
               Try Again
             </Button>
@@ -126,9 +126,9 @@ export default function OrgChartPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-slate-800">
       {/* Header Section - Fixed */}
-      <div className="flex-shrink-0 bg-white border-b">
+      <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b">
         <div className="container mx-auto px-4 py-8">
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
@@ -153,8 +153,8 @@ export default function OrgChartPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Organization Chart & Permissions</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Organization Chart & Permissions</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Manage your organizational structure, permissions, and employee assignments
               </p>
             </div>
@@ -204,7 +204,7 @@ export default function OrgChartPage() {
 
           {/* Tab Navigation */}
           {hasOrgChart && (
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-slate-700">
               <nav className="-mb-px flex space-x-8">
                 {[
                   { 
@@ -260,11 +260,11 @@ export default function OrgChartPage() {
           {!hasOrgChart ? (
         <div className="text-center py-12">
           <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Building2 className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Organization Chart Yet</h3>
-            <p className="text-gray-500 mb-6">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Organization Chart Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Create your first organizational structure to get started with team management and permissions.
             </p>
             <Button

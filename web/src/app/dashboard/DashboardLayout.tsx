@@ -216,7 +216,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { currentBranding, isBusinessContext, getHeaderStyles, getSidebarStyles } = useGlobalBranding();
   const { isWorkAuthenticated, currentBusinessId } = useWorkAuth();
   const { getFilteredModules, hasModuleAccess, getModuleAccessReason } = usePositionAwareModules();
-  const { getHeaderStyle, getBrandColor } = useThemeColors();
+  const { getHeaderStyle, getBrandColor, isDark } = useThemeColors();
   const { getConfigForContext, getConfigForTab, loading: sidebarConfigLoading } = useSidebarCustomization();
 
   const [showWorkTab, setShowWorkTab] = useState(false);
@@ -321,6 +321,36 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [isMobile]);
 
   const isPlaceActive = showPlaceTab;
+  const mutedTextColor = isDark ? '#cbd5e1' : '#4b5563';
+  const tabPalette = {
+    activeBg: isDark ? '#0f172a' : '#ffffff',
+    activeText: isDark ? '#f8fafc' : '#1f2937',
+    inactiveBg: isDark ? '#334155' : '#e5e7eb',
+    inactiveText: isDark ? '#cbd5e1' : '#4b5563',
+    border: isDark ? '#475569' : '#d1d5db',
+    newTabBg: isDark ? '#1e293b' : '#f3f4f6',
+    newTabText: isDark ? '#cbd5e1' : '#6b7280',
+  };
+
+  const getTabStyle = (isActive: boolean, borderRadius: string, marginLeft: number) => ({
+    background: isActive ? tabPalette.activeBg : tabPalette.inactiveBg,
+    color: isActive ? tabPalette.activeText : tabPalette.inactiveText,
+    borderStyle: 'solid',
+    borderColor: tabPalette.border,
+    borderTopWidth: 1,
+    borderRightWidth: 1,
+    borderLeftWidth: 1,
+    borderBottomWidth: 0,
+    borderRadius,
+    padding: '8px 24px 10px 24px',
+    marginLeft,
+    fontWeight: 700,
+    fontSize: 16,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    position: 'relative' as const,
+  });
 
   const handleTabClick = (dashboardId: string) => {
     if (dashboardId === 'place') {
@@ -613,7 +643,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px' }}>Loading dashboards...</div>
-          <div style={{ fontSize: '14px', color: '#666' }}>Please wait while we load your workspace</div>
+          <div style={{ fontSize: '14px', color: mutedTextColor }}>Please wait while we load your workspace</div>
         </div>
       </div>
     );
@@ -633,7 +663,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px', color: '#ef4444' }}>Error</div>
-          <div style={{ fontSize: '14px', color: '#666' }}>{error}</div>
+          <div style={{ fontSize: '14px', color: mutedTextColor }}>{error}</div>
         </div>
       </div>
     );
@@ -653,7 +683,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '18px', marginBottom: '8px' }}>No dashboards found</div>
-          <div style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>Create your first dashboard to get started</div>
+          <div style={{ fontSize: '14px', color: mutedTextColor, marginBottom: '16px' }}>Create your first dashboard to get started</div>
           <button
             onClick={() => handleCreateDashboard()}
             style={{
@@ -717,19 +747,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => handleTabClick('place')}
                 style={{
-                  background: isPlaceActive ? '#fff' : '#e5e7eb',
-                  color: isPlaceActive ? '#4F46E5' : '#666',
-                  border: '1px solid #ccc',
-                  borderBottom: 'none',
-                  borderRadius: '8px 0 0 0',
-                  padding: '8px 24px 10px 24px',
-                  marginLeft: 0,
-                  fontWeight: 700,
-                  fontSize: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  position: 'relative',
+                  ...getTabStyle(isPlaceActive, '8px 0 0 0', 0),
+                  color: isPlaceActive ? '#4F46E5' : tabPalette.inactiveText,
                   cursor: 'pointer',
                 }}
               >
@@ -740,21 +759,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               <button
                 key={mainPersonalDashboard.id}
                 onClick={() => handleTabClick(mainPersonalDashboard.id)}
-                style={{
-                  background: !isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
-                  color: !isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
-                  border: '1px solid #ccc',
-                  borderBottom: 'none',
-                  borderRadius: '0',
-                  padding: '8px 24px 10px 24px',
-                  marginLeft: -1,
-                  fontWeight: 700,
-                  fontSize: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  position: 'relative',
-                }}
+                style={getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id, '0', -1)}
               >
                 {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) && React.createElement(getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)), { size: 20, style: { marginRight: 4 } })}
                 {getDashboardDisplayName(mainPersonalDashboard)}
@@ -771,19 +776,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       onClick={() => handleTabClick(dashboard.id)}
                       className={`dashboard-tab ${isDragging ? 'dragging' : ''}`}
                       style={{
-                        background: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                        color: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#222' : '#666',
-                        border: '1px solid #ccc',
-                        borderBottom: 'none',
-                        borderRadius: '0',
-                        padding: '8px 24px 10px 24px',
-                        marginLeft: -1,
-                        fontWeight: 700,
-                        fontSize: 16,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        position: 'relative',
+                        ...getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id, '0', -1),
                         cursor: 'grab',
                       }}
                     >
@@ -839,21 +832,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <button
                     key={dashboard.id}
                     onClick={() => handleTabClick(dashboard.id)}
-                    style={{
-                      background: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                      color: !isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id ? '#222' : '#666',
-                      border: '1px solid #ccc',
-                      borderBottom: 'none',
-                      borderRadius: '0',
-                      padding: '8px 24px 10px 24px',
-                      marginLeft: -1,
-                      fontWeight: 700,
-                      fontSize: 16,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      position: 'relative',
-                    }}
+                    style={getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id, '0', -1)}
                   >
                     {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) && React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), { size: 20, style: { marginRight: 4 } })}
                     {getDashboardDisplayName(dashboard)}
@@ -863,21 +842,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Work Tab, Add Tab, +/- Button as before */}
               <button
                 onClick={() => handleTabClick('work')}
-                style={{
-                  background: showWorkTab ? '#fff' : '#e5e7eb',
-                  color: showWorkTab ? '#222' : '#666',
-                  border: '1px solid #ccc',
-                  borderBottom: 'none',
-                  borderRadius: allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
-                  padding: '8px 24px 10px 24px',
-                  marginLeft: allDashboards.length === 0 ? 0 : -1,
-                  fontWeight: 700,
-                  fontSize: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  position: 'relative',
-                }}
+                style={getTabStyle(
+                  showWorkTab,
+                  allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
+                  allDashboards.length === 0 ? 0 : -1
+                )}
               >
                 <Briefcase size={20} style={{ marginRight: 4 }} />
                 Work
@@ -887,10 +856,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                 <button
                   onClick={() => setShowAddModal(true)}
                   style={{
-                    background: '#f3f4f6',
-                    color: '#888',
-                    border: '1px dashed #ccc',
-                    borderBottom: 'none',
+                    background: tabPalette.newTabBg,
+                    color: tabPalette.newTabText,
+                    borderStyle: 'dashed',
+                    borderColor: tabPalette.border,
+                    borderTopWidth: 1,
+                    borderRightWidth: 1,
+                    borderLeftWidth: 1,
+                    borderBottomWidth: 0,
                     borderRadius: '0',
                     padding: '8px 24px 10px 24px',
                     marginLeft: -1,
@@ -908,20 +881,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               {/* '+/-' Edit Button */}
               <button
                 onClick={() => setEditMode((v) => !v)}
-                style={{
-                  background: editMode ? '#fff' : '#e5e7eb',
-                  color: editMode ? '#222' : '#666',
-                  border: '1px solid #ccc',
-                  borderBottom: 'none',
-                  borderRadius: '0 8px 0 0',
-                  padding: '8px 24px 10px 24px',
-                  marginLeft: -1,
-                  fontWeight: 700,
-                  fontSize: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
+                style={getTabStyle(editMode, '0 8px 0 0', -1)}
               >
                 <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>+/-</span>
               </button>
@@ -993,7 +953,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
         <aside style={{
           width: shouldShowSidebar ? (sidebarCollapsed ? 0 : 240) : 0,
-          background: (showWorkTab || isBusinessContext) ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
+          background: (showWorkTab || isBusinessContext)
+            ? getSidebarStyles().backgroundColor
+            : (isDark ? '#0f172a' : getBrandColor('neutralMid')),
           display: 'flex',
           flexDirection: 'column',
           padding: '20px 0',
@@ -1111,7 +1073,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                         return a.order - b.order;
                       });
                       
-                      const textColor = (showWorkTab || isBusinessContext) ? getSidebarStyles().color : '#fff';
+                      const textColor = (showWorkTab || isBusinessContext)
+                        ? getSidebarStyles().color
+                        : (isDark ? '#e2e8f0' : '#1f2937');
                       const activeModuleId = pathname?.split('/')[1] || null;
 
                       const handleToggleCollapse = (folderId: string) => {
@@ -1189,7 +1153,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               </nav>
             )}
             <div style={{ marginTop: 'auto' }}>
-              <button onClick={() => setShowCustomizationModal(true)} style={{ width: '100%', background: 'none', border: '1px solid #555', color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : '#fff', padding: '8px 0', borderRadius: 6, fontWeight: 600 }}>
+              <button onClick={() => setShowCustomizationModal(true)} style={{ width: '100%', background: 'none', border: `1px solid ${isDark ? '#475569' : '#9ca3af'}`, color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : (isDark ? '#e2e8f0' : '#1f2937'), padding: '8px 0', borderRadius: 6, fontWeight: 600 }}>
                 Customize
               </button>
             </div>
@@ -1379,11 +1343,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             
             {/* Tab Type Selection */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Tab Type
               </label>
               <div className="space-y-3">
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                   <input
                     type="radio"
                     name="tabType"
@@ -1393,15 +1357,15 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                     className="w-4 h-4 text-blue-600"
                   />
                   <div className="flex items-center space-x-3">
-                    <LayoutDashboard className="w-5 h-5 text-gray-600" />
+                    <LayoutDashboard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <div>
-                      <div className="font-medium text-gray-900">Blank Tab</div>
-                      <div className="text-sm text-gray-500">Create a personal dashboard</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">Blank Tab</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Create a personal dashboard</div>
                     </div>
                   </div>
                 </label>
                 
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                   <input
                     type="radio"
                     name="tabType"
@@ -1413,8 +1377,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   <div className="flex items-center space-x-3">
                     <Home className="w-5 h-5 text-orange-600" />
                     <div>
-                      <div className="font-medium text-gray-900">Home Tab</div>
-                      <div className="text-sm text-gray-500">Create a household management dashboard</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">Home Tab</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Create a household management dashboard</div>
                     </div>
                   </div>
                 </label>
@@ -1423,14 +1387,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
             {/* Name Input */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {selectedTabType === 'home' ? 'Household Name' : 'Dashboard Name'}
               </label>
               <input
                 name="dashboardName"
                 value={newDashboardName}
                 onChange={e => setNewDashboardName(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder={selectedTabType === 'home' ? 'My Family' : 'My Dashboard'}
               />
             </div>
@@ -1447,7 +1411,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   setInviteMembers([]);
                   setShowMemberInvite(false);
                 }} 
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               >
                 Cancel
               </button>
@@ -1485,13 +1449,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         }}>
           <div className="p-6 max-w-lg">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🏠</span>
               </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 {createdHouseholdName} Created!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-700 dark:text-gray-300">
                 Would you like to invite family members to your household?
               </p>
             </div>
@@ -1500,7 +1464,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="mb-6">
               <div className="space-y-3">
                 {inviteMembers.map((member, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border">
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border dark:border-slate-600">
                     <input
                       type="email"
                       placeholder="Email address"
@@ -1510,7 +1474,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                         updated[index].email = e.target.value;
                         setInviteMembers(updated);
                       }}
-                      className="flex-1 text-sm bg-white border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="flex-1 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                     <select
                       value={member.relation}
@@ -1519,7 +1483,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                         updated[index].relation = e.target.value;
                         setInviteMembers(updated);
                       }}
-                      className="text-sm bg-white border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-gray-100 rounded px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     >
                       <option value="">Relation</option>
                       <option value="spouse">Spouse/Partner</option>
@@ -1538,7 +1502,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                         const updated = inviteMembers.filter((_, i) => i !== index);
                         setInviteMembers(updated);
                       }}
-                      className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50"
+                      className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       ×
                     </button>
@@ -1550,7 +1514,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   onClick={() => {
                     setInviteMembers([...inviteMembers, { email: '', role: 'ADULT', relation: '' }]);
                   }}
-                  className="w-full p-3 border-2 border-dashed border-orange-200 rounded-lg text-orange-600 hover:text-orange-700 hover:border-orange-300 hover:bg-orange-50 text-sm font-medium transition-colors"
+                  className="w-full p-3 border-2 border-dashed border-orange-200 dark:border-orange-700/50 rounded-lg text-orange-600 dark:text-orange-300 hover:text-orange-700 dark:hover:text-orange-200 hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-sm font-medium transition-colors"
                 >
                   + Add Family Member
                 </button>
@@ -1566,7 +1530,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                   setCreatedHouseholdId(null);
                   setCreatedHouseholdName('');
                 }} 
-                className="flex-1 px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors font-medium"
+                className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors font-medium"
               >
                 Skip for Now
               </button>
@@ -1646,7 +1610,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
-            <div className="text-xs text-gray-500 mt-4 text-center">
+            <div className="text-xs text-gray-600 dark:text-gray-400 mt-4 text-center">
               💡 You can always invite more members later from your dashboard
             </div>
           </div>

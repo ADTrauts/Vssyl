@@ -347,7 +347,7 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
   const getTrendIcon = (change: number) => {
     if (change > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
     if (change < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Activity className="w-4 h-4 text-gray-600" />;
+    return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
   };
 
   const getTrendColor = (change: number) => {
@@ -373,7 +373,7 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
         </div>
       </Card>
     );
@@ -383,15 +383,15 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
     <FeatureGate feature="calendar_analytics" businessId={businessId}>
       <Card className={`${className}`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <BarChart3 className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Calendar Analytics</h2>
-                <p className="text-gray-600">Meeting effectiveness and resource utilization insights</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Calendar Analytics</h2>
+                <p className="text-gray-600 dark:text-gray-400">Meeting effectiveness and resource utilization insights</p>
               </div>
             </div>
             
@@ -399,7 +399,7 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 {PERIOD_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -492,8 +492,8 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                           </span>
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-gray-900">{value}<span className="text-sm text-gray-500">{unit}</span></div>
-                      <div className="text-sm text-gray-600">{card.title}</div>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}<span className="text-sm text-gray-500 dark:text-gray-400">{unit}</span></div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{card.title}</div>
                     </Card>
                   );
                 })}
@@ -501,31 +501,31 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
 
               {/* Department Breakdown */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Department Metrics</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Department Metrics</h3>
                 <div className="space-y-3">
                   {departmentMetrics.map(dept => (
-                    <div key={dept.departmentId} className="grid grid-cols-6 gap-4 items-center p-3 bg-gray-50 rounded-lg">
-                      <div className="font-medium text-gray-900">{dept.departmentName}</div>
+                    <div key={dept.departmentId} className="grid grid-cols-6 gap-4 items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{dept.departmentName}</div>
                       <div className="text-sm">
-                        <div className="text-gray-500">Meetings</div>
+                        <div className="text-gray-500 dark:text-gray-400">Meetings</div>
                         <div className="font-medium">{dept.meetingCount}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="text-gray-500">Hours</div>
+                        <div className="text-gray-500 dark:text-gray-400">Hours</div>
                         <div className="font-medium">{dept.totalHours}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="text-gray-500">Avg Cost</div>
+                        <div className="text-gray-500 dark:text-gray-400">Avg Cost</div>
                         <div className="font-medium">${dept.costPerMeeting}</div>
                       </div>
                       <div className="text-sm">
-                        <div className="text-gray-500">Productivity</div>
+                        <div className="text-gray-500 dark:text-gray-400">Productivity</div>
                         <div className={`font-medium ${getEffectivenessColor(dept.productivityIndex).split(' ')[0]}`}>
                           {dept.productivityIndex}/100
                         </div>
                       </div>
                       <div className="text-sm">
-                        <div className="text-gray-500">External %</div>
+                        <div className="text-gray-500 dark:text-gray-400">External %</div>
                         <div className="font-medium">{Math.round(dept.externalMeetingRatio * 100)}%</div>
                       </div>
                     </div>
@@ -536,36 +536,36 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
               {/* Quick Insights */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Cost Efficiency</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Cost Efficiency</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Cost per hour:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Cost per hour:</span>
                       <span className="font-medium">${(meetingMetrics.meetingCost / meetingMetrics.totalHours).toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Cost per attendee hour:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Cost per attendee hour:</span>
                       <span className="font-medium">${(meetingMetrics.meetingCost / meetingMetrics.attendeeHours).toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Average meeting cost:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Average meeting cost:</span>
                       <span className="font-medium">${(meetingMetrics.meetingCost / meetingMetrics.totalMeetings).toFixed(0)}</span>
                     </div>
                   </div>
                 </Card>
                 
                 <Card className="p-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Time Efficiency</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Time Efficiency</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Average duration:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Average duration:</span>
                       <span className="font-medium">{meetingMetrics.averageDuration} min</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total person-hours:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Total person-hours:</span>
                       <span className="font-medium">{meetingMetrics.attendeeHours} hrs</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Meetings per day:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Meetings per day:</span>
                       <span className="font-medium">{(meetingMetrics.totalMeetings / 30).toFixed(1)}</span>
                     </div>
                   </div>
@@ -581,8 +581,8 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                 <Card key={resource.resourceId} className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-medium text-gray-900">{resource.resourceName}</h3>
-                      <p className="text-sm text-gray-600">{resource.resourceType}</p>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{resource.resourceName}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{resource.resourceType}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`px-2 py-1 text-xs rounded-full ${
@@ -595,29 +595,29 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                   
                   <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                     <div>
-                      <div className="text-gray-500 text-sm">Utilization</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Utilization</div>
                       <div className={`font-medium text-lg ${getUtilizationColor(resource.bookingRate)}`}>
                         {resource.bookingRate.toFixed(1)}%
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Bookings</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Bookings</div>
                       <div className="font-medium text-lg">{resource.totalBookings}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Hours</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Hours</div>
                       <div className="font-medium text-lg">{resource.totalHours}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Revenue</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Revenue</div>
                       <div className="font-medium text-lg">${resource.revenue.toLocaleString()}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Rating</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Rating</div>
                       <div className="font-medium text-lg">{resource.averageRating.toFixed(1)}/5</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Maintenance</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Maintenance</div>
                       <div className="font-medium text-lg">{resource.maintenanceHours}h</div>
                     </div>
                   </div>
@@ -633,8 +633,8 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                 <Card key={meeting.meetingId} className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-medium text-gray-900">{meeting.title}</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{meeting.title}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {meeting.date.toLocaleDateString()} • {meeting.duration} min • {meeting.attendeeCount} attendees
                       </p>
                     </div>
@@ -647,29 +647,29 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                     <div>
-                      <div className="text-gray-500 text-sm">Cost</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Cost</div>
                       <div className="font-medium">${meeting.cost}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Actions</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Actions</div>
                       <div className="font-medium">{meeting.completedActions}/{meeting.followUpActions}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Rating</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Rating</div>
                       <div className="font-medium">{meeting.attendeeRating.toFixed(1)}/5</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Room Usage</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Room Usage</div>
                       <div className="font-medium">{meeting.roomUtilization}%</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Outcomes</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">Outcomes</div>
                       <div className="font-medium">{meeting.outcomes.length}</div>
                     </div>
                   </div>
                   
                   <div>
-                    <div className="text-gray-500 text-sm mb-2">Key Outcomes:</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-sm mb-2">Key Outcomes:</div>
                     <div className="flex flex-wrap gap-2">
                       {meeting.outcomes.map((outcome, index) => (
                         <Badge key={index} className="px-2 py-1 text-xs bg-green-50 text-green-700 border border-green-200 rounded">
@@ -688,10 +688,10 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
           {activeTab === 'insights' && (
             <div className="space-y-6">
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Optimal Meeting Times</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Optimal Meeting Times</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {timeSlotAnalysis.map((slot, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-medium">{slot.dayOfWeek} at {slot.hour}:00</span>
                         <Badge className={`px-2 py-1 text-xs rounded-full ${getEffectivenessColor(slot.effectivenessScore)}`}>
@@ -700,15 +700,15 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
-                          <span className="text-gray-500">Meetings: </span>
+                          <span className="text-gray-500 dark:text-gray-400">Meetings: </span>
                           <span className="font-medium">{slot.meetingCount}</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">Attendance: </span>
+                          <span className="text-gray-500 dark:text-gray-400">Attendance: </span>
                           <span className="font-medium">{slot.averageAttendance}%</span>
                         </div>
                         <div>
-                          <span className="text-gray-500">Conflicts: </span>
+                          <span className="text-gray-500 dark:text-gray-400">Conflicts: </span>
                           <span className="font-medium">{slot.conflictRate}%</span>
                         </div>
                       </div>
@@ -719,7 +719,7 @@ export const CalendarAnalyticsPanel: React.FC<CalendarAnalyticsPanelProps> = ({
 
               {/* Recommendations */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Recommendations</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Recommendations</h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />

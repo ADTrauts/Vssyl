@@ -55,8 +55,8 @@ export default function AutonomyControlsHybrid() {
       <Card className="p-6">
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Component Error</h3>
-          <p className="text-gray-600 mb-4">The autonomy controls encountered an error. Please refresh the page.</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Component Error</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">The autonomy controls encountered an error. Please refresh the page.</p>
           <Button onClick={() => window.location.reload()}>
             Refresh Page
           </Button>
@@ -235,7 +235,7 @@ export default function AutonomyControlsHybrid() {
       <Card className="p-6">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-sm text-gray-600 mt-2">Checking authentication...</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Checking authentication...</p>
         </div>
       </Card>
     );
@@ -247,8 +247,8 @@ export default function AutonomyControlsHybrid() {
       <Card className="p-6">
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-600">Please log in to access autonomy settings.</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Authentication Required</h3>
+          <p className="text-gray-600 dark:text-gray-400">Please log in to access autonomy settings.</p>
         </div>
       </Card>
     );
@@ -260,8 +260,8 @@ export default function AutonomyControlsHybrid() {
       <Card className="p-6">
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Error</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <Button onClick={() => window.location.reload()}>
             Refresh Page
           </Button>
@@ -283,8 +283,8 @@ export default function AutonomyControlsHybrid() {
 
         <div className="space-y-6">
           <div className="text-center py-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Hybrid Autonomy Controls</h3>
-            <p className="text-gray-600 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Hybrid Autonomy Controls</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               This is a hybrid version that gradually adds back the original functionality.
             </p>
             
@@ -335,7 +335,7 @@ export default function AutonomyControlsHybrid() {
                     <br />
                     {rec.reason}
                     <br />
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       Suggested level: {rec.suggestedLevel}%
                     </span>
                   </span>

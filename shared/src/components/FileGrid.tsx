@@ -211,9 +211,9 @@ function FileGridItemDraggable({
           {renderItem ? renderItem(item) : (
             <div className="flex flex-col items-center justify-center p-2 h-28">
               <div className="mb-2">
-                {item.type === 'folder' ? <Folder size={40} className="text-blue-500" /> : <File size={40} className="text-gray-500" />}
+                {item.type === 'folder' ? <Folder size={40} className="text-blue-500" /> : <File size={40} className="text-gray-500 dark:text-gray-400" />}
               </div>
-              <span className="w-full text-center text-sm font-medium text-gray-700 truncate">{item.name}</span>
+              <span className="w-full text-center text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{item.name}</span>
               {/* Classification Badge */}
               {item.classification && (
                 <div className="mt-1">
@@ -318,15 +318,15 @@ export const FileGrid: React.FC<FileGridProps> = ({
   if (viewMode === 'list') {
     // Render as a list/table
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm">
             <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 dark:bg-slate-800">
                     <tr>
-                        <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"></th>
-                        <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                        <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Classification</th>
-                        <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Modified</th>
-                        <th className="p-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">File Size</th>
+                        <th className="p-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider"></th>
+                        <th className="p-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                        <th className="p-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Classification</th>
+                        <th className="p-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Last Modified</th>
+                        <th className="p-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">File Size</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -352,7 +352,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
                             </td>
                             <td className="p-3">
                                 <button
-                                    className="w-full text-left text-sm font-medium text-gray-800 flex items-center gap-2 hover:bg-gray-100 rounded px-2 py-1 transition-colors"
+                                    className="w-full text-left text-sm font-medium text-gray-800 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded px-2 py-1 transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onItemClick?.(item);
@@ -360,7 +360,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
                                     style={{ background: 'none', border: 'none' }}
                                     type="button"
                                 >
-                                    {item.type === 'file' ? <File size={20} className="text-gray-500" /> : <Folder size={20} className="text-blue-500" />}
+                                    {item.type === 'file' ? <File size={20} className="text-gray-500 dark:text-gray-400" /> : <Folder size={20} className="text-blue-500" />}
                                     {item.name}
                                 </button>
                             </td>
@@ -376,8 +376,8 @@ export const FileGrid: React.FC<FileGridProps> = ({
                                     <span className="text-sm text-gray-400">—</span>
                                 )}
                             </td>
-                            <td className="p-3 text-sm text-gray-600">{item.updatedAt ? formatDate(item.updatedAt) : '—'}</td>
-                            <td className="p-3 text-sm text-gray-600">{item.type === 'file' ? formatFileSize(item.size || 0) : '—'}</td>
+                            <td className="p-3 text-sm text-gray-600 dark:text-gray-400">{item.updatedAt ? formatDate(item.updatedAt) : '—'}</td>
+                            <td className="p-3 text-sm text-gray-600 dark:text-gray-400">{item.type === 'file' ? formatFileSize(item.size || 0) : '—'}</td>
                         </tr>
                     ))}
                 </tbody>

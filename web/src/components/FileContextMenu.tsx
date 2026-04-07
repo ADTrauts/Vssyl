@@ -90,7 +90,7 @@ export default function FileContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[200px]"
+      className="fixed z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-2 min-w-[200px]"
       style={{
         left: adjustedPosition.x,
         top: adjustedPosition.y,

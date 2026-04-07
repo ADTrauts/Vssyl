@@ -396,30 +396,30 @@ export default function ManagerTeamView() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Team HR</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
           Manage your team&apos;s HR information and approvals
         </p>
       </div>
       
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white border rounded-lg p-4">
-          <div className="text-sm text-gray-600">Team Members</div>
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">Team Members</div>
           <div className="text-2xl font-bold">{teamMembers.length}</div>
         </div>
-        <div className="bg-white border rounded-lg p-4">
-          <div className="text-sm text-gray-600">Pending Approvals</div>
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">Pending Approvals</div>
           <div className="text-2xl font-bold">{pending.length}</div>
         </div>
-        <div className="bg-white border rounded-lg p-4">
-          <div className="text-sm text-gray-600">Out Today</div>
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">Out Today</div>
           <div className="text-2xl font-bold">0</div>
-          <div className="text-xs text-gray-500 mt-1">Coming later</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Coming later</div>
         </div>
-        <div className="bg-white border rounded-lg p-4">
-          <div className="text-sm text-gray-600">Open Attendance Exceptions</div>
+        <div className="bg-white dark:bg-slate-900 border rounded-lg p-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">Open Attendance Exceptions</div>
           <div className="text-2xl font-bold">{openExceptionCount}</div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Exceptions flagged for your review
           </div>
         </div>
@@ -428,11 +428,11 @@ export default function ManagerTeamView() {
       {/* Team Management Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {onboardingManagerFeatureEnabled && (
-          <div className="border rounded-lg p-6 bg-white md:col-span-2 xl:col-span-3">
+          <div className="border rounded-lg p-6 bg-white dark:bg-slate-900 md:col-span-2 xl:col-span-3">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">Team Onboarding</h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Review and approve onboarding tasks for your team members.
                 </p>
               </div>
@@ -470,7 +470,7 @@ export default function ManagerTeamView() {
         )}
 
         {/* Team Members */}
-        <div className="border rounded-lg p-6 bg-white">
+        <div className="border rounded-lg p-6 bg-white dark:bg-slate-900">
           <div className="text-3xl mb-3">👥</div>
           <h3 className="text-lg font-semibold mb-2">Team Members</h3>
           {teamMembers.length === 0 ? (
@@ -484,7 +484,7 @@ export default function ManagerTeamView() {
               {teamMembers.map((m) => (
                 <div key={m.id} className="py-2 text-sm">
                   <div className="font-medium">{m.user?.name || m.user?.email}</div>
-                  <div className="text-gray-500">{m.position?.title}</div>
+                  <div className="text-gray-500 dark:text-gray-400">{m.position?.title}</div>
                 </div>
               ))}
             </div>
@@ -492,7 +492,7 @@ export default function ManagerTeamView() {
         </div>
 
         {/* Time-Off Approvals */}
-        <div className="border rounded-lg p-6 bg-white">
+        <div className="border rounded-lg p-6 bg-white dark:bg-slate-900">
           <div className="text-3xl mb-3">✅</div>
           <h3 className="text-lg font-semibold mb-2">Time-Off Approvals</h3>
           {pending.length === 0 ? (
@@ -505,7 +505,7 @@ export default function ManagerTeamView() {
             </div>
           ) : (
             <div className="border rounded">
-              <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+              <div className="grid grid-cols-12 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm font-medium">
                 <div className="col-span-3">Employee</div>
                 <div className="col-span-2">Type</div>
                 <div className="col-span-3">Dates</div>
@@ -522,24 +522,24 @@ export default function ManagerTeamView() {
                     <div className="grid grid-cols-12 px-3 py-3 text-sm items-start">
                       <div className="col-span-3">
                         <div className="font-medium">{r.employeePosition.user?.name || r.employeePosition.user.email}</div>
-                        <div className="text-gray-500 text-xs">{r.employeePosition.position.title}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">{r.employeePosition.position.title}</div>
                         {r.employeePosition.position?.department && (
                           <div className="text-gray-400 text-xs">{r.employeePosition.position.department.name}</div>
                         )}
                       </div>
                       <div className="col-span-2">
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{r.type}</span>
-                        <div className="text-xs text-gray-500 mt-1">{days} day{days !== 1 ? 's' : ''}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{days} day{days !== 1 ? 's' : ''}</div>
                       </div>
                       <div className="col-span-3">
                         <div>{start.toLocaleDateString()} → {end.toLocaleDateString()}</div>
                         {r.reason && (
-                          <div className="text-xs text-gray-500 mt-1" title={r.reason}>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1" title={r.reason}>
                             {r.reason.length > 30 ? `${r.reason.substring(0, 30)}...` : r.reason}
                           </div>
                         )}
                       </div>
-                      <div className="col-span-2 text-gray-500 text-xs">
+                      <div className="col-span-2 text-gray-500 dark:text-gray-400 text-xs">
                         {new Date(r.requestedAt).toLocaleDateString()}
                       </div>
                       <div className="col-span-2 flex gap-2 justify-end">
@@ -576,7 +576,7 @@ export default function ManagerTeamView() {
         </div>
 
         {/* Attendance Exceptions */}
-        <div className="border rounded-lg p-6 bg-white">
+        <div className="border rounded-lg p-6 bg-white dark:bg-slate-900">
           <div className="text-3xl mb-3">⚠️</div>
           <h3 className="text-lg font-semibold mb-2">Attendance Exceptions</h3>
           {exceptionsLoading ? (
@@ -597,7 +597,7 @@ export default function ManagerTeamView() {
             </div>
           ) : (
             <div className="border rounded">
-              <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+              <div className="grid grid-cols-12 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm font-medium">
                 <div className="col-span-3">Employee</div>
                 <div className="col-span-2">Type</div>
                 <div className="col-span-2">Detected</div>
@@ -618,7 +618,7 @@ export default function ManagerTeamView() {
                           {exception.employeePosition.user?.name ||
                             exception.employeePosition.user.email}
                         </div>
-                        <div className="text-gray-500 text-xs">
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">
                           {exception.employeePosition.position.title}
                         </div>
                         {exception.employeePosition.position?.department?.name && (
@@ -632,7 +632,7 @@ export default function ManagerTeamView() {
                           {exception.type.replace(/_/g, ' ')}
                         </span>
                       </div>
-                      <div className="col-span-2 text-gray-500 text-xs">
+                      <div className="col-span-2 text-gray-500 dark:text-gray-400 text-xs">
                         {detectedDate.toLocaleString()}
                       </div>
                       <div className="col-span-2">

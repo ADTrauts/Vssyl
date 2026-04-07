@@ -156,7 +156,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
   if (!session?.accessToken) {
     return (
       <div className={`flex h-full items-center justify-center ${className}`}>
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-500 dark:text-gray-400">
           Please log in to access chat
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
   if (!conversation) {
     return (
       <div className={`flex h-full items-center justify-center ${className}`}>
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-500 dark:text-gray-400">
           Select a conversation to start chatting
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
   return (
     <div className={`flex flex-col h-full bg-white ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-10">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
@@ -192,8 +192,8 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
             size={40}
           />
           <div>
-            <h2 className="font-semibold text-gray-900">{getConversationName(conversation)}</h2>
-            <p className="text-sm text-gray-500">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">{getConversationName(conversation)}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {conversation.type === 'DIRECT' ? 'Direct message' : `${conversation.participants?.length || 0} members`}
             </p>
           </div>
@@ -218,14 +218,14 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
 
       {/* Options Menu */}
       {showOptions && (
-        <div className="bg-white border-b border-gray-200 p-4">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-4">
           <div className="space-y-2">
-            <button className="flex items-center space-x-3 w-full p-2 rounded-lg hover:bg-gray-100">
-              <Search className="w-5 h-5 text-gray-600" />
+            <button className="flex items-center space-x-3 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700">
+              <Search className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <span>Search messages</span>
             </button>
-            <button className="flex items-center space-x-3 w-full p-2 rounded-lg hover:bg-gray-100">
-              <Info className="w-5 h-5 text-gray-600" />
+            <button className="flex items-center space-x-3 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700">
+              <Info className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <span>Conversation info</span>
             </button>
           </div>
@@ -254,7 +254,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
                         alt={message.sender?.name || 'User'}
                         size={24}
                       />
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {message.sender?.name || message.sender?.email}
                       </span>
                     </div>
@@ -282,7 +282,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
       </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -307,7 +307,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <Button
@@ -322,7 +322,7 @@ export default function MobileChat({ conversation, onBack, className = '' }: Mob
         
         {/* Emoji Picker */}
         {showEmojiPicker && (
-          <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+          <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="grid grid-cols-8 gap-1">
               {['😀', '😂', '😍', '🤔', '👍', '❤️', '🎉', '🔥', '😎', '🤗', '👋', '💪', '✨', '🌟', '💯', '🔥'].map((emoji) => (
                 <button

@@ -67,7 +67,7 @@ export default function NotesWidget({
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size={24} />
-        <span className="ml-2 text-gray-700">Loading notes...</span>
+        <span className="ml-2 text-gray-700 dark:text-gray-300">Loading notes...</span>
       </div>
     );
   }
@@ -91,7 +91,7 @@ export default function NotesWidget({
       </div>
 
       {notes.length === 0 ? (
-        <div className="text-center py-6 text-gray-700 text-sm">
+        <div className="text-center py-6 text-gray-700 dark:text-gray-300 text-sm">
           No notes yet. Create one to get started.
         </div>
       ) : (
@@ -101,15 +101,15 @@ export default function NotesWidget({
               <button
                 type="button"
                 onClick={() => (window.location.href = '/notes')}
-                className="w-full text-left flex items-start gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="w-full text-left flex items-start gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
               >
                 <FileText className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {note.title || 'Untitled note'}
                   </p>
                   {note.tags && note.tags.length > 0 && (
-                    <p className="text-xs text-gray-600 truncate">{note.tags.join(', ')}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{note.tags.join(', ')}</p>
                   )}
                 </div>
               </button>

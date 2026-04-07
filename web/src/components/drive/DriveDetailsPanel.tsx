@@ -220,7 +220,7 @@ export default function DriveDetailsPanel({
 
   if (isCollapsed) {
     return (
-      <div className="flex flex-col items-center justify-center bg-white border-l border-gray-200 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
+      <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
         <button
           className="absolute top-1/2 transform -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-gray-600 text-white border border-gray-500 cursor-pointer z-20 flex items-center justify-center hover:bg-gray-700 transition-colors"
           onClick={onToggleCollapse}
@@ -235,7 +235,7 @@ export default function DriveDetailsPanel({
 
   return (
     <div 
-      className="bg-white border-l border-gray-200 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
+      className="bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
       style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
     >
       {/* Toggle Button */}
@@ -251,7 +251,7 @@ export default function DriveDetailsPanel({
       {/* Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors z-10"
+        className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors z-10"
         aria-label="Close panel"
       >
         <X className="w-4 h-4" />
@@ -260,7 +260,7 @@ export default function DriveDetailsPanel({
       <div className="flex flex-col h-full overflow-hidden">
         {/* Preview Section */}
         {item.type === 'file' && (
-          <div className="flex-shrink-0 border-b border-gray-200 bg-gray-50">
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
             <div className="p-4 max-h-[400px] overflow-auto">
               {/* Image Preview with Zoom Controls */}
               {item.mimeType?.startsWith('image/') && previewUrl ? (
@@ -268,7 +268,7 @@ export default function DriveDetailsPanel({
                   <div className="flex justify-end gap-2 mb-2">
                     <button
                       onClick={() => setImageZoom(prev => Math.max(0.5, prev - 0.25))}
-                      className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                      className="p-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                       aria-label="Zoom out"
                       title="Zoom out"
                     >
@@ -276,7 +276,7 @@ export default function DriveDetailsPanel({
                     </button>
                     <button
                       onClick={() => setImageZoom(prev => Math.min(3, prev + 0.25))}
-                      className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                      className="p-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                       aria-label="Zoom in"
                       title="Zoom in"
                     >
@@ -287,7 +287,7 @@ export default function DriveDetailsPanel({
                         setImageZoom(1);
                         setImagePosition({ x: 0, y: 0 });
                       }}
-                      className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                      className="p-1.5 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                       aria-label="Reset zoom"
                       title="Reset zoom"
                     >
@@ -357,10 +357,10 @@ export default function DriveDetailsPanel({
               )
               // Code/Text Preview with Syntax Highlighting
               : textContent !== null && codeLanguage ? (
-                <div className="relative rounded-lg overflow-hidden border border-gray-300 bg-gray-900">
+                <div className="relative rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 bg-gray-900">
                   <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
                     <span className="text-xs font-mono text-gray-400">{codeLanguage}</span>
-                    <span className="text-xs text-gray-500">{textContent.length} chars</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{textContent.length} chars</span>
                   </div>
                   <div className="overflow-auto max-h-[280px]">
                     {syntaxStyle ? (
@@ -387,13 +387,13 @@ export default function DriveDetailsPanel({
               )
               // Plain Text Preview
               : textContent !== null ? (
-                <div className="relative rounded-lg overflow-hidden border border-gray-300 bg-gray-50">
-                  <div className="px-4 py-2 bg-gray-200 border-b border-gray-300">
-                    <span className="text-xs font-medium text-gray-700">Text File</span>
-                    <span className="text-xs text-gray-500 ml-2">{textContent.length} chars</span>
+                <div className="relative rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 bg-gray-50 dark:bg-slate-800">
+                  <div className="px-4 py-2 bg-gray-200 border-b border-gray-300 dark:border-slate-600">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Text File</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{textContent.length} chars</span>
                   </div>
                   <div className="p-4 overflow-auto max-h-[280px]">
-                    <pre className="text-sm font-mono whitespace-pre-wrap break-words text-gray-900">
+                    <pre className="text-sm font-mono whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100">
                       {textContent}
                     </pre>
                   </div>
@@ -410,8 +410,8 @@ export default function DriveDetailsPanel({
                 >
                   <div className="text-center py-8">
                     <div className="text-4xl mb-2">📄</div>
-                    <p className="text-sm text-gray-600">PDF preview</p>
-                    <p className="text-xs text-gray-500 mt-1">Click download to view PDF</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">PDF preview</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click download to view PDF</p>
                   </div>
                 </object>
               )
@@ -423,8 +423,8 @@ export default function DriveDetailsPanel({
                   ) : (
                     <div className="text-6xl mb-2">📄</div>
                   )}
-                  <p className="text-sm text-gray-600">{item.mimeType || 'File'}</p>
-                  <p className="text-xs text-gray-500 mt-1">Preview not available</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{item.mimeType || 'File'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preview not available</p>
                 </div>
               )}
             </div>
@@ -435,32 +435,32 @@ export default function DriveDetailsPanel({
         <div className="flex-1 overflow-y-auto p-6">
           {/* File Details */}
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Details</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">Details</h3>
             <div className="space-y-3">
               <div>
-                <dt className="text-xs font-medium text-gray-500 uppercase">Name</dt>
-                <dd className="text-sm text-gray-900 mt-1 break-words">{item.name}</dd>
+                <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1 break-words">{item.name}</dd>
               </div>
               {item.type === 'file' && item.size && (
                 <div>
-                  <dt className="text-xs font-medium text-gray-500 uppercase">Size</dt>
-                  <dd className="text-sm text-gray-900 mt-1">{formatSize(item.size)}</dd>
+                  <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Size</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1">{formatSize(item.size)}</dd>
                 </div>
               )}
               {item.mimeType && (
                 <div>
-                  <dt className="text-xs font-medium text-gray-500 uppercase">Type</dt>
-                  <dd className="text-sm text-gray-900 mt-1">{item.mimeType}</dd>
+                  <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1">{item.mimeType}</dd>
                 </div>
               )}
               <div>
-                <dt className="text-xs font-medium text-gray-500 uppercase">Modified</dt>
-                <dd className="text-sm text-gray-900 mt-1">{formatDateStr(item.modifiedAt)}</dd>
+                <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Modified</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1">{formatDateStr(item.modifiedAt)}</dd>
               </div>
               {item.createdBy && (
                 <div>
-                  <dt className="text-xs font-medium text-gray-500 uppercase">Created by</dt>
-                  <dd className="text-sm text-gray-900 mt-1">{item.createdBy}</dd>
+                  <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Created by</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1">{item.createdBy}</dd>
                 </div>
               )}
             </div>
@@ -468,7 +468,7 @@ export default function DriveDetailsPanel({
 
           {/* Actions */}
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Actions</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">Actions</h3>
             <div className="space-y-2">
               {item.type === 'file' && onDownload && (
                 <Button
@@ -549,7 +549,7 @@ export default function DriveDetailsPanel({
           {isLoading && (
             <div className="flex items-center justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-sm text-gray-600">Processing...</span>
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Processing...</span>
             </div>
           )}
         </div>

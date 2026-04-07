@@ -13,7 +13,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, pageCount, onPageC
   return (
     <div className="flex items-center gap-1">
       <button
-        className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+        className="px-2 py-1 rounded bg-gray-100 dark:bg-slate-700 hover:bg-gray-200"
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
       >
@@ -29,7 +29,7 @@ export const Pagination: React.FC<PaginationProps> = ({ page, pageCount, onPageC
         </button>
       ))}
       <button
-        className="px-2 py-1 rounded bg-gray-100 hover:bg-gray-200"
+        className="px-2 py-1 rounded bg-gray-100 dark:bg-slate-700 hover:bg-gray-200"
         onClick={() => onPageChange(page + 1)}
         disabled={page === pageCount}
       >

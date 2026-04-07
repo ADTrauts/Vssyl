@@ -25,7 +25,7 @@ interface Subscription {
   id: string;
   userId: string;
   userEmail: string;
-  tier: 'free' | 'standard' | 'enterprise';
+  tier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise' | string;
   status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
   amount: number;
   currentPeriodStart: string;
@@ -85,14 +85,39 @@ interface DeveloperPayout {
   isFirstYear?: boolean;
 }
 
+interface SubscriptionSummary {
+  activeCount: number;
+  pastDueCount: number;
+  cancelledCount: number;
+  unpaidCount: number;
+  totalAmount: number;
+  estimatedMonthlyAmount: number;
+  totalSubscriptions: number;
+}
+
+interface PayoutSummary {
+  pendingCount: number;
+  paidCount: number;
+  failedCount: number;
+  pendingAmount: number;
+  paidAmount: number;
+  failedAmount: number;
+  totalRevenue: number;
+  totalPlatformRevenue: number;
+  totalDeveloperRevenue: number;
+}
+
 export default function FinancialManagement() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [payouts, setPayouts] = useState<DeveloperPayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'subscriptions' | 'payments' | 'payouts' | 'expenses'>('subscriptions');
   const [syncing, setSyncing] = useState<Record<string, boolean>>({});
+  const [subscriptionSummary, setSubscriptionSummary] = useState<SubscriptionSummary | null>(null);
+  const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(null);
 
   useEffect(() => {
     loadFinancialData();
@@ -102,6 +127,7 @@ export default function FinancialManagement() {
     try {
       setLoading(true);
       setError(null);
+      setWarnings([]);
 
       // Load real data from APIs
       const [subscriptionsRes, paymentsRes, payoutsRes] = await Promise.all([
@@ -129,6 +155,19 @@ export default function FinancialManagement() {
       const subscriptionsData = (subscriptionsRes.data as any)?.subscriptions || [];
       const paymentsData = (paymentsRes.data as any)?.payments || [];
       const payoutsData = (payoutsRes.data as any)?.payouts || [];
+      const subscriptionSummaryData = (subscriptionsRes.data as any)?.summary || null;
+      const payoutSummaryData = (payoutsRes.data as any)?.summary || null;
+
+      const newWarnings: string[] = [];
+      if ((subscriptionsRes.data as any)?.schemaOutOfSync) {
+        newWarnings.push('Subscriptions schema is out of sync. Financial totals may be incomplete.');
+      }
+      if ((paymentsRes.data as any)?.schemaOutOfSync) {
+        newWarnings.push('Payments schema is out of sync. Payment rows may be incomplete.');
+      }
+      if ((payoutsRes.data as any)?.schemaOutOfSync) {
+        newWarnings.push('Developer payouts schema is out of sync. Payout rows may be incomplete.');
+      }
 
       // Format subscriptions with user email
       const formattedSubscriptions = subscriptionsData.map((sub: any) => ({
@@ -140,6 +179,9 @@ export default function FinancialManagement() {
       setSubscriptions(formattedSubscriptions);
       setPayments(paymentsData);
       setPayouts(payoutsData);
+      setSubscriptionSummary(subscriptionSummaryData);
+      setPayoutSummary(payoutSummaryData);
+      setWarnings(newWarnings);
     } catch (err) {
       setError('Failed to load financial data');
       console.error('Error loading financial data:', err);
@@ -175,8 +217,12 @@ export default function FinancialManagement() {
     switch (tier) {
       case 'free':
         return <Badge color="gray">Free</Badge>;
-      case 'standard':
-        return <Badge color="blue">Standard</Badge>;
+      case 'pro':
+        return <Badge color="blue">Pro</Badge>;
+      case 'business_basic':
+        return <Badge color="blue">Business Basic</Badge>;
+      case 'business_advanced':
+        return <Badge color="blue">Business Advanced</Badge>;
       case 'enterprise':
         return <Badge color="blue">Enterprise</Badge>;
       default:
@@ -265,8 +311,8 @@ export default function FinancialManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Financial Management</h1>
-          <p className="text-gray-600 mt-2">Manage subscriptions, payments, and developer payouts</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Financial Management</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">Manage subscriptions, payments, and developer payouts</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button 
@@ -288,6 +334,12 @@ export default function FinancialManagement() {
         </div>
       </div>
 
+      {warnings.length > 0 && (
+        <Alert type="warning" title="Data Warnings">
+          {warnings.join(' ')}
+        </Alert>
+      )}
+
       {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6">
@@ -296,9 +348,13 @@ export default function FinancialManagement() {
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${subscriptions.reduce((sum, sub) => sum + sub.amount, 0).toLocaleString()}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Revenue</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                ${(
+                  (payoutSummary?.totalRevenue ?? 0) ||
+                  (subscriptionSummary?.estimatedMonthlyAmount ?? 0) ||
+                  subscriptions.reduce((sum, sub) => sum + sub.amount, 0)
+                ).toLocaleString()}
               </p>
             </div>
           </div>
@@ -310,9 +366,9 @@ export default function FinancialManagement() {
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Subscriptions</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {subscriptions.filter(sub => sub.status === 'active').length}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Subscriptions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {subscriptionSummary?.activeCount ?? subscriptions.filter(sub => sub.status === 'active').length}
               </p>
             </div>
           </div>
@@ -324,9 +380,9 @@ export default function FinancialManagement() {
               <AlertTriangle className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Past Due</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {subscriptions.filter(sub => sub.status === 'past_due').length}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Past Due</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {subscriptionSummary?.pastDueCount ?? subscriptions.filter(sub => sub.status === 'past_due').length}
               </p>
             </div>
           </div>
@@ -338,9 +394,9 @@ export default function FinancialManagement() {
               <CreditCard className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Payouts</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${payouts.filter(payout => payout.status === 'pending').reduce((sum, payout) => sum + payout.amount, 0).toLocaleString()}
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Payouts</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                ${((payoutSummary?.pendingAmount ?? 0) || payouts.filter(payout => payout.status === 'pending').reduce((sum, payout) => sum + payout.amount, 0)).toLocaleString()}
               </p>
             </div>
           </div>
@@ -348,7 +404,7 @@ export default function FinancialManagement() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
           {[
             { id: 'subscriptions', label: 'Subscriptions', count: subscriptions.length },
@@ -362,11 +418,11 @@ export default function FinancialManagement() {
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
               }`}
             >
               {tab.label}
-              <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">
+              <span className="ml-2 bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-gray-100 py-0.5 px-2.5 rounded-full text-xs">
                 {tab.count}
               </span>
             </button>
@@ -381,31 +437,31 @@ export default function FinancialManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Plan
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Period
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
                 {subscriptions.map((subscription) => (
-                  <tr key={subscription.id} className="hover:bg-gray-50">
+                  <tr key={subscription.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{subscription.userEmail}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{subscription.userEmail}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getTierBadge(subscription.tier)}
@@ -413,10 +469,10 @@ export default function FinancialManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(subscription.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       ${subscription.amount}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -460,49 +516,49 @@ export default function FinancialManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
                 {payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-gray-50">
+                  <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payment.customerEmail}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{payment.customerEmail}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       <div>
                         <div className="font-medium">${payment.amount.toFixed(2)}</div>
                         {payment.stripeNetAmount && payment.stripeNetAmount !== payment.amount && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             Net: ${payment.stripeNetAmount.toFixed(2)}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       <div className="space-y-1">
                         {payment.stripeFee !== undefined && payment.stripeFee > 0 && (
                           <div className="text-xs">
-                            <span className="text-gray-500">Fee:</span> ${payment.stripeFee.toFixed(2)}
+                            <span className="text-gray-500 dark:text-gray-400">Fee:</span> ${payment.stripeFee.toFixed(2)}
                           </div>
                         )}
                         {payment.refundAmount !== undefined && payment.refundAmount > 0 && (
                           <div className="text-xs">
-                            <span className="text-gray-500">Refunded:</span> ${payment.refundAmount.toFixed(2)}
+                            <span className="text-gray-500 dark:text-gray-400">Refunded:</span> ${payment.refundAmount.toFixed(2)}
                             {payment.refundCount && payment.refundCount > 0 && (
                               <span className="text-gray-400"> ({payment.refundCount})</span>
                             )}
@@ -516,7 +572,7 @@ export default function FinancialManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(payment.status)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       <div>
                         {new Date(payment.createdAt).toLocaleDateString()}
                         {payment.lastSyncedAt && (
@@ -581,33 +637,33 @@ export default function FinancialManagement() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Developer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Requested
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Paid
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-700">
                 {payouts.map((payout) => (
-                  <tr key={payout.id} className="hover:bg-gray-50">
+                  <tr key={payout.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payout.developerName}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{payout.developerName}</div>
                       {payout.commissionType && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           {payout.commissionType === 'small_business' && '🏪 Small Business (15%)'}
                           {payout.commissionType === 'long_term' && '⏰ Long-term (15%)'}
                           {payout.commissionType === 'standard' && '📊 Standard (30%)'}
@@ -616,11 +672,11 @@ export default function FinancialManagement() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         ${payout.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                       {payout.totalRevenue && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           Total: ${payout.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                       )}
@@ -628,15 +684,15 @@ export default function FinancialManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(payout.status)}
                       {payout.commissionRate && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           {(payout.commissionRate * 100).toFixed(0)}% commission
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {new Date(payout.requestedAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

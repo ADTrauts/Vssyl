@@ -246,7 +246,7 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
                   >
                     Welcome Back!
                   </h2>
-                  <p className="text-gray-700">{config.welcomeMessage}</p>
+                  <p className="text-gray-700 dark:text-gray-300">{config.welcomeMessage}</p>
                 </Card>
               </div>
             )}
@@ -260,8 +260,8 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
                     <Card key={announcement.id} className="p-4 border-l-4 border-blue-500">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="font-semibold text-gray-900">{announcement.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{announcement.content}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">{announcement.title}</h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{announcement.content}</p>
                         </div>
                         {announcement.priority === 'urgent' && (
                           <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded">
@@ -301,7 +301,7 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500">No widgets available</p>
+                <p className="text-gray-500 dark:text-gray-400">No widgets available</p>
                 <p className="text-sm text-gray-400 mt-1">
                   Contact your administrator to configure the front page
                 </p>

@@ -30,7 +30,7 @@ export const AdminHeader = ({
             <Shield className="w-8 h-8 text-blue-400" />
             <div>
               <h1 className="text-xl font-bold">{title}</h1>
-              <p className="text-sm text-gray-400">{subtitle}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">{subtitle}</p>
             </div>
           </div>
         </div>

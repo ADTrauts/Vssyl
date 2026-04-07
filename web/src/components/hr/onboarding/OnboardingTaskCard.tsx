@@ -94,16 +94,16 @@ export default function OnboardingTaskCard({
             <div className="flex items-start justify-between gap-4 mb-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-semibold text-gray-900">{task.title}</h4>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</h4>
                   <OnboardingTaskStatusBadge status={task.status} />
                   {isOverdue && (
                     <span className="text-xs text-red-600 font-medium">Overdue</span>
                   )}
                 </div>
                 {task.description && (
-                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
                 )}
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                   <span className="capitalize">{task.taskType.toLowerCase()}</span>
                   {task.ownerType && (
                     <span className="capitalize">Owner: {task.ownerType.toLowerCase()}</span>
@@ -186,7 +186,7 @@ export default function OnboardingTaskCard({
 
             {/* Document Upload Section */}
             {showDocumentUpload && (task.metadata as { requiresDocument?: boolean })?.requiresDocument && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
                 <OnboardingDocumentUpload
                   businessId={businessId}
                   taskId={task.id}
@@ -212,15 +212,15 @@ export default function OnboardingTaskCard({
 
             {/* Completed Info */}
             {task.status === 'COMPLETED' && task.completedAt && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <CheckCircle2 className="w-4 h-4 text-green-600" />
                   <span>
                     Completed {format(new Date(task.completedAt), 'MMM d, yyyy')}
                   </span>
                 </div>
                 {task.notes && (
-                  <p className="text-sm text-gray-600 mt-1 ml-6">{task.notes}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-6">{task.notes}</p>
                 )}
               </div>
             )}

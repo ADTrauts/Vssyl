@@ -90,21 +90,21 @@ export default function OnboardingEquipmentRequest({
         <Modal open={true} onClose={() => setShowModal(false)} title="Request Equipment">
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{task.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{task.title}</h3>
               {task.description && (
-                <p className="text-sm text-gray-600">{task.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
               )}
             </div>
 
             <Alert type="info" title="Equipment Request">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Submit your equipment request. HR will review and process your request.
               </p>
             </Alert>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">Equipment Items</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Equipment Items</label>
                 <Button variant="secondary" size="sm" onClick={handleAddItem}>
                   <Plus className="w-4 h-4 mr-1" />
                   Add Item
@@ -112,7 +112,7 @@ export default function OnboardingEquipmentRequest({
               </div>
 
               {items.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 border border-dashed rounded-lg">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400 border border-dashed rounded-lg">
                   <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm">No equipment items added yet</p>
                   <p className="text-xs text-gray-400 mt-1">Click "Add Item" to get started</p>
@@ -122,7 +122,7 @@ export default function OnboardingEquipmentRequest({
                   {items.map((item, index) => (
                     <Card key={index} className="p-4">
                       <div className="flex items-start justify-between mb-3">
-                        <h4 className="text-sm font-medium text-gray-900">Item {index + 1}</h4>
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Item {index + 1}</h4>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -133,44 +133,44 @@ export default function OnboardingEquipmentRequest({
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Equipment Name *
                           </label>
                           <input
                             type="text"
                             value={item.name}
                             onChange={(e) => handleUpdateItem(index, { name: e.target.value })}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="e.g. Laptop, Monitor, Headset"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Quantity
                           </label>
                           <input
                             type="number"
                             value={item.quantity || 1}
                             onChange={(e) => handleUpdateItem(index, { quantity: parseInt(e.target.value) || 1 })}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             min={1}
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             SKU / Model (optional)
                           </label>
                           <input
                             type="text"
                             value={item.sku || ''}
                             onChange={(e) => handleUpdateItem(index, { sku: e.target.value })}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="e.g. MacBook Pro 16"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                             Size / Color (optional)
                           </label>
                           <input
@@ -185,7 +185,7 @@ export default function OnboardingEquipmentRequest({
                                 handleUpdateItem(index, { color: value });
                               }
                             }}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="e.g. Large, Black, 15 inch"
                           />
                         </div>

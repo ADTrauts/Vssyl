@@ -74,7 +74,7 @@ export function FolderItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="mb-2 border border-gray-200 rounded-lg bg-white"
+      className="mb-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
@@ -85,7 +85,7 @@ export function FolderItem({
           {...listeners}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
-          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
         >
           <GripVertical size={16} />
         </div>
@@ -93,7 +93,7 @@ export function FolderItem({
         {/* Collapse/Expand Button */}
         <button
           onClick={() => onToggleCollapse(folder.id)}
-          className="p-1 hover:bg-gray-100 rounded"
+          className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
           aria-label={folder.collapsed ? 'Expand folder' : 'Collapse folder'}
         >
           {folder.collapsed ? (
@@ -104,7 +104,7 @@ export function FolderItem({
         </button>
 
         {/* Folder Icon */}
-        <FolderIcon size={18} className="text-gray-600" />
+        <FolderIcon size={18} className="text-gray-600 dark:text-gray-400" />
 
         {/* Folder Name */}
         {isEditing ? (
@@ -119,7 +119,7 @@ export function FolderItem({
           />
         ) : (
           <span
-            className="flex-1 text-sm font-medium text-gray-700 cursor-pointer"
+            className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
             onDoubleClick={() => setIsEditing(true)}
           >
             {folder.name}
@@ -131,14 +131,14 @@ export function FolderItem({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setIsEditing(true)}
-              className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               aria-label="Rename folder"
             >
               <Edit2 size={14} />
             </button>
             <button
               onClick={() => onDelete(folder.id)}
-              className="p-1 hover:bg-gray-100 rounded text-red-500 hover:text-red-700"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded text-red-500 hover:text-red-700"
               aria-label="Delete folder"
             >
               <Trash2 size={14} />

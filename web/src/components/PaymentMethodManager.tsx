@@ -131,7 +131,7 @@ export default function PaymentMethodManager({ onUpdate }: PaymentMethodManagerP
             <CreditCard className="h-5 w-5" />
             Payment Methods
           </h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Manage your payment methods for subscriptions and purchases
           </p>
         </div>
@@ -173,8 +173,8 @@ export default function PaymentMethodManager({ onUpdate }: PaymentMethodManagerP
         <Card className="p-6">
           <div className="text-center py-8">
             <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">No payment methods on file</p>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">No payment methods on file</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Add a payment method to get started with subscriptions and purchases
             </p>
             <Button variant="primary" onClick={() => setShowAddModal(true)}>
@@ -189,9 +189,9 @@ export default function PaymentMethodManager({ onUpdate }: PaymentMethodManagerP
             <Card key={pm.id} className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-12 h-8 bg-gray-100 rounded border">
+                  <div className="flex items-center justify-center w-12 h-8 bg-gray-100 dark:bg-slate-700 rounded border">
                     {pm.card && (
-                      <CreditCard className="h-5 w-5 text-gray-600" />
+                      <CreditCard className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     )}
                   </div>
                   <div>
@@ -202,13 +202,13 @@ export default function PaymentMethodManager({ onUpdate }: PaymentMethodManagerP
                             {formatCardBrand(pm.card.brand)} •••• {pm.card.last4}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
                           Expires {formatExpiry(pm.card.exp_month, pm.card.exp_year)}
                         </div>
                       </>
                     )}
                     {pm.billing_details?.name && (
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {pm.billing_details.name}
                       </div>
                     )}

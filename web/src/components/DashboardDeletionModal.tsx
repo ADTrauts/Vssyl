@@ -130,36 +130,36 @@ export default function DashboardDeletionModal({
         {/* Header with icon */}
         <div className="flex items-center space-x-3 pb-4 border-b">
           <TrashIcon className="w-6 h-6 text-red-600" />
-          <span className="text-lg font-semibold text-gray-900">Dashboard Deletion</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Dashboard Deletion</span>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Loading file information...</span>
+            <span className="ml-3 text-gray-600 dark:text-gray-400">Loading file information...</span>
           </div>
         ) : (
           <>
             {/* File Summary */}
             {hasFiles && fileSummary && (
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-3">
-                  <FolderIcon className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-900">Dashboard Contents</span>
+                  <FolderIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">Dashboard Contents</span>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{fileSummary.fileCount}</div>
-                    <div className="text-sm text-gray-600">Files</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{fileSummary.fileCount}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Files</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{fileSummary.folderCount}</div>
-                    <div className="text-sm text-gray-600">Folders</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{fileSummary.folderCount}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Folders</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-gray-900">{formatFileSize(fileSummary.totalSize)}</div>
-                    <div className="text-sm text-gray-600">Total Size</div>
+                    <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatFileSize(fileSummary.totalSize)}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Total Size</div>
                   </div>
                 </div>
 
@@ -172,10 +172,10 @@ export default function DashboardDeletionModal({
 
                 {fileSummary.topLevelItems.length > 0 && (
                   <div>
-                    <div className="text-sm font-medium text-gray-700 mb-2">Sample Items:</div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sample Items:</div>
                     <div className="space-y-1">
                       {fileSummary.topLevelItems.map((item, index) => (
-                        <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                        <div key={index} className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                           <span className="text-xs">{item.type === 'folder' ? '📁' : '📄'}</span>
                           <span className="truncate">{item.name}</span>
                           {item.size && <span className="text-xs">({formatFileSize(item.size)})</span>}
@@ -190,12 +190,12 @@ export default function DashboardDeletionModal({
             {/* Action Selection */}
             {hasFiles ? (
               <div className="space-y-4">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   What would you like to do with these files?
                 </div>
 
                 {/* Move to Main Drive Option */}
-                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                   <input
                     type="radio"
                     name="fileAction"
@@ -207,16 +207,16 @@ export default function DashboardDeletionModal({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <FolderIcon className="w-5 h-5 text-blue-600" />
-                      <span className="font-medium text-gray-900">Move to My Drive</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">Move to My Drive</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Files will be moved to "{generateLabeledFolderName(dashboard.name)}" folder in your main drive
                     </p>
                   </div>
                 </label>
 
                 {/* Move to Trash Option */}
-                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                   <input
                     type="radio"
                     name="fileAction"
@@ -228,16 +228,16 @@ export default function DashboardDeletionModal({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <TrashIcon className="w-5 h-5 text-orange-600" />
-                      <span className="font-medium text-gray-900">Move to Trash</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">Move to Trash</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Files can be recovered from trash (extended 30-day retention)
                     </p>
                   </div>
                 </label>
 
                 {/* Export & Download Option */}
-                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <label className="flex items-start space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                   <input
                     type="radio"
                     name="fileAction"
@@ -249,9 +249,9 @@ export default function DashboardDeletionModal({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <ArrowDownTrayIcon className="w-5 h-5 text-green-600" />
-                      <span className="font-medium text-gray-900">Export & Download</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">Export & Download</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       Download a ZIP file of all content before deletion
                     </p>
                   </div>
@@ -266,7 +266,7 @@ export default function DashboardDeletionModal({
                     onChange={(e) => setRememberChoice(e.target.checked)}
                     className="rounded"
                   />
-                  <label htmlFor="rememberChoice" className="text-sm text-gray-600 cursor-pointer">
+                  <label htmlFor="rememberChoice" className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                     Remember my choice (don't ask again for similar dashboards)
                   </label>
                 </div>
@@ -274,8 +274,8 @@ export default function DashboardDeletionModal({
             ) : (
               <div className="text-center py-6">
                 <FolderIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">This dashboard doesn't contain any files or folders.</p>
-                <p className="text-sm text-gray-500 mt-1">The dashboard will be deleted immediately.</p>
+                <p className="text-gray-600 dark:text-gray-400">This dashboard doesn't contain any files or folders.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">The dashboard will be deleted immediately.</p>
               </div>
             )}
 

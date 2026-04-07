@@ -315,7 +315,7 @@ export default function ApprovalManager() {
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold">Action Details</h3>
-              <pre className="mt-2 p-3 bg-gray-100 rounded text-sm overflow-auto">
+              <pre className="mt-2 p-3 bg-gray-100 dark:bg-slate-700 rounded text-sm overflow-auto">
                 {JSON.stringify(selectedApproval.actionData, null, 2)}
               </pre>
             </div>

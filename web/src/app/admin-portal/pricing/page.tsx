@@ -334,8 +334,8 @@ export default function PricingManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pricing Management</h1>
-          <p className="text-gray-600 mt-1">Manage subscription tier pricing and query pack prices</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pricing Management</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-1">Manage subscription tier pricing and query pack prices</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -399,14 +399,14 @@ export default function PricingManagementPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Tier</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Monthly</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Yearly</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Per Employee</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Included</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Query Packs</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Tier</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Monthly</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Yearly</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Per Employee</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Included</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Query Packs</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Status</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -419,23 +419,23 @@ export default function PricingManagementPage() {
                           .join(' / ')
                       : '-';
                     return (
-                    <tr key={tier} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{formatTierName(tier)}</td>
-                      <td className="py-3 px-4 text-gray-700">
+                    <tr key={tier} className="border-b hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
+                      <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">{formatTierName(tier)}</td>
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                         {prices.monthly ? formatCurrency(prices.monthly.basePrice) : '-'}
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                         {prices.yearly ? formatCurrency(prices.yearly.basePrice) : '-'}
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                         {prices.monthly?.perEmployeePrice
                           ? formatCurrency(prices.monthly.perEmployeePrice)
                           : '-'}
                       </td>
-                      <td className="py-3 px-4 text-gray-700">
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                         {prices.monthly?.includedEmployees || '-'}
                       </td>
-                      <td className="py-3 px-4 text-gray-700 text-xs" title="Small / Medium / Large / Enterprise">
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300 text-xs" title="Small / Medium / Large / Enterprise">
                         {queryPackSummary}
                       </td>
                       <td className="py-3 px-4">
@@ -484,47 +484,47 @@ export default function PricingManagementPage() {
         <Tabs.Content value="history">
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Price Change History</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Price Change History</h2>
               <Button variant="secondary" size="sm" onClick={loadPriceHistory}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
             </div>
             {priceHistory.length === 0 ? (
-              <p className="text-gray-600">No price changes recorded yet</p>
+              <p className="text-gray-700 dark:text-gray-300">No price changes recorded yet</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Date</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Tier</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Change Type</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Old Value</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">New Value</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Changed By</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Notification</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Date</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Tier</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Change Type</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Old Value</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">New Value</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Changed By</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-gray-100">Notification</th>
                     </tr>
                   </thead>
                   <tbody>
                     {priceHistory.map((change: any) => (
-                      <tr key={change.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-4 text-gray-700">
+                      <tr key={change.id} className="border-b hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {new Date(change.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {formatTierName(change.pricingConfig?.tier || '')} ({change.pricingConfig?.billingCycle || ''})
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {change.changeType.replace('_', ' ')}
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {change.changeType.includes('price') ? formatCurrency(change.oldValue) : change.oldValue}
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {change.changeType.includes('price') ? formatCurrency(change.newValue) : change.newValue}
                         </td>
-                        <td className="py-3 px-4 text-gray-700">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {change.createdByUser?.name || change.createdByUser?.email || 'Unknown'}
                         </td>
                         <td className="py-3 px-4">
@@ -556,7 +556,7 @@ export default function PricingManagementPage() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Base Price ($)
               </label>
               <Input
@@ -597,22 +597,22 @@ export default function PricingManagementPage() {
 
             {showPreview && impact && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Impact Preview</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Impact Preview</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Affected Subscriptions:</span>
-                    <span className="font-medium text-gray-900">{impact.affectedSubscriptions}</span>
+                    <span className="text-gray-700 dark:text-gray-300">Affected Subscriptions:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{impact.affectedSubscriptions}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Current Monthly Revenue:</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(impact.currentRevenue)}</span>
+                    <span className="text-gray-700 dark:text-gray-300">Current Monthly Revenue:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(impact.currentRevenue)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-700">New Monthly Revenue:</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(impact.newRevenue)}</span>
+                    <span className="text-gray-700 dark:text-gray-300">New Monthly Revenue:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(impact.newRevenue)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-700">Revenue Change:</span>
+                    <span className="text-gray-700 dark:text-gray-300">Revenue Change:</span>
                     <span className={`font-medium ${impact.revenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {impact.revenueChange >= 0 ? '+' : ''}{formatCurrency(impact.revenueChange)} ({impact.revenueChangePercent >= 0 ? '+' : ''}{impact.revenueChangePercent.toFixed(1)}%)
                     </span>
@@ -622,7 +622,7 @@ export default function PricingManagementPage() {
             )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Per Employee Price ($)
                   </label>
                   <Input
@@ -637,10 +637,10 @@ export default function PricingManagementPage() {
                     }
                 placeholder="0.00"
                   />
-              <p className="text-xs text-gray-500 mt-1">Leave empty if not applicable</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">Leave empty if not applicable</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Included Employees
                   </label>
                   <Input
@@ -654,14 +654,14 @@ export default function PricingManagementPage() {
                     }
                 placeholder="0"
                   />
-              <p className="text-xs text-gray-500 mt-1">Number of employees included in base price</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">Number of employees included in base price</p>
                 </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-gray-900">AI Query Pack Prices</h4>
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Query Pack Prices</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Small Pack (500 queries) ($)
                   </label>
                   <Input
@@ -678,7 +678,7 @@ export default function PricingManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Medium Pack (2,500 queries) ($)
                   </label>
                   <Input
@@ -695,7 +695,7 @@ export default function PricingManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Large Pack (5,000 queries) ($)
                   </label>
                   <Input
@@ -712,7 +712,7 @@ export default function PricingManagementPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Enterprise Pack (10,000 queries) ($)
                   </label>
                   <Input
@@ -729,11 +729,11 @@ export default function PricingManagementPage() {
                   />
                 </div>
               </div>
-              <p className="text-xs text-gray-500">Query pack prices are global (same for all tiers). Changes will sync to Stripe.</p>
+              <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">Query pack prices are global (same for all tiers). Changes will sync to Stripe.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Stripe Price ID (optional)
               </label>
               <Input
@@ -756,7 +756,7 @@ export default function PricingManagementPage() {
                   onChange={(e) => setSendNotifications(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="sendNotifications" className="text-sm text-gray-700">
+                <label htmlFor="sendNotifications" className="text-sm text-gray-700 dark:text-gray-300">
                   Send email notifications to affected subscribers
                 </label>
                 </div>
@@ -769,14 +769,14 @@ export default function PricingManagementPage() {
                     className="w-4 h-4 mt-0.5"
                   />
                   <div>
-                    <label htmlFor="updateExistingSubscriptions" className="text-sm font-medium text-gray-700 block">
+                    <label htmlFor="updateExistingSubscriptions" className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
                       Update existing subscriptions to new price
                     </label>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                       All active subscriptions for this tier will be updated to the new price. 
                       The new price will take effect on their next billing cycle (no proration).
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">
                       ⚠️ If unchecked, existing customers will keep their current price (grandfathered pricing).
                     </p>
                   </div>
@@ -813,18 +813,18 @@ export default function PricingManagementPage() {
         title="Create new tier"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Add a new subscription tier. A Stripe product and monthly/yearly prices will be created and the tier will appear in the billing modal.</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">Add a new subscription tier. A Stripe product and monthly/yearly prices will be created and the tier will appear in the billing modal.</p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tier key (slug)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tier key (slug)</label>
             <Input
               value={createTierForm.tier}
               onChange={(e) => setCreateTierForm({ ...createTierForm, tier: e.target.value })}
               placeholder="e.g. pro_plus"
             />
-            <p className="text-xs text-gray-600 mt-1">Lowercase letters, numbers, underscores only</p>
+            <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">Lowercase letters, numbers, underscores only</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Display name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display name</label>
             <Input
               value={createTierForm.displayName}
               onChange={(e) => setCreateTierForm({ ...createTierForm, displayName: e.target.value })}
@@ -833,7 +833,7 @@ export default function PricingManagementPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Monthly price ($)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monthly price ($)</label>
               <Input
                 type="number"
                 step="0.01"
@@ -844,7 +844,7 @@ export default function PricingManagementPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Yearly price ($)</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Yearly price ($)</label>
               <Input
                 type="number"
                 step="0.01"
@@ -857,7 +857,7 @@ export default function PricingManagementPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Per employee price ($) — optional</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Per employee price ($) — optional</label>
               <Input
                 type="number"
                 step="0.01"
@@ -868,7 +868,7 @@ export default function PricingManagementPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Included employees — optional</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Included employees — optional</label>
               <Input
                 type="number"
                 min="0"

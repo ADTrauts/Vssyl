@@ -217,7 +217,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
       <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transition-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-4 border-b flex items-center justify-between">
           <div className="font-semibold">{eventToEdit ? 'Edit Event' : 'New Event'}</div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">✕</button>
         </div>
         <div className="p-4 space-y-4">
           <div>
@@ -385,9 +385,9 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
                   // Reset file input
                   e.target.value = '';
                 }}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
-              <div className="text-xs text-gray-500 mt-1">Drag & drop or click to select .ics file</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Drag & drop or click to select .ics file</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -408,7 +408,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
           <div>
             <label className="block text-sm mb-1">Reminder</label>
             <input type="number" min={0} value={reminderMinutes} onChange={e => setReminderMinutes(parseInt(e.target.value || '0', 10))} className="w-full border rounded px-2 py-1" />
-            <div className="text-[11px] text-gray-500 mt-1">minutes before</div>
+            <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">minutes before</div>
           </div>
           <div>
             <label className="block text-sm mb-1">Method</label>
@@ -464,7 +464,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm">Attendees</label>
               {eventToEdit?.id && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   RSVP:
                   <button className="ml-2 px-2 py-0.5 border rounded" onClick={async () => { const r = await calendarAPI.rsvp(eventToEdit.id!, 'ACCEPTED'); if (r?.success) setAttendees(r.data.attendees || []); }}>Accept</button>
                   <button className="ml-2 px-2 py-0.5 border rounded" onClick={async () => { const r = await calendarAPI.rsvp(eventToEdit.id!, 'DECLINED'); if (r?.success) setAttendees(r.data.attendees || []); }}>Decline</button>
@@ -483,9 +483,9 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
             {attendees.length > 0 && (
               <ul className="space-y-1">
                 {attendees.map((a, idx) => (
-                  <li key={idx} className="text-sm text-gray-700 flex items-center justify-between">
+                  <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between">
                     <span>{a.email || a.userId}</span>
-                    <span className="text-xs text-gray-500">{a.response || 'NEEDS_ACTION'}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{a.response || 'NEEDS_ACTION'}</span>
                   </li>
                 ))}
               </ul>

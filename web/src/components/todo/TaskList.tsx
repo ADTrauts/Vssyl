@@ -205,7 +205,7 @@ export function TaskList({ tasks, projects = [], onTaskSelect, onTaskComplete, o
         
         {/* Subtasks - Nested under parent */}
         {taskSubtasks.length > 0 && (
-          <div className="ml-8 pl-4 border-l-2 border-gray-200 space-y-1">
+          <div className="ml-8 pl-4 border-l-2 border-gray-200 dark:border-slate-700 space-y-1">
             {activeSubtasks.map((subtask) => (
               <TaskItem
                 key={subtask.id}
@@ -257,19 +257,19 @@ export function TaskList({ tasks, projects = [], onTaskSelect, onTaskComplete, o
         {/* Project Header */}
         <button
           onClick={() => toggleProject(projectId)}
-          className="w-full flex items-center gap-2 px-2 py-3 mb-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+          className="w-full flex items-center gap-2 px-2 py-3 mb-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left"
         >
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-gray-500" />
+            <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           )}
           <div
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: color }}
           />
-          <span className="font-semibold text-gray-900">{name}</span>
-          <span className="text-sm text-gray-500 ml-auto">
+          <span className="font-semibold text-gray-900 dark:text-gray-100">{name}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
             {totalCount} {totalCount === 1 ? 'task' : 'tasks'}
           </span>
         </button>
@@ -287,7 +287,7 @@ export function TaskList({ tasks, projects = [], onTaskSelect, onTaskComplete, o
             {/* Completed Tasks */}
             {completed.length > 0 && (
               <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Completed ({completed.length})
                 </h3>
                 <div className="space-y-3">

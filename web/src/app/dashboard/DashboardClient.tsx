@@ -186,7 +186,7 @@ function WidgetContentRenderer({
       );
     default:
       return (
-        <div className="flex items-center justify-center h-full text-gray-600 text-sm">
+        <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 text-sm">
           Unknown widget type: {widget.type}
         </div>
       );
@@ -227,15 +227,15 @@ function EmptyDashboard({
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to your Dashboard</h3>
-      <p className="text-sm text-gray-600 text-center max-w-md mb-8">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome to your Dashboard</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
         Your dashboard is your command center. Add widgets to see quick summaries of your modules, 
         or start with a template to get up and running quickly.
       </p>
 
       {/* Quick start templates */}
       <div className="w-full max-w-2xl mb-8">
-        <h4 className="text-sm font-medium text-gray-700 mb-3 text-center">Quick Start with a Template</h4>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 text-center">Quick Start with a Template</h4>
         <DashboardTemplates
           onSelectTemplate={onApplyTemplate}
           dashboardType={dashboardType}
@@ -244,7 +244,7 @@ function EmptyDashboard({
       </div>
 
       {/* Or add manually */}
-      <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
+      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
         <div className="w-12 h-px bg-gray-200" />
         <span>or</span>
         <div className="w-12 h-px bg-gray-200" />
@@ -253,7 +253,7 @@ function EmptyDashboard({
       {isEditMode ? (
         <button
           onClick={onAddWidget}
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 rounded-lg transition-colors shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 hover:border-gray-400 rounded-lg transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Add Widgets Manually
@@ -261,7 +261,7 @@ function EmptyDashboard({
       ) : (
         <button
           onClick={onEnterEditMode}
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 rounded-lg transition-colors shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 hover:border-gray-400 rounded-lg transition-colors shadow-sm"
         >
           Start Building Manually
         </button>
@@ -597,10 +597,10 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
 
   if (!session?.accessToken) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-slate-800">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-sm text-gray-600 mb-4">Please sign in to view your dashboard.</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Authentication Required</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Please sign in to view your dashboard.</p>
           <button
             onClick={() => router.push('/auth/login')}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
@@ -614,10 +614,10 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50">
+      <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-slate-800">
         <div className="text-center">
           <div className="text-red-600 text-lg font-medium mb-2">Something went wrong</div>
-          <div className="text-gray-700 text-sm">{error}</div>
+          <div className="text-gray-700 dark:text-gray-300 text-sm">{error}</div>
         </div>
       </div>
     );
@@ -627,7 +627,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const widgets = currentDashboard?.widgets || [];
 
   return (
-    <div className="h-full flex flex-col bg-gray-50/50">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-800/50">
       {/* Dashboard Header */}
       <DashboardHeader
         userName={userName}

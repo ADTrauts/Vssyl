@@ -38,8 +38,8 @@ const StatCard = ({ title, value, trend, icon: Icon, color = 'blue' }: StatCardP
     <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
           {trend !== undefined && trend !== null && (
             <div className={`flex items-center mt-1 ${getTrendColor(trend)}`}>
               {React.createElement(getTrendIcon(trend), { className: 'w-4 h-4 mr-1' })}
@@ -150,7 +150,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading session...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading session...</p>
         </div>
       </div>
     );
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="text-red-600 text-xl mb-2">Authentication Required</div>
-          <p className="text-gray-600">Please log in to access the admin dashboard.</p>
+          <p className="text-gray-700 dark:text-gray-300">Please log in to access the admin dashboard.</p>
         </div>
       </div>
     );
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading dashboard...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -182,8 +182,8 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Platform overview and quick actions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">Platform overview and quick actions</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex">
@@ -202,8 +202,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Platform overview and quick actions</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+        <p className="text-gray-700 dark:text-gray-300 mt-2">Platform overview and quick actions</p>
       </div>
 
       {/* Quick Stats */}
@@ -239,44 +239,44 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button 
             onClick={() => window.location.href = '/admin-portal/users'}
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-red-100 w-fit mb-3">
               <Shield className="w-5 h-5 text-red-600" />
             </div>
-            <h3 className="font-medium text-gray-900 mb-1">Manage Users</h3>
-            <p className="text-sm text-gray-600">Ban, suspend, or manage user accounts</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Manage Users</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">Ban, suspend, or manage user accounts</p>
           </button>
           <button 
             onClick={() => window.location.href = '/admin-portal/moderation'}
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-blue-100 w-fit mb-3">
               <Activity className="w-5 h-5 text-blue-600" />
             </div>
-            <h3 className="font-medium text-gray-900 mb-1">Review Content</h3>
-            <p className="text-sm text-gray-600">Review reported content and violations</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Review Content</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">Review reported content and violations</p>
           </button>
           <button 
             onClick={() => window.location.href = '/admin-portal/performance'}
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-green-100 w-fit mb-3">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
-            <h3 className="font-medium text-gray-900 mb-1">System Health</h3>
-            <p className="text-sm text-gray-600">Check system performance and metrics</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">System Health</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">Check system performance and metrics</p>
           </button>
         </div>
       </div>
 
       {/* System Alerts */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">System Alerts</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">System Alerts</h2>
         <div className="space-y-3">
           {alerts.length > 0 ? (
             alerts.map((alert, index) => (
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
               </div>
             ))
           ) : (
-            <div className="p-4 border rounded-lg text-gray-600 bg-gray-50 border-gray-200">
+            <div className="p-4 border rounded-lg text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <div>
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
 
       {/* Recent Activity */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h2>
         <Card className="p-6">
           {recentActivity.length > 0 ? (
             <div className="space-y-4">
@@ -367,18 +367,18 @@ export default function AdminDashboard() {
                     <div className={`w-2 h-2 ${getActivityColor(activity.action)} rounded-full`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{formatAction(activity.action)}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {userEmail}
                         {resourceInfo && ` • ${resourceInfo}`}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{formatTimestamp(activity.timestamp)}</span>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-600 dark:text-gray-400">
               <p className="text-sm">No recent activity</p>
             </div>
           )}

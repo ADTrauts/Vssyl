@@ -152,7 +152,7 @@ export default function ShiftBlock({
                 e.stopPropagation();
                 onEdit(shift);
               }}
-              className="p-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30"
+              className="p-1 bg-white dark:bg-slate-900 bg-opacity-20 rounded hover:bg-opacity-30"
               title="Edit shift"
             >
               <Edit className="w-3 h-3" />
@@ -166,7 +166,7 @@ export default function ShiftBlock({
                   onDelete(shift.id);
                 }
               }}
-              className="p-1 bg-white bg-opacity-20 rounded hover:bg-opacity-30"
+              className="p-1 bg-white dark:bg-slate-900 bg-opacity-20 rounded hover:bg-opacity-30"
               title="Delete shift"
             >
               <Trash2 className="w-3 h-3" />

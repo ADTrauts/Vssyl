@@ -67,18 +67,18 @@ export default function DashboardManagementDemo() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Dashboard Management Demo
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           This demo shows the new interactive dashboard deletion system with file handling options.
         </p>
       </div>
 
       {/* Dashboard List */}
-      <div className="bg-white rounded-lg shadow border">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Your Dashboards</h2>
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow border">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Your Dashboards</h2>
         </div>
         
         <div className="divide-y divide-gray-200">
@@ -91,8 +91,8 @@ export default function DashboardManagementDemo() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900">{dashboard.name}</h3>
-                  <p className="text-sm text-gray-500">Created 2 days ago</p>
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{dashboard.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Created 2 days ago</p>
                 </div>
               </div>
               

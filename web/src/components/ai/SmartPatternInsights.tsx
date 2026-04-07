@@ -158,7 +158,7 @@ export default function SmartPatternInsights() {
       case 'increasing': return <TrendingUp className="h-4 w-4 text-green-600" />;
       case 'decreasing': return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />;
       case 'stable': return <BarChart3 className="h-4 w-4 text-blue-600" />;
-      default: return <BarChart3 className="h-4 w-4 text-gray-600" />;
+      default: return <BarChart3 className="h-4 w-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -196,7 +196,7 @@ export default function SmartPatternInsights() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Smart Pattern Intelligence</h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             AI-discovered insights about your behavior and preferences
           </p>
         </div>
@@ -217,7 +217,7 @@ export default function SmartPatternInsights() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Interactions</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Interactions</p>
                 <p className="text-2xl font-bold">{insights.totalInteractions}</p>
               </div>
               {getTrendIcon(insights.trends.interactionTrend)}
@@ -227,7 +227,7 @@ export default function SmartPatternInsights() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Avg Confidence</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Confidence</p>
                 <p className="text-2xl font-bold">{insights.averageConfidence}%</p>
               </div>
               {getTrendIcon(insights.trends.confidenceTrend)}
@@ -237,7 +237,7 @@ export default function SmartPatternInsights() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Peak Hour</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Peak Hour</p>
                 <p className="text-2xl font-bold">{insights.mostActiveHour}:00</p>
               </div>
               <Clock className="h-5 w-5 text-blue-600" />
@@ -247,7 +247,7 @@ export default function SmartPatternInsights() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Productivity</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Productivity</p>
                 <p className="text-2xl font-bold">{insights.productivityScore}%</p>
               </div>
               <Target className="h-5 w-5 text-green-600" />
@@ -280,11 +280,11 @@ export default function SmartPatternInsights() {
                             {pattern.type.replace('_', ' ')}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           Observed {pattern.frequency} times
                         </p>
                         {pattern.metadata && Object.keys(pattern.metadata).length > 0 && (
-                          <div className="mt-2 text-xs text-gray-500">
+                          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             {pattern.metadata.percentage && (
                               <span>{pattern.metadata.percentage}% of your activity</span>
                             )}
@@ -296,7 +296,7 @@ export default function SmartPatternInsights() {
                       <div className="w-16">
                         <ProgressBar value={pattern.confidence} />
                       </div>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         {pattern.confidence}%
                       </span>
                     </div>
@@ -308,7 +308,7 @@ export default function SmartPatternInsights() {
             <Card className="p-8 text-center">
               <Brain className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h4 className="font-medium mb-2">Learning Your Patterns</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Keep using the AI system to discover personalized patterns and insights.
               </p>
             </Card>
@@ -330,7 +330,7 @@ export default function SmartPatternInsights() {
                           {prediction.confidence}% confidence
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         {prediction.reasoning}
                       </p>
                       {prediction.suggestedAction && (
@@ -352,7 +352,7 @@ export default function SmartPatternInsights() {
             <Card className="p-8 text-center">
               <TrendingUp className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h4 className="font-medium mb-2">Building Predictions</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 More interactions will enable better predictions about your needs.
               </p>
             </Card>
@@ -382,13 +382,13 @@ export default function SmartPatternInsights() {
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                         {suggestion.description}
                       </p>
                       {suggestion.suggestedActions && suggestion.suggestedActions.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Suggested Actions:</p>
-                          <ul className="text-sm text-gray-600 space-y-1">
+                          <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                             {suggestion.suggestedActions.map((action, actionIndex) => (
                               <li key={actionIndex} className="flex items-center space-x-2">
                                 <CheckCircle className="h-3 w-3 text-green-600" />
@@ -407,7 +407,7 @@ export default function SmartPatternInsights() {
             <Card className="p-8 text-center">
               <Lightbulb className="h-12 w-12 mx-auto text-gray-400 mb-4" />
               <h4 className="font-medium mb-2">Generating Suggestions</h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Smart suggestions will appear as we learn more about your preferences.
               </p>
             </Card>

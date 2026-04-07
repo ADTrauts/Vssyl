@@ -281,19 +281,19 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
               <Shield className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Data Classification</h2>
-              <p className="text-gray-600">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Data Classification</h2>
+              <p className="text-gray-600 dark:text-gray-400">
                 Classify {files.length} files to ensure proper data protection and compliance
               </p>
             </div>
           </div>
 
           {/* Settings */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-medium text-gray-900">Auto-Scan Settings</h3>
-                <p className="text-sm text-gray-600">Automatically detect sensitive content</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">Auto-Scan Settings</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Automatically detect sensitive content</p>
               </div>
               <Switch
                 checked={autoScanEnabled}
@@ -322,7 +322,7 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
                   )}
                 </Button>
                 
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-4 h-4" />
                     <span className="font-medium">Detection Rules Enabled:</span>
@@ -341,17 +341,17 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
           </div>
 
           {/* Bulk Actions */}
-          <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-medium text-gray-900 mb-3">Bulk Classification</h3>
+          <div className="mb-6 p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Bulk Classification</h3>
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Classification Level
                 </label>
                 <select
                   value={selectedClassification}
                   onChange={(e) => setSelectedClassification(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select classification</option>
                   {CLASSIFICATION_LEVELS.map(level => (
@@ -365,7 +365,7 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
                   checked={applyToAll}
                   onChange={setApplyToAll}
                 />
-                <span className="text-sm text-gray-700">Apply to all</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Apply to all</span>
               </div>
               
               <Button onClick={applyBulkClassification} disabled={!selectedClassification}>
@@ -385,24 +385,24 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
             </button>
             
             {showAdvanced && (
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 {CLASSIFICATION_LEVELS.map(level => (
-                  <div key={level.id} className="p-3 bg-white rounded-lg border">
+                  <div key={level.id} className="p-3 bg-white dark:bg-slate-900 rounded-lg border">
                     <div className="flex items-center gap-2 mb-2">
                       {level.icon}
-                      <span className="font-medium text-gray-900">{level.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{level.name}</span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{level.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{level.description}</p>
                     <div className="space-y-1">
                       {level.restrictions.map((restriction, index) => (
-                        <div key={index} className="text-xs text-gray-500 flex items-center gap-1">
+                        <div key={index} className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
                           {restriction}
                         </div>
                       ))}
                     </div>
                     {level.retentionPeriod && (
-                      <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         Retention: {level.retentionPeriod}
                       </div>
@@ -422,20 +422,20 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
               const suggestedLevel = result ? getClassificationLevel(result.suggestedClassification) : null;
               
               return (
-                <div key={file.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={file.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <FileText className="w-5 h-5 text-gray-400" />
                       <div>
-                        <div className="font-medium text-gray-900">{file.name}</div>
-                        <div className="text-sm text-gray-600">{file.type}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{file.name}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{file.type}</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       {/* Current Classification */}
                       <div className="text-sm">
-                        <span className="text-gray-600">Current: </span>
+                        <span className="text-gray-600 dark:text-gray-400">Current: </span>
                         <Badge className={`px-2 py-1 text-xs border rounded-full ${level.color}`}>
                           {level.icon}
                           <span className="ml-1">{level.name}</span>
@@ -446,7 +446,7 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
                       <select
                         value={currentClassification}
                         onChange={(e) => applyClassification(file.id, e.target.value)}
-                        className="w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-40 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {CLASSIFICATION_LEVELS.map(level => (
                           <option key={level.id} value={level.id}>{level.name}</option>
@@ -481,7 +481,7 @@ export const DataClassificationModal: React.FC<DataClassificationModalProps> = (
                       {/* Detected Patterns */}
                       {result.detectedPatterns.length > 0 && (
                         <div className="text-sm">
-                          <span className="text-gray-600">Detected content: </span>
+                          <span className="text-gray-600 dark:text-gray-400">Detected content: </span>
                           {result.detectedPatterns.map((pattern, index) => (
                             <Badge key={index} className="ml-1 px-2 py-0.5 text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded">
                               {pattern.type} ({pattern.matches})

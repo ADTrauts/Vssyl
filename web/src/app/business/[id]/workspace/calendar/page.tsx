@@ -242,13 +242,13 @@ export default function WorkCalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="container mx-auto px-6 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Work Calendar</h1>
-            <p className="text-gray-600">Business events and meetings</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Work Calendar</h1>
+            <p className="text-gray-600 dark:text-gray-400">Business events and meetings</p>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="secondary" size="sm">
@@ -269,7 +269,7 @@ export default function WorkCalendarPage() {
               {/* Calendar Header */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                     {formatDate(currentDate)}
                   </h2>
                   <div className="flex items-center space-x-2">
@@ -316,7 +316,7 @@ export default function WorkCalendarPage() {
                   <div className="grid grid-cols-7 gap-1">
                     {/* Day headers */}
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                      <div key={day} className="p-2 text-center font-medium text-gray-500 text-sm">
+                      <div key={day} className="p-2 text-center font-medium text-gray-500 dark:text-gray-400 text-sm">
                         {day}
                       </div>
                     ))}
@@ -351,7 +351,7 @@ export default function WorkCalendarPage() {
                             {dayEvents.slice(0, 2).map((event) => (
                               <div
                                 key={event.id}
-                                className="text-xs p-1 rounded truncate cursor-pointer hover:bg-gray-100"
+                                className="text-xs p-1 rounded truncate cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700"
                                 onClick={() => setSelectedEvent(event)}
                               >
                                 <Badge className={`text-xs ${getEventTypeColor(event.type)}`}>
@@ -360,7 +360,7 @@ export default function WorkCalendarPage() {
                               </div>
                             ))}
                             {dayEvents.length > 2 && (
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 +{dayEvents.length - 2} more
                               </div>
                             )}
@@ -378,7 +378,7 @@ export default function WorkCalendarPage() {
                       .map((event) => (
                         <div
                           key={event.id}
-                          className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                          className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer"
                           onClick={() => setSelectedEvent(event)}
                         >
                           <div className="flex items-start justify-between">
@@ -387,12 +387,12 @@ export default function WorkCalendarPage() {
                                 <Badge className={getEventTypeColor(event.type)}>
                                   {event.type}
                                 </Badge>
-                                <h3 className="font-medium text-gray-900">{event.title}</h3>
+                                <h3 className="font-medium text-gray-900 dark:text-gray-100">{event.title}</h3>
                               </div>
                               {event.description && (
-                                <p className="text-sm text-gray-600 mb-2">{event.description}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{event.description}</p>
                               )}
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                 <div className="flex items-center space-x-1">
                                   <Clock className="w-4 h-4" />
                                   <span>
@@ -432,13 +432,13 @@ export default function WorkCalendarPage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Today's Events */}
             <Card className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Today's Events</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Today's Events</h3>
               <div className="space-y-3">
                 {todayEvents.length > 0 ? (
                   todayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                      className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                       onClick={() => setSelectedEvent(event)}
                     >
                       <div className="flex items-center space-x-2 mb-1">
@@ -446,8 +446,8 @@ export default function WorkCalendarPage() {
                           {event.type}
                         </Badge>
                       </div>
-                      <h4 className="font-medium text-gray-900 text-sm">{event.title}</h4>
-                      <p className="text-xs text-gray-500">
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{event.title}</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {event.isAllDay 
                           ? 'All day'
                           : formatTime(event.startTime)
@@ -456,23 +456,23 @@ export default function WorkCalendarPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500">No events today</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No events today</p>
                 )}
               </div>
             </Card>
 
             {/* Upcoming Events */}
             <Card className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-4">Upcoming</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Upcoming</h3>
               <div className="space-y-3">
                 {upcomingEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                    className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                     onClick={() => setSelectedEvent(event)}
                   >
-                    <h4 className="font-medium text-gray-900 text-sm mb-1">{event.title}</h4>
-                    <p className="text-xs text-gray-500">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-1">{event.title}</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(event.startTime).toLocaleDateString()} at {formatTime(event.startTime)}
                     </p>
                   </div>
@@ -487,7 +487,7 @@ export default function WorkCalendarPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <Card className="w-full max-w-md p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">{selectedEvent.title}</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{selectedEvent.title}</h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -498,12 +498,12 @@ export default function WorkCalendarPage() {
               </div>
               
               {selectedEvent.description && (
-                <p className="text-gray-600 mb-4">{selectedEvent.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{selectedEvent.description}</p>
               )}
 
               <div className="space-y-3 mb-4">
                 <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
+                  <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm">
                     {selectedEvent.isAllDay 
                       ? 'All day'
@@ -514,14 +514,14 @@ export default function WorkCalendarPage() {
                 
                 {selectedEvent.location && (
                   <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm">{selectedEvent.location}</span>
                   </div>
                 )}
                 
                 {selectedEvent.meetingUrl && (
                   <div className="flex items-center space-x-2">
-                    <Video className="w-4 h-4 text-gray-500" />
+                    <Video className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                     <a href={selectedEvent.meetingUrl} className="text-sm text-blue-600 hover:underline">
                       Join meeting
                     </a>
@@ -530,12 +530,12 @@ export default function WorkCalendarPage() {
               </div>
 
               <div className="mb-4">
-                <h4 className="font-medium text-gray-900 mb-2">Attendees</h4>
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Attendees</h4>
                 <div className="space-y-2">
                   {selectedEvent.attendees.map((attendee) => (
                     <div key={attendee.id} className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Users className="w-4 h-4 text-gray-500" />
+                        <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm">{attendee.name}</span>
                       </div>
                       <span className={`text-xs ${getAttendeeStatusColor(attendee.status)}`}>

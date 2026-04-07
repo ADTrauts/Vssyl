@@ -90,7 +90,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <Card className="p-8 max-w-md w-full text-center">
           <Brain className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Checking your AI profile...</p>
+          <p className="text-gray-600 dark:text-gray-400">Checking your AI profile...</p>
         </Card>
       </div>
     );
@@ -113,10 +113,10 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
                   <Sparkles className="h-8 w-8 text-yellow-500 absolute -top-2 -right-2 animate-pulse" />
                 </div>
               </div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 Welcome to Your Digital Life Twin
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 You're about to create the world's first AI that understands and operates as your digital representation across your entire life.
               </p>
             </div>
@@ -125,48 +125,48 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Zap className="h-10 w-10 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Autonomous Actions</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Autonomous Actions</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Your AI can schedule meetings, organize files, and manage tasks across all modules
                 </p>
               </Card>
 
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Brain className="h-10 w-10 text-purple-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Cross-Module Intelligence</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Cross-Module Intelligence</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Understands your Drive, Chat, Household, and Business data as one unified system
                 </p>
               </Card>
 
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Shield className="h-10 w-10 text-green-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Privacy First</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Privacy First</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Sensitive data stays local while general data benefits from cloud AI intelligence
                 </p>
               </Card>
 
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Clock className="h-10 w-10 text-orange-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">24/7 Availability</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">24/7 Availability</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Your Digital Life Twin works around the clock to optimize your digital life
                 </p>
               </Card>
 
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Users className="h-10 w-10 text-red-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Interpersonal Awareness</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Interpersonal Awareness</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Understands how actions affect others and requests approval when needed
                 </p>
               </Card>
 
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Lightbulb className="h-10 w-10 text-yellow-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Continuous Learning</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Continuous Learning</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
                   Gets better over time by learning your preferences and patterns
                 </p>
               </Card>
@@ -184,7 +184,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
                 <Button 
                   variant="secondary"
                   onClick={() => setCurrentStep('personality')}
-                  className="bg-white text-blue-600 hover:bg-blue-50"
+                  className="bg-white dark:bg-slate-900 text-blue-600 hover:bg-blue-50"
                 >
                   Let's Get Started
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -198,7 +198,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
 
             {/* Trust Indicators */}
             <div className="mt-12 text-center">
-              <div className="flex items-center justify-center space-x-6 text-sm text-gray-600">
+              <div className="flex items-center justify-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center">
                   <Shield className="h-4 w-4 mr-1 text-green-600" />
                   <span>Enterprise-grade security</span>
@@ -230,15 +230,15 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
             <div className="mb-8">
               <div className="relative inline-block">
                 <Brain className="h-16 w-16 text-blue-600 mx-auto" />
-                <CheckCircle2 className="h-8 w-8 text-green-600 absolute -bottom-1 -right-1 bg-white rounded-full" />
+                <CheckCircle2 className="h-8 w-8 text-green-600 absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-full" />
               </div>
             </div>
             
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Your Digital Life Twin is Ready!
             </h1>
             
-            <p className="text-gray-600 mb-8 text-lg">
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-lg">
               Congratulations! Your AI is now configured to understand and represent you across your digital life. 
               It will continue learning and improving as you interact with it.
             </p>
@@ -283,7 +283,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
                 <Sparkles className="h-4 w-4 ml-2" />
               </Button>
               
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Your AI settings can be adjusted anytime in the AI Assistant section
               </p>
             </div>

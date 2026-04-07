@@ -80,7 +80,7 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
       <select
         value={hour}
         onChange={(e) => handleHourChange(Number(e.target.value))}
-        className="px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:border-blue-400"
+        className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring focus:border-blue-400"
       >
         {hourOptions.map((h) => (
           <option key={h} value={h}>
@@ -89,13 +89,13 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
         ))}
       </select>
 
-      <span className="text-gray-600 font-medium">:</span>
+      <span className="text-gray-600 dark:text-gray-400 font-medium">:</span>
 
       {/* Minute Select */}
       <select
         value={minute}
         onChange={(e) => handleMinuteChange(Number(e.target.value))}
-        className="px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring focus:border-blue-400"
+        className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring focus:border-blue-400"
       >
         {minuteOptions.map((m) => (
           <option key={m} value={m}>
@@ -105,7 +105,7 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({ value, onChange }) 
       </select>
 
       {/* AM/PM Toggle */}
-      <div className="flex border border-gray-300 rounded-md overflow-hidden">
+      <div className="flex border border-gray-300 dark:border-slate-600 rounded-md overflow-hidden">
         <button
           type="button"
           onClick={() => handleAmPmChange('AM')}
@@ -342,7 +342,7 @@ export default function AutonomyControls() {
           <span>{error || 'Authentication required'}</span>
         </Alert>
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             You need to be logged in to access AI settings.
           </p>
           <Button onClick={() => window.location.href = '/auth/login'}>
@@ -359,7 +359,7 @@ export default function AutonomyControls() {
       <div className="space-y-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
         </div>
       </div>
     );
@@ -500,7 +500,7 @@ export default function AutonomyControls() {
           {/* Module-Specific Controls */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Module Autonomy Levels</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Control how much autonomy your AI has in different areas. Higher levels mean the AI can take more actions without your approval.
             </p>
             
@@ -536,7 +536,7 @@ export default function AutonomyControls() {
                     className="w-full"
                   />
                   
-                  <div className="flex justify-between text-xs text-gray-600">
+                  <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
                     <span>No Autonomy</span>
                     <span>Full Autonomy</span>
                   </div>
@@ -555,7 +555,7 @@ export default function AutonomyControls() {
                 );
               }
             }) : (
-              <div className="text-center py-4 text-gray-500">
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                 Error loading autonomy categories. Please refresh the page.
               </div>
             )}
@@ -566,7 +566,7 @@ export default function AutonomyControls() {
           {/* Override Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Override Settings</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Special overrides that take precedence over autonomy levels.
             </p>
             
@@ -576,7 +576,7 @@ export default function AutonomyControls() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <label className="font-medium">Work Hours Override</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Prevent AI actions during your work hours
                     </p>
                   </div>
@@ -588,10 +588,10 @@ export default function AutonomyControls() {
                   />
                 </div>
                 {settings.workHoursOverride && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700 space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Start Time
                         </label>
                         <TimePicker12Hour
@@ -600,7 +600,7 @@ export default function AutonomyControls() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           End Time
                         </label>
                         <TimePicker12Hour
@@ -618,7 +618,7 @@ export default function AutonomyControls() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <label className="font-medium">Family Time Override</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Prevent AI actions during family time
                     </p>
                   </div>
@@ -630,10 +630,10 @@ export default function AutonomyControls() {
                   />
                 </div>
                 {settings.familyTimeOverride && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700 space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Start Time
                         </label>
                         <TimePicker12Hour
@@ -642,7 +642,7 @@ export default function AutonomyControls() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           End Time
                         </label>
                         <TimePicker12Hour
@@ -660,7 +660,7 @@ export default function AutonomyControls() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <label className="font-medium">Sleep Hours Override</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Prevent AI actions during your sleep hours
                     </p>
                   </div>
@@ -672,10 +672,10 @@ export default function AutonomyControls() {
                   />
                 </div>
                 {settings.sleepHoursOverride && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700 space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Start Time
                         </label>
                         <TimePicker12Hour
@@ -684,7 +684,7 @@ export default function AutonomyControls() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           End Time
                         </label>
                         <TimePicker12Hour
@@ -704,7 +704,7 @@ export default function AutonomyControls() {
           {/* Approval Thresholds */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Approval Thresholds</h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Set thresholds for when AI actions require your approval.
             </p>
             
@@ -721,7 +721,7 @@ export default function AutonomyControls() {
                   className="w-full p-2 border rounded"
                   placeholder="0"
                 />
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Actions with financial impact above this amount require approval
                 </p>
               </div>
@@ -738,7 +738,7 @@ export default function AutonomyControls() {
                   className="w-full p-2 border rounded"
                   placeholder="60"
                 />
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Actions requiring more time than this require approval
                 </p>
               </div>
@@ -755,7 +755,7 @@ export default function AutonomyControls() {
                   className="w-full p-2 border rounded"
                   placeholder="1"
                 />
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Actions affecting more people than this require approval
                 </p>
               </div>
@@ -792,7 +792,7 @@ export default function AutonomyControls() {
                         <br />
                         {rec.reason}
                         <br />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           Suggested level: {rec.suggestedLevel}%
                         </span>
                       </span>
@@ -808,7 +808,7 @@ export default function AutonomyControls() {
                   );
                 }
               }) : (
-                <div className="text-center py-4 text-gray-500">
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">
                   No recommendations available at this time.
                 </div>
               )}

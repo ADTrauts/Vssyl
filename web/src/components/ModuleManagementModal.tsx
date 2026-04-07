@@ -351,20 +351,20 @@ export default function ModuleManagementModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Manage Dashboard Modules
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Add or remove modules for "{dashboard.name}"
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -381,7 +381,7 @@ export default function ModuleManagementModal({
                 placeholder="Search modules..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -395,19 +395,19 @@ export default function ModuleManagementModal({
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading modules...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading modules...</span>
             </div>
           ) : (
             <div className="space-y-8">
               {/* Installed Modules */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                   <Check className="w-5 h-5 text-green-500 mr-2" />
                   Installed Modules ({installedModules.length})
                 </h3>
                 
                 {installedModules.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <p>No modules installed on this dashboard</p>
                   </div>
                 ) : (
@@ -418,8 +418,8 @@ export default function ModuleManagementModal({
                           <div className="flex items-center space-x-3">
                             <div className="text-2xl">{getModuleIcon(module.name)}</div>
                             <div>
-                              <h4 className="font-medium text-gray-900">{module.name}</h4>
-                              <p className="text-xs text-gray-600">{module.category}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{module.category}</p>
                             </div>
                           </div>
                           <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
@@ -427,7 +427,7 @@ export default function ModuleManagementModal({
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                           {module.description}
                         </p>
                         
@@ -460,25 +460,25 @@ export default function ModuleManagementModal({
 
               {/* Available Modules */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                   <Plus className="w-5 h-5 text-blue-500 mr-2" />
                   Available Modules ({availableModules.length})
                 </h3>
                 
                 {availableModules.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <p>All available modules are already installed</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {availableModules.map((module) => (
-                      <Card key={module.id} className="p-4 hover:bg-gray-50 transition-colors">
+                      <Card key={module.id} className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3">
                             <div className="text-2xl">{getModuleIcon(module.name)}</div>
                             <div>
-                              <h4 className="font-medium text-gray-900">{module.name}</h4>
-                              <p className="text-xs text-gray-600">{module.category}</p>
+                              <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400">{module.category}</p>
                             </div>
                           </div>
                           <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
@@ -486,11 +486,11 @@ export default function ModuleManagementModal({
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                           {module.description}
                         </p>
                         
-                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
                           <span>v{module.version}</span>
                           <span>⭐ {module.rating} ({module.reviewCount})</span>
                         </div>
@@ -521,8 +521,8 @@ export default function ModuleManagementModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             {installedModules.length} module{installedModules.length !== 1 ? 's' : ''} installed
           </div>
           <Button onClick={onClose}>

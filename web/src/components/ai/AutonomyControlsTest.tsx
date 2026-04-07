@@ -55,14 +55,14 @@ export default function AutonomyControlsTest() {
       </div>
       
       <div className="space-y-4">
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           This is a simplified test version of the autonomy controls to isolate the crash issue.
         </p>
         
         {loading && (
           <div className="text-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-sm text-gray-600 mt-2">Loading...</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
           </div>
         )}
         
@@ -76,7 +76,7 @@ export default function AutonomyControlsTest() {
           Test Button
         </Button>
         
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           <p>Component mounted: {new Date().toISOString()}</p>
           <p>Loading state: {loading ? 'true' : 'false'}</p>
           <p>Error state: {error || 'none'}</p>

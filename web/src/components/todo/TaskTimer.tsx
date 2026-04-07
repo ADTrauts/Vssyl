@@ -130,7 +130,7 @@ export function TaskTimer({ taskId, activeTimer, onTimerStart, onTimerStop }: Ta
       )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="text-2xl font-mono font-semibold text-gray-900">
+          <div className="text-2xl font-mono font-semibold text-gray-900 dark:text-gray-100">
             {formatTime(elapsedSeconds)}
           </div>
           {isRunning && (

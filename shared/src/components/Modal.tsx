@@ -98,7 +98,7 @@ export const Modal: React.FC<ModalProps> = ({
             {title && (
               <h2 
                 id="modal-title"
-                className="text-lg font-semibold text-gray-900"
+                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
                 style={{ color: '#111827' }}
               >
                 {title}
@@ -108,7 +108,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="flex items-center space-x-2">
             {headerActions}
             <button
-              className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none"
               style={{
                 color: '#9CA3AF',
                 cursor: 'pointer',

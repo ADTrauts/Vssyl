@@ -67,8 +67,8 @@ export default function SchedulingWidget({
     return (
       <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
         <Clock className="w-10 h-10 text-gray-300 mb-2" />
-        <p className="text-sm text-gray-700 font-medium">Scheduling at a glance</p>
-        <p className="text-xs text-gray-600 mt-1">
+        <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">Scheduling at a glance</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
           Add this widget to a business dashboard to see schedules, open shifts, and upcoming shifts.
         </p>
       </div>
@@ -79,7 +79,7 @@ export default function SchedulingWidget({
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size={24} />
-        <span className="ml-2 text-sm text-gray-600">Loading scheduling...</span>
+        <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Loading scheduling...</span>
       </div>
     );
   }
@@ -101,26 +101,26 @@ export default function SchedulingWidget({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-2">
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-medium text-gray-700">Published schedules</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Published schedules</span>
           </div>
-          <span className="text-lg font-semibold text-gray-900">{s.publishedSchedulesCount}</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{s.publishedSchedulesCount}</span>
         </div>
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100">
           <div className="flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-amber-600" />
-            <span className="text-sm font-medium text-gray-700">Open shifts</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Open shifts</span>
           </div>
-          <span className="text-lg font-semibold text-gray-900">{s.openShiftsCount}</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{s.openShiftsCount}</span>
         </div>
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-100">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-100">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">Upcoming (7 days)</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Upcoming (7 days)</span>
           </div>
-          <span className="text-lg font-semibold text-gray-900">{s.upcomingShiftsCount}</span>
+          <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">{s.upcomingShiftsCount}</span>
         </div>
       </div>
       <a

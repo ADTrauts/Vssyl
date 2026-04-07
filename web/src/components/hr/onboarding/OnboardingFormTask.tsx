@@ -119,7 +119,7 @@ export default function OnboardingFormTask({
       case 'textarea':
         return (
           <div key={field.id} className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {field.label} {field.required && <span className="text-red-600">*</span>}
             </label>
             <textarea
@@ -137,7 +137,7 @@ export default function OnboardingFormTask({
       case 'select':
         return (
           <div key={field.id} className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {field.label} {field.required && <span className="text-red-600">*</span>}
             </label>
             <select
@@ -164,9 +164,9 @@ export default function OnboardingFormTask({
                 checked={value === true}
                 onChange={(e) => handleFieldChange(field.id, e.target.checked)}
                 required={field.required}
-                className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="mr-2 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {field.label} {field.required && <span className="text-red-600">*</span>}
               </span>
             </label>
@@ -177,7 +177,7 @@ export default function OnboardingFormTask({
       default:
         return (
           <div key={field.id} className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {field.label} {field.required && <span className="text-red-600">*</span>}
             </label>
             <input
@@ -203,9 +203,9 @@ export default function OnboardingFormTask({
           </div>
         </div>
         <div className="flex-1">
-          <h4 className="text-sm font-semibold text-gray-900 mb-1">{task.title}</h4>
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{task.title}</h4>
           {task.description && (
-            <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{task.description}</p>
           )}
         </div>
       </div>
@@ -252,7 +252,7 @@ export default function OnboardingFormTask({
 
       {Object.keys(existingFormData).length > 0 && (
         <Alert type="info" title="Form Data Saved" className="mt-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             You have previously saved form data. You can continue editing or submit the form.
           </p>
         </Alert>

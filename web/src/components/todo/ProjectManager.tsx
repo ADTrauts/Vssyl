@@ -149,10 +149,10 @@ export function ProjectManager({
 
   return (
     <>
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-        <div className="p-4 border-b border-gray-200">
+      <div className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col h-full">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Projects</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Projects</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -177,9 +177,9 @@ export function ProjectManager({
 
         <div className="flex-1 overflow-auto p-2">
           {loading ? (
-            <div className="text-sm text-gray-500 text-center py-4">Loading...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading...</div>
           ) : projects.length === 0 ? (
-            <div className="text-sm text-gray-500 text-center py-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
               No projects yet
               <br />
               <Button
@@ -212,7 +212,7 @@ export function ProjectManager({
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">{project.name}</div>
                     {project._count && project._count.tasks > 0 && (
-                      <div className="text-xs text-gray-500">{project._count.tasks} tasks</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{project._count.tasks} tasks</div>
                     )}
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -259,7 +259,7 @@ export function ProjectManager({
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Project Name
               </label>
               <Input
@@ -269,7 +269,7 @@ export function ProjectManager({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description (optional)
               </label>
               <Textarea
@@ -280,7 +280,7 @@ export function ProjectManager({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Color
               </label>
               <div className="flex gap-2 flex-wrap">

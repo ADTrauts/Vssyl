@@ -82,7 +82,7 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading 
 
   if (activities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
         No recent activity
       </div>
     );
@@ -103,16 +103,16 @@ export const ActivityList: React.FC<ActivityListProps> = ({ activities, loading 
         return (
           <div key={activity.id} className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                <Icon className="w-5 h-5 text-gray-600" />
+              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">{activity.user.name}</span>
-                <span className="text-gray-500">{activityText}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{activity.user.name}</span>
+                <span className="text-gray-500 dark:text-gray-400">{activityText}</span>
               </div>
-              <div className="text-sm text-gray-500">{date}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{date}</div>
             </div>
           </div>
         );

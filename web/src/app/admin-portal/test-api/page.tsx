@@ -45,8 +45,8 @@ export default function TestApiPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">API Test</h1>
-        <p className="text-gray-600 mt-2">Test the admin API directly</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">API Test</h1>
+        <p className="text-gray-700 dark:text-gray-300 mt-2">Test the admin API directly</p>
       </div>
 
       <Card className="p-6">

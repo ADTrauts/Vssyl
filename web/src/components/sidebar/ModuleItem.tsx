@@ -67,16 +67,16 @@ export function ModuleItem({
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
       >
         <GripVertical size={14} />
       </div>
 
       {/* Module Icon */}
-      <Icon size={18} className="text-gray-600" />
+      <Icon size={18} className="text-gray-600 dark:text-gray-400" />
 
       {/* Module Name */}
-      <span className="flex-1 text-sm text-gray-700">{module.name}</span>
+      <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{module.name}</span>
       
       {/* Pin Button - only show if not from available modules list */}
       {!isAvailable && onTogglePin && (
@@ -85,7 +85,7 @@ export function ModuleItem({
             e.stopPropagation();
             onTogglePin(module.id);
           }}
-          className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-blue-600 transition-colors"
+          className="p-1 hover:bg-gray-200 rounded text-gray-500 dark:text-gray-400 hover:text-blue-600 transition-colors"
           title={isPinned ? 'Unpin from right sidebar' : 'Pin to right sidebar'}
           aria-label={isPinned ? 'Unpin from right sidebar' : 'Pin to right sidebar'}
         >

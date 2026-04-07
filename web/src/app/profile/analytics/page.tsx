@@ -109,7 +109,7 @@ export default function PersonalAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center py-12">
             <Spinner size={32} />
@@ -121,7 +121,7 @@ export default function PersonalAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -135,8 +135,8 @@ export default function PersonalAnalyticsPage() {
               Back to Dashboard
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Personal Analytics</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Personal Analytics</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Your activity and usage insights
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function PersonalAnalyticsPage() {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 dark:border-slate-700">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -221,8 +221,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <Clock className="w-8 h-8 text-blue-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-                  <p className="text-2xl font-bold text-gray-900">{analyticsData.usageStats.totalSessions}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Sessions</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analyticsData.usageStats.totalSessions}</p>
                 </div>
               </div>
             </Card>
@@ -231,8 +231,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <Activity className="w-8 h-8 text-green-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Time</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatTime(analyticsData.usageStats.totalTime)}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Time</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatTime(analyticsData.usageStats.totalTime)}</p>
                 </div>
               </div>
             </Card>
@@ -241,8 +241,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <BarChart3 className="w-8 h-8 text-purple-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Modules Used</p>
-                  <p className="text-2xl font-bold text-gray-900">{analyticsData.usageStats.modulesUsed}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Modules Used</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analyticsData.usageStats.modulesUsed}</p>
                 </div>
               </div>
             </Card>
@@ -251,8 +251,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <Upload className="w-8 h-8 text-orange-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Files Created</p>
-                  <p className="text-2xl font-bold text-gray-900">{analyticsData.usageStats.filesCreated}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Files Created</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analyticsData.usageStats.filesCreated}</p>
                 </div>
               </div>
             </Card>
@@ -261,8 +261,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <MessageSquare className="w-8 h-8 text-indigo-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Messages Sent</p>
-                  <p className="text-2xl font-bold text-gray-900">{analyticsData.usageStats.messagesSent}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Messages Sent</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analyticsData.usageStats.messagesSent}</p>
                 </div>
               </div>
             </Card>
@@ -271,8 +271,8 @@ export default function PersonalAnalyticsPage() {
               <div className="flex items-center">
                 <Users className="w-8 h-8 text-pink-500 mr-4" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Connections</p>
-                  <p className="text-2xl font-bold text-gray-900">{analyticsData.usageStats.connectionsMade}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Connections</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analyticsData.usageStats.connectionsMade}</p>
                 </div>
               </div>
             </Card>
@@ -282,21 +282,21 @@ export default function PersonalAnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Module Usage */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Module Usage</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Module Usage</h2>
             <div className="space-y-4">
               {analyticsData?.moduleUsage.map((module) => (
-                <div key={module.module} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={module.module} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                   <div className="flex items-center space-x-3">
                     {getModuleIcon(module.module)}
                     <div>
-                      <p className="font-medium text-gray-900">{module.module}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{module.module}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {module.usageCount} uses • {formatTime(module.totalTime)}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatDate(module.lastUsed)}
                     </p>
                   </div>
@@ -307,18 +307,18 @@ export default function PersonalAnalyticsPage() {
 
           {/* Recent Activity */}
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {analyticsData?.recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                   <div className="flex-shrink-0 mt-1">
                     {getActivityIcon(activity.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {activity.description}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {activity.module} • {formatDate(activity.timestamp)}
                     </p>
                   </div>
@@ -331,8 +331,8 @@ export default function PersonalAnalyticsPage() {
         {/* Export Section */}
         <div className="mt-8">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Export Data</h2>
-            <p className="text-gray-600 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Export Data</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Download your analytics data for personal use or backup.
             </p>
             <div className="flex space-x-3">

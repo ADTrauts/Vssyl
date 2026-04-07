@@ -43,7 +43,7 @@ export default function PlacePrivacySettings({ onClose }: Props) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}>
-        <div className="bg-white rounded-xl p-6" onClick={e => e.stopPropagation()}>
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-6" onClick={e => e.stopPropagation()}>
           <Spinner size={24} />
         </div>
       </div>
@@ -52,15 +52,15 @@ export default function PlacePrivacySettings({ onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-white rounded-xl w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
         <div className="p-6 space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
               <Shield className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Place Privacy</h2>
-              <p className="text-sm text-gray-600">Control your location and meeting visibility</p>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Place Privacy</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Control your location and meeting visibility</p>
             </div>
           </div>
 
@@ -69,10 +69,10 @@ export default function PlacePrivacySettings({ onClose }: Props) {
               <Card>
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-gray-700" />
+                    <MapPin className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Share Location with Connections</p>
-                      <p className="text-xs text-gray-600">Show approximate area to people you&apos;re connected with</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Share Location with Connections</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Show approximate area to people you&apos;re connected with</p>
                     </div>
                   </div>
                   <button
@@ -95,10 +95,10 @@ export default function PlacePrivacySettings({ onClose }: Props) {
               <Card>
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Users className="w-5 h-5 text-gray-700" />
+                    <Users className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Show on Meeting Places</p>
-                      <p className="text-xs text-gray-600">Visible to others when viewing shared meeting places</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Show on Meeting Places</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Visible to others when viewing shared meeting places</p>
                     </div>
                   </div>
                   <button
@@ -123,7 +123,7 @@ export default function PlacePrivacySettings({ onClose }: Props) {
           <div className="flex justify-end pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
             >
               Done
             </button>

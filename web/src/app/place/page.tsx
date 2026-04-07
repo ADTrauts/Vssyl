@@ -204,7 +204,7 @@ export default function PlacePage() {
           <Link
             href="/place/transactions"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, color: '#374151', borderRadius: 8, textDecoration: 'none' }}
-            className="hover:bg-gray-100 transition-colors"
+            className="hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
           >
             <Receipt size={16} />
             History
@@ -212,7 +212,7 @@ export default function PlacePage() {
           <button
             onClick={() => setShowPrivacy(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', fontSize: 13, color: '#374151', border: 'none', background: 'none', cursor: 'pointer', borderRadius: 8 }}
-            className="hover:bg-gray-100 transition-colors"
+            className="hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
           >
             <Settings size={16} />
             Privacy

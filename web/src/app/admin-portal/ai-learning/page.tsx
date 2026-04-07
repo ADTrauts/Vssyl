@@ -35,7 +35,7 @@ const CardTitle = ({ children, className = '' }: { children: React.ReactNode; cl
 );
 
 const CardDescription = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-  <p className={`text-sm text-gray-600 mb-4 ${className}`}>{children}</p>
+  <p className={`text-sm text-gray-700 dark:text-gray-300 mb-4 ${className}`}>{children}</p>
 );
 
 // TabsList, TabsTrigger, TabsContent are now imported from shared/components
@@ -69,9 +69,9 @@ const CustomBadge = ({
   
   const variantClasses = {
     default: 'bg-blue-100 text-blue-800',
-    secondary: 'bg-gray-100 text-gray-800',
+    secondary: 'bg-gray-100 dark:bg-slate-700 text-gray-800',
     destructive: 'bg-red-100 text-red-800',
-    outline: 'border border-gray-300 text-gray-700 bg-white'
+    outline: 'border border-gray-300 dark:border-slate-600 text-gray-700 bg-white dark:bg-slate-900'
   };
   
   return (
@@ -366,7 +366,7 @@ export default function AILearningAdminPage() {
       case 'declining':
         return <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-600" />;
+        return <Activity className="w-4 h-4 text-gray-700 dark:text-gray-300" />;
     }
   };
 
@@ -391,8 +391,8 @@ export default function AILearningAdminPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Learning Administration</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Learning Administration</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">
             Monitor and manage the centralized AI learning system across all users
           </p>
         </div>
@@ -409,7 +409,7 @@ export default function AILearningAdminPage() {
           <strong>Feature Status:</strong> All centralized AI endpoints are now connected through the API proxy. 
           <strong> Overview, Global Patterns, Collective Insights, System Health, Privacy & Settings, User Consent, and Scheduler</strong> tabs should display real data when available.
           <br />
-          <span className="text-xs text-gray-700 mt-1 block">
+          <span className="text-xs text-gray-700 dark:text-gray-300 mt-1 block">
             Note: If you see empty states, the endpoints may not have data yet, but they are properly connected.
           </span>
         </AlertDescription>
@@ -520,7 +520,7 @@ export default function AILearningAdminPage() {
                         <span className="text-sm">
                           {insights.length} collective insight{insights.length !== 1 ? 's' : ''} generated
                         </span>
-                        <span className="text-xs text-gray-700 ml-auto">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 ml-auto">
                           {insights[0]?.createdAt ? new Date(insights[0].createdAt).toLocaleDateString() : 'Recently'}
                         </span>
                       </div>
@@ -531,7 +531,7 @@ export default function AILearningAdminPage() {
                         <span className="text-sm">
                           {patterns.length} global pattern{patterns.length !== 1 ? 's' : ''} discovered
                         </span>
-                        <span className="text-xs text-gray-700 ml-auto">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 ml-auto">
                           {patterns[0]?.lastUpdated ? new Date(patterns[0].lastUpdated).toLocaleDateString() : 'Recently'}
                         </span>
                       </div>
@@ -545,14 +545,14 @@ export default function AILearningAdminPage() {
                         <span className="text-sm">
                           System health: {Math.round(healthMetrics.overallHealth * 100)}%
                         </span>
-                        <span className="text-xs text-gray-700 ml-auto">Current</span>
+                        <span className="text-xs text-gray-700 dark:text-gray-300 ml-auto">Current</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-700">
+                  <div className="text-center py-4 text-gray-700 dark:text-gray-300">
                     <p className="text-sm">No recent activity to display</p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                       Activity will appear here as the system processes learning events
                     </p>
                   </div>
@@ -608,15 +608,15 @@ export default function AILearningAdminPage() {
             <Card className="p-8">
               <div className="text-center">
                 <Spinner size={32} />
-                <p className="mt-4 text-gray-700">Loading global patterns...</p>
+                <p className="mt-4 text-gray-700 dark:text-gray-300">Loading global patterns...</p>
               </div>
             </Card>
           ) : patterns.length === 0 ? (
             <Card className="p-8">
               <div className="text-center">
-                <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Global Patterns Found</h3>
-                <p className="text-gray-700 mb-4">
+                <Target className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Global Patterns Found</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
                   Global patterns are discovered by analyzing user behavior across the platform. 
                   Patterns will appear here once enough data has been collected and analyzed.
                 </p>
@@ -640,7 +640,7 @@ export default function AILearningAdminPage() {
                       </CustomBadge>
                       <CustomBadge variant="outline">{pattern.userSegment}</CustomBadge>
                     </div>
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(pattern.lastUpdated).toLocaleDateString()}
                     </div>
                   </div>
@@ -649,29 +649,29 @@ export default function AILearningAdminPage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Frequency</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Frequency</p>
                       <p className="text-lg font-semibold">{pattern.frequency} users</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Confidence</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Confidence</p>
                       <p className="text-lg font-semibold">
                         {Math.round(pattern.confidence * 100)}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Strength</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Strength</p>
                       <p className="text-lg font-semibold">
                         {Math.round(pattern.strength * 100)}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Data Points</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Data Points</p>
                       <p className="text-lg font-semibold">{pattern.dataPoints}</p>
                     </div>
                   </div>
                   
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Affected Modules</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Affected Modules</p>
                     <div className="flex flex-wrap gap-2">
                       {pattern.modules.map((module) => (
                         <Badge key={module} color="blue">{module}</Badge>
@@ -681,10 +681,10 @@ export default function AILearningAdminPage() {
 
                   {pattern.recommendations.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Recommendations</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendations</p>
                       <ul className="list-disc list-inside space-y-1">
                         {pattern.recommendations.map((rec, index) => (
-                          <li key={index} className="text-sm text-gray-700">{rec}</li>
+                          <li key={index} className="text-sm text-gray-700 dark:text-gray-300">{rec}</li>
                         ))}
                       </ul>
                     </div>
@@ -717,15 +717,15 @@ export default function AILearningAdminPage() {
             <Card className="p-8">
               <div className="text-center">
                 <Spinner size={32} />
-                <p className="mt-4 text-gray-700">Loading collective insights...</p>
+                <p className="mt-4 text-gray-700 dark:text-gray-300">Loading collective insights...</p>
               </div>
             </Card>
           ) : insights.length === 0 ? (
             <Card className="p-8">
               <div className="text-center">
-                <Lightbulb className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Collective Insights Available</h3>
-                <p className="text-gray-700 mb-4">
+                <Lightbulb className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Collective Insights Available</h3>
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
                   Collective insights are generated from global patterns discovered across all users. 
                   Insights will appear here once patterns have been analyzed and insights generated.
                 </p>
@@ -751,7 +751,7 @@ export default function AILearningAdminPage() {
                         {insight.actionable ? 'Actionable' : 'Informational'}
                       </Badge>
                     </div>
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
                       {new Date(insight.createdAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -761,23 +761,23 @@ export default function AILearningAdminPage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Confidence</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Confidence</p>
                       <p className="text-lg font-semibold">
                         {Math.round(insight.confidence * 100)}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Impact</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Impact</p>
                       <p className="text-lg font-semibold capitalize">{insight.impact}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Benefit</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Benefit</p>
                       <p className="text-lg font-semibold">
                         {Math.round(insight.estimatedBenefit * 100)}%
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Complexity</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Complexity</p>
                       <p className="text-lg font-semibold capitalize">
                         {insight.implementationComplexity}
                       </p>
@@ -785,7 +785,7 @@ export default function AILearningAdminPage() {
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Affected Areas</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Affected Areas</p>
                     <div className="flex flex-wrap gap-2">
                       {insight.affectedModules.map((module) => (
                         <Badge key={module} color="blue">{module}</Badge>
@@ -795,10 +795,10 @@ export default function AILearningAdminPage() {
 
                   {insight.recommendations.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">Recommendations</p>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendations</p>
                       <ul className="list-disc list-inside space-y-1">
                         {insight.recommendations.map((rec, index) => (
-                          <li key={index} className="text-sm text-gray-700">{rec}</li>
+                          <li key={index} className="text-sm text-gray-700 dark:text-gray-300">{rec}</li>
                         ))}
                       </ul>
                     </div>
@@ -827,25 +827,25 @@ export default function AILearningAdminPage() {
                       <div className={`text-2xl font-bold ${getHealthColor(healthMetrics.overallHealth)}`}>
                         {Math.round(healthMetrics.overallHealth * 100)}%
                       </div>
-                      <p className="text-sm text-gray-500">Overall Health</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Overall Health</p>
                     </div>
                     <div className="text-center">
                       <div className={`text-2xl font-bold ${getHealthColor(healthMetrics.learningEffectiveness)}`}>
                         {Math.round(healthMetrics.learningEffectiveness * 100)}%
                       </div>
-                      <p className="text-sm text-gray-500">Learning Effectiveness</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Learning Effectiveness</p>
                     </div>
                     <div className="text-center">
                       <div className={`text-2xl font-bold ${getHealthColor(healthMetrics.userSatisfaction)}`}>
                         {Math.round(healthMetrics.userSatisfaction * 100)}%
                       </div>
-                      <p className="text-sm text-gray-500">User Satisfaction</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">User Satisfaction</p>
                     </div>
                     <div className="text-center">
                       <div className={`text-2xl font-bold ${getHealthColor(healthMetrics.patternDiscoveryRate)}`}>
                         {Math.round(healthMetrics.patternDiscoveryRate * 100)}%
                       </div>
-                      <p className="text-sm text-gray-500">Pattern Discovery</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">Pattern Discovery</p>
                     </div>
                   </div>
                 </CardContent>
@@ -920,9 +920,9 @@ export default function AILearningAdminPage() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">System Health Data Not Available</h3>
-                <p className="text-sm text-gray-700 mb-4">
+                <Activity className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">System Health Data Not Available</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                   System health metrics endpoint is not yet available. This feature will be available once the centralized AI system is fully implemented.
                 </p>
                 <Button variant="secondary" onClick={loadData}>
@@ -975,7 +975,7 @@ export default function AILearningAdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-gray-700">Data coming soon</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300">Data coming soon</p>
               </CardContent>
             </Card>
 
@@ -986,7 +986,7 @@ export default function AILearningAdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-gray-700">Data coming soon</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300">Data coming soon</p>
               </CardContent>
             </Card>
 
@@ -997,7 +997,7 @@ export default function AILearningAdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-gray-700">Data coming soon</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300">Data coming soon</p>
               </CardContent>
             </Card>
 
@@ -1008,7 +1008,7 @@ export default function AILearningAdminPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-gray-700">Data coming soon</p>
+                <p className="text-xs text-gray-700 dark:text-gray-300">Data coming soon</p>
               </CardContent>
             </Card>
           </div>
@@ -1040,9 +1040,9 @@ export default function AILearningAdminPage() {
                     {/* Empty state - Module analytics data will be loaded from API when available */}
                     <tr>
                       <td colSpan={8} className="p-8 text-center">
-                        <Activity className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-gray-900 mb-1">Module Analytics Coming Soon</p>
-                        <p className="text-xs text-gray-700">
+                        <Activity className="w-8 h-8 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Module Analytics Coming Soon</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300">
                           Real-time module performance data will be available once the module AI context system is fully integrated.
                         </p>
                       </td>
@@ -1083,7 +1083,7 @@ export default function AILearningAdminPage() {
                   </div>
                   <CustomBadge variant="outline">High Latency</CustomBadge>
                 </div>
-                <p className="text-xs text-gray-600 ml-6">
+                <p className="text-xs text-gray-700 dark:text-gray-300 ml-6">
                   Average response time of 450ms exceeds 250ms threshold. Consider optimizing context endpoints.
                 </p>
               </CardContent>
@@ -1105,27 +1105,27 @@ export default function AILearningAdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Anonymization Level</label>
-                    <p className="text-sm text-gray-600 capitalize">{privacySettings.anonymizationLevel}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 capitalize">{privacySettings.anonymizationLevel}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Aggregation Threshold</label>
-                    <p className="text-sm text-gray-600">{privacySettings.aggregationThreshold} users</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{privacySettings.aggregationThreshold} users</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Data Retention</label>
-                    <p className="text-sm text-gray-600">{privacySettings.dataRetentionDays} days</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{privacySettings.dataRetentionDays} days</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">User Consent Required</label>
-                    <p className="text-sm text-gray-600">{privacySettings.userConsentRequired ? 'Yes' : 'No'}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{privacySettings.userConsentRequired ? 'Yes' : 'No'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Cross-User Data Sharing</label>
-                    <p className="text-sm text-gray-600">{privacySettings.crossUserDataSharing ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{privacySettings.crossUserDataSharing ? 'Enabled' : 'Disabled'}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Audit Logging</label>
-                    <p className="text-sm text-gray-600">{privacySettings.auditLogging ? 'Enabled' : 'Disabled'}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{privacySettings.auditLogging ? 'Enabled' : 'Disabled'}</p>
                   </div>
                 </div>
                 
@@ -1139,9 +1139,9 @@ export default function AILearningAdminPage() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Privacy Settings Not Available</h3>
-                <p className="text-sm text-gray-700 mb-4">
+                <Shield className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Privacy Settings Not Available</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                   Privacy configuration endpoint is not yet available. This feature will be available once the centralized AI system is fully implemented.
                 </p>
                 <Button variant="secondary" onClick={loadData}>
@@ -1190,11 +1190,11 @@ export default function AILearningAdminPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Total Users</label>
-                      <p className="text-sm text-gray-600">{consentStats?.totalUsers || 0}</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{consentStats?.totalUsers || 0}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Consent Rate</label>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {consentStats && consentStats.totalUsers > 0 
                           ? Math.round((consentStats.consentingUsers / consentStats.totalUsers) * 100) 
                           : 0}%
@@ -1202,13 +1202,13 @@ export default function AILearningAdminPage() {
                     </div>
                     <div>
                       <label className="text-sm font-medium">Last Updated</label>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {consentStats?.lastUpdated ? new Date(consentStats.lastUpdated).toLocaleDateString() : 'Never'}
                       </p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Compliance Status</label>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         {consentStats?.complianceStatus || 'Unknown'}
                       </p>
                     </div>
@@ -1234,9 +1234,9 @@ export default function AILearningAdminPage() {
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Consent Stats Not Available</h3>
-                <p className="text-sm text-gray-700 mb-4">
+                <Shield className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Consent Stats Not Available</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                   User consent statistics endpoint is not yet available. This feature will be available once the centralized AI system is fully implemented.
                 </p>
                 <Button variant="secondary" onClick={refreshConsentStats}>
@@ -1287,19 +1287,19 @@ export default function AILearningAdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium">Pattern Analysis</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {schedulerStatus?.nextRun?.[0] ? new Date(schedulerStatus.nextRun[0]).toLocaleString() : 'Not scheduled'}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Insight Generation</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {schedulerStatus?.nextRun?.[1] ? new Date(schedulerStatus.nextRun[1]).toLocaleString() : 'Not scheduled'}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Health Check</label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {schedulerStatus?.nextRun?.[2] ? new Date(schedulerStatus.nextRun[2]).toLocaleString() : 'Not scheduled'}
                     </p>
                   </div>
@@ -1325,9 +1325,9 @@ export default function AILearningAdminPage() {
         ) : (
           <Card>
             <CardContent className="py-12 text-center">
-              <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Scheduler Not Available</h3>
-              <p className="text-sm text-gray-700 mb-4">
+              <Activity className="w-12 h-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Scheduler Not Available</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
                 The pattern analysis scheduler endpoint is not yet available. This feature will be available once the centralized AI system is fully implemented.
               </p>
               <Button variant="secondary" onClick={refreshSchedulerStatus}>
@@ -1360,12 +1360,12 @@ export default function AILearningAdminPage() {
                         <span className={`text-xs px-2 py-1 rounded ${
                           forecast.trend === 'increasing' ? 'bg-green-100 text-green-800' :
                           forecast.trend === 'decreasing' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
+                          'bg-gray-100 dark:bg-slate-700 text-gray-800'
                         }`}>
                           {forecast.trend}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-700 dark:text-gray-300">
                         <div>Current: {Math.round(forecast.currentValue * 100)}%</div>
                         <div>Predicted: {Math.round(forecast.predictedValue * 100)}%</div>
                         <div>Confidence: {Math.round(forecast.confidence * 100)}%</div>
@@ -1375,7 +1375,7 @@ export default function AILearningAdminPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-gray-700">
+                <div className="text-center py-4 text-gray-700 dark:text-gray-300">
                   No trend forecasts available
                 </div>
               )}
@@ -1399,7 +1399,7 @@ export default function AILearningAdminPage() {
                   {impactAnalyses.slice(0, 3).map((analysis) => (
                     <div key={analysis.id} className="p-3 border rounded-lg">
                       <div className="font-medium text-sm mb-2">{analysis.metric}</div>
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                         <div>Improvement: <span className="font-medium text-green-600">+{Math.round(analysis.improvement)}%</span></div>
                         <div>ROI: <span className="font-medium text-blue-600">{Math.round(analysis.roi)}x</span></div>
                         <div>Net Benefit: <span className="font-medium text-purple-600">${Math.round(analysis.netBenefit)}</span></div>
@@ -1409,7 +1409,7 @@ export default function AILearningAdminPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-gray-700">
+                <div className="text-center py-4 text-gray-700 dark:text-gray-300">
                   No impact analysis available
                 </div>
               )}
@@ -1448,7 +1448,7 @@ export default function AILearningAdminPage() {
                 {userPredictions.map((prediction, index) => (
                   <div key={index} className="p-4 border rounded-lg bg-blue-50">
                     <div className="font-medium text-sm mb-2">{prediction.behavior}</div>
-                    <div className="text-sm text-gray-600 space-y-1">
+                    <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                       <div>Probability: {Math.round(prediction.probability * 100)}%</div>
                       <div>Next Occurrence: {new Date(prediction.nextOccurrence).toLocaleDateString()}</div>
                       <div>Confidence: {Math.round(prediction.confidence * 100)}%</div>
@@ -1465,7 +1465,7 @@ export default function AILearningAdminPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-700">
+              <div className="text-center py-8 text-gray-700 dark:text-gray-300">
                 Enter a user ID and click "Predict Behavior" to generate predictions
               </div>
             )}

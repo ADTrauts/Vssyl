@@ -68,10 +68,10 @@ export function EmptyTaskState({ onCreateTask, view = 'list' }: EmptyTaskStatePr
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 mb-4">
             <CheckSquare className="w-10 h-10 text-blue-600" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Ready to get organized?
           </h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
             Create your first task to start managing your to-dos. Organize them in columns and track your workflow.
           </p>
           <Button
@@ -126,10 +126,10 @@ export function EmptyTaskState({ onCreateTask, view = 'list' }: EmptyTaskStatePr
         <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 mb-4">
           <CheckSquare className="w-10 h-10 text-blue-600" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
           Ready to get organized?
         </h3>
-        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
           Create your first task to start managing your to-dos. You can organize by priority, set due dates, and track your progress.
         </p>
         <Button
@@ -144,25 +144,25 @@ export function EmptyTaskState({ onCreateTask, view = 'list' }: EmptyTaskStatePr
         
         {/* Quick tips */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <Flag className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <div className="font-medium text-gray-900 text-sm">Set Priorities</div>
-              <div className="text-xs text-gray-600 mt-1">Mark tasks as urgent, high, medium, or low</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Set Priorities</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Mark tasks as urgent, high, medium, or low</div>
             </div>
           </div>
-          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <div className="font-medium text-gray-900 text-sm">Due Dates</div>
-              <div className="text-xs text-gray-600 mt-1">Never miss a deadline with date tracking</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Due Dates</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Never miss a deadline with date tracking</div>
             </div>
           </div>
-          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <div className="font-medium text-gray-900 text-sm">Track Progress</div>
-              <div className="text-xs text-gray-600 mt-1">See your productivity at a glance</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Track Progress</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">See your productivity at a glance</div>
             </div>
           </div>
         </div>

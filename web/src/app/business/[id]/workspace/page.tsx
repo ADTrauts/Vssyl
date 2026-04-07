@@ -234,7 +234,7 @@ export default function BusinessWorkspacePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size={32} />
-        <p className="mt-4 text-sm text-gray-600">Setting up workspace...</p>
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Setting up workspace...</p>
       </div>
     );
   }
@@ -274,7 +274,7 @@ export default function BusinessWorkspacePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size={32} />
-        <p className="mt-4 text-sm text-gray-600">Initializing business workspace...</p>
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Initializing business workspace...</p>
         {error && (
           <p className="mt-2 text-sm text-red-600">{error}</p>
         )}

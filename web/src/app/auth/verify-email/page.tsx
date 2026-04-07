@@ -87,7 +87,7 @@ export default function VerifyEmailPage() {
         <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
           Email Verification
         </h2>
-        <p className="text-center text-base text-gray-600">
+        <p className="text-center text-base text-gray-600 dark:text-gray-400">
           {token
             ? "Verifying your email address..."
             : "Please verify your email address to continue"}
@@ -97,7 +97,7 @@ export default function VerifyEmailPage() {
       {loading && (
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{borderColor: COLORS.infoBlue}}></div>
-          <p className="mt-4 text-sm text-gray-600">Verifying your email...</p>
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Verifying your email...</p>
         </div>
       )}
 
@@ -113,7 +113,7 @@ export default function VerifyEmailPage() {
 
       {!token && !success && (
         <div className="text-center">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Didn't receive a verification email?
           </p>
           <button

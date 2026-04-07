@@ -119,7 +119,7 @@ function RootDropZone({
         isOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
       }`}
     >
-      <div className="text-center text-sm text-gray-600">
+      <div className="text-center text-sm text-gray-600 dark:text-gray-400">
         {isOver ? 'Drop here to move to root' : 'Drag items here to move to root'}
       </div>
     </div>
@@ -273,7 +273,7 @@ const DraggableItem = React.memo(function DraggableItem({
                 e.stopPropagation();
                 handleStar(item.id);
               }}
-              className="absolute top-2 left-2 z-10 p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+              className="absolute top-2 left-2 z-10 p-1 bg-white dark:bg-slate-900 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Unpin"
               aria-label={`Unpin ${item.name}`}
             >
@@ -284,7 +284,7 @@ const DraggableItem = React.memo(function DraggableItem({
           <div className="flex items-center space-x-4">
             <div className={`flex-shrink-0 ${item.mimeType?.startsWith('image/') ? 'w-16 h-16' : ''}`}>
               {item.mimeType?.startsWith('image/') ? (
-                <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                <div className="relative w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
                   <img
                     src={getFileThumbnailUrl(item)}
                     alt={item.name}
@@ -298,17 +298,17 @@ const DraggableItem = React.memo(function DraggableItem({
                       }
                     }}
                   />
-                  <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 text-2xl">🖼️</div>
+                  <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 dark:bg-slate-800 text-2xl">🖼️</div>
                 </div>
               ) : (
                 getFileIcon(item)
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {item.name}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Modified {formatDate(item.modifiedAt)} by {item.createdBy}
               </p>
             </div>
@@ -383,7 +383,7 @@ const DraggableItem = React.memo(function DraggableItem({
               e.stopPropagation();
               handleStar(item.id);
             }}
-            className="absolute top-2 left-2 z-10 p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+            className="absolute top-2 left-2 z-10 p-1 bg-white dark:bg-slate-900 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
             title="Unpin"
           >
             <Pin className="w-4 h-4 text-yellow-500 fill-current" />
@@ -399,7 +399,7 @@ const DraggableItem = React.memo(function DraggableItem({
                 e.stopPropagation();
                 handleStar(item.id);
               }}
-              className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+              className="p-1 bg-white dark:bg-slate-900 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
               title="Pin"
               aria-label={`Pin ${item.name}`}
             >
@@ -413,7 +413,7 @@ const DraggableItem = React.memo(function DraggableItem({
                   e.stopPropagation();
                   handleShare(item.id);
                 }}
-                className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+                className="p-1 bg-white dark:bg-slate-900 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 title="Share"
                 aria-label={`Share ${item.name}`}
               >
@@ -424,7 +424,7 @@ const DraggableItem = React.memo(function DraggableItem({
                   e.stopPropagation();
                   handleDownload(item.id);
                 }}
-                className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full"
+                className="p-1 bg-white dark:bg-slate-900 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 title="Download"
                 aria-label={`Download ${item.name}`}
               >
@@ -438,15 +438,15 @@ const DraggableItem = React.memo(function DraggableItem({
           <div className={`flex justify-center mb-2 ${item.mimeType?.startsWith('image/') ? 'w-full' : ''}`}>
             {getFileIcon(item)}
           </div>
-          <p className="text-sm font-medium text-gray-900 truncate" title={item.name}>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.name}>
             {item.name}
           </p>
           {item.type === 'file' && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {formatFileSize(item.size || 0)}
             </p>
           )}
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {formatDate(item.modifiedAt)}
           </p>
         </div>
@@ -939,7 +939,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     // For images, show actual thumbnail using download endpoint
     if (mimeType.startsWith('image/')) {
       return (
-        <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+        <div className="relative w-full h-32 bg-gray-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
           <img
             src={getFileThumbnailUrl(item)}
             alt={item.name}
@@ -954,7 +954,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
               }
             }}
           />
-          <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 text-4xl">🖼️</div>
+          <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 dark:bg-slate-800 text-4xl">🖼️</div>
         </div>
       );
     }
@@ -1677,8 +1677,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center max-w-md">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Drive Error</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Drive Error</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
           <div className="space-y-2">
             <Button onClick={loadFilesAndFolders} variant="primary">
               Try Again
@@ -1718,10 +1718,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       {!currentFolder && breadcrumbs.length === 0 && (
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {currentDashboard ? `${currentDashboard.name} Drive` : 'My Drive'}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {currentDashboard 
                 ? 'Shared file storage and collaboration' 
                 : 'Your personal file storage'}
@@ -1811,7 +1811,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
 
       {/* Breadcrumbs - Show when navigating folders */}
       {(breadcrumbs.length > 0 || currentFolder) && (
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
+        <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
           <button
             onClick={() => {
               setCurrentFolder(null);
@@ -1847,7 +1847,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size' | 'type')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             aria-label="Sort by"
             title="Sort files and folders"
           >
@@ -1859,7 +1859,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
             title={`Sort ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}`}
           >
             {sortOrder === 'asc' ? '↑' : '↓'}
@@ -1883,18 +1883,18 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           {/* Filter dropdown menu */}
           {showFilterMenu && (
             <div 
-              className="absolute right-0 top-10 z-20 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-3"
+              className="absolute right-0 top-10 z-20 w-64 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-3 space-y-3"
               role="menu"
               aria-label="Filter options"
             >
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                   Type
                 </label>
                 <select
                   value={fileTypeFilter}
                   onChange={(e) => setFileTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="">All types</option>
                   <option value="documents">Documents</option>
@@ -1905,13 +1905,13 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                   Date
                 </label>
                 <select
                   value={dateRangeFilter}
                   onChange={(e) => setDateRangeFilter(e.target.value as 'all' | '7d' | '30d' | 'year')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="all">Any time</option>
                   <option value="7d">Last 7 days</option>
@@ -1920,10 +1920,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                 </select>
               </div>
 
-              <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer select-none">
+              <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 dark:border-slate-600"
                   checked={pinnedOnly}
                   onChange={(e) => setPinnedOnly(e.target.checked)}
                 />
@@ -1973,7 +1973,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       {/* Folders Section */}
         {folders.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4" id="folders-heading">Folders</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4" id="folders-heading">Folders</h2>
             {viewMode === 'grid' ? (
               <div 
                 ref={itemsListRef}
@@ -2044,7 +2044,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         {/* Files Section */}
         {files.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4" id="files-heading">Files</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4" id="files-heading">Files</h2>
             {viewMode === 'grid' ? (
               <div 
                 className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4"
@@ -2120,10 +2120,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       {folders.length === 0 && files.length === 0 && (
         <div className="text-center py-12">
           <Folder className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
             No files yet
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             Get started by uploading your first file or creating a folder
           </p>
           <div className="flex items-center justify-center space-x-3">
@@ -2169,14 +2169,14 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-48"
+          className="fixed z-50 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 min-w-48"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
           role="menu"
           aria-label={`Context menu for ${contextMenu.item.name}`}
         >
           <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
             onClick={async () => {
               const allItems = [...folders, ...files];
               const itemIndex = allItems.findIndex(i => i.id === contextMenu.item.id);
@@ -2194,7 +2194,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
             <span>{contextMenu.item.type === 'folder' ? 'Open' : 'Preview'}</span>
           </button>
           <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
             onClick={() => {
               handleStar(contextMenu.item.id);
               setContextMenu(null);
@@ -2208,7 +2208,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           {contextMenu.item.type === 'file' && (
             <>
               <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
                 onClick={() => {
                   handleShare(contextMenu.item.id);
                   setContextMenu(null);
@@ -2220,7 +2220,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                 <span>Share</span>
               </button>
               <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
                 onClick={() => {
                   handleDownload(contextMenu.item.id);
                   setContextMenu(null);
@@ -2234,7 +2234,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
             </>
           )}
           <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
             onClick={() => {
               handleDiscussInChat(contextMenu.item);
               setContextMenu(null);
@@ -2247,7 +2247,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           </button>
           {contextMenu.item.type === 'file' && (
             <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+              className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
               onClick={() => {
                 handleAskAIAboutFile(contextMenu.item);
                 setContextMenu(null);
@@ -2259,7 +2259,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
               <span>Ask AI about this file</span>
             </button>
           )}
-          <div className="border-t border-gray-200 my-1" role="separator"></div>
+          <div className="border-t border-gray-200 dark:border-slate-700 my-1" role="separator"></div>
           <button
             className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2 focus:outline-none focus:bg-red-50"
             onClick={() => {
@@ -2507,19 +2507,19 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           aria-labelledby="keyboard-shortcuts-title"
         >
           <div
-            className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+            className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <Keyboard className="w-5 h-5 text-gray-600" />
-                <h2 id="keyboard-shortcuts-title" className="text-xl font-semibold text-gray-900">
+                <Keyboard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <h2 id="keyboard-shortcuts-title" className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   Keyboard Shortcuts
                 </h2>
               </div>
               <button
                 onClick={() => setShowKeyboardShortcutsHelp(false)}
-                className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 aria-label="Close keyboard shortcuts help"
               >
                 <XIcon className="w-5 h-5" />
@@ -2528,49 +2528,49 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
             
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Navigation</h3>
-                <div className="space-y-1 text-sm text-gray-700">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Navigation</h3>
+                <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
                   <div className="flex justify-between">
                     <span>Arrow Keys</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">↑ ↓</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">↑ ↓</kbd>
                   </div>
-                  <p className="text-xs text-gray-500 ml-4">Navigate through files and folders</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Navigate through files and folders</p>
                   
                   <div className="flex justify-between mt-2">
                     <span>Right Arrow / Enter</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">→ / Enter</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">→ / Enter</kbd>
                   </div>
-                  <p className="text-xs text-gray-500 ml-4">Open folder or file</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Open folder or file</p>
                   
                   <div className="flex justify-between mt-2">
                     <span>Home / End</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Home / End</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Home / End</kbd>
                   </div>
-                  <p className="text-xs text-gray-500 ml-4">Jump to first or last item</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Jump to first or last item</p>
                 </div>
               </div>
               
               <div className="border-t pt-4">
-                <h3 className="font-medium text-gray-900 mb-2">Actions</h3>
-                <div className="space-y-1 text-sm text-gray-700">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Actions</h3>
+                <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
                   <div className="flex justify-between">
                     <span>New Folder</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+N</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+N</kbd>
                   </div>
                   
                   <div className="flex justify-between mt-2">
                     <span>Search</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+K</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+K</kbd>
                   </div>
                   
                   <div className="flex justify-between mt-2">
                     <span>Delete / Trash</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Delete</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Delete</kbd>
                   </div>
                   
                   <div className="flex justify-between mt-2">
                     <span>Close / Cancel</span>
-                    <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Esc</kbd>
+                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Esc</kbd>
                   </div>
                 </div>
               </div>

@@ -131,8 +131,8 @@ export default function BusinessBrandingManager({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Business Branding</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Business Branding</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Customize the appearance of your business workspace
           </p>
         </div>
@@ -166,14 +166,14 @@ export default function BusinessBrandingManager({
         <div className="space-y-6">
           {/* Logo */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Logo</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Logo</h3>
             <div className="space-y-4">
               {branding.logo && (
                 <div className="flex items-center space-x-4">
                   <img 
                     src={branding.logo} 
                     alt="Business logo" 
-                    className="h-16 w-16 object-contain border border-gray-200 rounded"
+                    className="h-16 w-16 object-contain border border-gray-200 dark:border-slate-700 rounded"
                   />
                   <Button
                     onClick={() => setBranding(prev => ({ ...prev, logo: '' }))}
@@ -186,8 +186,8 @@ export default function BusinessBrandingManager({
               
               <div className="flex items-center space-x-3">
                 <label className="flex items-center space-x-2 cursor-pointer">
-                  <Upload className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">
+                  <Upload className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Upload Logo
                   </span>
                   <input
@@ -203,10 +203,10 @@ export default function BusinessBrandingManager({
 
           {/* Colors */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Colors</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Colors</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Primary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -214,7 +214,7 @@ export default function BusinessBrandingManager({
                     type="color"
                     value={branding.primaryColor}
                     onChange={(e) => handleColorChange('primaryColor', e.target.value)}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 border border-gray-300 dark:border-slate-600 rounded cursor-pointer"
                   />
                   <Input
                     value={branding.primaryColor}
@@ -226,7 +226,7 @@ export default function BusinessBrandingManager({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Secondary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -234,7 +234,7 @@ export default function BusinessBrandingManager({
                     type="color"
                     value={branding.secondaryColor}
                     onChange={(e) => handleColorChange('secondaryColor', e.target.value)}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 border border-gray-300 dark:border-slate-600 rounded cursor-pointer"
                   />
                   <Input
                     value={branding.secondaryColor}
@@ -246,7 +246,7 @@ export default function BusinessBrandingManager({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Accent Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -254,7 +254,7 @@ export default function BusinessBrandingManager({
                     type="color"
                     value={branding.accentColor}
                     onChange={(e) => handleColorChange('accentColor', e.target.value)}
-                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-12 h-10 border border-gray-300 dark:border-slate-600 rounded cursor-pointer"
                   />
                   <Input
                     value={branding.accentColor}
@@ -269,15 +269,15 @@ export default function BusinessBrandingManager({
 
           {/* Typography */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Typography</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Typography</h3>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Font Family
               </label>
               <select
                 value={branding.fontFamily}
                 onChange={(e) => handleColorChange('fontFamily', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Default (System)</option>
                 <option value="Inter">Inter</option>
@@ -291,9 +291,9 @@ export default function BusinessBrandingManager({
 
           {/* Custom CSS */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom CSS</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Custom CSS</h3>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Custom Styles
               </label>
               <textarea
@@ -301,9 +301,9 @@ export default function BusinessBrandingManager({
                 onChange={(e) => handleColorChange('customCSS', e.target.value)}
                 placeholder="/* Add custom CSS here */"
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Use CSS variables like --business-primary-color in your custom styles
               </p>
             </div>
@@ -314,7 +314,7 @@ export default function BusinessBrandingManager({
         {previewMode && (
           <div className="space-y-6">
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Preview</h3>
               <div style={getPreviewStyles()} className="space-y-4">
                 {/* Preview Header */}
                 <div 
@@ -377,7 +377,7 @@ export default function BusinessBrandingManager({
                     >
                       Sample Card
                     </h4>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
                       This is how your branded components will look with the selected colors and styling.
                     </p>
                   </div>
@@ -387,7 +387,7 @@ export default function BusinessBrandingManager({
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: branding.accentColor }}
                     />
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                       Accent color indicator
                     </span>
                   </div>
@@ -399,7 +399,7 @@ export default function BusinessBrandingManager({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-slate-700">
         <Button
           onClick={handleReset}
           variant="secondary"

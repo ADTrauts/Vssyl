@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast';
 
 export default function DashboardDeletionDemoPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <Toaster 
         position="top-right"
         toastOptions={{

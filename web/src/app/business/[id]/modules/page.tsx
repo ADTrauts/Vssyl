@@ -312,9 +312,9 @@ export default function BusinessModulesPage() {
   const categories = getCategories();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -328,8 +328,8 @@ export default function BusinessModulesPage() {
               </Button>
               <div className="h-6 w-px bg-gray-300" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Module Management</h1>
-                <p className="text-sm text-gray-600">{business.name}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Module Management</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{business.name}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -356,7 +356,7 @@ export default function BusinessModulesPage() {
                 placeholder="Search modules..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -366,7 +366,7 @@ export default function BusinessModulesPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -415,10 +415,10 @@ export default function BusinessModulesPage() {
               <div className="col-span-full">
                 <Card className="p-12 text-center">
                   <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     No modules found
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     {searchQuery || selectedCategory !== 'all'
                       ? 'Try adjusting your search or filters'
                       : 'Install modules from the marketplace to get started'}
@@ -436,8 +436,8 @@ export default function BusinessModulesPage() {
                           <Package className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900">{module.name}</h3>
-                          <p className="text-sm text-gray-600">{module.version}</p>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{module.version}</p>
                         </div>
                       </div>
                       {isCoreModule && (
@@ -445,11 +445,11 @@ export default function BusinessModulesPage() {
                       )}
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                       {module.description}
                     </p>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                       <span className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 mr-1" />
                         {module.rating.toFixed(1)}
@@ -489,7 +489,7 @@ export default function BusinessModulesPage() {
                     </div>
 
                     {isCoreModule && (
-                      <p className="text-xs text-gray-500 mt-2 text-center">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                         Core module - cannot be uninstalled
                       </p>
                     )}
@@ -504,10 +504,10 @@ export default function BusinessModulesPage() {
               <div className="col-span-full">
                 <Card className="p-12 text-center">
                   <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     No modules found
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 dark:text-gray-400">
                     {searchQuery || selectedCategory !== 'all'
                       ? 'Try adjusting your search or filters'
                       : 'All available modules are already installed'}
@@ -519,12 +519,12 @@ export default function BusinessModulesPage() {
                 <Card key={module.id} className="p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Package className="w-6 h-6 text-gray-600" />
+                      <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                        <Package className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{module.name}</h3>
-                        <p className="text-sm text-gray-600">{module.version}</p>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{module.version}</p>
                       </div>
                     </div>
                     {module.pricingTier && module.pricingTier !== 'free' && (
@@ -534,11 +534,11 @@ export default function BusinessModulesPage() {
                     )}
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                     {module.description}
                   </p>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                     <span className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 mr-1" />
                       {module.rating.toFixed(1)}
@@ -547,7 +547,7 @@ export default function BusinessModulesPage() {
                       <Download className="w-4 h-4 mr-1" />
                       {module.downloads.toLocaleString()}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {module.category}
                     </span>
                   </div>
@@ -573,7 +573,7 @@ export default function BusinessModulesPage() {
                   </Button>
 
                   {module.basePrice && (
-                    <p className="text-xs text-gray-500 mt-2 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                       ${module.basePrice}/month
                     </p>
                   )}

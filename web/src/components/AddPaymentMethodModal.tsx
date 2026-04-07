@@ -98,13 +98,13 @@ function PaymentMethodForm({ onSuccess, onClose }: { onSuccess: () => void; onCl
       )}
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Card Details
         </label>
-        <div className="p-3 border border-gray-300 rounded-md bg-white">
+        <div className="p-3 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900">
           <CardElement options={cardElementOptions} />
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Your card information is securely processed by Stripe and never stored on our servers.
         </p>
       </div>

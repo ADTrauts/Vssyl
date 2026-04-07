@@ -329,8 +329,8 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
                         </Badge>
                         <Badge color="blue">{policy.policyType}</Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{policy.description}</p>
-                      <div className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{policy.description}</p>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         Rules: {policy.rules.length} | Created: {new Date(policy.createdAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -369,12 +369,12 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
                         <Badge color={getSeverityColor(violation.severity)}>
                           {violation.severity.toUpperCase()}
                         </Badge>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           {violation.resourceType} - {violation.resourceId}
                         </span>
                       </div>
                       <p className="text-sm mb-2">{violation.description}</p>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Detected: {new Date(violation.detectedAt).toLocaleString()}
                         {violation.resolvedAt && (
                           <span className="ml-4">
@@ -470,7 +470,7 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
                     {enforcementResult.violations.map((violation: PolicyViolation, index: number) => (
                       <div key={index} className="text-sm p-2 bg-red-50 border border-red-200 rounded">
                         <div className="font-medium">{violation.policyName}</div>
-                        <div className="text-gray-600">{violation.description}</div>
+                        <div className="text-gray-600 dark:text-gray-400">{violation.description}</div>
                       </div>
                     ))}
                   </div>
@@ -511,7 +511,7 @@ export default function GovernanceManagementDashboard({ className = '' }: Govern
               <select
                 value={policyForm.policyType}
                 onChange={(e) => setPolicyForm({ ...policyForm, policyType: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-md"
               >
                 <option value="classification">Classification</option>
                 <option value="retention">Retention</option>

@@ -46,7 +46,7 @@ export default function MemberManagementPage() {
         return (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Pending Requests</h2>
-            <p className="text-gray-600 mb-4">Connection requests sent to you</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Connection requests sent to you</p>
             <PendingRequestsList 
               onRequestUpdated={() => {
                 // Request updated
@@ -58,7 +58,7 @@ export default function MemberManagementPage() {
         return (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Sent Requests</h2>
-            <p className="text-gray-600 mb-4">Connection requests you've sent to others</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Connection requests you've sent to others</p>
             <SentRequestsList 
               onRequestUpdated={() => {
                 // Request updated
@@ -82,17 +82,17 @@ export default function MemberManagementPage() {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Member Management
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Search for users, manage your connections, respond to pending requests, and analyze your network.
             </p>
           </div>
 
           {/* Tab Navigation */}
           <div className="mb-6">
-            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+            <div className="flex space-x-1 bg-gray-100 dark:bg-slate-700 rounded-lg p-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (

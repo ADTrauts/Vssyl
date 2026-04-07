@@ -52,13 +52,13 @@ export default function ForgotPasswordPage() {
         <h2 className="text-center text-2xl font-extrabold mb-1" style={{ color: COLORS.neutralDark }}>
           Reset your password
         </h2>
-        <p className="text-center text-base text-gray-600">
+        <p className="text-center text-base text-gray-600 dark:text-gray-400">
           Enter your email address and we'll send you a link to reset your password.
         </p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="email" className="block text-base font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1">
             Email address
           </label>
           <input
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
             type="email"
             autoComplete="email"
             required
-            className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
+            className="appearance-none rounded-md block w-full px-4 py-3 border border-gray-300 dark:border-slate-600 placeholder-gray-400 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[${COLORS.infoBlue}] focus:border-[${COLORS.infoBlue}] text-base"
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

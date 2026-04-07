@@ -83,7 +83,7 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
       case 'failed':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -110,8 +110,8 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                   <div className="flex items-center">
                     <DollarSign className="w-8 h-8 text-green-500" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Revenue</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {formatCurrency(stats?.totalRevenue || 0)}
                       </p>
                     </div>
@@ -124,8 +124,8 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                   <div className="flex items-center">
                     <Users className="w-8 h-8 text-blue-500" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-600">Active Subscriptions</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Subscriptions</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {stats?.activeSubscriptions || 0}
                       </p>
                     </div>
@@ -138,8 +138,8 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                   <div className="flex items-center">
                     <Download className="w-8 h-8 text-purple-500" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-600">Total Downloads</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Downloads</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {stats?.totalDownloads || 0}
                       </p>
                     </div>
@@ -152,8 +152,8 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                   <div className="flex items-center">
                     <Star className="w-8 h-8 text-yellow-500" />
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-600">Average Rating</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Rating</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {stats?.averageRating?.toFixed(1) || '0.0'}
                       </p>
                     </div>
@@ -175,19 +175,19 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="text-center">
-                    <p className="text-sm text-gray-600">Total Payouts</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Payouts</p>
                     <p className="text-2xl font-bold text-green-600">
                       {formatCurrency(stats?.totalPayouts || 0)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm text-gray-600">Pending Payouts</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Pending Payouts</p>
                     <p className="text-2xl font-bold text-yellow-600">
                       {formatCurrency(stats?.pendingPayouts || 0)}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm text-gray-600">Available for Payout</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Available for Payout</p>
                     <p className="text-2xl font-bold text-blue-600">
                       {formatCurrency((stats?.totalRevenue || 0) - (stats?.totalPayouts || 0))}
                     </p>
@@ -200,14 +200,14 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                     <h4 className="font-medium mb-3">Recent Payouts</h4>
                     <div className="space-y-2">
                       {payoutHistory.slice(0, 5).map((payout) => (
-                        <div key={payout.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={payout.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                           <div className="flex items-center">
                             {getPayoutStatusIcon(payout.status)}
                             <span className="ml-2 text-sm font-medium">
                               {formatCurrency(payout.amount)}
                             </span>
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {new Date(payout.requestedAt).toLocaleDateString()}
                           </div>
                         </div>
@@ -234,15 +234,15 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <p className="text-gray-600">Total Revenue</p>
+                            <p className="text-gray-600 dark:text-gray-400">Total Revenue</p>
                             <p className="font-semibold">{formatCurrency(module.totalRevenue)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Monthly Recurring</p>
+                            <p className="text-gray-600 dark:text-gray-400">Monthly Recurring</p>
                             <p className="font-semibold">{formatCurrency(module.monthlyRecurringRevenue)}</p>
                           </div>
                           <div>
-                            <p className="text-gray-600">Lifetime Value</p>
+                            <p className="text-gray-600 dark:text-gray-400">Lifetime Value</p>
                             <p className="font-semibold">{formatCurrency(module.lifetimeValue)}</p>
                           </div>
                         </div>
@@ -250,7 +250,7 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                     <p>No modules with revenue yet</p>
                     <p className="text-sm">Create and publish modules to start earning</p>
@@ -270,7 +270,7 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Payout Amount
             </label>
             <input
@@ -278,13 +278,13 @@ export default function DeveloperPortal({ open, onClose }: DeveloperPortalProps)
               value={payoutAmount}
               onChange={(e) => setPayoutAmount(e.target.value)}
               placeholder="Enter amount"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               min="0"
               step="0.01"
             />
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             <p>Available for payout: {formatCurrency((stats?.totalRevenue || 0) - (stats?.totalPayouts || 0))}</p>
           </div>
 

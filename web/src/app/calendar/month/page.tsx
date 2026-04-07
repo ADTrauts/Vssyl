@@ -457,20 +457,20 @@ function MonthInner() {
                 type="checkbox" 
                 checked={myEventsOnly} 
                 onChange={(e) => setMyEventsOnly(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500"
               />
-              <span className="text-sm font-medium text-gray-700">My events only</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">My events only</span>
             </label>
           </div>
           
           {/* Filter Row */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span className="text-gray-600 font-medium">Calendar:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Calendar:</span>
               <select 
                 value={selectedCalendarFilter} 
                 onChange={(e) => setSelectedCalendarFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:border-transparent transition-all"
                 style={{ 
                   '--tw-ring-color': 'var(--primary-green)' 
                 } as React.CSSProperties}
@@ -483,11 +483,11 @@ function MonthInner() {
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-gray-600 font-medium">Attendee:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Attendee:</span>
               <select 
                 value={selectedAttendeeFilter} 
                 onChange={(e) => setSelectedAttendeeFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:border-transparent transition-all"
                 style={{ 
                   '--tw-ring-color': 'var(--primary-green)' 
                 } as React.CSSProperties}
@@ -499,11 +499,11 @@ function MonthInner() {
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-gray-600 font-medium">Status:</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Status:</span>
               <select 
                 value={selectedStatusFilter} 
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:border-transparent transition-all"
+                className="px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-900 focus:ring-2 focus:border-transparent transition-all"
                 style={{ 
                   '--tw-ring-color': 'var(--primary-green)' 
                 } as React.CSSProperties}
@@ -518,10 +518,10 @@ function MonthInner() {
           </div>
         </div>
         {loading && (
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-8 shadow-sm border border-gray-100">
             <div className="flex items-center justify-center space-x-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="text-gray-600 font-medium">Loading calendar events...</span>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">Loading calendar events...</span>
             </div>
           </div>
         )}
@@ -616,7 +616,7 @@ function MonthInner() {
             }}
           >
             <div 
-              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modern Header with Gradient */}
@@ -635,7 +635,7 @@ function MonthInner() {
                       <CalendarIcon className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                         {eventToShow.title}
                       </h2>
                       <div className="flex items-center space-x-2">
@@ -659,10 +659,10 @@ function MonthInner() {
                     setSelectedEvent(null);
                     eventClickRef.current = null;
                   }}
-                  className="p-2 hover:bg-white/50 rounded-xl transition-all"
+                  className="p-2 hover:bg-white dark:bg-slate-900/50 rounded-xl transition-all"
                 >
                   <span className="sr-only">Close</span>
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -671,8 +671,8 @@ function MonthInner() {
 
             <div className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-180px)]">
               {eventToShow.description && (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <p className="text-gray-700 leading-relaxed">{eventToShow.description}</p>
+                <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{eventToShow.description}</p>
                 </div>
               )}
 
@@ -726,11 +726,11 @@ function MonthInner() {
 
               {/* Attendees Section */}
               {eventToShow.attendees && eventToShow.attendees.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <Users className="w-5 h-5 text-gray-600" />
-                      <h4 className="text-sm font-bold text-gray-900">
+                      <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100">
                         Attendees ({eventToShow.attendees.length})
                       </h4>
                     </div>
@@ -749,7 +749,7 @@ function MonthInner() {
                       
                       return (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 mr-2">RSVP:</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mr-2">RSVP:</span>
                           <button
                             onClick={async () => {
                               try {
@@ -846,10 +846,10 @@ function MonthInner() {
                   </div>
                   <div className="space-y-3">
                     {eventToShow.attendees.map((attendee, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg transition-colors">
                         <div className="flex items-center space-x-3">
                           <Avatar size={32} nameOrEmail={attendee.email || attendee.userId || 'Unknown'} />
-                          <span className="text-sm font-medium text-gray-900">{attendee.email || attendee.userId}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{attendee.email || attendee.userId}</span>
                         </div>
                         {attendee.response && (
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -886,14 +886,14 @@ function MonthInner() {
             </div>
 
             {/* Modern Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
               <button
                 onClick={() => {
                   setShowEventModal(false);
                   setSelectedEvent(null);
                   eventClickRef.current = null;
                 }}
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
               >
                 Close
               </button>
@@ -1033,11 +1033,11 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
   };
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" onMouseUp={handleMouseUp}>
+    <div className="w-full bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 overflow-hidden" onMouseUp={handleMouseUp}>
       {/* Day of week header */}
-      <div className="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+      <div className="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 dark:border-slate-700">
         {dayNames.map(n => (
-          <div key={n} className="px-4 py-3 text-center text-sm font-semibold text-gray-600 border-r border-gray-200 last:border-r-0">
+          <div key={n} className="px-4 py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-slate-700 last:border-r-0">
             {n}
           </div>
         ))}
@@ -1097,7 +1097,7 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
                   <div
                     key={ev.id}
                     data-event-item="true"
-                    className="flex items-center gap-2 truncate w-full hover:shadow-md rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] bg-white border-l-4 shadow-sm hover:shadow-lg"
+                    className="flex items-center gap-2 truncate w-full hover:shadow-md rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] bg-white dark:bg-slate-900 border-l-4 shadow-sm hover:shadow-lg"
                     style={{
                       marginLeft: overlapPosition * 8,
                       maxWidth: `calc(100% - ${overlapPosition * 8}px)`,
@@ -1160,7 +1160,7 @@ function MonthGrid({ viewDate, events, onCellCreate, onEventClick, onEventMove, 
                     
                     {/* Time for non-all-day events */}
                     {!ev.allDay && (
-                      <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full flex-shrink-0">
                         {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}

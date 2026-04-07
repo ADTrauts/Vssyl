@@ -168,15 +168,15 @@ body {
 }
 
 .dark .text-gray-600 {
-  color: #94a3b8 !important;
+  color: #cbd5e1 !important;
 }
 
 .dark .text-gray-500 {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
 .dark .text-gray-400 {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
 .dark .text-gray-300 {
@@ -300,7 +300,7 @@ body,
 }
 
 .dark input::placeholder {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
 .dark input:focus {

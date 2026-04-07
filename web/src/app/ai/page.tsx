@@ -104,8 +104,8 @@ export default function AIPage() {
       <div className="container mx-auto p-6">
         <Card className="p-8 text-center">
           <Brain className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
-          <p className="text-gray-600">Please log in to access the AI Control Center.</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 dark:text-gray-400">Please log in to access the AI Control Center.</p>
         </Card>
       </div>
     );
@@ -116,11 +116,11 @@ export default function AIPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
             <Brain className="h-8 w-8 text-purple-600" />
             AI Control Center
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Manage your AI Digital Life Twin settings, personality, and autonomous actions
           </p>
         </div>
@@ -180,48 +180,48 @@ export default function AIPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Total Conversations</h3>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Conversations</h3>
                     <MessageSquare className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="text-3xl font-bold text-gray-900">{aiStats.totalConversations}</div>
-                  <p className="text-xs text-gray-500 mt-1">AI interactions</p>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{aiStats.totalConversations}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">AI interactions</p>
                 </Card>
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Total Actions</h3>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Actions</h3>
                     <Zap className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="text-3xl font-bold text-gray-900">{aiStats.totalActions}</div>
-                  <p className="text-xs text-gray-500 mt-1">Autonomous actions</p>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{aiStats.totalActions}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Autonomous actions</p>
                 </Card>
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Average Confidence</h3>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Confidence</h3>
                     <TrendingUp className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="text-3xl font-bold text-gray-900">{aiStats.averageConfidence}%</div>
-                  <p className="text-xs text-gray-500 mt-1">AI response confidence</p>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{aiStats.averageConfidence}%</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">AI response confidence</p>
                 </Card>
 
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Autonomy Level</h3>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Autonomy Level</h3>
                     <Activity className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="text-3xl font-bold text-gray-900">{aiStats.autonomyLevel}%</div>
-                  <p className="text-xs text-gray-500 mt-1">Overall autonomy</p>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">{aiStats.autonomyLevel}%</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Overall autonomy</p>
                 </Card>
               </div>
 
               {/* Learning Progress */}
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Progress</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Learning Progress</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">AI Understanding</span>
-                    <span className="text-sm text-gray-500">{aiStats.learningProgress}%</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Understanding</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{aiStats.learningProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
@@ -232,7 +232,7 @@ export default function AIPage() {
                       style={{ width: `${aiStats.learningProgress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {aiStats.learningProgress >= 80 
                       ? "Excellent! Your AI has a strong understanding of your preferences."
                       : aiStats.learningProgress >= 60
@@ -246,7 +246,7 @@ export default function AIPage() {
               {/* Recent Activity */}
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
                   <Button onClick={loadAIStats} variant="ghost" size="sm">
                     <Clock className="w-4 h-4 mr-2" />
                     Refresh
@@ -255,10 +255,10 @@ export default function AIPage() {
                 {aiStats.recentConversations.length > 0 ? (
                   <div className="space-y-3">
                     {aiStats.recentConversations.map((conv) => (
-                      <div key={conv.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div key={conv.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{conv.type}</p>
-                          <p className="text-xs text-gray-500 mt-1">{conv.timestamp}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.type}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{conv.timestamp}</p>
                         </div>
                         <div className="flex items-center gap-3 ml-4">
                           <Badge 
@@ -274,14 +274,14 @@ export default function AIPage() {
                 ) : (
                   <div className="text-center py-8">
                     <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No recent activity</p>
+                    <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
                   </div>
                 )}
               </Card>
 
               {/* Quick Actions */}
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
                     onClick={() => handleTabChange('autonomy')}
@@ -291,7 +291,7 @@ export default function AIPage() {
                     <Settings className="w-5 h-5 mr-3" />
                     <div className="text-left">
                       <div className="font-medium">Configure Autonomy</div>
-                      <div className="text-xs text-gray-500">Adjust AI autonomy levels</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Adjust AI autonomy levels</div>
                     </div>
                   </Button>
                   <Button
@@ -302,7 +302,7 @@ export default function AIPage() {
                     <User className="w-5 h-5 mr-3" />
                     <div className="text-left">
                       <div className="font-medium">Personality Profile</div>
-                      <div className="text-xs text-gray-500">Customize AI personality</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Customize AI personality</div>
                     </div>
                   </Button>
                   <Button
@@ -313,7 +313,7 @@ export default function AIPage() {
                     <Zap className="w-5 h-5 mr-3" />
                     <div className="text-left">
                       <div className="font-medium">Autonomous Actions</div>
-                      <div className="text-xs text-gray-500">View and manage actions</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">View and manage actions</div>
                     </div>
                   </Button>
                 </div>
@@ -322,7 +322,7 @@ export default function AIPage() {
           ) : (
             <Card className="p-6">
               <div className="text-center">
-                <p className="text-gray-600">No data available</p>
+                <p className="text-gray-600 dark:text-gray-400">No data available</p>
               </div>
             </Card>
           )}

@@ -248,8 +248,8 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Work</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Work</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Access your business workspaces and team collaboration tools
           </p>
         </div>
@@ -303,10 +303,10 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
         <Card>
           <div className="p-8 text-center">
             <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No Work Memberships
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               You haven't joined any businesses yet. Create a business or ask for an invitation.
             </p>
             <div className="flex justify-center space-x-4">
@@ -339,7 +339,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                       nameOrEmail={business.name}
                     />
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                         {business.name}
                       </h3>
                       <div className="flex items-center space-x-2 mt-1">
@@ -350,17 +350,17 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                           {membership.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                         {membership.title && (
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
                             {membership.title}
                           </span>
                         )}
                       </div>
                       {membership.department && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           {membership.department}
                         </p>
                       )}
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         {(business._count?.members ?? 0)} team member{(business._count?.members ?? 0) !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -368,12 +368,12 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
                   
                   <div className="flex items-center space-x-3">
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">Member since</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Member since</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {formatRelativeTime(membership.joinedAt)}
                       </p>
                       {!membership.isActive && membership.leftAt && (
-                        <p className="text-xs text-gray-500">Left {formatRelativeTime(membership.leftAt)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Left {formatRelativeTime(membership.leftAt)}</p>
                       )}
                     </div>
                     <Button
@@ -402,31 +402,31 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={handleCreateBusiness} role="button">
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg -m-4 p-4" onClick={handleCreateBusiness} role="button">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Building2 className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">Create Business</h4>
-              <p className="text-sm text-gray-600">Start a new business workspace</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Create Business</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Start a new business workspace</p>
             </div>
           </div>
         </Card>
         
         <Card className="p-4">
-          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={() => { setJoinError(null); setJoinToken(''); setShowJoinModal(true); }} role="button">
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg -m-4 p-4" onClick={() => { setJoinError(null); setJoinToken(''); setShowJoinModal(true); }} role="button">
             <div className="p-2 bg-green-100 rounded-lg">
               <Users className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">Join Business</h4>
-              <p className="text-sm text-gray-600">Accept an invitation</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Join Business</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Accept an invitation</p>
             </div>
           </div>
         </Card>
         
         <Card className="p-4">
-          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg -m-4 p-4" onClick={() => {
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg -m-4 p-4" onClick={() => {
             if (businesses.length === 1) {
               router.push(`/business/${businesses[0].id}/workspace/members`);
             } else {
@@ -438,8 +438,8 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
               <Shield className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <h4 className="font-medium text-gray-900">Manage Access</h4>
-              <p className="text-sm text-gray-600">Control permissions</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Manage Access</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Control permissions</p>
             </div>
           </div>
         </Card>
@@ -449,8 +449,8 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       {showJoinModal && (
         <Modal open={showJoinModal} onClose={() => setShowJoinModal(false)}>
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Join Business</h3>
-            <p className="text-sm text-gray-600 mb-4">Paste your invitation token to join the business.</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Join Business</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Paste your invitation token to join the business.</p>
             {joinError && (
               <div className="mb-3">
                 <Alert type="error" title="Invitation Error">{joinError}</Alert>
@@ -458,7 +458,7 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
             )}
             <input
               type="text"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
               placeholder="Invitation token"
               value={joinToken}
               onChange={(e) => setJoinToken(e.target.value)}
@@ -499,10 +499,10 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
       {showManageModal && (
         <Modal open={showManageModal} onClose={() => setShowManageModal(false)}>
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Business</h3>
-            <p className="text-sm text-gray-600 mb-4">Choose a business to manage members and permissions.</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Select a Business</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Choose a business to manage members and permissions.</p>
             <select
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
               value={selectedBusinessId}
               onChange={(e) => setSelectedBusinessId(e.target.value)}
             >

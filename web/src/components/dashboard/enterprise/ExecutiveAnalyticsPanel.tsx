@@ -404,7 +404,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
   const getTrendIcon = (trend: string, change: number) => {
     if (trend === 'up' && change > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
     if (trend === 'down' || change < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Activity className="w-4 h-4 text-gray-600" />;
+    return <Activity className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
   };
 
   const getStatusColor = (status: string) => {
@@ -440,7 +440,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading executive analytics...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading executive analytics...</p>
         </div>
       </Card>
     );
@@ -457,8 +457,8 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                 <BarChart3 className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Executive Analytics</h2>
-                <p className="text-gray-600">Real-time business intelligence and KPI tracking</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Executive Analytics</h2>
+                <p className="text-gray-600 dark:text-gray-400">Real-time business intelligence and KPI tracking</p>
               </div>
             </div>
             
@@ -468,7 +468,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                   checked={autoRefresh}
                   onChange={setAutoRefresh}
                 />
-                <span className="text-sm text-gray-600">Auto-refresh</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Auto-refresh</span>
               </div>
               
               <Button
@@ -518,7 +518,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                 .filter(alert => alert.priority === 'critical' || alert.priority === 'high')
                 .slice(0, 3)
                 .map(alert => (
-                  <div key={alert.id} className="flex items-center justify-between p-2 bg-white rounded">
+                  <div key={alert.id} className="flex items-center justify-between p-2 bg-white dark:bg-slate-900 rounded">
                     <div className="flex items-center gap-2">
                       {getAlertIcon(alert.type)}
                       <span className="text-sm font-medium">{alert.title}</span>
@@ -545,15 +545,15 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
           {filteredMetrics.map(metric => (
             <Card key={metric.id} className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-gray-900">{metric.name}</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">{metric.name}</h3>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(metric.status)}`}>
                   {metric.status}
                 </div>
               </div>
               
               <div className="flex items-center gap-2 mb-2">
-                <div className="text-2xl font-bold text-gray-900">
-                  {metric.value}<span className="text-sm text-gray-500">{metric.unit}</span>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {metric.value}<span className="text-sm text-gray-500 dark:text-gray-400">{metric.unit}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   {getTrendIcon(metric.trend, metric.change)}
@@ -567,7 +567,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
               
               {metric.target && (
                 <div className="mb-2">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
                     <span>Progress to target</span>
                     <span>{((Number(metric.value.toString().replace(/[^0-9.-]/g, '')) / metric.target) * 100).toFixed(0)}%</span>
                   </div>
@@ -582,7 +582,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                 </div>
               )}
               
-              <div className="text-xs text-gray-500">{metric.description}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">{metric.description}</div>
               <div className="text-xs text-gray-400 mt-1">
                 Updated {metric.lastUpdated.toLocaleTimeString()}
               </div>
@@ -592,29 +592,29 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
 
         {/* Department Performance */}
         <Card className="p-4">
-          <h3 className="font-medium text-gray-900 mb-4">Department Performance</h3>
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Department Performance</h3>
           <div className="space-y-3">
             {departmentMetrics.map(dept => (
-              <div key={dept.departmentId} className="grid grid-cols-6 gap-4 items-center p-3 bg-gray-50 rounded-lg">
-                <div className="font-medium text-gray-900">
+              <div key={dept.departmentId} className="grid grid-cols-6 gap-4 items-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <div className="font-medium text-gray-900 dark:text-gray-100">
                   {dept.departmentName}
-                  <div className="text-xs text-gray-500">{dept.teamSize} members</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{dept.teamSize} members</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium">{dept.productivity}%</div>
-                  <div className="text-xs text-gray-500">Productivity</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Productivity</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium">{dept.efficiency}%</div>
-                  <div className="text-xs text-gray-500">Efficiency</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Efficiency</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium">{dept.collaboration}%</div>
-                  <div className="text-xs text-gray-500">Collaboration</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Collaboration</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm font-medium">{dept.compliance}%</div>
-                  <div className="text-xs text-gray-500">Compliance</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Compliance</div>
                 </div>
                 <div className="text-center">
                   <div className={`text-sm font-medium flex items-center justify-center gap-1 ${
@@ -623,7 +623,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                     {dept.trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     {dept.trend > 0 ? '+' : ''}{dept.trend.toFixed(1)}%
                   </div>
-                  <div className="text-xs text-gray-500">Trend</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Trend</div>
                 </div>
               </div>
             ))}
@@ -632,37 +632,37 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
 
         {/* Module Usage Overview */}
         <Card className="p-4">
-          <h3 className="font-medium text-gray-900 mb-4">Module Usage Analytics</h3>
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Module Usage Analytics</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {moduleUsage.map(module => (
-              <div key={module.module} className="p-3 border border-gray-200 rounded-lg">
+              <div key={module.module} className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   {module.module === 'Drive' && <FolderOpen className="w-4 h-4 text-blue-600" />}
                   {module.module === 'Chat' && <MessageSquare className="w-4 h-4 text-green-600" />}
                   {module.module === 'Calendar' && <Calendar className="w-4 h-4 text-purple-600" />}
                   {module.module === 'Dashboard' && <BarChart3 className="w-4 h-4 text-orange-600" />}
-                  <span className="font-medium text-gray-900">{module.module}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{module.module}</span>
                 </div>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Active Users:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Active Users:</span>
                     <span className="font-medium">{module.activeUsers.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Sessions:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Sessions:</span>
                     <span className="font-medium">{module.totalSessions.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Avg Session:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Avg Session:</span>
                     <span className="font-medium">{module.averageSessionTime}min</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Adoption:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Adoption:</span>
                     <span className="font-medium">{module.featureAdoption}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Growth:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Growth:</span>
                     <div className={`flex items-center gap-1 ${
                       module.growthRate > 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
@@ -679,12 +679,12 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
         {/* Compliance Status */}
         {activeCategory === 'compliance' && (
           <Card className="p-4">
-            <h3 className="font-medium text-gray-900 mb-4">Compliance Status</h3>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Compliance Status</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {complianceStatus.map(compliance => (
-                <div key={compliance.category} className="p-3 border border-gray-200 rounded-lg">
+                <div key={compliance.category} className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">{compliance.category}</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{compliance.category}</h4>
                     <Badge className={`px-2 py-1 text-xs border rounded-full ${getStatusColor(compliance.status)}`}>
                       {compliance.status.replace('_', ' ')}
                     </Badge>
@@ -692,19 +692,19 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Score:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Score:</span>
                       <span className="font-medium">{compliance.score}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Issues:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Issues:</span>
                       <span className="font-medium">{compliance.issuesCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Last Audit:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Last Audit:</span>
                       <span className="font-medium">{compliance.lastAudit.toLocaleDateString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Next Review:</span>
+                      <span className="text-gray-600 dark:text-gray-400">Next Review:</span>
                       <span className="font-medium">{compliance.nextReview.toLocaleDateString()}</span>
                     </div>
                   </div>

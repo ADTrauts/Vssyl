@@ -29,9 +29,9 @@ const ContactPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -44,7 +44,7 @@ const ContactPage = () => {
             <div className="flex items-center space-x-4">
               <Link
                 href="/auth/login"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 px-3 py-2 rounded-md text-sm font-medium"
               >
                 Sign In
               </Link>
@@ -63,10 +63,10 @@ const ContactPage = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             Get in Touch
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
             Have questions about Vssyl? Want to discuss enterprise solutions? 
             We'd love to hear from you.
           </p>
@@ -79,10 +79,10 @@ const ContactPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Information */}
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
                 Let's Start a Conversation
               </h2>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 Whether you're interested in our platform, need technical support, 
                 or want to explore enterprise solutions, our team is here to help.
               </p>
@@ -91,26 +91,26 @@ const ContactPage = () => {
                 <div className="flex items-start">
                   <Mail className="h-6 w-6 mt-1 mr-4" style={{ color: COLORS.infoBlue }} />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Email Us</h3>
-                    <p className="text-gray-600">hello@vssyl.com</p>
-                    <p className="text-gray-600">support@vssyl.com</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Email Us</h3>
+                    <p className="text-gray-600 dark:text-gray-400">hello@vssyl.com</p>
+                    <p className="text-gray-600 dark:text-gray-400">support@vssyl.com</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <Phone className="h-6 w-6 mt-1 mr-4" style={{ color: COLORS.infoBlue }} />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Call Us</h3>
-                    <p className="text-gray-600">+1 (555) 123-4567</p>
-                    <p className="text-sm text-gray-500">Monday - Friday, 9AM - 6PM EST</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Call Us</h3>
+                    <p className="text-gray-600 dark:text-gray-400">+1 (555) 123-4567</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Monday - Friday, 9AM - 6PM EST</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <MapPin className="h-6 w-6 mt-1 mr-4" style={{ color: COLORS.infoBlue }} />
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Visit Us</h3>
-                    <p className="text-gray-600">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Visit Us</h3>
+                    <p className="text-gray-600 dark:text-gray-400">
                       123 Innovation Drive<br />
                       Tech Valley, CA 94000<br />
                       United States
@@ -121,10 +121,10 @@ const ContactPage = () => {
 
               {/* Enterprise Contact */}
               <div className="mt-12 p-6 bg-blue-50 rounded-lg">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   Enterprise Solutions
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Looking for custom solutions, volume pricing, or dedicated support? 
                   Our enterprise team is ready to help.
                 </p>
@@ -139,15 +139,15 @@ const ContactPage = () => {
             </div>
 
             {/* Contact Form */}
-            <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
                 Send us a Message
               </h3>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Name *
                     </label>
                     <input
@@ -157,12 +157,12 @@ const ContactPage = () => {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Your name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Email *
                     </label>
                     <input
@@ -172,14 +172,14 @@ const ContactPage = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="your@email.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Company
                   </label>
                   <input
@@ -188,13 +188,13 @@ const ContactPage = () => {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Your company name"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Subject *
                   </label>
                   <select
@@ -203,7 +203,7 @@ const ContactPage = () => {
                     required
                     value={formData.subject}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select a subject</option>
                     <option value="general">General Inquiry</option>
@@ -216,7 +216,7 @@ const ContactPage = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Message *
                   </label>
                   <textarea
@@ -226,7 +226,7 @@ const ContactPage = () => {
                     rows={6}
                     value={formData.message}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Tell us about your needs, questions, or how we can help..."
                   />
                 </div>
@@ -246,53 +246,53 @@ const ContactPage = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50 dark:bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 dark:text-gray-400">
               Quick answers to common questions about Vssyl
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 How does the free trial work?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Start with our free plan that includes basic AI features and core modules. 
                 Upgrade anytime to unlock advanced features and increased storage.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Is my data secure?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Yes! We use enterprise-grade security with end-to-end encryption, 
                 GDPR compliance, and regular security audits to protect your data.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Can I integrate with existing tools?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 Absolutely! Vssyl supports integrations with popular business tools 
                 and offers APIs for custom integrations.
               </p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 What support do you offer?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 We provide email support for all users, priority support for Pro users, 
                 and dedicated support for Enterprise customers.
               </p>

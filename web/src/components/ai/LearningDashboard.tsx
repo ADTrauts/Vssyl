@@ -150,8 +150,8 @@ const LearningDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">AI Learning Dashboard</h2>
-          <p className="text-gray-600">Track your AI's learning progress and insights</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Learning Dashboard</h2>
+          <p className="text-gray-600 dark:text-gray-400">Track your AI's learning progress and insights</p>
         </div>
         <Button onClick={loadLearningData} variant="secondary">
           Refresh Data
@@ -162,23 +162,23 @@ const LearningDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Total Learning Events</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.totalEvents}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Learning Events</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalEvents}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Learning Patterns</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.patterns}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Learning Patterns</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.patterns}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">AI Confidence</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">AI Confidence</h3>
             <div className="flex items-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {(analytics.confidence * 100).toFixed(1)}%
               </p>
               <Badge color={getConfidenceColor(analytics.confidence)} className="ml-2">
@@ -190,9 +190,9 @@ const LearningDashboard: React.FC = () => {
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Learning Progress</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Learning Progress</h3>
             <div className="flex items-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {(analytics.learningProgress * 100).toFixed(1)}%
               </p>
               <Badge color={getProgressColor(analytics.learningProgress)} className="ml-2">
@@ -206,11 +206,11 @@ const LearningDashboard: React.FC = () => {
       {/* Event Types Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Event Types</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Learning Event Types</h3>
           <div className="space-y-3">
             {Object.entries(analytics.eventTypes).map(([type, count]) => (
               <div key={type} className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700 capitalize">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
                   {type.replace('_', ' ')}
                 </span>
                 <div className="flex items-center space-x-2">
@@ -220,7 +220,7 @@ const LearningDashboard: React.FC = () => {
                       style={{ width: `${(count / analytics.totalEvents) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm text-gray-500">{count}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{count}</span>
                 </div>
               </div>
             ))}
@@ -231,23 +231,23 @@ const LearningDashboard: React.FC = () => {
       {/* Learning Patterns */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Patterns</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Learning Patterns</h3>
           {patterns.length === 0 ? (
-            <p className="text-gray-500">No patterns detected yet. Continue using the AI to build patterns.</p>
+            <p className="text-gray-500 dark:text-gray-400">No patterns detected yet. Continue using the AI to build patterns.</p>
           ) : (
             <div className="space-y-4">
               {patterns.slice(0, 5).map((pattern) => (
                 <div key={pattern.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-900 capitalize">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                       {pattern.patternType.replace('_', ' ')} Pattern
                     </h4>
                     <Badge color={getConfidenceColor(pattern.confidence)}>
                       {(pattern.confidence * 100).toFixed(1)}% confidence
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{pattern.description}</p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{pattern.description}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                     <span>Strength: {(pattern.strength * 100).toFixed(1)}%</span>
                     <span>Frequency: {pattern.frequency}</span>
                   </div>
@@ -262,14 +262,14 @@ const LearningDashboard: React.FC = () => {
       {analytics.recentInsights && analytics.recentInsights.length > 0 && (
         <Card>
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Insights</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Insights</h3>
             <div className="space-y-4">
               {analytics.recentInsights.slice(0, 3).map((insight: RecentInsight, index: number) => (
                 <div key={index} className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-medium text-gray-900 capitalize">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
                     {insight.type?.replace('_', ' ')} Insight
                   </h4>
-                  <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{insight.description}</p>
                   <div className="flex items-center mt-2 space-x-2">
                     <Badge color={getConfidenceColor(insight.confidence)}>
                       {(insight.confidence * 100).toFixed(1)}% confidence
@@ -288,11 +288,11 @@ const LearningDashboard: React.FC = () => {
       {/* Learning Progress Chart */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Progress</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Learning Progress</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {(analytics.learningProgress * 100).toFixed(1)}%
               </span>
             </div>
@@ -302,7 +302,7 @@ const LearningDashboard: React.FC = () => {
                 style={{ width: `${analytics.learningProgress * 100}%` }}
               />
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {analytics.learningProgress >= 0.8 
                 ? "Excellent progress! Your AI is learning effectively."
                 : analytics.learningProgress >= 0.6

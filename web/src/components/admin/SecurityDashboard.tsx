@@ -174,8 +174,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
         <div className="flex items-center space-x-3">
           <Shield className="w-8 h-8 text-blue-600" />
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Security Dashboard</h2>
-            <p className="text-gray-600">Comprehensive security monitoring and management</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Security Dashboard</h2>
+            <p className="text-gray-700 dark:text-gray-300">Comprehensive security monitoring and management</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -205,8 +205,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Modules</p>
-                <p className="text-2xl font-bold text-gray-900">{metrics.totalModules}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Modules</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.totalModules}</p>
               </div>
               <Package className="w-8 h-8 text-blue-600" />
             </div>
@@ -215,8 +215,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Monitored</p>
-                <p className="text-2xl font-bold text-gray-900">{metrics.monitoredModules}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Monitored</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.monitoredModules}</p>
               </div>
               <Activity className="w-8 h-8 text-green-600" />
             </div>
@@ -225,8 +225,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Security Violations</p>
-                <p className="text-2xl font-bold text-gray-900">{metrics.securityViolations}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Security Violations</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.securityViolations}</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>
@@ -235,8 +235,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Compliance Score</p>
-                <p className="text-2xl font-bold text-gray-900">{metrics.complianceScore}%</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Compliance Score</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.complianceScore}%</p>
               </div>
               <Shield className="w-8 h-8 text-purple-600" />
             </div>
@@ -245,14 +245,14 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('overview')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'overview'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             Overview
@@ -262,7 +262,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'monitoring'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             Monitoring
@@ -272,7 +272,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'alerts'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             Alerts
@@ -282,7 +282,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'policies'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             Policies
@@ -297,48 +297,48 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
               {/* Recent Security Events */}
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Recent Security Events</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Security Events</h3>
                   <Badge color={getSeverityColor(metrics?.threatLevel || 'low')} size="sm">
                     {metrics?.threatLevel?.toUpperCase() || 'LOW'}
                   </Badge>
                 </div>
                 <div className="space-y-3">
                   {alerts.slice(0, 5).map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full bg-${getSeverityColor(alert.severity)}-500`} />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                          <p className="text-xs text-gray-500">{alert.moduleId}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{alert.title}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{alert.moduleId}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-gray-500">{new Date(alert.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{new Date(alert.timestamp).toLocaleTimeString()}</span>
                     </div>
                   ))}
                   {alerts.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">No recent security events</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-center py-4">No recent security events</p>
                   )}
                 </div>
               </Card>
 
               {/* System Health */}
               <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">System Health</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Security Services</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Security Services</span>
                     <Badge color="green" size="sm">Online</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Monitoring System</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Monitoring System</span>
                     <Badge color="green" size="sm">Active</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Policy Engine</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Policy Engine</span>
                     <Badge color="green" size="sm">Running</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Sandbox Testing</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Sandbox Testing</span>
                     <Badge color="green" size="sm">Available</Badge>
                   </div>
                 </div>
@@ -351,7 +351,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
         {activeTab === 'monitoring' && (
           <div className="space-y-6 mt-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Module Monitoring</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Monitoring</h3>
               <Button
                 variant="primary"
                 size="sm"
@@ -372,7 +372,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
                           module.status === 'monitoring' ? 'bg-green-500' : 
                           module.status === 'stopped' ? 'bg-gray-500' : 'bg-red-500'
                         }`} />
-                        <span className="font-medium text-gray-900">{module.moduleName}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{module.moduleName}</span>
                       </div>
                       <Badge color={getSeverityColor(module.riskLevel)} size="sm">
                         {module.riskLevel.toUpperCase()}
@@ -380,7 +380,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
                     </div>
                     
                     <div className="flex items-center space-x-4">
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
                         <div>Violations: {module.violations}</div>
                         <div>Uptime: {module.uptime}</div>
                       </div>
@@ -423,8 +423,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
               {monitoringStatus.length === 0 && (
                 <Card className="p-8 text-center">
                   <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Monitoring</h3>
-                  <p className="text-gray-600">Start monitoring modules to track their security status in real-time.</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Active Monitoring</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Start monitoring modules to track their security status in real-time.</p>
                 </Card>
               )}
             </div>
@@ -435,7 +435,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
         {activeTab === 'alerts' && (
           <div className="space-y-6 mt-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Security Alerts</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Security Alerts</h3>
               <div className="flex items-center space-x-2">
                 <Badge color="red" size="sm">{alerts.filter(a => a.severity === 'critical').length} Critical</Badge>
                 <Badge color="red" size="sm">{alerts.filter(a => a.severity === 'high').length} High</Badge>
@@ -451,13 +451,13 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
                       <div className={`w-3 h-3 rounded-full mt-2 bg-${getSeverityColor(alert.severity)}-500`} />
                       <div>
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="font-medium text-gray-900">{alert.title}</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100">{alert.title}</h4>
                           <Badge color={getSeverityColor(alert.severity)} size="sm">
                             {alert.severity.toUpperCase()}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">{alert.description}</p>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{alert.description}</p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                           <span>Module: {alert.moduleId}</span>
                           <span>Type: {alert.type}</span>
                           <span>Time: {new Date(alert.timestamp).toLocaleString()}</span>
@@ -478,8 +478,8 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
               {alerts.length === 0 && (
                 <Card className="p-8 text-center">
                   <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Alerts</h3>
-                  <p className="text-gray-600">All systems are operating normally.</p>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Active Alerts</h3>
+                  <p className="text-gray-600 dark:text-gray-400">All systems are operating normally.</p>
                 </Card>
               )}
             </div>
@@ -490,7 +490,7 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
         {activeTab === 'policies' && (
           <div className="space-y-6 mt-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Security Policies</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Security Policies</h3>
               <Button
                 variant="primary"
                 size="sm"
@@ -505,36 +505,36 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
               <Card className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <Shield className="w-6 h-6 text-blue-600" />
-                  <h4 className="font-medium text-gray-900">Data Protection</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Data Protection</h4>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">Ensures modules comply with data protection requirements</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Ensures modules comply with data protection requirements</p>
                 <div className="flex items-center justify-between">
                   <Badge color="green" size="sm">Active</Badge>
-                  <span className="text-xs text-gray-500">Strict Enforcement</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Strict Enforcement</span>
                 </div>
               </Card>
 
               <Card className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
-                  <h4 className="font-medium text-gray-900">Access Control</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Access Control</h4>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">Controls module access to system resources</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Controls module access to system resources</p>
                 <div className="flex items-center justify-between">
                   <Badge color="green" size="sm">Active</Badge>
-                  <span className="text-xs text-gray-500">Strict Enforcement</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Strict Enforcement</span>
                 </div>
               </Card>
 
               <Card className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <BarChart3 className="w-6 h-6 text-purple-600" />
-                  <h4 className="font-medium text-gray-900">Performance</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Performance</h4>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">Ensures modules meet performance requirements</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Ensures modules meet performance requirements</p>
                 <div className="flex items-center justify-between">
                   <Badge color="green" size="sm">Active</Badge>
-                  <span className="text-xs text-gray-500">Moderate Enforcement</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Moderate Enforcement</span>
                 </div>
               </Card>
             </div>

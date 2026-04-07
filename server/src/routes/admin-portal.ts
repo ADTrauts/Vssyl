@@ -1436,7 +1436,8 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
         total: 0,
         page: Number(page),
         totalPages: 0,
-        schemaOutOfSync: true
+        schemaOutOfSync: true,
+        summary: result.summary
       });
     }
 
@@ -1448,6 +1449,7 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
       businessId: sub.businessId,
       tier: sub.tier,
       status: sub.status,
+      amount: typeof sub.amount === 'number' ? sub.amount : 0,
       currentPeriodStart: (sub.currentPeriodStart as Date).toISOString(),
       currentPeriodEnd: (sub.currentPeriodEnd as Date).toISOString(),
       cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
@@ -1473,7 +1475,8 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
       total: result.total,
       page: result.page,
       totalPages: result.totalPages,
-      schemaOutOfSync: false
+      schemaOutOfSync: false,
+      summary: result.summary
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

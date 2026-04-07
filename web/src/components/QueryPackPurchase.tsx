@@ -135,8 +135,8 @@ export default function QueryPackPurchase({ businessId, onPurchaseComplete }: Qu
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Purchase Query Packs</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Purchase Query Packs</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Buy additional AI queries that never expire. Perfect for heavy AI usage.
         </p>
       </div>
@@ -164,23 +164,23 @@ export default function QueryPackPurchase({ businessId, onPurchaseComplete }: Qu
                   )}
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-5 h-5 text-blue-600" />
-                    <h4 className="font-semibold text-gray-900">{pack.name}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">{pack.name}</h4>
                   </div>
-                  <p className="text-xs text-gray-600">{pack.description}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{pack.description}</p>
                 </div>
 
                 {/* Pricing */}
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">${pack.price.toFixed(2)}</p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${pack.price.toFixed(2)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     ${pricePerQuery} per query
                   </p>
                 </div>
 
                 {/* Queries */}
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-1">Queries</p>
-                  <p className="text-lg font-semibold text-gray-900">
+                <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Queries</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {pack.queries.toLocaleString()}
                   </p>
                 </div>
@@ -211,7 +211,7 @@ export default function QueryPackPurchase({ businessId, onPurchaseComplete }: Qu
       </div>
 
       <div className="p-4 bg-blue-50 rounded-lg">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
           <strong>Note:</strong> Purchased queries never expire and are added to your account balance. 
           They are used after your monthly base allowance and rolled-over queries.
         </p>

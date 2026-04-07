@@ -105,11 +105,11 @@ export function BrandedHeader({ title, subtitle, children }: BrandedHeaderProps)
 
   if (!branding) {
     return (
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            {title && <h1 className="text-2xl font-bold text-gray-900">{title}</h1>}
-            {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+            {title && <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{title}</h1>}
+            {subtitle && <p className="text-gray-600 dark:text-gray-400 mt-1">{subtitle}</p>}
           </div>
           {children}
         </div>
@@ -267,8 +267,8 @@ export function BrandedCard({ children, className = '', title }: BrandedCardProp
     return (
       <div className={`bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}>
         {title && (
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
           </div>
         )}
         <div className="p-6">{children}</div>

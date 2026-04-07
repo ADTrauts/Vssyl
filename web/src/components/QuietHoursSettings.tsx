@@ -165,12 +165,12 @@ export default function QuietHoursSettings() {
   return (
     <div className="space-y-6">
       {/* Enable/Disable Toggle */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
         <div className="flex items-center space-x-3">
-          <Moon className="w-5 h-5 text-gray-600" />
+          <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <div>
-            <h3 className="text-base font-medium text-gray-900">Quiet Hours</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="text-base font-medium text-gray-900 dark:text-gray-100">Quiet Hours</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Automatically silence notifications during specific hours
             </p>
           </div>
@@ -208,7 +208,7 @@ export default function QuietHoursSettings() {
               return (
                 <div
                   key={day.key}
-                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -216,7 +216,7 @@ export default function QuietHoursSettings() {
                         checked={daySettings.enabled}
                         onChange={() => handleToggleEnabled(day.key)}
                       />
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {day.label}
                       </span>
                     </div>
@@ -225,7 +225,7 @@ export default function QuietHoursSettings() {
                   {daySettings.enabled && (
                     <div className="ml-10 grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Start Time
                         </label>
                         <div className="flex items-center space-x-2">
@@ -234,12 +234,12 @@ export default function QuietHoursSettings() {
                             type="time"
                             value={daySettings.startTime}
                             onChange={(e) => handleTimeChange(day.key, 'startTime', e.target.value)}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                           End Time
                         </label>
                         <div className="flex items-center space-x-2">
@@ -248,7 +248,7 @@ export default function QuietHoursSettings() {
                             type="time"
                             value={daySettings.endTime}
                             onChange={(e) => handleTimeChange(day.key, 'endTime', e.target.value)}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
                       </div>
@@ -260,7 +260,7 @@ export default function QuietHoursSettings() {
           </div>
 
           {/* Save Button */}
-          <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-slate-700">
             <Button
               onClick={saveSettings}
               disabled={saving}

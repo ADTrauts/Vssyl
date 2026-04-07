@@ -127,9 +127,9 @@ function DraggableItem({
       <div
         ref={combinedRef}
         style={style}
-        className={`group relative cursor-move hover:bg-gray-50 transition-colors rounded-lg p-2 ${
-          isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : ''
-        } ${isOver && item.type === 'folder' ? 'ring-2 ring-blue-400 bg-blue-50' : ''} ${isDraggingItem ? 'opacity-50' : ''}`}
+        className={`group relative cursor-move hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors rounded-lg p-2 ${
+          isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500' : ''
+        } ${isOver && item.type === 'folder' ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900/30' : ''} ${isDraggingItem ? 'opacity-50' : ''}`}
         onClick={handleClick}
         onContextMenu={onContextMenu}
         {...attributes}
@@ -144,12 +144,12 @@ function DraggableItem({
               {item.starred && (
                 <Pin className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
               )}
-              <span className="font-medium text-gray-900 truncate">{item.name}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</span>
             </div>
-            <div className="text-sm text-gray-500">{formatDate(item.modifiedAt)}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{formatDate(item.modifiedAt)}</div>
           </div>
           {item.type === 'file' && item.size && (
-            <div className="text-sm text-gray-500">{formatFileSize(item.size)}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">{formatFileSize(item.size)}</div>
           )}
         </div>
       </div>
@@ -168,14 +168,14 @@ function DraggableItem({
       {...attributes}
       {...listeners}
     >
-      <div className="bg-white rounded-lg border border-gray-200 p-4 relative">
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-4 relative">
         {item.starred && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleStar(item.id);
             }}
-            className="absolute top-2 left-2 z-10 p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
+            className="absolute top-2 left-2 z-10 p-1 bg-white dark:bg-slate-700 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
             title="Unpin"
           >
             <Pin className="w-4 h-4 text-yellow-500 fill-current" />
@@ -189,10 +189,10 @@ function DraggableItem({
                 e.stopPropagation();
                 handleStar(item.id);
               }}
-              className="p-1.5 bg-white rounded shadow-sm hover:bg-gray-50 transition-colors"
+              className="p-1.5 bg-white dark:bg-slate-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
               title="Pin"
             >
-              <Pin className="w-4 h-4 text-gray-600" />
+              <Pin className="w-4 h-4 text-gray-700 dark:text-gray-300" />
             </button>
           )}
           <button
@@ -200,10 +200,10 @@ function DraggableItem({
               e.stopPropagation();
               handleShare(item.id);
             }}
-            className="p-1.5 bg-white rounded shadow-sm hover:bg-gray-50 transition-colors"
+            className="p-1.5 bg-white dark:bg-slate-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
             title="Share"
           >
-            <Share className="w-4 h-4 text-gray-600" />
+            <Share className="w-4 h-4 text-gray-700 dark:text-gray-300" />
           </button>
           {item.type === 'file' && (
             <button
@@ -211,10 +211,10 @@ function DraggableItem({
                 e.stopPropagation();
                 handleDownload(item.id);
               }}
-              className="p-1.5 bg-white rounded shadow-sm hover:bg-gray-50 transition-colors"
+              className="p-1.5 bg-white dark:bg-slate-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors"
               title="Download"
             >
-              <Download className="w-4 h-4 text-gray-600" />
+              <Download className="w-4 h-4 text-gray-700 dark:text-gray-300" />
             </button>
           )}
         </div>
@@ -223,7 +223,7 @@ function DraggableItem({
           <div className="mb-2 w-full flex justify-center">
             {getFileIcon(item)}
           </div>
-          <span className="text-sm font-medium text-gray-700 truncate w-full text-center">{item.name}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate w-full text-center">{item.name}</span>
         </div>
       </div>
     </div>
@@ -336,7 +336,7 @@ const PinnedPage = () => {
     
     if (mimeType.startsWith('image/')) {
       return (
-        <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+        <div className="relative w-full h-32 bg-gray-100 dark:bg-slate-700 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700">
           <img
             src={`/api/drive/files/${item.id}/download`}
             alt={item.name}
@@ -350,7 +350,7 @@ const PinnedPage = () => {
               }
             }}
           />
-          <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 text-4xl">🖼️</div>
+          <div className="fallback-icon hidden absolute inset-0 items-center justify-center bg-gray-50 dark:bg-slate-800 text-4xl">🖼️</div>
         </div>
       );
     }
@@ -590,7 +590,7 @@ const PinnedPage = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <DriveSidebar 
           onNewFolder={handleCreateFolder} 
           onFileUpload={handleFileUpload} 
@@ -615,16 +615,16 @@ const PinnedPage = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Pin className="w-8 h-8 text-yellow-500 fill-current" />
-                    <h1 className="text-3xl font-bold text-gray-900">Pinned Items</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Pinned Items</h1>
                   </div>
-                  <p className="text-gray-600">Your pinned files and folders</p>
+                  <p className="text-gray-700 dark:text-gray-300">Your pinned files and folders</p>
                 </div>
                 
                 {items.length > 0 && (
                   <div className="flex items-center space-x-2">
                     <button
                       className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                        viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                       }`}
                       onClick={() => setViewMode('grid')}
                     >
@@ -632,7 +632,7 @@ const PinnedPage = () => {
                     </button>
                     <button
                       className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                        viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                       }`}
                       onClick={() => setViewMode('list')}
                     >
@@ -644,15 +644,15 @@ const PinnedPage = () => {
 
               {items.length === 0 ? (
                 <div className="text-center py-12">
-                  <Pin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No pinned items</h3>
-                  <p className="text-gray-600">Pin files and folders to see them here.</p>
+                  <Pin className="w-16 h-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No pinned items</h3>
+                  <p className="text-gray-700 dark:text-gray-300">Pin files and folders to see them here.</p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {folders.length > 0 && (
                     <div className="mb-8">
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">Folders</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Folders</h2>
                       {viewMode === 'grid' ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                           {folders.map((item) => (
@@ -700,7 +700,7 @@ const PinnedPage = () => {
 
                   {files.length > 0 && (
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900 mb-4">Files</h2>
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Files</h2>
                       {viewMode === 'grid' ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                           {files.map((item) => (
@@ -775,7 +775,7 @@ const PinnedPage = () => {
         {/* Context Menu */}
         {contextMenu && (
           <div
-            className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1 min-w-[150px]"
+            className="fixed bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 py-1 min-w-[150px]"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onMouseLeave={() => setContextMenu(null)}
           >
@@ -784,7 +784,7 @@ const PinnedPage = () => {
                 handleStar(contextMenu.item.id);
                 setContextMenu(null);
               }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
             >
               <Pin className="w-4 h-4" />
               {contextMenu.item.starred ? 'Unpin' : 'Pin'}
@@ -794,7 +794,7 @@ const PinnedPage = () => {
                 handleShare(contextMenu.item.id);
                 setContextMenu(null);
               }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
             >
               <Share className="w-4 h-4" />
               Share
@@ -806,7 +806,7 @@ const PinnedPage = () => {
                     handleDownload(contextMenu.item.id);
                     setContextMenu(null);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Download
@@ -816,7 +816,7 @@ const PinnedPage = () => {
                     handleAskAIAboutFile(contextMenu.item.id, contextMenu.item.name);
                     setContextMenu(null);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
                 >
                   <Brain className="w-4 h-4" />
                   Ask AI about this file
@@ -828,7 +828,7 @@ const PinnedPage = () => {
                 handleDelete(contextMenu.item.id);
                 setContextMenu(null);
               }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600"
+              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-red-600 dark:text-red-400"
             >
               <Trash2 className="w-4 h-4" />
               Delete
@@ -839,9 +839,9 @@ const PinnedPage = () => {
         {/* Share Modal - TODO: Implement proper ShareModal with correct API */}
         {shareModalOpen && shareItem && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md">
-              <h2 className="text-lg font-semibold mb-4">Share {shareItem.name}</h2>
-              <p className="text-sm text-gray-600 mb-4">Share functionality coming soon</p>
+            <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Share {shareItem.name}</h2>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">Share functionality coming soon</p>
               <button
                 onClick={() => {
                   setShareModalOpen(false);

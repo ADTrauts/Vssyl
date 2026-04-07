@@ -108,7 +108,7 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
   if (!session?.accessToken) {
     return (
       <Card className={`p-6 ${className}`}>
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-500 dark:text-gray-400">
           Please log in to view chat analytics
         </div>
       </Card>
@@ -129,7 +129,7 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
   if (!analytics) {
     return (
       <Card className={`p-6 ${className}`}>
-        <div className="text-center text-gray-500">
+        <div className="text-center text-gray-500 dark:text-gray-400">
           No analytics data available
         </div>
       </Card>
@@ -141,14 +141,14 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Chat Analytics</h2>
-          <p className="text-gray-600">Activity and engagement insights</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Chat Analytics</h2>
+          <p className="text-gray-600 dark:text-gray-400">Activity and engagement insights</p>
         </div>
         <div className="flex items-center space-x-2">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -166,8 +166,8 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
               <MessageCircle className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Messages</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalMessages}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Messages</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalMessages}</p>
             </div>
           </div>
         </Card>
@@ -178,8 +178,8 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
               <Users className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalConversations}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Conversations</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalConversations}</p>
             </div>
           </div>
         </Card>
@@ -190,8 +190,8 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
               <Zap className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Reactions</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalReactions}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Reactions</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalReactions}</p>
             </div>
           </div>
         </Card>
@@ -202,8 +202,8 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
               <TrendingUp className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Avg Messages/Conv</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.averageMessagesPerConversation}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Messages/Conv</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.averageMessagesPerConversation}</p>
             </div>
           </div>
         </Card>
@@ -213,7 +213,7 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Message Activity Chart */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Message Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Message Activity</h3>
           <div style={{ padding: '20px', textAlign: 'center', color: '#666', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             Message Activity Chart (Temporarily Disabled)
           </div>
@@ -221,7 +221,7 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
 
         {/* Top Reactors Chart */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Reactors</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Reactors</h3>
           <div style={{ padding: '20px', textAlign: 'center', color: '#666', height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             Top Reactors Chart (Temporarily Disabled)
           </div>
@@ -230,28 +230,28 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
 
       {/* Response Time Stats */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Time Statistics</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Response Time Statistics</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-sm text-gray-600">Average</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Average</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {analytics.responseTimeStats.averageResponseTime}m
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Median</p>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Median</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {analytics.responseTimeStats.medianResponseTime}m
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Fastest</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Fastest</p>
             <p className="text-xl font-bold text-green-600">
               {analytics.responseTimeStats.fastestResponse}m
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-600">Slowest</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Slowest</p>
             <p className="text-xl font-bold text-red-600">
               {analytics.responseTimeStats.slowestResponse}m
             </p>
@@ -261,24 +261,24 @@ export default function ChatAnalytics({ dashboardId, className = '' }: ChatAnaly
 
       {/* Most Active Conversations */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Active Conversations</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Most Active Conversations</h3>
         <div className="space-y-3">
           {analytics.mostActiveConversations.map((conversation, index) => (
-            <div key={conversation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div key={conversation.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center">
                 <Badge color="blue" className="mr-3">
                   #{index + 1}
                 </Badge>
                 <div>
-                  <p className="font-medium text-gray-900">{conversation.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{conversation.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Last activity: {new Date(conversation.lastActivity).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">{conversation.messageCount}</p>
-                <p className="text-sm text-gray-500">messages</p>
+                <p className="font-bold text-gray-900 dark:text-gray-100">{conversation.messageCount}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">messages</p>
               </div>
             </div>
           ))}

@@ -103,22 +103,22 @@ export function DriveFilePicker({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-2">
             <h3 className="font-semibold text-lg">Select File from Drive</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 rounded p-1 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 rounded p-1 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Breadcrumb */}
-        <div className="px-4 py-2 border-b border-gray-200 bg-gray-50">
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
           <div className="flex items-center space-x-2 text-sm">
             {folderStack.length > 1 && (
               <button
@@ -144,7 +144,7 @@ export function DriveFilePicker({
         </div>
 
         {/* Search */}
-        <div className="px-4 py-2 border-b border-gray-200">
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-slate-700">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -152,7 +152,7 @@ export function DriveFilePicker({
               placeholder="Search files..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -168,7 +168,7 @@ export function DriveFilePicker({
               {/* Folders */}
               {filteredFolders.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 mb-2">Folders</h4>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Folders</h4>
                   <div className="space-y-1">
                     {filteredFolders.map((folder) => (
                       <div
@@ -176,10 +176,10 @@ export function DriveFilePicker({
                         onClick={() => handleFolderClick(folder)}
                         className="cursor-pointer"
                       >
-                        <Card className="p-3 hover:bg-gray-50 transition-colors">
+                        <Card className="p-3 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                           <div className="flex items-center space-x-3">
                             <Folder className="w-5 h-5 text-blue-500" />
-                            <span className="text-sm font-medium text-gray-900">{folder.name}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{folder.name}</span>
                             <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
                           </div>
                         </Card>
@@ -192,7 +192,7 @@ export function DriveFilePicker({
               {/* Files */}
               {filteredFiles.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-medium text-gray-500 mb-2 mt-4">Files</h4>
+                  <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 mt-4">Files</h4>
                   <div className="space-y-1">
                     {filteredFiles.map((file) => (
                       <div
@@ -200,14 +200,14 @@ export function DriveFilePicker({
                         onClick={() => handleFileSelect(file)}
                         className="cursor-pointer"
                       >
-                        <Card className="p-3 hover:bg-gray-50 transition-colors">
+                        <Card className="p-3 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
                           <div className="flex items-center space-x-3">
-                            <File className="w-5 h-5 text-gray-500" />
+                            <File className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {file.name}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {file.type} • {(file.size / 1024).toFixed(1)} KB
                               </p>
                             </div>
@@ -222,7 +222,7 @@ export function DriveFilePicker({
               {filteredFolders.length === 0 && filteredFiles.length === 0 && (
                 <div className="text-center py-8">
                   <File className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {searchQuery ? 'No files found' : 'No files in this folder'}
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export function DriveFilePicker({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
           <Button onClick={onClose} variant="ghost" size="sm" className="w-full">
             Cancel
           </Button>

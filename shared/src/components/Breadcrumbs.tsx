@@ -11,7 +11,7 @@ type BreadcrumbsProps = {
 };
 
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => (
-  <nav className="flex items-center text-sm text-gray-600">
+  <nav className="flex items-center text-sm text-gray-600 dark:text-gray-400">
     {items.map((item, idx) => (
       <span key={item.label} className="flex items-center">
         <button

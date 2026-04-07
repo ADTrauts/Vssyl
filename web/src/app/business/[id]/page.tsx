@@ -398,7 +398,7 @@ const truncateDescription = (value?: string) => {
         <div className="flex w-full" style={{ minHeight: 'calc(100vh - 64px)' }}>
           <aside className="hidden w-64 flex-col border-r border-gray-800 bg-gray-900 text-white lg:flex">
             <nav className="flex-1 overflow-y-auto py-8">
-              <p className="px-6 pb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+              <p className="px-6 pb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
                 Navigation
               </p>
               <div className="space-y-1">
@@ -425,8 +425,8 @@ const truncateDescription = (value?: string) => {
             </nav>
           </aside>
 
-          <main className="flex-1 bg-gray-50">
-            <div className="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-3 lg:hidden">
+          <main className="flex-1 bg-gray-50 dark:bg-slate-800">
+            <div className="sticky top-0 z-20 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 lg:hidden">
               <div className="flex gap-2 overflow-x-auto">
                 {sidebarSections.map((section) => {
                   const Icon = section.icon;
@@ -454,8 +454,8 @@ const truncateDescription = (value?: string) => {
               <section id="overview" className="scroll-mt-24 space-y-6">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Overview</h2>
-                    <p className="text-sm text-gray-600">
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Overview</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Monitor setup progress and key metrics for {business.name}.
                     </p>
                   </div>
@@ -491,8 +491,8 @@ const truncateDescription = (value?: string) => {
                         <Users className="h-6 w-6 text-blue-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Team Members</p>
-                        <p className="text-2xl font-bold text-gray-900">{business.members.length}</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Team Members</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{business.members.length}</p>
                       </div>
                     </div>
                   </Card>
@@ -503,8 +503,8 @@ const truncateDescription = (value?: string) => {
                         <Package className="h-6 w-6 text-green-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Active Modules</p>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Modules</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                           {installedModules.length}
                         </p>
                       </div>
@@ -517,8 +517,8 @@ const truncateDescription = (value?: string) => {
                         <Brain className="h-6 w-6 text-purple-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">AI Interactions</p>
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">AI Interactions</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                           {business.aiDigitalTwin?.totalInteractions || 0}
                         </p>
                       </div>
@@ -531,8 +531,8 @@ const truncateDescription = (value?: string) => {
                         <Target className="h-6 w-6 text-orange-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">Setup Progress</p>
-                        <p className="text-2xl font-bold text-gray-900">{setupProgress}%</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Setup Progress</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{setupProgress}%</p>
                       </div>
                     </div>
                   </Card>
@@ -542,8 +542,8 @@ const truncateDescription = (value?: string) => {
               <section id="modules" className="scroll-mt-24 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Modules</h2>
-                    <p className="text-sm text-gray-600">
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Modules</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Install and configure the tools powering your workspace experience.
                     </p>
                   </div>
@@ -575,13 +575,13 @@ const truncateDescription = (value?: string) => {
                               <ModuleIcon className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <h3 className="text-base font-semibold text-gray-900">{module.name}</h3>
-                              <p className="text-xs uppercase tracking-wide text-gray-500">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
+                              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                 {module.category || 'Core Module'}
                               </p>
                             </div>
                           </div>
-                          <p className="mt-4 text-sm text-gray-600">
+                          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
                             {truncateDescription(module.description)}
                           </p>
                           <div className="mt-4 flex items-center justify-between">
@@ -592,7 +592,7 @@ const truncateDescription = (value?: string) => {
                                 ? 'Pending'
                                 : 'Available'}
                             </Badge>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               v{module.version ?? '1.0.0'}
                             </span>
                           </div>
@@ -601,14 +601,14 @@ const truncateDescription = (value?: string) => {
                     })}
                   </div>
                 ) : (
-                  <Card className="flex flex-col gap-4 border border-dashed border-gray-300 bg-white p-6 shadow-sm">
+                  <Card className="flex flex-col gap-4 border border-dashed border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-6 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="rounded-full bg-amber-100 p-2">
                         <Package className="h-5 w-5 text-amber-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">No modules installed yet</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No modules installed yet</h3>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Install modules to unlock collaboration, automation, and analytics for your team.
                     </p>
                   </Card>
@@ -621,8 +621,8 @@ const truncateDescription = (value?: string) => {
                         <Package className="h-6 w-6 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Module Readiness</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Readiness</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Keep modules aligned across personal and business contexts.
                         </p>
                       </div>
@@ -632,15 +632,15 @@ const truncateDescription = (value?: string) => {
                     </Badge>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800 p-3 text-sm text-gray-700 dark:text-gray-300">
                       <span>Installed Modules</span>
                       <Badge color={installedModules.length > 0 ? 'green' : 'gray'} size="sm">
                         {installedModules.length}
                       </Badge>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800 p-3 text-sm text-gray-700 dark:text-gray-300">
                       <span>Status</span>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
                         {setupStatus.modules ? 'Active' : 'Pending Setup'}
                       </span>
                     </div>
@@ -650,8 +650,8 @@ const truncateDescription = (value?: string) => {
 
               <section id="people" className="scroll-mt-24 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">People & Access</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">People & Access</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Manage organizational structure, permissions, and team membership.
                   </p>
                 </div>
@@ -664,8 +664,8 @@ const truncateDescription = (value?: string) => {
                           <Building2 className="h-6 w-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Organization Chart</h3>
-                          <p className="text-sm text-gray-600">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Organization Chart</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Manage roles, permissions, and hierarchy.
                           </p>
                         </div>
@@ -693,8 +693,8 @@ const truncateDescription = (value?: string) => {
                         <Users className="h-6 w-6 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Team Management</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Team Management</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Invite employees, assign roles, and maintain permissions.
                         </p>
                       </div>
@@ -714,8 +714,8 @@ const truncateDescription = (value?: string) => {
 
               <section id="branding" className="scroll-mt-24 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">Branding</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Branding</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Ensure every surface reflects your company identity across personal and business views.
                   </p>
                 </div>
@@ -727,8 +727,8 @@ const truncateDescription = (value?: string) => {
                         <Palette className="h-6 w-6 text-indigo-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Business Branding</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Branding</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Centralize logos, colors, fonts, and front page messaging.
                         </p>
                       </div>
@@ -749,8 +749,8 @@ const truncateDescription = (value?: string) => {
 
               <section id="place" className="scroll-mt-24 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">Vssyl Place</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Vssyl Place</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Manage how your business appears on Vssyl Place — the personal Main Street where users discover and connect with businesses.
                   </p>
                 </div>
@@ -764,8 +764,8 @@ const truncateDescription = (value?: string) => {
 
               <section id="ai" className="scroll-mt-24 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">AI & Insights</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">AI & Insights</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Configure automation and review the intelligence supporting your business decisions.
                   </p>
                 </div>
@@ -778,8 +778,8 @@ const truncateDescription = (value?: string) => {
                           <Brain className="h-6 w-6 text-purple-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">AI Assistant</h3>
-                          <p className="text-sm text-gray-600">Configure prompts, guardrails, and automations.</p>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Assistant</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Configure prompts, guardrails, and automations.</p>
                         </div>
                       </div>
                       <Badge color={setupStatus.aiAssistant ? 'green' : 'yellow'} size="sm">
@@ -805,8 +805,8 @@ const truncateDescription = (value?: string) => {
                         <BarChart3 className="h-6 w-6 text-orange-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Analytics</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Analytics</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Review performance, adoption, and compliance metrics for your organization.
                         </p>
                       </div>
@@ -827,8 +827,8 @@ const truncateDescription = (value?: string) => {
               {canManageBillingAccess && (
                 <section id="subscription" className="scroll-mt-24 space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Subscription</h2>
-                    <p className="text-sm text-gray-600">
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Subscription</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Manage billing, seat counts, and plan upgrades for your business.
                     </p>
                   </div>
@@ -840,8 +840,8 @@ const truncateDescription = (value?: string) => {
                           <CreditCard className="h-6 w-6 text-purple-600" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Billing & Subscription</h3>
-                          <p className="text-sm text-gray-600">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Billing & Subscription</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Update payment details, seats, and plan tiers whenever you need.
                           </p>
                         </div>
@@ -850,8 +850,8 @@ const truncateDescription = (value?: string) => {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                        <span className="text-sm font-medium text-gray-700">Current Plan</span>
+                      <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800 p-3">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Current Plan</span>
                         <Badge color={getTierBadgeColor(effectiveTier)}>
                           {getTierDisplayName(effectiveTier)}
                         </Badge>
@@ -879,8 +879,8 @@ const truncateDescription = (value?: string) => {
 
               <section id="workspace" className="scroll-mt-24 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">Workspace & Actions</h2>
-                  <p className="text-sm text-gray-600">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Workspace & Actions</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Launch the daily workspace and wrap up outstanding setup tasks.
                   </p>
                 </div>
@@ -888,12 +888,12 @@ const truncateDescription = (value?: string) => {
                 <div className="grid gap-6 md:grid-cols-2">
                   <Card className="p-6 shadow-sm">
                     <div className="flex items-center gap-3 pb-4">
-                      <div className="rounded-lg bg-gray-100 p-2">
-                        <Briefcase className="h-6 w-6 text-gray-700" />
+                      <div className="rounded-lg bg-gray-100 dark:bg-slate-700 p-2">
+                        <Briefcase className="h-6 w-6 text-gray-700 dark:text-gray-300" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Business Workspace</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Workspace</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           Enter the live workspace to collaborate with your team.
                         </p>
                       </div>
@@ -916,13 +916,13 @@ const truncateDescription = (value?: string) => {
                           <Zap className="h-6 w-6 text-orange-600" />
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                             Complete Your Setup
                           </h3>
-                          <p className="mt-2 text-sm text-gray-600">
+                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                             You&apos;re {setupProgress}% done—finish the remaining steps to unlock all features.
                           </p>
-                          <div className="mt-4 space-y-2 text-sm text-gray-600">
+                          <div className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
                             {!setupStatus.orgChart && (
                               <div className="flex items-center">
                                 <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />

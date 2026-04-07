@@ -68,30 +68,30 @@ export default function PlaceActivityFeed() {
     return (
       <div className="text-center py-16 px-4">
         <Zap className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-        <p className="text-lg font-semibold text-gray-900">Your activity feed is empty</p>
-        <p className="text-sm text-gray-600 mt-1">Follow businesses, connect with people, and your activity will show here.</p>
+        <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">Your activity feed is empty</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Follow businesses, connect with people, and your activity will show here.</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-1">
-      <p className="text-xs text-gray-600 mb-3">{total} activit{total !== 1 ? 'ies' : 'y'}</p>
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{total} activit{total !== 1 ? 'ies' : 'y'}</p>
       {items.map(item => (
         <div key={item.id} className="flex gap-3 py-3 border-b border-gray-100 last:border-0">
-          <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5">
             {ICON_MAP[item.type] || <Zap className="w-4 h-4 text-gray-400" />}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900">{item.user.name || 'User'}</span>
-              <span className="text-xs text-gray-600">{relativeTime(item.createdAt)}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.user.name || 'User'}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">{relativeTime(item.createdAt)}</span>
               {item.isPrivate && (
-                <span className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">private</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">private</span>
               )}
             </div>
-            <p className="text-sm text-gray-700">{item.title}</p>
-            {item.description && <p className="text-xs text-gray-600 mt-0.5">{item.description}</p>}
+            <p className="text-sm text-gray-700 dark:text-gray-300">{item.title}</p>
+            {item.description && <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{item.description}</p>}
           </div>
         </div>
       ))}

@@ -381,7 +381,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
 
   if (!effectiveDashboardId) {
     return (
-      <div className="p-6 text-gray-700">
+      <div className="p-6 text-gray-700 dark:text-gray-300">
         <p>Select a dashboard to view notes.</p>
       </div>
     );
@@ -390,16 +390,16 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
   return (
     <div className="flex h-full">
       {/* Left: note list */}
-      <div className="w-72 border-r border-gray-200 bg-gray-50 flex flex-col shrink-0">
-        <div className="p-3 border-b border-gray-200">
+      <div className="w-72 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex flex-col shrink-0">
+        <div className="p-3 border-b border-gray-200 dark:border-slate-700">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
             <input
               type="text"
               placeholder="Search notes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded text-gray-900 placeholder:text-gray-500 text-sm"
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 text-sm"
             />
           </div>
           <div className="flex gap-1 mt-2">
@@ -436,7 +436,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
             </Button>
           </div>
           <div className="mt-2">
-            <label className="text-xs text-gray-600 block mb-1">Folder</label>
+            <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">Folder</label>
             <select
               value={sharedWithMe ? 'shared' : selectedFolderId ?? 'all'}
               onChange={(e) => {
@@ -449,7 +449,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   setSelectedFolderId(v === 'all' ? null : v === 'none' ? '' : v);
                 }
               }}
-              className="w-full py-1.5 px-2 border border-gray-300 rounded text-gray-900 text-sm"
+              className="w-full py-1.5 px-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 text-sm"
             >
               <option value="all">All notes</option>
               <option value="shared">Shared with me</option>
@@ -469,7 +469,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
               <Spinner size={24} />
             </div>
           ) : notes.length === 0 ? (
-            <div className="p-4 text-center text-gray-700 text-sm">
+            <div className="p-4 text-center text-gray-700 dark:text-gray-300 text-sm">
               No notes yet. Create one to get started.
             </div>
           ) : (
@@ -487,7 +487,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   >
                     <span className="font-medium truncate block">{n.title || 'Untitled note'}</span>
                     {n.tags && n.tags.length > 0 && (
-                      <span className="text-xs text-gray-600 truncate block">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
                         {n.tags.join(', ')}
                       </span>
                     )}
@@ -500,16 +500,16 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
       </div>
 
       {/* Right: editor / empty state */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-800">
         {selectedNote ? (
           <>
-            <div className="border-b border-gray-200 px-4 py-2 flex items-center justify-between gap-2 flex-wrap">
+            <div className="border-b border-gray-200 dark:border-slate-700 px-4 py-2 flex items-center justify-between gap-2 flex-wrap">
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={handleSave}
                 placeholder="Note title"
-                className="flex-1 min-w-0 text-lg font-medium border-0 border-b border-transparent focus:border-gray-300 rounded-none"
+                className="flex-1 min-w-0 text-lg font-medium border-0 border-b border-transparent focus:border-gray-300 dark:focus:border-slate-500 rounded-none"
                 readOnly={noteDetail?.canEdit === false}
               />
               <div className="flex items-center gap-2 flex-wrap">
@@ -519,7 +519,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                     const v = e.target.value;
                     handleNoteFolderChange(v === 'none' ? null : v);
                   }}
-                  className="py-1.5 px-2 border border-gray-300 rounded text-gray-700 text-sm"
+                  className="py-1.5 px-2 border border-gray-300 dark:border-slate-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 text-sm"
                   title="Move to folder"
                 >
                   <option value="none">No folder</option>
@@ -533,7 +533,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
               <div className="flex items-center gap-1">
                 {(noteDetail?.isOwner ?? selectedNote?.isOwner) && (
                   <Button type="button" variant="ghost" size="sm" onClick={() => setShareModalOpen(true)} title="Share">
-                    <Share2 className="w-4 h-4 text-gray-700" />
+                    <Share2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   </Button>
                 )}
                 <Button
@@ -544,9 +544,9 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   title={selectedNote.pinned ? 'Unpin' : 'Pin'}
                 >
                   {selectedNote.pinned ? (
-                    <PinOff className="w-4 h-4 text-gray-700" />
+                    <PinOff className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   ) : (
-                    <Pin className="w-4 h-4 text-gray-700" />
+                    <Pin className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   )}
                 </Button>
                 <Button type="button" variant="secondary" size="sm" onClick={handleSave} disabled={saving || noteDetail?.canEdit === false}>
@@ -559,7 +559,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                 )}
               </div>
             </div>
-            <div className="border-t border-gray-200 px-4 py-2 flex items-center gap-2 bg-gray-50">
+            <div className="border-t border-gray-200 dark:border-slate-700 px-4 py-2 flex items-center gap-2 bg-gray-50 dark:bg-slate-900">
               {noteDetail?.canEdit !== false && (
                 <>
                   <Button
@@ -583,9 +583,9 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                 </>
               )}
               {noteDetail?.canEdit === false && (
-                <span className="text-sm text-gray-600">View only</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">View only</span>
               )}
-              <span className="text-xs text-gray-600 ml-2">
+              <span className="text-xs text-gray-700 dark:text-gray-300 ml-2">
                 Markdown: **bold** *italic* lists [links](url)
               </span>
             </div>
@@ -596,11 +596,11 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   onChange={(e) => setEditContent(e.target.value)}
                   onBlur={handleSave}
                   placeholder="Write your note... Markdown supported: **bold**, *italic*, lists, [links](url)"
-                  className="min-h-[200px] w-full resize-y text-gray-900 placeholder:text-gray-500 font-mono text-sm"
+                  className="min-h-[200px] w-full resize-y text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 font-mono text-sm"
                   rows={12}
                 />
               ) : (
-                <div className="min-h-[200px] notes-markdown max-w-none text-gray-800">
+                <div className="min-h-[200px] notes-markdown max-w-none text-gray-800 dark:text-gray-200">
                   {editContent.trim() ? (
                     <ReactMarkdown
                       components={{
@@ -609,27 +609,27 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                             {children}
                           </a>
                         ),
-                        ul: ({ children, ...props }) => <ul className="list-disc list-inside my-2 space-y-1 text-gray-700" {...props}>{children}</ul>,
-                        ol: ({ children, ...props }) => <ol className="list-decimal list-inside my-2 space-y-1 text-gray-700" {...props}>{children}</ol>,
-                        h1: ({ children, ...props }) => <h1 className="text-xl font-bold text-gray-900 mt-4 mb-2" {...props}>{children}</h1>,
-                        h2: ({ children, ...props }) => <h2 className="text-lg font-semibold text-gray-900 mt-3 mb-2" {...props}>{children}</h2>,
-                        h3: ({ children, ...props }) => <h3 className="text-base font-semibold text-gray-900 mt-2 mb-1" {...props}>{children}</h3>,
-                        p: ({ children, ...props }) => <p className="my-2 text-gray-700" {...props}>{children}</p>,
-                        strong: ({ children, ...props }) => <strong className="font-semibold text-gray-900" {...props}>{children}</strong>,
-                        code: ({ children, ...props }) => <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>,
+                        ul: ({ children, ...props }) => <ul className="list-disc list-inside my-2 space-y-1 text-gray-700 dark:text-gray-300" {...props}>{children}</ul>,
+                        ol: ({ children, ...props }) => <ol className="list-decimal list-inside my-2 space-y-1 text-gray-700 dark:text-gray-300" {...props}>{children}</ol>,
+                        h1: ({ children, ...props }) => <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-4 mb-2" {...props}>{children}</h1>,
+                        h2: ({ children, ...props }) => <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-3 mb-2" {...props}>{children}</h2>,
+                        h3: ({ children, ...props }) => <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mt-2 mb-1" {...props}>{children}</h3>,
+                        p: ({ children, ...props }) => <p className="my-2 text-gray-700 dark:text-gray-300" {...props}>{children}</p>,
+                        strong: ({ children, ...props }) => <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props}>{children}</strong>,
+                        code: ({ children, ...props }) => <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 px-1 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>,
                       }}
                     >
                       {editContent}
                     </ReactMarkdown>
                   ) : (
-                    <p className="text-gray-500 italic">Nothing to preview. Switch to Edit to write.</p>
+                    <p className="text-gray-500 dark:text-gray-400 italic">Nothing to preview. Switch to Edit to write.</p>
                   )}
                 </div>
               )}
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-700 p-8">
+          <div className="flex-1 flex items-center justify-center text-gray-700 dark:text-gray-300 p-8">
             <div className="text-center">
               <p className="text-lg font-medium mb-1">Select a note or create one</p>
               <p className="text-sm mb-4">Use the list on the left to open a note, or click New note.</p>
@@ -644,7 +644,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
 
       <Modal open={templateModalOpen} onClose={() => setTemplateModalOpen(false)} title="New from template" size="medium">
         <div className="space-y-2">
-          <p className="text-sm text-gray-700">Choose a template to create a new note.</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">Choose a template to create a new note.</p>
           <ul className="space-y-1">
             {NOTE_TEMPLATES.map((t) => (
               <li key={t.id}>
@@ -652,7 +652,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   type="button"
                   onClick={() => handleCreateFromTemplate(t)}
                   disabled={creatingFromTemplate}
-                  className="w-full text-left px-3 py-2.5 rounded border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-900 text-sm font-medium disabled:opacity-50"
+                  className="w-full text-left px-3 py-2.5 rounded border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 hover:border-gray-300 dark:border-slate-600 text-gray-900 dark:text-gray-100 text-sm font-medium disabled:opacity-50"
                 >
                   {t.name}
                 </button>
@@ -664,11 +664,11 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
 
       <Modal open={shareModalOpen} onClose={() => setShareModalOpen(false)} title="Share note" size="medium">
         <div className="space-y-4">
-          <p className="text-sm text-gray-700">People with access</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">People with access</p>
           <ul className="space-y-2 max-h-32 overflow-y-auto">
             {noteShares.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-1.5 border-b border-gray-100">
-                <span className="text-sm text-gray-900">
+                <span className="text-sm text-gray-900 dark:text-gray-100">
                   {s.sharedWith?.name || s.sharedWith?.email || s.sharedWithUserId} — {s.role}
                 </span>
                 <Button type="button" variant="ghost" size="sm" onClick={() => handleRevokeShare(s.sharedWithUserId)} className="text-red-600">
@@ -676,10 +676,10 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                 </Button>
               </li>
             ))}
-            {noteShares.length === 0 && <li className="text-sm text-gray-500">Not shared with anyone yet.</li>}
+            {noteShares.length === 0 && <li className="text-sm text-gray-500 dark:text-gray-400">Not shared with anyone yet.</li>}
           </ul>
           <div>
-            <label className="text-xs text-gray-600 block mb-1">Add person (search by name or email)</label>
+            <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">Add person (search by name or email)</label>
             <div className="flex gap-2">
               <Input
                 value={shareUserQuery}
@@ -693,12 +693,12 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
               </Button>
             </div>
             {shareUserResults.length > 0 && (
-              <ul className="mt-2 border border-gray-200 rounded divide-y max-h-40 overflow-y-auto">
+              <ul className="mt-2 border border-gray-200 dark:border-slate-700 rounded divide-y max-h-40 overflow-y-auto">
                 {shareUserResults
                   .filter((u) => !noteShares.some((s) => s.sharedWithUserId === u.id))
                   .map((u) => (
                     <li key={u.id} className="flex items-center justify-between px-2 py-2">
-                      <span className="text-sm text-gray-900">{u.name || u.email || u.id}</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">{u.name || u.email || u.id}</span>
                       <div className="flex gap-1">
                         <Button type="button" variant="ghost" size="sm" onClick={() => handleAddShare(u.id, 'viewer')} disabled={sharing}>
                           Viewer

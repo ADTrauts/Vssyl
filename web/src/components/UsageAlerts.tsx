@@ -97,7 +97,7 @@ export default function UsageAlerts({ businessId, onAlertClick }: UsageAlertsPro
       <Card>
         <div className="p-6 text-center">
           <Spinner size={32} />
-          <p className="mt-2 text-gray-700">Loading usage alerts...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading usage alerts...</p>
         </div>
       </Card>
     );
@@ -116,8 +116,8 @@ export default function UsageAlerts({ businessId, onAlertClick }: UsageAlertsPro
       <Card>
         <div className="p-6 text-center">
           <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-700 font-medium mb-1">All usage within limits</p>
-          <p className="text-sm text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300 font-medium mb-1">All usage within limits</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Your usage is within acceptable ranges for all metrics.
           </p>
         </div>
@@ -180,7 +180,7 @@ export default function UsageAlerts({ businessId, onAlertClick }: UsageAlertsPro
                 </div>
 
                 {/* Usage details */}
-                <div className="flex items-center justify-between text-xs text-gray-700">
+                <div className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300">
                   <span>
                     Used: {formatValue(alert.currentUsage, alert.metric)} / {formatValue(alert.limit, alert.metric)}
                   </span>
@@ -202,7 +202,7 @@ export default function UsageAlerts({ businessId, onAlertClick }: UsageAlertsPro
       </div>
 
       {onAlertClick && (
-        <div className="text-sm text-gray-600 text-center">
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
           <button
             onClick={() => onAlertClick('usage')}
             className="text-blue-600 hover:text-blue-700 underline"

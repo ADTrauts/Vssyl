@@ -238,7 +238,7 @@ export default function AutonomousActions() {
           <Brain className="w-6 h-6 text-blue-600" />
           <div>
             <h2 className="text-xl font-semibold">Autonomous Actions</h2>
-            <p className="text-sm text-gray-600">AI-powered actions based on your preferences</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">AI-powered actions based on your preferences</p>
           </div>
         </div>
         <Button
@@ -252,7 +252,7 @@ export default function AutonomousActions() {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex space-x-1 bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
         {[
           { id: 'suggestions', label: 'Suggestions', icon: <Zap className="w-4 h-4" /> },
           { id: 'pending', label: 'Pending Approval', icon: <Clock className="w-4 h-4" /> },
@@ -284,13 +284,13 @@ export default function AutonomousActions() {
             {loading ? (
               <div className="text-center py-8">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p className="text-gray-600">Loading suggestions...</p>
+                <p className="text-gray-600 dark:text-gray-400">Loading suggestions...</p>
               </div>
             ) : suggestions.length === 0 ? (
               <Card className="p-8 text-center">
                 <Zap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No suggestions available</h3>
-                <p className="text-gray-600">Your AI assistant will suggest actions based on your activity patterns.</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No suggestions available</h3>
+                <p className="text-gray-600 dark:text-gray-400">Your AI assistant will suggest actions based on your activity patterns.</p>
               </Card>
             ) : (
               suggestions.map((action) => (
@@ -301,9 +301,9 @@ export default function AutonomousActions() {
                         {getActionIcon(action.actionType)}
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 mb-1">{action.title}</h3>
-                        <p className="text-gray-600 text-sm mb-3">{action.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">{action.title}</h3>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{action.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <Timer className="w-3 h-3" />
                             {action.estimatedTime}
@@ -343,13 +343,13 @@ export default function AutonomousActions() {
             {loading ? (
               <div className="text-center py-8">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p className="text-gray-600">Loading pending approvals...</p>
+                <p className="text-gray-600 dark:text-gray-400">Loading pending approvals...</p>
               </div>
             ) : pendingApprovals.length === 0 ? (
               <Card className="p-8 text-center">
                 <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No pending approvals</h3>
-                <p className="text-gray-600">Actions requiring your approval will appear here.</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No pending approvals</h3>
+                <p className="text-gray-600 dark:text-gray-400">Actions requiring your approval will appear here.</p>
               </Card>
             ) : (
               pendingApprovals.map((approval) => (
@@ -360,11 +360,11 @@ export default function AutonomousActions() {
                         <AlertTriangle className="w-4 h-4 text-yellow-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 mb-1">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
                           {approval.actionType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </h3>
-                        <p className="text-gray-600 text-sm mb-3">{approval.reason}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{approval.reason}</p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(approval.createdAt).toLocaleDateString()}
@@ -405,13 +405,13 @@ export default function AutonomousActions() {
             {loading ? (
               <div className="text-center py-8">
                 <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p className="text-gray-600">Loading history...</p>
+                <p className="text-gray-600 dark:text-gray-400">Loading history...</p>
               </div>
             ) : actionHistory.length === 0 ? (
               <Card className="p-8 text-center">
                 <History className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No action history</h3>
-                <p className="text-gray-600">Completed actions will appear here.</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No action history</h3>
+                <p className="text-gray-600 dark:text-gray-400">Completed actions will appear here.</p>
               </Card>
             ) : (
               actionHistory.map((item) => (
@@ -427,13 +427,13 @@ export default function AutonomousActions() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900 mb-1">
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
                         {item.actionType?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
                       </h3>
-                      <p className="text-gray-600 text-sm mb-2">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
                         {item.success ? 'Completed successfully' : item.error || 'Failed to execute'}
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'}

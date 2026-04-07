@@ -97,7 +97,7 @@ export default function OnboardingDriveIntegration({
   if (!hasDrive) {
     return (
       <Alert type="info" title="Drive module not installed">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Install the Drive module to upload documents for onboarding tasks.
         </p>
       </Alert>
@@ -155,7 +155,7 @@ export default function OnboardingDriveIntegration({
       </div>
 
       {!documentLibrary && !loadingLibrary && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Document library not available. Please contact your administrator.
         </p>
       )}

@@ -45,14 +45,14 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800 p-6">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <AlertTriangle className="h-16 w-16 mx-auto text-red-500 mb-4" />
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Something went wrong
               </h1>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 An unexpected error occurred. Don't worry, your data is safe.
               </p>
             </div>
@@ -75,10 +75,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-6 text-left">
-                <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
+                <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800">
                   Error Details (Development)
                 </summary>
-                <div className="mt-2 p-3 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto">
+                <div className="mt-2 p-3 bg-gray-100 dark:bg-slate-700 rounded text-xs font-mono text-gray-800 overflow-auto">
                   <div className="mb-2">
                     <strong>Error:</strong> {this.state.error.toString()}
                   </div>

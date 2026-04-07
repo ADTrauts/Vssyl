@@ -176,9 +176,32 @@ interface ModuleSubmission {
     id: string;
     name: string;
     category: string;
+    description?: string | null;
+    version?: string | null;
+    manifest?: Record<string, unknown> | null;
+    permissions?: string[] | null;
+    dependencies?: string[] | null;
     downloads?: number | null;
     rating?: number | null;
     pricingTier?: string | null;
+    latestVersion?: {
+      id: string;
+      version: string;
+      status: string;
+      isCurrent: boolean;
+      artifact?: {
+        scanStatus: string;
+        sha256: string;
+        sizeBytes: number;
+      } | null;
+    } | null;
+    business?: {
+      id: string;
+      name: string;
+      isDeveloperBusiness: boolean;
+      developerBusinessLinkedAt?: Date | null;
+      developerBusinessLinkedBy?: string | null;
+    } | null;
     developer: {
       id: string;
       name: string | null;
@@ -254,6 +277,18 @@ interface BusinessIntelligenceData {
   abTests: unknown; // Will be defined by getABTests return type
   userSegments: unknown; // Will be defined by getUserSegments return type
   competitiveAnalysis: unknown; // Will be defined by getCompetitiveAnalysis return type
+}
+
+interface FinancialValidationSummary {
+  moduleSubscriptionRevenue: number;
+  moduleSubscriptionDeveloperRevenue: number;
+  moduleSubscriptionPlatformRevenue: number;
+  recordedDeveloperRevenue: number;
+  recordedPlatformRevenue: number;
+  pendingPayoutAmount: number;
+  paidPayoutAmount: number;
+  developerRevenueDelta: number;
+  platformRevenueDelta: number;
 }
 
 interface KnowledgeArticle {
@@ -1030,6 +1065,12 @@ export class AdminService {
     return msg.includes('does not exist in the current database');
   }
 
+  private static toSafeNumber(value: number | null | undefined): number {
+    if (value === null || value === undefined) return 0;
+    const converted = Number(value);
+    return Number.isFinite(converted) ? converted : 0;
+  }
+
   static async getSubscriptions(params: {
     page?: number;
     limit?: number;
@@ -1042,7 +1083,7 @@ export class AdminService {
     if (status) where.status = status;
 
     try {
-      const [subscriptions, total] = await Promise.all([
+      const [subscriptions, total, aggregates, statusGroups] = await Promise.all([
         prisma.subscription.findMany({
           where,
           skip,
@@ -1054,15 +1095,39 @@ export class AdminService {
             }
           }
         }),
-        prisma.subscription.count({ where })
+        prisma.subscription.count({ where }),
+        prisma.subscription.aggregate({
+          where,
+          _sum: { additionalEmployeeCost: true },
+          _count: { id: true },
+        }),
+        prisma.subscription.groupBy({
+          by: ['status'],
+          where,
+          _count: { id: true },
+        }),
       ]);
+
+      const statusCounts = statusGroups.reduce<Record<string, number>>((acc, row) => {
+        acc[row.status] = row._count.id;
+        return acc;
+      }, {});
 
       return {
         subscriptions,
         total,
         page,
         totalPages: Math.ceil(total / limit),
-        schemaOutOfSync: false
+        schemaOutOfSync: false,
+        summary: {
+          activeCount: statusCounts.active || 0,
+          pastDueCount: statusCounts.past_due || 0,
+          cancelledCount: statusCounts.cancelled || 0,
+          unpaidCount: statusCounts.unpaid || 0,
+          totalAmount: subscriptions.reduce((sum, sub) => sum + this.toSafeNumber(sub.additionalEmployeeCost), 0),
+          estimatedMonthlyAmount: this.toSafeNumber(aggregates._sum.additionalEmployeeCost),
+          totalSubscriptions: this.toSafeNumber(aggregates._count.id),
+        },
       };
     } catch (error) {
       if (AdminService.isSchemaDriftError(error)) {
@@ -1075,7 +1140,16 @@ export class AdminService {
           total: 0,
           page,
           totalPages: 0,
-          schemaOutOfSync: true
+          schemaOutOfSync: true,
+          summary: {
+            activeCount: 0,
+            pastDueCount: 0,
+            cancelledCount: 0,
+            unpaidCount: 0,
+            totalAmount: 0,
+            estimatedMonthlyAmount: 0,
+            totalSubscriptions: 0,
+          },
         };
       }
       throw error;
@@ -1192,7 +1266,7 @@ export class AdminService {
       const where: Record<string, unknown> = {};
       if (status) where.payoutStatus = status;
 
-      const [payouts, total] = await Promise.all([
+      const [payouts, total, payoutAggregates, payoutStatusGroups] = await Promise.all([
         prisma.developerRevenue.findMany({
           where,
           include: {
@@ -1214,8 +1288,32 @@ export class AdminService {
           skip,
           take: limit
         }),
-        prisma.developerRevenue.count({ where })
+        prisma.developerRevenue.count({ where }),
+        prisma.developerRevenue.aggregate({
+          where,
+          _sum: {
+            totalRevenue: true,
+            platformRevenue: true,
+            developerRevenue: true,
+          },
+        }),
+        prisma.developerRevenue.groupBy({
+          by: ['payoutStatus'],
+          where,
+          _sum: { developerRevenue: true },
+          _count: { id: true },
+        }),
       ]);
+
+      const payoutStatusSummary = payoutStatusGroups.reduce<
+        Record<string, { count: number; amount: number }>
+      >((acc, row) => {
+        acc[row.payoutStatus] = {
+          count: row._count.id,
+          amount: this.toSafeNumber(row._sum.developerRevenue),
+        };
+        return acc;
+      }, {});
 
       return {
         payouts: payouts.map(payout => ({
@@ -1236,7 +1334,18 @@ export class AdminService {
         total,
         page,
         totalPages: Math.ceil(total / limit),
-        schemaOutOfSync: false
+        schemaOutOfSync: false,
+        summary: {
+          pendingCount: payoutStatusSummary.pending?.count || 0,
+          paidCount: payoutStatusSummary.paid?.count || 0,
+          failedCount: payoutStatusSummary.failed?.count || 0,
+          pendingAmount: payoutStatusSummary.pending?.amount || 0,
+          paidAmount: payoutStatusSummary.paid?.amount || 0,
+          failedAmount: payoutStatusSummary.failed?.amount || 0,
+          totalRevenue: this.toSafeNumber(payoutAggregates._sum.totalRevenue),
+          totalPlatformRevenue: this.toSafeNumber(payoutAggregates._sum.platformRevenue),
+          totalDeveloperRevenue: this.toSafeNumber(payoutAggregates._sum.developerRevenue),
+        },
       };
     } catch (error) {
       if (AdminService.isSchemaDriftError(error)) {
@@ -1249,7 +1358,18 @@ export class AdminService {
           total: 0,
           page: params.page ?? 1,
           totalPages: 0,
-          schemaOutOfSync: true
+          schemaOutOfSync: true,
+          summary: {
+            pendingCount: 0,
+            paidCount: 0,
+            failedCount: 0,
+            pendingAmount: 0,
+            paidAmount: 0,
+            failedAmount: 0,
+            totalRevenue: 0,
+            totalPlatformRevenue: 0,
+            totalDeveloperRevenue: 0,
+          },
         };
       }
       await logger.error('Failed to get developer payouts', {
@@ -1848,12 +1968,34 @@ export class AdminService {
       // Add pagination to prevent loading too many records at once
       const limit = 100; // Limit to 100 most recent submissions
       
-      const submissions = await prisma.moduleSubmission.findMany({
+      const submissions = await (prisma as any).moduleSubmission.findMany({
         where: whereClause,
         take: limit, // Limit results
         include: {
           module: {
             include: {
+              versions: {
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                  artifact: {
+                    select: {
+                      scanStatus: true,
+                      sha256: true,
+                      sizeBytes: true,
+                    },
+                  },
+                },
+              },
+              business: {
+                select: {
+                  id: true,
+                  name: true,
+                  isDeveloperBusiness: true,
+                  developerBusinessLinkedAt: true,
+                  developerBusinessLinkedBy: true,
+                }
+              },
               developer: {
                 select: {
                   id: true,
@@ -1883,7 +2025,7 @@ export class AdminService {
         }
       });
 
-      return submissions;
+      return submissions as ModuleSubmission[];
     } catch (error) {
       await logger.error('Failed to get module submissions', {
         operation: 'admin_get_module_submissions',
@@ -2426,41 +2568,92 @@ export class AdminService {
 
   static async getDeveloperStats(): Promise<unknown> {
     try {
-      const developers = await prisma.user.findMany({
-        where: {
-          modules: {
-            some: {}
-          }
-        },
-        include: {
-          modules: {
-            include: {
-              submissions: true,
-              installations: true,
-              subscriptions: {
-                where: {
-                  status: 'active'
-                }
-              }
-            }
-          }
-        }
-      });
+      const [
+        totalDevelopers,
+        activeDeveloperGroups,
+        totalModules,
+        pendingSubmissions,
+        approvedRating,
+        topCategoryGroup,
+        moduleSubscriptionRevenue,
+        developerRevenueRecords,
+        pendingPayout,
+        paidPayout,
+      ] = await Promise.all([
+        prisma.user.count({
+          where: {
+            modules: { some: {} },
+          },
+        }),
+        prisma.module.groupBy({
+          by: ['developerId'],
+          where: { status: 'APPROVED' },
+        }),
+        prisma.module.count(),
+        prisma.moduleSubmission.count({
+          where: { status: 'PENDING' },
+        }),
+        prisma.module.aggregate({
+          where: { status: 'APPROVED' },
+          _avg: { rating: true },
+        }),
+        prisma.module.groupBy({
+          by: ['category'],
+          _count: { id: true },
+          orderBy: { _count: { id: 'desc' } },
+          take: 1,
+        }),
+        prisma.moduleSubscription.aggregate({
+          _sum: {
+            amount: true,
+            developerRevenue: true,
+            platformRevenue: true,
+          },
+        }),
+        prisma.developerRevenue.aggregate({
+          _sum: {
+            totalRevenue: true,
+            developerRevenue: true,
+            platformRevenue: true,
+          },
+        }),
+        prisma.developerRevenue.aggregate({
+          where: { payoutStatus: 'pending' },
+          _sum: { developerRevenue: true },
+        }),
+        prisma.developerRevenue.aggregate({
+          where: { payoutStatus: 'paid' },
+          _sum: { developerRevenue: true },
+        }),
+      ]);
 
-      return developers.map(developer => ({
-        id: developer.id,
-        name: developer.name,
-        email: developer.email,
-        totalModules: developer.modules.length,
-        approvedModules: developer.modules.filter(m => m.status === 'APPROVED').length,
-        totalDownloads: developer.modules.reduce((sum, m) => sum + m.downloads, 0),
-        totalRevenue: developer.modules.reduce((sum, m) => 
-          sum + m.subscriptions.reduce((s, sub) => s + sub.amount, 0), 0
-        ),
-        averageRating: developer.modules.length > 0 
-          ? developer.modules.reduce((sum, m) => sum + m.rating, 0) / developer.modules.length 
-          : 0
-      }));
+      const validation: FinancialValidationSummary = {
+        moduleSubscriptionRevenue: this.toSafeNumber(moduleSubscriptionRevenue._sum.amount),
+        moduleSubscriptionDeveloperRevenue: this.toSafeNumber(moduleSubscriptionRevenue._sum.developerRevenue),
+        moduleSubscriptionPlatformRevenue: this.toSafeNumber(moduleSubscriptionRevenue._sum.platformRevenue),
+        recordedDeveloperRevenue: this.toSafeNumber(developerRevenueRecords._sum.developerRevenue),
+        recordedPlatformRevenue: this.toSafeNumber(developerRevenueRecords._sum.platformRevenue),
+        pendingPayoutAmount: this.toSafeNumber(pendingPayout._sum.developerRevenue),
+        paidPayoutAmount: this.toSafeNumber(paidPayout._sum.developerRevenue),
+        developerRevenueDelta:
+          this.toSafeNumber(moduleSubscriptionRevenue._sum.developerRevenue) -
+          this.toSafeNumber(developerRevenueRecords._sum.developerRevenue),
+        platformRevenueDelta:
+          this.toSafeNumber(moduleSubscriptionRevenue._sum.platformRevenue) -
+          this.toSafeNumber(developerRevenueRecords._sum.platformRevenue),
+      };
+
+      return {
+        totalDevelopers,
+        activeDevelopers: activeDeveloperGroups.length,
+        totalModules,
+        pendingSubmissions,
+        totalRevenue: this.toSafeNumber(moduleSubscriptionRevenue._sum.amount),
+        pendingPayouts: this.toSafeNumber(pendingPayout._sum.developerRevenue),
+        averageRating: this.toSafeNumber(approvedRating._avg.rating),
+        topCategory: topCategoryGroup[0]?.category || 'N/A',
+        financialValidation: validation,
+      };
     } catch (error) {
       await logger.error('Failed to get developer statistics', {
         operation: 'admin_get_developer_stats',

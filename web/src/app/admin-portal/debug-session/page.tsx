@@ -36,7 +36,7 @@ export default function DebugSessionPage() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Debug Session Information</h1>
       
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Session Status</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -57,21 +57,21 @@ export default function DebugSessionPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Session Data</h2>
-        <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+        <pre className="bg-gray-100 dark:bg-slate-700 p-4 rounded text-sm overflow-auto">
           {JSON.stringify(session, null, 2)}
         </pre>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Debug Information</h2>
-        <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+        <pre className="bg-gray-100 dark:bg-slate-700 p-4 rounded text-sm overflow-auto">
           {JSON.stringify(debugInfo, null, 2)}
         </pre>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold mb-4">Actions</h2>
         <div className="space-y-4">
           <button
@@ -91,7 +91,7 @@ export default function DebugSessionPage() {
           </button>
           <button
             onClick={() => window.location.href = '/api/auth/signout'}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 ml-4"
+            className="bg-gray-50 dark:bg-slate-8000 text-white px-4 py-2 rounded hover:bg-gray-600 ml-4"
           >
             Sign Out
           </button>

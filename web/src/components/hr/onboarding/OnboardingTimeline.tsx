@@ -77,13 +77,13 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-gray-900">{task.title}</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</h4>
                     <OnboardingTaskStatusBadge status={task.status} />
                   </div>
                   {task.description && (
-                    <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                     <span className="capitalize">{task.taskType.toLowerCase()}</span>
                     {task.ownerType && (
                       <span className="capitalize">Owner: {task.ownerType.toLowerCase()}</span>
@@ -100,7 +100,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
                 )}
               </div>
               {task.completedAt && (
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
                 </div>
               )}

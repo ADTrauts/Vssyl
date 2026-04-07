@@ -221,8 +221,8 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
       case 'owner': return <Shield className="w-4 h-4 text-purple-600" />;
       case 'editor': return <Edit className="w-4 h-4 text-blue-600" />;
       case 'commenter': return <MessageCircle className="w-4 h-4 text-green-600" />;
-      case 'viewer': return <Eye className="w-4 h-4 text-gray-600" />;
-      default: return <Eye className="w-4 h-4 text-gray-600" />;
+      case 'viewer': return <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
+      default: return <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -248,39 +248,39 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
               <Share className="w-6 h-6 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Advanced Sharing</h2>
-              <p className="text-gray-600">Share "{file.name}" with advanced permissions and controls</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Advanced Sharing</h2>
+              <p className="text-gray-600 dark:text-gray-400">Share "{file.name}" with advanced permissions and controls</p>
             </div>
           </div>
 
           {/* Share Analytics */}
-          <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{shareAnalytics.totalViews}</div>
-              <div className="text-sm text-gray-600">Total Views</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shareAnalytics.totalViews}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Total Views</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{shareAnalytics.uniqueViewers}</div>
-              <div className="text-sm text-gray-600">Unique Viewers</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shareAnalytics.uniqueViewers}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Unique Viewers</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{shareAnalytics.downloadCount}</div>
-              <div className="text-sm text-gray-600">Downloads</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{shareAnalytics.downloadCount}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Downloads</div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {shareAnalytics.lastAccessed ? 
                   shareAnalytics.lastAccessed.toLocaleTimeString() : 
                   'Never'
                 }
               </div>
-              <div className="text-sm text-gray-600">Last Accessed</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Last Accessed</div>
             </div>
           </div>
 
           {/* Add New Share */}
-          <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-medium text-gray-900 mb-3">Share with People</h3>
+          <div className="mb-6 p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Share with People</h3>
             <div className="flex gap-3">
               <Input
                 placeholder="Enter email address"
@@ -291,7 +291,7 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
               <select
                 value={newShareRole}
                 onChange={(e) => setNewShareRole(e.target.value as 'viewer' | 'editor' | 'commenter')}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-32 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="viewer">Viewer</option>
                 <option value="commenter">Commenter</option>
@@ -308,20 +308,20 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
 
           {/* Current Permissions */}
           <div className="mb-6">
-            <h3 className="font-medium text-gray-900 mb-3">People with Access</h3>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">People with Access</h3>
             <div className="space-y-3">
               {permissions.map((permission) => (
-                <div key={permission.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={permission.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-700 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
                       {permission.type === 'link' ? <Globe className="w-4 h-4" /> : <Users className="w-4 h-4" />}
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
                         {permission.type === 'link' ? 'Anyone with the link' : permission.target}
                       </div>
                       {permission.note && (
-                        <div className="text-sm text-gray-600">{permission.note}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{permission.note}</div>
                       )}
                       {permission.expiresAt && (
                         <div className="text-sm text-orange-600 flex items-center gap-1">
@@ -365,14 +365,14 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
           </div>
 
           {/* Link Sharing Settings */}
-          <div className="mb-6 p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-medium text-gray-900 mb-3">Link Sharing</h3>
+          <div className="mb-6 p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">Link Sharing</h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-gray-900">Password Protection</div>
-                  <div className="text-sm text-gray-600">Require password to access</div>
+                  <div className="font-medium text-gray-900 dark:text-gray-100">Password Protection</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Require password to access</div>
                 </div>
                 <Switch
                   checked={linkSettings.requirePassword}
@@ -391,8 +391,8 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
               
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-gray-900">Track Views</div>
-                  <div className="text-sm text-gray-600">Monitor who accesses this file</div>
+                  <div className="font-medium text-gray-900 dark:text-gray-100">Track Views</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Monitor who accesses this file</div>
                 </div>
                 <Switch
                   checked={linkSettings.trackViews}
@@ -401,13 +401,13 @@ export const AdvancedSharingModal: React.FC<AdvancedSharingModalProps> = ({
               </div>
               
               <div>
-                <label className="block font-medium text-gray-900 mb-2">Link Expiration</label>
+                <label className="block font-medium text-gray-900 dark:text-gray-100 mb-2">Link Expiration</label>
                 <input
                   type="date"
                   value={linkSettings.expiresAt ? linkSettings.expiresAt.toISOString().split('T')[0] : ''}
                   onChange={(e) => setLinkSettings(prev => ({ ...prev, expiresAt: e.target.value ? new Date(e.target.value) : undefined }))}
                   placeholder="No expiration"
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               

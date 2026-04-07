@@ -96,7 +96,7 @@ export default function AIProviderModelPicker({
     <button
       type="button"
       onClick={() => setIsOpen(!isOpen)}
-      className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+      className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-md transition-colors"
       title={provider === 'auto' ? selectedProviderOption.description : selectedModelDef?.description ?? selectedProviderOption.description}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -109,7 +109,7 @@ export default function AIProviderModelPicker({
     <button
       type="button"
       onClick={() => setIsOpen(!isOpen)}
-      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left min-w-[200px]"
+      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left min-w-[200px]"
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
       <span className="flex-1 truncate">{displayLabel}</span>
@@ -119,11 +119,11 @@ export default function AIProviderModelPicker({
 
   const panel = isOpen && (
     <div
-      className="absolute top-full left-0 mt-1 flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+      className="absolute top-full left-0 mt-1 flex bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 overflow-hidden"
       style={{ minWidth: compact ? 320 : 420 }}
     >
       {/* Left: providers */}
-      <div className="w-[160px] border-r border-gray-100 flex-shrink-0 bg-gray-50/50">
+      <div className="w-[160px] border-r border-gray-100 flex-shrink-0 bg-gray-50 dark:bg-slate-800/50">
         {PROVIDER_OPTIONS.map((opt) => {
           const OptIcon = opt.icon;
           const active = provider === opt.value;
@@ -143,7 +143,7 @@ export default function AIProviderModelPicker({
               <OptIcon className="h-4 w-4 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate">{opt.label}</div>
-                <div className="text-xs text-gray-500 truncate">{opt.description}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{opt.description}</div>
               </div>
               {active && <span className="h-2 w-2 rounded-full bg-purple-600 flex-shrink-0" />}
               {showModels && (opt.value === 'openai' || opt.value === 'anthropic') && (
@@ -157,10 +157,10 @@ export default function AIProviderModelPicker({
       <div className="flex-1 min-w-[200px] max-h-[320px] overflow-y-auto">
         {providerForModels === 'openai' || providerForModels === 'anthropic' ? (
           providerModels.length === 0 ? (
-            <div className="p-4 text-sm text-gray-500">No models available</div>
+            <div className="p-4 text-sm text-gray-500 dark:text-gray-400">No models available</div>
           ) : (
             <div className="py-1">
-              <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+              <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-b border-gray-100">
                 Model
               </div>
               {providerModels.map((m) => (
@@ -174,9 +174,9 @@ export default function AIProviderModelPicker({
                 >
                   <div className="flex-1 min-w-0">
                     <span className="font-medium block">{m.label}</span>
-                    <span className="text-xs text-gray-600 block truncate">{m.description}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 block truncate">{m.description}</span>
                     {(m.queryCost ?? 1) > 1 && (
-                      <span className="text-xs text-gray-500 block">Uses {m.queryCost} queries</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 block">Uses {m.queryCost} queries</span>
                     )}
                   </div>
                   {model === m.id && <span className="h-2 w-2 rounded-full bg-purple-600 flex-shrink-0" />}
@@ -185,7 +185,7 @@ export default function AIProviderModelPicker({
             </div>
           )
         ) : (
-          <div className="p-4 text-sm text-gray-500">
+          <div className="p-4 text-sm text-gray-500 dark:text-gray-400">
             {providerForModels === null ? 'Select a provider' : 'Model chosen by system'}
           </div>
         )}
@@ -211,7 +211,7 @@ export default function AIProviderModelPicker({
         </div>
       )}
       {showLabel && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
       )}
       {triggerFull}
       {panel}

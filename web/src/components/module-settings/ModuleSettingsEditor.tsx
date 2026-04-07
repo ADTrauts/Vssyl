@@ -570,19 +570,19 @@ export default function ModuleSettingsEditor({
       <Tabs.Content value="general">
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">General Configuration</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">General Configuration</h3>
 
             {moduleType === 'drive' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Storage Quota (GB)
                   </label>
                   <input
                     type="number"
                     value={config.storage?.quota ?? 10}
                     onChange={(e) => updateConfig('storage.quota', parseInt(e.target.value, 10))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min={1}
                     max={1000}
                   />
@@ -593,9 +593,9 @@ export default function ModuleSettingsEditor({
                     id="compression"
                     checked={config.storage?.compression ?? false}
                     onChange={(e) => updateConfig('storage.compression', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="compression" className="text-sm text-gray-700">
+                  <label htmlFor="compression" className="text-sm text-gray-700 dark:text-gray-300">
                     Enable file compression
                   </label>
                 </div>
@@ -605,9 +605,9 @@ export default function ModuleSettingsEditor({
                     id="backup"
                     checked={config.storage?.backup ?? false}
                     onChange={(e) => updateConfig('storage.backup', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="backup" className="text-sm text-gray-700">
+                  <label htmlFor="backup" className="text-sm text-gray-700 dark:text-gray-300">
                     Enable automatic backups
                   </label>
                 </div>
@@ -617,19 +617,19 @@ export default function ModuleSettingsEditor({
             {moduleType === 'chat' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Message Retention (days)
                   </label>
                   <input
                     type="number"
                     value={config.notifications?.frequency === 'daily' ? 30 : 14}
                     onChange={() => undefined}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min={1}
                     max={365}
                     disabled
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Custom retention policies will be configurable in an upcoming release.
                   </p>
                 </div>
@@ -639,9 +639,9 @@ export default function ModuleSettingsEditor({
                     id="read-receipts"
                     checked={config.notifications?.push ?? true}
                     onChange={(e) => updateConfig('notifications.push', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="read-receipts" className="text-sm text-gray-700">
+                  <label htmlFor="read-receipts" className="text-sm text-gray-700 dark:text-gray-300">
                     Enable read receipts
                   </label>
                 </div>
@@ -651,13 +651,13 @@ export default function ModuleSettingsEditor({
             {moduleType === 'calendar' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Default Event Duration (minutes)
                   </label>
                   <select
                     value={30}
                     onChange={() => undefined}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled
                   >
                     <option value="15">15 minutes</option>
@@ -665,7 +665,7 @@ export default function ModuleSettingsEditor({
                     <option value="60">1 hour</option>
                     <option value="90">1.5 hours</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Duration presets will be customizable soon; current default is 30 minutes.
                   </p>
                 </div>
@@ -675,9 +675,9 @@ export default function ModuleSettingsEditor({
                     id="auto-reminders"
                     checked={config.notifications?.email ?? true}
                     onChange={(e) => updateConfig('notifications.email', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                   />
-                  <label htmlFor="auto-reminders" className="text-sm text-gray-700">
+                  <label htmlFor="auto-reminders" className="text-sm text-gray-700 dark:text-gray-300">
                     Enable automatic reminders
                   </label>
                 </div>
@@ -687,7 +687,7 @@ export default function ModuleSettingsEditor({
             {moduleType === 'hr' && (
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     Toggle which HR capabilities are active for your workspace. Availability depends on your subscription tier.
                   </p>
                   {hrFeatureAvailability?.tier && (
@@ -716,10 +716,10 @@ export default function ModuleSettingsEditor({
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {HR_FEATURE_GROUPS.map((group) => (
-                      <div key={group.title} className="rounded-lg border border-gray-200 p-4 space-y-4">
+                      <div key={group.title} className="rounded-lg border border-gray-200 dark:border-slate-700 p-4 space-y-4">
                         <div>
-                          <h4 className="text-md font-semibold text-gray-900">{group.title}</h4>
-                          {group.description && <p className="text-sm text-gray-600 mt-1">{group.description}</p>}
+                          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">{group.title}</h4>
+                          {group.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{group.description}</p>}
                         </div>
                         <div className="space-y-4">
                           {group.items.map((item) => {
@@ -731,14 +731,14 @@ export default function ModuleSettingsEditor({
                               <div key={item.path} className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.label}</p>
                                     <Badge color={tierBadgeColor} size="sm">
                                       {formatTierLabel(item.requiredTier)}
                                     </Badge>
                                   </div>
-                                  <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
                                   {!available && (
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                       Not available on your current tier. Upgrade to enable.
                                     </p>
                                   )}
@@ -765,11 +765,11 @@ export default function ModuleSettingsEditor({
       <Tabs.Content value="permissions">
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Access Permissions</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Access Permissions</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   User Roles with Access
                 </label>
                 <div className="space-y-2">
@@ -783,9 +783,9 @@ export default function ModuleSettingsEditor({
                           id={`role-${role}`}
                           checked={hasPermission}
                           onChange={(e) => togglePermission(role, e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                         />
-                        <label htmlFor={`role-${role}`} className="text-sm text-gray-700">
+                        <label htmlFor={`role-${role}`} className="text-sm text-gray-700 dark:text-gray-300">
                           {label}
                         </label>
                       </div>
@@ -795,20 +795,20 @@ export default function ModuleSettingsEditor({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Department Access
                 </label>
                 <select
                   value="all"
                   onChange={() => undefined}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   disabled
                 >
                   <option value="all">All Departments</option>
                   <option value="specific">Specific Departments Only</option>
                   <option value="none">No Department Access</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   Department-level controls align with the org chart and will surface automatically here.
                 </p>
               </div>
@@ -820,7 +820,7 @@ export default function ModuleSettingsEditor({
       <Tabs.Content value="security">
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Security Configuration</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Security Configuration</h3>
 
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -829,9 +829,9 @@ export default function ModuleSettingsEditor({
                   id="encryption"
                   checked={config.security?.encryption ?? false}
                   onChange={(e) => updateConfig('security.encryption', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="encryption" className="text-sm text-gray-700">
+                <label htmlFor="encryption" className="text-sm text-gray-700 dark:text-gray-300">
                   Enable end-to-end encryption
                 </label>
               </div>
@@ -842,21 +842,21 @@ export default function ModuleSettingsEditor({
                   id="audit-log"
                   checked={config.security?.auditLog ?? false}
                   onChange={(e) => updateConfig('security.auditLog', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="audit-log" className="text-sm text-gray-700">
+                <label htmlFor="audit-log" className="text-sm text-gray-700 dark:text-gray-300">
                   Enable audit logging
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Access Control Level
                 </label>
                 <select
                   value={config.security?.accessControl ?? 'moderate'}
                   onChange={(e) => updateConfig('security.accessControl', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="strict">Strict (Admin approval required)</option>
                   <option value="moderate">Moderate (Role-based access)</option>
@@ -871,7 +871,7 @@ export default function ModuleSettingsEditor({
       <Tabs.Content value="integrations">
         <div className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">External Integrations</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">External Integrations</h3>
 
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -880,9 +880,9 @@ export default function ModuleSettingsEditor({
                   id="webhooks"
                   checked={config.integrations?.webhooks ?? false}
                   onChange={(e) => updateConfig('integrations.webhooks', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="webhooks" className="text-sm text-gray-700">
+                <label htmlFor="webhooks" className="text-sm text-gray-700 dark:text-gray-300">
                   Enable webhook notifications
                 </label>
               </div>
@@ -893,15 +893,15 @@ export default function ModuleSettingsEditor({
                   id="api-access"
                   checked={config.integrations?.apiAccess ?? false}
                   onChange={(e) => updateConfig('integrations.apiAccess', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                 />
-                <label htmlFor="api-access" className="text-sm text-gray-700">
+                <label htmlFor="api-access" className="text-sm text-gray-700 dark:text-gray-300">
                   Enable API access
                 </label>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Connected Services
                 </label>
                 <div className="space-y-2">
@@ -918,11 +918,11 @@ export default function ModuleSettingsEditor({
                             : current.filter((item) => item !== service);
                           updateConfig('integrations.externalServices', updated);
                         }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                       />
                       <label
                         htmlFor={`service-${service.toLowerCase().replace(' ', '-')}`}
-                        className="text-sm text-gray-700"
+                        className="text-sm text-gray-700 dark:text-gray-300"
                       >
                         {service}
                       </label>

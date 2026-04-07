@@ -18,7 +18,7 @@ function getRoleIcon(role: string) {
   switch (role) {
     case 'OWNER': return <Crown className="w-3.5 h-3.5 text-amber-600" />;
     case 'ADMIN': return <Shield className="w-3.5 h-3.5 text-blue-600" />;
-    default: return <User className="w-3.5 h-3.5 text-gray-600" />;
+    default: return <User className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />;
   }
 }
 
@@ -115,15 +115,15 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
   const activeMembers = household?.members.filter(m => m.isActive) || [];
 
   return (
-    <div className="absolute right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col overflow-hidden">
+    <div className="absolute right-0 top-0 bottom-0 w-96 bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-700 shadow-xl z-50 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <Home className="w-5 h-5 text-amber-700" />
-          <h2 className="text-lg font-semibold text-gray-900">Household</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Household</h2>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-          <X className="w-5 h-5 text-gray-700" />
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors">
+          <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         </button>
       </div>
 
@@ -137,7 +137,7 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
 
         {error && (
           <div className="p-6 text-center">
-            <p className="text-gray-700">{error}</p>
+            <p className="text-gray-700 dark:text-gray-300">{error}</p>
           </div>
         )}
 
@@ -149,9 +149,9 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
                 <Home className="w-7 h-7 text-amber-700" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-gray-900 truncate">{household.name}</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{household.name}</h3>
                 {household.description && (
-                  <p className="text-sm text-gray-600 mt-0.5">{household.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{household.description}</p>
                 )}
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
@@ -159,7 +159,7 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
                   }`}>
                     {household.isPrimary ? 'Primary Home' : 'Secondary Home'}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-gray-600">
+                  <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                     <Users className="w-3 h-3" /> {activeMembers.length} {activeMembers.length === 1 ? 'member' : 'members'}
                   </span>
                 </div>
@@ -168,23 +168,23 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
 
             {/* Members */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-700" /> Members
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-700 dark:text-gray-300" /> Members
               </h4>
               <div className="space-y-2">
                 {activeMembers.map(member => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 bg-gray-50"
+                    className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 bg-gray-50 dark:bg-slate-800"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
+                    <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-700 dark:text-gray-300">
                       {(member.user.name || member.user.email)[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {member.user.name || member.user.email}
                       </p>
-                      <p className="text-xs text-gray-600 truncate">{member.user.email}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{member.user.email}</p>
                     </div>
                     <span className={`flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${getRoleBadgeColor(member.role)}`}>
                       {getRoleIcon(member.role)}
@@ -197,8 +197,8 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
 
             {/* Upcoming Events */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-700" /> Upcoming Events
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-gray-700 dark:text-gray-300" /> Upcoming Events
               </h4>
 
               {eventsLoading && (
@@ -208,10 +208,10 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
               )}
 
               {!eventsLoading && events.length === 0 && (
-                <div className="text-center py-6 border border-dashed border-gray-200 rounded-lg">
+                <div className="text-center py-6 border border-dashed border-gray-200 dark:border-slate-700 rounded-lg">
                   <Calendar className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">No upcoming events</p>
-                  <p className="text-xs text-gray-600 mt-0.5">Events from the household calendar will appear here</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">No upcoming events</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Events from the household calendar will appear here</p>
                 </div>
               )}
 
@@ -220,14 +220,14 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
                   {events.map(event => (
                     <div
                       key={event.id}
-                      className="p-3 rounded-lg border border-gray-100 bg-gray-50"
+                      className="p-3 rounded-lg border border-gray-100 bg-gray-50 dark:bg-slate-800"
                     >
-                      <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                      <p className="text-xs text-gray-600 mt-0.5">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{event.title}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                         {formatEventDate(event.startAt, event.allDay)}
                       </p>
                       {event.location && (
-                        <p className="text-xs text-gray-600 mt-0.5 truncate">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate">
                           📍 {event.location}
                         </p>
                       )}
@@ -239,7 +239,7 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
 
             {/* Created date */}
             <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Created {new Date(household.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
               </p>
             </div>

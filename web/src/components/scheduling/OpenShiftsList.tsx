@@ -160,8 +160,8 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Open Shifts</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Open Shifts</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Claim available shifts that match your position
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <h3 className="text-lg font-medium text-gray-900 ml-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 ml-4">
               {viewMode === 'week' 
                 ? `Week of ${format(weekStart, 'MMM d, yyyy')}`
                 : format(currentMonth, 'MMMM yyyy')}
@@ -260,8 +260,8 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
       {filteredShifts.length === 0 ? (
         <Card className="p-12 text-center">
           <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium mb-2">No open shifts available</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">No open shifts available</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {filter === 'all'
               ? 'There are currently no open shifts for you to claim.'
               : `No open shifts found for the selected time period.`}
@@ -274,9 +274,9 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
             <div className="grid grid-cols-7 gap-2">
               {/* Day Headers */}
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => (
-                <div key={day} className="text-center font-semibold text-gray-700 py-2 border-b">
+                <div key={day} className="text-center font-semibold text-gray-700 dark:text-gray-300 py-2 border-b">
                   <div className="text-sm">{day}</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {format(weekDays[idx], 'd')}
                   </div>
                 </div>
@@ -311,7 +311,7 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-1">
                                 <Clock className="h-3 w-3 text-orange-600" />
-                                <span className="text-xs font-medium text-gray-900">
+                                <span className="text-xs font-medium text-gray-900 dark:text-gray-100">
                                   {formatShiftTime(shift.startTime || '')} - {formatShiftTime(shift.endTime || '')}
                                 </span>
                               </div>
@@ -325,13 +325,13 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
                               )}
                             </div>
                             {shift.position && (
-                              <div className="text-xs text-gray-600 truncate flex items-center gap-1 mb-1">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 truncate flex items-center gap-1 mb-1">
                                 <Briefcase className="h-3 w-3" />
                                 {shift.position.title}
                               </div>
                             )}
                             {shift.location && (
-                              <div className="text-xs text-gray-500 truncate flex items-center gap-1">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
                                 <MapPin className="h-3 w-3" />
                                 {shift.location.name}
                               </div>
@@ -370,7 +370,7 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
             <div className="grid grid-cols-7 gap-1">
               {/* Day Headers */}
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                <div key={day} className="text-center font-semibold text-gray-700 py-2 border-b">
+                <div key={day} className="text-center font-semibold text-gray-700 dark:text-gray-300 py-2 border-b">
                   {day}
                 </div>
               ))}
@@ -404,12 +404,12 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
                           >
                             <div className="flex items-center gap-1 truncate">
                               <Clock className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
-                              <span className="font-medium text-gray-900 truncate">
+                              <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {formatShiftTime(shift.startTime || '')}
                               </span>
                             </div>
                             {shift.position && (
-                              <div className="text-xs text-gray-600 truncate">
+                              <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                                 {shift.position.title}
                               </div>
                             )}
@@ -417,7 +417,7 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
                         );
                       })}
                       {dayShifts.length > 3 && (
-                        <div className="text-xs text-gray-500 text-center py-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1">
                           +{dayShifts.length - 3} more
                         </div>
                       )}
@@ -442,38 +442,38 @@ export default function OpenShiftsList({ businessId }: OpenShiftsListProps) {
         >
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Are you sure you want to claim this shift?
               </p>
               
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium text-gray-900">
+                  <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
                     {formatShiftDate(selectedShift.startTime || '')}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">
+                  <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">
                     {formatShiftTime(selectedShift.startTime || '')} - {formatShiftTime(selectedShift.endTime || '')}
                   </span>
                 </div>
                 {selectedShift.position && (
                   <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">{selectedShift.position.title}</span>
+                    <Briefcase className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-gray-700 dark:text-gray-300">{selectedShift.position.title}</span>
                   </div>
                 )}
                 {selectedShift.location && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">{selectedShift.location.name}</span>
+                    <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-gray-700 dark:text-gray-300">{selectedShift.location.name}</span>
                   </div>
                 )}
                 {selectedShift.locationId && !selectedShift.location && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-gray-400 italic">Location ID: {selectedShift.locationId}</span>
                   </div>
                 )}

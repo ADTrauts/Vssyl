@@ -78,8 +78,8 @@ export default function ChatPage() {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Dashboard Available</h2>
-          <p className="text-gray-600 mb-4">Please create a dashboard to access chat functionality.</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Dashboard Available</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Please create a dashboard to access chat functionality.</p>
           <button
             onClick={() => router.push('/dashboard')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -98,7 +98,7 @@ export default function ChatPage() {
   const fileName = searchParams?.get('fileName');
 
   return (
-      <div className="flex h-full bg-gray-50">
+      <div className="flex h-full bg-gray-50 dark:bg-slate-800">
       {/* Use panel-based system with 94+ features including classification, governance, teams */}
       <ChatContent fileReference={fileId && fileName ? { fileId, fileName } : undefined} />
     </div>

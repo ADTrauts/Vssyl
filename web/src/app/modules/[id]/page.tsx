@@ -153,8 +153,8 @@ export default function ModuleDetailsPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{module.name}</h1>
-              <p className="text-gray-600">by {module.developer}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{module.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400">by {module.developer}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -180,7 +180,7 @@ export default function ModuleDetailsPage() {
             <Card>
               <div className="p-6">
                 <h2 className="text-lg font-semibold mb-4">Description</h2>
-                <p className="text-gray-700">{module.description}</p>
+                <p className="text-gray-700 dark:text-gray-300">{module.description}</p>
               </div>
             </Card>
 
@@ -190,14 +190,14 @@ export default function ModuleDetailsPage() {
                 <div className="p-6">
                   <h2 className="text-lg font-semibold mb-4">Pricing</h2>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <div>
                         <h3 className="font-medium">Premium Plan</h3>
-                        <p className="text-sm text-gray-600">Full access to all features</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Full access to all features</p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold">${module.basePrice || 0}/month</div>
-                        <div className="text-sm text-gray-500">or ${((module.basePrice || 0) * 12 * 0.8).toFixed(0)}/year</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">or ${((module.basePrice || 0) * 12 * 0.8).toFixed(0)}/year</div>
                       </div>
                     </div>
                     
@@ -205,11 +205,11 @@ export default function ModuleDetailsPage() {
                       <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
                         <div>
                           <h3 className="font-medium">Enterprise Plan</h3>
-                          <p className="text-sm text-gray-600">Custom pricing for large organizations</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Custom pricing for large organizations</p>
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold">${module.enterprisePrice}/month</div>
-                          <div className="text-sm text-gray-500">Contact sales for details</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">Contact sales for details</div>
                         </div>
                       </div>
                     )}
@@ -225,7 +225,7 @@ export default function ModuleDetailsPage() {
                   <h2 className="text-lg font-semibold mb-4">Reviews</h2>
                   <div className="space-y-4">
                     {module.reviews.map((review) => (
-                      <div key={review.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                      <div key={review.id} className="border-b border-gray-200 dark:border-slate-700 pb-4 last:border-b-0">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
                             <div className="flex items-center">
@@ -236,14 +236,14 @@ export default function ModuleDetailsPage() {
                                 />
                               ))}
                             </div>
-                            <span className="text-sm text-gray-600">{review.reviewer.name}</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">{review.reviewer.name}</span>
                           </div>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
                             {new Date(review.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                         {review.comment && (
-                          <p className="text-gray-700">{review.comment}</p>
+                          <p className="text-gray-700 dark:text-gray-300">{review.comment}</p>
                         )}
                       </div>
                     ))}
@@ -261,23 +261,23 @@ export default function ModuleDetailsPage() {
                 <h3 className="font-semibold mb-4">Module Information</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Version:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Version:</span>
                     <span>{module.version}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Category:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Category:</span>
                     <span>{module.category}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Downloads:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Downloads:</span>
                     <span>{module.downloads}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Rating:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Rating:</span>
                     <span>{module.rating.toFixed(1)} ({module.reviewCount} reviews)</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Updated:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Updated:</span>
                     <span>{module.updatedAt ? new Date(module.updatedAt).toLocaleDateString() : 'Unknown'}</span>
                   </div>
                 </div>
@@ -332,7 +332,7 @@ export default function ModuleDetailsPage() {
                             </>
                           )}
                         </Button>
-                        <p className="text-xs text-gray-500 text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                           {module.pricingTier === 'premium' 
                             ? `$${module.basePrice}/month subscription required`
                             : 'Enterprise pricing - contact sales'

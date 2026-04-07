@@ -178,7 +178,7 @@ export default function ModuleSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-800">
         <Spinner size={32} />
       </div>
     );
@@ -201,8 +201,8 @@ export default function ModuleSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 bg-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
+      <div className="border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -216,8 +216,8 @@ export default function ModuleSettingsPage() {
               </Button>
               <div className="h-6 w-px bg-gray-200" />
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">{moduleData.name} Settings</h1>
-                <p className="text-sm text-gray-600">
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{moduleData.name} Settings</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Configure how {moduleData.name.toLowerCase()} operates across your business workspace.
                 </p>
               </div>
@@ -240,8 +240,8 @@ export default function ModuleSettingsPage() {
                 <Package className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">{moduleData.name}</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{moduleData.name}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {moduleData.description || 'This module powers key workflows inside your business workspace.'}
                 </p>
               </div>

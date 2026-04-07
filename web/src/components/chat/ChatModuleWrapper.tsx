@@ -59,10 +59,10 @@ export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
       <div className={`h-full ${className}`}>
         <Suspense 
           fallback={
-            <div className="h-full flex items-center justify-center bg-gray-50">
+            <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-slate-800">
               <div className="text-center">
                 <Spinner size={32} />
-                <p className="mt-4 text-sm text-gray-600">Loading enterprise chat...</p>
+                <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">Loading enterprise chat...</p>
               </div>
             </div>
           }

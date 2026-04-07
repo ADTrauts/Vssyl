@@ -292,9 +292,9 @@ export default function UnifiedBrandingPage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-slate-800 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white border-b flex-shrink-0">
+      <div className="bg-white dark:bg-slate-900 border-b flex-shrink-0">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -307,8 +307,8 @@ export default function UnifiedBrandingPage() {
                 Back to Admin
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Business Branding</h1>
-                <p className="text-sm text-gray-600">Configure global branding and front page settings</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Branding</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Configure global branding and front page settings</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -373,7 +373,7 @@ export default function UnifiedBrandingPage() {
 
         {/* Tabs */}
         <div className="mb-6">
-          <div className="flex space-x-2 border-b border-gray-200">
+          <div className="flex space-x-2 border-b border-gray-200 dark:border-slate-700">
             <button
               onClick={() => setActiveTab('global')}
               className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
@@ -456,7 +456,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600">Save your global branding first to configure the front page layout.</p>
+                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to configure the front page layout.</p>
                 </Card>
               )
             )}
@@ -473,7 +473,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600">Save your global branding first to configure front page content.</p>
+                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to configure front page content.</p>
                 </Card>
               )
             )}
@@ -498,7 +498,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600">Save your global branding first to see the preview.</p>
+                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to see the preview.</p>
                 </Card>
               )
             )}

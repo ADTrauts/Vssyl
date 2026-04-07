@@ -160,8 +160,8 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Google Workspace SSO</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Google Workspace SSO</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Configure Google OAuth 2.0 for single sign-on with Google Workspace
           </p>
         </div>
@@ -185,16 +185,16 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
                 <AlertCircle className="w-6 h-6 text-gray-400" />
               )}
               <div>
-                <h3 className="font-medium text-gray-900">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">
                   {status.configured ? 'Google OAuth Configured' : 'Google OAuth Not Configured'}
                 </h3>
-                <p className="text-sm text-gray-600">{status.message}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{status.message}</p>
               </div>
             </div>
             {status.configured && status.config && (
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{status.config.name}</p>
-                <p className="text-xs text-gray-500">{status.config.provider}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{status.config.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{status.config.provider}</p>
               </div>
             )}
           </div>
@@ -216,11 +216,11 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
 
       {/* Configuration Form */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">OAuth Configuration</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">OAuth Configuration</h3>
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Client ID
             </label>
             <Input
@@ -229,13 +229,13 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
               placeholder="your-client-id.apps.googleusercontent.com"
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Found in Google Cloud Console under APIs & Services &gt; Credentials
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Client Secret
             </label>
             <Input
@@ -245,13 +245,13 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
               placeholder="GOCSPX-..."
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Keep this secure and never expose it in client-side code
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Redirect URI
             </label>
             <Input
@@ -260,14 +260,14 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
               placeholder="https://yourdomain.com/api/google-oauth/business/{businessId}/callback"
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Must match the redirect URI configured in Google Cloud Console
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-3">
             <Button
               onClick={openGoogleConsole}
@@ -314,11 +314,11 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
 
       {/* Setup Instructions */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Setup Instructions</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Setup Instructions</h3>
         
-        <div className="space-y-4 text-sm text-gray-600">
+        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-400">
           <div>
-            <h4 className="font-medium text-gray-900 mb-2">1. Create OAuth 2.0 Credentials</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">1. Create OAuth 2.0 Credentials</h4>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Cloud Console</a></li>
               <li>Create a new project or select an existing one</li>
@@ -329,7 +329,7 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
           </div>
           
           <div>
-            <h4 className="font-medium text-gray-900 mb-2">2. Configure Scopes</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">2. Configure Scopes</h4>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Add the following scopes to your OAuth consent screen:</li>
               <li className="ml-4 font-mono text-xs">https://www.googleapis.com/auth/userinfo.email</li>
@@ -339,7 +339,7 @@ export default function GoogleOAuthConfig({ businessId, onConfigUpdate }: Google
           </div>
           
           <div>
-            <h4 className="font-medium text-gray-900 mb-2">3. Test Configuration</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">3. Test Configuration</h4>
             <ul className="list-disc list-inside space-y-1 ml-4">
               <li>Enter your Client ID and Client Secret above</li>
               <li>Set the redirect URI to your callback endpoint</li>

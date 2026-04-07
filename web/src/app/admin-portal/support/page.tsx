@@ -385,7 +385,7 @@ export default function SupportPage() {
       case 'resolved':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'closed':
-        return <XCircle className="w-4 h-4 text-gray-500" />;
+        return <XCircle className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
       default:
         return null;
     }
@@ -423,8 +423,8 @@ export default function SupportPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customer Support</h1>
-          <p className="text-gray-600">Manage tickets, knowledge base, and live chat support</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Customer Support</h1>
+          <p className="text-gray-700 dark:text-gray-300">Manage tickets, knowledge base, and live chat support</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -451,8 +451,8 @@ export default function SupportPage() {
                 <MessageSquare className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalTickets}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Tickets</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalTickets}</p>
               </div>
             </div>
           </Card>
@@ -463,8 +463,8 @@ export default function SupportPage() {
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Open Tickets</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.openTickets}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Open Tickets</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.openTickets}</p>
               </div>
             </div>
           </Card>
@@ -475,8 +475,8 @@ export default function SupportPage() {
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Resolved Today</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.resolvedToday}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Resolved Today</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.resolvedToday}</p>
               </div>
             </div>
           </Card>
@@ -487,8 +487,8 @@ export default function SupportPage() {
                 <Star className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Satisfaction</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.customerSatisfaction}/5</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Satisfaction</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.customerSatisfaction}/5</p>
               </div>
             </div>
           </Card>
@@ -496,14 +496,14 @@ export default function SupportPage() {
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('tickets')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'tickets'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <MessageSquare className="w-4 h-4 inline mr-2" />
@@ -514,7 +514,7 @@ export default function SupportPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'knowledge'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <FileText className="w-4 h-4 inline mr-2" />
@@ -525,7 +525,7 @@ export default function SupportPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'chats'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <MessageCircle className="w-4 h-4 inline mr-2" />
@@ -536,7 +536,7 @@ export default function SupportPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'analytics'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <BarChart3 className="w-4 h-4 inline mr-2" />
@@ -584,7 +584,7 @@ export default function SupportPage() {
                     <select
                       value={filters.status}
                       onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">All Status</option>
                       <option value="open">Open</option>
@@ -596,7 +596,7 @@ export default function SupportPage() {
                     <select
                       value={filters.priority}
                       onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">All Priority</option>
                       <option value="urgent">Urgent</option>
@@ -608,7 +608,7 @@ export default function SupportPage() {
                     <select
                       value={filters.category}
                       onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">All Categories</option>
                       <option value="Technical">Technical</option>
@@ -625,17 +625,17 @@ export default function SupportPage() {
                 <div className="space-y-4">
                   {filteredTickets.length === 0 ? (
                     <div className="text-center py-8">
-                      <MessageSquare className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No tickets found</h3>
-                      <p className="text-gray-600">No support tickets match your current filters.</p>
+                      <MessageSquare className="w-12 h-12 mx-auto text-gray-500 dark:text-gray-400 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No tickets found</h3>
+                      <p className="text-gray-700 dark:text-gray-300">No support tickets match your current filters.</p>
                     </div>
                   ) : (
                     filteredTickets.map((ticket) => (
-                      <div key={ticket.id} className="border border-gray-200 rounded-lg p-4">
+                      <div key={ticket.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                                 {ticket.title}
                               </h3>
                               {getStatusBadge(ticket.status)}
@@ -645,24 +645,24 @@ export default function SupportPage() {
                               </Badge>
                             </div>
                             
-                            <p className="text-gray-600 mb-3">{ticket.description}</p>
+                            <p className="text-gray-700 dark:text-gray-300 mb-3">{ticket.description}</p>
                             
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                               <div>
-                                <span className="font-medium text-gray-700">Customer:</span>
-                                <p className="text-gray-600">{ticket.customer.name}</p>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Customer:</span>
+                                <p className="text-gray-700 dark:text-gray-300">{ticket.customer.name}</p>
                               </div>
                               <div>
-                                <span className="font-medium text-gray-700">Plan:</span>
-                                <p className="text-gray-600 capitalize">{ticket.customer.plan}</p>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Plan:</span>
+                                <p className="text-gray-700 dark:text-gray-300 capitalize">{ticket.customer.plan}</p>
                               </div>
                               <div>
-                                <span className="font-medium text-gray-700">Created:</span>
-                                <p className="text-gray-600">{formatDate(ticket.createdAt)}</p>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Created:</span>
+                                <p className="text-gray-700 dark:text-gray-300">{formatDate(ticket.createdAt)}</p>
                               </div>
                               <div>
-                                <span className="font-medium text-gray-700">Response Time:</span>
-                                <p className="text-gray-600">
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Response Time:</span>
+                                <p className="text-gray-700 dark:text-gray-300">
                                   {ticket.responseTime ? `${ticket.responseTime}h` : 'N/A'}
                                 </p>
                               </div>
@@ -670,14 +670,14 @@ export default function SupportPage() {
 
                             {ticket.assignedTo && (
                               <div className="mt-3 text-sm">
-                                <span className="font-medium text-gray-700">Assigned to:</span>
-                                <span className="text-gray-600 ml-2">{ticket.assignedTo.name}</span>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Assigned to:</span>
+                                <span className="text-gray-700 dark:text-gray-300 ml-2">{ticket.assignedTo.name}</span>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex space-x-3 pt-4 border-t border-gray-200 mt-4">
+                        <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700 mt-4">
                           <Button
                             variant="primary"
                             size="sm"
@@ -750,7 +750,7 @@ export default function SupportPage() {
           {activeTab === 'knowledge' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">Knowledge Base</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Knowledge Base</h2>
                 <Button>
                   <Plus className="w-4 h-4 mr-2" />
                   New Article
@@ -761,17 +761,17 @@ export default function SupportPage() {
                 {knowledgeBase.map((article) => (
                   <Card key={article.id} className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-medium text-gray-900">{article.title}</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{article.title}</h3>
                       <Badge color={article.status === 'published' ? 'green' : 'yellow'} size="sm">
                         {article.status}
                       </Badge>
                     </div>
                     
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
                       {article.content.substring(0, 150)}...
                     </p>
                     
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                       <span>{article.views} views</span>
                       <span>{article.helpful} helpful</span>
                     </div>
@@ -803,7 +803,7 @@ export default function SupportPage() {
           {activeTab === 'chats' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-900">Live Chat</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Live Chat</h2>
                 <Badge color="green" size="sm">
                   {(liveChats || []).filter(chat => chat.status === 'active').length} Active
                 </Badge>
@@ -815,11 +815,11 @@ export default function SupportPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{chat.customer.name}</h3>
-                          <p className="text-sm text-gray-600">{chat.customer.email}</p>
+                          <h3 className="font-medium text-gray-900 dark:text-gray-100">{chat.customer.name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{chat.customer.email}</p>
                         </div>
                         
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center space-x-2">
                             <Clock className="w-4 h-4" />
                             <span>{formatDuration(chat.duration)}</span>
@@ -860,37 +860,37 @@ export default function SupportPage() {
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-900">Support Analytics</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Support Analytics</h2>
               
               {stats && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <Card className="p-6">
-                    <h3 className="font-medium text-gray-900 mb-4">Response Time</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Response Time</h3>
                     <p className="text-3xl font-bold text-blue-600">{stats.averageResponseTime}h</p>
-                    <p className="text-sm text-gray-600">Average response time</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Average response time</p>
                   </Card>
                   
                   <Card className="p-6">
-                    <h3 className="font-medium text-gray-900 mb-4">Resolution Time</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Resolution Time</h3>
                     <p className="text-3xl font-bold text-green-600">{stats.averageResolutionTime}h</p>
-                    <p className="text-sm text-gray-600">Average resolution time</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Average resolution time</p>
                   </Card>
                   
                   <Card className="p-6">
-                    <h3 className="font-medium text-gray-900 mb-4">Active Agents</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Active Agents</h3>
                     <p className="text-3xl font-bold text-purple-600">{stats.activeAgents}</p>
-                    <p className="text-sm text-gray-600">Currently online</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Currently online</p>
                   </Card>
                 </div>
               )}
               
               {stats && (
                 <Card className="p-6">
-                  <h3 className="font-medium text-gray-900 mb-4">Top Categories</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Top Categories</h3>
                   <div className="space-y-3">
                     {stats.topCategories.map((category, index) => (
                       <div key={index} className="flex items-center justify-between">
-                        <span className="text-gray-700">{category.category}</span>
+                        <span className="text-gray-700 dark:text-gray-300">{category.category}</span>
                         <div className="flex items-center space-x-2">
                           <div className="w-32 bg-gray-200 rounded-full h-2">
                             <div 
@@ -898,7 +898,7 @@ export default function SupportPage() {
                               style={{ width: `${category.percentage}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-gray-600">{category.count}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{category.count}</span>
                         </div>
                       </div>
                     ))}
@@ -913,35 +913,35 @@ export default function SupportPage() {
       {/* Ticket Details Modal */}
       <Modal open={showTicketModal} onClose={() => setShowTicketModal(false)}>
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ticket Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Ticket Details</h2>
           
           {selectedTicket && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900">{selectedTicket.title}</h3>
-                <p className="text-gray-600 mt-2">{selectedTicket.description}</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">{selectedTicket.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedTicket.description}</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">Customer:</span>
-                  <p className="text-gray-600">{selectedTicket.customer.name}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Customer:</span>
+                  <p className="text-gray-600 dark:text-gray-400">{selectedTicket.customer.name}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Email:</span>
-                  <p className="text-gray-600">{selectedTicket.customer.email}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Email:</span>
+                  <p className="text-gray-600 dark:text-gray-400">{selectedTicket.customer.email}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Status:</span>
-                  <p className="text-gray-600">{getStatusBadge(selectedTicket.status)}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                  <p className="text-gray-600 dark:text-gray-400">{getStatusBadge(selectedTicket.status)}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Priority:</span>
-                  <p className="text-gray-600">{getPriorityBadge(selectedTicket.priority)}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Priority:</span>
+                  <p className="text-gray-600 dark:text-gray-400">{getPriorityBadge(selectedTicket.priority)}</p>
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Button
                   variant="secondary"
                   onClick={() => setShowTicketModal(false)}
@@ -961,22 +961,22 @@ export default function SupportPage() {
       {/* Article Details Modal */}
       <Modal open={showArticleModal} onClose={() => setShowArticleModal(false)}>
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Article Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Article Details</h2>
           
           {selectedArticle && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900">{selectedArticle.title}</h3>
-                <p className="text-gray-600 mt-2">{selectedArticle.content}</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">{selectedArticle.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedArticle.content}</p>
               </div>
               
               <div className="flex items-center space-x-4 text-sm">
-                <span className="text-gray-600">Views: {selectedArticle.views}</span>
-                <span className="text-gray-600">Helpful: {selectedArticle.helpful}</span>
-                <span className="text-gray-600">Not Helpful: {selectedArticle.notHelpful}</span>
+                <span className="text-gray-600 dark:text-gray-400">Views: {selectedArticle.views}</span>
+                <span className="text-gray-600 dark:text-gray-400">Helpful: {selectedArticle.helpful}</span>
+                <span className="text-gray-600 dark:text-gray-400">Not Helpful: {selectedArticle.notHelpful}</span>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Button
                   variant="secondary"
                   onClick={() => setShowArticleModal(false)}
@@ -1003,7 +1003,7 @@ export default function SupportPage() {
               {/* Ticket Info */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Customer Information</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Customer Information</h3>
                   <div className="space-y-1 text-sm">
                     <p><span className="font-medium">Name:</span> {selectedTicketForDetails.customer.name}</p>
                     <p><span className="font-medium">Email:</span> {selectedTicketForDetails.customer.email}</p>
@@ -1012,7 +1012,7 @@ export default function SupportPage() {
                 </div>
                 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Ticket Details</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Ticket Details</h3>
                   <div className="space-y-1 text-sm">
                     <p><span className="font-medium">Status:</span> 
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
@@ -1040,19 +1040,19 @@ export default function SupportPage() {
 
               {/* Description */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-700">{selectedTicketForDetails.description}</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Description</h3>
+                <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{selectedTicketForDetails.description}</p>
                 </div>
               </div>
 
               {/* Tags */}
               {selectedTicketForDetails.tags && selectedTicketForDetails.tags.length > 0 && (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Tags</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedTicketForDetails.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                      <span key={index} className="px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-800 rounded-full text-xs font-medium">
                         {tag}
                       </span>
                     ))}
@@ -1061,7 +1061,7 @@ export default function SupportPage() {
               )}
 
               {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Button
                   variant="secondary"
                   onClick={() => setShowTicketDetailsModal(false)}
@@ -1087,13 +1087,13 @@ export default function SupportPage() {
       <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)}>
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4">Assign Ticket</h2>
-          <p className="text-gray-600 mb-6">Select an admin user to assign this ticket to:</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Select an admin user to assign this ticket to:</p>
           
           <div className="space-y-3 max-h-64 overflow-y-auto">
             {adminUsers.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer"
                 onClick={() => handleAssignToUser(user.id)}
               >
                 <div className="flex items-center space-x-3">
@@ -1101,8 +1101,8 @@ export default function SupportPage() {
                     {user.name?.charAt(0) || user.email.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{user.name || 'Unknown'}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{user.name || 'Unknown'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
                   </div>
                 </div>
                 <User className="w-5 h-5 text-gray-400" />
@@ -1110,7 +1110,7 @@ export default function SupportPage() {
             ))}
           </div>
           
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-6">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700 mt-6">
             <Button
               variant="secondary"
               onClick={() => setShowAssignModal(false)}

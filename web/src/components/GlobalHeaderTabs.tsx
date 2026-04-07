@@ -32,7 +32,7 @@ export default function GlobalHeaderTabs() {
   const { data: session } = useSession();
 
   const { currentBranding, isBusinessContext, getHeaderStyles } = useGlobalBranding();
-  const { getHeaderStyle } = useThemeColors();
+  const { getHeaderStyle, isDark } = useThemeColors();
   const { isWorkAuthenticated } = useWorkAuth();
   const { configuration } = useBusinessConfiguration();
   // Local override when on business workspace: fetch authoritative business branding
@@ -222,6 +222,29 @@ export default function GlobalHeaderTabs() {
 
   const isBusinessWorkspace = pathname?.startsWith('/business/');
   const workActive = isBusinessWorkspace || showWorkTab;
+  const tabPalette = {
+    activeBg: isDark ? '#0f172a' : '#ffffff',
+    activeText: isDark ? '#f8fafc' : '#1f2937',
+    inactiveBg: isDark ? '#334155' : '#e5e7eb',
+    inactiveText: isDark ? '#cbd5e1' : '#4b5563',
+    border: isDark ? '#475569' : '#d1d5db',
+  };
+
+  const getTabStyle = (isActive: boolean, borderRadius: string, marginLeft: number) => ({
+    background: isActive ? tabPalette.activeBg : tabPalette.inactiveBg,
+    color: isActive ? tabPalette.activeText : tabPalette.inactiveText,
+    border: `1px solid ${tabPalette.border}`,
+    borderBottom: 'none',
+    borderRadius,
+    padding: '8px 24px 10px 24px',
+    marginLeft,
+    fontWeight: 700,
+    fontSize: 16,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    position: 'relative' as const,
+  });
 
   if (loading || !mainPersonalDashboard) {
     return null;
@@ -273,21 +296,7 @@ export default function GlobalHeaderTabs() {
             <button
               key={mainPersonalDashboard.id}
               onClick={() => handleTabClick(mainPersonalDashboard.id)}
-              style={{
-                background: !workActive && currentDashboardId === mainPersonalDashboard.id ? '#fff' : '#e5e7eb',
-                color: !workActive && currentDashboardId === mainPersonalDashboard.id ? '#222' : '#666',
-                border: '1px solid #ccc',
-                borderBottom: 'none',
-                borderRadius: '8px 0 0 0',
-                padding: '8px 24px 10px 24px',
-                marginLeft: 0,
-                fontWeight: 700,
-                fontSize: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                position: 'relative',
-              }}
+              style={getTabStyle(!workActive && currentDashboardId === mainPersonalDashboard.id, '8px 0 0 0', 0)}
             >
               {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) && React.createElement(getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)), { size: 20, style: { marginRight: 4 } })}
               {getDashboardDisplayName(mainPersonalDashboard)}
@@ -297,21 +306,7 @@ export default function GlobalHeaderTabs() {
               <button
                 key={dashboard.id}
                 onClick={() => handleTabClick(dashboard.id)}
-                style={{
-                  background: !workActive && currentDashboardId === dashboard.id ? '#fff' : '#e5e7eb',
-                  color: !workActive && currentDashboardId === dashboard.id ? '#222' : '#666',
-                  border: '1px solid #ccc',
-                  borderBottom: 'none',
-                  borderRadius: '0',
-                  padding: '8px 24px 10px 24px',
-                  marginLeft: -1,
-                  fontWeight: 700,
-                  fontSize: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  position: 'relative',
-                }}
+                style={getTabStyle(!workActive && currentDashboardId === dashboard.id, '0', -1)}
               >
                 {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) && React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), { size: 20, style: { marginRight: 4 } })}
                 {getDashboardDisplayName(dashboard)}
@@ -320,21 +315,11 @@ export default function GlobalHeaderTabs() {
             {/* Work Tab */}
             <button
               onClick={() => handleTabClick('work')}
-              style={{
-                background: workActive ? '#fff' : '#e5e7eb',
-                color: workActive ? '#222' : '#666',
-                border: '1px solid #ccc',
-                borderBottom: 'none',
-                borderRadius: allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
-                padding: '8px 24px 10px 24px',
-                marginLeft: allDashboards.length === 0 ? 0 : -1,
-                fontWeight: 700,
-                fontSize: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                position: 'relative',
-              }}
+              style={getTabStyle(
+                workActive,
+                allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
+                allDashboards.length === 0 ? 0 : -1
+              )}
             >
               <Briefcase size={20} style={{ marginRight: 4 }} />
               Work
@@ -342,20 +327,7 @@ export default function GlobalHeaderTabs() {
             {/* '+/-' Edit Button (visual consistency) */}
             <button
               onClick={() => setEditMode((v) => !v)}
-              style={{
-                background: editMode ? '#fff' : '#e5e7eb',
-                color: editMode ? '#222' : '#666',
-                border: '1px solid #ccc',
-                borderBottom: 'none',
-                borderRadius: '0 8px 0 0',
-                padding: '8px 24px 10px 24px',
-                marginLeft: -1,
-                fontWeight: 700,
-                fontSize: 16,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
+              style={getTabStyle(editMode, '0 8px 0 0', -1)}
             >
               <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>+/-</span>
             </button>

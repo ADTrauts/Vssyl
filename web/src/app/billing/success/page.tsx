@@ -26,11 +26,11 @@ export default function BillingSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800">
         <Card className="p-8 max-w-md w-full">
           <div className="text-center">
             <Spinner size={48} />
-            <p className="mt-4 text-gray-600">Verifying your subscription...</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying your subscription...</p>
           </div>
         </Card>
       </div>
@@ -39,12 +39,12 @@ export default function BillingSuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800">
         <Card className="p-8 max-w-md w-full">
           <div className="text-center">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h1>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Something went wrong</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
             <div className="flex gap-4 justify-center">
               <Button variant="primary" onClick={() => router.push('/')}>
                 <Home className="h-4 w-4 mr-2" />
@@ -58,12 +58,12 @@ export default function BillingSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-800">
       <Card className="p-8 max-w-md w-full">
         <div className="text-center">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Payment Successful!</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Your subscription has been activated successfully. You now have access to all premium features.
           </p>
           <div className="flex gap-4 justify-center">

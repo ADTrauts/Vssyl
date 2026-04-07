@@ -434,9 +434,9 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-semibold mb-4">Settings</h2>
-            <p className="text-gray-600 mb-4">Settings functionality coming soon...</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Settings functionality coming soon...</p>
             <button
               onClick={() => setShowSettings(false)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

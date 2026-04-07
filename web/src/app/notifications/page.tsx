@@ -796,28 +796,28 @@ export default function NotificationsPage() {
   if (!session?.user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Bell className="w-6 h-6 text-gray-600" />
+            <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Notifications</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {notifications.filter(n => !n.read).length} unread notifications
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 border border-gray-300 rounded-lg p-1">
+            <div className="flex items-center space-x-1 border border-gray-300 dark:border-slate-600 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-1.5 rounded transition-colors ${
                   viewMode === 'list'
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
                 title="List View"
               >
@@ -828,7 +828,7 @@ export default function NotificationsPage() {
                 className={`p-1.5 rounded transition-colors ${
                   viewMode === 'grouped'
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                 }`}
                 title="Grouped View"
               >
@@ -838,7 +838,7 @@ export default function NotificationsPage() {
             
             {selectionMode ? (
               <>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
                   {selectedNotifications.size} selected
                 </span>
                 <Button
@@ -930,7 +930,7 @@ export default function NotificationsPage() {
 
       <div className="flex h-[calc(100vh-80px)]">
         {/* Left Sidebar - Categories */}
-        <div className="w-64 bg-white border-r border-gray-200 p-4">
+        <div className="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-4">
           <div className="space-y-1">
             {categories.map((category) => (
               <button
@@ -939,7 +939,7 @@ export default function NotificationsPage() {
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                   selectedCategory === category.id
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'hover:bg-gray-50 text-gray-700'
+                    : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300'
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -952,7 +952,7 @@ export default function NotificationsPage() {
                       {category.unreadCount}
                     </Badge>
                   )}
-                  <span className="text-xs text-gray-500">({category.count})</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">({category.count})</span>
                 </div>
               </button>
             ))}
@@ -962,22 +962,22 @@ export default function NotificationsPage() {
         {/* Main Content - Notification List */}
         <div className="flex-1 flex flex-col">
           {/* Search and Filters */}
-          <div className="bg-white border-b border-gray-200 p-4">
+          <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4">
             <div className="flex flex-col space-y-4">
               {/* Top row: Search and basic filters */}
               <div className="flex items-center space-x-4">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search notifications..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-2 text-sm text-gray-700">
+                  <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={showRead}
@@ -990,11 +990,11 @@ export default function NotificationsPage() {
               </div>
               
               {/* Bottom row: Time range and Priority filters */}
-              <div className="flex items-center justify-between border-t border-gray-200 pt-3">
+              <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 pt-3">
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-gray-700">Time Range:</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Range:</span>
                   <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                       <input 
                         type="radio" 
                         name="timeRange" 
@@ -1005,7 +1005,7 @@ export default function NotificationsPage() {
                       />
                       <span>Today</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                       <input 
                         type="radio" 
                         name="timeRange" 
@@ -1016,7 +1016,7 @@ export default function NotificationsPage() {
                       />
                       <span>This week</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                       <input 
                         type="radio" 
                         name="timeRange" 
@@ -1027,7 +1027,7 @@ export default function NotificationsPage() {
                       />
                       <span>This month</span>
                     </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer">
+                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
                       <input 
                         type="radio" 
                         name="timeRange" 
@@ -1042,11 +1042,11 @@ export default function NotificationsPage() {
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-gray-700">Priority:</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority:</span>
                   <select
                     value={priorityFilter}
                     onChange={(e) => setPriorityFilter(e.target.value as 'all' | 'urgent' | 'high' | 'normal' | 'low')}
-                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">All</option>
                     <option value="urgent">Urgent</option>
@@ -1082,7 +1082,7 @@ export default function NotificationsPage() {
                     return (
                       <div
                         key={group.id}
-                        className={`bg-white border rounded-lg transition-all hover:shadow-md ${
+                        className={`bg-white dark:bg-slate-800 border rounded-lg transition-all hover:shadow-md ${
                           group.isRead ? 'opacity-75' : 'border-blue-200 bg-blue-50'
                         }`}
                       >
@@ -1103,13 +1103,13 @@ export default function NotificationsPage() {
                         >
                           <div className="flex items-start space-x-3">
                             <div className="flex-shrink-0">
-                              <Icon className="w-5 h-5 text-gray-500" />
+                              <Icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
                                   <h3 className={`font-medium ${
-                                    group.isRead ? 'text-gray-700' : 'text-gray-900'
+                                    group.isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'
                                   }`}>
                                     {group.title}
                                   </h3>
@@ -1129,18 +1129,18 @@ export default function NotificationsPage() {
                                   </Badge>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs text-gray-600 dark:text-gray-400">
                                     {getTimeAgo(group.updatedAt)}
                                   </span>
                                   <ChevronRight 
-                                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                                    className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${
                                       isExpanded ? 'transform rotate-90' : ''
                                     }`}
                                   />
                                 </div>
                               </div>
                               {group.latestNotification.title && (
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                                   {group.latestNotification.title}
                                 </p>
                               )}
@@ -1149,7 +1149,7 @@ export default function NotificationsPage() {
                         </div>
                         
                         {/* Group Actions */}
-                        <div className="px-4 pb-3 flex items-center space-x-2 border-t border-gray-200 pt-3">
+                        <div className="px-4 pb-3 flex items-center space-x-2 border-t border-gray-200 dark:border-slate-700 pt-3">
                           {!group.isRead && (
                             <Button
                               variant="ghost"
@@ -1193,14 +1193,14 @@ export default function NotificationsPage() {
                         
                         {/* Expanded Notifications */}
                         {isExpanded && groupNotifications.length > 1 && (
-                          <div className="border-t border-gray-200 bg-gray-50">
+                          <div className="border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900">
                             {groupNotifications.slice(1).map((notification) => (
                               <div
                                 key={notification.id}
-                                className="p-3 border-b border-gray-200 last:border-b-0"
+                                className="p-3 border-b border-gray-200 dark:border-slate-700 last:border-b-0"
                               >
-                                <p className="text-sm text-gray-700">{notification.title}</p>
-                                <span className="text-xs text-gray-500">
+                                <p className="text-sm text-gray-700 dark:text-gray-300">{notification.title}</p>
+                                <span className="text-xs text-gray-600 dark:text-gray-400">
                                   {getTimeAgo(notification.createdAt)}
                                 </span>
                               </div>
@@ -1225,7 +1225,7 @@ export default function NotificationsPage() {
                   return (
                     <div
                       key={notification.id}
-                      className={`bg-white border rounded-lg px-4 pt-4 pb-2 transition-all hover:shadow-md ${
+                      className={`bg-white dark:bg-slate-800 border rounded-lg px-4 pt-4 pb-2 transition-all hover:shadow-md ${
                         notification.read ? 'opacity-75' : 'border-blue-200 bg-blue-50'
                       } ${isSelected ? 'ring-2 ring-blue-500' : ''} ${
                         selectionMode ? 'cursor-default' : 'cursor-pointer'
@@ -1273,15 +1273,15 @@ export default function NotificationsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-2 flex-1 min-w-0">
-                              <Icon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <Icon className="w-4 h-4 text-gray-600 dark:text-gray-400 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <h3 className={`font-medium truncate ${
-                                  notification.read ? 'text-gray-700' : 'text-gray-900'
+                                  notification.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'
                                 }`}>
                                   {notification.title}
                                 </h3>
                                 {notification.body && (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{notification.body}</p>
+                                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 line-clamp-2">{notification.body}</p>
                                 )}
                               </div>
                               {!notification.read && (
@@ -1302,7 +1302,7 @@ export default function NotificationsPage() {
                               )}
                             </div>
                             <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                 {getTimeAgo(notification.createdAt)}
                               </span>
                               {!selectionMode && (
@@ -1347,7 +1347,7 @@ export default function NotificationsPage() {
                             />
                           )}
                           {notification.body && (
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
                               {notification.body}
                             </p>
                           )}
@@ -1481,21 +1481,21 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
   return (
     <div className="relative" ref={menuRef}>
       <button
-        className="p-1 hover:bg-gray-100 rounded"
+        className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
         onClick={(e) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
       >
-        <MoreHorizontal className="w-4 h-4 text-gray-400" />
+        <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 z-10">
           <div className="py-1">
             {!notification.read && (
               <button
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMarkAsRead();
@@ -1508,7 +1508,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
             )}
             {isSnoozed ? (
               <button
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
                 onClick={(e) => {
                   e.stopPropagation();
                   onUnsnooze?.();
@@ -1521,7 +1521,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
             ) : (
               <>
                 <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowSnoozeOptions(!showSnoozeOptions);
@@ -1532,9 +1532,9 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
                   <ChevronRight className={`w-3 h-3 ml-auto transition-transform ${showSnoozeOptions ? 'rotate-90' : ''}`} />
                 </button>
                 {showSnoozeOptions && (
-                  <div className="pl-8 border-t border-gray-100">
+                  <div className="pl-8 border-t border-gray-100 dark:border-slate-700">
                     <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSnooze?.('1h');
@@ -1544,7 +1544,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
                       1 hour
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSnooze?.('1d');
@@ -1554,7 +1554,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
                       1 day
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         onSnooze?.('1w');
@@ -1568,7 +1568,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
               </>
             )}
             <button
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
               onClick={(e) => {
                 e.stopPropagation();
                 onArchive();
@@ -1579,7 +1579,7 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
               <span>Archive</span>
             </button>
             <button
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center space-x-2"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm('Are you sure you want to delete this notification?')) {
@@ -1647,7 +1647,7 @@ function NotificationQuickActions({ notification, moduleMetadata, onAction }: No
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
+    <div className="flex items-center space-x-2 mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
       {actions.map((action) => {
         const Icon = action.icon;
         return (
@@ -1662,7 +1662,7 @@ function NotificationQuickActions({ notification, moduleMetadata, onAction }: No
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : action.variant === 'secondary'
                 ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600'
             }`}
           >
             <Icon className="w-3 h-3" />
@@ -1728,12 +1728,12 @@ function EmptyState({ category, hasFilters }: EmptyStateProps) {
   const Icon = config.icon;
 
   return (
-    <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+    <div className="flex flex-col items-center justify-center h-64 text-gray-600 dark:text-gray-400">
       <Icon className="w-12 h-12 mb-4 opacity-50" />
-      <p className="text-lg font-medium text-gray-700">{config.title}</p>
-      <p className="text-sm text-gray-600 mt-1">{config.message}</p>
+      <p className="text-lg font-medium text-gray-700 dark:text-gray-300">{config.title}</p>
+      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{config.message}</p>
       {hasFilters && (
-        <p className="text-xs text-gray-500 mt-2">Try adjusting your filters to see more notifications</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Try adjusting your filters to see more notifications</p>
       )}
     </div>
   );

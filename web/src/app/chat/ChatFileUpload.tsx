@@ -125,10 +125,10 @@ export default function ChatFileUpload({ onFileSelect, disabled = false }: ChatF
         onClick={() => !disabled && fileInputRef.current?.click()}
       >
         <Paperclip className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Click to select files or drag and drop
         </p>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Files will be uploaded to your "Chat Files" folder
         </p>
       </div>
@@ -146,7 +146,7 @@ export default function ChatFileUpload({ onFileSelect, disabled = false }: ChatF
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Selected Files ({selectedFiles.length})
             </h4>
             <button
@@ -162,24 +162,24 @@ export default function ChatFileUpload({ onFileSelect, disabled = false }: ChatF
             {selectedFiles.map((file) => (
               <div
                 key={file.id}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800 rounded-lg"
               >
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  <div className="text-gray-500">
+                  <div className="text-gray-500 dark:text-gray-400">
                     {getFileIcon(file.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => removeFile(file.id)}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
                 >
                   <X size={14} />
                 </button>

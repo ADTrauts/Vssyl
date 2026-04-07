@@ -159,7 +159,7 @@ export default function TrashPage() {
   const isEmpty = driveItems.length === 0;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Drive Sidebar */}
       <DriveSidebar 
         onNewFolder={handleCreateFolder} 
@@ -234,30 +234,30 @@ export default function TrashPage() {
         ) : (
           <div className="p-6">
             <div className="mb-8 flex items-center gap-4">
-              <TrashIcon className="w-8 h-8 text-gray-700" />
+              <TrashIcon className="w-8 h-8 text-gray-700 dark:text-gray-300" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Trash</h1>
-                <p className="text-gray-600">Items in trash will be permanently deleted after 30 days.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Trash</h1>
+                <p className="text-gray-700 dark:text-gray-300">Items in trash will be permanently deleted after 30 days.</p>
               </div>
             </div>
 
             {isEmpty ? (
               <div className="text-center py-16">
-                <TrashIcon className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-gray-900 mb-2">Trash is empty</h3>
-                <p className="text-gray-500">Items you move to the trash will appear here.</p>
+                <TrashIcon className="w-20 h-20 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">Trash is empty</h3>
+                <p className="text-gray-600 dark:text-gray-400">Items you move to the trash will appear here.</p>
               </div>
             ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
           {/* View Toggle */}
-          <div className="p-4 border-b border-gray-200 flex justify-end">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700 flex justify-end">
             <div className="flex gap-2">
               <button
                 onClick={() => handleViewModeChange('list')}
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'list' 
                     ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
                 aria-label="List view"
               >
@@ -268,7 +268,7 @@ export default function TrashPage() {
                 className={`p-2 rounded-md transition-colors ${
                   viewMode === 'grid' 
                     ? 'bg-blue-100 text-blue-600' 
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
                 aria-label="Grid view"
               >
@@ -280,20 +280,20 @@ export default function TrashPage() {
           {/* Content */}
           {viewMode === 'list' ? (
             <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
                 <tr>
-                  <th className="p-4 text-sm font-semibold text-gray-600">Name</th>
-                  <th className="p-4 text-sm font-semibold text-gray-600">Type</th>
-                  <th className="p-4 text-sm font-semibold text-gray-600">Trashed At</th>
-                  <th className="p-4 text-sm font-semibold text-gray-600 text-right">Actions</th>
+                  <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Name</th>
+                  <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Type</th>
+                  <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Trashed At</th>
+                  <th className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {driveItems.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50">
-                    <td className="p-4 font-medium text-gray-800">{item.name}</td>
-                    <td className="p-4 text-gray-600 capitalize">{item.type === 'file' ? 'File' : 'Folder'}</td>
-                    <td className="p-4 text-gray-600">{item.trashedAt ? new Date(item.trashedAt).toLocaleString() : ''}</td>
+                  <tr key={item.id} className="border-b border-gray-200 dark:border-slate-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-slate-700">
+                    <td className="p-4 font-medium text-gray-800 dark:text-gray-200">{item.name}</td>
+                    <td className="p-4 text-gray-700 dark:text-gray-300 capitalize">{item.type === 'file' ? 'File' : 'Folder'}</td>
+                    <td className="p-4 text-gray-700 dark:text-gray-300">{item.trashedAt ? new Date(item.trashedAt).toLocaleString() : ''}</td>
                     <td className="p-4 text-right">
                       <button 
                         onClick={() => handleRestore(item)} 
@@ -320,24 +320,24 @@ export default function TrashPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {driveItems.map((item) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={item.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gray-100 dark:bg-slate-700 rounded flex items-center justify-center">
                           {item.type === 'file' ? (
-                            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                             </svg>
                           ) : (
-                            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                             </svg>
                           )}
                         </div>
-                        <span className="font-medium text-sm text-gray-900 truncate">{item.name}</span>
+                        <span className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{item.name}</span>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-3">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                       {item.trashedAt ? new Date(item.trashedAt).toLocaleDateString() : ''}
                     </div>
                     <div className="flex gap-2">

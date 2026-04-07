@@ -184,8 +184,8 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Predictive Intelligence Dashboard</h2>
-          <p className="text-gray-600">AI predictions and anticipatory insights</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Predictive Intelligence Dashboard</h2>
+          <p className="text-gray-600 dark:text-gray-400">AI predictions and anticipatory insights</p>
         </div>
         <div className="flex space-x-2">
           <Button onClick={loadPredictiveData} variant="secondary">
@@ -208,16 +208,16 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Total Analyses</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.totalAnalyses}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Analyses</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalAnalyses}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Average Confidence</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Confidence</h3>
             <div className="flex items-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {(analytics.averageConfidence * 100).toFixed(1)}%
               </p>
               <Badge color={getConfidenceColor(analytics.averageConfidence)} className="ml-2">
@@ -229,15 +229,15 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Total Recommendations</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.totalRecommendations}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Recommendations</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalRecommendations}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Analysis Types</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.analysisTypes.length}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Analysis Types</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.analysisTypes.length}</p>
           </div>
         </Card>
       </div>
@@ -245,10 +245,10 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       {/* Analysis Types Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Analysis Types</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Analysis Types</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {analytics.analysisTypes.map((type) => (
-              <div key={type} className="text-center p-3 bg-gray-50 rounded-lg">
+              <div key={type} className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Badge color="blue" className="mb-2">
                   {formatAnalysisType(type)}
                 </Badge>
@@ -261,15 +261,15 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       {/* Recent Analyses */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Predictive Analyses</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Predictive Analyses</h3>
           {analyses.length === 0 ? (
-            <p className="text-gray-500">No analyses available. Generate a new analysis to see predictions.</p>
+            <p className="text-gray-500 dark:text-gray-400">No analyses available. Generate a new analysis to see predictions.</p>
           ) : (
             <div className="space-y-4">
               {analyses.map((analysis) => (
                 <div key={analysis.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
                       {formatAnalysisType(analysis.analysisType)}
                     </h4>
                     <div className="flex space-x-2">
@@ -284,14 +284,14 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
                       </Badge>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{analysis.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{analysis.description}</p>
                   
                   {analysis.recommendations && analysis.recommendations.length > 0 && (
                     <div className="mt-3">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Recommendations:</h5>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendations:</h5>
                       <div className="space-y-2">
                         {analysis.recommendations.slice(0, 3).map((rec: Recommendation, index: number) => (
-                          <div key={index} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          <div key={index} className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-2 rounded">
                             {rec.description}
                           </div>
                         ))}
@@ -308,10 +308,10 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       {/* Timeframe Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Prediction Timeframes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Prediction Timeframes</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {analytics.timeframes.map((timeframe) => (
-              <div key={timeframe} className="text-center p-3 bg-gray-50 rounded-lg">
+              <div key={timeframe} className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Badge color={getTimeframeColor(timeframe)} className="mb-2">
                   {timeframe.replace('_', ' ')}
                 </Badge>
@@ -324,7 +324,7 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       {/* Predictive Insights */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Predictive Insights</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Predictive Insights</h3>
           <div className="space-y-4">
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
               <h4 className="font-medium text-blue-900">AI Learning Progress</h4>

@@ -134,8 +134,8 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
             <Calendar className="w-8 h-8 text-blue-600" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Enterprise Calendar Features</h2>
-            <p className="text-gray-600 mt-2">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Enterprise Calendar Features</h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
               Advanced scheduling, resource management, and meeting optimization
             </p>
           </div>
@@ -143,10 +143,10 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
         
         <div className="flex items-center justify-center gap-2 mb-6">
           <FeatureBadge tier="enterprise" hasAccess={false} />
-          <span className="text-gray-600">•</span>
-          <span className="text-sm text-gray-600">Starting at $25/user/month</span>
-          <span className="text-gray-600">•</span>
-          <span className="text-sm text-gray-600">14-day free trial</span>
+          <span className="text-gray-600 dark:text-gray-400">•</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">Starting at $25/user/month</span>
+          <span className="text-gray-600 dark:text-gray-400">•</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">14-day free trial</span>
         </div>
         
         {onUpgrade && (
@@ -167,7 +167,7 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
             showUpgradePrompt={false}
             fallback={
               <Card 
-                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 border-dashed border-gray-200 hover:border-blue-300"
+                className="p-6 cursor-pointer hover:shadow-lg transition-all border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-blue-300"
               >
                 <div onClick={() => handleFeatureClick(feature.id)}>
                 <div className="text-center">
@@ -176,18 +176,18 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
                   </div>
                   
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{feature.name}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{feature.name}</h3>
                     <Lock className="w-4 h-4 text-blue-600" />
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-4">{feature.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{feature.description}</p>
                   
                   {expandedFeature === feature.id && (
                     <div className="mb-4">
-                      <h4 className="font-medium text-gray-900 mb-2 text-left">What you get:</h4>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-left">What you get:</h4>
                       <ul className="text-left space-y-1">
                         {feature.benefits.slice(0, 3).map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                             <span>{benefit}</span>
                           </li>
@@ -217,11 +217,11 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
                 </div>
                 
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{feature.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{feature.name}</h3>
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 </div>
                 
-                <p className="text-gray-600 text-sm mb-4">{feature.description}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{feature.description}</p>
                 
                 <div className="flex items-center justify-center gap-2 text-green-600 font-medium">
                   <span>Available</span>
@@ -236,10 +236,10 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
       {/* ROI Calculator */}
       <Card className="p-8 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Calculate Your ROI
           </h3>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
             See how enterprise calendar features can reduce meeting costs, improve productivity, 
             and optimize resource utilization for your organization.
           </p>
@@ -250,28 +250,28 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
                 <Clock className="w-5 h-5 text-blue-600" />
                 <div className="text-2xl font-bold text-blue-600">25%</div>
               </div>
-              <div className="text-sm text-gray-600">Time Savings</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Time Savings</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-2">
                 <TrendingUp className="w-5 h-5 text-green-600" />
                 <div className="text-2xl font-bold text-green-600">40%</div>
               </div>
-              <div className="text-sm text-gray-600">Cost Reduction</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Cost Reduction</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-2">
                 <Target className="w-5 h-5 text-purple-600" />
                 <div className="text-2xl font-bold text-purple-600">60%</div>
               </div>
-              <div className="text-sm text-gray-600">Productivity Gain</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Productivity Gain</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-2">
                 <Shield className="w-5 h-5 text-red-600" />
                 <div className="text-2xl font-bold text-red-600">100%</div>
               </div>
-              <div className="text-sm text-gray-600">Compliance</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Compliance</div>
             </div>
           </div>
           
@@ -296,8 +296,8 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
             <div className="p-3 bg-blue-100 rounded-lg inline-flex mb-4">
               <Users className="w-6 h-6 text-blue-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Resource Optimization</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Resource Optimization</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Maximize conference room utilization, reduce booking conflicts, and track 
               resource costs with intelligent booking and analytics systems.
             </p>
@@ -309,8 +309,8 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
             <div className="p-3 bg-green-100 rounded-lg inline-flex mb-4">
               <FileText className="w-6 h-6 text-green-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Meeting Governance</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Meeting Governance</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Implement approval workflows for executive meetings, ensure compliance 
               with corporate policies, and maintain audit trails for regulatory requirements.
             </p>
@@ -322,8 +322,8 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
             <div className="p-3 bg-purple-100 rounded-lg inline-flex mb-4">
               <TrendingUp className="w-6 h-6 text-purple-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-2">Productivity Analytics</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Productivity Analytics</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Analyze meeting effectiveness, track time investment, and identify 
               opportunities to improve organizational productivity and meeting culture.
             </p>
@@ -332,12 +332,12 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
       </div>
 
       {/* Integration Ecosystem */}
-      <Card className="p-8 bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200">
+      <Card className="p-8 bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-200 dark:border-slate-700">
         <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Seamless Enterprise Integration
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             Connect with your existing business systems for a unified experience
           </p>
           
@@ -352,9 +352,9 @@ export const CalendarEnterpriseShowcase: React.FC<CalendarEnterpriseShowcaseProp
               { name: 'Workday', icon: '👥' },
               { name: 'Custom APIs', icon: '🔧' }
             ].map((integration, index) => (
-              <div key={index} className="p-3 bg-white rounded-lg border text-center">
+              <div key={index} className="p-3 bg-white dark:bg-slate-900 rounded-lg border text-center">
                 <div className="text-2xl mb-2">{integration.icon}</div>
-                <div className="text-sm font-medium text-gray-900">{integration.name}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{integration.name}</div>
               </div>
             ))}
           </div>

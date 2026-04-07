@@ -283,8 +283,8 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
               <Shield className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Audit Logs</h2>
-              <p className="text-gray-600">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Audit Logs</h2>
+              <p className="text-gray-600 dark:text-gray-400">
                 {fileId ? 'File access and modification history' : 'Complete activity audit trail'}
               </p>
             </div>
@@ -307,10 +307,10 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
         </div>
 
         {/* Filters */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -323,11 +323,11 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Action</label>
               <select
                 value={filters.action || ''}
                 onChange={(e) => setFilters(prev => ({ ...prev, action: e.target.value || undefined }))}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Actions</option>
                 <option value="view">View</option>
@@ -339,11 +339,11 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Risk Level</label>
               <select
                 value={filters.riskLevel || ''}
                 onChange={(e) => setFilters(prev => ({ ...prev, riskLevel: e.target.value || undefined }))}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Levels</option>
                 <option value="high">High Risk</option>
@@ -353,11 +353,11 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Range</label>
               <select
                 value="30d"
                 onChange={() => {}}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="1d">Last 24 hours</option>
                 <option value="7d">Last 7 days</option>
@@ -399,18 +399,18 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading audit logs...</p>
+              <p className="text-gray-600 dark:text-gray-400">Loading audit logs...</p>
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8">
               <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No audit events found</p>
+              <p className="text-gray-600 dark:text-gray-400">No audit events found</p>
             </div>
           ) : (
             filteredEvents.map((event) => (
-              <div key={event.id} className="border border-gray-200 rounded-lg overflow-hidden">
+              <div key={event.id} className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
                 <div 
-                  className="p-4 cursor-pointer hover:bg-gray-50"
+                  className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                   onClick={() => toggleEventExpansion(event.id)}
                 >
                   <div className="flex items-center justify-between">
@@ -420,10 +420,10 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
                       </div>
                       
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
                           {event.userName} {event.action}ed "{event.resourceName}"
                         </div>
-                        <div className="text-sm text-gray-600 flex items-center gap-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {event.timestamp.toLocaleString()}
@@ -460,10 +460,10 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
                 
                 {/* Expanded Details */}
                 {expandedEvents.has(event.id) && (
-                  <div className="px-4 pb-4 bg-gray-50 border-t border-gray-200">
+                  <div className="px-4 pb-4 bg-gray-50 dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">User Details</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">User Details</h4>
                         <div className="space-y-1">
                           <div><strong>Email:</strong> {event.userEmail}</div>
                           <div><strong>Role:</strong> {event.userRole}</div>
@@ -472,7 +472,7 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
                       </div>
                       
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Technical Details</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Technical Details</h4>
                         <div className="space-y-1">
                           <div><strong>IP Address:</strong> {event.details.ipAddress}</div>
                           <div><strong>Location:</strong> {event.details.location || 'Unknown'}</div>
@@ -482,7 +482,7 @@ export const AuditLogsPanel: React.FC<AuditLogsPanelProps> = ({
                       
                       {event.action === 'share' && event.details.shareTarget && (
                         <div className="col-span-2">
-                          <h4 className="font-medium text-gray-900 mb-2">Share Details</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Share Details</h4>
                           <div><strong>Shared with:</strong> {event.details.shareTarget}</div>
                         </div>
                       )}

@@ -326,12 +326,12 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
   return (
     <div className={`h-full flex ${className}`}>
       {/* Left Sidebar - Channels */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
+      <div className="w-80 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         {/* Enhanced Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Chat</h2>
               {hasEnterprise && (
                 <Badge className="px-2 py-1 text-xs bg-purple-50 text-purple-600 border border-purple-200 rounded-full">
                   Enterprise
@@ -415,7 +415,7 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   {getChannelIcon(channel)}
-                  <span className="font-medium text-gray-900">{channel.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{channel.name}</span>
                   {channel.encryptionEnabled && (
                     <Lock className="w-3 h-3 text-green-600" />
                   )}
@@ -430,11 +430,11 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
                 )}
               </div>
               
-              <div className="text-sm text-gray-600 truncate">{channel.lastMessage}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{channel.lastMessage}</div>
               
               {/* Enterprise Info */}
               {hasEnterprise && channel.retentionPolicy && (
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Policy: {channel.retentionPolicy}
                 </div>
               )}
@@ -448,13 +448,13 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
         {selectedChannel ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-gray-200 dark:border-slate-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {getChannelIcon(selectedChannel)}
                   <div>
-                    <h3 className="font-semibold text-gray-900">{selectedChannel.name}</h3>
-                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{selectedChannel.name}</h3>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                       <span>{selectedChannel.members.length} members</span>
                       {selectedChannel.encryptionEnabled && (
                         <Badge className="px-1 py-0.5 text-xs bg-green-50 text-green-600 border border-green-200 rounded">
@@ -504,9 +504,9 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900">{message.sender.name}</span>
-                      <span className="text-xs text-gray-500">{message.sender.role}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{message.sender.name}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{message.sender.role}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(message.timestamp).toLocaleTimeString()}
                       </span>
                       {getMessageStatusIcon(message)}
@@ -535,7 +535,7 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
                             key={index}
                             variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs bg-gray-100 hover:bg-gray-200"
+                            className="h-6 px-2 text-xs bg-gray-100 dark:bg-slate-700 hover:bg-gray-200"
                           >
                             {reaction.emoji} {reaction.users.length}
                           </Button>
@@ -549,7 +549,7 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
             </div>
             
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-gray-200 dark:border-slate-700">
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm">
                   <Paperclip className="w-4 h-4" />
@@ -587,7 +587,7 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Select a channel to start chatting</p>
+              <p className="text-gray-600 dark:text-gray-400">Select a channel to start chatting</p>
             </div>
           </div>
         )}
@@ -595,10 +595,10 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
       
       {/* Enterprise Panel */}
       {showEnterprisePanel && hasEnterprise && (
-        <div className="w-96 border-l border-gray-200 bg-white">
-          <div className="p-4 border-b border-gray-200">
+        <div className="w-96 border-l border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <div className="p-4 border-b border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Enterprise Features</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Enterprise Features</h3>
               <Button
                 variant="ghost"
                 size="sm"

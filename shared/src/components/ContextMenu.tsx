@@ -239,7 +239,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             <button
               key={item.label || idx}
               className={`flex items-center w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 focus:bg-gray-50 dark:focus:bg-slate-700 focus:outline-none transition-colors duration-150 
-                ${item.disabled ? 'opacity-50 cursor-not-allowed text-gray-400 dark:text-slate-500' : 'text-gray-900 dark:text-slate-100'}`}
+                ${item.disabled ? 'opacity-50 cursor-not-allowed text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`}
               role="menuitem"
               tabIndex={item.disabled ? -1 : 0}
               aria-disabled={item.disabled}
@@ -258,8 +258,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             >
               {item.icon && <span className="mr-2">{item.icon}</span>}
               <span className="flex-1">{item.label}</span>
-              {item.shortcut && <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{item.shortcut}</span>}
-              {item.submenu && <ChevronRightIcon className="w-4 h-4 ml-2 text-gray-400 dark:text-gray-500" />}
+              {item.shortcut && <span className="ml-2 text-xs text-gray-600 dark:text-slate-400">{item.shortcut}</span>}
+              {item.submenu && <ChevronRightIcon className="w-4 h-4 ml-2 text-gray-600 dark:text-slate-400" />}
             </button>
           )
         )}
@@ -281,7 +281,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 <button
                   key={subItem.label || subIdx}
                   className={`flex items-center w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 focus:bg-gray-50 dark:focus:bg-slate-700 focus:outline-none transition-colors duration-150 
-                    ${subItem.disabled ? 'opacity-50 cursor-not-allowed text-gray-400 dark:text-slate-500' : 'text-gray-900 dark:text-slate-100'}`}
+                    ${subItem.disabled ? 'opacity-50 cursor-not-allowed text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -294,7 +294,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 >
                   {subItem.icon && <span className="mr-2">{subItem.icon}</span>}
                   <span className="flex-1">{subItem.label}</span>
-                  {subItem.shortcut && <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{subItem.shortcut}</span>}
+                  {subItem.shortcut && <span className="ml-2 text-xs text-gray-600 dark:text-slate-400">{subItem.shortcut}</span>}
                 </button>
               ))}
             </div>

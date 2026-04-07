@@ -35,8 +35,8 @@ export const BusinessBulkActionBar: React.FC<BusinessBulkActionBarProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Users className="w-5 h-5 text-gray-600" />
-            <span className="text-sm font-medium text-gray-900">
+            <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {selectedCount} of {totalCount} selected
             </span>
             <Badge color="blue" className="text-xs">
@@ -65,7 +65,7 @@ export const BusinessBulkActionBar: React.FC<BusinessBulkActionBarProps> = ({
           <Button
             variant="secondary"
             onClick={onClearSelection}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
           >
             Clear Selection
           </Button>

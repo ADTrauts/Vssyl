@@ -165,14 +165,14 @@ export function RightSidebarCustomizer({
       <div className="space-y-6">
         {/* Fixed Top Section */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <Lock size={12} />
             <span>Fixed (Top)</span>
           </div>
-          <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+          <div className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
             <div className="flex items-center gap-2">
-              <LayoutDashboard size={18} className="text-gray-600" />
-              <span className="text-sm text-gray-700">Dashboard</span>
+              <LayoutDashboard size={18} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Dashboard</span>
             </div>
           </div>
         </div>
@@ -180,12 +180,12 @@ export function RightSidebarCustomizer({
         {/* Customizable Pinned Modules Section */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>Pinned Modules (Customizable)</span>
             </div>
           </div>
           <SortableContext items={pinnedModuleSortableIds} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2 p-3 border-2 border-dashed border-gray-200 rounded-lg min-h-[200px]">
+            <div className="space-y-2 p-3 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg min-h-[200px]">
               {sortedPinnedModules.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
                   No pinned modules. Pin modules from the left sidebar customizer.
@@ -210,27 +210,27 @@ export function RightSidebarCustomizer({
 
         {/* Fixed Bottom Section */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
             <Lock size={12} />
             <span>Fixed (Bottom)</span>
           </div>
-          <div className="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+          <div className="space-y-2 p-3 border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
             <div className="flex items-center gap-2">
-              <Brain size={18} className="text-gray-600" />
-              <span className="text-sm text-gray-700">AI Assistant</span>
+              <Brain size={18} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">AI Assistant</span>
             </div>
             <div className="flex items-center gap-2">
-              <Puzzle size={18} className="text-gray-600" />
-              <span className="text-sm text-gray-700">Modules</span>
+              <Puzzle size={18} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Modules</span>
             </div>
             <div className="flex items-center gap-2">
-              <Trash2 size={18} className="text-gray-600" />
-              <span className="text-sm text-gray-700">Trash</span>
+              <Trash2 size={18} className="text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Trash</span>
             </div>
           </div>
         </div>
 
-        <p className="text-xs text-gray-500 mt-4">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
           💡 Drag pinned modules to reorder. Pin modules from the left sidebar customizer.
         </p>
       </div>
@@ -244,9 +244,9 @@ export function RightSidebarCustomizer({
             if (!module) return null;
             const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
             return (
-              <div className="bg-white border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
-                <Icon size={18} className="text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">{module.name}</span>
+              <div className="bg-white dark:bg-slate-900 border-2 border-blue-400 rounded-lg p-3 shadow-xl opacity-95 flex items-center gap-2 rotate-2">
+                <Icon size={18} className="text-gray-600 dark:text-gray-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{module.name}</span>
               </div>
             );
           })()
@@ -286,17 +286,17 @@ function PinnedModuleItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 p-2 border border-gray-200 rounded bg-white hover:bg-gray-50"
+      className="flex items-center gap-2 p-2 border border-gray-200 dark:border-slate-700 rounded bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
     >
       <div
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
       >
         <GripVertical size={14} />
       </div>
-      <Icon size={18} className="text-gray-600" />
-      <span className="flex-1 text-sm text-gray-700">{module.name}</span>
+      <Icon size={18} className="text-gray-600 dark:text-gray-400" />
+      <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{module.name}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();

@@ -224,7 +224,7 @@ export default function ChatWidget({
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size={24} />
-        <span className="ml-2 text-gray-600">Loading chat data...</span>
+        <span className="ml-2 text-gray-600 dark:text-gray-400">Loading chat data...</span>
       </div>
     );
   }
@@ -254,15 +254,15 @@ export default function ChatWidget({
 
       {/* Quick Compose */}
       {showQuickCompose && (
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
-              <MessageCircle className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Quick Message</span>
+              <MessageCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Quick Message</span>
             </div>
             <button
               onClick={() => setShowQuickCompose(false)}
-              className="text-xs text-gray-600 hover:text-gray-900"
+              className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
             >
               Close
             </button>
@@ -294,21 +294,21 @@ export default function ChatWidget({
 
       {/* Conversation Stats */}
       {safeConfig.showConversationStats && (
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
-              <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Stats</span>
+              <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Stats</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div className="text-center">
-              <div className="font-semibold text-gray-900">{conversations.length}</div>
-              <div className="text-gray-500">Conversations</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100">{conversations.length}</div>
+              <div className="text-gray-500 dark:text-gray-400">Conversations</div>
             </div>
             <div className="text-center">
-              <div className="font-semibold text-gray-900">{totalUnreadCount}</div>
-              <div className="text-gray-500">Unread</div>
+              <div className="font-semibold text-gray-900 dark:text-gray-100">{totalUnreadCount}</div>
+              <div className="text-gray-500 dark:text-gray-400">Unread</div>
             </div>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function ChatWidget({
       {safeConfig.showRecentConversations && conversations.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-gray-700">Recent Conversations</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Recent Conversations</h4>
             <Button
               size="sm"
               variant="ghost"
@@ -331,7 +331,7 @@ export default function ChatWidget({
             {conversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded-lg cursor-pointer"
                 onClick={() => window.location.href = `/chat?conversation=${conversation.id}`}
               >
                 <div className="flex-shrink-0">
@@ -343,7 +343,7 @@ export default function ChatWidget({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                       {getConversationName(conversation)}
                     </p>
                     {conversation.unreadCount > 0 && (
@@ -354,13 +354,13 @@ export default function ChatWidget({
                     {conversation.type === 'GROUP' && (
                       <div className="flex items-center space-x-1">
                         <Users className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           {conversation.participantCount}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                     {conversation.lastMessage ? (
                       <>
                         <span className="truncate">
@@ -377,23 +377,23 @@ export default function ChatWidget({
                 </div>
                 <div className="flex items-center space-x-1">
                   <button
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
                     onClick={(e) => {
                       e.stopPropagation();
                       window.location.href = `/chat?conversation=${conversation.id}`;
                     }}
                   >
-                    <Eye className="w-3 h-3 text-gray-500" />
+                    <Eye className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                   </button>
                   <button
-                    className="p-1 hover:bg-gray-100 rounded"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
                     onClick={(e) => {
                       e.stopPropagation();
                       setQuickMessage(`@${getConversationName(conversation)} `);
                       setShowQuickCompose(true);
                     }}
                   >
-                    <Reply className="w-3 h-3 text-gray-500" />
+                    <Reply className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
               </div>
@@ -407,7 +407,7 @@ export default function ChatWidget({
         <div className="text-center py-6">
           <MessageCircle className="w-12 h-12 mx-auto mb-2" style={{ color: contextContent.color }} />
           <span className="text-2xl block mb-2">{contextContent.icon}</span>
-          <p className="text-sm text-gray-500 mb-3">{contextContent.emptyMessage}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{contextContent.emptyMessage}</p>
           <Button
             size="sm"
             onClick={() => window.location.href = '/chat'}
@@ -422,7 +422,7 @@ export default function ChatWidget({
         <div>
           <button
             onClick={() => setShowConfig(!showConfig)}
-            className="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            className="text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             {showConfig ? 'Hide settings' : 'Settings'}
           </button>
@@ -431,8 +431,8 @@ export default function ChatWidget({
 
       {/* Configuration Panel */}
       {showConfig && onConfigChange && (
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <h5 className="text-sm font-medium text-gray-700 mb-2">Widget Settings</h5>
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Widget Settings</h5>
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
               <input
@@ -444,7 +444,7 @@ export default function ChatWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show recent conversations</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show recent conversations</span>
             </label>
             <label className="flex items-center space-x-2">
               <input
@@ -456,7 +456,7 @@ export default function ChatWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show unread count</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show unread count</span>
             </label>
             <label className="flex items-center space-x-2">
               <input
@@ -468,7 +468,7 @@ export default function ChatWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show quick compose</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show quick compose</span>
             </label>
             <label className="flex items-center space-x-2">
               <input
@@ -480,10 +480,10 @@ export default function ChatWidget({
                 })}
                 className="rounded"
               />
-              <span className="text-sm text-gray-600">Show conversation stats</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show conversation stats</span>
             </label>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Max conversations:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Max conversations:</span>
               <select
                 value={safeConfig.maxConversationsToShow}
                 onChange={(e) => onConfigChange({
@@ -498,7 +498,7 @@ export default function ChatWidget({
               </select>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Sort by:</span>
               <select
                 value={safeConfig.sortBy}
                 onChange={(e) => onConfigChange({

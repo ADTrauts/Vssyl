@@ -96,7 +96,7 @@ export default function AIResponseRenderer({
       </p>
     ),
     strong: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-      <strong className="font-semibold text-gray-900" {...props}>{children}</strong>
+      <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props}>{children}</strong>
     ),
     a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
       <a href={href} className="text-purple-600 underline hover:text-purple-700" target={href?.startsWith('http') ? '_blank' : undefined} rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined} {...props}>
@@ -104,16 +104,16 @@ export default function AIResponseRenderer({
       </a>
     ),
     ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 my-2" {...props}>{children}</ul>
+      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ul>
     ),
     ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 my-2" {...props}>{children}</ol>
+      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ol>
     ),
     li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
       <li className="pl-1" {...props}>{children}</li>
     ),
     code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-      <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
+      <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
     ),
   };
 
@@ -123,7 +123,7 @@ export default function AIResponseRenderer({
     const lines = trimmed.split(/\n/).map((l) => l.trim()).filter(Boolean);
     if (useOrderedList && lines.length > 1) {
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
           {lines.map((line, i) => (
             <li key={i} className="pl-1">{line}</li>
           ))}
@@ -132,7 +132,7 @@ export default function AIResponseRenderer({
     }
     if (useUnorderedList && lines.length > 1) {
       return (
-        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
           {lines.map((line, i) => (
             <li key={i} className="pl-1">{line}</li>
           ))}
@@ -159,7 +159,7 @@ export default function AIResponseRenderer({
       data-response-type={structured.type}
     >
       {structured.title?.trim() && (
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <TypeIcon className="text-purple-600 flex-shrink-0" size={20} />
           {structured.title.trim()}
         </h2>
@@ -173,18 +173,18 @@ export default function AIResponseRenderer({
             Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
           );
           return (
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-50 text-gray-900 font-medium">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 font-medium">
                   <tr>
                     {columns.map((col, i) => (
-                      <th key={i} className="px-3 py-2 border-b border-gray-200">
+                      <th key={i} className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
                         {col}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="text-gray-700">
+                <tbody className="text-gray-700 dark:text-gray-300">
                   {normalizedRows.map((row, ri) => (
                     <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
                       {row.map((cell, ci) => (
@@ -212,14 +212,14 @@ export default function AIResponseRenderer({
                   <button
                     type="button"
                     onClick={() => toggleSection(index)}
-                    className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-900 hover:bg-gray-50 rounded px-1 py-0.5 -mx-1"
+                    className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded px-1 py-0.5 -mx-1"
                   >
                     {isExpanded ? <ChevronDown className="w-4 h-4 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 flex-shrink-0" />}
                     {section.icon ? <span className="text-base" aria-hidden>{section.icon}</span> : null}
                     {section.heading.trim()}
                   </button>
                 ) : hasHeading ? (
-                  <h3 className="text-sm font-medium text-gray-900 mb-1 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                     {section.icon ? <span className="text-base" aria-hidden>{section.icon}</span> : null}
                     {section.heading.trim()}
                   </h3>
@@ -250,7 +250,7 @@ export default function AIResponseRenderer({
       ) : null}
 
       {confidence !== undefined && confidence < 1 ? (
-        <p className="text-xs text-gray-600 mt-2">
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
           Confidence: {Math.round(confidence * 100)}%
         </p>
       ) : null}

@@ -284,8 +284,8 @@ export default function PerformancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Performance & Scalability</h1>
-          <p className="text-gray-600">Monitor system performance, optimize resources, and scale infrastructure</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Performance & Scalability</h1>
+          <p className="text-gray-700 dark:text-gray-300">Monitor system performance, optimize resources, and scale infrastructure</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -304,14 +304,14 @@ export default function PerformancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('overview')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'overview'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <Activity className="w-4 h-4 inline mr-2" />
@@ -322,7 +322,7 @@ export default function PerformancePage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'metrics'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <Gauge className="w-4 h-4 inline mr-2" />
@@ -333,7 +333,7 @@ export default function PerformancePage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'scalability'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <Rocket className="w-4 h-4 inline mr-2" />
@@ -344,7 +344,7 @@ export default function PerformancePage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'optimization'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <Target className="w-4 h-4 inline mr-2" />
@@ -355,7 +355,7 @@ export default function PerformancePage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'alerts'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
             }`}
           >
             <AlertTriangle className="w-4 h-4 inline mr-2" />
@@ -389,8 +389,8 @@ export default function PerformancePage() {
                       <Cpu className="w-6 h-6 text-blue-600" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">CPU Usage</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">CPU Usage</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {metrics?.cpu.usage ? formatPercentage(metrics.cpu.usage) : 'N/A'}
                       </p>
                     </div>
@@ -403,8 +403,8 @@ export default function PerformancePage() {
                       <HardDrive className="w-6 h-6 text-green-600" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Memory Usage</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Memory Usage</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {metrics?.memory ? formatPercentage((metrics.memory.used / metrics.memory.total) * 100) : 'N/A'}
                       </p>
                     </div>
@@ -417,8 +417,8 @@ export default function PerformancePage() {
                       <Zap className="w-6 h-6 text-purple-600" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Response Time</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Response Time</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {metrics?.application.responseTime ? `${metrics.application.responseTime}ms` : 'N/A'}
                       </p>
                     </div>
@@ -431,8 +431,8 @@ export default function PerformancePage() {
                       <Database className="w-6 h-6 text-orange-600" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">DB Connections</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">DB Connections</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                         {metrics?.database.connections || 'N/A'}
                       </p>
                     </div>
@@ -442,21 +442,21 @@ export default function PerformancePage() {
 
               {/* System Health Status */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">System Health</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">System Health</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-medium text-gray-900">Application</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Application</span>
                     <Badge color="green" size="sm">Healthy</Badge>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-medium text-gray-900">Database</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Database</span>
                     <Badge color="green" size="sm">Healthy</Badge>
                   </div>
                   <div className="flex items-center space-x-3">
                     <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                    <span className="text-sm font-medium text-gray-900">Cache</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Cache</span>
                     <Badge color="yellow" size="sm">Warning</Badge>
                   </div>
                 </div>
@@ -464,15 +464,15 @@ export default function PerformancePage() {
 
               {/* Recent Alerts */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Alerts</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Alerts</h2>
                 <div className="space-y-3">
                   {alerts.slice(0, 3).map((alert) => (
-                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                       <div className="flex items-center space-x-3">
                         {getSeverityIcon(alert.severity)}
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{alert.title}</p>
-                          <p className="text-xs text-gray-600">{alert.description}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{alert.title}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">{alert.description}</p>
                         </div>
                       </div>
                       <Badge color={alert.severity === 'critical' ? 'red' : 'yellow'} size="sm">
@@ -490,27 +490,27 @@ export default function PerformancePage() {
             <div className="space-y-6">
               {/* CPU Metrics */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">CPU Performance</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">CPU Performance</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Usage</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Usage</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.cpu.usage ? formatPercentage(metrics.cpu.usage) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Cores</p>
-                    <p className="text-2xl font-bold text-gray-900">{metrics?.cpu.cores || 'N/A'}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Cores</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics?.cpu.cores || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Temperature</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Temperature</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.cpu.temperature ? `${metrics.cpu.temperature}°C` : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Load Average</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Load Average</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.cpu.loadAverage ? metrics.cpu.loadAverage.map(l => l.toFixed(2)).join(', ') : 'N/A'}
                     </p>
                   </div>
@@ -519,29 +519,29 @@ export default function PerformancePage() {
 
               {/* Memory Metrics */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Memory Usage</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Memory Usage</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.memory.total ? formatBytes(metrics.memory.total * 1024 * 1024) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Used</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Used</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.memory.used ? formatBytes(metrics.memory.used * 1024 * 1024) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Available</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Available</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.memory.available ? formatBytes(metrics.memory.available * 1024 * 1024) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Usage %</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Usage %</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.memory ? formatPercentage((metrics.memory.used / metrics.memory.total) * 100) : 'N/A'}
                     </p>
                   </div>
@@ -550,35 +550,35 @@ export default function PerformancePage() {
 
               {/* Network Metrics */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Network Performance</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Network Performance</h2>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Bytes In</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Bytes In</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.network.bytesIn ? formatBytes(metrics.network.bytesIn) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Bytes Out</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Bytes Out</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.network.bytesOut ? formatBytes(metrics.network.bytesOut) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Packets In</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Packets In</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.network.packetsIn ? metrics.network.packetsIn.toLocaleString() : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Packets Out</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Packets Out</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.network.packetsOut ? metrics.network.packetsOut.toLocaleString() : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Connections</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Connections</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {metrics?.network.connections || 'N/A'}
                     </p>
                   </div>
@@ -592,29 +592,29 @@ export default function PerformancePage() {
             <div className="space-y-6">
               {/* Auto-scaling Configuration */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Auto-scaling Configuration</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Auto-scaling Configuration</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Status</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Status</p>
                     <Badge color={scalability?.autoScaling.enabled ? 'green' : 'red'} size="sm">
                       {scalability?.autoScaling.enabled ? 'Enabled' : 'Disabled'}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Current Instances</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Instances</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.autoScaling.currentInstances || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Min Instances</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Min Instances</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.autoScaling.minInstances || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Max Instances</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Max Instances</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.autoScaling.maxInstances || 'N/A'}
                     </p>
                   </div>
@@ -623,29 +623,29 @@ export default function PerformancePage() {
 
               {/* Load Balancing */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Load Balancing</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Load Balancing</h2>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Status</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Status</p>
                     <Badge color={scalability?.loadBalancing.enabled ? 'green' : 'red'} size="sm">
                       {scalability?.loadBalancing.enabled ? 'Enabled' : 'Disabled'}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Healthy Instances</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Healthy Instances</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.loadBalancing.healthyInstances || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Instances</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Instances</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.loadBalancing.totalInstances || 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Distribution</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Distribution</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.loadBalancing.distribution || 'N/A'}
                     </p>
                   </div>
@@ -654,35 +654,35 @@ export default function PerformancePage() {
 
               {/* Caching Performance */}
               <Card className="p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Caching Performance</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Caching Performance</h2>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Hit Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Hit Rate</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.caching.hitRate ? formatPercentage(scalability.caching.hitRate) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Miss Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Miss Rate</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.caching.missRate ? formatPercentage(scalability.caching.missRate) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Requests</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Requests</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.caching.totalRequests ? scalability.caching.totalRequests.toLocaleString() : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Cache Size</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Cache Size</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.caching.cacheSize ? formatBytes(scalability.caching.cacheSize * 1024 * 1024) : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Evictions</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Evictions</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {scalability?.caching.evictions || 'N/A'}
                     </p>
                   </div>
@@ -695,7 +695,7 @@ export default function PerformancePage() {
           {activeTab === 'optimization' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Optimization Recommendations</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Optimization Recommendations</h2>
                 <Button>
                   <Settings className="w-4 h-4 mr-2" />
                   Configure
@@ -708,32 +708,32 @@ export default function PerformancePage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{recommendation.title}</h3>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{recommendation.title}</h3>
                           {getStatusBadge(recommendation.status)}
                           <Badge color={getImpactColor(recommendation.impact)} size="sm">
                             {recommendation.impact} impact
                           </Badge>
                         </div>
                         
-                        <p className="text-gray-600 mb-4">{recommendation.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">{recommendation.description}</p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <span className="font-medium text-gray-700">Effort:</span>
-                            <span className="ml-2 text-gray-600 capitalize">{recommendation.effort}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Effort:</span>
+                            <span className="ml-2 text-gray-600 dark:text-gray-400 capitalize">{recommendation.effort}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Priority:</span>
-                            <span className="ml-2 text-gray-600">{recommendation.priority}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Priority:</span>
+                            <span className="ml-2 text-gray-600 dark:text-gray-400">{recommendation.priority}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Type:</span>
-                            <span className="ml-2 text-gray-600 capitalize">{recommendation.type}</span>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">Type:</span>
+                            <span className="ml-2 text-gray-600 dark:text-gray-400 capitalize">{recommendation.type}</span>
                           </div>
                           {recommendation.estimatedSavings && (
                             <div>
-                              <span className="font-medium text-gray-700">Est. Savings:</span>
-                              <span className="ml-2 text-gray-600">${recommendation.estimatedSavings.toLocaleString()}</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Est. Savings:</span>
+                              <span className="ml-2 text-gray-600 dark:text-gray-400">${recommendation.estimatedSavings.toLocaleString()}</span>
                             </div>
                           )}
                         </div>
@@ -782,7 +782,7 @@ export default function PerformancePage() {
           {activeTab === 'alerts' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Performance Alerts</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Performance Alerts</h2>
                 <div className="flex space-x-2">
                   <Button variant="secondary" size="sm">
                     <Eye className="w-4 h-4 mr-1" />
@@ -803,7 +803,7 @@ export default function PerformancePage() {
                         {getSeverityIcon(alert.severity)}
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-medium text-gray-900">{alert.title}</h3>
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100">{alert.title}</h3>
                             <Badge color={alert.severity === 'critical' ? 'red' : 'yellow'} size="sm">
                               {alert.severity}
                             </Badge>
@@ -811,8 +811,8 @@ export default function PerformancePage() {
                               <Badge color="blue" size="sm">Acknowledged</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">{alert.description}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{alert.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(alert.timestamp).toLocaleString()}
                           </p>
                         </div>
@@ -861,39 +861,39 @@ export default function PerformancePage() {
       {/* Alert Details Modal */}
       <Modal open={showAlertModal} onClose={() => setShowAlertModal(false)}>
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Alert Details</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Alert Details</h2>
           
           {selectedAlert && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-gray-900">{selectedAlert.title}</h3>
-                <p className="text-gray-600 mt-2">{selectedAlert.description}</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">{selectedAlert.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">{selectedAlert.description}</p>
               </div>
               
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-700">Severity:</span>
-                  <p className="text-gray-600 capitalize">{selectedAlert.severity}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Severity:</span>
+                  <p className="text-gray-600 dark:text-gray-400 capitalize">{selectedAlert.severity}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Type:</span>
-                  <p className="text-gray-600 capitalize">{selectedAlert.type}</p>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Type:</span>
+                  <p className="text-gray-600 dark:text-gray-400 capitalize">{selectedAlert.type}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Timestamp:</span>
-                  <p className="text-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Timestamp:</span>
+                  <p className="text-gray-600 dark:text-gray-400">
                     {new Date(selectedAlert.timestamp).toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Status:</span>
-                  <p className="text-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                  <p className="text-gray-600 dark:text-gray-400">
                     {selectedAlert.resolved ? 'Resolved' : selectedAlert.acknowledged ? 'Acknowledged' : 'Active'}
                   </p>
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Button
                   variant="secondary"
                   onClick={() => setShowAlertModal(false)}

@@ -87,7 +87,7 @@ export default function QuickActionsWidget({ businessId, settings, theme }: Widg
                 >
                   <Icon className={`w-6 h-6`} />
                 </div>
-                <span className="text-xs font-medium text-gray-700 text-center">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
                   {action.label}
                 </span>
               </div>

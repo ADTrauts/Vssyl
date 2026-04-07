@@ -55,7 +55,7 @@ export default function HRAdminDashboard() {
     return (
       <div className="p-6">
         <h1 className="text-3xl font-bold mb-4">HR Module Not Available</h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Upgrade to Business Advanced or Enterprise to access HR features.
         </p>
         <Link 
@@ -75,12 +75,12 @@ export default function HRAdminDashboard() {
         <h1 className="text-3xl font-bold">
           HR Administration
           {hrFeatures.tier === 'business_advanced' && (
-            <span className="text-sm font-normal ml-2 text-gray-600">
+            <span className="text-sm font-normal ml-2 text-gray-600 dark:text-gray-400">
               (Limited Features)
             </span>
           )}
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
           Manage employees, attendance, payroll, and more
         </p>
       </div>
@@ -188,7 +188,7 @@ export default function HRAdminDashboard() {
       {/* HR Settings */}
       <div className="mt-8 p-4 border rounded-lg">
         <h2 className="text-xl font-semibold mb-2">HR Settings</h2>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Configure HR policies, work week settings, and module preferences
         </p>
         <Link
@@ -229,13 +229,13 @@ function FeatureCard({
   if (available) {
     return (
       <Link href={href}>
-        <div className="border p-6 rounded-lg bg-white hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="border p-6 rounded-lg bg-white dark:bg-slate-900 hover:shadow-lg transition-shadow cursor-pointer">
           <div className="text-4xl mb-3">{icon}</div>
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
-          <p className="text-gray-600 text-sm mb-3">{description}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{description}</p>
           <p className="text-green-600 text-sm font-medium">✓ Available</p>
           {limitInfo && (
-            <p className="text-gray-500 text-xs mt-2">{limitInfo}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs mt-2">{limitInfo}</p>
           )}
         </div>
       </Link>
@@ -243,11 +243,11 @@ function FeatureCard({
   }
   
   return (
-    <div className="border p-6 rounded-lg bg-gray-50 opacity-75">
+    <div className="border p-6 rounded-lg bg-gray-50 dark:bg-slate-800 opacity-75">
       <div className="text-4xl mb-3 grayscale">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-500 mb-2">{title}</h3>
+      <h3 className="text-xl font-semibold text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
       <p className="text-gray-400 text-sm mb-3">{description}</p>
-      <p className="text-gray-500 text-sm">
+      <p className="text-gray-500 dark:text-gray-400 text-sm">
         {requiresTier === 'enterprise' 
           ? 'Enterprise tier required' 
           : 'Not available'}

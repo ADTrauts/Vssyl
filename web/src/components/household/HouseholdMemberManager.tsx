@@ -204,7 +204,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       <Card className="p-6">
         <div className="flex items-center justify-center py-8">
           <Spinner size={24} />
-          <span className="ml-2 text-gray-600">Loading household members...</span>
+          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading household members...</span>
         </div>
       </Card>
     );
@@ -245,8 +245,8 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-orange-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">{household.name}</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{household.name}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {household.members.length} member{household.members.length !== 1 ? 's' : ''}
                 {household.isPrimary && (
                   <Badge size="sm" color="blue" className="ml-2">Primary</Badge>
@@ -267,19 +267,19 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
         </div>
 
         {household.description && (
-          <p className="text-gray-600 mb-4">{household.description}</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{household.description}</p>
         )}
       </Card>
 
       {/* Members List */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Members</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Members</h3>
         
         <div className="space-y-3">
           {household.members.map((member) => (
             <div
               key={member.id}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+              className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
             >
               <div className="flex items-center space-x-3">
                 <Avatar
@@ -289,14 +289,14 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
                 />
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {member.user.name || member.user.email}
                     </span>
                     {member.userId === session?.user?.id && (
                       <Badge size="sm" color="blue">You</Badge>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                     <Mail className="w-3 h-3" />
                     <span>{member.user.email}</span>
                   </div>
@@ -384,20 +384,20 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email Address
             </label>
             <input
               type="email"
               value={inviteModal.email}
               onChange={(e) => setInviteModal({ ...inviteModal, email: e.target.value })}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="Enter email address..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Role
             </label>
             <select
@@ -410,7 +410,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
                   isGuest: role === 'TEMPORARY_GUEST'
                 });
               }}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             >
               <option value="ADULT">Adult</option>
               <option value="TEEN">Teen</option>
@@ -424,14 +424,14 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
 
           {inviteModal.isGuest && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Access Expires (Optional)
               </label>
               <input
                 type="datetime-local"
                 value={inviteModal.expiresAt}
                 onChange={(e) => setInviteModal({ ...inviteModal, expiresAt: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           )}
@@ -467,7 +467,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       >
         {roleEditModal.member && (
           <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center space-x-3">
                 <Avatar
                   size={40}
@@ -475,16 +475,16 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
                   className="bg-orange-100 text-orange-600"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
                     {roleEditModal.member.user.name || roleEditModal.member.user.email}
                   </span>
-                  <div className="text-sm text-gray-500">{roleEditModal.member.user.email}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">{roleEditModal.member.user.email}</div>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 New Role
               </label>
               <select
@@ -496,7 +496,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
                     newRole: role
                   });
                 }}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               >
                 <option value="ADULT">Adult</option>
                 <option value="TEEN">Teen</option>
@@ -510,14 +510,14 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
 
             {roleEditModal.newRole === 'TEMPORARY_GUEST' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Access Expires (Optional)
                 </label>
                 <input
                   type="datetime-local"
                   value={roleEditModal.newExpiresAt}
                   onChange={(e) => setRoleEditModal({ ...roleEditModal, newExpiresAt: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
             )}

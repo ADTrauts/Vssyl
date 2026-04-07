@@ -179,8 +179,8 @@ export function RecurrenceRuleBuilder({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Repeat className="w-4 h-4 text-gray-500" />
-        <label className="text-sm font-medium text-gray-700">Recurrence</label>
+        <Repeat className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Recurrence</label>
       </div>
 
       {/* Pattern Selection */}
@@ -261,10 +261,10 @@ export function RecurrenceRuleBuilder({
 
       {/* Pattern-specific options */}
       {pattern !== 'none' && pattern !== 'custom' && (
-        <div className="space-y-3 pl-6 border-l-2 border-gray-200">
+        <div className="space-y-3 pl-6 border-l-2 border-gray-200 dark:border-slate-700">
           {/* Interval */}
           <div>
-            <label className="text-xs text-gray-600 mb-1 block">Repeat every</label>
+            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">Repeat every</label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -274,7 +274,7 @@ export function RecurrenceRuleBuilder({
                 onChange={(e) => setInterval(parseInt(e.target.value, 10) || 1)}
                 className="w-20"
               />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 {pattern === 'daily' && 'day(s)'}
                 {pattern === 'weekly' && 'week(s)'}
                 {pattern === 'monthly' && 'month(s)'}
@@ -286,7 +286,7 @@ export function RecurrenceRuleBuilder({
           {/* Weekly: Day selection */}
           {pattern === 'weekly' && (
             <div>
-              <label className="text-xs text-gray-600 mb-2 block">On days</label>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-2 block">On days</label>
               <div className="flex flex-wrap gap-2">
                 {dayNames.map((day, idx) => (
                   <Button
@@ -310,7 +310,7 @@ export function RecurrenceRuleBuilder({
           {/* Monthly: Day of month */}
           {pattern === 'monthly' && (
             <div>
-              <label className="text-xs text-gray-600 mb-1 block">On day</label>
+              <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">On day</label>
               <Input
                 type="number"
                 min="1"
@@ -326,8 +326,8 @@ export function RecurrenceRuleBuilder({
 
       {/* Custom RRULE input */}
       {pattern === 'custom' && (
-        <div className="pl-6 border-l-2 border-gray-200">
-          <label className="text-xs text-gray-600 mb-1 block">RRULE (e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR)</label>
+        <div className="pl-6 border-l-2 border-gray-200 dark:border-slate-700">
+          <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">RRULE (e.g., FREQ=WEEKLY;BYDAY=MO,WE,FR)</label>
           <Input
             type="text"
             value={customRule}
@@ -340,8 +340,8 @@ export function RecurrenceRuleBuilder({
 
       {/* End date options */}
       {pattern !== 'none' && (
-        <div className="pl-6 border-l-2 border-gray-200 space-y-2">
-          <label className="text-xs text-gray-600 block">Ends</label>
+        <div className="pl-6 border-l-2 border-gray-200 dark:border-slate-700 space-y-2">
+          <label className="text-xs text-gray-600 dark:text-gray-400 block">Ends</label>
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2">
               <input

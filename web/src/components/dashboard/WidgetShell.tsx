@@ -85,19 +85,19 @@ export default function WidgetShell({
   if (isExpanded) {
     return (
       <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50/80">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80">
             <div className="flex items-center gap-2.5">
               <div className={`w-8 h-8 flex items-center justify-center flex-shrink-0 ${shapeClass} ${iconBgClass}`}>
                 <Icon className={`w-5 h-5 ${iconColorClass}`} />
               </div>
-              <span className="text-sm font-semibold text-gray-900">{displayTitle}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{displayTitle}</span>
             </div>
             <div className="flex items-center gap-1">
               {onRefresh && (
                 <button
                   onClick={onRefresh}
-                  className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+                  className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 dark:text-gray-400 transition-colors"
                   title="Refresh"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -105,7 +105,7 @@ export default function WidgetShell({
               )}
               <button
                 onClick={handleExpand}
-                className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 transition-colors"
+                className="p-1.5 rounded-md hover:bg-gray-200 text-gray-600 dark:text-gray-400 transition-colors"
                 title="Minimize"
               >
                 <Minimize2 className="w-4 h-4" />
@@ -125,13 +125,13 @@ export default function WidgetShell({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-950 rounded-xl border border-gray-200 dark:border-slate-600 shadow-sm dark:shadow-[0_8px_30px_rgba(2,6,23,0.65)] hover:shadow-md dark:hover:shadow-[0_12px_32px_rgba(2,6,23,0.72)] transition-shadow overflow-hidden">
       {/* Header - entire header is draggable in edit mode */}
       <div 
         className={`flex items-center justify-between px-4 py-2.5 border-b border-gray-100 flex-shrink-0 ${
           isEditMode 
-            ? 'widget-drag-handle bg-blue-50/70 cursor-grab active:cursor-grabbing hover:bg-blue-100/70' 
-            : 'bg-gray-50/50'
+            ? 'widget-drag-handle bg-blue-50/70 dark:bg-blue-950/45 cursor-grab active:cursor-grabbing hover:bg-blue-100/70 dark:hover:bg-blue-900/45' 
+            : 'bg-gray-50/50 dark:bg-slate-900/90'
         }`}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -141,7 +141,7 @@ export default function WidgetShell({
           <div className={`w-7 h-7 flex items-center justify-center flex-shrink-0 ${shapeClass} ${iconBgClass}`}>
             <Icon className={`w-4 h-4 ${iconColorClass}`} />
           </div>
-          <span className="text-sm font-medium text-gray-900 truncate">{displayTitle}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{displayTitle}</span>
           {isEditMode && (
             <span className="text-[10px] text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded font-medium">Drag header</span>
           )}
@@ -154,7 +154,7 @@ export default function WidgetShell({
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="p-1 rounded hover:bg-gray-200 text-gray-600 transition-colors"
+              className="p-1 rounded hover:bg-gray-200 text-gray-600 dark:text-gray-400 transition-colors"
               title="Refresh"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -162,7 +162,7 @@ export default function WidgetShell({
           )}
           <button
             onClick={handleExpand}
-            className="p-1 rounded hover:bg-gray-200 text-gray-600 transition-colors"
+            className="p-1 rounded hover:bg-gray-200 text-gray-600 dark:text-gray-400 transition-colors"
             title="Expand"
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -170,7 +170,7 @@ export default function WidgetShell({
           {isEditMode && (
             <button
               onClick={onRemove}
-              className="p-1 rounded hover:bg-red-100 text-gray-600 hover:text-red-600 transition-colors"
+              className="p-1 rounded hover:bg-red-100 text-gray-600 dark:text-gray-400 hover:text-red-600 transition-colors"
               title="Remove widget"
             >
               <X className="w-3.5 h-3.5" />
@@ -180,7 +180,7 @@ export default function WidgetShell({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4 min-h-0">
+      <div className="flex-1 overflow-auto p-4 min-h-0 bg-white dark:bg-slate-950">
         {isLoading ? (
           <WidgetSkeleton />
         ) : error ? (
@@ -198,7 +198,7 @@ function WidgetSkeleton() {
     <div className="space-y-3 animate-pulse">
       <div className="h-4 bg-gray-200 rounded w-3/4" />
       <div className="h-4 bg-gray-200 rounded w-1/2" />
-      <div className="h-20 bg-gray-100 rounded-lg" />
+      <div className="h-20 bg-gray-100 dark:bg-slate-700 rounded-lg" />
       <div className="h-4 bg-gray-200 rounded w-2/3" />
     </div>
   );
@@ -208,7 +208,7 @@ function WidgetError({ message, onRetry }: { message: string; onRetry?: () => vo
   return (
     <div className="flex flex-col items-center justify-center h-full text-center py-6">
       <div className="text-red-500 text-sm font-medium mb-2">Something went wrong</div>
-      <div className="text-gray-600 text-xs mb-3">{message}</div>
+      <div className="text-gray-600 dark:text-gray-400 text-xs mb-3">{message}</div>
       {onRetry && (
         <button
           onClick={onRetry}

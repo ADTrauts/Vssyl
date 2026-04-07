@@ -230,7 +230,7 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
     return (
       <div
         ref={resultsRef}
-        className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto"
+        className="fixed z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg max-h-96 overflow-y-auto"
         style={{
           top: dropdownPosition.top,
           left: dropdownPosition.left,
@@ -255,7 +255,7 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
             {moduleOrder.map((moduleId) =>
               groupedResults[moduleId] ? (
                 <div key={moduleId} className="border-b last:border-b-0">
-                  <div className="flex items-center px-4 py-2 bg-gray-50 text-xs font-bold text-gray-600">
+                  <div className="flex items-center px-4 py-2 bg-gray-50 dark:bg-slate-800 text-xs font-bold text-gray-600 dark:text-gray-400">
                     <span className="mr-2">{moduleIcons[moduleId]}</span>
                     {moduleLabels[moduleId]}
                   </div>
@@ -274,7 +274,7 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
                         <div className="font-medium truncate">
                           {highlightText(item.title || '', inputValue || '')}
                         </div>
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                           {highlightText(item.description || '', inputValue || '')}
                         </div>
                       </div>
@@ -309,7 +309,7 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
             // Collapsed state - just icon button
             <button
               onClick={handleButtonClick}
-              className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-gray-600 transition-colors"
+              className="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -327,14 +327,14 @@ export default function CompactSearchButton({ className = '' }: CompactSearchBut
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Search across all modules..."
-                className="flex-1 py-2 px-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
+                className="flex-1 py-2 px-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none"
               />
               
               <div className="flex items-center pr-2 space-x-1">
                 {inputValue && (
                   <button
                     onClick={handleClearClick}
-                    className="p-1 text-gray-400 hover:text-gray-600"
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                   >
                     <X className="w-4 h-4" />
                   </button>

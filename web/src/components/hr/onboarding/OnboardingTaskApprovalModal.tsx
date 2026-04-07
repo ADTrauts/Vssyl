@@ -68,7 +68,7 @@ export default function OnboardingTaskApprovalModal({
     <Modal open={true} onClose={onClose} title="Review Onboarding Task">
       <div className="space-y-4">
         {/* Task Info */}
-        <div className="bg-gray-50 rounded-lg p-4">
+        <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
           <div className="flex items-start gap-3 mb-3">
             <div
               className={`flex items-center justify-center w-10 h-10 rounded-lg ${
@@ -93,30 +93,30 @@ export default function OnboardingTaskApprovalModal({
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{task.title}</h3>
                 <OnboardingTaskStatusBadge status={task.status} />
               </div>
               {task.description && (
-                <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
               )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="flex items-center gap-2 text-gray-600 mb-1">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                 <User className="w-4 h-4" />
                 <span className="font-medium">Employee</span>
               </div>
-              <p className="text-gray-900">{employeeName}</p>
+              <p className="text-gray-900 dark:text-gray-100">{employeeName}</p>
             </div>
             {task.dueDate && (
               <div>
-                <div className="flex items-center gap-2 text-gray-600 mb-1">
+                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-1">
                   <Calendar className="w-4 h-4" />
                   <span className="font-medium">Due Date</span>
                 </div>
-                <p className="text-gray-900">
+                <p className="text-gray-900 dark:text-gray-100">
                   {format(new Date(task.dueDate), 'MMM d, yyyy')}
                 </p>
               </div>
@@ -127,19 +127,19 @@ export default function OnboardingTaskApprovalModal({
         {/* Employee Submission */}
         {task.notes && typeof task.notes === 'string' ? (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Employee Notes</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee Notes</h4>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-gray-700">{task.notes}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{task.notes}</p>
             </div>
           </div>
         ) : null}
 
         {hasDocument && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Document</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Uploaded Document</h4>
             <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
               <FileText className="w-4 h-4 text-green-600" />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 Document uploaded: {(task.metadata as { documentFileName?: string })?.documentFileName || 'Document'}
               </span>
             </div>
@@ -148,9 +148,9 @@ export default function OnboardingTaskApprovalModal({
 
         {hasEquipmentRequest && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Equipment Request</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Equipment Request</h4>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
                 Equipment request submitted. Review the details in the task metadata.
               </p>
             </div>
@@ -159,13 +159,13 @@ export default function OnboardingTaskApprovalModal({
 
         {/* Manager Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Your Notes (optional)
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={4}
             placeholder="Add any notes or feedback for the employee..."
           />

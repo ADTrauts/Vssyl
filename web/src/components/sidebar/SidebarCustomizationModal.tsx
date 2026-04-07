@@ -120,7 +120,7 @@ export function SidebarCustomizationModal({
       headerActions={
         <div className="flex items-center gap-2">
           {isDirty && (
-            <span className="text-xs text-gray-500">Unsaved changes</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Unsaved changes</span>
           )}
           <Button
             variant="ghost"
@@ -178,7 +178,7 @@ export function SidebarCustomizationModal({
             {/* Dashboard Tab Selector (for left sidebar) */}
             {activeTab === 'left' && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Dashboard Tab
                 </label>
                 <select
@@ -189,7 +189,7 @@ export function SidebarCustomizationModal({
                       loadConfig(e.target.value);
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-sm"
                 >
                   {personalDashboards.map((dashboard) => (
                     <option key={dashboard.id} value={dashboard.id}>
@@ -197,7 +197,7 @@ export function SidebarCustomizationModal({
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Each dashboard tab can have its own sidebar organization
                 </p>
               </div>
@@ -218,7 +218,7 @@ export function SidebarCustomizationModal({
                     context={context}
                   />
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     Please select a dashboard tab
                   </div>
                 )}
@@ -226,7 +226,7 @@ export function SidebarCustomizationModal({
 
               <Tabs.Content value="right">
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Context
                   </label>
                   <select
@@ -235,14 +235,14 @@ export function SidebarCustomizationModal({
                       // Context is determined by work auth, but we can show it
                     }}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-sm bg-gray-50 dark:bg-slate-800"
                   >
                     <option value="personal">Personal</option>
                     {isWorkAuthenticated && currentBusinessId && (
                       <option value={currentBusinessId}>Business</option>
                     )}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Right sidebar is context-specific (Personal or Business)
                   </p>
                 </div>

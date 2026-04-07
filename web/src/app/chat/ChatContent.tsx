@@ -146,10 +146,10 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
 
   if (status === 'loading') {
     return (
-      <div className="flex h-full w-full bg-gray-50 items-center justify-center">
+      <div className="flex h-full w-full bg-gray-50 dark:bg-gray-900 items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
+          <p className="text-gray-700 dark:text-gray-300">Loading chat...</p>
         </div>
       </div>
     );
@@ -157,10 +157,10 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
 
   if (status === 'unauthenticated' || !session?.accessToken) {
     return (
-      <div className="flex h-full w-full bg-gray-50 items-center justify-center">
+      <div className="flex h-full w-full bg-gray-50 dark:bg-gray-900 items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Authentication Required</h2>
-          <p className="text-gray-600 mb-6">Please log in to access the chat.</p>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Authentication Required</h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">Please log in to access the chat.</p>
           <a 
             href="/auth/login" 
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -176,7 +176,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
     <div className="flex h-full overflow-hidden">
       {/* Left Panel - Conversation List */}
       <div 
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col ${panelState.leftPanelCollapsed ? 'w-16' : 'w-[260px]'}`}
+        className={`bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-all duration-300 flex flex-col ${panelState.leftPanelCollapsed ? 'w-16' : 'w-[260px]'}`}
         style={{ width: panelState.leftPanelCollapsed ? '64px' : '260px', minWidth: panelState.leftPanelCollapsed ? '64px' : '260px', maxWidth: panelState.leftPanelCollapsed ? '64px' : '260px' }}
       >
         <ChatLeftPanel
@@ -190,7 +190,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
       </div>
 
       {/* Main Panel - Active Conversation */}
-      <div className="flex-1 min-w-0 flex flex-col bg-gray-50 overflow-hidden">
+      <div className="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
         <ChatMainPanel
           panelState={panelState}
           onThreadSelect={updateActiveThread}
@@ -201,7 +201,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
 
       {/* Right Panel - Thread Details */}
       {panelState.rightPanelCollapsed ? (
-        <div className="flex flex-col items-center justify-center bg-white border-l border-gray-200 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
+        <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
           <button
             className="absolute top-1/2 transform -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-gray-600 text-white border border-gray-500 cursor-pointer z-20 flex items-center justify-center hover:bg-gray-700 transition-colors"
             onClick={toggleRightPanel}
@@ -215,7 +215,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
         </div>
       ) : (
         <div 
-          className="bg-white border-l border-gray-200 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
+          className="bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
           style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
         >
           <button
@@ -239,7 +239,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
       {/* Mobile overlay for right panel */}
       {panelState.isMobile && !panelState.rightPanelCollapsed && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40">
-          <div className="absolute right-0 top-0 h-full bg-white w-80">
+          <div className="absolute right-0 top-0 h-full bg-white dark:bg-slate-800 w-80">
             <ChatRightPanel
               panelState={panelState}
               onToggleCollapse={toggleRightPanel}

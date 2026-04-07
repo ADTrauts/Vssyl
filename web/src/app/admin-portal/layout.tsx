@@ -58,10 +58,10 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading admin portal...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading admin portal...</p>
         </div>
       </div>
     );
@@ -71,10 +71,10 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
   // (redirect will happen in useEffect)
   if (!session || session.user.role !== 'ADMIN') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Redirecting...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Redirecting...</p>
         </div>
       </div>
     );
@@ -107,7 +107,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
 
   return (
     <ImpersonationProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 dark:bg-gray-900">
         <ImpersonationBanner />
         <header className="bg-gray-900 text-white border-b border-gray-800">
           <div className="flex items-center justify-between px-6 py-4">
@@ -159,7 +159,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
               </button>
             </div>
           </aside>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-800 dark:bg-gray-900">
             <div className="p-6">
               {children}
             </div>

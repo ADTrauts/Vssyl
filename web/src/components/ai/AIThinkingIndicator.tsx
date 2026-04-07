@@ -30,7 +30,7 @@ export default function AIThinkingIndicator({
     >
       <Bot className="text-purple-600 flex-shrink-0" size={iconSize} />
       <div className="flex items-center gap-1">
-        <span className="text-sm text-gray-600">{message.replace(/\.+$/, '')}</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{message.replace(/\.+$/, '')}</span>
         <span className="flex gap-0.5" aria-hidden>
           <span
             className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce"

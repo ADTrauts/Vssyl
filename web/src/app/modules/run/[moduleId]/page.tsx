@@ -37,8 +37,8 @@ export default function RunModulePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-gray-600">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Spinner size={24} />
           <span>Loading module...</span>
         </div>
@@ -48,7 +48,7 @@ export default function RunModulePage() {
 
   if (error || !config) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <Alert type="error" title="Error" className="mb-4">
             {error || 'Module not available'}
@@ -60,13 +60,13 @@ export default function RunModulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{config.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{config.name}</h1>
             <div className="flex items-center gap-2">
-              <p className="text-gray-600">v{config.version}</p>
+              <p className="text-gray-600 dark:text-gray-400">v{config.version}</p>
               {config?.accessContext?.scope && (
                 <span className={`text-xs px-2 py-0.5 rounded border ${config.accessContext.scope === 'business' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
                   {config.accessContext.scope === 'business' ? 'Business' : 'Personal'}

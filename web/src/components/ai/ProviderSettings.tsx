@@ -118,8 +118,8 @@ export default function ProviderSettings() {
     <div className="space-y-6">
       <Card className="p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">AI Provider Selection</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">AI Provider Selection</h2>
+          <p className="text-gray-600 dark:text-gray-400">
             Choose your default AI provider. You can override this selection per conversation in the AI chat interface.
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function ProviderSettings() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Default Provider
             </label>
             <AIServicePicker
@@ -150,7 +150,7 @@ export default function ProviderSettings() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Default model for OpenAI
             </label>
             <AIModelPicker
@@ -161,11 +161,11 @@ export default function ProviderSettings() {
               compact={false}
               showLabel={false}
             />
-            <p className="text-xs text-gray-600 mt-1">Used when OpenAI is selected as provider. Leave default to use the recommended model. Premium models use 2 queries per request.</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Used when OpenAI is selected as provider. Leave default to use the recommended model. Premium models use 2 queries per request.</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Default model for Anthropic
             </label>
             <AIModelPicker
@@ -176,7 +176,7 @@ export default function ProviderSettings() {
               compact={false}
               showLabel={false}
             />
-            <p className="text-xs text-gray-600 mt-1">Used when Anthropic is selected as provider. Premium models use 2 queries per request.</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Used when Anthropic is selected as provider. Premium models use 2 queries per request.</p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -213,26 +213,26 @@ export default function ProviderSettings() {
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Provider Comparison</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Provider Comparison</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Zap className="h-5 w-5 text-purple-600" />
-              <h4 className="font-medium text-gray-900">OpenAI</h4>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">OpenAI</h4>
             </div>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
               <li>• General purpose queries</li>
               <li>• Conversational tasks</li>
               <li>• Decision-making</li>
               <li>• Fast responses</li>
             </ul>
           </div>
-          <div className="border border-gray-200 rounded-lg p-4">
+          <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Brain className="h-5 w-5 text-blue-600" />
-              <h4 className="font-medium text-gray-900">Anthropic</h4>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">Anthropic</h4>
             </div>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
               <li>• Complex analysis</li>
               <li>• Deep reasoning</li>
               <li>• Understanding tasks</li>

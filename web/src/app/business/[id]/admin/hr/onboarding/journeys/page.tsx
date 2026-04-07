@@ -113,8 +113,8 @@ export default function OnboardingJourneysPage() {
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Onboarding Journeys</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Onboarding Journeys</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               View and manage all employee onboarding journeys
             </p>
           </div>
@@ -175,13 +175,13 @@ export default function OnboardingJourneysPage() {
           </Alert>
         ) : filteredJourneys.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-gray-600 mb-2">
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
               {journeys.length === 0 
                 ? 'No onboarding journeys found.' 
                 : `No ${statusFilter === 'all' ? '' : statusFilter.toLowerCase().replace('_', ' ')} journeys found.`}
             </p>
             {journeys.length === 0 && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Onboarding journeys will appear here once employees start their onboarding process.
               </p>
             )}
@@ -200,17 +200,17 @@ export default function OnboardingJourneysPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {employeeName}
                         </h3>
                         <Badge color={journey.status === 'COMPLETED' ? 'green' : journey.status === 'CANCELLED' ? 'red' : 'blue'}>
                           {journey.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                         Template: {journey.onboardingTemplate?.name || 'N/A'}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <span>Started: {startDate}</span>
                         <span>Progress: {progress}%</span>
                         <span>Tasks: {completedTasks}/{totalTasks}</span>

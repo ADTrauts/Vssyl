@@ -13,20 +13,20 @@ import ColorSchemeDemo from '../../components/ColorSchemeDemo';
 
 export default function DemoIndexPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800 py-12">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Vssyl - Feature Demos
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-600 dark:text-gray-400">
             Explore the latest features and functionality
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Dashboard Deletion Demo */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 bg-red-50 border-b border-red-100">
               <div className="flex items-center space-x-3">
                 <TrashIcon className="w-8 h-8 text-red-600" />
@@ -41,7 +41,7 @@ export default function DemoIndexPage() {
               </div>
             </div>
             <div className="p-6">
-              <ul className="space-y-3 mb-6 text-sm text-gray-600">
+              <ul className="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   <span>File summary with size and shared status</span>
@@ -72,7 +72,7 @@ export default function DemoIndexPage() {
           </div>
 
           {/* Context-Aware Drive */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
               <div className="flex items-center space-x-3">
                 <FolderIcon className="w-8 h-8 text-blue-600" />
@@ -87,7 +87,7 @@ export default function DemoIndexPage() {
               </div>
             </div>
             <div className="p-6">
-              <ul className="space-y-3 mb-6 text-sm text-gray-600">
+              <ul className="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   <span>Separate drives for each dashboard</span>
@@ -114,7 +114,7 @@ export default function DemoIndexPage() {
           </div>
 
           {/* Chat System */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 bg-green-50 border-b border-green-100">
               <div className="flex items-center space-x-3">
                 <ChatBubbleLeftIcon className="w-8 h-8 text-green-600" />
@@ -129,7 +129,7 @@ export default function DemoIndexPage() {
               </div>
             </div>
             <div className="p-6">
-              <ul className="space-y-3 mb-6 text-sm text-gray-600">
+              <ul className="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   <span>Separate chats for work, home, personal</span>
@@ -152,7 +152,7 @@ export default function DemoIndexPage() {
           </div>
 
           {/* Settings & Admin */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 bg-purple-50 border-b border-purple-100">
               <div className="flex items-center space-x-3">
                 <Cog6ToothIcon className="w-8 h-8 text-purple-600" />
@@ -167,7 +167,7 @@ export default function DemoIndexPage() {
               </div>
             </div>
             <div className="p-6">
-              <ul className="space-y-3 mb-6 text-sm text-gray-600">
+              <ul className="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-400">
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
                   <span>Business dashboard deletion policies</span>
@@ -189,7 +189,7 @@ export default function DemoIndexPage() {
             </div>
           </div>
           {/* Color Scheme Demo */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
               <div className="flex items-center space-x-3">
                 <PaintBrushIcon className="w-8 h-8 text-blue-600" />
@@ -204,7 +204,7 @@ export default function DemoIndexPage() {
               </div>
             </div>
             <div className="p-6">
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 View the new brand color system with green primary colors, 
                 improved dark mode, and consistent theming throughout the app.
               </p>

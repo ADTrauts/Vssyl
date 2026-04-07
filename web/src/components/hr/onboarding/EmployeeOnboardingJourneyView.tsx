@@ -69,7 +69,7 @@ export default function EmployeeOnboardingJourneyView({
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-xl font-semibold text-gray-900">{templateName}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{templateName}</h3>
               <Badge
                 color={
                   journeyStatus === 'COMPLETED'
@@ -86,7 +86,7 @@ export default function EmployeeOnboardingJourneyView({
                   : 'In Progress'}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Started {new Date(journey.startDate).toLocaleDateString()}
               {journey.completionDate && (
                 <> • Completed {new Date(journey.completionDate).toLocaleDateString()}</>
@@ -101,20 +101,20 @@ export default function EmployeeOnboardingJourneyView({
 
       {/* Task Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 mb-1">Total Tasks</div>
-          <div className="text-2xl font-semibold text-gray-900">{totalTasks}</div>
+        <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Tasks</div>
+          <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalTasks}</div>
         </div>
         <div className="bg-blue-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 mb-1">In Progress</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">In Progress</div>
           <div className="text-2xl font-semibold text-blue-600">{inProgressTasks}</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 mb-1">Pending</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pending</div>
           <div className="text-2xl font-semibold text-yellow-600">{pendingTasks}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 mb-1">Completed</div>
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Completed</div>
           <div className="text-2xl font-semibold text-green-600">{completedTasks}</div>
         </div>
       </div>
@@ -122,8 +122,8 @@ export default function EmployeeOnboardingJourneyView({
       {/* Filters and View Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter:</span>
+          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
           <button
             onClick={() => setTaskFilter('all')}
             className={`px-3 py-1 rounded text-sm ${
@@ -198,7 +198,7 @@ export default function EmployeeOnboardingJourneyView({
 
       {/* Tasks Display */}
       {sortedTasks.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <p className="text-sm">No tasks match the selected filter.</p>
         </div>
       ) : viewMode === 'timeline' ? (

@@ -159,21 +159,21 @@ export function LoginModal() {
     >
       <div className="space-y-6">
         {loginMessage && (
-          <div className="text-sm text-gray-600 bg-yellow-50 border border-yellow-200 rounded-md p-3">
+          <div className="text-sm text-gray-600 dark:text-gray-400 bg-yellow-50 border border-yellow-200 rounded-md p-3">
             {loginMessage}
           </div>
         )}
 
         {/* Show close option if user is already logged in (testing scenario) */}
         {session?.accessToken && hadSessionWhenOpened && (
-          <div className="text-xs text-gray-500 text-center">
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
             You're already logged in. This is a test modal.
           </div>
         )}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="modal-email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="modal-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email address
             </label>
             <Input
@@ -190,7 +190,7 @@ export function LoginModal() {
           </div>
 
           <div>
-            <label htmlFor="modal-password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="modal-password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Password
             </label>
             <Input

@@ -115,7 +115,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
               nameOrEmail={message.sender?.name || message.sender?.email}
               size={24}
             />
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
               {message.sender?.name || message.sender?.email}
             </span>
             {hasEnterprise && (message as any).encrypted && (
@@ -168,17 +168,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
         {/* Context Menu */}
         {showContextMenu && (
-          <div className="absolute right-2 top-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-32">
+          <div className="absolute right-2 top-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-32">
             <button
               onClick={handleReply}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
             >
               <Reply className="w-4 h-4" />
               <span>Reply</span>
             </button>
             <button
               onClick={() => setShowReactions(!showReactions)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
             >
               <Smile className="w-4 h-4" />
               <span>React</span>
@@ -189,7 +189,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                   onCreateTask(message.id, conversationId);
                   setShowContextMenu(false);
                 }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
               >
                 <CheckSquare className="w-4 h-4" />
                 <span>Create Task</span>
@@ -197,7 +197,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
             )}
             <button
               onClick={handleDelete}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2 text-red-600"
+              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2 text-red-600"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete</span>
@@ -207,7 +207,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
         {/* Reaction picker */}
         {showReactions && (
-          <div className="absolute top-full left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50 flex space-x-1">
+          <div className="absolute top-full left-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-50 flex space-x-1">
             {commonEmojis.map(emoji => (
               <button
                 key={emoji}
@@ -215,7 +215,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
                   onAddReaction(message.id, emoji);
                   setShowReactions(false);
                 }}
-                className="p-1 hover:bg-gray-100 rounded text-lg"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded text-lg"
               >
                 {emoji}
               </button>
@@ -452,7 +452,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   if (isMinimizedToBottom) {
     return (
       <div
-        className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 cursor-pointer"
+        className="fixed bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 cursor-pointer"
         style={{
           right: '352px', // Positioned to the left of the 352px messaging panel
           bottom: '20px',
@@ -469,8 +469,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               size={32}
             />
             <div>
-              <h3 className="font-medium text-gray-900">{conversationName}</h3>
-              <p className="text-sm text-gray-500">Click to expand</p>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">{conversationName}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Click to expand</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -479,20 +479,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 e.stopPropagation();
                 toggleMinimizeToBottom();
               }}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
               title="Expand"
             >
-              <Minus className="w-4 h-4 text-gray-600 rotate-180" />
+              <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400 rotate-180" />
             </button>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
               }}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
               title="Close"
             >
-              <X className="w-4 h-4 text-gray-600" />
+              <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         </div>
@@ -503,7 +503,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Full chat window - positioned to the left of the messaging panel
   return (
     <div
-      className="fixed bg-white border border-gray-200 rounded-lg shadow-xl z-50 flex flex-col"
+      className="fixed bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col"
       style={{
         right: '320px', // Positioned to the left of the 320px messaging panel
         bottom: '20px', // Fixed distance from bottom
@@ -513,7 +513,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }}
     >
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+      <div className="border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-t-lg">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
             <Avatar 
@@ -522,9 +522,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               size={32}
             />
             <div>
-              <h3 className="font-medium text-gray-900">{conversationName}</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">{conversationName}</h3>
               <div className="flex items-center space-x-2">
-                <p className="text-sm text-gray-500">Online</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Online</p>
                 {hasEnterprise && (
                   <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
                     Enterprise
@@ -536,23 +536,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div className="flex items-center space-x-2">
             <button 
               onClick={toggleMinimizeToBottom} 
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
               title="Minimize to bottom"
             >
-              <Minus className="w-4 h-4 text-gray-600" />
+              <Minus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
             <button 
               onClick={onClose} 
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
               title="Close"
             >
-              <X className="w-4 h-4 text-gray-600" />
+              <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         </div>
         
         {/* Tab Switcher */}
-        <div className="flex border-t border-gray-200">
+        <div className="flex border-t border-gray-200 dark:border-slate-700">
           <button
             onClick={() => setActiveTab('messages')}
             className={`flex-1 py-2 px-4 text-sm font-medium transition-colors ${
@@ -589,23 +589,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         ) : activeTab === 'messages' && messages.filter(m => !(m as any).parentMessageId).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
               <Avatar 
                 src={(otherParticipant as any)?.avatar || undefined} 
                 nameOrEmail={conversationName}
                 size={48}
               />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
-            <p className="text-gray-500">Start the conversation with {conversationName}</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No messages yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">Start the conversation with {conversationName}</p>
           </div>
         ) : activeTab === 'threads' && messages.filter(m => (m as any).parentMessageId).length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
               <Reply className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No threads yet</h3>
-            <p className="text-gray-500">Reply to a message to start a thread</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No threads yet</h3>
+            <p className="text-gray-500 dark:text-gray-400">Reply to a message to start a thread</p>
           </div>
         ) : (
           <>
@@ -657,14 +657,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* File Upload Modal */}
       {showFileUpload && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Upload Files</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Upload Files</h3>
               <button
                 onClick={() => setShowFileUpload(false)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
               >
-                <X className="w-5 h-5 text-gray-600" />
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
             <ChatFileUpload onFileSelect={handleFileSelect} />
@@ -674,13 +674,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="emoji-picker absolute bottom-20 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-50">
+        <div className="emoji-picker absolute bottom-20 right-4 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-3 z-50">
           <div className="grid grid-cols-6 gap-1">
             {['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'].slice(0, 48).map(emoji => (
               <button
                 key={emoji}
                 onClick={() => handleEmojiSelect(emoji)}
-                className="p-2 hover:bg-gray-100 rounded text-lg transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded text-lg transition-colors"
               >
                 {emoji}
               </button>
@@ -690,7 +690,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-2">
           <input
             ref={inputRef}
@@ -699,21 +699,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
           <button 
             onClick={() => setShowFileUpload(true)}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
             title="Attach file"
           >
-            <Paperclip className="w-4 h-4 text-gray-600" />
+            <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>
           <button 
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded transition-colors"
             title="Add emoji"
           >
-            <Smile className="w-4 h-4 text-gray-600" />
+            <Smile className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </button>
           <Button
             onClick={handleSendMessage}

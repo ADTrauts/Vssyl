@@ -136,11 +136,11 @@ export default function ShareFileModal({
     >
       <div className="space-y-6">
         {/* File Info */}
-        <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
           <ShareIcon className="w-8 h-8 text-blue-600" />
           <div>
-            <h3 className="font-medium text-gray-900">{fileName}</h3>
-            <p className="text-sm text-gray-600">Share this file with other dashboards</p>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">{fileName}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Share this file with other dashboards</p>
           </div>
         </div>
 
@@ -154,12 +154,12 @@ export default function ShareFileModal({
         {shareableDashboards.length === 0 ? (
           <div className="text-center py-8">
             <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">No other dashboards available for sharing.</p>
-            <p className="text-sm text-gray-500 mt-1">Create additional dashboards to share files between contexts.</p>
+            <p className="text-gray-600 dark:text-gray-400">No other dashboards available for sharing.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Create additional dashboards to share files between contexts.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            <h4 className="font-medium text-gray-900">Select dashboards to share with:</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">Select dashboards to share with:</h4>
             
             {shareableDashboards.map((dashboard) => {
               const Icon = getContextIcon(dashboard.type);
@@ -188,11 +188,11 @@ export default function ShareFileModal({
                       <div>
                         <label
                           htmlFor={`dashboard-${dashboard.id}`}
-                          className="font-medium text-gray-900 cursor-pointer"
+                          className="font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
                         >
                           {dashboard.name}
                         </label>
-                        <p className="text-sm text-gray-600 capitalize">{dashboard.type} dashboard</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">{dashboard.type} dashboard</p>
                       </div>
                     </div>
 
@@ -201,7 +201,7 @@ export default function ShareFileModal({
                         <select
                           value={permission}
                           onChange={(e) => handlePermissionChange(dashboard.id, e.target.value as any)}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
                         >
                           <option value="view">View Only</option>
                           <option value="edit">Can Edit</option>
@@ -213,7 +213,7 @@ export default function ShareFileModal({
 
                   {isSelected && (
                     <div className="mt-3 pl-10">
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         {getPermissionDescription(permission)}
                       </p>
                     </div>

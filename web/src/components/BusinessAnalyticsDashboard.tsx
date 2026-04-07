@@ -148,8 +148,8 @@ export default function BusinessAnalyticsDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Business Analytics</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Analytics</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             {getTimeRangeLabel(selectedTimeRange)} • Last updated just now
           </p>
         </div>
@@ -177,8 +177,8 @@ export default function BusinessAnalyticsDashboard({
               <Users className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Team Members</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Team Members</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {stats ? formatNumber(stats.memberCount) : '0'}
               </p>
             </div>
@@ -191,8 +191,8 @@ export default function BusinessAnalyticsDashboard({
               <Folder className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Files Created</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Files Created</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {stats ? formatNumber(stats.fileCount) : '0'}
               </p>
             </div>
@@ -205,8 +205,8 @@ export default function BusinessAnalyticsDashboard({
               <MessageSquare className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Conversations</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {stats ? formatNumber(stats.conversationCount) : '0'}
               </p>
             </div>
@@ -219,8 +219,8 @@ export default function BusinessAnalyticsDashboard({
               <HardDrive className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Storage Used</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {stats ? formatStorageSize(stats.storageUsed) : '0 B'}
               </p>
             </div>
@@ -233,8 +233,8 @@ export default function BusinessAnalyticsDashboard({
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Module Performance</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Performance</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {moduleAnalytics.totalModules} modules • {moduleAnalytics.totalInstallations} total installations
               </p>
             </div>
@@ -245,14 +245,14 @@ export default function BusinessAnalyticsDashboard({
 
           <div className="space-y-4">
             {moduleAnalytics.modules.map((module) => (
-              <div key={module.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={module.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <BarChart3 className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">{module.name}</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       by {module.developer.name} • {module.category}
                     </p>
                   </div>
@@ -260,16 +260,16 @@ export default function BusinessAnalyticsDashboard({
                 
                 <div className="flex items-center space-x-6">
                   <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {module.activeInstallations}
                     </p>
-                    <p className="text-xs text-gray-600">Active</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Active</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {module.adoptionRate.toFixed(1)}%
                     </p>
-                    <p className="text-xs text-gray-600">Adoption</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Adoption</p>
                   </div>
                   <div className="flex items-center space-x-1">
                     {module.adoptionRate > 50 ? (
@@ -289,8 +289,8 @@ export default function BusinessAnalyticsDashboard({
       {moduleAnalytics && moduleAnalytics.totalModules === 0 && (
         <Card className="p-8 text-center">
           <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Modules Yet</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Modules Yet</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             Your business doesn't have any modules yet. Create or link modules to see performance analytics.
           </p>
           <Button variant="secondary">
@@ -304,37 +304,37 @@ export default function BusinessAnalyticsDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Recent Activity</h3>
             <Button variant="ghost" size="sm">
               View All
             </Button>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="p-1 bg-blue-100 rounded">
                 <Activity className="w-4 h-4 text-blue-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">New team member joined</p>
-                <p className="text-xs text-gray-600">2 hours ago</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">New team member joined</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">2 hours ago</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="p-1 bg-green-100 rounded">
                 <Folder className="w-4 h-4 text-green-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">5 files uploaded</p>
-                <p className="text-xs text-gray-600">4 hours ago</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">5 files uploaded</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">4 hours ago</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
               <div className="p-1 bg-purple-100 rounded">
                 <MessageSquare className="w-4 h-4 text-purple-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">New conversation started</p>
-                <p className="text-xs text-gray-600">6 hours ago</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">New conversation started</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">6 hours ago</p>
               </div>
             </div>
           </div>
@@ -342,7 +342,7 @@ export default function BusinessAnalyticsDashboard({
 
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h3>
           </div>
           <div className="space-y-3">
             <Button variant="secondary" className="w-full justify-start">

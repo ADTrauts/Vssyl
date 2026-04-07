@@ -78,7 +78,7 @@ function DashboardTemplateCard({ template, onSelect, isRecommended }: DashboardT
   return (
     <button
       onClick={() => onSelect(template)}
-      className="relative group p-4 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all text-left w-full"
+      className="relative group p-4 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-300 hover:shadow-md transition-all text-left w-full"
     >
       {isRecommended && (
         <span className="absolute -top-2 -right-2 px-2 py-0.5 text-xs font-medium text-white bg-blue-500 rounded-full">
@@ -88,19 +88,19 @@ function DashboardTemplateCard({ template, onSelect, isRecommended }: DashboardT
       <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${template.color} flex items-center justify-center mb-3`}>
         <Icon className="w-5 h-5 text-white" />
       </div>
-      <h4 className="text-sm font-semibold text-gray-900 mb-1">{template.name}</h4>
-      <p className="text-xs text-gray-600 mb-3">{template.description}</p>
+      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{template.name}</h4>
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{template.description}</p>
       <div className="flex flex-wrap gap-1">
         {template.widgets.slice(0, 4).map((widget) => (
           <span
             key={widget}
-            className="px-1.5 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded"
+            className="px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 rounded"
           >
             {widget}
           </span>
         ))}
         {template.widgets.length > 4 && (
-          <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-500 bg-gray-100 rounded">
+          <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 rounded">
             +{template.widgets.length - 4}
           </span>
         )}
@@ -148,7 +148,7 @@ export default function DashboardTemplates({
               <div className={`w-6 h-6 rounded bg-gradient-to-br ${template.color} flex items-center justify-center`}>
                 <Icon className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="text-sm font-medium text-gray-900">{template.name}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{template.name}</span>
               {isRecommended && (
                 <span className="px-1.5 py-0.5 text-[10px] font-medium text-blue-700 bg-blue-100 rounded">
                   Best fit

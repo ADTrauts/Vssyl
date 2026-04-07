@@ -43,11 +43,11 @@ export function SessionReadyGate({ children }: SessionReadyGateProps) {
 
   if (!isReady) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center text-gray-600">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center text-gray-600 dark:text-gray-400">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
         <div>
           <p className="font-semibold text-gray-800">Establishing secure session…</p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             We&apos;re finalizing your authentication before loading your workspace.
           </p>
           {timeoutReached && (

@@ -113,8 +113,8 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
   return (
     <div className={className}>
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Connection Analytics</h3>
-        <p className="text-sm text-gray-600">Insights about your professional network</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Connection Analytics</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Insights about your professional network</p>
       </div>
 
       {/* Stats Grid */}
@@ -122,8 +122,8 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Connections</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalConnections}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Connections</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalConnections}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -134,8 +134,8 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Colleagues</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.colleagueConnections}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Colleagues</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.colleagueConnections}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <Building2 className="w-6 h-6 text-green-600" />
@@ -146,8 +146,8 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Personal</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.personalConnections}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Personal</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.personalConnections}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">
               <UserPlus className="w-6 h-6 text-purple-600" />
@@ -158,8 +158,8 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Recent (30d)</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.recentConnections}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Recent (30d)</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.recentConnections}</p>
             </div>
             <div className="p-3 bg-orange-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -172,7 +172,7 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
       {analytics.organizations.length > 0 && (
         <Card className="p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-gray-900">Organization Distribution</h4>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Organization Distribution</h4>
             <Badge color="blue">{analytics.organizations.length} organizations</Badge>
           </div>
           
@@ -183,7 +183,7 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <Building2 className="w-4 h-4 text-blue-600" />
                   </div>
-                  <span className="font-medium text-gray-900">{org.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{org.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-24 bg-gray-200 rounded-full h-2">
@@ -194,7 +194,7 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
                       }}
                     />
                   </div>
-                  <span className="text-sm text-gray-600 w-8 text-right">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 w-8 text-right">
                     {org.count}
                   </span>
                 </div>
@@ -203,7 +203,7 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
             
             {analytics.organizations.length > 3 && (
               <div className="text-center pt-2">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   +{analytics.organizations.length - 3} more organizations
                 </span>
               </div>
@@ -214,33 +214,33 @@ export const ConnectionAnalytics: React.FC<ConnectionAnalyticsProps> = ({ classN
 
       {/* Network Insights */}
       <Card className="p-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">Network Insights</h4>
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Network Insights</h4>
         
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="flex items-center gap-3">
-              <Network className="w-5 h-5 text-gray-600" />
-              <span className="text-sm text-gray-700">Connection Diversity</span>
+              <Network className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Connection Diversity</span>
             </div>
             <Badge color={analytics.organizations.length > 5 ? 'green' : 'yellow'}>
               {analytics.organizations.length > 5 ? 'High' : 'Medium'}
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-gray-600" />
-              <span className="text-sm text-gray-700">Growth Rate</span>
+              <TrendingUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Growth Rate</span>
             </div>
             <Badge color={analytics.recentConnections > 5 ? 'green' : 'blue'}>
               {analytics.recentConnections} new connections
             </Badge>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div className="flex items-center gap-3">
-              <Building2 className="w-5 h-5 text-gray-600" />
-              <span className="text-sm text-gray-700">Professional Network</span>
+              <Building2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Professional Network</span>
             </div>
             <Badge color={analytics.colleagueConnections > analytics.personalConnections ? 'blue' : 'gray'}>
               {analytics.colleagueConnections > analytics.personalConnections ? 'Colleague-focused' : 'Balanced'}

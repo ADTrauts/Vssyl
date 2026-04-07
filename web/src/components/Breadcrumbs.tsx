@@ -21,13 +21,13 @@ export default function Breadcrumbs({ items, onNavigate, currentDashboardName }:
   if (items.length === 0) return null;
 
   return (
-    <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-4">
+    <nav className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 mb-4">
       {/* Dashboard root */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(items[0])}
-        className="flex items-center space-x-1 hover:bg-gray-100 px-2 py-1 rounded"
+        className="flex items-center space-x-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 px-2 py-1 rounded"
       >
         <HomeIcon className="w-4 h-4" />
         <span>{currentDashboardName || 'Drive'}</span>

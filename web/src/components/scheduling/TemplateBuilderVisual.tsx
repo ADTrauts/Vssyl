@@ -465,7 +465,7 @@ export default function TemplateBuilderVisual({
     >
       <div className="h-full flex">
         {/* Sidebar with positions and stations - Hidden by default in template builder */}
-        <div className="w-64 bg-white border-r flex-shrink-0">
+        <div className="w-64 bg-white dark:bg-slate-900 border-r flex-shrink-0">
           <ScheduleBuilderSidebar
             scheduleId="template"
             businessId={businessId}
@@ -484,13 +484,13 @@ export default function TemplateBuilderVisual({
         {/* Main builder area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header with Layout Mode Selector */}
-          <div className="flex-shrink-0 bg-white border-b p-4">
+          <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {/* Layout Mode Toggle */}
                 <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium text-gray-700">Layout:</label>
-                  <div className="flex rounded-lg border border-gray-300 p-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Layout:</label>
+                  <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 p-1">
                     <button
                       onClick={() => setLayoutMode('employee')}
                       className={`px-3 py-1 text-sm rounded transition-colors ${
@@ -590,7 +590,7 @@ export default function TemplateBuilderVisual({
             <div className="grid grid-cols-2 gap-3 mb-3">
               {/* Time (Required) */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Time *
                 </label>
                 <div className="flex items-center gap-2">
@@ -604,12 +604,12 @@ export default function TemplateBuilderVisual({
                           : ''
                       }
                       readOnly
-                      className="pl-10 cursor-not-allowed bg-gray-50 text-sm"
+                      className="pl-10 cursor-not-allowed bg-gray-50 dark:bg-slate-800 text-sm"
                     />
                     <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   </div>
                   <div className="flex items-center gap-1">
-                    <label className="text-xs text-gray-500 whitespace-nowrap">Start:</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Start:</label>
                     <Input
                       type="time"
                       value={selectedShift.startTime ? format(parseISO(selectedShift.startTime), 'HH:mm') : ''}
@@ -643,7 +643,7 @@ export default function TemplateBuilderVisual({
                     />
                   </div>
                   <div className="flex items-center gap-1">
-                    <label className="text-xs text-gray-500 whitespace-nowrap">End:</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">End:</label>
                     <Input
                       type="time"
                       value={selectedShift.endTime ? format(parseISO(selectedShift.endTime), 'HH:mm') : ''}
@@ -681,7 +681,7 @@ export default function TemplateBuilderVisual({
 
               {/* Position */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Position
                 </label>
                 <div className="relative">
@@ -704,7 +704,7 @@ export default function TemplateBuilderVisual({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Position</option>
                     {positionOptions.map(pos => (
@@ -719,7 +719,7 @@ export default function TemplateBuilderVisual({
 
               {/* Station */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Station
                 </label>
                 <div className="relative">
@@ -744,7 +744,7 @@ export default function TemplateBuilderVisual({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Station</option>
                     {stations.map(station => (
@@ -759,18 +759,18 @@ export default function TemplateBuilderVisual({
 
               {/* Shift Color */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Shift Color
                 </label>
                 <div className="relative" data-color-picker>
                   <button
                     type="button"
                     onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
+                    className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       <div
-                        className="w-4 h-4 rounded-full border border-gray-300"
+                        className="w-4 h-4 rounded-full border border-gray-300 dark:border-slate-600"
                         style={{ backgroundColor: shiftColor || selectedShift.color || '#d1d5db' }}
                       />
                       <span>{shiftColor || selectedShift.color ? 'Custom' : 'Default'}</span>
@@ -779,7 +779,7 @@ export default function TemplateBuilderVisual({
                   </button>
                   
                   {showColorPicker && (
-                    <div className="absolute z-50 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg p-4" data-color-picker>
+                    <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg p-4" data-color-picker>
                       <div className="grid grid-cols-10 gap-2 mb-3">
                         {[
                           '#ec4899', '#f472b6', '#f9a8d4', '#fbcfe8', '#fce7f3', '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b',
@@ -809,7 +809,7 @@ export default function TemplateBuilderVisual({
                                 }
                               }
                             }}
-                            className="w-8 h-8 rounded border border-gray-200 hover:scale-110 hover:z-10 transition-transform cursor-pointer"
+                            className="w-8 h-8 rounded border border-gray-200 dark:border-slate-700 hover:scale-110 hover:z-10 transition-transform cursor-pointer"
                             style={{ backgroundColor: color }}
                             title={color}
                           />
@@ -833,7 +833,7 @@ export default function TemplateBuilderVisual({
                             }
                           }
                         }}
-                        className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded border border-gray-300"
+                        className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded border border-gray-300 dark:border-slate-600"
                       >
                         CLEAR COLOR
                       </button>
@@ -844,7 +844,7 @@ export default function TemplateBuilderVisual({
 
               {/* Notes */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 mb-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
                   Notes
                 </label>
                 <Input

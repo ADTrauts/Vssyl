@@ -140,9 +140,9 @@ export default function SchedulingSidebar({
   });
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Scheduling</h2>
+    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col h-full">
+      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scheduling</h2>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">

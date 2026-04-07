@@ -158,16 +158,16 @@ function DayInner() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold">Calendar — Day</h1>
             <div className="ml-2 grid grid-cols-4 gap-2 text-xs">
-              <a className="px-2 py-1 border rounded text-center bg-gray-100" href="/calendar/day">Day</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/week">Week</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/month">Month</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/year">Year</a>
+              <a className="px-2 py-1 border rounded text-center bg-gray-100 dark:bg-slate-700" href="/calendar/day">Day</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/week">Week</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/month">Month</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/year">Year</a>
             </div>
             <div className="flex items-center gap-1 ml-3">
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate()-1))}>{'<'}</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(new Date())}>Today</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewDate(d => new Date(d.getFullYear(), d.getMonth(), d.getDate()+1))}>{'>'}</button>
-              <div className="ml-2 text-sm text-gray-600">{viewDate.toLocaleString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+              <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">{viewDate.toLocaleString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ function DayInner() {
               <input type="checkbox" checked={myEventsOnly} onChange={(e) => setMyEventsOnly(e.target.checked)} />
               My events
             </label>
-            <div className="text-sm text-gray-500">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
           </div>
         </div>
 

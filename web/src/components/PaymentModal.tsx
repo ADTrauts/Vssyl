@@ -113,7 +113,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold">{module.name}</h3>
-                <p className="text-gray-600">{module.description}</p>
+                <p className="text-gray-600 dark:text-gray-400">{module.description}</p>
               </div>
               <Badge className={
                 module.pricingTier === 'premium' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
@@ -132,7 +132,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
             <div className="space-y-4">
               {/* Tier Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Plan Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Plan Type</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -144,7 +144,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
                     }`}
                   >
                     <div className="font-medium">Premium</div>
-                    <div className="text-sm text-gray-600">${module.basePrice}/month</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">${module.basePrice}/month</div>
                   </button>
 
                   {module.enterprisePrice && (
@@ -158,7 +158,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
                       }`}
                     >
                       <div className="font-medium">Enterprise</div>
-                      <div className="text-sm text-gray-600">${module.enterprisePrice}/month</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">${module.enterprisePrice}/month</div>
                     </button>
                   )}
                 </div>
@@ -166,7 +166,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
 
               {/* Billing Interval */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Billing Interval</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Billing Interval</label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -178,7 +178,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
                     }`}
                   >
                     <div className="font-medium">Monthly</div>
-                    <div className="text-sm text-gray-600">${getPrice()}/month</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">${getPrice()}/month</div>
                   </button>
 
                   <button
@@ -191,7 +191,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
                     }`}
                   >
                     <div className="font-medium">Yearly</div>
-                    <div className="text-sm text-gray-600">${getPrice()}/month (20% off)</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">${getPrice()}/month (20% off)</div>
                   </button>
                 </div>
               </div>
@@ -227,17 +227,17 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
 
         {/* Security & Trust Indicators */}
         <div className="space-y-3">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <Lock className="w-4 h-4" />
             <span>Your payment is secured by Stripe</span>
           </div>
           
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <Shield className="w-4 h-4" />
             <span>SSL encrypted payment processing</span>
           </div>
           
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <Zap className="w-4 h-4" />
             <span>Instant access after payment</span>
           </div>

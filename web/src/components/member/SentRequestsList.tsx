@@ -91,11 +91,11 @@ export const SentRequestsList: React.FC<SentRequestsListProps> = ({
     <div className={className}>
       {requests.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
             <Clock className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No sent requests</h3>
-          <p className="text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No sent requests</h3>
+          <p className="text-gray-600 dark:text-gray-400">
             You haven't sent any connection requests yet. Search for users to connect with them.
           </p>
         </div>
@@ -115,7 +115,7 @@ export const SentRequestsList: React.FC<SentRequestsListProps> = ({
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                         {request.receiver.name || 'Unknown User'}
                       </h3>
                       <Badge color={getRequestTypeColor(request.type)}>
@@ -123,27 +123,27 @@ export const SentRequestsList: React.FC<SentRequestsListProps> = ({
                       </Badge>
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {request.receiver.email}
                     </p>
                     
                     {request.receiver.organization && (
                       <div className="flex items-center space-x-1 mb-2">
                         <OrgIcon className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
                           {request.receiver.organization.name} • {request.receiver.organization.role}
                         </span>
                       </div>
                     )}
                     
                     {request.message && (
-                      <p className="text-sm text-gray-700 bg-gray-50 rounded-md p-3 mb-2">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 rounded-md p-3 mb-2">
                         "{request.message}"
                       </p>
                     )}
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                         <Clock className="w-3 h-3" />
                         <span>Sent {formatDate(request.createdAt)}</span>
                       </div>

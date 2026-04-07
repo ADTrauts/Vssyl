@@ -81,10 +81,10 @@ const UnifiedGlobalChatMessageItem = React.memo(({
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2 mb-1">
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {message.sender?.name || message.sender?.email}
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {formatTime(message.createdAt || message.timestamp)}
           </span>
           {hasEnterprise && message.encrypted && (
@@ -92,24 +92,24 @@ const UnifiedGlobalChatMessageItem = React.memo(({
           )}
         </div>
         
-        <div className="bg-gray-100 rounded-lg p-3 max-w-md">
-          <p className="text-sm text-gray-900">{message.content}</p>
+        <div className="bg-gray-100 dark:bg-slate-700 rounded-lg p-3 max-w-md">
+          <p className="text-sm text-gray-900 dark:text-gray-100">{message.content}</p>
         </div>
       </div>
 
       {/* Context Menu */}
       {showContextMenu && (
-        <div className="absolute right-2 top-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-32">
+        <div className="absolute right-2 top-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-32">
           <button
             onClick={handleReply}
-            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2"
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
           >
             <Reply className="w-4 h-4" />
             <span>Reply</span>
           </button>
           <button
             onClick={handleDelete}
-            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center space-x-2 text-red-600"
+            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2 text-red-600"
           >
             <Trash2 className="w-4 h-4" />
             <span>Delete</span>
@@ -365,7 +365,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   if (status === 'loading') {
     return (
       <div className={`fixed bottom-0 right-12 z-50 ${className}`}>
-        <div className="bg-white border border-gray-200 rounded-t-lg shadow-xl w-80 h-12 flex items-center justify-center">
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-t-lg shadow-xl w-80 h-12 flex items-center justify-center">
           <Spinner size={20} />
         </div>
       </div>
@@ -385,7 +385,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
         'w-[600px] h-[500px]'
       }`}>
         {/* Header */}
-        <div className="flex flex-col border-b border-gray-200 bg-white rounded-t-lg">
+        <div className="flex flex-col border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-t-lg">
           {/* Top Row: Avatar, Status, Controls */}
           <div className="flex items-center justify-between p-3">
             <div className="flex items-center space-x-3">
@@ -400,13 +400,13 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">
                   Messaging
                   {hasEnterprise && (
                     <span className="ml-2 text-xs text-purple-600">Enterprise</span>
                   )}
                 </h3>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {isConnected ? 'Online' : 'Connecting...'}
                 </p>
               </div>
@@ -509,9 +509,9 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
         {!isMinimized && (
           <div className="flex h-[calc(100%-100px)]">
             {/* Left Panel - Conversations */}
-            <div className="w-64 border-r border-gray-200 flex flex-col">
+            <div className="w-64 border-r border-gray-200 dark:border-slate-700 flex flex-col">
               {/* Search */}
-              <div className="p-3 border-b border-gray-200">
+              <div className="p-3 border-b border-gray-200 dark:border-slate-700">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
@@ -519,7 +519,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                     placeholder={`Search conversations...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
               </div>
@@ -529,7 +529,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                 {filteredConversations.length === 0 ? (
                   <div className="p-6 text-center">
                     <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {selectedDashboard 
                         ? `No conversations in ${getDashboardDisplayName(selectedDashboard)} yet`
                         : 'No conversations yet'}
@@ -554,7 +554,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {conversation.name || 'Direct Message'}
                               </p>
                               {/* Enterprise indicators for work conversations */}
@@ -564,7 +564,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                                 </div>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {conversation.participants?.length || 0} participant{(conversation.participants?.length || 0) !== 1 ? 's' : ''}
                             </p>
                           </div>
@@ -603,7 +603,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-3 border-t border-gray-200">
+                  <div className="p-3 border-t border-gray-200 dark:border-slate-700">
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="ghost"
@@ -619,7 +619,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyPress={handleKeyPress}
                           placeholder="Type a message..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
                           rows={1}
                         />
                       </div>
@@ -637,8 +637,8 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-                    <p className="text-gray-600">Choose a conversation to start chatting</p>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Select a conversation</h3>
+                    <p className="text-gray-600 dark:text-gray-400">Choose a conversation to start chatting</p>
                   </div>
                 </div>
               )}

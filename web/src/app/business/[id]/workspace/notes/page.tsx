@@ -23,7 +23,7 @@ export default function BusinessWorkspaceNotesPage() {
     <div className="flex h-screen items-center justify-center">
       <div className="text-center">
         <Spinner size={24} />
-        <p className="mt-2 text-sm text-gray-700">Loading notes...</p>
+        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">Loading notes...</p>
       </div>
     </div>
   );

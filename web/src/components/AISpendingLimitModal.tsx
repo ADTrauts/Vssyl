@@ -132,17 +132,17 @@ export default function AISpendingLimitModal({
 
             {/* Current Status */}
             {spending && spending.limit > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-900">Current Period</h3>
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Current Period</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Current Spending</p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Current Spending</p>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                       ${spending.currentSpending.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Remaining</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Remaining</p>
                     <p className={`text-lg font-semibold ${
                       spending.remaining <= 0 ? 'text-red-600' : 
                       spending.remaining < spending.limit * 0.2 ? 'text-yellow-600' : 
@@ -154,8 +154,8 @@ export default function AISpendingLimitModal({
                 </div>
                 {spending.overageQueries > 0 && (
                   <div className="pt-2 border-t">
-                    <p className="text-xs text-gray-600 mb-1">Overage Queries Used</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Overage Queries Used</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {spending.overageQueries.toLocaleString()} queries (${spending.overageCost.toFixed(2)})
                     </p>
                   </div>
@@ -165,7 +165,7 @@ export default function AISpendingLimitModal({
 
             {/* Limit Input */}
             <div className="space-y-2">
-              <label htmlFor="limit" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="limit" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Monthly Spending Limit (USD)
               </label>
               <div className="relative">
@@ -180,16 +180,16 @@ export default function AISpendingLimitModal({
                   value={limit}
                   onChange={(e) => setLimit(e.target.value)}
                   placeholder="0.00"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               {limit && !isNaN(parseFloat(limit)) && parseFloat(limit) > 0 && (
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   This allows approximately <strong>{estimatedQueries.toLocaleString()}</strong> overage queries per month
                 </p>
               )}
               {limit === '0' || limit === '' ? (
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Setting limit to $0 disables overage billing. Queries will be blocked when base allowance is exhausted.
                 </p>
               ) : null}

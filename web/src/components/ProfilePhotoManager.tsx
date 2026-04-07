@@ -203,7 +203,7 @@ export default function ProfilePhotoManager() {
               </div>
               <div>
                 <div className="text-lg font-semibold">Personal</div>
-                <div className="text-sm text-gray-600">Your personal avatar</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Your personal avatar</div>
               </div>
             </div>
             <Button variant="secondary" onClick={() => handlePickFile('personal')}>
@@ -215,9 +215,9 @@ export default function ProfilePhotoManager() {
             {personalUrl ? (
               <img src={personalUrl} alt="Personal" className="w-20 h-20 rounded-xl object-cover border" />
             ) : (
-              <div className="w-20 h-20 rounded-xl bg-gray-100 border" />
+              <div className="w-20 h-20 rounded-xl bg-gray-100 dark:bg-slate-700 border" />
             )}
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Choose a photo from the library below or upload a new one.
             </div>
           </div>
@@ -231,7 +231,7 @@ export default function ProfilePhotoManager() {
               </div>
               <div>
                 <div className="text-lg font-semibold">Business</div>
-                <div className="text-sm text-gray-600">Your work avatar</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Your work avatar</div>
               </div>
             </div>
             <Button variant="secondary" onClick={() => handlePickFile('business')}>
@@ -243,9 +243,9 @@ export default function ProfilePhotoManager() {
             {businessUrl ? (
               <img src={businessUrl} alt="Business" className="w-20 h-20 rounded-xl object-cover border" />
             ) : (
-              <div className="w-20 h-20 rounded-xl bg-gray-100 border" />
+              <div className="w-20 h-20 rounded-xl bg-gray-100 dark:bg-slate-700 border" />
             )}
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Choose a different photo than Personal to keep contexts distinct.
             </div>
           </div>
@@ -255,11 +255,11 @@ export default function ProfilePhotoManager() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">Photo Library</h3>
-          <div className="text-sm text-gray-500">{library.length} photos</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{library.length} photos</div>
         </div>
 
         {library.length === 0 ? (
-          <Card className="p-6 text-sm text-gray-600">
+          <Card className="p-6 text-sm text-gray-600 dark:text-gray-400">
             No photos yet. Upload one above.
           </Card>
         ) : (
@@ -268,7 +268,7 @@ export default function ProfilePhotoManager() {
               const isPersonal = personalId === p.id;
               const isBusiness = businessId === p.id;
               return (
-                <div key={p.id} className="border rounded-lg p-2 bg-white">
+                <div key={p.id} className="border rounded-lg p-2 bg-white dark:bg-slate-900">
                   <img src={p.avatarUrl} alt="Profile" className="w-full aspect-square rounded-md object-cover border" />
                   <div className="flex flex-wrap gap-1 mt-2">
                     {isPersonal && <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700">Personal</span>}
@@ -276,7 +276,7 @@ export default function ProfilePhotoManager() {
                   </div>
                   <div className="flex gap-2 mt-2">
                     <button
-                      className="flex-1 text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                      className="flex-1 text-xs px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                       onClick={() => handleAssign(p.id, 'personal')}
                       disabled={isPersonal}
                       title="Assign as Personal"
@@ -284,7 +284,7 @@ export default function ProfilePhotoManager() {
                       Personal
                     </button>
                     <button
-                      className="flex-1 text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                      className="flex-1 text-xs px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                       onClick={() => handleAssign(p.id, 'business')}
                       disabled={isBusiness}
                       title="Assign as Business"
@@ -293,7 +293,7 @@ export default function ProfilePhotoManager() {
                     </button>
                   </div>
                   <button
-                    className="w-full mt-2 text-xs px-2 py-1 rounded border hover:bg-gray-50"
+                    className="w-full mt-2 text-xs px-2 py-1 rounded border hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                     onClick={() => {
                       setEditPhotoId(p.id);
                       setEditImageUrl(p.originalUrl);

@@ -89,8 +89,8 @@ function BusinessDashboardWidget() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Overview</h1>
-          <p className="text-gray-600">Your business workspace at a glance</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Overview</h1>
+          <p className="text-gray-700 dark:text-gray-300">Your business workspace at a glance</p>
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
@@ -103,8 +103,8 @@ function BusinessDashboardWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Members</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.members}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Members</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.members}</p>
             </div>
             <Users className="w-6 h-6 text-gray-400" />
           </div>
@@ -112,8 +112,8 @@ function BusinessDashboardWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Files</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.files}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Files</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.files}</p>
             </div>
             <Folder className="w-6 h-6 text-gray-400" />
           </div>
@@ -121,8 +121,8 @@ function BusinessDashboardWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.conversations}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Conversations</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.conversations}</p>
             </div>
             <MessageSquare className="w-6 h-6 text-gray-400" />
           </div>
@@ -130,8 +130,8 @@ function BusinessDashboardWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Events</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.events}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Events</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.events}</p>
             </div>
             <Calendar className="w-6 h-6 text-gray-400" />
           </div>
@@ -139,8 +139,8 @@ function BusinessDashboardWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.storageUsed} GB</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Storage Used</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.storageUsed} GB</p>
             </div>
             <BarChart3 className="w-6 h-6 text-gray-400" />
           </div>
@@ -150,43 +150,43 @@ function BusinessDashboardWidget() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h3>
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">New member joined</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">New member joined</span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">File uploaded</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">File uploaded</span>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm text-gray-600">Meeting scheduled</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Meeting scheduled</span>
             </div>
           </div>
         </Card>
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Members</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Team Members</h3>
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
               <div>
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">Admin</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">John Doe</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Admin</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">JS</div>
               <div>
-                <p className="text-sm font-medium text-gray-900">Jane Smith</p>
-                <p className="text-xs text-gray-500">Manager</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Jane Smith</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Manager</p>
               </div>
             </div>
           </div>
         </Card>
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
           <div className="space-y-2">
             <Button variant="secondary" className="w-full justify-start">
               <Users className="w-4 h-4 mr-2" />
@@ -242,8 +242,8 @@ function BusinessCalendarWidget() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Calendar</h1>
-          <p className="text-gray-600">Manage your business events and meetings</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Calendar</h1>
+          <p className="text-gray-700 dark:text-gray-300">Manage your business events and meetings</p>
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
@@ -254,16 +254,16 @@ function BusinessCalendarWidget() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Events</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Today's Events</h3>
             <div className="space-y-3">
               {events.map((event) => (
-                <div key={event.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                <div key={event.id} className="flex items-center space-x-3 p-3 border border-gray-200 dark:border-slate-600 rounded-lg">
                   <div className={`w-3 h-3 rounded-full ${
                     event.type === 'meeting' ? 'bg-blue-500' : 'bg-green-500'
                   }`}></div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{event.title}</p>
-                    <p className="text-sm text-gray-500">{event.time}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{event.title}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{event.time}</p>
                   </div>
                 </div>
               ))}
@@ -272,7 +272,7 @@ function BusinessCalendarWidget() {
         </div>
         <div>
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
             <div className="space-y-2">
               <Button variant="secondary" className="w-full justify-start">
                 <Calendar className="w-4 h-4 mr-2" />
@@ -318,8 +318,8 @@ function BusinessAnalyticsWidget() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Business Analytics</h1>
-          <p className="text-gray-600">Insights into your business activity</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Analytics</h1>
+          <p className="text-gray-700 dark:text-gray-300">Insights into your business activity</p>
         </div>
         <Button>
           <Settings className="w-4 h-4 mr-2" />
@@ -331,8 +331,8 @@ function BusinessAnalyticsWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Active Members</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.activeMembers}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Active Members</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.activeMembers}</p>
             </div>
             <Users className="w-8 h-8 text-blue-500" />
           </div>
@@ -340,8 +340,8 @@ function BusinessAnalyticsWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Files</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalFiles}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Total Files</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalFiles}</p>
             </div>
             <Folder className="w-8 h-8 text-green-500" />
           </div>
@@ -349,8 +349,8 @@ function BusinessAnalyticsWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Messages</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.totalMessages}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Messages</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalMessages}</p>
             </div>
             <MessageSquare className="w-8 h-8 text-purple-500" />
           </div>
@@ -358,8 +358,8 @@ function BusinessAnalyticsWidget() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.storageUsed} GB</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">Storage Used</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.storageUsed} GB</p>
             </div>
             <BarChart3 className="w-8 h-8 text-indigo-500" />
           </div>
@@ -368,33 +368,33 @@ function BusinessAnalyticsWidget() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Activity Over Time</h3>
-          <div className="h-64 flex items-center justify-center text-gray-500">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Activity Over Time</h3>
+          <div className="h-64 flex items-center justify-center text-gray-600 dark:text-gray-400">
             <p>Chart placeholder - Activity over time</p>
           </div>
         </Card>
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Users</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Users</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-blue-600">#1</span>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">John Doe</p>
-                  <p className="text-sm text-gray-500">45 activities</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">John Doe</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">45 activities</p>
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-green-600">#2</span>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Jane Smith</p>
-                  <p className="text-sm text-gray-500">38 activities</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Jane Smith</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">38 activities</p>
                 </div>
               </div>
             </div>
@@ -440,8 +440,8 @@ function BusinessMembersWidget() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
-          <p className="text-gray-600">Manage your business team</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Team Members</h1>
+          <p className="text-gray-700 dark:text-gray-300">Manage your business team</p>
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
@@ -452,23 +452,23 @@ function BusinessMembersWidget() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">All Members</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">All Members</h3>
             <div className="space-y-3">
               {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-600 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
                       {member.name.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{member.name}</p>
-                      <p className="text-sm text-gray-500">{member.email}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
                     </div>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded-full ${
-                    member.role === 'Admin' ? 'bg-red-100 text-red-800' :
-                    member.role === 'Manager' ? 'bg-blue-100 text-blue-800' :
-                    'bg-green-100 text-green-800'
+                    member.role === 'Admin' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+                    member.role === 'Manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' :
+                    'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                   }`}>
                     {member.role}
                   </span>
@@ -479,23 +479,23 @@ function BusinessMembersWidget() {
         </div>
         <div>
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Stats</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Team Stats</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total Members</span>
-                <span className="font-medium text-gray-900">{members.length}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Total Members</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{members.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Admins</span>
-                <span className="font-medium text-gray-900">{members.filter((m) => m.role === 'Admin').length}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Admins</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Admin').length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Managers</span>
-                <span className="font-medium text-gray-900">{members.filter((m) => m.role === 'Manager').length}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Managers</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Manager').length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Employees</span>
-                <span className="font-medium text-gray-900">{members.filter((m) => m.role === 'Employee').length}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Employees</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Employee').length}</span>
               </div>
             </div>
           </Card>

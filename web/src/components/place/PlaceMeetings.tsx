@@ -117,8 +117,8 @@ export default function PlaceMeetings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Meeting Places</h2>
-          <p className="text-sm text-gray-600">Coordinate meetups with your connections</p>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Meeting Places</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Coordinate meetups with your connections</p>
         </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
@@ -133,7 +133,7 @@ export default function PlaceMeetings() {
       {pendingInvites.length > 0 && (
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-600" />
               Pending Invites ({pendingInvites.length})
             </h3>
@@ -141,12 +141,12 @@ export default function PlaceMeetings() {
               {pendingInvites.map(m => (
                 <div key={m.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{m.locationName}</p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{m.locationName}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       From {m.creator.name || 'Unknown'}
                       {m.scheduledAt && ` · ${new Date(m.scheduledAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                     </p>
-                    {m.note && <p className="text-xs text-gray-700 mt-1">&quot;{m.note}&quot;</p>}
+                    {m.note && <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">&quot;{m.note}&quot;</p>}
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => handleRsvp(m.id, 'ACCEPTED')} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors" title="Accept">
@@ -167,25 +167,25 @@ export default function PlaceMeetings() {
       {showCreate && (
         <Card>
           <div className="p-4 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900">Create a Meeting Place</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create a Meeting Place</h3>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">Location Name *</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Location Name *</label>
               <input
                 type="text"
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
                 placeholder="e.g., Joe's Pizza, Central Park"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">Link to a Place on your Main Street</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Link to a Place on your Main Street</label>
               <select
                 value={formBusinessId}
                 onChange={e => setFormBusinessId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">None</option>
                 {businessNodes.map(n => (
@@ -196,46 +196,46 @@ export default function PlaceMeetings() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Date & Time</label>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Date & Time</label>
                 <input
                   type="datetime-local"
                   value={formDate}
                   onChange={e => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700 block mb-1">Duration (min)</label>
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Duration (min)</label>
                 <input
                   type="number"
                   value={formDuration}
                   onChange={e => setFormDuration(parseInt(e.target.value) || 60)}
                   min={15}
                   step={15}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">Address</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Address</label>
               <input
                 type="text"
                 value={formAddress}
                 onChange={e => setFormAddress(e.target.value)}
                 placeholder="Optional address"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 block mb-1">Note</label>
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Note</label>
               <input
                 type="text"
                 value={formNote}
                 onChange={e => setFormNote(e.target.value)}
                 placeholder="e.g., Let's grab lunch!"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
 
@@ -249,7 +249,7 @@ export default function PlaceMeetings() {
               </button>
               <button
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
@@ -260,10 +260,10 @@ export default function PlaceMeetings() {
 
       {/* Meeting list */}
       {activeMeetings.length === 0 ? (
-        <div className="text-center py-16 text-gray-700">
+        <div className="text-center py-16 text-gray-700 dark:text-gray-300">
           <MapPin className="w-10 h-10 mx-auto mb-3 text-gray-400" />
           <p className="text-lg font-semibold">No meetings yet</p>
-          <p className="text-sm text-gray-600 mt-1">Create a meeting place to coordinate with your connections.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Create a meeting place to coordinate with your connections.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -286,12 +286,12 @@ export default function PlaceMeetings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 truncate">{m.locationName}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{m.locationName}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
                           {m.status.toLowerCase()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-600 mt-0.5">
+                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                         {m.scheduledAt && (
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -310,22 +310,22 @@ export default function PlaceMeetings() {
                         </span>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-600" /> : <ChevronDown className="w-4 h-4 text-gray-600" />}
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
                   </div>
 
                   {/* Expanded details */}
                   {isExpanded && (
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                      {m.note && <p className="text-sm text-gray-700">&quot;{m.note}&quot;</p>}
+                      {m.note && <p className="text-sm text-gray-700 dark:text-gray-300">&quot;{m.note}&quot;</p>}
                       {m.locationAddress && (
-                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> {m.locationAddress}
                         </p>
                       )}
 
                       {/* Attendees */}
                       <div>
-                        <p className="text-xs font-semibold text-gray-700 mb-1">Attendees</p>
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Attendees</p>
                         <div className="flex flex-wrap gap-2">
                           <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">
                             {m.creator.name || 'Unknown'} (organizer)
@@ -371,7 +371,7 @@ export default function PlaceMeetings() {
                         )}
                         {/* Cancel if creator */}
                         {isCreator && m.status !== 'CANCELLED' && (
-                          <button onClick={() => handleCancel(m.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                          <button onClick={() => handleCancel(m.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
                             <X className="w-3 h-3" /> Cancel Meeting
                           </button>
                         )}

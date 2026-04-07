@@ -142,23 +142,23 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
           {/* Left Column */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Title *</label>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Title *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter task title"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Description</label>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 rows={3}
                 placeholder="Add task description..."
               />
@@ -166,11 +166,11 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Priority</label>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Priority</label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="LOW">Low</option>
                   <option value="MEDIUM">Medium</option>
@@ -180,11 +180,11 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as TaskStatus)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="TODO">To Do</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -199,7 +199,7 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
           {/* Right Column */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Due Date {recurrenceRule && <span className="text-red-500">*</span>}
               </label>
               <input
@@ -209,7 +209,7 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
                   // Keep the full datetime-local value (includes time)
                   setDueDate(e.target.value);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required={!!recurrenceRule}
               />
               {recurrenceRule && !dueDate && (
@@ -222,9 +222,9 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
                     id="createCalendarEvent"
                     checked={createCalendarEvent}
                     onChange={(e) => setCreateCalendarEvent(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500"
                   />
-                  <label htmlFor="createCalendarEvent" className="text-sm font-medium text-gray-900 cursor-pointer">
+                  <label htmlFor="createCalendarEvent" className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer">
                     Create calendar event for this task
                   </label>
                 </div>
@@ -232,11 +232,11 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Project</label>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Project</label>
               <select
                 value={projectId || ''}
                 onChange={(e) => setProjectId(e.target.value || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">No Project</option>
                 {projects.map((project) => (
@@ -260,23 +260,23 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Category</label>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Category</label>
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Work, Personal"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Time Estimate (minutes)</label>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Time Estimate (minutes)</label>
                 <input
                   type="number"
                   value={timeEstimate}
                   onChange={(e) => setTimeEstimate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., 120"
                 />
               </div>
@@ -284,7 +284,7 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200 dark:border-slate-700">
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

@@ -141,7 +141,7 @@ export default function QuickStatsWidget({
     return (
       <div className="flex items-center justify-center py-8">
         <Spinner size={24} />
-        <span className="ml-2 text-gray-600 text-sm">Loading stats...</span>
+        <span className="ml-2 text-gray-600 dark:text-gray-400 text-sm">Loading stats...</span>
       </div>
     );
   }
@@ -198,19 +198,19 @@ export default function QuickStatsWidget({
             <a
               key={card.key}
               href={card.href}
-              className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
+              className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-300 hover:bg-blue-50/30 transition-colors group"
             >
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
                 <Icon className={`w-5 h-5 ${iconColor}`} />
               </div>
               {!safeConfig.compactMode && (
                 <div className="flex-1 min-w-0">
-                  <div className="text-lg font-semibold text-gray-900">{card.value}</div>
-                  <div className="text-xs text-gray-600">{card.label}</div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{card.value}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{card.label}</div>
                 </div>
               )}
               {safeConfig.compactMode && (
-                <div className="text-sm font-semibold text-gray-900">{card.value}</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{card.value}</div>
               )}
             </a>
           );
@@ -221,7 +221,7 @@ export default function QuickStatsWidget({
       <div className="flex justify-end">
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="text-xs text-gray-600 hover:text-gray-900"
+          className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
         >
           {showSettings ? 'Hide Settings' : 'Settings'}
         </button>
@@ -229,8 +229,8 @@ export default function QuickStatsWidget({
 
       {/* Settings panel */}
       {showSettings && onConfigChange && (
-        <div className="p-3 bg-gray-50 rounded-lg space-y-2">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-2">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={safeConfig.showMessages}
@@ -239,7 +239,7 @@ export default function QuickStatsWidget({
             />
             Show messages
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={safeConfig.showTasks}
@@ -248,7 +248,7 @@ export default function QuickStatsWidget({
             />
             Show tasks
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={safeConfig.showEvents}
@@ -257,7 +257,7 @@ export default function QuickStatsWidget({
             />
             Show events
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={safeConfig.showStorage}
@@ -266,7 +266,7 @@ export default function QuickStatsWidget({
             />
             Show storage
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={safeConfig.compactMode}

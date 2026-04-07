@@ -203,7 +203,7 @@ export default function SchedulingEmployeeContent({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-600">Loading your schedule...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading your schedule...</p>
         </div>
       </div>
     );
@@ -229,8 +229,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Hours This Week</p>
-                <p className="text-2xl font-semibold text-gray-900">{totalHoursThisWeek.toFixed(1)}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Hours This Week</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalHoursThisWeek.toFixed(1)}</p>
               </div>
               <div className="flex-shrink-0">
                 <Clock className="h-5 w-5 text-blue-500" />
@@ -241,8 +241,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Upcoming Shifts</p>
-                <p className="text-2xl font-semibold text-gray-900">{upcomingShifts.length}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Upcoming Shifts</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{upcomingShifts.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -253,8 +253,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Open Shifts</p>
-                <p className="text-2xl font-semibold text-gray-900">{openShifts.length}</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Open Shifts</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{openShifts.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
@@ -267,7 +267,7 @@ export default function SchedulingEmployeeContent({
         <Card className="mb-6">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">My Schedule</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">My Schedule</h2>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="secondary"
@@ -313,21 +313,21 @@ export default function SchedulingEmployeeContent({
         {upcomingShifts.length > 0 && (
           <Card>
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Upcoming Shifts</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Upcoming Shifts</h2>
               <div className="space-y-3">
                 {upcomingShifts.map((shift) => (
-                  <div key={shift.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={shift.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">
                           {safeFormatDate(shift.startTime, 'MMM d, yyyy', 'Invalid date')}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {safeFormatDate(shift.startTime, 'HH:mm', '--')} - {safeFormatDate(shift.endTime, 'HH:mm', '--')}
                         </p>
                       </div>
                       {getShiftPositionTitle(shift) && (
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
+                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded">
                           {getShiftPositionTitle(shift)}
                         </span>
                       )}
@@ -358,18 +358,18 @@ export default function SchedulingEmployeeContent({
     return (
       <div className="h-full overflow-y-auto p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Shift Swaps</h2>
-          <p className="text-sm text-gray-600">Request to swap your shifts with other employees</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Shift Swaps</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Request to swap your shifts with other employees</p>
         </div>
 
         <div className="space-y-6">
           {/* My Swap Requests */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">My Swap Requests</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">My Swap Requests</h3>
             {swapRequests.length === 0 ? (
               <Card className="p-6 text-center">
                 <RefreshCw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No swap requests yet</p>
+                <p className="text-gray-600 dark:text-gray-400">No swap requests yet</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -378,7 +378,7 @@ export default function SchedulingEmployeeContent({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
                             {swap.originalShift?.schedule?.name || 'Shift Swap Request'}
                           </p>
                           <span className={`px-2 py-1 text-xs font-medium rounded ${
@@ -391,16 +391,16 @@ export default function SchedulingEmployeeContent({
                             {swap.status}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {safeFormatDate(swap.originalShift?.startTime, 'MMM d, yyyy HH:mm', '--')} - {safeFormatDate(swap.originalShift?.endTime, 'HH:mm', '--')}
                         </p>
                         {swap.requestedTo && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             Requested to: {swap.requestedTo.name}
                           </p>
                         )}
                         {swap.requestNotes && (
-                          <p className="text-sm text-gray-500 mt-2">{swap.requestNotes}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{swap.requestNotes}</p>
                         )}
                       </div>
                       {swap.status === 'PENDING' && (
@@ -426,11 +426,11 @@ export default function SchedulingEmployeeContent({
 
           {/* Request New Swap */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Request a Swap</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Request a Swap</h3>
             {myShifts.length === 0 ? (
               <Card className="p-6 text-center">
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No upcoming shifts available to swap</p>
+                <p className="text-gray-600 dark:text-gray-400">No upcoming shifts available to swap</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -438,14 +438,14 @@ export default function SchedulingEmployeeContent({
                   <Card key={shift.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {shift.schedule?.name || 'Shift'}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {safeFormatDate(shift.startTime, 'MMM d, yyyy HH:mm', '--')} - {safeFormatDate(shift.endTime, 'HH:mm', '--')}
                         </p>
                         {getShiftPositionTitle(shift) && (
-                          <p className="text-sm text-gray-500 mt-1">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Position: {getShiftPositionTitle(shift)}
                           </p>
                         )}

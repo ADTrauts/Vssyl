@@ -41,25 +41,25 @@ export default function ForceLoginPage() {
   }, [status, step, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Force Login</h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Force Login</h1>
         
         {step === 'logout' && (
-          <p className="text-gray-600">Signing out to clear cached session...</p>
+          <p className="text-gray-600 dark:text-gray-400">Signing out to clear cached session...</p>
         )}
         
         {step === 'login' && (
-          <p className="text-gray-600">Signing in with admin credentials...</p>
+          <p className="text-gray-600 dark:text-gray-400">Signing in with admin credentials...</p>
         )}
         
         {step === 'redirect' && (
-          <p className="text-gray-600">Login successful! Redirecting to admin portal...</p>
+          <p className="text-gray-600 dark:text-gray-400">Login successful! Redirecting to admin portal...</p>
         )}
 
         {session && (
-          <div className="mt-4 p-4 bg-white rounded-lg shadow">
+          <div className="mt-4 p-4 bg-white dark:bg-slate-900 rounded-lg shadow">
             <p><strong>Current User:</strong> {session.user.email}</p>
             <p><strong>Current Role:</strong> {session.user.role}</p>
           </div>

@@ -307,7 +307,7 @@ export default function AISystemPage() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading session...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading session...</p>
         </div>
       </div>
     );
@@ -318,7 +318,7 @@ export default function AISystemPage() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading AI System overview...</p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading AI System overview...</p>
         </div>
       </div>
     );
@@ -328,8 +328,8 @@ export default function AISystemPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI System</h1>
-          <p className="text-gray-600 mt-2">Unified AI system management and monitoring</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI System</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">Unified AI system management and monitoring</p>
         </div>
         <Alert onClose={() => setError(null)}>
           {error}
@@ -401,8 +401,8 @@ export default function AISystemPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">AI System</h1>
-          <p className="text-gray-600 mt-2">Unified AI system management and monitoring</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI System</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">Unified AI system management and monitoring</p>
         </div>
         <Button onClick={loadOverviewData} variant="secondary">
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -431,8 +431,8 @@ export default function AISystemPage() {
                       <Icon className={`w-6 h-6 ${colors.text}`} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{system.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{system.description}</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{system.title}</h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{system.description}</p>
                     </div>
                   </div>
                   <ArrowRight className={`w-5 h-5 ${colors.text}`} />
@@ -440,9 +440,9 @@ export default function AISystemPage() {
                 
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   {system.metrics.map((metric, idx) => (
-                    <div key={idx} className="border-t border-gray-200 pt-3">
-                      <p className="text-xs text-gray-700 mb-1">{metric.label}</p>
-                      <p className="text-lg font-semibold text-gray-900">{metric.value}</p>
+                    <div key={idx} className="border-t border-gray-200 dark:border-slate-700 pt-3">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">{metric.label}</p>
+                      <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{metric.value}</p>
                     </div>
                   ))}
                 </div>
@@ -455,16 +455,16 @@ export default function AISystemPage() {
       {/* Combined Analytics Summary */}
       {overview && (
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Combined Analytics</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Combined Analytics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-700 mb-1">Total AI Systems</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total AI Systems</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {overview.businessAI.totalBusinessAIs + (overview.aiLearning.systemHealth > 0 ? 1 : 0)}
                   </p>
-                  <p className="text-xs text-gray-700 mt-1">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                     {overview.businessAI.activeBusinessAIs} active
                   </p>
                 </div>
@@ -475,11 +475,11 @@ export default function AISystemPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-700 mb-1">Total Insights</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Insights</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {(overview?.unifiedInsights?.length ?? 0) + (overview?.businessIntelligence?.predictiveInsights ?? 0)}
                   </p>
-                  <p className="text-xs text-gray-700 mt-1">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                     Across all systems
                   </p>
                 </div>
@@ -490,11 +490,11 @@ export default function AISystemPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-700 mb-1">Total Patterns</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Patterns</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {overview?.unifiedPatterns?.length ?? 0}
                   </p>
-                  <p className="text-xs text-gray-700 mt-1">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                     Discovered patterns
                   </p>
                 </div>
@@ -505,11 +505,11 @@ export default function AISystemPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gray-700 mb-1">AI Interactions</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">AI Interactions</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {overview.businessAI.totalInteractions.toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-700 mt-1">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
                     Total conversations
                   </p>
                 </div>
@@ -523,7 +523,7 @@ export default function AISystemPage() {
       {/* Combined Analytics Charts */}
       {combinedAnalytics && (
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Trend Analytics</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Trend Analytics</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* User Growth Chart */}
             {combinedAnalytics.userGrowth.monthlyTrend.length > 0 && (
@@ -531,7 +531,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Users className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">User Growth</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">User Growth</h3>
                   </div>
                   <span className={`text-sm font-medium ${
                     combinedAnalytics.userGrowth.growthRate > 0 ? 'text-green-600' : 'text-red-600'
@@ -587,7 +587,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <DollarSign className="w-5 h-5 text-green-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Revenue</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Revenue</h3>
                   </div>
                   <span className={`text-sm font-medium ${
                     combinedAnalytics.revenue.growthRate > 0 ? 'text-green-600' : 'text-red-600'
@@ -645,7 +645,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Activity className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">AI Interactions</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Interactions</h3>
                   </div>
                   <span className={`text-sm font-medium ${
                     combinedAnalytics.aiInteractions.growthRate > 0 ? 'text-green-600' : 'text-red-600'
@@ -695,7 +695,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-orange-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Pattern Discovery</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Pattern Discovery</h3>
                   </div>
                   <span className={`text-sm font-medium ${
                     combinedAnalytics.patterns.growthRate > 0 ? 'text-green-600' : 'text-red-600'
@@ -747,8 +747,8 @@ export default function AISystemPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <Layers className="w-5 h-5 text-gray-700" />
-              <h2 className="text-xl font-semibold text-gray-900">Unified Trends Comparison</h2>
+              <Layers className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Unified Trends Comparison</h2>
             </div>
             <Button
               variant="secondary"
@@ -761,14 +761,14 @@ export default function AISystemPage() {
           {showUnifiedTrends && (
             <Card className="p-6">
               {/* Filters and Controls */}
-              <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-200">
+              <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-slate-700">
                 <div className="flex items-center space-x-2">
-                  <Filter className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-700">Date Range:</span>
+                  <Filter className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Date Range:</span>
                   <select
                     value={dateRange}
                     onChange={(e) => setDateRange(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="30d">Last 30 days</option>
                     <option value="90d">Last 90 days</option>
@@ -778,7 +778,7 @@ export default function AISystemPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Metrics:</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Metrics:</span>
                   <div className="flex items-center space-x-2">
                     {[
                       { key: 'users', label: 'Users', color: '#3b82f6' },
@@ -800,7 +800,7 @@ export default function AISystemPage() {
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                           selectedMetrics.has(metric.key)
                             ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                            : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600 hover:bg-gray-200'
                         }`}
                         style={{
                           borderColor: selectedMetrics.has(metric.key) ? metric.color : undefined
@@ -971,8 +971,8 @@ export default function AISystemPage() {
 
                     {/* Correlation Analysis */}
                     {selectedMetrics.size > 1 && (
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Correlation Analysis</h3>
+                      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Correlation Analysis</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {(() => {
                             // Calculate correlation coefficients
@@ -1026,12 +1026,12 @@ export default function AISystemPage() {
                                 ? (direction === 'positive' ? 'text-green-600' : 'text-red-600')
                                 : strength > 0.4 
                                 ? 'text-yellow-600' 
-                                : 'text-gray-600';
+                                : 'text-gray-700 dark:text-gray-300';
 
                               return (
-                                <div key={idx} className="p-4 bg-gray-50 rounded-lg">
+                                <div key={idx} className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-gray-700">
+                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                       {corr.metric1} ↔ {corr.metric2}
                                     </span>
                                     <span className={`text-sm font-semibold ${color}`}>
@@ -1051,7 +1051,7 @@ export default function AISystemPage() {
                                         style={{ width: `${Math.abs(corr.value) * 100}%` }}
                                       />
                                     </div>
-                                    <span className="text-xs text-gray-600">
+                                    <span className="text-xs text-gray-700 dark:text-gray-300">
                                       {strengthLabel} {direction}
                                     </span>
                                   </div>
@@ -1060,7 +1060,7 @@ export default function AISystemPage() {
                             });
                           })()}
                         </div>
-                        <p className="text-xs text-gray-600 mt-4">
+                        <p className="text-xs text-gray-700 dark:text-gray-300 mt-4">
                           Correlation values range from -1 (perfect negative) to +1 (perfect positive). 
                           Values closer to ±1 indicate stronger relationships.
                         </p>
@@ -1078,7 +1078,7 @@ export default function AISystemPage() {
       {((overview?.unifiedPatterns?.length ?? 0) > 0 || (overview?.unifiedInsights?.length ?? 0) > 0) && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Patterns & Insights</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Patterns & Insights</h2>
             <Button
               variant="secondary"
               onClick={() => setShowPatternsSection(!showPatternsSection)}
@@ -1094,7 +1094,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Unified Patterns</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Unified Patterns</h3>
                   </div>
                   <Badge color="blue" size="sm">
                     {overview?.unifiedPatterns?.length ?? 0} patterns
@@ -1104,19 +1104,19 @@ export default function AISystemPage() {
                 {(overview?.unifiedPatterns?.length ?? 0) > 0 ? (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {overview?.unifiedPatterns?.slice(0, 5).map((pattern) => (
-                      <div key={pattern.id} className="border border-gray-200 rounded-lg p-3">
+                      <div key={pattern.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-3">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
                               <Badge color="blue" size="sm">
                                 {pattern.source === 'ai-learning' ? 'AI Learning' : 'Business AI'}
                               </Badge>
-                              <span className="text-xs text-gray-700 font-medium">{pattern.type}</span>
+                              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">{pattern.type}</span>
                             </div>
-                            <p className="text-sm text-gray-900 font-medium">{pattern.description}</p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{pattern.description}</p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-700">
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-700 dark:text-gray-300">
                           {pattern.frequency !== undefined && (
                             <span>Frequency: {pattern.frequency}</span>
                           )}
@@ -1135,7 +1135,7 @@ export default function AISystemPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 text-center py-4">No patterns discovered yet</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 text-center py-4">No patterns discovered yet</p>
                 )}
               </Card>
 
@@ -1144,7 +1144,7 @@ export default function AISystemPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Lightbulb className="w-5 h-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Unified Insights</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Unified Insights</h3>
                   </div>
                   <Badge color="yellow" size="sm">
                     {overview?.unifiedInsights?.length ?? 0} insights
@@ -1167,7 +1167,7 @@ export default function AISystemPage() {
                       const color = sourceColors[insight.source] || 'gray';
                       
                       return (
-                        <div key={insight.id} className="border border-gray-200 rounded-lg p-3">
+                        <div key={insight.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-3">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-1">
@@ -1183,14 +1183,14 @@ export default function AISystemPage() {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm text-gray-900 font-medium">{insight.title}</p>
+                              <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{insight.title}</p>
                               {insight.description && (
-                                <p className="text-xs text-gray-700 mt-1">{insight.description}</p>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{insight.description}</p>
                               )}
                             </div>
                           </div>
                           {insight.confidence !== undefined && (
-                            <div className="mt-2 text-xs text-gray-700">
+                            <div className="mt-2 text-xs text-gray-700 dark:text-gray-300">
                               Confidence: {Math.round(insight.confidence)}%
                             </div>
                           )}
@@ -1204,7 +1204,7 @@ export default function AISystemPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 text-center py-4">No insights available yet</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 text-center py-4">No insights available yet</p>
                 )}
               </Card>
             </div>
@@ -1214,15 +1214,15 @@ export default function AISystemPage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/admin-portal/business-intelligence">
             <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-center space-x-3">
                 <BarChart3 className="w-5 h-5 text-blue-600" />
                 <div>
-                  <h3 className="font-medium text-gray-900">View Business Intelligence</h3>
-                  <p className="text-sm text-gray-600">Analytics and insights</p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">View Business Intelligence</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Analytics and insights</p>
                 </div>
               </div>
             </Card>
@@ -1232,8 +1232,8 @@ export default function AISystemPage() {
               <div className="flex items-center space-x-3">
                 <Brain className="w-5 h-5 text-purple-600" />
                 <div>
-                  <h3 className="font-medium text-gray-900">Manage AI Learning</h3>
-                  <p className="text-sm text-gray-600">Centralized learning system</p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">Manage AI Learning</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Centralized learning system</p>
                 </div>
               </div>
             </Card>
@@ -1243,8 +1243,8 @@ export default function AISystemPage() {
               <div className="flex items-center space-x-3">
                 <Globe className="w-5 h-5 text-green-600" />
                 <div>
-                  <h3 className="font-medium text-gray-900">Business AI Management</h3>
-                  <p className="text-sm text-gray-600">Digital twins and patterns</p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">Business AI Management</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Digital twins and patterns</p>
                 </div>
               </div>
             </Card>
@@ -1254,8 +1254,8 @@ export default function AISystemPage() {
               <div className="flex items-center space-x-3">
                 <Search className="w-5 h-5 text-orange-600" />
                 <div>
-                  <h3 className="font-medium text-gray-900">Debug AI Context</h3>
-                  <p className="text-sm text-gray-600">Context monitoring tools</p>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100">Debug AI Context</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">Context monitoring tools</p>
                 </div>
               </div>
             </Card>
@@ -1267,13 +1267,13 @@ export default function AISystemPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Provider Usage</h2>
-            <p className="text-sm text-gray-600 mt-1">Official usage data from AI providers</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Provider Usage</h2>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Official usage data from AI providers</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
+        <div className="border-b border-gray-200 dark:border-slate-700 mb-6">
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'combined', label: 'Combined View', icon: Database },
@@ -1290,7 +1290,7 @@ export default function AISystemPage() {
                     flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
                     ${isActive
                       ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:text-gray-700 hover:border-gray-300 dark:border-slate-600'
                     }
                   `}
                 >

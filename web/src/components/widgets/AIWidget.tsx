@@ -422,7 +422,7 @@ export default function AIWidget({
       <Card className="p-6">
         <div className="text-center">
           <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">Please sign in to access your Digital Life Twin</p>
+          <p className="text-gray-600 dark:text-gray-400">Please sign in to access your Digital Life Twin</p>
         </div>
       </Card>
     );
@@ -438,8 +438,8 @@ export default function AIWidget({
             <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Digital Life Twin</h3>
-            <p className="text-xs text-gray-500">AI-powered personal assistant</p>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Digital Life Twin</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">AI-powered personal assistant</p>
           </div>
         </div>
         
@@ -468,7 +468,7 @@ export default function AIWidget({
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="p-4 border-b bg-gray-50">
+        <div className="p-4 border-b bg-gray-50 dark:bg-slate-800">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Show Personality</span>
@@ -511,14 +511,14 @@ export default function AIWidget({
             {/* Personality Traits */}
             {safeConfig.showPersonality && personality.length > 0 && (
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
                   <User className="h-4 w-4 mr-1" />
                   Personality Profile
                 </h4>
                 <div className="space-y-1">
                   {personality.slice(0, 3).map((trait, index) => (
                     <div key={index} className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">{trait.trait}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{trait.trait}</span>
                       <span className={`font-medium ${getPersonalityColor(trait.value)}`}>
                         {trait.value}%
                       </span>
@@ -531,15 +531,15 @@ export default function AIWidget({
             {/* Insights */}
             {safeConfig.showInsights && insights.length > 0 && (
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
                   <Lightbulb className="h-4 w-4 mr-1" />
                   AI Insights
                 </h4>
                 <div className="space-y-1">
                   {insights.slice(0, 2).map((insight, index) => (
                     <div key={index} className="text-xs">
-                      <div className="font-medium text-gray-700">{insight.title}</div>
-                      <div className="text-gray-600">{insight.description}</div>
+                      <div className="font-medium text-gray-700 dark:text-gray-300">{insight.title}</div>
+                      <div className="text-gray-600 dark:text-gray-400">{insight.description}</div>
                     </div>
                   ))}
                 </div>
@@ -557,7 +557,7 @@ export default function AIWidget({
           )}
 
           {conversations.length === 0 ? (
-            <div className="text-center text-gray-500 mt-8">
+            <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
               <Brain className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p className="text-sm">Start a conversation with your Digital Life Twin</p>
               <p className="text-xs text-gray-400 mt-1">
@@ -580,7 +580,7 @@ export default function AIWidget({
 
                   {/* AI Response */}
                   <div className="flex justify-start">
-                    <div className="bg-gray-100 rounded-lg px-3 py-2 max-w-xs lg:max-w-md">
+                    <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-xs lg:max-w-md">
                       <div className="flex items-start space-x-2">
                         <Bot className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
@@ -603,7 +603,7 @@ export default function AIWidget({
                           )}
 
                           {/* Confidence & Reasoning */}
-                          <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                          <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Confidence: {Math.round(conversation.confidence * 100)}%</span>
                             {conversation.reasoning && (
                               <span title={conversation.reasoning}>
@@ -657,7 +657,7 @@ export default function AIWidget({
               onChange={(e) => setCurrentQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Ask your Digital Life Twin anything..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               disabled={isLoading}
             />
             <Button 
@@ -674,7 +674,7 @@ export default function AIWidget({
           </div>
           
           {safeConfig.autonomyDisplay && autonomySettings && (
-            <div className="mt-2 text-xs text-gray-500">
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               Autonomy: {(autonomySettings.crossModuleActions as number)}% • 
               Context: {dashboardType} • 
               Status: Active
@@ -686,9 +686,9 @@ export default function AIWidget({
       {/* Feedback Modal */}
       {showFeedback && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 max-w-sm w-full mx-4">
             <h3 className="text-lg font-medium mb-4">Provide Feedback</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Help improve your Digital Life Twin by rating this response.
             </p>
             <div className="space-y-3">

@@ -139,13 +139,13 @@ function VisibilitySelector({ visibility, orgChartData, onChange }: VisibilitySe
       </div>
 
       {!showAllUsers && (
-        <div className="space-y-4 p-4 border border-gray-200 rounded-lg">
+        <div className="space-y-4 p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
           {/* Roles */}
           {orgChartData?.roles && orgChartData.roles.length > 0 && (
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <Users className="w-4 h-4 text-gray-600" />
-                <label className="font-medium text-sm text-gray-700">Roles</label>
+                <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <label className="font-medium text-sm text-gray-700 dark:text-gray-300">Roles</label>
               </div>
               <div className="flex flex-wrap gap-2">
                 {orgChartData.roles.map((role) => (
@@ -169,8 +169,8 @@ function VisibilitySelector({ visibility, orgChartData, onChange }: VisibilitySe
           {orgChartData?.tiers && orgChartData.tiers.length > 0 && (
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <Layers className="w-4 h-4 text-gray-600" />
-                <label className="font-medium text-sm text-gray-700">Tiers</label>
+                <Layers className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <label className="font-medium text-sm text-gray-700 dark:text-gray-300">Tiers</label>
               </div>
               <div className="flex flex-wrap gap-2">
                 {orgChartData.tiers.map((tier) => (
@@ -194,8 +194,8 @@ function VisibilitySelector({ visibility, orgChartData, onChange }: VisibilitySe
           {orgChartData?.positions && orgChartData.positions.length > 0 && (
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <UserCircle className="w-4 h-4 text-gray-600" />
-                <label className="font-medium text-sm text-gray-700">Positions</label>
+                <UserCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <label className="font-medium text-sm text-gray-700 dark:text-gray-300">Positions</label>
               </div>
               <div className="flex flex-wrap gap-2">
                 {orgChartData.positions.map((position) => (
@@ -219,8 +219,8 @@ function VisibilitySelector({ visibility, orgChartData, onChange }: VisibilitySe
           {orgChartData?.departments && orgChartData.departments.length > 0 && (
             <div>
               <div className="flex items-center space-x-2 mb-2">
-                <Building2 className="w-4 h-4 text-gray-600" />
-                <label className="font-medium text-sm text-gray-700">Departments</label>
+                <Building2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <label className="font-medium text-sm text-gray-700 dark:text-gray-300">Departments</label>
               </div>
               <div className="flex flex-wrap gap-2">
                 {orgChartData.departments.map((dept) => (
@@ -241,8 +241,8 @@ function VisibilitySelector({ visibility, orgChartData, onChange }: VisibilitySe
           )}
 
           {/* Summary */}
-          <div className="pt-3 border-t border-gray-200">
-            <p className="text-xs text-gray-600">
+          <div className="pt-3 border-t border-gray-200 dark:border-slate-700">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               {!visibility.visibleToRoles?.length &&
               !visibility.visibleToTiers?.length &&
               !visibility.visibleToPositions?.length &&
@@ -314,20 +314,20 @@ export default function FrontPageWidgetEditor({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {isNew ? 'Add New Widget' : 'Edit Widget'}
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Configure widget settings and visibility permissions
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
         </div>
 
@@ -335,13 +335,13 @@ export default function FrontPageWidgetEditor({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Widget Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Widget Type *
             </label>
             <select
               value={formData.widgetType}
               onChange={(e) => setFormData({ ...formData, widgetType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={!isNew}
             >
               {WIDGET_TYPES.map((type) => (
@@ -351,7 +351,7 @@ export default function FrontPageWidgetEditor({
               ))}
             </select>
             {selectedWidgetType && (
-              <p className="mt-1 text-sm text-gray-600">{selectedWidgetType.description}</p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{selectedWidgetType.description}</p>
             )}
             {errors.widgetType && (
               <p className="mt-1 text-sm text-red-600">{errors.widgetType}</p>
@@ -360,7 +360,7 @@ export default function FrontPageWidgetEditor({
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Widget Title *
             </label>
             <Input
@@ -376,7 +376,7 @@ export default function FrontPageWidgetEditor({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Description
             </label>
             <Textarea
@@ -388,10 +388,10 @@ export default function FrontPageWidgetEditor({
           </div>
 
           {/* Visibility Toggle */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
             <div>
-              <label className="font-medium text-sm text-gray-900">Visible</label>
-              <p className="text-xs text-gray-600">Show this widget on the front page</p>
+              <label className="font-medium text-sm text-gray-900 dark:text-gray-100">Visible</label>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Show this widget on the front page</p>
             </div>
             <Switch
               checked={formData.visible}
@@ -407,7 +407,7 @@ export default function FrontPageWidgetEditor({
           />
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
             <Button
               type="button"
               variant="secondary"

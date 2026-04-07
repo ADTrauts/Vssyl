@@ -159,7 +159,7 @@ const RecentPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Drive Sidebar */}
       <DriveSidebar 
         onNewFolder={handleCreateFolder} 
@@ -183,15 +183,15 @@ const RecentPage = () => {
         ) : (
           <div className="p-6">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Recent Activity</h1>
-              <p className="text-gray-600">Track your recent file and folder activities</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Recent Activity</h1>
+              <p className="text-gray-700 dark:text-gray-300">Track your recent file and folder activities</p>
             </div>
 
             {activities.length === 0 ? (
         <div className="text-center py-12">
-          <ClockIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
-          <p className="text-gray-600 mb-6">
+          <ClockIcon className="w-16 h-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No recent activity</h3>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">
             Your recent file activities will appear here. Start by uploading or working with files in your Drive.
           </p>
           <Link 
@@ -209,17 +209,17 @@ const RecentPage = () => {
             return (
             <div 
               key={activity.id} 
-              className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+              className="flex items-center p-4 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow duration-200"
             >
               <div className={iconContainerClass}>
                 {renderActivityIcon(activity.type)}
               </div>
               <div className="ml-4 flex-1 min-w-0">
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
                   {renderActivityText(activity)}
                 </p>
                 {activity.details && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {activity.details.action && (
                       <span className="capitalize">{activity.details.action.replace('_', ' ')}</span>
                     )}

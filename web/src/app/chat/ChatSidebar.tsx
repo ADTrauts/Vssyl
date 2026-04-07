@@ -228,7 +228,7 @@ export default function ChatSidebar({
             key={item.label}
             href={item.href}
             style={styles.item}
-            className="hover:bg-gray-100"
+            className="hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700"
           >
             <Icon style={{ width: 18, height: 18 }} />
             {item.label}

@@ -234,8 +234,8 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Intelligent Recommendations</h2>
-          <p className="text-gray-600">AI-powered suggestions to optimize your experience</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Intelligent Recommendations</h2>
+          <p className="text-gray-600 dark:text-gray-400">AI-powered suggestions to optimize your experience</p>
         </div>
         <div className="flex space-x-2">
           <Button onClick={loadRecommendationsData} variant="secondary">
@@ -258,30 +258,30 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Total Recommendations</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.totalRecommendations}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Recommendations</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalRecommendations}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Accepted</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.acceptedRecommendations}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Accepted</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.acceptedRecommendations}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Implemented</h3>
-            <p className="text-2xl font-bold text-gray-900">{analytics.implementedRecommendations}</p>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Implemented</h3>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.implementedRecommendations}</p>
           </div>
         </Card>
 
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-500">Average Confidence</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Confidence</h3>
             <div className="flex items-center">
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {(analytics.averageConfidence * 100).toFixed(1)}%
               </p>
               <Badge color={getConfidenceColor(analytics.averageConfidence)} className="ml-2">
@@ -295,7 +295,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       {/* Category Filter */}
       <Card>
         <div className="p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Filter by Category</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Filter by Category</h3>
           <div className="flex flex-wrap gap-2">
             <Button
               variant={selectedCategory === 'all' ? 'primary' : 'secondary'}
@@ -321,15 +321,15 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       {/* Category Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendations by Category</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recommendations by Category</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {Object.entries(analytics.categoryDistribution).map(([category, count]) => (
-              <div key={category} className="text-center p-4 bg-gray-50 rounded-lg">
+              <div key={category} className="text-center p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Badge color={getCategoryColor(category)} className="mb-2">
                   {category.charAt(0).toUpperCase() + category.slice(1)}
                 </Badge>
-                <p className="text-2xl font-bold text-gray-900">{count}</p>
-                <p className="text-xs text-gray-500">recommendations</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{count}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">recommendations</p>
               </div>
             ))}
           </div>
@@ -339,7 +339,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       {/* Priority Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendations by Priority</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recommendations by Priority</h3>
           <div className="space-y-3">
             {Object.entries(analytics.priorityDistribution).map(([priority, count]) => (
               <div key={priority} className="flex items-center justify-between">
@@ -347,7 +347,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
                   <Badge color={getPriorityColor(priority)}>
                     {priority.charAt(0).toUpperCase() + priority.slice(1)}
                   </Badge>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     {priority.charAt(0).toUpperCase() + priority.slice(1)} Priority
                   </span>
                 </div>
@@ -362,7 +362,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
                       }}
                     />
                   </div>
-                  <span className="text-sm text-gray-500">{count}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{count}</span>
                 </div>
               </div>
             ))}
@@ -373,11 +373,11 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       {/* Recommendations List */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             {selectedCategory === 'all' ? 'All Recommendations' : `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Recommendations`}
           </h3>
           {filteredRecommendations.length === 0 ? (
-            <p className="text-gray-500">No recommendations available for this category.</p>
+            <p className="text-gray-500 dark:text-gray-400">No recommendations available for this category.</p>
           ) : (
             <div className="space-y-4">
               {filteredRecommendations.map((recommendation) => (
@@ -398,9 +398,9 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
                           {recommendation.estimatedImpact.charAt(0).toUpperCase() + recommendation.estimatedImpact.slice(1)} Impact
                         </Badge>
                       </div>
-                      <h4 className="font-medium text-gray-900 mb-1">{recommendation.title}</h4>
-                      <p className="text-sm text-gray-600 mb-2">{recommendation.description}</p>
-                      <p className="text-xs text-gray-500 mb-3">{recommendation.reasoning}</p>
+                      <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">{recommendation.title}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{recommendation.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{recommendation.reasoning}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Badge color={getConfidenceColor(recommendation.confidence)}>
@@ -415,10 +415,10 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
                   {/* Suggested Actions */}
                   {recommendation.suggestedActions && recommendation.suggestedActions.length > 0 && (
                     <div className="mb-3">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Suggested Actions:</h5>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Suggested Actions:</h5>
                       <div className="space-y-1">
                         {recommendation.suggestedActions.map((action, index) => (
-                          <div key={index} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          <div key={index} className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-slate-800 p-2 rounded">
                             • {action}
                           </div>
                         ))}
@@ -429,7 +429,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
                   {/* Expected Benefits */}
                   {recommendation.expectedBenefits && recommendation.expectedBenefits.length > 0 && (
                     <div className="mb-3">
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Expected Benefits:</h5>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expected Benefits:</h5>
                       <div className="space-y-1">
                         {recommendation.expectedBenefits.map((benefit, index) => (
                           <div key={index} className="text-xs text-green-600 bg-green-50 p-2 rounded">
@@ -442,7 +442,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>Time to implement: {recommendation.timeToImplement.replace('_', ' ')}</span>
                       <span>•</span>
                       <span>Status: {recommendation.status}</span>

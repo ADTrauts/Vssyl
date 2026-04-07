@@ -383,11 +383,11 @@ export default function ModulesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Installed Modules</h2>
-          <p className="text-gray-600">Manage your installed modules and their settings</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Installed Modules</h2>
+          <p className="text-gray-600 dark:text-gray-400">Manage your installed modules and their settings</p>
         </div>
         <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden">
             <button
               className={`px-3 py-1 text-sm ${scope === 'personal' ? 'bg-blue-600 text-white' : 'text-gray-700'}`}
               onClick={() => setScope('personal')}
@@ -405,7 +405,7 @@ export default function ModulesPage() {
             <select
               value={businessId || currentBusinessId || ''}
               onChange={(e) => setBusinessId(e.target.value || null)}
-              className="px-2 py-1 border border-gray-300 rounded"
+              className="px-2 py-1 border border-gray-300 dark:border-slate-600 rounded"
             >
               <option value="">Select business</option>
               {loadingBusinesses ? (
@@ -434,8 +434,8 @@ export default function ModulesPage() {
       ) : modules.length === 0 ? (
         <Card className="p-8 text-center">
           <Puzzle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No modules installed</h3>
-          <p className="text-gray-600 mb-4">Get started by browsing the marketplace for modules</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No modules installed</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Get started by browsing the marketplace for modules</p>
           <Button onClick={() => handleTabChange('marketplace')}>
             Browse Marketplace
           </Button>
@@ -450,8 +450,8 @@ export default function ModulesPage() {
                     {getModuleIcon(module)}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{module.name}</h3>
-                    <p className="text-sm text-gray-600">{module.developer}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{module.developer}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -467,9 +467,9 @@ export default function ModulesPage() {
                 </div>
               </div>
               
-              <p className="text-gray-600 text-sm mb-4">{module.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{module.description}</p>
               
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                 <span>v{module.version}</span>
                 <span>{module.category}</span>
               </div>
@@ -524,11 +524,11 @@ export default function ModulesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Marketplace</h2>
-          <p className="text-gray-600">Discover and install new modules to extend your workspace</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Marketplace</h2>
+          <p className="text-gray-600 dark:text-gray-400">Discover and install new modules to extend your workspace</p>
         </div>
         <div className="flex space-x-3 items-center">
-          <div className="flex items-center bg-white border border-gray-300 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg overflow-hidden">
             <button
               className={`px-3 py-1 text-sm ${scope === 'personal' ? 'bg-blue-600 text-white' : 'text-gray-700'}`}
               onClick={() => setScope('personal')}
@@ -548,7 +548,7 @@ export default function ModulesPage() {
               value={businessId || ''}
               onChange={(e) => setBusinessId(e.target.value || null)}
               placeholder="Business ID"
-              className="px-2 py-1 border border-gray-300 rounded"
+              className="px-2 py-1 border border-gray-300 dark:border-slate-600 rounded"
             />
           )}
           <Button onClick={() => router.push('/modules/submit')}>
@@ -569,13 +569,13 @@ export default function ModulesPage() {
             placeholder="Search modules..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <select 
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Categories</option>
           <option value="PRODUCTIVITY">Productivity</option>
@@ -591,7 +591,7 @@ export default function ModulesPage() {
         <select 
           value={selectedPricingTier}
           onChange={(e) => setSelectedPricingTier(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="all">All Pricing</option>
           <option value="free">Free</option>
@@ -608,8 +608,8 @@ export default function ModulesPage() {
       ) : modules.length === 0 ? (
         <Card className="p-8 text-center">
           <Puzzle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No modules available</h3>
-          <p className="text-gray-600 mb-4">Check back soon for new modules in the marketplace!</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No modules available</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Check back soon for new modules in the marketplace!</p>
           <Button onClick={() => handleTabChange('submit')}>
             Submit Your Module
           </Button>
@@ -624,8 +624,8 @@ export default function ModulesPage() {
                     {getModuleIcon(module)}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{module.name}</h3>
-                    <p className="text-sm text-gray-600">{module.developer}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{module.developer}</p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end space-y-1">
@@ -646,36 +646,36 @@ export default function ModulesPage() {
                 </div>
               </div>
               
-              <p className="text-gray-600 text-sm mb-4">{module.description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">{module.description}</p>
               
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                 <span>v{module.version}</span>
                 <span>{module.category}</span>
               </div>
               
               {/* Pricing Information */}
               {module.pricingTier && module.pricingTier !== 'free' && (
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">Pricing:</span>
-                    <span className="text-gray-900">
+                    <span className="text-gray-900 dark:text-gray-100">
                       ${module.basePrice}/month
                       {module.enterprisePrice && module.enterprisePrice !== module.basePrice && (
-                        <span className="text-gray-500 ml-1">
+                        <span className="text-gray-500 dark:text-gray-400 ml-1">
                           (Enterprise: ${module.enterprisePrice}/month)
                         </span>
                       )}
                     </span>
                   </div>
                   {module.subscriptionStatus && (
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Subscription: {module.subscriptionStatus}
                     </div>
                   )}
                 </div>
               )}
               
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                 <div className="flex items-center space-x-1">
                   <Star className="w-4 h-4 text-yellow-500 fill-current" />
                   <span>{module.rating.toFixed(1)}</span>
@@ -722,8 +722,8 @@ export default function ModulesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Submit Module</h2>
-          <p className="text-gray-600">Share your module with the community</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Submit Module</h2>
+          <p className="text-gray-600 dark:text-gray-400">Share your module with the community</p>
         </div>
         <Button variant="secondary" onClick={() => handleTabChange('marketplace')}>
           Browse Marketplace
@@ -732,8 +732,8 @@ export default function ModulesPage() {
 
       <Card className="p-8 text-center">
         <Upload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Submit Your Module?</h3>
-        <p className="text-gray-600 mb-4">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Ready to Submit Your Module?</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Create and submit your module to the marketplace. Our team will review your submission 
           and get back to you within 2-3 business days.
         </p>
@@ -742,7 +742,7 @@ export default function ModulesPage() {
             <Upload className="w-4 h-4 mr-2" />
             Start Submission
           </Button>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             <p>What you'll need:</p>
             <ul className="mt-2 space-y-1">
               <li>• Module name, description, and version</li>
@@ -762,9 +762,9 @@ export default function ModulesPage() {
     const permissions = modulePermissions[moduleId] || [];
     
     return (
-      <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+      <div className="mt-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-medium text-gray-700">Team Access</h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Team Access</h4>
           <Button size="sm" variant="secondary" className="text-xs">
             Manage Access
           </Button>
@@ -776,7 +776,7 @@ export default function ModulesPage() {
                 <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
                   {permission.name.charAt(0)}
                 </div>
-                <span className="text-gray-700">{permission.name}</span>
+                <span className="text-gray-700 dark:text-gray-300">{permission.name}</span>
                 <Badge color="gray" size="sm">{permission.role}</Badge>
               </div>
               <span className={`text-xs px-2 py-1 rounded ${
@@ -798,8 +798,8 @@ export default function ModulesPage() {
       return (
         <Card className="p-8 text-center">
           <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Unavailable</h3>
-          <p className="text-gray-600 mb-4">Module analytics are only available for business users</p>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Analytics Unavailable</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Module analytics are only available for business users</p>
           <Button onClick={() => setScope('business')}>
             Switch to Business Mode
           </Button>
@@ -811,8 +811,8 @@ export default function ModulesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Module Analytics</h2>
-            <p className="text-gray-600">Track module usage and team activity across your business</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Module Analytics</h2>
+            <p className="text-gray-600 dark:text-gray-400">Track module usage and team activity across your business</p>
           </div>
         </div>
 
@@ -821,8 +821,8 @@ export default function ModulesPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Modules</p>
-                <p className="text-2xl font-bold text-gray-900">{modules.length}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Modules</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{modules.length}</p>
               </div>
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Puzzle className="w-6 h-6 text-blue-600" />
@@ -833,8 +833,8 @@ export default function ModulesPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Users</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Users</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {Object.values(modulePermissions).flat().filter((p: any) => p.access !== 'read-only').length}
                 </p>
               </div>
@@ -847,8 +847,8 @@ export default function ModulesPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Most Used</p>
-                <p className="text-2xl font-bold text-gray-900">Dashboard</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Most Used</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</p>
               </div>
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Star className="w-6 h-6 text-purple-600" />
@@ -859,29 +859,29 @@ export default function ModulesPage() {
 
         {/* Module Usage Chart */}
         <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Module Usage This Month</h3>
-          <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Module Usage This Month</h3>
+          <div className="h-64 bg-gray-50 dark:bg-slate-800 rounded-lg flex items-center justify-center">
             <div className="text-center">
               <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-              <p className="text-gray-600">Usage charts coming soon</p>
+              <p className="text-gray-600 dark:text-gray-400">Usage charts coming soon</p>
             </div>
           </div>
         </Card>
 
         {/* Team Activity */}
         <Card className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Team Activity</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Recent Team Activity</h3>
           <div className="space-y-3">
             {Object.values(modulePermissions).flat().slice(0, 5).map((permission: any, index: number) => (
-              <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
                   {permission.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{permission.name}</p>
-                  <p className="text-xs text-gray-600">Accessed Dashboard module</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{permission.name}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Accessed Dashboard module</p>
                 </div>
-                <span className="text-xs text-gray-500">2 hours ago</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">2 hours ago</span>
               </div>
             ))}
           </div>
@@ -891,19 +891,19 @@ export default function ModulesPage() {
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 dark:bg-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Module Management</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Module Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Manage your installed modules, discover new ones, and submit your own
           </p>
         </div>
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 dark:border-slate-700">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => handleTabChange('installed')}

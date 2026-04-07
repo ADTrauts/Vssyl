@@ -57,19 +57,19 @@ function YearInner() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold">Calendar — Year</h1>
             <div className="ml-2 grid grid-cols-4 gap-2 text-xs">
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/day">Day</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/week">Week</a>
-              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50" href="/calendar/month">Month</a>
-              <a className="px-2 py-1 border rounded text-center bg-gray-100" href="/calendar/year">Year</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/day">Day</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/week">Week</a>
+              <a className="px-2 py-1 border rounded text-center hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800" href="/calendar/month">Month</a>
+              <a className="px-2 py-1 border rounded text-center bg-gray-100 dark:bg-slate-700" href="/calendar/year">Year</a>
             </div>
             <div className="flex items-center gap-1 ml-3">
               <button className="px-2 py-1 border rounded" onClick={() => setViewYear(y => y - 1)}>{'<'}</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewYear(new Date().getFullYear())}>This Year</button>
               <button className="px-2 py-1 border rounded" onClick={() => setViewYear(y => y + 1)}>{'>'}</button>
-              <div className="ml-2 text-sm text-gray-600">{viewYear}</div>
+              <div className="ml-2 text-sm text-gray-600 dark:text-gray-400">{viewYear}</div>
             </div>
           </div>
-          <div className="text-sm text-gray-500">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">{currentDashboard ? getDashboardDisplayName(currentDashboard) : 'All Tabs'}</div>
         </div>
 
         {loading && <div>Loading…</div>}
@@ -82,9 +82,9 @@ function YearInner() {
               const bg = `rgba(59,130,246,${0.1 + 0.6*intensity})`;
               return (
                 <div key={label} className="border rounded p-2 min-h-[120px] flex flex-col">
-                  <div className="text-xs text-gray-600 mb-2">{label}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">{label}</div>
                   <div className="flex-1 rounded" style={{ background: bg }} />
-                  <div className="text-[11px] text-gray-500 mt-2">{c} event{c === 1 ? '' : 's'}</div>
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-2">{c} event{c === 1 ? '' : 's'}</div>
                 </div>
               );
             })}

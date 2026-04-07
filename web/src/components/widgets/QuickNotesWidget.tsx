@@ -140,7 +140,7 @@ export default function QuickNotesWidget({
         ))}
         <button
           onClick={createNote}
-          className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+          className="p-1 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700"
           title="New note"
         >
           <Plus className="w-4 h-4" />
@@ -155,11 +155,11 @@ export default function QuickNotesWidget({
             value={activeNote.content}
             onChange={(e) => updateNoteContent(e.target.value)}
             placeholder="Type your note here..."
-            className="flex-1 w-full p-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            className="flex-1 w-full p-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
             style={{ minHeight: '100px' }}
           />
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {activeNote.content.length} chars
             </span>
             <div className="flex items-center gap-1">
@@ -175,7 +175,7 @@ export default function QuickNotesWidget({
               {notes.length > 1 && (
                 <button
                   onClick={() => deleteNote(activeNote.id)}
-                  className="p-1 rounded hover:bg-red-100 text-gray-500 hover:text-red-600"
+                  className="p-1 rounded hover:bg-red-100 text-gray-500 dark:text-gray-400 hover:text-red-600"
                   title="Delete note"
                 >
                   <Trash2 className="w-4 h-4" />

@@ -121,13 +121,13 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
               {...listeners}
               className="cursor-grab active:cursor-grabbing touch-none"
             >
-              <GripVertical className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+              <GripVertical className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400" />
             </div>
             <span className="text-2xl">{getWidgetIcon(widget.widgetType)}</span>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm text-gray-900">{widget.title}</h4>
+              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{widget.title}</h4>
               {widget.description && (
-                <p className="text-xs text-gray-500 mt-0.5">{widget.description}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{widget.description}</p>
               )}
             </div>
           </div>
@@ -135,11 +135,11 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
           {/* Visibility Toggle */}
           <button
             onClick={onToggleVisibility}
-            className="p-1 hover:bg-gray-100 rounded"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
             title={widget.visible ? 'Hide widget' : 'Show widget'}
           >
             {widget.visible ? (
-              <Eye className="w-4 h-4 text-gray-600" />
+              <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             ) : (
               <EyeOff className="w-4 h-4 text-gray-400" />
             )}
@@ -155,19 +155,19 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
 
         {/* Permissions Info */}
         {widget.visibility && (
-          <div className="mb-3 p-2 bg-gray-50 rounded text-xs">
-            <div className="font-medium text-gray-700 mb-1">Visible to:</div>
+          <div className="mb-3 p-2 bg-gray-50 dark:bg-slate-800 rounded text-xs">
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Visible to:</div>
             {widget.visibility.visibleToRoles && widget.visibility.visibleToRoles.length > 0 && (
-              <div className="text-gray-600">Roles: {widget.visibility.visibleToRoles.join(', ')}</div>
+              <div className="text-gray-600 dark:text-gray-400">Roles: {widget.visibility.visibleToRoles.join(', ')}</div>
             )}
             {widget.visibility.visibleToTiers && widget.visibility.visibleToTiers.length > 0 && (
-              <div className="text-gray-600">Tiers: {widget.visibility.visibleToTiers.join(', ')}</div>
+              <div className="text-gray-600 dark:text-gray-400">Tiers: {widget.visibility.visibleToTiers.join(', ')}</div>
             )}
             {widget.visibility.visibleToPositions && widget.visibility.visibleToPositions.length > 0 && (
-              <div className="text-gray-600">Positions: {widget.visibility.visibleToPositions.join(', ')}</div>
+              <div className="text-gray-600 dark:text-gray-400">Positions: {widget.visibility.visibleToPositions.join(', ')}</div>
             )}
             {widget.visibility.visibleToDepartments && widget.visibility.visibleToDepartments.length > 0 && (
-              <div className="text-gray-600">Depts: {widget.visibility.visibleToDepartments.join(', ')}</div>
+              <div className="text-gray-600 dark:text-gray-400">Depts: {widget.visibility.visibleToDepartments.join(', ')}</div>
             )}
           </div>
         )}
@@ -295,8 +295,8 @@ export default function FrontPageLayoutDesigner({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Layout Designer</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Layout Designer</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Drag to reorder, resize widgets, and control visibility
           </p>
         </div>
@@ -343,10 +343,10 @@ export default function FrontPageLayoutDesigner({
 
       {/* Empty State */}
       {widgets.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <div className="text-center py-12 bg-gray-50 dark:bg-slate-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600">
           <Grid className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h4 className="text-lg font-medium text-gray-900 mb-2">No widgets yet</h4>
-          <p className="text-gray-600 mb-4">Add your first widget to get started</p>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No widgets yet</h4>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Add your first widget to get started</p>
           <Button onClick={onAddWidget} className="flex items-center space-x-2 mx-auto">
             <Plus className="w-4 h-4" />
             <span>Add Widget</span>

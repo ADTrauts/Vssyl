@@ -95,24 +95,24 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
     <Modal open={isOpen} onClose={handleClose} size="large">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Bulk Invite Members</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Bulk Invite Members</h2>
           <Button variant="ghost" onClick={handleClose} className="p-1">
             <X className="w-5 h-5" />
           </Button>
         </div>
 
         {/* Global Settings */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Global Settings</h3>
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg mb-6">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Global Settings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Default Role
               </label>
               <select
                 value={globalRole}
                 onChange={(e) => setGlobalRole(e.target.value as 'EMPLOYEE' | 'MANAGER' | 'ADMIN')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="EMPLOYEE">Employee</option>
                 <option value="MANAGER">Manager</option>
@@ -120,7 +120,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Global Message
               </label>
               <Input
@@ -143,7 +143,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
         {/* Invitations List */}
         <div className="space-y-4 mb-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-gray-700">
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Invitations ({invitations.filter(inv => inv.email.trim()).length})
             </h3>
             <Button
@@ -157,9 +157,9 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
           </div>
 
           {invitations.map((invitation, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
+            <div key={index} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Invitation {index + 1}
                 </span>
                 {invitations.length > 1 && (
@@ -175,7 +175,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Email *
                   </label>
                   <Input
@@ -188,13 +188,13 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Role
                   </label>
                   <select
                     value={invitation.role}
                     onChange={(e) => updateInvitation(index, 'role', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="EMPLOYEE">Employee</option>
                     <option value="MANAGER">Manager</option>
@@ -203,7 +203,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Title
                   </label>
                   <Input
@@ -215,7 +215,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Department
                   </label>
                   <Input
@@ -227,7 +227,7 @@ export const BulkInviteModal: React.FC<BulkInviteModalProps> = ({
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Personal Message
                   </label>
                   <Textarea

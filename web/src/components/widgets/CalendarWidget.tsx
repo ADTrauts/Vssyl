@@ -211,7 +211,7 @@ export default function CalendarWidget({
           <select
             value={selectedCalendarId}
             onChange={(e) => setSelectedCalendarId(e.target.value)}
-            className="text-sm border border-gray-300 rounded px-2 py-1"
+            className="text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1"
           >
             <option value="all">All Calendars</option>
             {calendars.map(cal => (
@@ -247,7 +247,7 @@ export default function CalendarWidget({
           size="sm"
           variant="ghost"
           onClick={() => setShowConfig(!showConfig)}
-          className="p-1 text-gray-600 hover:text-gray-900"
+          className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
           title="Widget settings"
         >
           <Settings className="w-4 h-4" />
@@ -259,7 +259,7 @@ export default function CalendarWidget({
         {events.slice(0, widgetConfig.maxEventsToShow).map((event) => (
           <div
             key={event.id}
-            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
@@ -270,13 +270,13 @@ export default function CalendarWidget({
                       backgroundColor: event.calendar?.color || '#3b82f6' 
                     }}
                   />
-                  <h4 className="font-medium text-gray-900 truncate">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 truncate">
                     {event.title}
                   </h4>
                 </div>
                 
                 {widgetConfig.showEventDetails && (
-                  <div className="mt-1 space-y-1 text-sm text-gray-600">
+                  <div className="mt-1 space-y-1 text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
                       <Clock className="w-3 h-3" />
                       <span>{formatEventTime(event)}</span>
@@ -303,7 +303,7 @@ export default function CalendarWidget({
         ))}
         
         {events.length === 0 && (
-          <div className="text-center py-6 text-gray-500">
+          <div className="text-center py-6 text-gray-500 dark:text-gray-400">
             <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
             <p className="text-sm">No upcoming events</p>
           </div>
@@ -311,7 +311,7 @@ export default function CalendarWidget({
       </div>
 
       {/* Quick Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-slate-700">
         {widgetConfig.showQuickAdd && (
           <Button
             size="sm"
@@ -337,8 +337,8 @@ export default function CalendarWidget({
 
       {/* Configuration Panel */}
       {showConfig && (
-        <div className="p-4 bg-gray-50 rounded-lg space-y-3">
-          <h4 className="font-medium text-gray-900">Widget Settings</h4>
+        <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-3">
+          <h4 className="font-medium text-gray-900 dark:text-gray-100">Widget Settings</h4>
           
           <div className="space-y-2">
             <label className="flex items-center space-x-2">
@@ -373,13 +373,13 @@ export default function CalendarWidget({
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Max Events to Show
             </label>
             <select
               value={widgetConfig.maxEventsToShow}
               onChange={(e) => onConfigChange?.({ ...widgetConfig, maxEventsToShow: parseInt(e.target.value) })}
-              className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+              className="w-full text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1"
             >
               <option value={3}>3 events</option>
               <option value={5}>5 events</option>

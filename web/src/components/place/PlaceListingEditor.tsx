@@ -259,8 +259,8 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
             <MapPin className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Vssyl Place Listing</h2>
-            <p className="text-sm text-gray-600">Manage how your business appears on Vssyl Place</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Vssyl Place Listing</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Manage how your business appears on Vssyl Place</p>
           </div>
         </div>
       )}
@@ -274,18 +274,18 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
 
       <Card>
         <div className="p-5 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Listing Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Listing Details</h3>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
-            <p className="text-xs text-gray-600 mb-2">Hero image for your Place listing (JPEG, PNG, WebP, GIF, max 5MB)</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cover Image</label>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Hero image for your Place listing (JPEG, PNG, WebP, GIF, max 5MB)</p>
             <div className="flex items-start gap-4">
               {listing?.coverImage ? (
                 <div className="relative">
                   <img
                     src={listing.coverImage || ''}
                     alt="Cover"
-                    className="w-40 h-24 object-cover rounded-lg border border-gray-200"
+                    className="w-40 h-24 object-cover rounded-lg border border-gray-200 dark:border-slate-700"
                   />
                   <button
                     type="button"
@@ -298,7 +298,7 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
                   </button>
                 </div>
               ) : (
-                <div className="w-40 h-24 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
+                <div className="w-40 h-24 rounded-lg border-2 border-dashed border-gray-200 dark:border-slate-700 flex items-center justify-center bg-gray-50 dark:bg-slate-800">
                   <ImageIcon className="w-8 h-8 text-gray-400" />
                 </div>
               )}
@@ -335,15 +335,15 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Thumbnail / Avatar Image</label>
-            <p className="text-xs text-gray-600 mb-2">Small image for the card and map marker. If empty, the cover image or business logo is used.</p>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Thumbnail / Avatar Image</label>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Small image for the card and map marker. If empty, the cover image or business logo is used.</p>
             <div className="flex items-start gap-4">
               {listing?.avatarImage ? (
                 <div className="relative">
                   <img
                     src={listing.avatarImage}
                     alt="Avatar"
-                    className="w-14 h-14 rounded-lg object-cover border border-gray-200"
+                    className="w-14 h-14 rounded-lg object-cover border border-gray-200 dark:border-slate-700"
                   />
                   <button
                     type="button"
@@ -356,7 +356,7 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
                   </button>
                 </div>
               ) : (
-                <div className="w-14 h-14 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50">
+                <div className="w-14 h-14 rounded-lg border-2 border-dashed border-gray-200 dark:border-slate-700 flex items-center justify-center bg-gray-50 dark:bg-slate-800">
                   <ImageIcon className="w-6 h-6 text-gray-400" />
                 </div>
               )}
@@ -393,14 +393,14 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
             <Input value={displayName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDisplayName(e.target.value)} placeholder="How your business appears on Place" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Short Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short Description</label>
             <textarea
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={2}
               value={shortDescription}
               onChange={(e) => setShortDescription(e.target.value)}
@@ -410,9 +410,9 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
               <select
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -420,32 +420,32 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Node Color</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Node Color</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={nodeColor}
                   onChange={(e) => setNodeColor(e.target.value)}
-                  className="w-10 h-10 rounded cursor-pointer border border-gray-300"
+                  className="w-10 h-10 rounded cursor-pointer border border-gray-300 dark:border-slate-600"
                 />
-                <span className="text-sm text-gray-700">{nodeColor}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{nodeColor}</span>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags</label>
             <Input value={tags} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTags(e.target.value)} placeholder="Comma-separated tags (e.g. pizza, delivery, italian)" />
           </div>
 
           <div className="flex items-center gap-6 pt-2 border-t border-gray-100">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isEnabled} onChange={(e) => setIsEnabled(e.target.checked)} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-              <span className="text-sm text-gray-700">Enable listing</span>
+              <input type="checkbox" checked={isEnabled} onChange={(e) => setIsEnabled(e.target.checked)} className="rounded border-gray-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Enable listing</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-              <span className="text-sm text-gray-700">Publish (visible to users)</span>
+              <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="rounded border-gray-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Publish (visible to users)</span>
             </label>
           </div>
 
@@ -460,26 +460,26 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
 
       <Card>
         <div className="p-5 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Interaction Links</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Interaction Links</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Add ways for users to interact with your business — order food, visit your website, follow on social media, etc.
           </p>
 
           {listing?.interactionLinks && listing.interactionLinks.length > 0 && (
             <div className="space-y-2">
               {listing.interactionLinks.map((link) => (
-                <div key={link.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                <div key={link.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
                   <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">{link.label}</span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{link.label}</span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">{link.type.replace('_', ' ')}</span>
-                      {!link.isActive && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">Hidden</span>}
+                      {!link.isActive && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:text-gray-400">Hidden</span>}
                     </div>
-                    <p className="text-xs text-gray-600 truncate">{link.url}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{link.url}</p>
                   </div>
                   <button onClick={() => handleToggleLink(link)} className="p-1.5 rounded hover:bg-gray-200 transition-colors" title={link.isActive ? 'Hide' : 'Show'}>
-                    {link.isActive ? <Eye className="w-4 h-4 text-gray-700" /> : <EyeOff className="w-4 h-4 text-gray-700" />}
+                    {link.isActive ? <Eye className="w-4 h-4 text-gray-700 dark:text-gray-300" /> : <EyeOff className="w-4 h-4 text-gray-700 dark:text-gray-300" />}
                   </button>
                   <button onClick={() => handleDeleteLink(link.id)} className="p-1.5 rounded hover:bg-red-100 transition-colors" title="Delete">
                     <Trash2 className="w-4 h-4 text-red-600" />
@@ -489,11 +489,11 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
             </div>
           )}
 
-          <div className="p-4 rounded-lg border border-dashed border-gray-300 space-y-3">
-            <h4 className="text-sm font-medium text-gray-700">Add New Link</h4>
+          <div className="p-4 rounded-lg border border-dashed border-gray-300 dark:border-slate-600 space-y-3">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Add New Link</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <select
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={newLinkType}
                 onChange={(e) => setNewLinkType(e.target.value)}
               >
@@ -512,7 +512,7 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
         </div>
       </Card>
 
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
         <ExternalLink className="w-4 h-4 inline-block mr-1 align-middle" />
         Users will see your listing after your business is verified and the listing is published.
       </p>

@@ -146,8 +146,8 @@ export default function AnalyticsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Platform Analytics</h1>
-            <p className="text-gray-600 mt-2">Real-time platform metrics and insights</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Platform Analytics</h1>
+            <p className="text-gray-700 dark:text-gray-300 mt-2">Real-time platform metrics and insights</p>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -162,8 +162,8 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Platform Analytics</h1>
-          <p className="text-gray-600 mt-2">System performance, technical metrics, and real-time activity monitoring</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Platform Analytics</h1>
+          <p className="text-gray-700 dark:text-gray-300 mt-2">System performance, technical metrics, and real-time activity monitoring</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -171,7 +171,7 @@ export default function AnalyticsPage() {
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600'
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -193,14 +193,14 @@ export default function AnalyticsPage() {
       <Card className="p-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">Filters:</span>
+            <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
           </div>
           
           <select
             value={filters.dateRange}
             onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -211,7 +211,7 @@ export default function AnalyticsPage() {
           <select
             value={filters.userType}
             onChange={(e) => setFilters({ ...filters, userType: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
           >
             <option value="all">All users</option>
             <option value="active">Active users</option>
@@ -222,7 +222,7 @@ export default function AnalyticsPage() {
           <select
             value={filters.metric}
             onChange={(e) => setFilters({ ...filters, metric: e.target.value })}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
           >
             <option value="all">All metrics</option>
             <option value="system">System performance</option>
@@ -264,20 +264,20 @@ export default function AnalyticsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <Activity className="w-5 h-5 text-orange-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">System Performance</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">System Performance</h3>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Uptime</span>
+                  <span className="text-gray-700 dark:text-gray-300">Uptime</span>
                   <span className="font-semibold text-green-600">{analyticsData.system.uptime}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Avg Response Time</span>
+                  <span className="text-gray-700 dark:text-gray-300">Avg Response Time</span>
                   <span className="font-semibold">{analyticsData.system.avgResponseTime}ms</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Error Rate</span>
+                  <span className="text-gray-700 dark:text-gray-300">Error Rate</span>
                   <span className={`font-semibold ${
                     analyticsData.system.errorRate < 1 ? 'text-green-600' : 'text-red-600'
                   }`}>
@@ -292,20 +292,20 @@ export default function AnalyticsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <BarChart3 className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">System Health</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">System Health</h3>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">API Requests (24h)</span>
+                  <span className="text-gray-700 dark:text-gray-300">API Requests (24h)</span>
                   <span className="font-semibold">-</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Database Queries (24h)</span>
+                  <span className="text-gray-700 dark:text-gray-300">Database Queries (24h)</span>
                   <span className="font-semibold">-</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Cache Hit Rate</span>
+                  <span className="text-gray-700 dark:text-gray-300">Cache Hit Rate</span>
                   <span className="font-semibold">-</span>
                 </div>
               </div>
@@ -316,20 +316,20 @@ export default function AnalyticsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <Activity className="w-5 h-5 text-purple-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Resource Usage</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Resource Usage</h3>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">CPU Usage</span>
+                  <span className="text-gray-700 dark:text-gray-300">CPU Usage</span>
                   <span className="font-semibold">-</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Memory Usage</span>
+                  <span className="text-gray-700 dark:text-gray-300">Memory Usage</span>
                   <span className="font-semibold">-</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Storage Usage</span>
+                  <span className="text-gray-700 dark:text-gray-300">Storage Usage</span>
                   <span className="font-semibold">-</span>
                 </div>
               </div>
@@ -339,7 +339,7 @@ export default function AnalyticsPage() {
           {/* Performance Trends */}
           {analyticsData.system.performanceTrend && analyticsData.system.performanceTrend.length > 0 && (
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Response Time Trend</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Response Time Trend</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={analyticsData.system.performanceTrend}>
@@ -395,10 +395,10 @@ export default function AnalyticsPage() {
       {/* Real-time Activity Feed */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Real-time Activity</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Real-time Activity</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-600">Live</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Live</span>
           </div>
         </div>
         {recentActivity.length > 0 ? (
@@ -446,22 +446,22 @@ export default function AnalyticsPage() {
                 : '';
 
               return (
-                <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className={`w-2 h-2 ${getActivityColor(activity.action)} rounded-full`}></div>
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {formatAction(activity.action)}
                       {userEmail !== 'Unknown user' && `: ${userEmail}`}
                       {resourceInfo && ` • ${resourceInfo}`}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</span>
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{formatTimestamp(activity.timestamp)}</span>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-600 dark:text-gray-400">
             <p className="text-sm">No recent activity</p>
           </div>
         )}

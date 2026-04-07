@@ -301,8 +301,8 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Permission Management</h2>
-          <p className="text-gray-600">Manage access control and role-based permissions</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Permission Management</h2>
+          <p className="text-gray-600 dark:text-gray-400">Manage access control and role-based permissions</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -325,7 +325,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           >
             <div className="flex items-center space-x-3">
               <Shield className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-medium text-gray-900">Permission Sets</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Permission Sets</h3>
               <Badge color="blue">{permissionSets.length}</Badge>
             </div>
             {expandedSections.has('permission-sets') ? (
@@ -338,7 +338,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           {expandedSections.has('permission-sets') && (
             <div className="mt-4 space-y-4">
               {permissionSets.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p>No permission sets created yet</p>
                   <Button
@@ -352,14 +352,14 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
               ) : (
                 <div className="grid gap-4">
                   {permissionSets.map((permissionSet) => (
-                    <div key={permissionSet.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="flex items-center justify-between p-4 bg-gray-50">
+                    <div key={permissionSet.id} className="border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800">
                         <div className="flex items-center space-x-3">
                           <Shield className="w-5 h-5 text-blue-600" />
                           <div>
-                            <h4 className="font-medium text-gray-900">{permissionSet.name}</h4>
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">{permissionSet.name}</h4>
                             {permissionSet.description && (
-                              <p className="text-sm text-gray-600">{permissionSet.description}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{permissionSet.description}</p>
                             )}
                           </div>
                         </div>
@@ -384,13 +384,13 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                       </div>
                       
                       {/* Permission Details */}
-                      <div className="p-4 border-t border-gray-200">
+                      <div className="p-4 border-t border-gray-200 dark:border-slate-700">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {Object.entries(modulePermissions).map(([moduleId, module]) => (
                             <div key={moduleId} className="space-y-2">
                               <div className="flex items-center space-x-2">
                                 <span className="text-lg">{module.icon}</span>
-                                <h5 className="font-medium text-gray-900">{module.name}</h5>
+                                <h5 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h5>
                               </div>
                               <div className="space-y-1">
                                 {module.permissions.map((perm) => (
@@ -428,7 +428,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           >
             <div className="flex items-center space-x-3">
               <Copy className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-medium text-gray-900">Template Permission Sets</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Template Permission Sets</h3>
               <Badge color="green">{templatePermissionSets.length}</Badge>
             </div>
             {expandedSections.has('templates') ? (
@@ -441,21 +441,21 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           {expandedSections.has('templates') && (
             <div className="mt-4 space-y-4">
               {templatePermissionSets.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <Copy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p>No template permission sets available</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
                   {templatePermissionSets.map((template) => (
-                    <div key={template.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={template.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-3">
                           <Shield className="w-5 h-5 text-green-600" />
                           <div>
-                            <h4 className="font-medium text-gray-900">{template.name}</h4>
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">{template.name}</h4>
                             {template.description && (
-                              <p className="text-sm text-gray-600">{template.description}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{template.description}</p>
                             )}
                           </div>
                         </div>
@@ -484,7 +484,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                           <div key={moduleId} className="space-y-2">
                             <div className="flex items-center space-x-2">
                               <span className="text-lg">{module.icon}</span>
-                              <h5 className="font-medium text-gray-900">{module.name}</h5>
+                              <h5 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h5>
                             </div>
                             <div className="space-y-1">
                               {module.permissions.map((perm) => (
@@ -521,7 +521,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           >
             <div className="flex items-center space-x-3">
               <Building2 className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900">Department Module Access</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Department Module Access</h3>
               <Badge color="blue">{orgChartData.departments.length}</Badge>
             </div>
             {expandedSections.has('department-modules') ? (
@@ -533,26 +533,26 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           
           {expandedSections.has('department-modules') && (
             <div className="mt-6 space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Assign specific modules to departments. Employees in each department will only see modules assigned to their department.
               </p>
               
               {orgChartData.departments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>No departments found. Create departments in the Organization Chart tab first.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {orgChartData.departments.map((department) => (
-                    <div key={department.id} className="border border-gray-200 rounded-lg p-4">
+                    <div key={department.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-gray-900">{department.name}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{department.name}</h4>
                         <Badge color="blue">{department.positions?.length || 0} positions</Badge>
                       </div>
                       
                       <div className="space-y-2">
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Available Modules
                         </label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -560,11 +560,11 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                             <label key={moduleId} className="flex items-center space-x-2">
                               <input
                                 type="checkbox"
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                className="rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
                                 // TODO: Connect to actual department module assignment
                                 defaultChecked={false}
                               />
-                              <span className="text-sm text-gray-700">
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
                                 {(modulePermissions as any)[moduleId]?.name || moduleId}
                               </span>
                             </label>
@@ -583,14 +583,14 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
       {/* Edit Permission Set Modal */}
       {editMode === 'permission-set' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
               {editAction === 'create' ? 'Create New Permission Set' : 'Edit Permission Set'}
             </h3>
             <form onSubmit={handlePermissionSetSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Permission Set Name
                   </label>
                   <Input
@@ -601,7 +601,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Description
                   </label>
                   <Input
@@ -614,15 +614,15 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
 
               {/* Permission Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   Select Permissions
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Object.entries(modulePermissions).map(([moduleId, module]) => (
                     <div key={moduleId} className="space-y-3">
-                      <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
                         <span className="text-lg">{module.icon}</span>
-                        <h4 className="font-medium text-gray-900">{module.name}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">{module.name}</h4>
                       </div>
                       <div className="space-y-2 pl-3">
                         {module.permissions.map((perm) => (
@@ -632,8 +632,8 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                               onChange={(e) => handlePermissionToggle(perm.id, e.target.checked)}
                             />
                             <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">{perm.name}</div>
-                              <div className="text-xs text-gray-500">{perm.description}</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{perm.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">{perm.description}</div>
                             </div>
                           </label>
                         ))}
@@ -644,7 +644,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <Button variant="secondary" onClick={cancelEdit} disabled={loading}>
                   Cancel
                 </Button>

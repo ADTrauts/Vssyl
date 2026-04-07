@@ -45,9 +45,9 @@ export default function AIContextDebugPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center gap-3">
@@ -55,8 +55,8 @@ export default function AIContextDebugPage() {
                 <Brain className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">AI Context Debugging</h1>
-                <p className="text-gray-600">Debug and monitor AI context across all modules</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Context Debugging</h1>
+                <p className="text-gray-700 dark:text-gray-300">Debug and monitor AI context across all modules</p>
               </div>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function AIContextDebugPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             {tabs.map((tab) => {
@@ -76,7 +76,7 @@ export default function AIContextDebugPage() {
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                      : 'border-transparent text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300 dark:border-slate-600'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

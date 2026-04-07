@@ -113,8 +113,8 @@ export default function TeamOnboardingTaskList({
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filter:</span>
+          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
           <button
             onClick={() => {
               setTaskFilter('all');
@@ -153,14 +153,14 @@ export default function TeamOnboardingTaskList({
 
         {employees.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Employee:</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Employee:</span>
             <select
               value={selectedEmployee || ''}
               onChange={(e) => {
                 setSelectedEmployee(e.target.value || null);
                 setTaskFilter('all');
               }}
-              className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Employees</option>
               {employees.map(([id, employee]) => (
@@ -176,7 +176,7 @@ export default function TeamOnboardingTaskList({
       {/* Task List */}
       {filteredTasks.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-sm text-gray-500">No tasks match the selected filters.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No tasks match the selected filters.</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -226,7 +226,7 @@ export default function TeamOnboardingTaskList({
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-semibold text-gray-900">{task.title}</h4>
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</h4>
                           <OnboardingTaskStatusBadge status={task.status} />
                           {overdue && (
                             <Badge color="red" size="sm">Overdue</Badge>
@@ -236,9 +236,9 @@ export default function TeamOnboardingTaskList({
                           )}
                         </div>
                         {task.description && (
-                          <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <User className="w-3 h-3" />
                             <span>{employeeName}</span>
@@ -291,8 +291,8 @@ export default function TeamOnboardingTaskList({
 
                     {/* Completed Info */}
                     {task.status === 'COMPLETED' && task.completedAt && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <CheckCircle2 className="w-4 h-4 text-green-600" />
                           <span>
                             Completed {format(new Date(task.completedAt), 'MMM d, yyyy')}
@@ -300,7 +300,7 @@ export default function TeamOnboardingTaskList({
                           </span>
                         </div>
                         {task.notes && (
-                          <p className="text-sm text-gray-600 mt-1 ml-6">{task.notes}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-6">{task.notes}</p>
                         )}
                       </div>
                     )}

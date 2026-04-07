@@ -30,15 +30,15 @@ export const AdminStatCard = ({
     <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
           {trend !== undefined && (
             <div className={`flex items-center mt-1 ${getTrendColor(trend)}`}>
               <span className="text-sm font-medium">{getTrendIcon(trend)} {Math.abs(trend)}%</span>
             </div>
           )}
           {description && (
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{description}</p>
           )}
         </div>
         <div className={`p-3 rounded-lg bg-${color}-100`}>

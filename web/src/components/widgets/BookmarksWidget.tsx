@@ -113,7 +113,7 @@ export default function BookmarksWidget({
       {bookmarks.length === 0 && !showAddForm ? (
         <div className="flex flex-col items-center justify-center py-6 text-center">
           <Bookmark className="w-8 h-8 text-gray-300 mb-2" />
-          <p className="text-sm text-gray-600 mb-2">No bookmarks yet</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">No bookmarks yet</p>
           <button
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
@@ -145,23 +145,23 @@ export default function BookmarksWidget({
                 href={bookmark.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors group"
+                className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors group"
               >
-                <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-6 h-6 rounded bg-gray-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {favicon ? (
                     <img src={favicon} alt="" className="w-4 h-4" />
                   ) : (
-                    <LinkIcon className="w-3 h-3 text-gray-500" />
+                    <LinkIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                   )}
                 </div>
-                <span className="flex-1 text-sm text-gray-900 truncate">{bookmark.title}</span>
+                <span className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate">{bookmark.title}</span>
                 <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       setEditingId(bookmark.id);
                     }}
-                    className="p-1 rounded hover:bg-gray-200 text-gray-500"
+                    className="p-1 rounded hover:bg-gray-200 text-gray-500 dark:text-gray-400"
                     title="Edit"
                   >
                     <Edit2 className="w-3 h-3" />
@@ -171,7 +171,7 @@ export default function BookmarksWidget({
                       e.preventDefault();
                       deleteBookmark(bookmark.id);
                     }}
-                    className="p-1 rounded hover:bg-red-100 text-gray-500 hover:text-red-600"
+                    className="p-1 rounded hover:bg-red-100 text-gray-500 dark:text-gray-400 hover:text-red-600"
                     title="Delete"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -185,13 +185,13 @@ export default function BookmarksWidget({
 
       {/* Add bookmark form */}
       {showAddForm && (
-        <div className="p-3 bg-gray-50 rounded-lg space-y-2">
+        <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-2">
           <input
             type="text"
             placeholder="Title"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             autoFocus
           />
           <input
@@ -199,7 +199,7 @@ export default function BookmarksWidget({
             placeholder="URL (e.g., google.com)"
             value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}
-            className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             onKeyDown={(e) => e.key === 'Enter' && addBookmark()}
           />
           <div className="flex items-center gap-2 justify-end">
@@ -209,7 +209,7 @@ export default function BookmarksWidget({
                 setNewTitle('');
                 setNewUrl('');
               }}
-              className="px-3 py-1 text-xs text-gray-600 hover:text-gray-900"
+              className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
             >
               Cancel
             </button>
@@ -228,7 +228,7 @@ export default function BookmarksWidget({
       {bookmarks.length > 0 && !showAddForm && (
         <button
           onClick={() => setShowAddForm(true)}
-          className="flex items-center justify-center gap-1.5 w-full py-2 text-xs text-gray-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg border border-dashed border-gray-300 hover:border-indigo-300 transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full py-2 text-xs text-gray-600 dark:text-gray-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg border border-dashed border-gray-300 dark:border-slate-600 hover:border-indigo-300 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Add bookmark
@@ -256,17 +256,17 @@ function EditBookmarkForm({
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
         autoFocus
       />
       <input
         type="text"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
+        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400"
       />
       <div className="flex items-center gap-1 justify-end">
-        <button onClick={onCancel} className="p-1 rounded hover:bg-gray-200 text-gray-500">
+        <button onClick={onCancel} className="p-1 rounded hover:bg-gray-200 text-gray-500 dark:text-gray-400">
           <X className="w-3 h-3" />
         </button>
         <button

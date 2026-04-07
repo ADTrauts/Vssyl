@@ -355,7 +355,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading moderation data...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading moderation data...</p>
         </div>
       </Card>
     );
@@ -365,15 +365,15 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
     <FeatureGate feature="chat_content_moderation" businessId={businessId}>
       <Card className={`${className}`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg">
                 <Shield className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Content Moderation</h2>
-                <p className="text-gray-600">AI-powered content filtering and policy enforcement</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Content Moderation</h2>
+                <p className="text-gray-600 dark:text-gray-400">AI-powered content filtering and policy enforcement</p>
               </div>
             </div>
             
@@ -444,11 +444,11 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
 
               {/* Top Violated Rules */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Top Violated Rules</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Top Violated Rules</h3>
                 <div className="space-y-3">
                   {stats.topViolatedRules.map((rule, index) => (
                     <div key={index} className="flex items-center justify-between">
-                      <span className="text-gray-900">{rule.ruleName}</span>
+                      <span className="text-gray-900 dark:text-gray-100">{rule.ruleName}</span>
                       <Badge className="px-2 py-1 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full">
                         {rule.count} violations
                       </Badge>
@@ -459,13 +459,13 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
 
               {/* Violations by User */}
               <Card className="p-4">
-                <h3 className="font-medium text-gray-900 mb-4">Violations by User</h3>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Violations by User</h3>
                 <div className="space-y-3">
                   {stats.violationsByUser.map((user, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-900">{user.userName}</span>
+                        <span className="text-gray-900 dark:text-gray-100">{user.userName}</span>
                       </div>
                       <Badge className="px-2 py-1 text-xs bg-orange-50 text-orange-600 border border-orange-200 rounded-full">
                         {user.count} violations
@@ -495,7 +495,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                 <select
                   value={severityFilter}
                   onChange={(e) => setSeverityFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Severities</option>
                   <option value="low">Low</option>
@@ -507,7 +507,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -521,7 +521,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
               {/* Violations List */}
               <div className="space-y-3">
                 {filteredViolations.map(violation => (
-                  <Card key={violation.id} className="p-4 border border-gray-200">
+                  <Card key={violation.id} className="p-4 border border-gray-200 dark:border-slate-700">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start gap-3">
                         <AlertTriangle className={`w-5 h-5 mt-0.5 ${
@@ -531,9 +531,9 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                         }`} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">{violation.userName}</span>
-                            <span className="text-gray-500">in</span>
-                            <span className="font-medium text-gray-900">{violation.conversationName}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{violation.userName}</span>
+                            <span className="text-gray-500 dark:text-gray-400">in</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{violation.conversationName}</span>
                             <Badge className={`px-2 py-1 text-xs border rounded-full ${SEVERITY_COLORS[violation.severity]}`}>
                               {violation.severity.toUpperCase()}
                             </Badge>
@@ -542,7 +542,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                             </Badge>
                           </div>
                           
-                          <div className="text-sm text-gray-600 mb-2">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                             <strong>Rule:</strong> {violation.ruleName} • 
                             <strong className="ml-1">Confidence:</strong> 
                             <span className={`ml-1 font-medium ${getConfidenceColor(violation.aiConfidence)}`}>
@@ -551,12 +551,12 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                             <strong className="ml-1">Time:</strong> {violation.timestamp.toLocaleString()}
                           </div>
                           
-                          <div className="bg-gray-50 p-3 rounded text-sm text-gray-900 border-l-4 border-red-500">
+                          <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded text-sm text-gray-900 dark:text-gray-100 border-l-4 border-red-500">
                             "{violation.content}"
                           </div>
                           
                           {violation.context.beforeMessage && (
-                            <div className="mt-2 text-xs text-gray-500">
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                               <strong>Context:</strong> ...{violation.context.beforeMessage} → <strong>[FLAGGED MESSAGE]</strong> → {violation.context.afterMessage}...
                             </div>
                           )}
@@ -601,7 +601,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
           {activeTab === 'rules' && (
             <div className="space-y-4">
               {moderationRules.map(rule => (
-                <Card key={rule.id} className="p-4 border border-gray-200">
+                <Card key={rule.id} className="p-4 border border-gray-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <Switch
@@ -609,8 +609,8 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                         onChange={(enabled) => handleToggleRule(rule.id, enabled)}
                       />
                       <div>
-                        <h3 className="font-medium text-gray-900">{rule.name}</h3>
-                        <p className="text-sm text-gray-600">{rule.description}</p>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100">{rule.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{rule.description}</p>
                       </div>
                     </div>
                     
@@ -618,7 +618,7 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                       <Badge className={`px-2 py-1 text-xs border rounded-full ${SEVERITY_COLORS[rule.severity]}`}>
                         {rule.severity.toUpperCase()}
                       </Badge>
-                      <Badge className="px-2 py-1 text-xs bg-gray-100 text-gray-700 border border-gray-200 rounded-full">
+                      <Badge className="px-2 py-1 text-xs bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700 rounded-full">
                         {rule.triggerCount} triggers
                       </Badge>
                     </div>
@@ -626,20 +626,20 @@ export const ContentModerationPanel: React.FC<ContentModerationPanelProps> = ({
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <div className="text-gray-500 mb-1">Type</div>
-                      <div className="text-gray-900 capitalize">{rule.type.replace('_', ' ')}</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Type</div>
+                      <div className="text-gray-900 dark:text-gray-100 capitalize">{rule.type.replace('_', ' ')}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Action</div>
-                      <div className="text-gray-900 capitalize">{rule.action}</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Action</div>
+                      <div className="text-gray-900 dark:text-gray-100 capitalize">{rule.action}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Auto Action</div>
-                      <div className="text-gray-900">{rule.autoAction ? 'Yes' : 'No'}</div>
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Auto Action</div>
+                      <div className="text-gray-900 dark:text-gray-100">{rule.autoAction ? 'Yes' : 'No'}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500 mb-1">Last Triggered</div>
-                      <div className="text-gray-900">
+                      <div className="text-gray-500 dark:text-gray-400 mb-1">Last Triggered</div>
+                      <div className="text-gray-900 dark:text-gray-100">
                         {rule.lastTriggered ? rule.lastTriggered.toLocaleDateString() : 'Never'}
                       </div>
                     </div>

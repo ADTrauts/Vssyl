@@ -381,7 +381,7 @@ export default function AIEnhancedSearchBar({
     return (
       <div
         ref={resultsRef}
-        className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden"
+        className="fixed z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden"
         style={{
           top: dropdownPosition.top + 8,
           left: dropdownPosition.left,
@@ -390,7 +390,7 @@ export default function AIEnhancedSearchBar({
         }}
       >
         {/* Mode switcher */}
-        <div className="p-3 border-b border-gray-100 bg-gray-50">
+        <div className="p-3 border-b border-gray-100 bg-gray-50 dark:bg-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {isAIMode ? (
@@ -401,8 +401,8 @@ export default function AIEnhancedSearchBar({
                 </>
               ) : (
                 <>
-                  <Search className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm font-medium text-gray-600">Search Results</span>
+                  <Search className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Search Results</span>
                 </>
               )}
             </div>
@@ -437,7 +437,7 @@ export default function AIEnhancedSearchBar({
               {conversation.length === 0 ? (
                 <div className="text-center py-8">
                   <Brain className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 text-sm">Ask me anything about your digital life</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Ask me anything about your digital life</p>
                   <p className="text-gray-400 text-xs mt-1">
                     I can help schedule meetings, organize files, analyze data, and more
                   </p>
@@ -456,7 +456,7 @@ export default function AIEnhancedSearchBar({
                       
                       {item.type === 'ai' && (
                         <div className="flex justify-start">
-                          <div className="bg-gray-100 rounded-lg px-3 py-2 max-w-sm">
+                          <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-sm">
                             <div className="flex items-start space-x-2">
                               <Bot className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
                               <div>
@@ -482,7 +482,7 @@ export default function AIEnhancedSearchBar({
                                 
                                 {/* Confidence */}
                                 {item.confidence !== undefined && (
-                                  <p className="text-xs text-gray-500 mt-1">
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     Confidence: {Math.round(item.confidence * 100)}%
                                   </p>
                                 )}
@@ -493,16 +493,16 @@ export default function AIEnhancedSearchBar({
                       )}
                       
                       {item.type === 'search_results' && item.searchResults && (
-                        <div className="border border-gray-200 rounded-lg p-3">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                        <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
                             <Search className="h-4 w-4 mr-1" />
                             {item.content}
                           </h4>
                           <div className="space-y-2">
                             {item.searchResults.slice(0, 3).map((result) => (
                               <div key={result.id} className="text-xs">
-                                <p className="font-medium text-gray-900">{result.title}</p>
-                                <p className="text-gray-600">{result.description}</p>
+                                <p className="font-medium text-gray-900 dark:text-gray-100">{result.title}</p>
+                                <p className="text-gray-600 dark:text-gray-400">{result.description}</p>
                               </div>
                             ))}
                           </div>
@@ -516,10 +516,10 @@ export default function AIEnhancedSearchBar({
               
               {isAILoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-lg px-3 py-2">
+                  <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2">
                     <div className="flex items-center space-x-2">
                       <Spinner size={16} />
-                      <span className="text-sm text-gray-600">Thinking...</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Thinking...</span>
                     </div>
                   </div>
                 </div>
@@ -531,19 +531,19 @@ export default function AIEnhancedSearchBar({
               {state.loading ? (
                 <div className="text-center py-8">
                   <Spinner size={24} />
-                  <p className="text-sm text-gray-500 mt-2">Searching...</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Searching...</p>
                 </div>
               ) : state.results.length > 0 ? (
                 <div className="space-y-4">
                   {Object.entries(groupResultsByModule(state.results)).map(([moduleId, results]) => (
                     <div key={moduleId} className="space-y-2">
-                      <h3 className="text-sm font-semibold text-gray-700 capitalize">{moduleId}</h3>
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize">{moduleId}</h3>
                       {results.slice(0, 3).map((result) => (
-                        <div key={result.id} className="p-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <p className="text-sm font-medium text-gray-900">
+                        <div key={result.id} className="p-2 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded cursor-pointer">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {highlightText(result.title, inputValue)}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             {highlightText(result.description || '', inputValue)}
                           </p>
                         </div>
@@ -554,7 +554,7 @@ export default function AIEnhancedSearchBar({
               ) : inputValue && !state.loading ? (
                 <div className="text-center py-8">
                   <Search className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500">No results found</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No results found</p>
                   {session?.accessToken && (
                     <Button
                       variant="ghost"
@@ -599,14 +599,14 @@ export default function AIEnhancedSearchBar({
               onKeyDown={handleKeyPress}
               onFocus={() => inputValue && setIsOpen(true)}
               placeholder={isAIMode ? "Ask your AI assistant anything..." : "Search across all modules..."}
-              className="flex-1 py-3 px-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none"
+              className="flex-1 py-3 px-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none"
             />
             
             <div className="flex items-center pr-2 space-x-2">
               {inputValue && (
                 <button
                   onClick={handleClear}
-                  className="p-1 text-gray-400 hover:text-gray-600"
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                 >
                   <X className="w-4 h-4" />
                 </button>

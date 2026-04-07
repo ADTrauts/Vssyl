@@ -175,10 +175,10 @@ export const EnterpriseUpgradePrompt: React.FC<EnterpriseUpgradePromptProps> = (
             </button>
             
             {showDetails && (
-              <div className="bg-white rounded-lg p-4 border border-purple-100">
+              <div className="bg-white dark:bg-slate-900 rounded-lg p-4 border border-purple-100">
                 <ul className="text-left space-y-2">
                   {featureInfo.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
                       <span className="text-green-500 mt-1">✓</span>
                       <span>{benefit}</span>
                     </li>
@@ -212,7 +212,7 @@ export const EnterpriseUpgradePrompt: React.FC<EnterpriseUpgradePromptProps> = (
           
           <button
             onClick={handleStartTrial}
-            className="px-6 py-3 text-purple-600 bg-white border border-purple-600 font-medium rounded-lg hover:bg-purple-50 transition-colors"
+            className="px-6 py-3 text-purple-600 bg-white dark:bg-slate-900 border border-purple-600 font-medium rounded-lg hover:bg-purple-50 transition-colors"
           >
             Start Free Trial
           </button>

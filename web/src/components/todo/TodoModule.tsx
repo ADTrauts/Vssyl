@@ -250,7 +250,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
   if (!effectiveDashboardId) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-gray-500">Please select a dashboard</p>
+        <p className="text-gray-500 dark:text-gray-400">Please select a dashboard</p>
       </div>
     );
   }
@@ -258,7 +258,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Compact Header - Single Row */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b bg-white">
+      <div className="flex items-center gap-4 px-4 py-3 border-b bg-white dark:bg-slate-900">
         {/* Title */}
         <h1 className="text-xl font-bold whitespace-nowrap">To-Do</h1>
         
@@ -300,7 +300,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
         </div>
 
         {/* Task Counts - Compact */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
           <span>{tasks.filter(t => t.status !== 'DONE').length} active</span>
           <span className="text-gray-300">•</span>
           <span>{tasks.filter(t => t.status === 'DONE').length} completed</span>
@@ -472,7 +472,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
 
             {/* Task Detail Panel - Always render but conditionally show */}
             {selectedTask && (
-              <div className="w-96 min-w-[384px] max-w-[384px] flex-shrink-0 h-full overflow-hidden border-l border-gray-200">
+              <div className="w-96 min-w-[384px] max-w-[384px] flex-shrink-0 h-full overflow-hidden border-l border-gray-200 dark:border-slate-700">
                 <TaskDetail
                   task={selectedTask}
                   onClose={() => setSelectedTask(null)}

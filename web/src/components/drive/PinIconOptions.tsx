@@ -32,39 +32,39 @@ export const PinIconOptions = () => {
       {icons.map(({ name, component: Icon, description }) => (
         <div key={name} className="border rounded-lg p-6 space-y-4">
           <h2 className="text-xl font-semibold">{name}</h2>
-          <p className="text-gray-600">{description}</p>
+          <p className="text-gray-600 dark:text-gray-400">{description}</p>
           
           <div className="grid grid-cols-4 gap-4">
             {/* Unpinned state - wireframe */}
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Icon className="w-6 h-6 text-gray-400" />
               </div>
-              <span className="text-xs text-gray-500">Unpinned (outline)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Unpinned (outline)</span>
             </div>
             
             {/* Pinned state - filled */}
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Icon className="w-6 h-6 text-yellow-500 fill-current" />
               </div>
-              <span className="text-xs text-gray-500">Pinned (filled)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Pinned (filled)</span>
             </div>
             
             {/* Small size - unpinned */}
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Icon className="w-4 h-4 text-gray-400" />
               </div>
-              <span className="text-xs text-gray-500">Small (outline)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Small (outline)</span>
             </div>
             
             {/* Small size - pinned */}
             <div className="flex flex-col items-center space-y-2">
-              <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
                 <Icon className="w-4 h-4 text-yellow-500 fill-current" />
               </div>
-              <span className="text-xs text-gray-500">Small (filled)</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Small (filled)</span>
             </div>
           </div>
         </div>
@@ -72,10 +72,10 @@ export const PinIconOptions = () => {
       
       <div className="mt-8 p-6 bg-blue-50 rounded-lg">
         <h3 className="text-lg font-semibold mb-2">Recommendation</h3>
-        <p className="text-gray-700">
+        <p className="text-gray-700 dark:text-gray-300">
           <strong>Pin</strong> is the best choice for "pinning" items because:
         </p>
-        <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700">
+        <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700 dark:text-gray-300">
           <li>It's specifically designed for pinning/attaching items</li>
           <li>Looks like a push pin (matches the concept)</li>
           <li>Works well with fill-current for filled state</li>

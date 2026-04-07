@@ -12,18 +12,18 @@ export default function DashboardError({ error, reset }: ErrorProps) {
   const errorStack = error instanceof Error ? error.stack : undefined;
 
   return (
-    <div className="flex h-full w-full bg-gray-50 items-center justify-center p-8">
+    <div className="flex h-full w-full bg-gray-50 dark:bg-slate-800 items-center justify-center p-8">
       <div className="text-center max-w-2xl">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard Error</h2>
-        <p className="text-gray-600 mb-4">
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Dashboard Error</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           {errorMessage}
         </p>
         {errorStack && process.env.NODE_ENV === 'development' && (
           <details className="mt-4 text-left">
-            <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 mb-2">
+            <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2">
               Show error details (development only)
             </summary>
-            <pre className="text-xs bg-gray-100 p-4 rounded overflow-auto max-h-64 text-gray-800">
+            <pre className="text-xs bg-gray-100 dark:bg-slate-700 p-4 rounded overflow-auto max-h-64 text-gray-800">
               {errorStack}
             </pre>
           </details>
@@ -43,7 +43,7 @@ export default function DashboardError({ error, reset }: ErrorProps) {
           </a>
           <a
             href="/"
-            className="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 transition-colors"
           >
             Go Home
           </a>

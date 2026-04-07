@@ -359,7 +359,7 @@ export default function HREmployeesPage() {
                 setQ('');
                 setPage(1);
               }}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
               title="Clear search"
             >
               ✕
@@ -398,7 +398,7 @@ export default function HREmployeesPage() {
                 setPositionId('');
                 setPage(1);
               }}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
               title="Clear filters"
             >
               Clear Filters
@@ -428,7 +428,7 @@ export default function HREmployeesPage() {
       )}
 
       <div className="border rounded">
-        <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+        <div className="grid grid-cols-12 bg-gray-50 dark:bg-slate-800 px-3 py-2 text-sm font-medium">
           <div className="col-span-4">
             <button
               onClick={() => {
@@ -485,7 +485,7 @@ export default function HREmployeesPage() {
         {loading ? (
           <div className="p-8 flex items-center justify-center">
             <Spinner size={32} />
-            <span className="ml-3 text-gray-600">Loading employees...</span>
+            <span className="ml-3 text-gray-600 dark:text-gray-400">Loading employees...</span>
           </div>
         ) : items.length === 0 ? (
           <div className="p-8">
@@ -533,7 +533,7 @@ export default function HREmployeesPage() {
                   >
                     {name}
                   </button>
-                  <div className="text-gray-500">{ep.user?.email}</div>
+                  <div className="text-gray-500 dark:text-gray-400">{ep.user?.email}</div>
                 </div>
                 <div className="col-span-3">{title}</div>
                 <div className="col-span-3">{dept}</div>
@@ -556,7 +556,7 @@ export default function HREmployeesPage() {
                       </button>
                     </>
                   ) : (
-                    <span className="text-gray-500">Archived</span>
+                    <span className="text-gray-500 dark:text-gray-400">Archived</span>
                   )}
                 </div>
               </div>
@@ -566,7 +566,7 @@ export default function HREmployeesPage() {
       </div>
 
       <div className="mt-3 flex items-center justify-between text-sm">
-        <div className="text-gray-600">{count} total</div>
+        <div className="text-gray-600 dark:text-gray-400">{count} total</div>
         <div className="flex gap-2">
           <button
             className="px-3 py-1 border rounded disabled:opacity-50"
@@ -588,7 +588,7 @@ export default function HREmployeesPage() {
 
       {showEdit && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-5">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-lg p-5">
             <div className="text-lg font-semibold mb-3">Edit HR Profile</div>
             
             {validationErrors.length > 0 && (
@@ -671,7 +671,7 @@ export default function HREmployeesPage() {
       {/* Employee Detail Modal */}
       {showDetail && detailEmployee && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Employee Profile</h2>
               <button
@@ -680,7 +680,7 @@ export default function HREmployeesPage() {
                   setViewingId(null);
                   setDetailEmployee(null);
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
               >
                 ×
               </button>
@@ -692,23 +692,23 @@ export default function HREmployeesPage() {
                 <h3 className="text-lg font-semibold mb-3">Basic Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-gray-600">Name</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Name</label>
                     <p className="font-medium">{detailEmployee.user.name || detailEmployee.user.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-600">Email</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Email</label>
                     <p className="font-medium">{detailEmployee.user.email}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-600">Position</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Position</label>
                     <p className="font-medium">{detailEmployee.position.title}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-600">Department</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Department</label>
                     <p className="font-medium">{detailEmployee.position.department?.name || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-600">Organizational Tier</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">Organizational Tier</label>
                     <p className="font-medium">{detailEmployee.position.tier?.name || 'N/A'}</p>
                   </div>
                 </div>
@@ -721,13 +721,13 @@ export default function HREmployeesPage() {
                   <div className="grid grid-cols-2 gap-4">
                     {detailEmployee.hrProfile.hireDate && (
                       <div>
-                        <label className="text-sm text-gray-600">Hire Date</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Hire Date</label>
                         <p className="font-medium">{new Date(detailEmployee.hrProfile.hireDate).toLocaleDateString()}</p>
                       </div>
                     )}
                     {detailEmployee.hrProfile.employeeType && (
                       <div>
-                        <label className="text-sm text-gray-600">Employment Type</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Employment Type</label>
                         <p className="font-medium">{detailEmployee.hrProfile.employeeType.replace(/_/g, ' ')}</p>
                       </div>
                     )}
@@ -766,7 +766,7 @@ export default function HREmployeesPage() {
                   <Spinner size={24} />
                 </div>
               ) : auditLogs.length === 0 ? (
-                <p className="text-gray-500 text-sm">No changes recorded</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">No changes recorded</p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {auditLogs.map((log) => {
@@ -787,11 +787,11 @@ export default function HREmployeesPage() {
                       <div key={log.id} className="border rounded p-3 text-sm">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-medium">{actionLabels[log.action] || log.action}</span>
-                          <span className="text-gray-500 text-xs">
+                          <span className="text-gray-500 dark:text-gray-400 text-xs">
                             {new Date(log.timestamp).toLocaleString()}
                           </span>
                         </div>
-                        <div className="text-gray-600 text-xs">
+                        <div className="text-gray-600 dark:text-gray-400 text-xs">
                           by {log.user.name || log.user.email}
                         </div>
                         {(() => {
@@ -800,7 +800,7 @@ export default function HREmployeesPage() {
                             return (
                               <div className="mt-2 text-xs">
                                 {Object.entries(changes as Record<string, { from: unknown; to: unknown }>).map(([field, change]) => (
-                                  <div key={field} className="text-gray-600">
+                                  <div key={field} className="text-gray-600 dark:text-gray-400">
                                     <span className="font-medium">{field}:</span> {String(change.from ?? 'N/A')} → {String(change.to ?? 'N/A')}
                                   </div>
                                 ))}
@@ -822,7 +822,7 @@ export default function HREmployeesPage() {
       {/* Import Wizard Modal */}
       {showImport && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold">Import Employees from CSV</h2>
               <button
@@ -831,7 +831,7 @@ export default function HREmployeesPage() {
                   setImportFile(null);
                   setImportResults(null);
                 }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl"
               >
                 ×
               </button>
@@ -839,7 +839,7 @@ export default function HREmployeesPage() {
             
             {!importResults ? (
               <div className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
                   <input
                     type="file"
                     accept=".csv"
@@ -853,7 +853,7 @@ export default function HREmployeesPage() {
                   >
                     <div className="text-4xl">📄</div>
                     <div className="font-semibold">Click to select CSV file</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {importFile ? importFile.name : 'Required columns: name, email, title, department'}
                     </div>
                   </label>
@@ -861,7 +861,7 @@ export default function HREmployeesPage() {
                 
                 <div className="bg-blue-50 border border-blue-200 rounded p-4 text-sm">
                   <div className="font-semibold mb-2">CSV Format Requirements:</div>
-                  <div className="space-y-1 text-gray-700">
+                  <div className="space-y-1 text-gray-700 dark:text-gray-300">
                     <div>• <strong>Required:</strong> name, email</div>
                     <div>• <strong>Optional:</strong> title, department, hiredate, employeetype, worklocation</div>
                     <div>• First row must contain column headers</div>
@@ -895,19 +895,19 @@ export default function HREmployeesPage() {
                   <div className="font-semibold mb-2">Import Summary</div>
                   <div className="grid grid-cols-4 gap-4 text-sm">
                     <div>
-                      <div className="text-gray-600">Total Rows</div>
+                      <div className="text-gray-600 dark:text-gray-400">Total Rows</div>
                       <div className="text-2xl font-bold">{importResults.summary.total}</div>
                     </div>
                     <div>
-                      <div className="text-gray-600">Created</div>
+                      <div className="text-gray-600 dark:text-gray-400">Created</div>
                       <div className="text-2xl font-bold text-green-600">{importResults.summary.created}</div>
                     </div>
                     <div>
-                      <div className="text-gray-600">Updated</div>
+                      <div className="text-gray-600 dark:text-gray-400">Updated</div>
                       <div className="text-2xl font-bold text-blue-600">{importResults.summary.updated}</div>
                     </div>
                     <div>
-                      <div className="text-gray-600">Errors</div>
+                      <div className="text-gray-600 dark:text-gray-400">Errors</div>
                       <div className="text-2xl font-bold text-red-600">{importResults.summary.errors}</div>
                     </div>
                   </div>
@@ -915,7 +915,7 @@ export default function HREmployeesPage() {
                 
                 {importResults.summary.errors > 0 && (
                   <div className="border rounded max-h-60 overflow-y-auto">
-                    <div className="bg-gray-50 px-3 py-2 font-semibold text-sm">Errors ({importResults.summary.errors})</div>
+                    <div className="bg-gray-50 dark:bg-slate-800 px-3 py-2 font-semibold text-sm">Errors ({importResults.summary.errors})</div>
                     {importResults.results.filter(r => !r.success).slice(0, 20).map((result, idx) => (
                       <div key={idx} className="px-3 py-2 border-t text-sm">
                         <div className="font-medium">Row {result.row}: {result.name} ({result.email})</div>
@@ -923,7 +923,7 @@ export default function HREmployeesPage() {
                       </div>
                     ))}
                     {importResults.results.filter(r => !r.success).length > 20 && (
-                      <div className="px-3 py-2 border-t text-sm text-gray-500">
+                      <div className="px-3 py-2 border-t text-sm text-gray-500 dark:text-gray-400">
                         ...and {importResults.results.filter(r => !r.success).length - 20} more errors
                       </div>
                     )}

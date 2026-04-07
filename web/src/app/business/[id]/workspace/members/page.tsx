@@ -194,13 +194,13 @@ export default function WorkMembersPage() {
   }
 
     return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
       <div className="container mx-auto px-6 py-6">
       {/* Header */}
         <div className="flex items-center justify-between mb-6">
         <div>
-            <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
-            <p className="text-gray-600">Manage your business team members</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Team Members</h1>
+            <p className="text-gray-600 dark:text-gray-400">Manage your business team members</p>
         </div>
           <div className="flex items-center space-x-3">
             <Button variant="secondary" size="sm">
@@ -221,8 +221,8 @@ export default function WorkMembersPage() {
           <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                <p className="text-sm text-gray-600">Total Members</p>
-                <p className="text-2xl font-bold text-gray-900">{memberStats.total}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Members</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{memberStats.total}</p>
                 </div>
               <Users className="w-8 h-8 text-blue-500" />
               </div>
@@ -230,8 +230,8 @@ export default function WorkMembersPage() {
           <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                <p className="text-sm text-gray-600">Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{memberStats.admins}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Admins</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{memberStats.admins}</p>
                 </div>
               <Shield className="w-8 h-8 text-red-500" />
               </div>
@@ -239,8 +239,8 @@ export default function WorkMembersPage() {
           <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                <p className="text-sm text-gray-600">Managers</p>
-                <p className="text-2xl font-bold text-gray-900">{memberStats.managers}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Managers</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{memberStats.managers}</p>
                 </div>
               <UserCheck className="w-8 h-8 text-blue-500" />
               </div>
@@ -248,8 +248,8 @@ export default function WorkMembersPage() {
           <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                <p className="text-sm text-gray-600">Employees</p>
-                <p className="text-2xl font-bold text-gray-900">{memberStats.employees}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Employees</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{memberStats.employees}</p>
                 </div>
               <Users className="w-8 h-8 text-green-500" />
                 </div>
@@ -257,8 +257,8 @@ export default function WorkMembersPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Today</p>
-                <p className="text-2xl font-bold text-gray-900">{memberStats.active}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Today</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{memberStats.active}</p>
               </div>
               <UserCheck className="w-8 h-8 text-green-500" />
               </div>
@@ -275,20 +275,20 @@ export default function WorkMembersPage() {
                     placeholder="Search members..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <select
                   value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as 'all' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE')}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Roles</option>
                   <option value="ADMIN">Admins</option>
                   <option value="MANAGER">Managers</option>
                   <option value="EMPLOYEE">Employees</option>
                 </select>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setViewMode('list')}
@@ -315,30 +315,30 @@ export default function WorkMembersPage() {
                       .sort(([a], [b]) => a.localeCompare(b))
                       .map(([dept, deptMembers]) => (
                         <div key={dept}>
-                          <h3 className="text-sm font-semibold text-gray-700 mb-2 border-b border-gray-200 pb-1">
+                          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 border-b border-gray-200 dark:border-slate-700 pb-1">
                             {dept}
                           </h3>
                           <div className="space-y-2 pl-2">
                             {deptMembers.map((member) => (
                               <div
                                 key={member.id}
-                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                                className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
                               >
                                 <div className="flex items-center space-x-4">
                                   <Avatar size={40} nameOrEmail={member.user.name ?? member.user.email} />
                                   <div>
                                     <div className="flex items-center space-x-2">
-                                      <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
+                                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{member.user.name ?? member.user.email}</h3>
                                       <Badge className={getRoleColor(member.role)}>
                                         {getRoleDisplayName(member.role)}
                                       </Badge>
                                     </div>
-                                    <p className="text-sm text-gray-600">{member.user.email}</p>
-                                    {member.title && <p className="text-sm text-gray-500">{member.title}</p>}
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">{member.user.email}</p>
+                                    {member.title && <p className="text-sm text-gray-500 dark:text-gray-400">{member.title}</p>}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600">
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
                                     Joined {new Date(member.joinedAt).toLocaleDateString()}
                                   </span>
                                   {currentUserId && member.user.id !== currentUserId && (
@@ -353,9 +353,9 @@ export default function WorkMembersPage() {
                                         {pinLoadingUserId === member.user.id ? (
                                           <Spinner size={14} />
                                         ) : pinnedUserIds.has(member.user.id) ? (
-                                          <PinOff className="w-4 h-4 text-gray-600" />
+                                          <PinOff className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                         ) : (
-                                          <Pin className="w-4 h-4 text-gray-500" />
+                                          <Pin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                         )}
                                       </Button>
                                       {member.connectionStatus === 'none' && (
@@ -387,31 +387,31 @@ export default function WorkMembersPage() {
                   <>
                     {pinnedMembers.length > 0 && (
                       <div className="mb-4">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">People I work with most</h3>
+                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">People I work with most</h3>
                         <div className="space-y-2">
                           {pinnedMembers.map((member) => (
                             <div
                               key={member.id}
-                              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 bg-amber-50/50"
+                              className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 bg-amber-50/50"
                             >
                               <div className="flex items-center space-x-4">
                                 <Avatar size={48} nameOrEmail={member.user.name ?? member.user.email} />
                                 <div>
                                   <div className="flex items-center space-x-2">
-                                    <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
+                                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{member.user.name ?? member.user.email}</h3>
                                     <Badge className={getRoleColor(member.role)}>{getRoleDisplayName(member.role)}</Badge>
                                   </div>
-                                  <p className="text-sm text-gray-600">{member.user.email}</p>
-                                  {member.title && <p className="text-sm text-gray-500">{member.title}</p>}
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">{member.user.email}</p>
+                                  {member.title && <p className="text-sm text-gray-500 dark:text-gray-400">{member.title}</p>}
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
                                 <div className="text-right">
-                                  <p className="text-sm text-gray-600">Last active</p>
-                                  <p className="text-sm font-medium text-gray-900">{getLastActiveText(member.lastActive ?? undefined)}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">Last active</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{getLastActiveText(member.lastActive ?? undefined)}</p>
                                 </div>
                                 <Button variant="ghost" size="sm" onClick={() => handleTogglePin(member)} disabled={pinLoadingUserId === member.user.id} title="Unpin">
-                                  {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : <PinOff className="w-4 h-4 text-gray-600" />}
+                                  {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : <PinOff className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
                                 </Button>
                                 <Button variant="ghost" size="sm"><Mail className="w-4 h-4" /></Button>
                                 {currentUserId && member.user.id !== currentUserId && member.connectionStatus === 'none' && (
@@ -427,43 +427,43 @@ export default function WorkMembersPage() {
                     )}
                     {unpinnedMembers.length > 0 && (
                       <div>
-                        {pinnedMembers.length > 0 && <h3 className="text-sm font-semibold text-gray-700 mb-2">All members</h3>}
+                        {pinnedMembers.length > 0 && <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">All members</h3>}
                         <div className="space-y-2">
                           {unpinnedMembers.map((member) => (
               <div
                 key={member.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
               >
                 <div className="flex items-center space-x-4">
                   <Avatar size={48} nameOrEmail={member.user.name ?? member.user.email} />
                           <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-medium text-gray-900">{member.user.name ?? member.user.email}</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">{member.user.name ?? member.user.email}</h3>
                       <Badge className={getRoleColor(member.role)}>
                           {getRoleDisplayName(member.role)}
                         </Badge>
                         </div>
-                    <p className="text-sm text-gray-600">{member.user.email}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{member.user.email}</p>
                     {member.title && (
-                      <p className="text-sm text-gray-500">{member.title}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{member.title}</p>
                     )}
                     {member.department && (
-                      <p className="text-sm text-gray-500">{member.department}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{member.department}</p>
                     )}
             </div>
                           </div>
                 
                 <div className="flex items-center space-x-6">
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Last active</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Last active</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {getLastActiveText(member.lastActive ?? undefined)}
               </p>
             </div>
                   
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Joined</p>
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Joined</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {new Date(member.joinedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -481,7 +481,7 @@ export default function WorkMembersPage() {
                           disabled={pinLoadingUserId === member.user.id}
                           title={pinnedUserIds.has(member.user.id) ? 'Unpin' : 'Pin (people I work with most)'}
                         >
-                          {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : pinnedUserIds.has(member.user.id) ? <PinOff className="w-4 h-4 text-gray-600" /> : <Pin className="w-4 h-4 text-gray-500" />}
+                          {pinLoadingUserId === member.user.id ? <Spinner size={14} /> : pinnedUserIds.has(member.user.id) ? <PinOff className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <Pin className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                         </Button>
                         {member.connectionStatus === 'none' && (
                       <Button
@@ -520,10 +520,10 @@ export default function WorkMembersPage() {
           {filteredMembers.length === 0 && (
               <div className="text-center py-12">
                 <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 {searchTerm || roleFilter !== 'all' ? 'No members found' : 'No members yet'}
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
                 {searchTerm || roleFilter !== 'all' 
                   ? 'Try adjusting your search or filter criteria'
                   : 'Invite your first team member to get started'

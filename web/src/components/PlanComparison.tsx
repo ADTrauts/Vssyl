@@ -237,7 +237,7 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
   }, [userType, uniqueTiersFromApi]);
 
   const renderFeatureValue = (value: boolean | string | undefined) => {
-    if (value === undefined) return <span className="text-sm text-gray-500">—</span>;
+    if (value === undefined) return <span className="text-sm text-gray-500 dark:text-gray-400">—</span>;
     if (typeof value === 'boolean') {
       return value ? (
         <Check className="h-5 w-5 text-green-600" />
@@ -245,7 +245,7 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
         <X className="h-5 w-5 text-gray-400" />
       );
     }
-    return <span className="text-sm text-gray-700">{value}</span>;
+    return <span className="text-sm text-gray-700 dark:text-gray-300">{value}</span>;
   };
 
   const isCurrentTier = (tier: TierOrString) => tier === currentTier;
@@ -276,8 +276,8 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
   return (
     <div className="space-y-4">
       <div className="text-center mb-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Choose Your Plan</h3>
-        <p className="text-gray-600">Compare features and find the perfect plan for your needs</p>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Choose Your Plan</h3>
+        <p className="text-gray-600 dark:text-gray-400">Compare features and find the perfect plan for your needs</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -285,12 +285,12 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="text-left p-4 border-b border-gray-200 font-semibold text-gray-900">Feature</th>
+                <th className="text-left p-4 border-b border-gray-200 dark:border-slate-700 font-semibold text-gray-900 dark:text-gray-100">Feature</th>
                 {availableTiers.map((tier) => (
-                  <th key={tier} className="text-center p-4 border-b border-gray-200">
+                  <th key={tier} className="text-center p-4 border-b border-gray-200 dark:border-slate-700">
                     <div className="flex flex-col items-center">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-gray-900">{getTierName(tier)}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{getTierName(tier)}</span>
                         {isCurrentTier(tier) && (
                           <Badge color={getTierColor(tier)} className="text-xs">Current</Badge>
                         )}
@@ -319,9 +319,9 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
             <tbody>
               {TIER_FEATURES.map((feature, index) => (
                 <tr key={feature.name} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="p-4 border-b border-gray-200 font-medium text-gray-900">{feature.name}</td>
+                  <td className="p-4 border-b border-gray-200 dark:border-slate-700 font-medium text-gray-900 dark:text-gray-100">{feature.name}</td>
                   {availableTiers.map((tier) => (
-                    <td key={tier} className="p-4 border-b border-gray-200 text-center">
+                    <td key={tier} className="p-4 border-b border-gray-200 dark:border-slate-700 text-center">
                       {renderFeatureValue(getFeatureValueForTier(feature.name, tier))}
                     </td>
                   ))}
@@ -332,7 +332,7 @@ export default function PlanComparison({ currentTier, onSelectTier, showActions 
         </div>
       </div>
 
-      <div className="mt-4 text-sm text-gray-600 text-center">
+      <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
         <p>All prices are in USD. Business plans include 10 employees, additional employees are $5/month each.</p>
         <p className="mt-1">Yearly plans save approximately 17% compared to monthly billing.</p>
       </div>
