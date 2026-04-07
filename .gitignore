@@ -37,3 +37,6 @@ server/uploads/
 # Test and build output files
 test-upload.txt
 build-output.txt
+
+# Local SDK/tools directories
+Google CLI/
