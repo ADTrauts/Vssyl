@@ -574,32 +574,12 @@ export async function getProfilePhotos(req: Request, res: Response) {
       },
     });
 
-    // Convert all URLs to backend serving URLs for consistent, authenticated access
-    // This ensures images work regardless of storage provider or public access settings
-    const baseUrl = process.env.BACKEND_URL || 
-                   process.env.NEXT_PUBLIC_API_BASE_URL || 
-                   'https://vssyl-server-235369681725.us-central1.run.app';
-
     const convertToBackendUrl = (url: string | null, photoId: string | null, type: 'avatar' | 'original'): string | null => {
       if (!url || !photoId) return url;
       
-      // If it's already a backend serving URL, return as-is
-      if (url.includes('/api/profile-photos/serve/')) {
-        return url;
-      }
-      
-      // Convert GCS URLs to backend serving URL
-      if (url.includes('storage.googleapis.com')) {
-        return `${baseUrl}/api/profile-photos/serve/${photoId}?type=${type}`;
-      }
-      
-      // Convert local storage URLs (both full URLs and relative paths) to backend serving URL
-      if (url.includes('/uploads/') || url.startsWith('/uploads/')) {
-        return `${baseUrl}/api/profile-photos/serve/${photoId}?type=${type}`;
-      }
-      
-      // For any other URL format, convert to backend serving URL as fallback
-      return `${baseUrl}/api/profile-photos/serve/${photoId}?type=${type}`;
+      // Always return a proxy-relative URL so the Next.js API proxy can inject auth.
+      // This avoids broken images in environments where direct backend URLs don't carry auth headers.
+      return `/api/profile-photos/serve/${photoId}?type=${type}`;
     };
 
     // Convert library URLs
@@ -691,25 +671,9 @@ export async function serveProfilePhoto(req: Request, res: Response) {
       return res.status(404).json({ error: 'Photo URL not found' });
     }
 
-    // Extract file path from URL
-    let filePath: string;
-    if (photoUrl.includes('storage.googleapis.com')) {
-      // GCS URL: https://storage.googleapis.com/bucket/path
-      const urlParts = photoUrl.split('/');
-      const bucketIndex = urlParts.findIndex(part => part.includes('storage.googleapis.com'));
-      if (bucketIndex >= 0 && urlParts[bucketIndex + 1]) {
-        filePath = urlParts.slice(bucketIndex + 1).join('/');
-      } else {
-        return res.status(400).json({ error: 'Invalid GCS URL format' });
-      }
-    } else if (photoUrl.includes('/uploads/')) {
-      // Local URL: can be either:
-      // - Full URL: https://vssyl-server-235369681725.us-central1.run.app/uploads/profile-photos/...
-      // - Relative URL: /uploads/profile-photos/...
-      // Extract the path after /uploads/
-      const uploadsIndex = photoUrl.indexOf('/uploads/');
-      filePath = photoUrl.substring(uploadsIndex + '/uploads/'.length);
-    } else {
+    // Extract storage path in a provider-safe way.
+    const filePath = storageService.extractPathFromUrl(photoUrl);
+    if (!filePath) {
       return res.status(400).json({ error: 'Unsupported URL format' });
     }
 
@@ -717,15 +681,16 @@ export async function serveProfilePhoto(req: Request, res: Response) {
     const fileBuffer = await storageService.getFileBuffer(filePath);
 
     // Determine content type
-    const contentType = photoUrl.endsWith('.jpg') || photoUrl.endsWith('.jpeg') 
-      ? 'image/jpeg' 
-      : photoUrl.endsWith('.png') 
-      ? 'image/png' 
-      : 'image/jpeg'; // default
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = ext === '.png'
+      ? 'image/png'
+      : ext === '.webp'
+      ? 'image/webp'
+      : 'image/jpeg';
 
     // Set headers and send file
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Content-Length', fileBuffer.length.toString());
     res.send(fileBuffer);
 
