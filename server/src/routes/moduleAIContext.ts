@@ -267,8 +267,11 @@ router.get(
   requireRole('ADMIN'),
   async (req: Request, res: Response) => {
     try {
-      // Get all modules from database
+      // Get vetted modules only (approved/published modules should appear in AI status)
       const allModules = await prisma.module.findMany({
+        where: {
+          status: 'APPROVED',
+        },
         select: {
           id: true,
           name: true,
@@ -639,7 +642,7 @@ router.post(
       console.error(`📊 Module IDs: ${allModules.map((m: { id: string }) => m.id).join(', ')}`);
       
       // Check which built-in modules exist and which are registered
-      const builtInIds = ['drive', 'chat', 'calendar', 'hr', 'scheduling', 'todo'];
+      const builtInIds = ['drive', 'chat', 'calendar', 'hr', 'scheduling', 'todo', 'notes', 'place', 'dashboard'];
       const moduleStatus = builtInIds.map((id: string) => {
         const moduleExists = allModules.find((m: { id: string; name: string; status: string }) => m.id === id);
         const registryExists = registryEntries.find((r: { moduleId: string }) => r.moduleId === id);

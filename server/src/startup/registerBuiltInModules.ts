@@ -910,6 +910,22 @@ async function ensureLegacyRegistryCompatibility(): Promise<void> {
           ALTER TABLE "module_ai_context_registry"
           ALTER COLUMN "moduleVersion" SET DEFAULT '1.0.0';
         END IF;
+
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'module_ai_context_registry'
+            AND column_name = 'lastUpdatedAt'
+        ) THEN
+          -- Backfill existing rows if any nulls exist
+          UPDATE "module_ai_context_registry"
+          SET "lastUpdatedAt" = CURRENT_TIMESTAMP
+          WHERE "lastUpdatedAt" IS NULL;
+
+          -- Ensure future inserts have a default value
+          ALTER TABLE "module_ai_context_registry"
+          ALTER COLUMN "lastUpdatedAt" SET DEFAULT CURRENT_TIMESTAMP;
+        END IF;
       END $$;
     `);
   } catch (error) {
@@ -967,6 +983,7 @@ async function registerModule(
         relationships: (aiContext.relationships || []) as any,
         fullAIContext: aiContext as any,
         version: '1.0.0',
+        lastUpdated: new Date(),
       },
     });
 
