@@ -301,19 +301,29 @@ export async function assignProfilePhoto(req: Request, res: Response) {
       return res.status(404).json({ error: 'Photo not found' });
     }
 
-    // Enforce: cannot assign same photo to both
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        personalPhotoId: true,
+        businessPhotoId: true,
+      },
+    });
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Enforce distinct personal/business slots.
+    if (target === 'personal' && currentUser.businessPhotoId === photoId) {
+      return res.status(400).json({ error: 'This photo is already assigned as business photo' });
+    }
+    if (target === 'business' && currentUser.personalPhotoId === photoId) {
+      return res.status(400).json({ error: 'This photo is already assigned as personal photo' });
+    }
+
     const updateData: Record<string, unknown> =
       target === 'personal'
         ? { personalPhotoId: photoId, personalPhoto: photo.avatarUrl }
         : { businessPhotoId: photoId, businessPhoto: photo.avatarUrl };
-
-    // If assigning to personal, and business currently points to same photo, clear it (defensive)
-    // Same for business.
-    if (target === 'personal') {
-      updateData.businessPhotoId = null;
-    } else {
-      updateData.personalPhotoId = null;
-    }
 
     const user = await prisma.user.update({
       where: { id: userId },
@@ -589,9 +599,16 @@ export async function getProfilePhotos(req: Request, res: Response) {
       originalUrl: convertToBackendUrl(photo.originalUrl, photo.id, 'original'),
     }));
 
-    // Convert user photo URLs
-    const personalPhotoId = user.personalPhotoId;
-    const businessPhotoId = user.businessPhotoId;
+    // Convert user photo URLs.
+    // Legacy fallback: if *_photo_id is missing but URL still exists, resolve ID from library.
+    const resolvePhotoIdFromUrl = (url: string | null): string | null => {
+      if (!url) return null;
+      const match = library.find((item) => item.avatarUrl === url || item.originalUrl === url);
+      return match?.id ?? null;
+    };
+
+    const personalPhotoId = user.personalPhotoId ?? resolvePhotoIdFromUrl(user.personalPhoto);
+    const businessPhotoId = user.businessPhotoId ?? resolvePhotoIdFromUrl(user.businessPhoto);
     const personalPhotoUrl = personalPhotoId 
       ? convertToBackendUrl(user.personalPhoto, personalPhotoId, 'avatar')
       : user.personalPhoto;
