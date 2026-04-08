@@ -180,10 +180,12 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
   // Business pages live under /business/*, and the in-dashboard Work experience
   // (BrandedWorkDashboard) keeps you on /dashboard/*. We gate that using a UI flag,
   // not just isWorkAuthenticated, since the work token can persist across personal pages.
+  const isBusinessRoute = pathname?.startsWith('/business/') === true;
+  const isDashboardRoute = pathname?.startsWith('/dashboard') === true;
+  const isWorkDashboardUIActive = isDashboardRoute && isWorkAuthenticated && isWorkUIActive;
+
   const avatarContext: 'personal' | 'business' =
-    pathname?.startsWith('/business/') || (isWorkAuthenticated && isWorkUIActive)
-      ? 'business'
-      : 'personal';
+    isBusinessRoute || isWorkDashboardUIActive ? 'business' : 'personal';
 
   // IMPORTANT: Avoid cross-context fallback. If the user set only a business photo, we should not
   // show it on personal pages. Use default photo (NextAuth image) if present, otherwise initials.
