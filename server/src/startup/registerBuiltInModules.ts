@@ -882,6 +882,7 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
 /** Result of registering a single module */
 interface RegisterModuleResult {
   success: boolean;
+  action?: 'created' | 'updated';
   error?: string;
 }
 
@@ -961,8 +962,26 @@ async function registerModule(
     });
 
     if (existing) {
-      console.error(`   ✅ ${moduleName} AI context already registered`);
-      return { success: true };
+      await prisma.moduleAIContextRegistry.update({
+        where: { moduleId },
+        data: {
+          moduleName,
+          purpose: aiContext.purpose,
+          category: aiContext.category,
+          keywords: aiContext.keywords,
+          patterns: aiContext.patterns,
+          concepts: aiContext.concepts,
+          entities: aiContext.entities as any,
+          actions: aiContext.actions as any,
+          contextProviders: aiContext.contextProviders as any,
+          relationships: (aiContext.relationships || []) as any,
+          fullAIContext: aiContext as any,
+          version: '1.0.0',
+          lastUpdated: new Date(),
+        },
+      });
+      console.error(`   🔄 ${moduleName} AI context updated`);
+      return { success: true, action: 'updated' };
     }
 
     // Step 3: Register the AI context
@@ -988,7 +1007,7 @@ async function registerModule(
     });
 
     console.error(`   ✅ ${moduleName} AI context registered (ID: ${created.id})`);
-    return { success: true };
+    return { success: true, action: 'created' };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     const msg = `${moduleName}: ${err.message}`;
@@ -1006,11 +1025,13 @@ async function registerModule(
 /** Result returned from registration - includes any errors for debugging */
 export interface RegistrationResult {
   successCount: number;
+  createdCount: number;
+  updatedCount: number;
   errors: string[];
 }
 
 export async function registerBuiltInModulesOnStartup(): Promise<RegistrationResult> {
-  const emptyResult: RegistrationResult = { successCount: 0, errors: [] };
+  const emptyResult: RegistrationResult = { successCount: 0, createdCount: 0, updatedCount: 0, errors: [] };
 
   try {
     await ensureLegacyRegistryCompatibility();
@@ -1041,31 +1062,29 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
     }
     console.error(`📋 Using developer ID: ${developerId.substring(0, 8)}...`);
 
-    const registeredModuleIds = new Set<string>();
     if (registryCount > 0) {
       const registered = await prisma.moduleAIContextRegistry.findMany({
         select: { moduleId: true },
       });
-      registered.forEach((r: { moduleId: string }) => registeredModuleIds.add(r.moduleId));
-      console.error(`📋 Found ${registryCount} already registered: ${Array.from(registeredModuleIds).join(', ')}`);
+      console.error(`📋 Found ${registryCount} registered entries: ${registered.map((r: { moduleId: string }) => r.moduleId).join(', ')}`);
     } else {
-      console.error('📋 Registry is empty - will register all built-in modules');
+      console.error('📋 Registry is empty - will create all built-in modules');
     }
 
-    const modulesToRegister = BUILT_IN_MODULES.filter(
-      ({ moduleId }) => !registeredModuleIds.has(moduleId)
-    );
+    const modulesToRegister = BUILT_IN_MODULES;
 
-    console.error(`📦 Modules needing registration: ${modulesToRegister.map(m => m.moduleId).join(', ')}`);
+    console.error(`📦 Built-in modules to process: ${modulesToRegister.map(m => m.moduleId).join(', ')}`);
 
     if (modulesToRegister.length === 0) {
-      console.error(`✅ All built-in modules already registered\n`);
+      console.error(`✅ No built-in modules configured\n`);
       return emptyResult;
     }
 
-    console.error(`📦 Registering ${modulesToRegister.length} missing module(s)...\n`);
+    console.error(`📦 Processing ${modulesToRegister.length} built-in module context(s)...\n`);
 
     let successCount = 0;
+    let createdCount = 0;
+    let updatedCount = 0;
     const registrationErrors: string[] = [];
 
     for (const { moduleId, moduleName, aiContext } of modulesToRegister) {
@@ -1073,6 +1092,8 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
         const result = await registerModule(moduleId, moduleName, aiContext, developerId);
         if (result.success) {
           successCount++;
+          if (result.action === 'created') createdCount++;
+          if (result.action === 'updated') updatedCount++;
         } else {
           registrationErrors.push(result.error || `Unknown error for ${moduleName}`);
         }
@@ -1080,19 +1101,19 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
         const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
         if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
           console.error('\n⚠️  Database connection lost');
-          return { successCount, errors: registrationErrors };
+          return { successCount, createdCount, updatedCount, errors: registrationErrors };
         }
         registrationErrors.push(`${moduleName}: ${errorMessage}`);
       }
     }
 
-    console.error(`\n📊 Summary: ${successCount} registered, ${registrationErrors.length} errors`);
+    console.error(`\n📊 Summary: processed=${successCount}, created=${createdCount}, updated=${updatedCount}, errors=${registrationErrors.length}`);
 
-    return { successCount, errors: registrationErrors };
+    return { successCount, createdCount, updatedCount, errors: registrationErrors };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error('❌ Error during module registration:', err.message);
-    return { successCount: 0, errors: [err.message] };
+    return { successCount: 0, createdCount: 0, updatedCount: 0, errors: [err.message] };
   }
 }
 

@@ -623,7 +623,7 @@ router.post(
       // Call the registration function
       console.error('🚀 Calling registerBuiltInModulesOnStartup()...');
       const regResult = await registerBuiltInModulesOnStartup();
-      console.error(`✅ Completed: ${regResult.successCount} registered, ${regResult.errors.length} errors`);
+      console.error(`✅ Completed: processed=${regResult.successCount}, created=${regResult.createdCount}, updated=${regResult.updatedCount}, errors=${regResult.errors.length}`);
       
       // Get detailed status AFTER registration
       const registryEntries = await prisma.moduleAIContextRegistry.findMany({
@@ -665,6 +665,9 @@ router.post(
       res.json({
         success: true,
         message: 'Module registration completed',
+        processedCount: regResult.successCount,
+        createdCount: regResult.createdCount,
+        updatedCount: regResult.updatedCount,
         registeredCount: afterCount,
         newRegistrations: afterCount - beforeCount,
         totalModules: allModules.length,
