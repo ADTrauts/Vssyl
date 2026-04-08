@@ -16,6 +16,7 @@
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import type {
   ModuleAIContext,
   ModuleAIContextRegistryEntry,
@@ -25,6 +26,49 @@ import type {
 import { prisma } from '../../lib/prisma';
 
 export class ModuleAIContextService {
+  private getInternalApiBaseUrl(): string {
+    const isProduction = process.env.NODE_ENV === 'production';
+    return (
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.INTERNAL_API_BASE_URL ||
+      (isProduction
+        ? 'https://vssyl-server-235369681725.us-central1.run.app'
+        : `http://127.0.0.1:${process.env.PORT || '5000'}`)
+    );
+  }
+
+  private buildInternalAuthToken(userId: string, email: string, role: string): string {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured for internal context fetch');
+    }
+
+    return jwt.sign(
+      {
+        sub: userId,
+        email,
+        role,
+      },
+      jwtSecret,
+      { expiresIn: '5m' }
+    );
+  }
+
+  private async resolveDefaultBusinessId(userId: string): Promise<string | undefined> {
+    const member = await prisma.businessMember.findFirst({
+      where: {
+        userId,
+        isActive: true,
+      },
+      select: { businessId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return member?.businessId;
+  }
+
   /**
    * Register a module's AI context when it's installed
    * Called during module installation
@@ -391,10 +435,35 @@ export class ModuleAIContextService {
       console.log(`🔄 Fetching live context from ${moduleId}.${providerName}`);
       
       const endpoint = provider.endpoint.replace(':id', moduleId);
+      const baseURL = this.getInternalApiBaseUrl();
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, role: true },
+      });
+
+      if (!user?.email || !user?.role) {
+        throw new Error(`Cannot resolve user info for internal context fetch: ${userId}`);
+      }
+
+      const authToken = this.buildInternalAuthToken(userId, user.email, user.role);
+      const requestParams: Record<string, unknown> = {
+        userId,
+        ...parameters,
+      };
+
+      // Many business-scoped providers require businessId; infer one when absent.
+      if (!requestParams.businessId) {
+        const defaultBusinessId = await this.resolveDefaultBusinessId(userId);
+        if (defaultBusinessId) {
+          requestParams.businessId = defaultBusinessId;
+        }
+      }
+
       const response = await axios.get(endpoint, {
-        params: {
-          userId,
-          ...parameters,
+        baseURL,
+        params: requestParams,
+        headers: {
+          Authorization: `Bearer ${authToken}`,
         },
         timeout: 5000, // 5 second timeout
       });

@@ -886,6 +886,39 @@ interface RegisterModuleResult {
 }
 
 /**
+ * Production self-heal for legacy schema drift:
+ * some environments still have a required "moduleVersion" column on
+ * module_ai_context_registry. Ensure it has a default so inserts succeed.
+ */
+async function ensureLegacyRegistryCompatibility(): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_name = 'module_ai_context_registry'
+            AND column_name = 'moduleVersion'
+        ) THEN
+          -- Backfill existing rows if any nulls exist
+          UPDATE "module_ai_context_registry"
+          SET "moduleVersion" = '1.0.0'
+          WHERE "moduleVersion" IS NULL;
+
+          -- Ensure future inserts have a default value
+          ALTER TABLE "module_ai_context_registry"
+          ALTER COLUMN "moduleVersion" SET DEFAULT '1.0.0';
+        END IF;
+      END $$;
+    `);
+  } catch (error) {
+    // Non-fatal: registration still attempts normal path.
+    console.error('   ⚠️ Could not run legacy registry compatibility check:', error);
+  }
+}
+
+/**
  * Register a single module's AI context
  * Now also ensures the Module record exists first
  */
@@ -963,6 +996,8 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
   const emptyResult: RegistrationResult = { successCount: 0, errors: [] };
 
   try {
+    await ensureLegacyRegistryCompatibility();
+
     console.error('\n🤖 ============================================');
     console.error('🤖 Module AI Context Registry - Startup Check');
     console.error('🤖 ============================================\n');
