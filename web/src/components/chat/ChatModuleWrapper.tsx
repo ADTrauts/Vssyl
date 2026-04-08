@@ -40,14 +40,6 @@ export const ChatModuleWrapper: React.FC<ChatModuleWrapperProps> = ({
   // Get business ID for enterprise feature checking (NOT for data scoping!)
   const effectiveBusinessId = businessId ?? (dashboardType === 'business' ? currentDashboard?.id : undefined);
   
-  console.log('💬 ChatModuleWrapper:', {
-    dashboardId,
-    effectiveDashboardId,
-    dashboardType,
-    currentDashboardId: currentDashboard?.id,
-    effectiveBusinessId
-  });
-  
   // Check if user has enterprise Chat features
   // Using 'chat_message_retention' as the primary enterprise chat feature gate
   const { hasAccess: hasEnterpriseFeatures } = useFeature('chat_message_retention', effectiveBusinessId || undefined);
