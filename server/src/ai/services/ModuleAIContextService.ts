@@ -63,7 +63,7 @@ export class ModuleAIContextService {
         isActive: true,
       },
       select: { businessId: true },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { joinedAt: 'asc' },
     });
 
     return member?.businessId;

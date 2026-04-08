@@ -1075,7 +1075,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
                       
                       const textColor = (showWorkTab || isBusinessContext)
                         ? getSidebarStyles().color
-                        : (isDark ? '#e2e8f0' : '#1f2937');
+                        : (isDark ? '#e2e8f0' : '#ffffff');
                       const activeModuleId = pathname?.split('/')[1] || null;
 
                       const handleToggleCollapse = (folderId: string) => {
@@ -1153,7 +1153,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
               </nav>
             )}
             <div style={{ marginTop: 'auto' }}>
-              <button onClick={() => setShowCustomizationModal(true)} style={{ width: '100%', background: 'none', border: `1px solid ${isDark ? '#475569' : '#9ca3af'}`, color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : (isDark ? '#e2e8f0' : '#1f2937'), padding: '8px 0', borderRadius: 6, fontWeight: 600 }}>
+              <button onClick={() => setShowCustomizationModal(true)} style={{ width: '100%', background: 'none', border: `1px solid ${isDark ? '#475569' : '#9ca3af'}`, color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : (isDark ? '#e2e8f0' : '#ffffff'), padding: '8px 0', borderRadius: 6, fontWeight: 600 }}>
                 Customize
               </button>
             </div>
