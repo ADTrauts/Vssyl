@@ -97,6 +97,13 @@ export default function WorkTab({ onSwitchToWork }: WorkTabProps) {
     window.dispatchEvent(
       new CustomEvent('vssyl:work-ui-active', { detail: { active } })
     );
+    return () => {
+      // Defensive cleanup: if WorkTab unmounts while active, do not leave stale business UI state behind.
+      localStorage.removeItem('vssyl_work_ui_active');
+      window.dispatchEvent(
+        new CustomEvent('vssyl:work-ui-active', { detail: { active: false } })
+      );
+    };
   }, [showBrandedDashboard]);
 
   // Helper to accept invitation tokens
