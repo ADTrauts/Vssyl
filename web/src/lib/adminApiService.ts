@@ -736,7 +736,10 @@ class AdminApiService {
     }
   }
 
-  async testModuleAIProvider(endpoint: string, businessId?: string): Promise<ApiResponse<any>> {
+  async testModuleAIProvider(
+    endpoint: string,
+    params?: Record<string, string>
+  ): Promise<ApiResponse<any>> {
     try {
       const headers = await this.getAuthHeaders();
 
@@ -749,8 +752,14 @@ class AdminApiService {
         testUrl = `/api/${endpoint}`;
       }
 
-      if (businessId && !/[\?&]businessId=/.test(testUrl)) {
-        testUrl += `${testUrl.includes('?') ? '&' : '?'}businessId=${encodeURIComponent(businessId)}`;
+      if (params && Object.keys(params).length > 0) {
+        const url = new URL(testUrl, 'http://localhost');
+        Object.entries(params).forEach(([key, value]) => {
+          if (value && !url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+          }
+        });
+        testUrl = `${url.pathname}${url.search}`;
       }
 
       const response = await fetch(testUrl, {

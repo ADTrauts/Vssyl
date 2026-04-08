@@ -166,7 +166,6 @@ export async function getUpcomingContext(req: Request, res: Response): Promise<v
         dueDate: true,
         priority: true,
         status: true,
-        category: true,
       },
       orderBy: { dueDate: 'asc' },
       take: 20,
@@ -184,7 +183,6 @@ export async function getUpcomingContext(req: Request, res: Response): Promise<v
           dueDate: task.dueDate?.toISOString(),
           priority: task.priority,
           status: task.status,
-          category: task.category,
         })),
       },
     };
@@ -256,7 +254,6 @@ export async function getOverdueContext(req: Request, res: Response): Promise<vo
         dueDate: true,
         priority: true,
         status: true,
-        category: true,
       },
       orderBy: { dueDate: 'asc' },
       take: 20,
@@ -279,7 +276,6 @@ export async function getOverdueContext(req: Request, res: Response): Promise<vo
             daysOverdue,
             priority: task.priority,
             status: task.status,
-            category: task.category,
           };
         }),
       },
@@ -352,7 +348,6 @@ export async function getPriorityContext(req: Request, res: Response): Promise<v
         dueDate: true,
         priority: true,
         status: true,
-        category: true,
       },
       orderBy: [
         { priority: 'desc' },
@@ -374,7 +369,6 @@ export async function getPriorityContext(req: Request, res: Response): Promise<v
           dueDate: task.dueDate?.toISOString(),
           priority: task.priority,
           status: task.status,
-          category: task.category,
         })),
       },
     };
@@ -445,7 +439,15 @@ export async function getPriorityAnalysisContext(req: Request, res: Response): P
     // Get tasks with all relevant data for prioritization
     const tasks = await prisma.task.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        priority: true,
+        dueDate: true,
+        status: true,
+        timeEstimate: true,
+        actualTimeSpent: true,
+        createdAt: true,
         project: {
           select: {
             id: true,
@@ -493,7 +495,6 @@ export async function getPriorityAnalysisContext(req: Request, res: Response): P
         priority: task.priority,
         dueDate: task.dueDate?.toISOString() || null,
         status: task.status,
-        category: task.category,
         timeEstimate: task.timeEstimate,
         actualTimeSpent: task.actualTimeSpent,
         project: task.project ? {

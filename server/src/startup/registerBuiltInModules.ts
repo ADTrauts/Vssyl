@@ -751,19 +751,19 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
         {
           name: 'dashboard_overview',
           description: 'Get dashboard overview — widget list, layout summary, preferences',
-          endpoint: '/api/dashboards/ai/context/overview',
+          endpoint: '/api/dashboard/ai/context/overview',
           cacheDuration: 300000,
         },
         {
           name: 'dashboard_quick_stats',
           description: 'Get aggregated quick stats from all modules',
-          endpoint: '/api/dashboards/ai/context/quick-stats',
+          endpoint: '/api/dashboard/ai/context/quick-stats',
           cacheDuration: 120000,
         },
         {
           name: 'dashboard_widget_summary',
           description: 'Get summary of widgets on the dashboard',
-          endpoint: '/api/dashboards/ai/context/widgets',
+          endpoint: '/api/dashboard/ai/context/widgets',
           cacheDuration: 300000,
         },
       ],

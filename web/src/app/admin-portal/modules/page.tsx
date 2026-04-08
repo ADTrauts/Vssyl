@@ -427,6 +427,8 @@ export default function AdminModulesPage() {
 
     const results: Record<string, { success: boolean; error?: string; data?: unknown }> = {};
     let cachedBusinessId: string | undefined;
+    let cachedDashboardId: string | undefined;
+    let cachedConversationId: string | undefined;
 
     const getDefaultBusinessId = async (): Promise<string | undefined> => {
       if (cachedBusinessId) return cachedBusinessId;
@@ -459,18 +461,101 @@ export default function AdminModulesPage() {
       return undefined;
     };
 
+    const getDefaultDashboardId = async (): Promise<string | undefined> => {
+      if (cachedDashboardId) return cachedDashboardId;
+      try {
+        const candidates = ['/api/dashboard', '/api/dashboards'];
+        for (const path of candidates) {
+          const response = await fetch(path, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (!response.ok) continue;
+          const payload = await response.json();
+          const dashboards = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.dashboards)
+              ? payload.dashboards
+              : Array.isArray(payload?.data?.dashboards)
+                ? payload.data.dashboards
+                : [];
+          const firstDashboard = dashboards.find((d: unknown) => {
+            if (!d || typeof d !== 'object') return false;
+            return 'id' in d && typeof (d as { id?: unknown }).id === 'string';
+          }) as { id: string } | undefined;
+          if (firstDashboard?.id) {
+            cachedDashboardId = firstDashboard.id;
+            return firstDashboard.id;
+          }
+        }
+      } catch {
+        // No-op
+      }
+      return undefined;
+    };
+
+    const getDefaultConversationId = async (): Promise<string | undefined> => {
+      if (cachedConversationId) return cachedConversationId;
+      try {
+        const response = await fetch('/api/chat/conversations', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) return undefined;
+        const payload = await response.json();
+        const conversations = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.conversations)
+            ? payload.conversations
+            : Array.isArray(payload?.data?.conversations)
+              ? payload.data.conversations
+              : [];
+        const firstConversation = conversations.find((c: unknown) => {
+          if (!c || typeof c !== 'object') return false;
+          return 'id' in c && typeof (c as { id?: unknown }).id === 'string';
+        }) as { id: string } | undefined;
+        if (firstConversation?.id) {
+          cachedConversationId = firstConversation.id;
+          return firstConversation.id;
+        }
+      } catch {
+        // No-op
+      }
+      return undefined;
+    };
+
     // Test each context provider endpoint
     for (const provider of module.aiContext.contextProviders) {
       try {
         const endpoint = provider.endpoint;
-        let response = await adminApiService.testModuleAIProvider(endpoint);
+        const params: Record<string, string> = {};
+        const endpointLower = endpoint.toLowerCase();
 
-        if (response.error && response.error.toLowerCase().includes('businessid is required')) {
+        if (endpointLower.includes('/hr/') || endpointLower.includes('/scheduling/')) {
           const fallbackBusinessId = await getDefaultBusinessId();
-          if (fallbackBusinessId) {
-            response = await adminApiService.testModuleAIProvider(endpoint, fallbackBusinessId);
-          }
+          if (fallbackBusinessId) params.businessId = fallbackBusinessId;
         }
+
+        if (endpointLower.includes('/notes/') || endpointLower.includes('/todo/')) {
+          const fallbackDashboardId = await getDefaultDashboardId();
+          if (fallbackDashboardId) params.dashboardId = fallbackDashboardId;
+        }
+
+        if (endpointLower.includes('/calendar/ai/query/availability')) {
+          const start = new Date();
+          const end = new Date(start.getTime() + 60 * 60 * 1000);
+          params.startTime = start.toISOString();
+          params.endTime = end.toISOString();
+        }
+
+        if (endpointLower.includes('/chat/ai/query/history')) {
+          const fallbackConversationId = await getDefaultConversationId();
+          if (fallbackConversationId) params.conversationId = fallbackConversationId;
+        }
+
+        let response = await adminApiService.testModuleAIProvider(endpoint, params);
 
         if (response.error) {
           results[provider.name] = {
