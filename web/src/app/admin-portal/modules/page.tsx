@@ -442,11 +442,13 @@ export default function AdminModulesPage() {
         const payload = await response.json();
         const businesses = Array.isArray(payload)
           ? payload
-          : Array.isArray(payload?.businesses)
-            ? payload.businesses
-            : Array.isArray(payload?.data?.businesses)
-              ? payload.data.businesses
-              : [];
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload?.businesses)
+              ? payload.businesses
+              : Array.isArray(payload?.data?.businesses)
+                ? payload.data.businesses
+                : [];
         const firstBusinessId = businesses.find((b: unknown) => {
           if (!b || typeof b !== 'object') return false;
           return 'id' in b && typeof (b as { id?: unknown }).id === 'string';
@@ -464,7 +466,7 @@ export default function AdminModulesPage() {
     const getDefaultDashboardId = async (): Promise<string | undefined> => {
       if (cachedDashboardId) return cachedDashboardId;
       try {
-        const candidates = ['/api/dashboard', '/api/dashboards'];
+        const candidates = ['/api/dashboard'];
         for (const path of candidates) {
           const response = await fetch(path, {
             method: 'GET',
@@ -473,13 +475,16 @@ export default function AdminModulesPage() {
           });
           if (!response.ok) continue;
           const payload = await response.json();
-          const dashboards = Array.isArray(payload)
-            ? payload
-            : Array.isArray(payload?.dashboards)
-              ? payload.dashboards
-              : Array.isArray(payload?.data?.dashboards)
-                ? payload.data.dashboards
-                : [];
+          const dashboardGroups = payload?.dashboards || payload?.data?.dashboards || null;
+          let dashboards: unknown[] = [];
+          if (Array.isArray(payload)) {
+            dashboards = payload;
+          } else if (Array.isArray(payload?.dashboards)) {
+            dashboards = payload.dashboards;
+          } else if (dashboardGroups && typeof dashboardGroups === 'object') {
+            dashboards = Object.values(dashboardGroups)
+              .flatMap((group) => (Array.isArray(group) ? group : []));
+          }
           const firstDashboard = dashboards.find((d: unknown) => {
             if (!d || typeof d !== 'object') return false;
             return 'id' in d && typeof (d as { id?: unknown }).id === 'string';
@@ -507,6 +512,8 @@ export default function AdminModulesPage() {
         const payload = await response.json();
         const conversations = Array.isArray(payload)
           ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
           : Array.isArray(payload?.conversations)
             ? payload.conversations
             : Array.isArray(payload?.data?.conversations)
@@ -1637,16 +1644,16 @@ export default function AdminModulesPage() {
                   <RefreshCw className={`w-4 h-4 mr-2 ${aiContextLoading ? 'animate-spin' : ''}`} />
                   Refresh
                 </Button>
-                {aiContextSummary && aiContextSummary.notRegistered > 0 && (
-                  <Button 
-                    variant="primary" 
-                    onClick={handleRegisterMissingModules} 
-                    disabled={registering || aiContextLoading}
-                  >
-                    <Brain className={`w-4 h-4 mr-2 ${registering ? 'animate-pulse' : ''}`} />
-                    Register Missing ({aiContextSummary.notRegistered})
-                  </Button>
-                )}
+                <Button
+                  variant="primary"
+                  onClick={handleRegisterMissingModules}
+                  disabled={registering || aiContextLoading}
+                >
+                  <Brain className={`w-4 h-4 mr-2 ${registering ? 'animate-pulse' : ''}`} />
+                  {aiContextSummary && aiContextSummary.notRegistered > 0
+                    ? `Register Missing (${aiContextSummary.notRegistered})`
+                    : 'Re-sync Built-ins'}
+                </Button>
               </div>
             </div>
           </Card>
