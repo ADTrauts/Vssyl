@@ -213,6 +213,7 @@ export interface ModuleManifest {
 interface ApiResponse<T> {
   data?: T;
   error?: string;
+  statusCode?: number;
   total?: number;
   page?: number;
   totalPages?: number;
@@ -770,7 +771,10 @@ class AdminApiService {
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        return { error: payload.error || payload.message || `HTTP ${response.status}` };
+        return {
+          error: payload.error || payload.message || `HTTP ${response.status}`,
+          statusCode: response.status,
+        };
       }
 
       return { data: payload };

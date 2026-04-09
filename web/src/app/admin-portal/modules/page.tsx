@@ -160,6 +160,15 @@ interface ModuleAIStatusSummary {
   healthStatus: 'good' | 'warning' | 'critical';
 }
 
+interface ProviderTestResult {
+  success: boolean;
+  error?: string;
+  data?: unknown;
+  statusCode?: number;
+  skipped?: boolean;
+  note?: string;
+}
+
 export default function AdminModulesPage() {
   const [activeTab, setActiveTab] = useState<'submissions' | 'ai-context'>('submissions');
   const [loading, setLoading] = useState(false);
@@ -211,7 +220,7 @@ export default function AdminModulesPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showTestProvidersModal, setShowTestProvidersModal] = useState(false);
   const [testingProviders, setTestingProviders] = useState(false);
-  const [providerTestResults, setProviderTestResults] = useState<Record<string, { success: boolean; error?: string; data?: unknown }>>({});
+  const [providerTestResults, setProviderTestResults] = useState<Record<string, ProviderTestResult>>({});
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -425,7 +434,7 @@ export default function AdminModulesPage() {
     setTestingProviders(true);
     setProviderTestResults({});
 
-    const results: Record<string, { success: boolean; error?: string; data?: unknown }> = {};
+    const results: Record<string, ProviderTestResult> = {};
     let cachedBusinessId: string | undefined;
     let cachedDashboardId: string | undefined;
     let cachedConversationId: string | undefined;
@@ -503,29 +512,42 @@ export default function AdminModulesPage() {
     const getDefaultConversationId = async (): Promise<string | undefined> => {
       if (cachedConversationId) return cachedConversationId;
       try {
-        const response = await fetch('/api/chat/conversations', {
-          method: 'GET',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!response.ok) return undefined;
-        const payload = await response.json();
-        const conversations = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data)
-            ? payload.data
-          : Array.isArray(payload?.conversations)
-            ? payload.conversations
-            : Array.isArray(payload?.data?.conversations)
-              ? payload.data.conversations
-              : [];
-        const firstConversation = conversations.find((c: unknown) => {
-          if (!c || typeof c !== 'object') return false;
-          return 'id' in c && typeof (c as { id?: unknown }).id === 'string';
-        }) as { id: string } | undefined;
-        if (firstConversation?.id) {
-          cachedConversationId = firstConversation.id;
-          return firstConversation.id;
+        // Prefer AI recent context endpoint first, then fallback conversation list endpoints.
+        const dashboardId = await getDefaultDashboardId();
+        const candidateUrls: string[] = ['/api/chat/ai/context/recent'];
+        if (dashboardId) {
+          candidateUrls.push(`/api/chat/conversations?dashboardId=${encodeURIComponent(dashboardId)}`);
+        }
+        candidateUrls.push('/api/chat/conversations');
+
+        for (const path of candidateUrls) {
+          const response = await fetch(path, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (!response.ok) continue;
+
+          const payload = await response.json();
+          const conversations = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : Array.isArray(payload?.conversations)
+                ? payload.conversations
+                : Array.isArray(payload?.data?.conversations)
+                  ? payload.data.conversations
+                  : Array.isArray(payload?.context?.recentConversations)
+                    ? payload.context.recentConversations
+                    : [];
+          const firstConversation = conversations.find((c: unknown) => {
+            if (!c || typeof c !== 'object') return false;
+            return 'id' in c && typeof (c as { id?: unknown }).id === 'string';
+          }) as { id: string } | undefined;
+          if (firstConversation?.id) {
+            cachedConversationId = firstConversation.id;
+            return firstConversation.id;
+          }
         }
       } catch {
         // No-op
@@ -550,6 +572,11 @@ export default function AdminModulesPage() {
           if (fallbackDashboardId) params.dashboardId = fallbackDashboardId;
         }
 
+        if (endpointLower.includes('/dashboard')) {
+          const fallbackDashboardId = await getDefaultDashboardId();
+          if (fallbackDashboardId) params.dashboardId = fallbackDashboardId;
+        }
+
         if (endpointLower.includes('/calendar/ai/query/availability')) {
           const start = new Date();
           const end = new Date(start.getTime() + 60 * 60 * 1000);
@@ -559,15 +586,31 @@ export default function AdminModulesPage() {
 
         if (endpointLower.includes('/chat/ai/query/history')) {
           const fallbackConversationId = await getDefaultConversationId();
-          if (fallbackConversationId) params.conversationId = fallbackConversationId;
+          if (!fallbackConversationId) {
+            results[provider.name] = {
+              success: true,
+              skipped: true,
+              note: 'Skipped: no conversations available for this user, so history cannot be tested.',
+            };
+            continue;
+          }
+          params.conversationId = fallbackConversationId;
         }
 
-        let response = await adminApiService.testModuleAIProvider(endpoint, params);
+        const response = await adminApiService.testModuleAIProvider(endpoint, params);
 
         if (response.error) {
+          let friendlyError = response.error;
+          if (
+            response.statusCode === 403 &&
+            (endpointLower.includes('/scheduling/') || endpointLower.includes('/hr/'))
+          ) {
+            friendlyError = 'Forbidden: your user is not an active member of the selected business.';
+          }
           results[provider.name] = {
             success: false,
-            error: response.error,
+            error: friendlyError,
+            statusCode: response.statusCode,
           };
         } else {
           results[provider.name] = {
@@ -2003,7 +2046,9 @@ export default function AdminModulesPage() {
                           <div className="text-sm text-gray-600 dark:text-gray-400">{provider.endpoint}</div>
                         </div>
                         {result ? (
-                          result.success ? (
+                          result.skipped ? (
+                            <Badge color="yellow" size="sm">Skipped</Badge>
+                          ) : result.success ? (
                             <Badge color="green" size="sm">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Success
@@ -2023,7 +2068,12 @@ export default function AdminModulesPage() {
                       
                       {result && (
                         <div className="mt-3">
-                          {result.success ? (
+                          {result.skipped ? (
+                            <div className="p-3 bg-yellow-50 rounded text-sm">
+                              <div className="font-medium text-yellow-900 mb-1">Skipped:</div>
+                              <div className="text-xs text-yellow-800">{result.note}</div>
+                            </div>
+                          ) : result.success ? (
                             <div className="p-3 bg-green-50 rounded text-sm">
                               <div className="font-medium text-green-900 mb-1">Response:</div>
                               <pre className="text-xs text-green-700 overflow-auto max-h-32">
@@ -2033,6 +2083,9 @@ export default function AdminModulesPage() {
                           ) : (
                             <div className="p-3 bg-red-50 rounded text-sm">
                               <div className="font-medium text-red-900 mb-1">Error:</div>
+                              {typeof result.statusCode === 'number' && (
+                                <div className="text-xs text-red-800 mb-1">HTTP {result.statusCode}</div>
+                              )}
                               <div className="text-xs text-red-700">{result.error}</div>
                             </div>
                           )}
