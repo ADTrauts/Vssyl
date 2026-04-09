@@ -191,6 +191,7 @@ interface ModuleSubmission {
       isCurrent: boolean;
       artifact?: {
         scanStatus: string;
+        scanSummary?: Record<string, unknown> | null;
         sha256: string;
         sizeBytes: number;
       } | null;
@@ -1981,6 +1982,7 @@ export class AdminService {
                   artifact: {
                     select: {
                       scanStatus: true,
+                      scanSummary: true,
                       sha256: true,
                       sizeBytes: true,
                     },
@@ -2400,6 +2402,7 @@ export class AdminService {
       createdAt: string;
       artifact: {
         scanStatus: string;
+        scanSummary?: Record<string, unknown> | null;
         sha256: string;
         sizeBytes: number;
       } | null;
@@ -2419,7 +2422,7 @@ export class AdminService {
         orderBy: { createdAt: 'desc' },
         include: {
           artifact: {
-            select: { scanStatus: true, sha256: true, sizeBytes: true },
+            select: { scanStatus: true, scanSummary: true, sha256: true, sizeBytes: true },
           },
         },
       });
@@ -2433,6 +2436,7 @@ export class AdminService {
         artifact: r.artifact
           ? {
               scanStatus: r.artifact.scanStatus,
+              scanSummary: (r.artifact.scanSummary as Record<string, unknown> | null) ?? null,
               sha256: r.artifact.sha256,
               sizeBytes: r.artifact.sizeBytes,
             }

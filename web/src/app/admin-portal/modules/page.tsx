@@ -37,6 +37,7 @@ interface ModuleVersionRow {
   createdAt: string;
   artifact: {
     scanStatus: string;
+    scanSummary?: Record<string, unknown> | null;
     sha256: string;
     sizeBytes: number;
   } | null;
@@ -88,6 +89,7 @@ interface ModuleSubmission {
       isCurrent: boolean;
       artifact?: {
         scanStatus: string;
+        scanSummary?: Record<string, unknown> | null;
         sha256: string;
         sizeBytes: number;
       } | null;
@@ -741,9 +743,21 @@ export default function AdminModulesPage() {
     return latest?.artifact?.scanStatus || null;
   };
 
+  const getScanFailureReason = (scanSummary?: Record<string, unknown> | null): string | null => {
+    if (!scanSummary) return null;
+    const reason = scanSummary.reason;
+    return typeof reason === 'string' && reason.trim().length > 0 ? reason.trim() : null;
+  };
+
+  const getLatestArtifactScanReason = (submission: ModuleSubmission): string | null => {
+    const latest = submission.module.versions?.[0];
+    return getScanFailureReason(latest?.artifact?.scanSummary);
+  };
+
   const getReadinessChecklist = (submission: ModuleSubmission) => {
     const latest = submission.module.versions?.[0];
     const scanStatus = latest?.artifact?.scanStatus || null;
+    const scanReason = getScanFailureReason(latest?.artifact?.scanSummary);
     const artifactScanPassed = scanStatus === 'PASSED';
     const frontend = submission.module.manifest?.frontend as Record<string, unknown> | undefined;
     const entryUrl =
@@ -756,6 +770,7 @@ export default function AdminModulesPage() {
       runtimeReady,
       publishReady,
       scanStatus: scanStatus || 'NOT_AVAILABLE',
+      scanReason,
       latestVersion: latest?.version || submission.module.version,
     };
   };
@@ -1150,6 +1165,11 @@ export default function AdminModulesPage() {
                             {readiness.publishReady ? '✓' : '!'} Publish readiness
                           </div>
                         </div>
+                        {!readiness.artifactScanPassed && readiness.scanReason && (
+                          <p className="mt-2 text-xs text-yellow-700 dark:text-yellow-300">
+                            Failure reason: <span className="font-mono">{readiness.scanReason}</span>
+                          </p>
+                        )}
                       </div>
                     );
                   })()}
@@ -1477,6 +1497,14 @@ export default function AdminModulesPage() {
                   <p className="text-gray-900 dark:text-gray-100">
                     Scan: {getLatestArtifactScanStatus(selectedSubmissionDetails) || 'Not available'}
                   </p>
+                  {(() => {
+                    const reason = getLatestArtifactScanReason(selectedSubmissionDetails);
+                    return reason ? (
+                      <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                        Reason: <span className="font-mono">{reason}</span>
+                      </p>
+                    ) : null;
+                  })()}
                   <p className="text-gray-700 dark:text-gray-300">
                     Version: {selectedSubmissionDetails.module.versions?.[0]?.version || selectedSubmissionDetails.module.version}
                   </p>
@@ -1506,7 +1534,13 @@ export default function AdminModulesPage() {
                       {(versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).map((row) => (
                         <div key={row.id} className="flex items-center justify-between text-gray-700 dark:text-gray-300">
                           <span className="font-mono text-xs">{row.version}</span>
-                          <span className="text-xs">{row.artifact?.scanStatus || 'NOT_AVAILABLE'}</span>
+                          <span className="text-xs">
+                            {(row.artifact?.scanStatus || 'NOT_AVAILABLE')}
+                            {(() => {
+                              const reason = getScanFailureReason(row.artifact?.scanSummary);
+                              return reason ? ` (${reason})` : '';
+                            })()}
+                          </span>
                         </div>
                       ))}
                     </div>

@@ -805,6 +805,7 @@ class AdminApiService {
         createdAt: string;
         artifact: {
           scanStatus: string;
+          scanSummary?: Record<string, unknown> | null;
           sha256: string;
           sizeBytes: number;
         } | null;
