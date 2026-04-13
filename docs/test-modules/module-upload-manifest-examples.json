@@ -1,0 +1,53 @@
+{
+  "hostedHappyPath": {
+    "name": "Mock Hosted Module",
+    "version": "1.0.0",
+    "description": "Mock hosted module for upload pipeline validation",
+    "author": "Vssyl QA",
+    "license": "MIT",
+    "entryPoint": "/mock-hosted",
+    "permissions": [],
+    "dependencies": [],
+    "runtime": {
+      "apiVersion": "1.0.0"
+    },
+    "frontend": {
+      "entryUrl": "https://cdn.example.com/mock-hosted/index.html"
+    },
+    "settings": {}
+  },
+  "bundleHappyPath": {
+    "name": "Mock Bundle Module",
+    "version": "1.0.0",
+    "description": "Mock bundled module for upload pipeline validation",
+    "author": "Vssyl QA",
+    "license": "MIT",
+    "entryPoint": "/mock-bundle",
+    "permissions": [],
+    "dependencies": [],
+    "runtime": {
+      "apiVersion": "1.0.0"
+    },
+    "frontend": {
+      "entryUrl": ""
+    },
+    "settings": {}
+  },
+  "negativeNoHtmlNoHostedUrl": {
+    "name": "Mock Invalid Module",
+    "version": "1.0.0",
+    "description": "Negative test fixture for no_html_entry guardrail",
+    "author": "Vssyl QA",
+    "license": "MIT",
+    "entryPoint": "/mock-invalid",
+    "permissions": [],
+    "dependencies": [],
+    "runtime": {
+      "apiVersion": "1.0.0"
+    },
+    "frontend": {
+      "entryUrl": ""
+    },
+    "settings": {}
+  }
+}
