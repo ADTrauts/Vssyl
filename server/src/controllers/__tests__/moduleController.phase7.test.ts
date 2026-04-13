@@ -241,12 +241,10 @@ describe('moduleController Phase 7 critical paths', () => {
     vi.spyOn(prisma.moduleVersion, 'upsert').mockResolvedValue({
       id: 'mv-1',
     } as any);
-    vi.spyOn(prisma.moduleArtifact, 'upsert').mockImplementation(async (args: any) => {
-      return {
-        id: 'artifact-1',
-        scanStatus: args.create.scanStatus,
-      } as any;
-    });
+    vi.spyOn(prisma.moduleArtifact, 'upsert').mockResolvedValue({
+      id: 'artifact-1',
+      scanStatus: 'PASSED',
+    } as any);
     vi.spyOn(prisma.moduleUploadSession, 'update').mockResolvedValue({ id: 'us-1' } as any);
 
     const req = {
