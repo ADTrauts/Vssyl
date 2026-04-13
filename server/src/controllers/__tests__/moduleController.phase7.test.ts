@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
+import { zipSync } from 'fflate';
 import { prisma } from '../../lib/prisma';
+import { storageService } from '../../services/storageService';
 import {
+  finalizeModuleArtifactUpload,
   getMarketplaceModules,
   getModuleRuntimeConfig,
   linkModuleToBusiness,
   promoteModuleVersion,
+  reviewModuleSubmission,
 } from '../moduleController';
 
 function mockResponse() {
@@ -173,6 +177,102 @@ describe('moduleController Phase 7 critical paths', () => {
       })
     );
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: [] }));
+  });
+
+  it('does not mark submission reviewed when approval guard fails artifact scan', async () => {
+    vi.spyOn(prisma.moduleSubmission, 'findUnique').mockResolvedValue({
+      id: 'sub-1',
+      moduleId: 'm1',
+      status: 'PENDING',
+      module: { id: 'm1', version: '1.0.0', name: 'Guard Test Module' },
+    } as any);
+    vi.spyOn(prisma.moduleVersion, 'findFirst').mockResolvedValue({
+      id: 'mv-1',
+      moduleId: 'm1',
+      version: '1.0.0',
+    } as any);
+    vi.spyOn(prisma.moduleArtifact, 'findUnique').mockResolvedValue({
+      scanStatus: 'FAILED',
+    } as any);
+    const updateSpy = vi.spyOn(prisma.moduleSubmission, 'update');
+
+    const req = {
+      user: { id: 'admin-1', role: 'ADMIN' },
+      params: { submissionId: 'sub-1' },
+      body: { action: 'approve', reviewNotes: 'looks good' },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await reviewModuleSubmission(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        error: 'Module artifact scan must pass before approval',
+      })
+    );
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it('finalize upload allows zip without html when manifest has https entryUrl', async () => {
+    const zipWithoutHtml = Buffer.from(
+      zipSync({
+        'bundle.js': new TextEncoder().encode('console.log("hello");'),
+        'readme.txt': new TextEncoder().encode('bundle files'),
+      })
+    );
+
+    vi.spyOn(prisma.moduleUploadSession, 'findUnique').mockResolvedValue({
+      id: 'us-1',
+      moduleId: 'm1',
+      uploaderId: 'u1',
+      expiresAt: new Date(Date.now() + 60_000),
+      objectPath: 'modules/m1/1.0.0/bundle.zip',
+      bucket: 'bucket-1',
+    } as any);
+    vi.spyOn(storageService, 'fileExists').mockResolvedValue(true);
+    vi.spyOn(storageService, 'getFileBuffer').mockResolvedValue(zipWithoutHtml);
+    vi.spyOn(prisma.module, 'update').mockResolvedValue({
+      id: 'm1',
+      name: 'Hosted Module',
+      version: '1.0.0',
+    } as any);
+    vi.spyOn(prisma.moduleVersion, 'upsert').mockResolvedValue({
+      id: 'mv-1',
+    } as any);
+    vi.spyOn(prisma.moduleArtifact, 'upsert').mockImplementation(async (args: any) => {
+      return {
+        id: 'artifact-1',
+        scanStatus: args.create.scanStatus,
+      } as any;
+    });
+    vi.spyOn(prisma.moduleUploadSession, 'update').mockResolvedValue({ id: 'us-1' } as any);
+
+    const req = {
+      user: { id: 'u1', role: 'USER' },
+      params: { moduleId: 'm1', uploadSessionId: 'us-1' },
+      body: {
+        version: '1.0.0',
+        manifest: {
+          frontend: { entryUrl: 'https://cdn.example.com/module/index.html' },
+        },
+        permissions: [],
+        dependencies: [],
+      },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await finalizeModuleArtifactUpload(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          scanStatus: 'PASSED',
+        }),
+      })
+    );
   });
 });
 

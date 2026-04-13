@@ -25,6 +25,19 @@ describe('runBaselineZipScan', () => {
     expect(r.scanSummary).toMatchObject({ reason: 'no_html_entry' });
   });
 
+  it('passes when html check is disabled for hosted runtime', () => {
+    const buf = zipToBuffer({
+      'readme.txt': new TextEncoder().encode('hello'),
+      'bundle.js': new TextEncoder().encode('console.log("ok")'),
+    });
+    const r = runBaselineZipScan(buf, undefined, { requireHtmlEntry: false });
+    expect(r.scanStatus).toBe('PASSED');
+    expect(r.scanSummary).toMatchObject({
+      requireHtmlEntry: false,
+      checks: expect.arrayContaining(['html_entry_not_required']),
+    });
+  });
+
   it('fails on unsafe path segments', () => {
     const buf = zipToBuffer({
       '../evil.html': new TextEncoder().encode('<!doctype html><html></html>'),

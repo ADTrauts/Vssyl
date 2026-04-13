@@ -21,6 +21,31 @@ function asRecordJson(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function getManifestEntryUrl(manifest: Record<string, unknown>): string | null {
+  const frontend = asRecordJson(manifest.frontend);
+  const value = frontend.entryUrl;
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed;
+}
+
+function isValidHttpsEntryUrl(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 /** Must match `ModuleCategory` in prisma schema */
 const VALID_MODULE_CATEGORIES = new Set([
   'PRODUCTIVITY',
@@ -1295,7 +1320,30 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
 
     const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
 
-    // Update submission
+    // If approved/rejected, update module version status when available
+    const latestVersion = await prisma.moduleVersion.findFirst({
+      where: {
+        moduleId: submission.moduleId,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (action === 'approve') {
+      if (latestVersion) {
+        const artifact = await prisma.moduleArtifact.findUnique({
+          where: { moduleVersionId: latestVersion.id },
+          select: { scanStatus: true },
+        });
+        if (!artifact || artifact.scanStatus !== 'PASSED') {
+          return res.status(400).json({
+            success: false,
+            error: 'Module artifact scan must pass before approval',
+          });
+        }
+      }
+    }
+
+    // Update submission only after pre-approval guards pass.
     const updatedSubmission = await prisma.moduleSubmission.update({
       where: { id: submissionId },
       data: {
@@ -1333,26 +1381,8 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
       }
     });
 
-    // If approved/rejected, update module version status when available
-    const latestVersion = await prisma.moduleVersion.findFirst({
-      where: {
-        moduleId: submission.moduleId,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
     if (action === 'approve') {
       if (latestVersion) {
-        const artifact = await prisma.moduleArtifact.findUnique({
-          where: { moduleVersionId: latestVersion.id },
-          select: { scanStatus: true },
-        });
-        if (!artifact || artifact.scanStatus !== 'PASSED') {
-          return res.status(400).json({
-            success: false,
-            error: 'Module artifact scan must pass before approval',
-          });
-        }
 
         await prisma.moduleVersion.updateMany({
           where: { moduleId: submission.moduleId, isCurrent: true },
@@ -2210,7 +2240,13 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
     const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
     const sizeBytes = fileBuffer.length;
 
-    const baseline = runBaselineZipScan(fileBuffer, { objectPath: session.objectPath });
+    const manifestRecord = asRecordJson(manifest);
+    const entryUrl = getManifestEntryUrl(manifestRecord);
+    const baseline = runBaselineZipScan(
+      fileBuffer,
+      { objectPath: session.objectPath },
+      { requireHtmlEntry: !isValidHttpsEntryUrl(entryUrl) }
+    );
     const scanStatus = baseline.scanStatus;
     const scanSummary = baseline.scanSummary as Prisma.InputJsonValue;
 

@@ -13,17 +13,28 @@ export interface BaselineScanOutcome {
   scanSummary: Record<string, unknown>;
 }
 
+export interface BaselineScanOptions {
+  /** When false, skip strict requirement for an .html file in the zip (hosted runtime mode). */
+  requireHtmlEntry?: boolean;
+}
+
 /**
  * Baseline (internal) scanner: structure, path safety, size limits, HTML entry presence.
  * External / pluggable scanners run separately and can update the same artifact row later.
  */
-export function runBaselineZipScan(zipBuffer: Buffer, context?: { objectPath?: string }): BaselineScanOutcome {
+export function runBaselineZipScan(
+  zipBuffer: Buffer,
+  context?: { objectPath?: string },
+  options?: BaselineScanOptions
+): BaselineScanOutcome {
+  const requireHtmlEntry = options?.requireHtmlEntry ?? true;
   const baseMeta = {
     scanner: 'baseline',
     engine: 'fflate',
     pipeline: 'hybrid_internal',
     scannedAt: new Date().toISOString(),
     objectPath: context?.objectPath,
+    requireHtmlEntry,
   };
 
   try {
@@ -90,7 +101,7 @@ export function runBaselineZipScan(zipBuffer: Buffer, context?: { objectPath?: s
     }
 
     const hasHtml = names.some(n => /\.html?$/i.test(n));
-    if (!hasHtml) {
+    if (requireHtmlEntry && !hasHtml) {
       return {
         scanStatus: 'FAILED',
         scanSummary: {
@@ -109,7 +120,7 @@ export function runBaselineZipScan(zipBuffer: Buffer, context?: { objectPath?: s
           'zip_parse',
           'path_traversal_guard',
           'size_limits',
-          'html_entry_present',
+          requireHtmlEntry ? 'html_entry_present' : 'html_entry_not_required',
         ],
         fileCount: names.length,
         uncompressedBytes: uncompressedTotal,

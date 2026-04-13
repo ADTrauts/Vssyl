@@ -403,6 +403,10 @@ export default function SubmitModulePage() {
             Google Cloud Storage for review and publishing. Hosted-URL-only submissions are deprecated and will be
             phased out—use a zip when possible.
           </p>
+          <p className="mt-1 text-xs text-gray-700 dark:text-gray-300">
+            If you do not provide a hosted HTTPS entry URL, the uploaded zip must include an HTML entry file (for
+            example <span className="font-mono">index.html</span>) so sandbox runtime can launch it.
+          </p>
           <div className="mt-3">
             <input
               type="file"
