@@ -83,10 +83,15 @@ export const createBusiness = async (req: Request, res: Response) => {
     }
 
     const businessData: CreateBusinessRequest = req.body;
+    const normalizedEin = typeof businessData.ein === 'string' ? businessData.ein.trim() : '';
+
+    if (!normalizedEin) {
+      return res.status(400).json({ success: false, error: 'EIN / Tax ID is required' });
+    }
 
     // Check if EIN already exists
     const existingBusiness = await prisma.business.findUnique({
-      where: { ein: businessData.ein }
+      where: { ein: normalizedEin }
     });
 
     if (existingBusiness) {
@@ -97,6 +102,7 @@ export const createBusiness = async (req: Request, res: Response) => {
     const business = await prisma.business.create({
       data: {
         ...businessData,
+        ein: normalizedEin,
         members: {
           create: {
             userId: user.id,
@@ -261,6 +267,12 @@ export const createBusiness = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true, data: business });
   } catch (error) {
+    const prismaCode = typeof (error as { code?: string }).code === 'string'
+      ? (error as { code: string }).code
+      : undefined;
+    if (prismaCode === 'P2002') {
+      return res.status(400).json({ success: false, error: 'Business with this EIN already exists' });
+    }
     handleError(res, error, 'Failed to create business');
   }
 };

@@ -163,7 +163,7 @@ export default function BusinessCreationModal({
         
         <Button
           variant="secondary"
-          onClick={() => setMode('link')}
+          onClick={handleLinkExisting}
           className="w-full justify-center"
           size="lg"
         >
@@ -209,6 +209,19 @@ export default function BusinessCreationModal({
               value={formData.name}
               onChange={handleInputChange}
               placeholder="Your Business Name"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              EIN / Tax ID *
+            </label>
+            <Input
+              name="ein"
+              value={formData.ein}
+              onChange={handleInputChange}
+              placeholder="e.g., 12-3456789"
               required
             />
           </div>
@@ -294,7 +307,7 @@ export default function BusinessCreationModal({
           </Button>
           <Button
             type="submit"
-            disabled={loading || !formData.name}
+            disabled={loading || !formData.name.trim() || !formData.ein.trim()}
             className="flex-1"
           >
             {loading ? (
@@ -361,6 +374,14 @@ export default function BusinessCreationModal({
                 className="flex-1"
               >
                 Back
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleLinkExisting}
+                disabled={loading}
+                className="flex-1"
+              >
+                Refresh
               </Button>
               <Button
                 disabled={!selectedBusinessId || !moduleId}
