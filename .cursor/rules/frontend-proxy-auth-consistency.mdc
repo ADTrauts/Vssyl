@@ -1,0 +1,23 @@
+---
+description: Frontend rules for API proxy use, auth UX, and shared provider consistency
+globs: web/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend Proxy And Auth Consistency
+
+- Browser-side requests should use the Next.js `/api/*` proxy or a shared frontend API helper.
+- Do not call `${API_BASE_URL}` directly from pages, layouts, or components unless a documented blob/download helper truly requires it.
+- Remove localhost-only telemetry, debug fetches, and ad hoc network calls from normal runtime code.
+- Reuse shared auth and provider patterns; do not add overlapping business/session/config providers for the same route tree.
+- Protected route trees should have one clear contract: server-side gate, shared layout guard, or explicit forbidden state. Avoid page-by-page signed-out behavior drift.
+
+```typescript
+// ✅ preferred
+await fetch('/api/profile', { headers: authHeaders(token) });
+
+// ❌ drift-prone
+await fetch(`${API_BASE_URL}/profile`, { headers: authHeaders(token) });
+```
+
+- If a direct backend export/download path is unavoidable, centralize it in one helper and document why it cannot use the proxy.

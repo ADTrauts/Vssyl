@@ -7,26 +7,38 @@ on:
     branches: [main]
 
 jobs:
-  lint-typecheck:
+  verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vssyl_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vssyl_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/vssyl_ci
+      JWT_SECRET: ci-jwt-secret-must-be-at-least-32-chars
+      JWT_REFRESH_SECRET: ci-jwt-refresh-secret-32chars-minimum
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 10.11.0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: pnpm install
-      - run: pnpm --filter web lint
-      - run: pnpm --filter web format:check
-      - run: pnpm --filter web type-check
-      - run: pnpm --filter server lint
-      - run: pnpm --filter server format:check
-      - run: pnpm --filter server type-check
-      - run: pnpm --filter shared lint
-      - run: pnpm --filter shared format:check
-      - run: pnpm --filter shared type-check
-      - run: pnpm --filter prisma lint
-      - run: pnpm --filter prisma format:check
-      - run: pnpm --filter prisma type-check 
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma:generate
+      - run: pnpm exec prisma migrate deploy --schema prisma/schema.prisma
+      - run: pnpm type-check
+      - run: pnpm test

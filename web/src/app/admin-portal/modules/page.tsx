@@ -43,6 +43,19 @@ interface ModuleVersionRow {
   } | null;
 }
 
+interface SmartScanSummary {
+  scanner: string;
+  checkedAt: string;
+  riskScore: number;
+  verdict: 'PASS' | 'WARN' | 'FAIL';
+  findings: Array<{
+    severity: 'low' | 'medium' | 'high';
+    code: string;
+    message: string;
+    path?: string;
+  }>;
+}
+
 interface ModuleSubmission {
   id: string;
   moduleId: string;
@@ -747,6 +760,15 @@ export default function AdminModulesPage() {
     if (!scanSummary) return null;
     const reason = scanSummary.reason;
     return typeof reason === 'string' && reason.trim().length > 0 ? reason.trim() : null;
+  };
+
+  const getSmartScanSummary = (scanSummary?: Record<string, unknown> | null): SmartScanSummary | null => {
+    if (!scanSummary) return null;
+    const value = scanSummary.smartScan;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+    return value as SmartScanSummary;
   };
 
   const getLatestArtifactScanReason = (submission: ModuleSubmission): string | null => {
@@ -1494,6 +1516,14 @@ export default function AdminModulesPage() {
                 </div>
                 <div className="rounded border border-gray-200 dark:border-slate-700 p-3">
                   <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-1">Latest artifact</p>
+                  {(() => {
+                    const smart = getSmartScanSummary(selectedSubmissionDetails.module.versions?.[0]?.artifact?.scanSummary);
+                    return smart ? (
+                      <p className="text-gray-700 dark:text-gray-300 text-sm">
+                        SmartScan: <span className="font-mono">{smart.verdict}</span> (risk {smart.riskScore})
+                      </p>
+                    ) : null;
+                  })()}
                   <p className="text-gray-900 dark:text-gray-100">
                     Scan: {getLatestArtifactScanStatus(selectedSubmissionDetails) || 'Not available'}
                   </p>
@@ -1538,7 +1568,10 @@ export default function AdminModulesPage() {
                             {(row.artifact?.scanStatus || 'NOT_AVAILABLE')}
                             {(() => {
                               const reason = getScanFailureReason(row.artifact?.scanSummary);
-                              return reason ? ` (${reason})` : '';
+                              const smart = getSmartScanSummary(row.artifact?.scanSummary);
+                              const reasonLabel = reason ? ` (${reason})` : '';
+                              const smartLabel = smart ? ` [smart:${smart.verdict.toLowerCase()}:${smart.riskScore}]` : '';
+                              return `${reasonLabel}${smartLabel}`;
                             })()}
                           </span>
                         </div>

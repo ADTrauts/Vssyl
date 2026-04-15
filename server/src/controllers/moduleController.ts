@@ -8,6 +8,7 @@ import { ModuleSecurityService } from '../services/moduleSecurityService';
 import { initializeHrScheduleForBusiness } from '../services/hrScheduleService';
 import { storageService } from '../services/storageService';
 import { runBaselineZipScan } from '../services/moduleArtifactBaselineScan';
+import { runSmartModuleScan } from '../services/moduleArtifactSmartScan';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
@@ -2247,8 +2248,14 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       { objectPath: session.objectPath },
       { requireHtmlEntry: !isValidHttpsEntryUrl(entryUrl) }
     );
+    const smartScan = runSmartModuleScan(fileBuffer, { objectPath: session.objectPath });
     const scanStatus = baseline.scanStatus;
-    const scanSummary = baseline.scanSummary as Prisma.InputJsonValue;
+    const combinedScanSummary = {
+      ...baseline.scanSummary,
+      smartScan,
+      scanLevel: 'baseline_plus_smart',
+    };
+    const scanSummary = combinedScanSummary as unknown as Prisma.InputJsonValue;
 
     const updatedModule = await prisma.module.update({
       where: { id: moduleId },
@@ -2318,7 +2325,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
         moduleVersionId: moduleVersion.id,
         artifactId: artifact.id,
         scanStatus: artifact.scanStatus,
-        scanSummary: baseline.scanSummary,
+        scanSummary: combinedScanSummary,
       },
     });
   } catch (error: unknown) {

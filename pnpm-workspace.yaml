@@ -2,7 +2,6 @@ packages:
   - web
   - server
   - shared
-  - prisma
 onlyBuiltDependencies:
   - '@prisma/client'
   - '@prisma/engines'

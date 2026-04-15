@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AdminService } from '../services/adminService';
@@ -8,6 +9,16 @@ import { logger } from '../lib/logger';
 import adminSecurityRoutes from './adminSecurityRoutes';
 
 const router: express.Router = express.Router();
+
+const ALLOWED_CONTENT_REPORT_STATUSES = new Set([
+  'pending',
+  'reviewed',
+  'approved',
+  'rejected',
+  'resolved',
+  'dismissed',
+  'escalated',
+]);
 
 // Middleware to require admin role
 const requireAdmin = (req: Request, res: Response, next: () => void) => {
@@ -1238,21 +1249,41 @@ router.get('/moderation/reported', authenticateJWT, requireAdmin, async (req: Re
 router.patch('/moderation/reports/:reportId', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { reportId } = req.params;
-    const { status, action, reason } = req.body;
+    const { status, action, reason, adminNotes } = req.body as {
+      status?: unknown;
+      action?: unknown;
+      reason?: unknown;
+      adminNotes?: unknown;
+    };
     const adminUser = req.user;
 
     if (!adminUser) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    if (typeof status !== 'string' || !ALLOWED_CONTENT_REPORT_STATUSES.has(status)) {
+      return res.status(400).json({ error: 'Invalid or missing status' });
+    }
+
+    const data: Prisma.ContentReportUpdateInput = {
+      status,
+      reviewedBy: adminUser.id,
+      reviewedAt: new Date(),
+    };
+
+    if (typeof action === 'string' && action.length > 0) {
+      data.action = action;
+    }
+
+    if (typeof adminNotes === 'string' && adminNotes.length > 0) {
+      data.details = adminNotes;
+    } else if (typeof reason === 'string' && reason.length > 0) {
+      data.details = reason;
+    }
+
     const report = await prisma.contentReport.update({
       where: { id: reportId },
-      data: {
-        status,
-        action,
-        reviewedBy: adminUser.id,
-        reviewedAt: new Date()
-      }
+      data,
     });
 
     await logger.info('Admin updated content report', {
@@ -1264,7 +1295,7 @@ router.patch('/moderation/reports/:reportId', authenticateJWT, requireAdmin, asy
       reason: reason || 'No reason provided'
     });
 
-    res.json(report);
+    res.json({ success: true, data: { report } });
   } catch (error) {
     await logger.error('Failed to update content report', {
       operation: 'admin_update_report',

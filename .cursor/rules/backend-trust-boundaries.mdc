@@ -1,0 +1,28 @@
+---
+description: Backend trust-boundary rules for auth, tenancy, and external entrypoints
+globs: server/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Backend Trust Boundaries
+
+- Treat `req.body`, `req.query`, `req.params`, socket payload IDs, and webhook payloads as untrusted input.
+- Never trust client-supplied `userId`, `businessId`, `dashboardId`, `householdId`, `conversationId`, or room IDs as authority by themselves.
+- Resolve actor identity from `req.user` or verified webhook/signature state first, then prove membership/ownership with a database lookup before reads, joins, writes, or emits.
+- Sensitive, debug, admin, webhook, and callback routes must be made safe at the mount point, not only inside the controller.
+- Validate query/param types before casting; avoid `as string` on Express query values without a runtime check.
+
+```typescript
+const { businessId } = req.query;
+if (!businessId || typeof businessId !== 'string') {
+  return res.status(400).json({ error: 'businessId is required' });
+}
+
+const member = await prisma.businessMember.findUnique({
+  where: { businessId_userId: { businessId, userId: req.user.id } },
+});
+if (!member) return res.status(403).json({ error: 'Access denied' });
+```
+
+- For sockets, verify membership before `join_*`, reactions, read receipts, or presence broadcasts.
+- For webhooks, preserve the raw-body/signature contract and keep unauthenticated intake isolated from JWT-protected payment/admin routes.

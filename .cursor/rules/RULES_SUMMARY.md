@@ -4,10 +4,13 @@ This is a quick reference guide to all documented rules. For complete details, s
 
 ## 📋 Rule Files Location
 
-- **`.cursor/rules/coding-standards.mdc`** - Comprehensive coding standards (778 lines)
-- **`.cursor/rules/module-development.mdc`** - Module development requirements (829 lines)
-- **`.cursor/rules/core.mdc`** - Core workflow and reuse-first rules (69 lines)
-- **`.cursor/rules/memory-bank.mdc`** - Memory bank structure and documentation rules (310 lines)
+- **`.cursor/rules/core.mdc`** - Core workflow, plan/act behavior, and reuse-first rules
+- **`.cursor/rules/memory-bank.mdc`** - Memory bank structure and documentation placement rules
+- **`.cursor/rules/coding-standards.mdc`** - Broad coding, API, Prisma, logging, storage, and security standards
+- **`.cursor/rules/module-development.mdc`** - Module-specific development requirements
+- **`.cursor/rules/backend-trust-boundaries.mdc`** - Backend auth, tenancy, socket, and webhook guardrails
+- **`.cursor/rules/frontend-proxy-auth-consistency.mdc`** - Frontend proxy, auth UX, and provider consistency guardrails
+- **`.cursor/rules/release-safety-gates.mdc`** - CI, deploy, startup, healthcheck, and rollback guardrails
 - **`memory-bank/AI_CODING_STANDARDS.md`** - Type safety and code quality standards
 
 ---
@@ -21,7 +24,25 @@ This is a quick reference guide to all documented rules. For complete details, s
   - Only create new items when no suitable extension point exists
   - Document rationale when creating something new
 
-### 2. Environment Variables & URLs
+### 2. Backend Trust Boundaries
+- **Never trust client-supplied authority IDs** like `userId`, `businessId`, `dashboardId`, `householdId`, or socket room IDs by themselves
+- **Resolve actor identity from trusted auth state first** (`req.user`, verified webhook signature, trusted admin flow)
+- **Prove membership/ownership** with a database lookup before reads, writes, joins, emits, reactions, or read receipts
+- **Secure sensitive routes at the mount point** — especially admin, debug, callback, and webhook routes
+
+### 3. Frontend Proxy & Auth Consistency
+- **Use the Next.js `/api/*` proxy** or a shared frontend API helper for browser-side requests
+- **Do not call `${API_BASE_URL}` directly from normal pages/components**
+- **Avoid overlapping providers** for the same route tree (business/session/config state should have one clear owner)
+- **Protected route trees need one clear contract** — shared guard, server gate, or explicit forbidden state
+
+### 4. Release Safety Gates
+- **CI must run the checks that actually protect the changed area**
+- **Keep tool/workspace versions aligned** across workflows, package scripts, and Dockerfiles
+- **Startup should fail fast** if migrations or required readiness steps fail
+- **Healthchecks must match their purpose** — shallow liveness is not the same as database-backed readiness
+
+### 5. Environment Variables & URLs
 - **NEVER hardcode localhost** in production code
 - **ALWAYS use** `NEXT_PUBLIC_API_BASE_URL` with production fallback
 - **Fallback hierarchy**: `NEXT_PUBLIC_API_BASE_URL` → `NEXT_PUBLIC_API_URL` → production URL
@@ -30,60 +51,60 @@ This is a quick reference guide to all documented rules. For complete details, s
   - Frontend: `https://vssyl.com`
   - WebSocket: `wss://vssyl-server-235369681725.us-central1.run.app/socket.io/`
 
-### 3. API Routing Pattern
+### 6. API Routing Pattern
 - **MUST use Next.js API proxy** (`/api/[...slug]/route.ts`)
 - **NEVER bypass** the proxy with direct backend URLs
 - **NEVER create double `/api` paths** — use relative paths in API clients
 - **Pattern**: Client calls `/api/endpoint` → Proxy forwards to backend
 
-### 4. Prisma & Database
+### 7. Prisma & Database
 - **NEVER edit `prisma/schema.prisma`** directly — edit module files in `prisma/modules/*`
 - **Build order**: `prisma:build` → `prisma:generate` → `prisma:migrate`
 - **Connection pooling**: Always include `?connection_limit=20&pool_timeout=20`
 - **Encode passwords**: Use `encodeURIComponent()` for special characters
 
-### 5. Multi-Tenant Data Isolation (CRITICAL SECURITY)
+### 8. Multi-Tenant Data Isolation (CRITICAL SECURITY)
 - **Personal context**: MUST include `dashboardId` in all queries
 - **Business context**: MUST include both `dashboardId` AND `businessId`
 - **Household context**: MUST include both `dashboardId` AND `householdId`
 - **NEVER query without context scoping** — prevents data leakage
 
-### 6. TypeScript Type Safety
+### 9. TypeScript Type Safety
 - **ZERO `any` types policy** — use `unknown`, `Record<string, unknown>`, or specific interfaces
 - **Explicit router types**: Always type Express routers explicitly
 - **Prisma JSON**: Use `Prisma.InputJsonValue` for JSON fields
 - **Type guards**: Use type guards for runtime type checking
 
-### 7. Authentication & Security
+### 10. Authentication & Security
 - **Frontend**: Use NextAuth `getToken({ req, secret })`
 - **Backend**: ALWAYS check `req.user` exists before accessing properties
 - **Input validation**: Use Zod or express-validator for all user input
 - **Never log secrets**: Don't log tokens, passwords, or API keys
 
-### 8. Storage Abstraction
+### 11. Storage Abstraction
 - **ALWAYS use `storageService`** — never direct file system access
 - **Production**: Set `STORAGE_PROVIDER=gcs`
 - **Methods**: `uploadFile()`, `deleteFile()`, `getFileUrl()`, `getProvider()`
 
-### 9. Logging Standards
+### 12. Logging Standards
 - **New code**: ALWAYS use `logger` utility (`logger.info/error/warn`)
 - **Existing code**: `console.log` is acceptable (natural migration)
 - **Structured logging**: Include context (userId, operation, error details)
 - **Never log secrets**: Don't log tokens, passwords, or sensitive data
 
-### 10. Module Development (AI Context Integration)
+### 13. Module Development (AI Context Integration)
 - **MANDATORY**: Every module MUST have complete `ModuleAIContext` object
 - **Required components**: purpose, category, keywords, patterns, concepts, entities, actions, contextProviders
 - **Context providers**: Must respond < 500ms, use authentication, return 10-20 items max
 - **Registration**: Must register AI context during module installation
 
-### 11. Documentation Rules
+### 14. Documentation Rules
 - **NEVER create root-level `.md` files** (except README.md)
 - **Use `memory-bank/`** for AI context and persistent knowledge
 - **Use `docs/`** for human-facing operational guides
 - **Update existing files** rather than creating duplicates
 
-### 12. Development Workflow
+### 15. Development Workflow
 - **Start dev**: `pnpm dev` from root (starts frontend + backend)
 - **Before commit**: `pnpm lint`, `pnpm type-check`, Prisma commands if DB changes
 - **Build order**: Prisma build → generate → migrate (if schema changed)
@@ -137,7 +158,9 @@ This is a quick reference guide to all documented rules. For complete details, s
 ### Before Creating New Code
 1. Check `.cursor/rules/core.mdc` — Reuse-first rule
 2. Check `.cursor/rules/coding-standards.mdc` — Type safety, API patterns
-3. Check Memory Bank — Existing patterns and contexts
+3. Check `.cursor/rules/backend-trust-boundaries.mdc` when touching backend controllers, routes, services, sockets, or webhooks
+4. Check `.cursor/rules/frontend-proxy-auth-consistency.mdc` when touching frontend pages, layouts, contexts, or API calls
+5. Check Memory Bank — Existing patterns and contexts
 
 ### Before Creating Modules
 1. Check `.cursor/rules/module-development.mdc` — Complete requirements
@@ -149,7 +172,8 @@ This is a quick reference guide to all documented rules. For complete details, s
 
 ### Before Deploying
 1. Check `.cursor/rules/coding-standards.mdc` — Environment variables, URLs
-2. Check deployment checklist in `docs/deployment/MODULE_DEPLOYMENT_CHECKLIST.md`
+2. Check `.cursor/rules/release-safety-gates.mdc` — CI, startup, healthchecks, rollback expectations
+3. Check deployment checklist in `docs/deployment/MODULE_DEPLOYMENT_CHECKLIST.md`
 
 ---
 
@@ -167,10 +191,12 @@ This is a quick reference guide to all documented rules. For complete details, s
 - [ ] Using `logger` utility (new code)
 - [ ] Following API proxy pattern
 - [ ] Prisma module pattern (not editing schema.prisma directly)
+- [ ] Trust boundaries verified for backend IDs, sockets, and webhooks
+- [ ] Release/health/CI changes still represent real safety gates
 
 ---
 
-**Last Updated**: 2025-10-28  
-**Status**: Comprehensive — All major rules documented  
+**Last Updated**: 2026-04-14  
+**Status**: Comprehensive — includes audit-driven preventive rules  
 **Maintainer**: Development Team
 

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationGroupingService } from '../services/notificationGroupingService';
@@ -168,12 +169,22 @@ export const getModuleNotificationTypes = async (req: Request, res: Response) =>
   }
 };
 
-// Create a new notification
+// Create a new notification (always for the authenticated user; ignore client userId)
 export const createNotification = async (req: Request, res: Response) => {
   try {
-    const { type, title, body, data, userId } = req.body;
+    const callerId = req.user?.id;
+    if (!callerId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
 
-    if (!type || !title || !userId) {
+    const { type, title, body, data } = req.body as {
+      type?: string;
+      title?: string;
+      body?: string;
+      data?: Record<string, unknown>;
+    };
+
+    if (!type || !title) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -182,8 +193,8 @@ export const createNotification = async (req: Request, res: Response) => {
         type,
         title,
         body,
-        data: data || {},
-        userId
+        data: (data ?? {}) as Prisma.InputJsonValue,
+        userId: callerId,
       },
       include: {
         user: {

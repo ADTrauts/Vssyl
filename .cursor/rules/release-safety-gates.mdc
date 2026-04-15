@@ -1,0 +1,23 @@
+---
+description: Release-gate rules for CI, deployment, healthchecks, and startup safety
+globs: "{package.json,server/package.json,web/package.json,pnpm-workspace.yaml,playwright.config.ts,cloudbuild.yaml,.github/workflows/*.yml,server/Dockerfile.production,server/src/index.ts,server/src/routes/health.ts,server/src/services/chatSocketService.ts}"
+alwaysApply: false
+---
+
+# Release Safety Gates
+
+- When editing CI, build, deploy, startup, or healthcheck files, optimize for trustworthy release signals, not just green builds.
+- CI must run the checks that actually protect the changed area; do not let tests exist only locally.
+- Keep workspace and tool versions aligned across repo config, Dockerfiles, and workflows.
+- Startup should fail fast when migrations or required readiness steps fail. Do not continue serving in a known-unsafe schema state.
+- Healthchecks must prove the level of health they claim. Use shallow liveness and deeper readiness intentionally; do not point container readiness at a route that only proves the process booted.
+- For **multiple Cloud Run (or any) instances**, Socket.IO room broadcasts require a shared adapter: set **`SOCKET_IO_REDIS_URL`** (or **`REDIS_URL`**) so the server can attach the Redis adapter at startup; otherwise realtime is single-process only.
+
+```yaml
+# ✅ minimum meaningful verification today (repo-wide eslint/prettier are backlog)
+- pnpm type-check
+- pnpm test
+# Optional when green: pnpm lint, package format:check
+```
+
+- If deploy automation changes, also verify rollback guidance or operator docs still match the real release path.

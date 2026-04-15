@@ -1,14 +1,14 @@
 /**
- * DEBUG BUSINESS TIER ENDPOINT
- * 
- * Check and update business tier
- * No auth required for debugging
+ * DEBUG BUSINESS TIER — admin-only, not mounted in production unless ENABLE_DEBUG_BUSINESS_TIER=true.
  */
 
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { authenticateJWT, requireRole } from '../middleware/auth';
 
 const router: express.Router = express.Router();
+
+router.use(authenticateJWT, requireRole('ADMIN'));
 
 /**
  * Get business tier information
@@ -113,4 +113,3 @@ router.post('/:businessId', async (req: Request, res: Response) => {
 });
 
 export default router;
-

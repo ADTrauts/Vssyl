@@ -65,6 +65,10 @@ export class EmployeeManagementService {
       throw new Error('Position not found');
     }
 
+    if (position.businessId !== data.businessId) {
+      throw new Error('Position does not belong to the specified business');
+    }
+
     if (position.employeePositions.length >= position.maxOccupants) {
       throw new Error(`Position ${position.title} is at maximum capacity`);
     }
@@ -83,12 +87,12 @@ export class EmployeeManagementService {
       throw new Error('User is already assigned to this position');
     }
 
-    // Create the assignment
+    // Create the assignment (businessId always from authoritative position row)
     return await prisma.employeePosition.create({
       data: {
         userId: data.userId,
         positionId: data.positionId,
-        businessId: data.businessId,
+        businessId: position.businessId,
         assignedById: data.assignedById,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -143,6 +147,17 @@ export class EmployeeManagementService {
     transferredById: string,
     effectiveDate: Date = new Date()
   ): Promise<EmployeePosition> {
+    const [fromPos, toPos] = await Promise.all([
+      prisma.position.findUnique({ where: { id: fromPositionId }, select: { businessId: true } }),
+      prisma.position.findUnique({ where: { id: toPositionId }, select: { businessId: true } }),
+    ]);
+    if (!fromPos || !toPos) {
+      throw new Error('Position not found');
+    }
+    if (fromPos.businessId !== businessId || toPos.businessId !== businessId) {
+      throw new Error('Positions must belong to the specified business');
+    }
+
     // Remove from current position
     await this.removeEmployeeFromPosition(userId, fromPositionId, businessId);
 

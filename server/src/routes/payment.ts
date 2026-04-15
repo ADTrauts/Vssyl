@@ -4,7 +4,6 @@ import {
   createSubscription,
   cancelSubscription,
   reactivateSubscription,
-  handleWebhook,
   getPaymentMethods,
 } from '../controllers/paymentController';
 
@@ -25,7 +24,6 @@ router.post('/subscription/:subscriptionId/reactivate', reactivateSubscription);
 // Get payment methods
 router.get('/methods', getPaymentMethods);
 
-// Stripe webhook (no authentication required)
-router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+// Stripe webhook is mounted in index.ts before express.json() (raw body + no JWT).
 
 export default router; 

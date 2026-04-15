@@ -49,7 +49,8 @@ export interface CreateNotificationData {
   title: string;
   body?: string;
   data?: NotificationData;
-  userId: string;
+  /** Target user (required for admin `for-user` endpoint only; ignored on `POST /api/notifications`) */
+  userId?: string;
 }
 
 // Get notifications with optional filters

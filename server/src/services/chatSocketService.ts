@@ -51,8 +51,8 @@ interface NotificationEvent {
 
 export class ChatSocketService {
   private io: SocketIOServer;
-  private userSockets: Map<string, string> = new Map(); // userId -> socketId
-  private socketUsers: Map<string, AuthenticatedSocket> = new Map(); // socketId -> user
+  /** socketId -> authenticated user (supports multiple sockets per user) */
+  private socketUsers: Map<string, AuthenticatedSocket> = new Map();
   private typingUsers: Map<string, Set<string>> = new Map(); // conversationId -> Set of userIds
 
   constructor(server: HTTPServer) {
@@ -150,19 +150,20 @@ export class ChatSocketService {
         userEmail: user.userEmail
       });
       
-      // Store socket mappings
-      this.userSockets.set(user.userId, socket.id);
       this.socketUsers.set(socket.id, user);
+
+      // Per-user room: all tabs for this user receive user-targeted events (notifications, drive, etc.)
+      void socket.join(`user_${user.userId}`);
 
       // Add a reference to the io server on the socket for external use
       socket.data.io = this.io;
 
       // Join user to their conversations
-      this.joinUserToConversations(socket, user.userId);
+      void this.joinUserToConversations(socket, user.userId);
 
       // Handle conversation join
       socket.on('join_conversation', (conversationId: string) => {
-        this.joinConversation(socket, conversationId);
+        void this.joinConversationIfMember(socket, conversationId);
       });
 
       // Handle conversation leave
@@ -172,11 +173,11 @@ export class ChatSocketService {
 
       // Handle typing events
       socket.on('typing_start', (data: TypingEvent) => {
-        this.handleTypingStart(socket, data);
+        void this.handleTypingStartGuarded(socket, data);
       });
 
       socket.on('typing_stop', (data: TypingEvent) => {
-        this.handleTypingStop(socket, data);
+        void this.handleTypingStopGuarded(socket, data);
       });
 
       // Handle new message
@@ -199,23 +200,13 @@ export class ChatSocketService {
         this.handlePresenceUpdate(socket, data);
       });
 
-      // Handle scheduling room joins
+      // Handle scheduling room joins (tenant-checked; do not trust client-supplied ids alone)
       socket.on('join_business', (businessId: string) => {
-        socket.join(`business_${businessId}`);
-        logger.debug('User joined business room', {
-          operation: 'socket_join_business',
-          businessId,
-          userId: user.userId
-        });
+        void this.joinBusinessRoomIfMember(socket, businessId);
       });
 
       socket.on('join_schedule', (scheduleId: string) => {
-        socket.join(`schedule_${scheduleId}`);
-        logger.debug('User joined schedule room', {
-          operation: 'socket_join_schedule',
-          scheduleId,
-          userId: user.userId
-        });
+        void this.joinScheduleRoomIfMember(socket, scheduleId);
       });
 
       socket.on('leave_schedule', (scheduleId: string) => {
@@ -263,9 +254,6 @@ export class ChatSocketService {
         socket.join(`conversation_${conversation.id}`);
       });
 
-      // Join user to their personal room for direct messages
-      socket.join(`user_${userId}`);
-
       await logger.info('User joined conversations', {
         operation: 'socket_user_joined_conversations',
         userId,
@@ -282,12 +270,63 @@ export class ChatSocketService {
     }
   }
 
-  private joinConversation(socket: SocketWithData, conversationId: string) {
-    socket.join(`conversation_${conversationId}`);
-    logger.debug('User joined conversation', {
-      operation: 'socket_join_conversation',
-      conversationId
+  private async assertActiveConversationMember(
+    conversationId: string,
+    userId: string
+  ): Promise<boolean> {
+    const participant = await prisma.conversationParticipant.findFirst({
+      where: {
+        conversationId,
+        userId,
+        isActive: true,
+      },
     });
+    return !!participant;
+  }
+
+  /** Returns conversationId if the user is an active participant of the message's conversation; otherwise null. */
+  private async assertMessageConversationMember(
+    messageId: string,
+    userId: string
+  ): Promise<string | null> {
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true },
+    });
+    if (!message) {
+      return null;
+    }
+    const allowed = await this.assertActiveConversationMember(message.conversationId, userId);
+    return allowed ? message.conversationId : null;
+  }
+
+  private async joinConversationIfMember(socket: SocketWithData, conversationId: string) {
+    if (!conversationId || typeof conversationId !== 'string') {
+      return;
+    }
+    const user = socket.data.user as AuthenticatedSocket;
+    try {
+      const allowed = await this.assertActiveConversationMember(conversationId, user.userId);
+      if (!allowed) {
+        socket.emit('error', { message: 'Cannot join conversation' });
+        return;
+      }
+      socket.join(`conversation_${conversationId}`);
+      logger.debug('User joined conversation', {
+        operation: 'socket_join_conversation',
+        conversationId,
+        userId: user.userId,
+      });
+    } catch (error: unknown) {
+      await logger.error('join_conversation failed', {
+        operation: 'socket_join_conversation_error',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      socket.emit('error', { message: 'Cannot join conversation' });
+    }
   }
 
   private leaveConversation(socket: SocketWithData, conversationId: string) {
@@ -298,26 +337,41 @@ export class ChatSocketService {
     });
   }
 
-  private handleTypingStart(socket: SocketWithData, data: TypingEvent) {
+  private async handleTypingStartGuarded(socket: SocketWithData, data: TypingEvent) {
     const user = socket.data.user as AuthenticatedSocket;
-    
+    if (!data?.conversationId || typeof data.conversationId !== 'string') {
+      return;
+    }
+    const ok = await this.assertActiveConversationMember(data.conversationId, user.userId);
+    if (!ok) {
+      socket.emit('error', { message: 'Not a member of this conversation' });
+      return;
+    }
+
     if (!this.typingUsers.has(data.conversationId)) {
       this.typingUsers.set(data.conversationId, new Set());
     }
-    
+
     this.typingUsers.get(data.conversationId)!.add(user.userId);
-    
+
     socket.to(`conversation_${data.conversationId}`).emit('user_typing', {
       conversationId: data.conversationId,
       userId: user.userId,
       userName: user.userName,
-      isTyping: true
+      isTyping: true,
     });
   }
 
-  private handleTypingStop(socket: SocketWithData, data: TypingEvent) {
+  private async handleTypingStopGuarded(socket: SocketWithData, data: TypingEvent) {
     const user = socket.data.user as AuthenticatedSocket;
-    
+    if (!data?.conversationId || typeof data.conversationId !== 'string') {
+      return;
+    }
+    const ok = await this.assertActiveConversationMember(data.conversationId, user.userId);
+    if (!ok) {
+      return;
+    }
+
     const typingSet = this.typingUsers.get(data.conversationId);
     if (typingSet) {
       typingSet.delete(user.userId);
@@ -325,13 +379,97 @@ export class ChatSocketService {
         this.typingUsers.delete(data.conversationId);
       }
     }
-    
+
     socket.to(`conversation_${data.conversationId}`).emit('user_typing', {
       conversationId: data.conversationId,
       userId: user.userId,
       userName: user.userName,
-      isTyping: false
+      isTyping: false,
     });
+  }
+
+  /** @returns whether the socket joined the room */
+  private async joinBusinessRoomIfMember(socket: SocketWithData, businessId: string): Promise<boolean> {
+    const user = socket.data.user as AuthenticatedSocket;
+    if (!businessId || typeof businessId !== 'string') {
+      return false;
+    }
+    try {
+      const member = await prisma.businessMember.findFirst({
+        where: {
+          businessId,
+          userId: user.userId,
+          isActive: true,
+        },
+      });
+      if (!member) {
+        socket.emit('error', { message: 'Cannot join business room' });
+        return false;
+      }
+      socket.join(`business_${businessId}`);
+      logger.debug('User joined business room', {
+        operation: 'socket_join_business',
+        businessId,
+        userId: user.userId,
+      });
+      return true;
+    } catch (error: unknown) {
+      await logger.error('join_business failed', {
+        operation: 'socket_join_business_error',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      socket.emit('error', { message: 'Cannot join business room' });
+      return false;
+    }
+  }
+
+  /** @returns whether the socket joined the room */
+  private async joinScheduleRoomIfMember(socket: SocketWithData, scheduleId: string): Promise<boolean> {
+    const user = socket.data.user as AuthenticatedSocket;
+    if (!scheduleId || typeof scheduleId !== 'string') {
+      return false;
+    }
+    try {
+      const schedule = await prisma.schedule.findUnique({
+        where: { id: scheduleId },
+        select: { businessId: true },
+      });
+      if (!schedule) {
+        socket.emit('error', { message: 'Schedule not found' });
+        return false;
+      }
+      const member = await prisma.businessMember.findFirst({
+        where: {
+          businessId: schedule.businessId,
+          userId: user.userId,
+          isActive: true,
+        },
+      });
+      if (!member) {
+        socket.emit('error', { message: 'Cannot join schedule room' });
+        return false;
+      }
+      socket.join(`schedule_${scheduleId}`);
+      logger.debug('User joined schedule room', {
+        operation: 'socket_join_schedule',
+        scheduleId,
+        userId: user.userId,
+      });
+      return true;
+    } catch (error: unknown) {
+      await logger.error('join_schedule failed', {
+        operation: 'socket_join_schedule_error',
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      socket.emit('error', { message: 'Cannot join schedule room' });
+      return false;
+    }
   }
 
   private async handleNewMessage(socket: SocketWithData, message: ChatMessage) {
@@ -448,6 +586,12 @@ export class ChatSocketService {
     const user = socket.data.user as AuthenticatedSocket;
     
     try {
+      const conversationId = await this.assertMessageConversationMember(messageId, user.userId);
+      if (!conversationId) {
+        socket.emit('error', { message: 'Not a member of this conversation' });
+        return;
+      }
+
       // Save read receipt to database
       const readReceipt = await prisma.readReceipt.upsert({
         where: {
@@ -517,7 +661,6 @@ export class ChatSocketService {
   private handleDisconnect(socket: SocketWithData) {
     const user = this.socketUsers.get(socket.id);
     if (user) {
-      this.userSockets.delete(user.userId);
       this.socketUsers.delete(socket.id);
       logger.info('User disconnected from socket', {
         operation: 'socket_user_disconnected',
@@ -546,17 +689,11 @@ export class ChatSocketService {
   }
 
   public broadcastToUser(userId: string, event: string, data: Record<string, unknown>) {
-    const socketId = this.userSockets.get(userId);
-    if (socketId) {
-      this.io.to(socketId).emit(event, data);
-    }
+    this.io.to(`user_${userId}`).emit(event, data);
   }
 
   public broadcastNotification(userId: string, notification: NotificationEvent) {
-    const socketId = this.userSockets.get(userId);
-    if (socketId) {
-      this.io.to(socketId).emit('new_notification', notification);
-    }
+    this.io.to(`user_${userId}`).emit('new_notification', notification);
   }
 
   public broadcastNotificationToMultipleUsers(userIds: string[], notification: NotificationEvent) {
@@ -566,24 +703,22 @@ export class ChatSocketService {
   }
 
   public broadcastNotificationUpdate(userId: string, notificationId: string, updates: Record<string, unknown>) {
-    const socketId = this.userSockets.get(userId);
-    if (socketId) {
-      this.io.to(socketId).emit('notification_updated', {
-        id: notificationId,
-        ...updates
-      });
-    }
+    this.io.to(`user_${userId}`).emit('notification_updated', {
+      id: notificationId,
+      ...updates,
+    });
   }
 
   public broadcastNotificationDelete(userId: string, notificationId: string) {
-    const socketId = this.userSockets.get(userId);
-    if (socketId) {
-      this.io.to(socketId).emit('notification_deleted', { id: notificationId });
-    }
+    this.io.to(`user_${userId}`).emit('notification_deleted', { id: notificationId });
   }
 
   public getConnectedUsers(): string[] {
-    return Array.from(this.userSockets.keys());
+    const ids = new Set<string>();
+    for (const u of this.socketUsers.values()) {
+      ids.add(u.userId);
+    }
+    return Array.from(ids);
   }
 
   // ============================================================================
@@ -695,18 +830,16 @@ export class ChatSocketService {
   }
 
   /**
-   * Join user to business and schedule rooms for scheduling updates
+   * Join user to business and schedule rooms for scheduling updates (membership-checked).
    */
-  public joinSchedulingRooms(socket: SocketWithData, businessId: string, scheduleId?: string) {
-    socket.join(`business_${businessId}`);
-    if (scheduleId) {
-      socket.join(`schedule_${scheduleId}`);
+  public async joinSchedulingRooms(socket: SocketWithData, businessId: string, scheduleId?: string): Promise<void> {
+    const joinedBusiness = await this.joinBusinessRoomIfMember(socket, businessId);
+    if (!joinedBusiness) {
+      return;
     }
-    logger.debug('User joined scheduling rooms', {
-      operation: 'socket_join_scheduling',
-      businessId,
-      scheduleId
-    });
+    if (scheduleId) {
+      await this.joinScheduleRoomIfMember(socket, scheduleId);
+    }
   }
 
   // ============================================================================
@@ -720,6 +853,52 @@ export class ChatSocketService {
   ) {
     const payload = { ...data, timestamp: new Date().toISOString() };
     this.broadcastToUser(userId, event, payload);
+  }
+
+  /**
+   * When SOCKET_IO_REDIS_URL or REDIS_URL is set, attach the official Redis adapter so
+   * room broadcasts work across multiple server instances (e.g. scaled Cloud Run).
+   * If unset or connection fails, the server continues with the default in-memory adapter.
+   */
+  public async attachRedisAdapterIfConfigured(): Promise<void> {
+    const redisUrl = (process.env.SOCKET_IO_REDIS_URL || process.env.REDIS_URL || '').trim();
+    if (!redisUrl) {
+      await logger.debug('Socket.IO cluster adapter skipped (no SOCKET_IO_REDIS_URL / REDIS_URL)', {
+        operation: 'socket_io_adapter_skipped',
+      });
+      return;
+    }
+
+    try {
+      const { createClient } = await import('redis');
+      const { createAdapter } = await import('@socket.io/redis-adapter');
+
+      const pubClient = createClient({ url: redisUrl });
+      const subClient = pubClient.duplicate();
+
+      const logRedisErr = (channel: 'pub' | 'sub', err: Error) => {
+        void logger.error('Redis client error (Socket.IO adapter)', {
+          operation: 'socket_io_redis_client_error',
+          channel,
+          error: { message: err.message, stack: err.stack },
+        });
+      };
+      pubClient.on('error', (err: Error) => logRedisErr('pub', err));
+      subClient.on('error', (err: Error) => logRedisErr('sub', err));
+
+      await Promise.all([pubClient.connect(), subClient.connect()]);
+      this.io.adapter(createAdapter(pubClient, subClient));
+
+      await logger.info('Socket.IO Redis adapter attached for multi-instance broadcasts', {
+        operation: 'socket_io_redis_adapter_ready',
+      });
+    } catch (error: unknown) {
+      const err = error as Error;
+      await logger.error('Socket.IO Redis adapter failed; continuing with in-memory adapter', {
+        operation: 'socket_io_redis_adapter_failed',
+        error: { message: err.message, stack: err.stack },
+      });
+    }
   }
 }
 

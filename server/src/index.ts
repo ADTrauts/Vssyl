@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { createServer } from 'http';
 import { execSync } from 'child_process';
@@ -48,7 +49,7 @@ import {
   sendWelcomeEmail 
 } from './services/emailService';
 import { startCleanupJob } from './services/cleanupService';
-import { initializeChatSocketService } from './services/chatSocketService';
+import { initializeChatSocketService, getChatSocketService } from './services/chatSocketService';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
@@ -88,6 +89,7 @@ import pricingRouter from './routes/pricing';
 import featureGatingRouter from './routes/featureGating';
 import featuresRouter from './routes/features';
 import paymentRouter from './routes/payment';
+import { handleWebhook } from './controllers/paymentController';
 import developerPortalRouter from './routes/developerPortal';
 import locationRouter from './routes/location';
 import adminRouter from './routes/admin';
@@ -167,6 +169,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
+
+// Stripe webhook MUST use raw body for signature verification and MUST NOT pass JWT auth.
+// Registered before express.json() so the body is not parsed as JSON.
+app.post(
+  '/api/payment/webhook',
+  express.raw({ type: 'application/json' }),
+  asyncHandler(handleWebhook)
+);
 
 app.use(express.json());
 app.use(passport.initialize() as express.RequestHandler);
@@ -740,32 +750,6 @@ app.post('/api/auth/_log', (req: Request, res: Response) => {
   res.status(200).json({ success: true });
 });
 
-// Temporary endpoint to list users (for debugging)
-app.get('/api/debug/users', async (req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        userNumber: true,
-        role: true,
-        emailVerified: true,
-        createdAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-    
-    res.json({
-      count: users.length,
-      users: users
-    });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
-  }
-});
-
 // JWT authentication middleware - using imported function from middleware/auth
 
 // Temporarily disabled due to type conflicts
@@ -789,16 +773,6 @@ app.get('/api/profile', authenticateJWT, (req, res) => {
 // app.get('/api/admin', authenticateJWT, requireRole('ADMIN'), (req, res) => {
 //   res.json({ message: 'Welcome, admin!' });
 // });
-
-// Public health endpoint
-app.get('/api/health', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    service: 'vssyl-server',
-    version: '1.0.0'
-  });
-});
 
 // Health check routes (no authentication required)
 app.use('/api', healthRouter);
@@ -862,7 +836,17 @@ app.use('/api/ai-conversations', authenticateJWT, aiConversationsRouter);
 app.use('/api/ai/queries', authenticateJWT, aiQueriesRouter);
 app.use('/api/usage', authenticateJWT, usageRouter);
 app.use('/api/profile-photos', profilePhotosRouter);
-app.use('/api/admin-setup', adminSetupRouter);
+{
+  const enableAdminSetup = process.env.ENABLE_ADMIN_SETUP_ROUTES === 'true';
+  const setupSecret = process.env.ADMIN_SETUP_SECRET?.trim() ?? '';
+  if (enableAdminSetup && setupSecret.length >= 16) {
+    app.use('/api/admin-setup', adminSetupRouter);
+  } else if (enableAdminSetup && setupSecret.length < 16) {
+    void logger.warn('ENABLE_ADMIN_SETUP_ROUTES is set but ADMIN_SETUP_SECRET is missing or shorter than 16 characters; /api/admin-setup not mounted', {
+      operation: 'admin_setup_misconfigured',
+    });
+  }
+}
 app.use('/api/content-reports', contentReportsRouter);
 app.use('/api/admin/seed', authenticateJWT, adminSeedModulesRouter);
 app.use('/api', moduleAIContextRouter);
@@ -919,7 +903,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 app.use('/api/debug', debugModulesRouter); // Debug endpoints (no auth for troubleshooting)
 app.use('/api/debug/database', debugDatabaseRouter); // Database debug endpoints
-app.use('/api/debug/business-tier', debugBusinessTierRouter); // Business tier debug
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG_BUSINESS_TIER === 'true') {
+  app.use('/api/debug/business-tier', debugBusinessTierRouter); // Admin JWT + ADMIN role only
+}
 app.use('/api/admin-override', adminOverrideRouter); // Admin override endpoints (requires ADMIN role)
 app.use('/api/admin/hr-setup', authenticateJWT, adminHRSetupRouter); // Admin HR setup endpoints (manual seeding & diagnostics)
 app.use('/api/admin/fix-hr', authenticateJWT, adminFixHRRouter); // Emergency HR fix endpoints (migrations & raw DB access)
@@ -980,226 +966,81 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json(response);
 });
 
-// Run database migrations in production
-if (process.env.NODE_ENV === 'production') {
-  // Wrap in async IIFE to use await
-  (async () => {
-    console.log('🔄 Running database migrations...');
-    console.log('DATABASE_MIGRATE_URL:', process.env.DATABASE_MIGRATE_URL ? 'SET' : 'NOT SET');
-    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-    
-    try {
-    const { execSync } = require('child_process');
-    const path = require('path');
-    
-    // CRITICAL: Build Prisma schema from modules BEFORE running migrations
-    // This ensures all migrations are available and schema is up to date
-    console.log('🔨 Building Prisma schema from modules...');
-    const projectRoot = path.join(__dirname, '../..');
-    const buildScriptPath = path.join(projectRoot, 'scripts/build-prisma-schema.js');
-    
-    try {
-      console.log('Build script path:', buildScriptPath);
-      console.log('Project root:', projectRoot);
-      execSync(`node ${buildScriptPath}`, {
-        stdio: 'inherit',
-        env: process.env,
-        cwd: projectRoot
-      });
-      console.log('✅ Prisma schema built successfully');
-    } catch (buildError) {
-      console.error('⚠️  Schema build failed:', buildError);
-      console.error('⚠️  Continuing with migrations anyway (schema may be pre-built in Docker image)');
-      // Continue anyway - schema might be pre-built in Docker image
-    }
-    
-    // Use migration URL with connection pool parameters
-    // Migrations need their own connection pool to avoid conflicts with Prisma client
-    let migrationUrl = process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL;
-    if (!migrationUrl) {
-      throw new Error('DATABASE_URL is required for migrations');
-    }
-    
-    // Ensure migration URL has connection pool parameters
-    // Use a lower connection limit for migrations (5) to avoid exhausting the pool
-    // The Prisma client uses 20 connections, so migrations get 5 dedicated connections
-    if (!migrationUrl.includes('connection_limit=')) {
-      const hasParams = migrationUrl.includes('?');
-      const separator = hasParams ? '&' : '?';
-      migrationUrl = `${migrationUrl}${separator}connection_limit=5&pool_timeout=30&connect_timeout=60`;
-    } else {
-      // If it already has connection_limit, ensure it's reasonable for migrations
-      // Replace with a lower limit to avoid conflicts
-      migrationUrl = migrationUrl.replace(/connection_limit=\d+/, 'connection_limit=5');
-      if (!migrationUrl.includes('pool_timeout=')) {
-        migrationUrl += '&pool_timeout=30';
-      }
-      if (!migrationUrl.includes('connect_timeout=')) {
-        migrationUrl += '&connect_timeout=60';
-      }
-    }
-    
-    console.log('Using migration URL:', migrationUrl ? 'SET' : 'NOT SET');
-    console.log('Migration URL length:', migrationUrl ? migrationUrl.length : 0);
-    
-    // Disconnect Prisma client before running migrations to free up connections
-    // This prevents connection pool exhaustion
-    try {
-      console.log('🔌 Disconnecting Prisma client before migrations...');
-      await prisma.$disconnect();
-      console.log('✅ Prisma client disconnected');
-    } catch (disconnectError) {
-      console.warn('⚠️  Could not disconnect Prisma client (may not be connected):', disconnectError instanceof Error ? disconnectError.message : String(disconnectError));
-    }
-    
-    const migrationEnv = {
-      ...process.env,
-      DATABASE_URL: migrationUrl
-    };
-
-    // Verify migrations directory exists
-    const migrationsDir = path.join(projectRoot, 'prisma/migrations');
-    const schemaPath = path.join(projectRoot, 'prisma/schema.prisma');
-    const fs = require('fs');
-    
-    if (!fs.existsSync(schemaPath)) {
-      console.error('❌ Prisma schema not found:', schemaPath);
-      throw new Error(`Prisma schema not found: ${schemaPath}`);
-    }
-    console.log('✅ Prisma schema found:', schemaPath);
-    
-    if (!fs.existsSync(migrationsDir)) {
-      console.error('❌ Migrations directory not found:', migrationsDir);
-      throw new Error(`Migrations directory not found: ${migrationsDir}`);
-    }
-    
-    const migrationFiles = fs.readdirSync(migrationsDir).filter((f: string) => 
-      fs.statSync(path.join(migrationsDir, f)).isDirectory()
-    );
-    console.log(`📁 Found ${migrationFiles.length} migration directories`);
-    if (migrationFiles.length === 0) {
-      console.warn('⚠️  No migrations found - this might be expected for a fresh database');
-    }
-    
-    console.log('🔄 Applying database migrations...');
-    console.log('Working directory:', projectRoot);
-    console.log('Prisma schema:', schemaPath);
-    console.log('Prisma migrations directory:', migrationsDir);
-    console.log('📁 Migrations to apply:', migrationFiles.join(', ') || '(none)');
-
-    // Run migrations (no resolve step - we only have baseline after clean DB reset)
-    // On a fresh DB this applies 20260126230000_initial_schema_baseline
-    try {
-      // Capture stdout and stderr to see actual Prisma errors
-      const output = execSync(`npx prisma migrate deploy --schema ${schemaPath}`, {
-        stdio: 'pipe',
-        encoding: 'utf-8',
-        env: migrationEnv,
-        cwd: projectRoot,
-        timeout: 120000
-      });
-      console.log('✅ Database migrations completed successfully');
-      if (output) {
-        console.log('Migration output:', output);
-      }
-    } catch (migrationError: unknown) {
-      const errorMessage = migrationError instanceof Error ? migrationError.message : String(migrationError);
-      const errorStack = migrationError instanceof Error ? migrationError.stack : undefined;
-      
-      // Extract actual Prisma error from execSync error
-      // execSync throws an error with stdout and stderr properties when stdio is 'pipe'
-      const execError = migrationError as { stdout?: string | Buffer; stderr?: string | Buffer; status?: number; signal?: string | null };
-      const prismaOutput = execError.stdout ? String(execError.stdout) : '';
-      const prismaError = execError.stderr ? String(execError.stderr) : '';
-      
-      console.error('❌ Migration command failed after resolution attempt');
-      console.error('Error message:', errorMessage);
-      console.error('Error status:', execError.status);
-      console.error('Error signal:', execError.signal);
-      if (errorStack) {
-        console.error('Error stack:', errorStack);
-      }
-      if (prismaOutput) {
-        console.error('=== Prisma stdout ===');
-        console.error(prismaOutput);
-        console.error('=== End stdout ===');
-      }
-      if (prismaError) {
-        console.error('=== Prisma stderr ===');
-        console.error(prismaError);
-        console.error('=== End stderr ===');
-      }
-      // Also log full error for debugging
-      console.error('Full error keys:', Object.keys(execError));
-      
-      // Log to structured logger for better visibility in Cloud Logging
-      logger.error('Database migration failed on startup', {
-        operation: 'migration_startup_failed',
-        error: {
-          message: errorMessage,
-          stack: errorStack
-        },
-        prismaOutput: prismaOutput || 'No stdout',
-        prismaError: prismaError || 'No stderr',
-        status: execError.status,
-        signal: execError.signal,
-        environment: process.env.NODE_ENV,
-        databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET'
-      }).catch(() => {
-        // Ignore logger errors
-      });
-      // Don't throw - let server start anyway so we can investigate
-    } finally {
-      // Reconnect Prisma client after migrations (whether they succeeded or failed)
-      try {
-        console.log('🔌 Reconnecting Prisma client after migrations...');
-        await prisma.$connect();
-        console.log('✅ Prisma client reconnected');
-      } catch (reconnectError) {
-        console.warn('⚠️  Could not reconnect Prisma client:', reconnectError instanceof Error ? reconnectError.message : String(reconnectError));
-        // This is okay - Prisma will connect on first query
-      }
-    }
-  } catch (error) {
-    console.error('❌ Database migration failed:', error);
-    console.error('⚠️  Server will start but database may be out of sync');
-    console.error('⚠️  Please check logs and run migrations manually if needed');
-    
-    // Ensure Prisma client is connected even if migrations failed
-    try {
-      await prisma.$connect();
-    } catch (reconnectError) {
-      // Ignore - Prisma will connect on first query
-    }
-    // Don't exit - let the server start so we can investigate the migration issue
-    // But log the error clearly so it's visible in Cloud Run logs
+async function runProductionStartupMigrations(): Promise<void> {
+  if (process.env.NODE_ENV !== 'production') {
+    return;
   }
-  })(); // End async IIFE
+
+  console.log('🔄 Running production startup migrations...');
+
+  const projectRoot = path.join(__dirname, '../..');
+  const buildScriptPath = path.join(projectRoot, 'scripts/build-prisma-schema.js');
+  const schemaPath = path.join(projectRoot, 'prisma/schema.prisma');
+  const migrationsDir = path.join(projectRoot, 'prisma/migrations');
+
+  if (!fs.existsSync(buildScriptPath)) {
+    throw new Error(`Prisma build script not found: ${buildScriptPath}`);
+  }
+  if (!fs.existsSync(schemaPath)) {
+    throw new Error(`Prisma schema not found: ${schemaPath}`);
+  }
+  if (!fs.existsSync(migrationsDir)) {
+    throw new Error(`Prisma migrations directory not found: ${migrationsDir}`);
+  }
+
+  const migrationDirectories = fs.readdirSync(migrationsDir).filter((entry: string) =>
+    fs.statSync(path.join(migrationsDir, entry)).isDirectory()
+  );
+
+  console.log(`📁 Found ${migrationDirectories.length} migration directories`);
+  console.log('🔨 Building Prisma schema from modules...');
+  execSync(`node "${buildScriptPath}"`, {
+    stdio: 'inherit',
+    env: process.env,
+    cwd: projectRoot,
+  });
+
+  let migrationUrl = process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL;
+  if (!migrationUrl) {
+    throw new Error('DATABASE_URL is required for startup migrations');
+  }
+
+  if (!migrationUrl.includes('connection_limit=')) {
+    const separator = migrationUrl.includes('?') ? '&' : '?';
+    migrationUrl = `${migrationUrl}${separator}connection_limit=5&pool_timeout=30&connect_timeout=60`;
+  } else {
+    migrationUrl = migrationUrl.replace(/connection_limit=\d+/, 'connection_limit=5');
+    if (!migrationUrl.includes('pool_timeout=')) {
+      migrationUrl += '&pool_timeout=30';
+    }
+    if (!migrationUrl.includes('connect_timeout=')) {
+      migrationUrl += '&connect_timeout=60';
+    }
+  }
+
+  await prisma.$disconnect().catch(() => undefined);
+
+  execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      DATABASE_URL: migrationUrl,
+    },
+    cwd: projectRoot,
+    timeout: 120000,
+  });
+
+  await prisma.$connect();
+  await prisma.$queryRaw`SELECT 1`;
+  console.log('✅ Production migrations and database readiness checks passed');
 }
 
 // Initialize HTTP server
 const httpServer = createServer(app);
 
-// Initialize WebSocket service
-initializeChatSocketService(httpServer);
-
-// Create HTTP server and initialize WebSocket service
-const server = httpServer.listen(port, () => {
-  console.log(`About to listen on port ${port}`);
-}).on('listening', async () => {
+async function handleServerListening(): Promise<void> {
   console.log(`Server listening on port ${port}`);
-  
-  // Run pending migrations on startup (auto-repair)
-  if (process.env.NODE_ENV === 'production') {
-    try {
-      console.log('🔄 Running pending migrations...');
-      await prisma.$executeRawUnsafe(`SELECT 1`);
-      console.log('✅ Database connection verified');
-    } catch (e) {
-      console.error('⚠️  Database connection warning:', e);
-    }
-  }
-  
+
   // Seed modules if they don't exist (non-blocking)
   try {
     await seedHRModuleOnStartup();
@@ -1209,14 +1050,14 @@ const server = httpServer.listen(port, () => {
   } catch (e) {
     console.error('Module seed failed (non-critical):', e);
   }
-  
+
   // Register built-in modules if registry is empty (non-blocking)
   try {
     await registerBuiltInModulesOnStartup();
   } catch (e) {
     console.error('Module registration startup failed (non-critical):', e);
   }
-  
+
   // Run reminder dispatcher every minute (MVP)
   try {
     cron.schedule('* * * * *', async () => {
@@ -1264,8 +1105,6 @@ const server = httpServer.listen(port, () => {
   }
 
   // Process overage billing daily at 3am
-  // This checks all subscriptions and processes overage for any whose billing period has ended
-  // This handles both monthly and yearly subscriptions correctly
   try {
     cron.schedule('0 3 * * *', async () => {
       console.log('🔄 Running daily overage billing processing...');
@@ -1288,11 +1127,10 @@ const server = httpServer.listen(port, () => {
   }
 
   // Sync AI provider usage/expense data daily at 4am
-  // This pulls latest data from OpenAI and Anthropic APIs
   try {
     const { ProviderSyncService } = await import('./services/aiProviderServices/providerSyncService');
     const providerSyncService = new ProviderSyncService();
-    
+
     cron.schedule('0 4 * * *', async () => {
       console.log('🔄 Running daily AI provider data sync...');
       try {
@@ -1305,16 +1143,53 @@ const server = httpServer.listen(port, () => {
       timezone: 'America/New_York'
     });
     console.log('✅ Daily AI provider data sync job scheduled (4am daily)');
-    
-    // Also run initial sync on startup (non-blocking)
+
     providerSyncService.syncProviderData().catch(error => {
       console.error('Initial provider sync failed (non-critical):', error);
     });
   } catch (e) {
     console.error('Failed to schedule AI provider sync job:', e);
   }
-}).on('error', (err) => {
-  console.error('Server startup error:', err);
+}
+
+async function bootstrap(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      await runProductionStartupMigrations();
+    } catch (error) {
+      const err = error as Error;
+      await logger.error('Production startup blocked by failed migrations or readiness checks', {
+        operation: 'startup_readiness_failed',
+        error: {
+          message: err.message,
+          stack: err.stack,
+        },
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  initializeChatSocketService(httpServer);
+  await getChatSocketService().attachRedisAdapterIfConfigured();
+
+  httpServer
+    .listen(port, () => {
+      console.log(`About to listen on port ${port}`);
+    })
+    .on('listening', () => {
+      handleServerListening().catch((error) => {
+        console.error('Post-listen initialization failed:', error);
+      });
+    })
+    .on('error', (err) => {
+      console.error('Server startup error:', err);
+      process.exit(1);
+    });
+}
+
+bootstrap().catch((error) => {
+  console.error('Fatal startup error:', error);
+  process.exit(1);
 });
 
 export default app;

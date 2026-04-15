@@ -79,10 +79,12 @@ describe('Admin Portal - Content Moderation Integration', () => {
         })
         .expect(200);
 
-      expect(approveResponse.body).toHaveProperty('status', 'approved');
-      expect(approveResponse.body).toHaveProperty('action', 'remove');
-      expect(approveResponse.body).toHaveProperty('reviewedBy', adminUser.id);
-      expect(approveResponse.body.reviewedAt).toBeDefined();
+      expect(approveResponse.body).toMatchObject({ success: true });
+      const approved = approveResponse.body.data.report as ContentReport;
+      expect(approved).toHaveProperty('status', 'approved');
+      expect(approved).toHaveProperty('action', 'remove');
+      expect(approved).toHaveProperty('reviewedBy', adminUser.id);
+      expect(approved.reviewedAt).toBeDefined();
 
       // Step 4: Verify report is updated in database
       const updatedReport = await prisma.contentReport.findUnique({
@@ -119,8 +121,10 @@ describe('Admin Portal - Content Moderation Integration', () => {
         })
         .expect(200);
 
-      expect(rejectResponse.body).toHaveProperty('status', 'rejected');
-      expect(rejectResponse.body).toHaveProperty('action', 'no_action');
+      expect(rejectResponse.body).toMatchObject({ success: true });
+      const rejected = rejectResponse.body.data.report as ContentReport;
+      expect(rejected).toHaveProperty('status', 'rejected');
+      expect(rejected).toHaveProperty('action', 'no_action');
 
       // Verify in database
       const rejectedReport = await prisma.contentReport.findUnique({

@@ -1,8 +1,51 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcrypt';
+import { logger } from '../lib/logger';
 
 const router: express.Router = express.Router();
+
+/**
+ * One-time / emergency bootstrap routes. Mounted only when ENABLE_ADMIN_SETUP_ROUTES=true
+ * and ADMIN_SETUP_SECRET is set (see index.ts). Every request must present the secret.
+ */
+function requireAdminSetupSecret(req: Request, res: Response, next: NextFunction): void {
+  const expected = process.env.ADMIN_SETUP_SECRET?.trim() ?? '';
+  if (expected.length < 16) {
+    res.status(503).json({ success: false, error: 'Admin setup is not configured' });
+    return;
+  }
+
+  const headerVal = req.headers['x-admin-setup-secret'];
+  const fromHeader = typeof headerVal === 'string' ? headerVal : Array.isArray(headerVal) ? headerVal[0] : '';
+  const fromBody =
+    req.body && typeof req.body === 'object' && typeof (req.body as { setupSecret?: string }).setupSecret === 'string'
+      ? (req.body as { setupSecret: string }).setupSecret
+      : '';
+  const provided = fromHeader || fromBody;
+
+  if (!provided) {
+    res.status(401).json({ success: false, error: 'Setup secret required (X-Admin-Setup-Secret header or setupSecret in body)' });
+    return;
+  }
+
+  const hashA = crypto.createHash('sha256').update(provided, 'utf8').digest();
+  const hashB = crypto.createHash('sha256').update(expected, 'utf8').digest();
+  if (!crypto.timingSafeEqual(hashA, hashB)) {
+    void logger.logSecurityEvent('admin_setup_secret_invalid', 'medium', {
+      operation: 'admin_setup_auth_failed',
+      path: req.path,
+      ipAddress: req.ip,
+    });
+    res.status(403).json({ success: false, error: 'Invalid setup secret' });
+    return;
+  }
+
+  next();
+}
+
+router.use(requireAdminSetupSecret);
 
 // Special endpoint to create Andrew's admin account in production
 // This is a one-time setup endpoint that should be removed after use
@@ -46,7 +89,7 @@ router.post('/create-andrew-admin', async (req: Request, res: Response) => {
         });
       }
     } else {
-      // Create new admin user
+      // Create new admin user (password is not returned — use forgot-password / reset flow)
       const password = 'VssylAdmin2025!';
       const hashedPassword = await bcrypt.hash(password, 10);
       
@@ -62,15 +105,11 @@ router.post('/create-andrew-admin', async (req: Request, res: Response) => {
 
       return res.json({
         success: true,
-        message: 'Admin user created successfully',
+        message: 'Admin user created successfully. Set a new password using the normal password reset flow; credentials are not returned in API responses.',
         user: {
           email: newUser.email,
           name: newUser.name,
           role: newUser.role
-        },
-        credentials: {
-          email: newUser.email,
-          password: password
         }
       });
     }
