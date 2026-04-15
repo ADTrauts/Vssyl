@@ -43,3 +43,10 @@ Vssyl is a revolutionary digital workspace platform - a modular ERP/LRM platform
 - **Install dependencies**: `pnpm install`
 - **Build all packages**: `pnpm build`
 - **Run tests**: `pnpm test`
+
+## Google Cloud Build vs GitHub Actions
+
+- **GitHub Actions** (`.github/workflows/ci.yml`) runs on pushes and pull requests to this repo (type-check, tests, Postgres migrations in CI).
+- **Google Cloud Build** is configured in **GCP** (Cloud Build → Triggers). It usually runs only for branches that match the trigger (often **`main`**). Pushing a **feature branch** may run Actions but **not** Cloud Build until you merge to `main` or widen the trigger.
+- If GitHub shows *repository moved*, set `origin` to the canonical URL: `https://github.com/ADTrauts/Vssyl.git` (`git remote set-url origin <url>`).
+- **Manual deploy build** from repo root: `gcloud builds submit --config cloudbuild.yaml .` (with `gcloud` authenticated to the correct project).
