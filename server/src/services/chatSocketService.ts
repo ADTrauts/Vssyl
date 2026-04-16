@@ -526,7 +526,18 @@ export class ChatSocketService {
     const user = socket.data.user as AuthenticatedSocket;
     
     try {
-      // Save reaction to database
+      if (!data?.messageId || typeof data.messageId !== 'string' || !data?.emoji || typeof data.emoji !== 'string') {
+        socket.emit('error', { message: 'Invalid reaction payload' });
+        return;
+      }
+
+      const conversationId = await this.assertMessageConversationMember(data.messageId, user.userId);
+      if (!conversationId) {
+        socket.emit('error', { message: 'Not a member of this conversation' });
+        return;
+      }
+
+      // Save reaction to database only after membership is proven (A-015 / F-017)
       const reaction = await prisma.messageReaction.upsert({
         where: {
           messageId_userId_emoji: {
@@ -550,26 +561,17 @@ export class ChatSocketService {
         }
       });
 
-      // Get message to find conversation
-      const message = await prisma.message.findUnique({
-        where: { id: data.messageId },
-        select: { conversationId: true }
+      this.io.to(`conversation_${conversationId}`).emit('message_reaction', {
+        messageId: data.messageId,
+        reaction: {
+          id: reaction.id,
+          messageId: reaction.messageId,
+          userId: reaction.userId,
+          emoji: reaction.emoji,
+          createdAt: reaction.createdAt,
+          user: reaction.user
+        }
       });
-
-      if (message) {
-        // Broadcast reaction to conversation
-        this.io.to(`conversation_${message.conversationId}`).emit('message_reaction', {
-          messageId: data.messageId,
-          reaction: {
-            id: reaction.id,
-            messageId: reaction.messageId,
-            userId: reaction.userId,
-            emoji: reaction.emoji,
-            createdAt: reaction.createdAt,
-            user: reaction.user
-          }
-        });
-      }
     } catch (error) {
       await logger.error('Failed to handle message reaction', {
         operation: 'socket_handle_reaction',
