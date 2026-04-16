@@ -874,6 +874,20 @@ export async function completeTask(req: Request, res: Response): Promise<void> {
 
     const { id } = req.params;
 
+    const existing = await prisma.task.findFirst({
+      where: {
+        id,
+        trashedAt: null,
+        OR: [{ createdById: userId }, { assignedToId: userId }],
+      },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
     const task = await prisma.task.update({
       where: { id },
       data: {
@@ -925,6 +939,20 @@ export async function reopenTask(req: Request, res: Response): Promise<void> {
 
     const { id } = req.params;
     const { status } = req.body;
+
+    const existing = await prisma.task.findFirst({
+      where: {
+        id,
+        trashedAt: null,
+        OR: [{ createdById: userId }, { assignedToId: userId }],
+      },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
 
     const task = await prisma.task.update({
       where: { id },
