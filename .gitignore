@@ -24,8 +24,10 @@ server/.env
 .env.backup.*
 vssyl-storage-key.json
 
-# Documentation folders
-docs/
+# Documentation folders (local by default; audit source-of-truth is versioned for the team)
+docs/**
+!docs/plans/
+!docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md
 memory-bank/
 
 # Upload files
