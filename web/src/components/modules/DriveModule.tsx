@@ -1501,9 +1501,6 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     const handleItemRestored = async (event: Event) => {
       const customEvent = event as CustomEvent;
       const itemData = customEvent.detail;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/939a7e45-5358-479f-aafd-320e00e09c1f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DriveModule.tsx:1477',message:'itemRestored event received',data:{moduleId:itemData?.moduleId,id:itemData?.id,isDrive:itemData?.moduleId==='drive'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       if (itemData?.moduleId === 'drive' && itemData?.id) {
         // Reload files and folders to show the restored item
         await loadFilesAndFolders();

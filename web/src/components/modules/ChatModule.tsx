@@ -48,9 +48,6 @@ export default function ChatModule({
     const handleItemRestored = async (event: Event) => {
       const customEvent = event as CustomEvent;
       const itemData = customEvent.detail;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/939a7e45-5358-479f-aafd-320e00e09c1f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ChatModule.tsx:45',message:'itemRestored event received',data:{moduleId:itemData?.moduleId,id:itemData?.id,isChat:itemData?.moduleId==='chat'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       if ((itemData?.moduleId === 'chat' || itemData?.moduleId === 'ai-chat') && itemData?.id) {
         // Reload conversations to show the restored item
         await loadConversations();

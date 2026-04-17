@@ -100,10 +100,6 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
     // Find the item being restored to get its metadata
     const itemToRestore = trashedItems.find(item => item.id === id);
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/939a7e45-5358-479f-aafd-320e00e09c1f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'GlobalTrashContext.tsx:95',message:'restoreItem called',data:{id,itemToRestore:itemToRestore?{id:itemToRestore.id,moduleId:itemToRestore.moduleId,type:itemToRestore.type}:null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    
     try {
       const response = await fetch(`/api/trash/restore/${id}`, {
         method: 'POST',
@@ -116,16 +112,8 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to restore item');
       }
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/939a7e45-5358-479f-aafd-320e00e09c1f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'GlobalTrashContext.tsx:110',message:'restore API success',data:{id,moduleId:itemToRestore?.moduleId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-      
       // Dispatch generic itemRestored event for all modules
       if (itemToRestore) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/939a7e45-5358-479f-aafd-320e00e09c1f',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'GlobalTrashContext.tsx:115',message:'Dispatching itemRestored event',data:{id:itemToRestore.id,moduleId:itemToRestore.moduleId,type:itemToRestore.type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
         // Dispatch generic event that all modules can listen to
         window.dispatchEvent(new CustomEvent('itemRestored', {
           detail: {

@@ -94,7 +94,7 @@ export const logsApi = {
 
     queryParams.append('format', format);
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://vssyl-server-235369681725.us-central1.run.app'}/api/admin/logs/export?${queryParams.toString()}`, {
+    const response = await fetch(`/api/admin/logs/export?${queryParams.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
