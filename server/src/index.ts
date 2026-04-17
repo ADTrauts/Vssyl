@@ -123,7 +123,7 @@ import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
 import adminFixSubscriptionsRouter from './routes/admin-fix-subscriptions';
 import aiProviderUsageRouter from './routes/ai-provider-usage';
 import placeRouter from './routes/place';
-import { authenticateJWT } from './middleware/auth';
+import { authenticateJWT, type AuthenticatedRequest } from './middleware/auth';
 import { logger } from './lib/logger';
 
 
@@ -761,6 +761,47 @@ app.post('/api/auth/_log', (req: Request, res: Response) => {
 // Example of a protected route
 app.get('/api/profile', authenticateJWT, (req, res) => {
   res.json({ user: req.user });
+});
+
+app.put('/api/profile', authenticateJWT, async (req, res) => {
+  try {
+    const auth = req as AuthenticatedRequest;
+    const userId = auth.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const rawName = (req.body as { name?: unknown })?.name;
+    if (typeof rawName !== 'string' || !rawName.trim()) {
+      return res.status(400).json({ message: 'Name is required' });
+    }
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { name: rawName.trim() },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+        emailVerified: true,
+        image: true,
+        stripeCustomerId: true,
+        createdAt: true,
+        updatedAt: true,
+        userNumber: true,
+        countryId: true,
+        regionId: true,
+        townId: true,
+        locationDetectedAt: true,
+        locationUpdatedAt: true,
+        lastActiveAt: true,
+      },
+    });
+    res.json({ user: updated });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('PUT /api/profile failed:', err.message);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
 });
 
 // Example of an admin-only route
