@@ -44,14 +44,12 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     }
 
     if (!session) {
-      console.log('No session found, redirecting to login');
       router.push('/auth/login');
       return;
     }
 
     if (session.user.role !== 'ADMIN') {
-      console.log('User role is not ADMIN:', session.user.role);
-      router.push('/auth/login');
+      router.push('/forbidden');
       return;
     }
   }, [session, status, router]);
