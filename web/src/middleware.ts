@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 /**
  * - /admin-portal/*: requires session; non-ADMIN → /forbidden; unauthenticated → sign-in.
- * - /profile/*: requires session (unauthenticated → sign-in with callbackUrl).
+ * - /profile/*: requires session.
+ * - /business/*: requires session (create, workspace, profile, etc.).
  */
 export default withAuth(
   function middleware(req) {
@@ -29,5 +30,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin-portal/:path*', '/profile/:path*'],
+  matcher: ['/admin-portal/:path*', '/profile/:path*', '/business/:path*'],
 };
