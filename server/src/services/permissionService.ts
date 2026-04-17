@@ -493,6 +493,45 @@ export class PermissionService {
   }
 
   /**
+   * Derive module/category rollups from this business's permission sets only
+   * (avoids mixing global Permission catalog rows into a business-scoped summary).
+   */
+  private aggregateFromBusinessPermissionSets(
+    sets: { permissions: Prisma.JsonValue }[]
+  ): {
+    modulesWithPermissions: string[];
+    permissionDistribution: Record<string, number>;
+  } {
+    const moduleIds = new Set<string>();
+    const distribution: Record<string, number> = {};
+
+    for (const set of sets) {
+      const raw = set.permissions;
+      if (!Array.isArray(raw)) {
+        continue;
+      }
+      for (const entry of raw) {
+        if (!entry || typeof entry !== 'object') {
+          continue;
+        }
+        const o = entry as Record<string, unknown>;
+        const mid = o.moduleId;
+        if (typeof mid === 'string' && mid.length > 0) {
+          moduleIds.add(mid);
+        }
+        const cat = o.category;
+        const key = typeof cat === 'string' && cat.length > 0 ? cat : 'basic';
+        distribution[key] = (distribution[key] || 0) + 1;
+      }
+    }
+
+    return {
+      modulesWithPermissions: [...moduleIds].sort(),
+      permissionDistribution: distribution,
+    };
+  }
+
+  /**
    * Get permission summary for a business
    */
   async getBusinessPermissionSummary(businessId: string): Promise<{
@@ -502,39 +541,27 @@ export class PermissionService {
     modulesWithPermissions: string[];
     permissionDistribution: Record<string, number>;
   }> {
-    const [positions, employees, permissionSets] = await Promise.all([
+    const [positions, employees, permissionSetsCount, permissionSetsRows] = await Promise.all([
       prisma.position.count({ where: { businessId } }),
-      prisma.employeePosition.count({ 
-        where: { businessId, active: true } 
+      prisma.employeePosition.count({
+        where: { businessId, active: true },
       }),
       prisma.permissionSet.count({ where: { businessId } }),
+      prisma.permissionSet.findMany({
+        where: { businessId },
+        select: { permissions: true },
+      }),
     ]);
 
-    // Get unique modules with permissions
-    const permissions = await prisma.permission.findMany({
-      select: { moduleId: true },
-      distinct: ['moduleId'],
-    });
-
-    const modulesWithPermissions = permissions.map(p => p.moduleId);
-
-    // Get permission distribution by category
-    const permissionDistribution = await prisma.permission.groupBy({
-      by: ['category'],
-      _count: { category: true },
-    });
-
-    const distribution: Record<string, number> = {};
-    for (const item of permissionDistribution) {
-      distribution[item.category] = item._count.category;
-    }
+    const { modulesWithPermissions, permissionDistribution } =
+      this.aggregateFromBusinessPermissionSets(permissionSetsRows);
 
     return {
       totalPositions: positions,
       totalEmployees: employees,
-      permissionSets,
+      permissionSets: permissionSetsCount,
       modulesWithPermissions,
-      permissionDistribution: distribution,
+      permissionDistribution,
     };
   }
 

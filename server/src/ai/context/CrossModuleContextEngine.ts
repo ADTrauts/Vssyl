@@ -862,7 +862,11 @@ export class CrossModuleContextEngine {
   /**
    * Get context for a specific module query
    */
-  async getModuleContext(userId: string, moduleId: string): Promise<Record<string, unknown>> {
+  async getModuleContext(
+    userId: string,
+    moduleId: string,
+    businessId?: string
+  ): Promise<Record<string, unknown>> {
     const fullContext = await this.getUserContext(userId);
     
     // Try to use registry-based context fetching first
@@ -881,7 +885,8 @@ export class CrossModuleContextEngine {
           const contextData = await moduleAIContextService.fetchModuleContext(
             moduleId,
             primaryProvider.name,
-            userId
+            userId,
+            businessId ? { businessId } : undefined
           );
 
           return {
@@ -927,7 +932,11 @@ export class CrossModuleContextEngine {
    * Uses the registry to determine which modules are relevant, then fetches only from those
    * This is MUCH faster than querying all modules!
    */
-  async getContextForAIQuery(userId: string, query: string): Promise<Record<string, unknown>> {
+  async getContextForAIQuery(
+    userId: string,
+    query: string,
+    businessId?: string
+  ): Promise<Record<string, unknown>> {
     try {
       // Step 1: Analyze query to find relevant modules (FAST - database lookup)
       const analysis = await moduleAIContextService.analyzeQuery(query, userId);
@@ -955,7 +964,8 @@ export class CrossModuleContextEngine {
               const context = await moduleAIContextService.fetchModuleContext(
                 match.moduleId,
                 provider.providerName,
-                userId
+                userId,
+                businessId ? { businessId } : undefined
               );
 
               moduleContexts[match.moduleId] = {

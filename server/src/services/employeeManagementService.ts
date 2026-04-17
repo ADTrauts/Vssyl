@@ -12,6 +12,17 @@ export interface CustomPermission {
   expiresAt?: Date;
 }
 
+/** Thrown when assignment validation fails with a client-safe status (e.g. 400). */
+export class EmployeeAssignmentValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly httpStatus: number = 400
+  ) {
+    super(message);
+    this.name = 'EmployeeAssignmentValidationError';
+  }
+}
+
 export interface AssignEmployeeData {
   userId: string;
   positionId: string;
@@ -67,6 +78,18 @@ export class EmployeeManagementService {
 
     if (position.businessId !== data.businessId) {
       throw new Error('Position does not belong to the specified business');
+    }
+
+    const assigneeMembership = await prisma.businessMember.findUnique({
+      where: {
+        businessId_userId: { businessId: position.businessId, userId: data.userId },
+      },
+      select: { isActive: true },
+    });
+    if (!assigneeMembership?.isActive) {
+      throw new EmployeeAssignmentValidationError(
+        'User is not an active member of this business'
+      );
     }
 
     if (position.employeePositions.length >= position.maxOccupants) {
@@ -156,6 +179,18 @@ export class EmployeeManagementService {
     }
     if (fromPos.businessId !== businessId || toPos.businessId !== businessId) {
       throw new Error('Positions must belong to the specified business');
+    }
+
+    const assigneeMembership = await prisma.businessMember.findUnique({
+      where: {
+        businessId_userId: { businessId, userId },
+      },
+      select: { isActive: true },
+    });
+    if (!assigneeMembership?.isActive) {
+      throw new EmployeeAssignmentValidationError(
+        'User is not an active member of this business'
+      );
     }
 
     // Remove from current position
@@ -709,6 +744,16 @@ export class EmployeeManagementService {
     // Check if position is in the same business
     if (position.businessId !== businessId) {
       errors.push('Position does not belong to the specified business');
+    }
+
+    const assigneeMembership = await prisma.businessMember.findUnique({
+      where: {
+        businessId_userId: { businessId, userId },
+      },
+      select: { isActive: true },
+    });
+    if (!assigneeMembership?.isActive) {
+      errors.push('User is not an active member of this business');
     }
 
     // Check capacity

@@ -8,6 +8,46 @@ function getUserId(req: Request): string | null {
   return user?.id || user?.sub || null;
 }
 
+/**
+ * User must be allowed to see/use the event's calendar (member row, or owner of a personal calendar).
+ */
+async function assertUserCanAccessCalendarEvent(
+  userId: string,
+  eventId: string
+): Promise<{ ok: true } | { ok: false; status: 404 | 403; message: string }> {
+  const ev = await prisma.event.findFirst({
+    where: { id: eventId, trashedAt: null },
+    select: { calendarId: true },
+  });
+  if (!ev) {
+    return { ok: false, status: 404, message: 'Event not found' };
+  }
+
+  const calendar = await prisma.calendar.findUnique({
+    where: { id: ev.calendarId },
+    select: { contextType: true, contextId: true },
+  });
+  if (!calendar) {
+    return { ok: false, status: 404, message: 'Calendar not found' };
+  }
+
+  const personalOwner =
+    calendar.contextType === 'PERSONAL' && calendar.contextId === userId;
+
+  if (personalOwner) {
+    return { ok: true };
+  }
+
+  const member = await prisma.calendarMember.findFirst({
+    where: { calendarId: ev.calendarId, userId },
+  });
+  if (!member) {
+    return { ok: false, status: 403, message: 'No access to this calendar event' };
+  }
+
+  return { ok: true };
+}
+
 // ============================================================================
 // MEETING PLACES CRUD
 // ============================================================================
@@ -329,6 +369,13 @@ export async function linkToCalendar(req: Request, res: Response): Promise<void>
     const { meetingId } = req.params;
     const { calendarId, existingEventId } = req.body;
 
+    if (existingEventId !== undefined && existingEventId !== null) {
+      if (typeof existingEventId !== 'string' || existingEventId.trim() === '') {
+        res.status(400).json({ success: false, error: 'existingEventId must be a non-empty string when provided' });
+        return;
+      }
+    }
+
     const meeting = await prisma.placeMeetingPlace.findUnique({
       where: { id: meetingId },
       include: { invites: { include: { invitee: { select: { id: true, email: true } } } } },
@@ -345,7 +392,17 @@ export async function linkToCalendar(req: Request, res: Response): Promise<void>
       return;
     }
 
-    let eventId = existingEventId;
+    let eventId: string | undefined =
+      typeof existingEventId === 'string' && existingEventId.trim() !== '' ? existingEventId : undefined;
+
+    // If linking to an existing event, require the same calendar access as for new-event creation
+    if (eventId) {
+      const access = await assertUserCanAccessCalendarEvent(userId, eventId);
+      if (!access.ok) {
+        res.status(access.status).json({ success: false, error: access.message });
+        return;
+      }
+    }
 
     // If no existing event, create one
     if (!eventId) {

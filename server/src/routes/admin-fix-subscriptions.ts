@@ -4,6 +4,7 @@
 
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 
@@ -63,6 +64,11 @@ router.post('/add-employee-columns', async (req: Request, res: Response) => {
  */
 router.get('/check', async (req: Request, res: Response) => {
   try {
+    const user = (req as AuthenticatedRequest).user;
+    if (!user || user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
     // Check subscription table columns
     const columnsCheck = await prisma.$queryRaw<Array<{column_name: string, data_type: string}>>`
       SELECT column_name, data_type

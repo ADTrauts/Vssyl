@@ -7,45 +7,18 @@ import { logger } from '../lib/logger';
 const router: express.Router = express.Router();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
 
-import { authenticateJWT } from '../middleware/auth';
+import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth';
 
-// Admin-only middleware
-const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  try {
-    // For testing purposes, allow any authenticated request
-    // In production, you'd verify the user is actually an admin
-    if (req.user?.id) {
-      next();
-      return;
-    }
-
-    // Fallback to database check if needed
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true }
-    });
-
-    if (user?.role !== 'ADMIN') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    next();
-  } catch (error) {
-    await logger.error('Failed to check admin status', {
-      operation: 'ai_check_admin_status',
-      error: {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
-    });
-    res.status(500).json({ error: 'Failed to verify admin status' });
+/** Admin-only — must run after `authenticateJWT` (JWT loads DB-backed `role`). */
+const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const user = (req as AuthenticatedRequest).user;
+  if (!user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
   }
+  if (user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
 };
 
 // ===== CENTRALIZED LEARNING ENDPOINTS =====

@@ -1,7 +1,6 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { BusinessAIDigitalTwinService } from '../ai/enterprise/BusinessAIDigitalTwinService';
-import jwt from 'jsonwebtoken';
+import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
@@ -9,47 +8,6 @@ const businessAIService = new BusinessAIDigitalTwinService(prisma);
 
 console.log('BusinessAI routes loaded');
 
-// JWT Authentication middleware
-function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction) {
-  console.log('BusinessAI - Authenticating request:', req.method, req.path);
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.JWT_SECRET!, (err: unknown, decoded: unknown) => {
-      if (err) {
-        console.log('BusinessAI - JWT verification failed:', err instanceof Error ? err.message : 'Unknown error');
-        return res.sendStatus(403);
-      }
-      
-      console.log('BusinessAI - JWT decoded successfully:', JSON.stringify(decoded, null, 2));
-      
-      // Store the decoded token
-      (req as any).user = decoded;
-      
-      // Try different possible user ID fields
-      const userId = (decoded as any)?.userId || (decoded as any)?.sub || (decoded as any)?.id || (decoded as any)?.user?.id;
-      console.log('BusinessAI - Extracted userId:', userId);
-      
-      if (!userId) {
-        console.log('BusinessAI - No userId found in token, available fields:', Object.keys(decoded as Record<string, unknown>));
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid token: no user ID found'
-        });
-      }
-      
-      // Store the userId directly for easier access
-      (req as any).userId = userId;
-      
-      next();
-    });
-  } else {
-    console.log('BusinessAI - No authorization header');
-    res.sendStatus(401);
-  }
-}
-
-// Apply authentication to all routes
 router.use(authenticateJWT);
 
 // Debug middleware to log all requests
@@ -72,7 +30,7 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
   console.log('BusinessAI - Initialize route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const config = req.body;
 
     console.log('BusinessAI - Initializing with:', { businessId, userId, config });
@@ -101,7 +59,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
   console.log('BusinessAI - Config route hit:', req.params.businessId);
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
 
     const businessAI = await prisma.businessAIDigitalTwin.findUnique({
       where: { businessId },
@@ -174,7 +132,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
 router.put('/:businessId/config', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const settings = req.body;
 
     await businessAIService.updateBusinessAIControls(businessId, userId, settings);
@@ -199,7 +157,7 @@ router.put('/:businessId/config', async (req: express.Request, res: express.Resp
 router.post('/:businessId/interact', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const { query, context } = req.body;
 
     if (!query || !context) {
@@ -243,7 +201,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
   
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     
     console.log('BusinessAI - Employee access request:', {
       businessId,
@@ -320,7 +278,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
 router.get('/:businessId/analytics', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const { period = 'daily' } = req.query;
 
     // Validate admin access
@@ -372,7 +330,7 @@ router.get('/:businessId/analytics', async (req: express.Request, res: express.R
 router.get('/:businessId/learning-events', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const { status, limit = 50 } = req.query;
 
     // Validate admin access
@@ -439,7 +397,7 @@ router.get('/:businessId/learning-events', async (req: express.Request, res: exp
 router.get('/:businessId/centralized-insights', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
 
     // Validate admin access
     const businessAI = await prisma.businessAIDigitalTwin.findUnique({
@@ -487,7 +445,7 @@ router.get('/:businessId/centralized-insights', async (req: express.Request, res
 router.put('/:businessId/learning-events/:eventId/review', async (req: express.Request, res: express.Response) => {
   try {
     const { businessId, eventId } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const { approved, rejectionReason } = req.body;
 
     // Validate admin access

@@ -11,6 +11,10 @@ import { Prisma } from '@prisma/client';
 import { TodoAIPrioritizationService } from '../services/todoAIPrioritizationService';
 import { TodoSmartSchedulingService } from '../services/todoSmartSchedulingService';
 import { TodoChatIntegrationService } from '../services/todoChatIntegrationService';
+import {
+  assertUserOwnedTaskDashboardContext,
+  assertUserOwnedDashboardBusinessAlignment,
+} from '../services/taskDashboardBinding';
 
 /**
  * Helper function to automatically create or update calendar event for a task
@@ -347,6 +351,21 @@ export async function createTask(req: Request, res: Response): Promise<void> {
         res.status(400).json({ error: 'Invalid recurrence rule (RRULE)' });
         return;
       }
+    }
+
+    try {
+      await assertUserOwnedTaskDashboardContext(prisma, userId, dashboardId, businessId, householdId);
+    } catch (e: unknown) {
+      const msg = (e as Error).message;
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(400).json({ error: 'Dashboard does not match business or household context' });
+        return;
+      }
+      throw e;
     }
 
     const task = await prisma.task.create({
@@ -2756,9 +2775,29 @@ export async function getProjects(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const businessScope =
+      businessId !== undefined && typeof businessId === 'string' && businessId.trim() !== ''
+        ? businessId
+        : null;
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(prisma, userId, dashboardId, businessScope);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      throw err;
+    }
+
     const where: Prisma.TaskProjectWhereInput = {
       dashboardId,
-      ...(businessId && typeof businessId === 'string' ? { businessId } : { businessId: null }),
+      businessId: businessScope,
     };
 
     const projects = await prisma.taskProject.findMany({
@@ -2814,6 +2853,26 @@ export async function createProject(req: Request, res: Response): Promise<void> 
       return;
     }
 
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        dashboardId,
+        businessId ?? null
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      throw err;
+    }
+
     const project = await prisma.taskProject.create({
       data: {
         name,
@@ -2863,6 +2922,26 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
     if (!project) {
       res.status(404).json({ error: 'Project not found' });
       return;
+    }
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        project.dashboardId,
+        project.businessId
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      throw err;
     }
 
     const updated = await prisma.taskProject.update({
@@ -2919,6 +2998,26 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
     if (!project) {
       res.status(404).json({ error: 'Project not found' });
       return;
+    }
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        project.dashboardId,
+        project.businessId
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Project not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      throw err;
     }
 
     // If project has tasks, unassign them (set projectId to null)
@@ -4099,6 +4198,18 @@ export async function createTaskFromMessage(req: Request, res: Response): Promis
     });
   } catch (error: unknown) {
     const err = error as Error;
+    if (err.message === 'Not a conversation member') {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+    if (err.message === 'Task dashboard not found') {
+      res.status(404).json({ error: 'Dashboard not found' });
+      return;
+    }
+    if (err.message === 'Task dashboard context mismatch') {
+      res.status(400).json({ error: 'Dashboard does not match business or household context' });
+      return;
+    }
     await logger.error('Failed to create task from message', {
       operation: 'todo_chat_create_task',
       error: { message: err.message, stack: err.stack },
@@ -4161,7 +4272,7 @@ export async function getTasksForConversation(req: Request, res: Response): Prom
       return;
     }
 
-    const tasks = await chatIntegrationService.getTasksForConversation(conversationId);
+    const tasks = await chatIntegrationService.getTasksForConversation(conversationId, userId);
 
     res.json({
       success: true,
@@ -4169,6 +4280,10 @@ export async function getTasksForConversation(req: Request, res: Response): Prom
     });
   } catch (error: unknown) {
     const err = error as Error;
+    if (err.message === 'Not a conversation member') {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
     await logger.error('Failed to get tasks for conversation', {
       operation: 'todo_chat_get_tasks',
       error: { message: err.message, stack: err.stack },

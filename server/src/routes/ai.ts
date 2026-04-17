@@ -18,6 +18,17 @@ const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 const personalityEngine = new PersonalityEngine(prisma);
 const learningEngine = new AdvancedLearningEngine(prisma);
 
+async function userHasActiveBusinessMembership(
+  userId: string,
+  businessId: string
+): Promise<boolean> {
+  const row = await prisma.businessMember.findFirst({
+    where: { userId, businessId, isActive: true },
+    select: { id: true },
+  });
+  return !!row;
+}
+
 function formatPatternForUser(p: LearningPattern): { id: string; description: string; type: string } {
   const type = p.patternType;
   const data = p.data as Record<string, unknown> | undefined;
@@ -89,6 +100,14 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
+    if (
+      typeof context.businessId === 'string' &&
+      context.businessId.trim() !== '' &&
+      !(await userHasActiveBusinessMembership(userId, context.businessId.trim()))
+    ) {
+      return res.status(403).json({ error: 'Access denied for this business' });
+    }
+
     if (provider && !['auto', 'openai', 'anthropic'].includes(provider)) {
       return res.status(400).json({ error: 'Invalid provider. Must be auto, openai, or anthropic' });
     }
@@ -148,6 +167,10 @@ router.post('/twin', authenticateJWT, async (req, res) => {
           preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
           conversationId: context.conversationId,
           fileIds: context.fileIds,
+          businessId:
+            typeof context.businessId === 'string' && context.businessId.trim() !== ''
+              ? context.businessId.trim()
+              : undefined,
         },
         res,
         async (response) => {
@@ -220,6 +243,10 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
         conversationId: context.conversationId,
         fileIds: context.fileIds,
+        businessId:
+          typeof context.businessId === 'string' && context.businessId.trim() !== ''
+            ? context.businessId.trim()
+            : undefined,
       }
     );
     
@@ -948,12 +975,18 @@ router.get('/context/:module', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user?.id;
     const { module } = req.params;
+    const q = req.query.businessId;
+    const businessId = typeof q === 'string' && q.trim() !== '' ? q.trim() : undefined;
     
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const moduleContext = await digitalLifeTwin.getModuleContext(userId, module);
+    if (businessId && !(await userHasActiveBusinessMembership(userId, businessId))) {
+      return res.status(403).json({ error: 'Access denied for this business' });
+    }
+
+    const moduleContext = await digitalLifeTwin.getModuleContext(userId, module, businessId);
 
     res.json({
       success: true,

@@ -14,6 +14,52 @@ function getUserId(req: Request): string | null {
   return user?.id || null;
 }
 
+/** Ensures the caller may create calendars in the given context (membership / personal id). */
+async function enforceCalendarContextMembership(
+  userId: string,
+  contextType: unknown,
+  contextId: unknown
+): Promise<void> {
+  if (typeof contextType !== 'string' || typeof contextId !== 'string') {
+    const err = new Error('Invalid context');
+    (err as Error & { status?: number }).status = 400;
+    throw err;
+  }
+  if (contextType === 'PERSONAL') {
+    if (contextId !== userId) {
+      const err = new Error('Forbidden');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+    return;
+  }
+  if (contextType === 'BUSINESS') {
+    const member = await prisma.businessMember.findFirst({
+      where: { businessId: contextId, userId, isActive: true },
+    });
+    if (!member) {
+      const err = new Error('Forbidden');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+    return;
+  }
+  if (contextType === 'HOUSEHOLD') {
+    const member = await prisma.householdMember.findFirst({
+      where: { householdId: contextId, userId, isActive: true },
+    });
+    if (!member) {
+      const err = new Error('Forbidden');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+    return;
+  }
+  const err = new Error('Invalid contextType');
+  (err as Error & { status?: number }).status = 400;
+  throw err;
+}
+
 export async function listCalendars(req: Request, res: Response) {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -45,6 +91,14 @@ export async function createCalendar(req: Request, res: Response) {
   const { name, color, type, contextType, contextId, isPrimary, isSystem, isDeletable, defaultReminderMinutes } = req.body;
   if (!name || !contextType || !contextId) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    await enforceCalendarContextMembership(userId, contextType, contextId);
+  } catch (e: unknown) {
+    const err = e as Error & { status?: number };
+    const code = err.status ?? 500;
+    return res.status(code).json({ error: err.message });
   }
 
   const calendar = await prisma.calendar.create({
@@ -104,6 +158,14 @@ export async function autoProvisionCalendar(req: Request, res: Response) {
 
   const { contextType, contextId, name, isPrimary } = req.body as { contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string; name?: string; isPrimary?: boolean };
   if (!contextType || !contextId) return res.status(400).json({ error: 'Missing context' });
+
+  try {
+    await enforceCalendarContextMembership(userId, contextType, contextId);
+  } catch (e: unknown) {
+    const err = e as Error & { status?: number };
+    const code = err.status ?? 500;
+    return res.status(code).json({ error: err.message });
+  }
 
   // Module-driven provisioning gate: require Calendar widget active on a dashboard for this context
   try {

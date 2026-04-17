@@ -159,6 +159,7 @@ export default function SchedulingAIAssistant({
           query,
           context: {
             currentModule: 'scheduling',
+            businessId,
             moduleContext: {
               scheduleId,
               businessId,

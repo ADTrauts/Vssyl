@@ -713,35 +713,30 @@ app.post('/api/auth/verify-email', asyncHandler(async (req: Request, res: Respon
 
 app.post('/api/auth/resend-verification', asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required' });
+  const raw = typeof email === 'string' ? email.trim() : '';
+  if (!raw || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+    return res.status(400).json({ message: 'A valid email address is required' });
   }
 
-  const user = await prisma.user.findUnique({ 
-    where: { email },
+  const user = await prisma.user.findUnique({
+    where: { email: raw },
     select: {
       id: true,
       email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
       emailVerified: true,
-    }
+    },
   });
-  
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+
+  if (user && !user.emailVerified) {
+    const verificationToken = await createEmailVerificationToken(user.id);
+    await sendVerificationEmail(user.email, verificationToken);
   }
 
-  if (user.emailVerified) {
-    return res.status(400).json({ message: 'Email is already verified' });
-  }
-
-  const verificationToken = await createEmailVerificationToken(user.id);
-  await sendVerificationEmail(user.email, verificationToken);
-
-  res.json({ message: 'Verification email sent' });
+  // Uniform response — do not reveal whether the account exists or is already verified
+  res.json({
+    message:
+      'If an account exists for this email and requires verification, instructions have been sent.',
+  });
 }));
 
 // NextAuth.js internal logging endpoint
@@ -901,8 +896,17 @@ if (process.env.NODE_ENV === 'development') {
     })).filter((r: any) => r.path)
   });
 }
-app.use('/api/debug', debugModulesRouter); // Debug endpoints (no auth for troubleshooting)
-app.use('/api/debug/database', debugDatabaseRouter); // Database debug endpoints
+const mountPublicDebugRoutes =
+  process.env.NODE_ENV !== 'production' ||
+  process.env.ENABLE_PUBLIC_DEBUG_ROUTES === 'true';
+if (mountPublicDebugRoutes) {
+  app.use('/api/debug', debugModulesRouter);
+  app.use('/api/debug/database', debugDatabaseRouter);
+} else {
+  void logger.info('Public debug routes not mounted (set ENABLE_PUBLIC_DEBUG_ROUTES=true to enable in production)', {
+    operation: 'debug_public_routes_skipped',
+  });
+}
 if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEBUG_BUSINESS_TIER === 'true') {
   app.use('/api/debug/business-tier', debugBusinessTierRouter); // Admin JWT + ADMIN role only
 }

@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { Prisma } from '@prisma/client';
+import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
 
 /**
  * GET /api/notes
@@ -189,12 +190,50 @@ export async function createNote(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const normalizedBusinessId =
+      businessId && typeof businessId === 'string' ? businessId : null;
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        dashboardId,
+        normalizedBusinessId
+      );
+    } catch (e: unknown) {
+      const msg = (e as Error).message;
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(400).json({ error: 'Dashboard does not match business context' });
+        return;
+      }
+      throw e;
+    }
+
+    if (folderId && typeof folderId === 'string') {
+      const folder = await prisma.noteFolder.findFirst({
+        where: {
+          id: folderId,
+          createdById: userId,
+          dashboardId,
+          businessId: normalizedBusinessId,
+        },
+      });
+      if (!folder) {
+        res.status(400).json({ error: 'Folder not found or not in this dashboard' });
+        return;
+      }
+    }
+
     const note = await prisma.note.create({
       data: {
         title: title.trim(),
         content: typeof content === 'string' ? content : '',
         dashboardId,
-        businessId: businessId && typeof businessId === 'string' ? businessId : null,
+        businessId: normalizedBusinessId,
         folderId: folderId && typeof folderId === 'string' ? folderId : null,
         tags: Array.isArray(tags) ? tags.filter((t: unknown) => typeof t === 'string') : [],
         pinned: Boolean(pinned),

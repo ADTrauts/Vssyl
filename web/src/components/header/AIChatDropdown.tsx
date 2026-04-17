@@ -510,6 +510,17 @@ export default function AIChatDropdown({
         }, session.accessToken);
       }
 
+      const twinBusinessId =
+        effectiveModuleContext?.businessId ||
+        (dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined);
+
       // Use existing Digital Life Twin endpoint
       const response = await authenticatedApiCall<{ 
         success: boolean;
@@ -536,6 +547,7 @@ export default function AIChatDropdown({
             ...(selectedModel && { model: selectedModel }),
             context: {
               currentModule: effectiveModuleContext?.module || 'search',
+              dashboardId: dashboardId ?? currentDashboard?.id,
               dashboardType,
               dashboardName,
               conversationId: currentConversationId || undefined,
@@ -546,6 +558,7 @@ export default function AIChatDropdown({
               } : undefined,
               urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
               fileIds: currentAttachedFiles.map((file) => file.id),
+              ...(twinBusinessId ? { businessId: twinBusinessId } : {}),
             }
           })
         },

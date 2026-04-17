@@ -56,19 +56,6 @@ export class ModuleAIContextService {
     );
   }
 
-  private async resolveDefaultBusinessId(userId: string): Promise<string | undefined> {
-    const member = await prisma.businessMember.findFirst({
-      where: {
-        userId,
-        isActive: true,
-      },
-      select: { businessId: true },
-      orderBy: { joinedAt: 'asc' },
-    });
-
-    return member?.businessId;
-  }
-
   /**
    * Register a module's AI context when it's installed
    * Called during module installation
@@ -451,13 +438,8 @@ export class ModuleAIContextService {
         ...parameters,
       };
 
-      // Many business-scoped providers require businessId; infer one when absent.
-      if (!requestParams.businessId) {
-        const defaultBusinessId = await this.resolveDefaultBusinessId(userId);
-        if (defaultBusinessId) {
-          requestParams.businessId = defaultBusinessId;
-        }
-      }
+      // Business-scoped providers must receive an explicit businessId from the caller
+      // (query params or internal orchestration). Do not infer a default tenant.
 
       const response = await axios.get(endpoint, {
         baseURL,

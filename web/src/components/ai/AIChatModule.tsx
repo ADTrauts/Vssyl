@@ -298,6 +298,16 @@ export default function AIChatModule({
         }, session.accessToken);
       }
 
+      const twinBusinessId =
+        dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined;
+
       // Call AI service (Digital Life Twin - supports file attachments)
       const response = await authenticatedApiCall(
         '/api/ai/twin',
@@ -317,6 +327,7 @@ export default function AIChatModule({
               conversationId,
               urgency: 'medium',
               fileIds: currentAttachedFiles.map((file) => file.id),
+              ...(twinBusinessId ? { businessId: twinBusinessId } : {}),
             }
           })
         },

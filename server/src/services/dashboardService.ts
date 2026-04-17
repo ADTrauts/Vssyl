@@ -3,6 +3,64 @@ import { HouseholdRole, Prisma } from '@prisma/client';
 import { logger } from '../lib/logger';
 import { seedBusinessWorkspaceResources } from './businessWorkspaceSeeder';
 
+/** Invalid context or forbidden tenant access when creating a context-bound dashboard */
+export class DashboardCreationError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: 400 | 403 = 403
+  ) {
+    super(message);
+    this.name = 'DashboardCreationError';
+  }
+}
+
+function countContextIds(data: {
+  businessId?: string;
+  institutionId?: string;
+  householdId?: string;
+}): number {
+  let n = 0;
+  if (data.businessId) n += 1;
+  if (data.institutionId) n += 1;
+  if (data.householdId) n += 1;
+  return n;
+}
+
+async function assertDashboardContextMembership(
+  userId: string,
+  data: { businessId?: string; institutionId?: string; householdId?: string }
+): Promise<void> {
+  if (data.businessId) {
+    const m = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId: data.businessId, userId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      throw new DashboardCreationError('Not a member of this business');
+    }
+    return;
+  }
+  if (data.institutionId) {
+    const m = await prisma.institutionMember.findUnique({
+      where: { institutionId_userId: { institutionId: data.institutionId, userId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      throw new DashboardCreationError('Not a member of this institution');
+    }
+    return;
+  }
+  if (data.householdId) {
+    const m = await prisma.householdMember.findUnique({
+      where: { userId_householdId: { userId, householdId: data.householdId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      throw new DashboardCreationError('Not a member of this household');
+    }
+  }
+}
+
 export interface DashboardLayout {
   widgets?: Array<{
     id: string;
@@ -149,6 +207,13 @@ export async function createDashboard(userId: string, data: { name: string; layo
     throw new Error(`User with ID ${userId} not found`);
   }
 
+  if (countContextIds(data) > 1) {
+    throw new DashboardCreationError(
+      'Specify at most one of businessId, institutionId, or householdId',
+      400
+    );
+  }
+
   // If businessId, institutionId, or householdId is provided, check for existing dashboard
   if (data.businessId) {
     const existing = await prisma.dashboard.findFirst({ where: { userId, businessId: data.businessId } });
@@ -162,6 +227,9 @@ export async function createDashboard(userId: string, data: { name: string; layo
     const existing = await prisma.dashboard.findFirst({ where: { userId, householdId: data.householdId } });
     if (existing) return prisma.dashboard.findUnique({ where: { id: existing.id }, include: { widgets: true } });
   }
+
+  await assertDashboardContextMembership(userId, data);
+
   // Create the dashboard first
   const dashboard = await prisma.dashboard.create({
     data: {

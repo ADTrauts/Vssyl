@@ -3,8 +3,34 @@
  * Handles creating tasks from chat messages and linking tasks to conversations
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { logger } from '../lib/logger';
+import { assertUserOwnedTaskDashboardContext } from './taskDashboardBinding';
+
+const CHAT_TASK_MESSAGE_MARKER = '[Created from chat message:';
+
+const taskConversationListInclude = {
+  createdBy: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  },
+  assignedTo: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  },
+} as const;
+
+export type TaskForConversationList = Prisma.TaskGetPayload<{
+  include: typeof taskConversationListInclude;
+}>;
 
 export interface TaskFromMessageOptions {
   messageId: string;
@@ -23,13 +49,22 @@ export interface TaskFromMessageOptions {
 export class TodoChatIntegrationService {
   constructor(private prisma: PrismaClient) {}
 
+  private async assertActiveConversationParticipant(
+    conversationId: string,
+    userId: string
+  ): Promise<void> {
+    const participant = await this.prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId, isActive: true },
+    });
+    if (!participant) {
+      throw new Error('Not a conversation member');
+    }
+  }
+
   /**
    * Create a task from a chat message
    */
-  async createTaskFromMessage(options: TaskFromMessageOptions): Promise<{
-    task: any;
-    messageLink: any;
-  }> {
+  async createTaskFromMessage(options: TaskFromMessageOptions) {
     try {
       const {
         messageId,
@@ -44,6 +79,16 @@ export class TodoChatIntegrationService {
         dueDate,
         assignedToId,
       } = options;
+
+      await this.assertActiveConversationParticipant(conversationId, userId);
+
+      await assertUserOwnedTaskDashboardContext(
+        this.prisma,
+        userId,
+        dashboardId,
+        businessId,
+        householdId
+      );
 
       // Get the message to extract content if title not provided
       const message = await this.prisma.message.findUnique({
@@ -110,10 +155,28 @@ export class TodoChatIntegrationService {
         ? `${taskDescription}\n\n[Created from chat message: ${messageId}]`
         : `[Created from chat message: ${messageId}]`;
 
-      await this.prisma.task.update({
+      const taskWithLink = await this.prisma.task.update({
         where: { id: task.id },
         data: {
           description: updatedDescription,
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
         },
       });
 
@@ -126,7 +189,7 @@ export class TodoChatIntegrationService {
       });
 
       return {
-        task,
+        task: taskWithLink,
         messageLink: {
           messageId,
           conversationId,
@@ -222,48 +285,73 @@ export class TodoChatIntegrationService {
   }
 
   /**
-   * Get tasks linked to a conversation
+   * Get tasks linked to a conversation (messages in this conversation only; caller must be participant).
    */
-  async getTasksForConversation(conversationId: string): Promise<any[]> {
+  async getTasksForConversation(
+    conversationId: string,
+    userId: string
+  ): Promise<TaskForConversationList[]> {
     try {
-      // Search for tasks that mention this conversation in description
-      // This is a simple implementation - in production, you'd want a proper link table
-      const tasks = await this.prisma.task.findMany({
-        where: {
-          description: {
-            contains: `[Created from chat message`,
-          },
-          trashedAt: null,
-        },
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              image: true,
-            },
-          },
-          assignedTo: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              image: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      });
+      await this.assertActiveConversationParticipant(conversationId, userId);
 
-      // Filter to only tasks that reference messages from this conversation
-      // This is a simplified approach - ideally we'd have a proper link table
-      return tasks.filter(task => {
-        // In a real implementation, we'd query TaskMessageLink table
-        // For now, we'll return all tasks (this can be improved)
-        return true;
+      const messages = await this.prisma.message.findMany({
+        where: { conversationId, deletedAt: null },
+        select: { id: true },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
       });
+      const messageIds = messages.map((m) => m.id);
+      if (messageIds.length === 0) {
+        return [];
+      }
+
+      const allowed = new Set(messageIds);
+      const chunkSize = 25;
+      const collected = new Map<string, TaskForConversationList>();
+
+      for (let i = 0; i < messageIds.length; i += chunkSize) {
+        const chunk = messageIds.slice(i, i + chunkSize);
+        const batch = await this.prisma.task.findMany({
+          where: {
+            trashedAt: null,
+            AND: [
+              {
+                OR: chunk.map((mid) => ({
+                  description: { contains: mid },
+                })),
+              },
+              {
+                OR: [{ createdById: userId }, { assignedToId: userId }],
+              },
+            ],
+          },
+          include: taskConversationListInclude,
+        });
+        for (const t of batch) {
+          if (!collected.has(t.id)) {
+            collected.set(t.id, t);
+          }
+        }
+      }
+
+      const descriptionReferencesConversation = (description: string | null): boolean => {
+        if (!description || !description.includes(CHAT_TASK_MESSAGE_MARKER)) {
+          return false;
+        }
+        const re = /\[Created from chat message:\s*([a-f0-9-]{36})\]/gi;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(description)) !== null) {
+          if (allowed.has(m[1])) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      return [...collected.values()]
+        .filter((t) => descriptionReferencesConversation(t.description))
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 50);
     } catch (error: unknown) {
       const err = error as Error;
       await logger.error('Failed to get tasks for conversation', {

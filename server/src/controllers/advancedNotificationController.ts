@@ -10,20 +10,20 @@ export const createNotification = async (req: Request, res: Response) => {
     }
 
     const userId = user.id;
-    const { type, title, body, targetUserId, priority, scheduledAt } = req.body;
+    const { type, title, body, priority, scheduledAt } = req.body;
 
     // Validate required fields
     if (!type || !title || !body) {
       return res.status(400).json({ message: 'Type, title, and body are required' });
     }
 
-    // Create notification
+    // Create notification (always for the authenticated user; ignore any legacy targetUserId)
     const notification = await prisma.notification.create({
       data: {
         type,
         title,
         body,
-        userId: targetUserId || userId,
+        userId,
         data: { 
           priority: priority || 'MEDIUM',
           scheduledAt: scheduledAt ? new Date(scheduledAt) : null 

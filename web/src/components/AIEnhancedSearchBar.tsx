@@ -8,6 +8,7 @@ import { useGlobalSearch } from '../contexts/GlobalSearchContext';
 import { SearchResult, SearchSuggestion } from 'shared/types/search';
 import { Button, Badge, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../lib/apiUtils';
+import { useDashboard } from '../contexts/DashboardContext';
 import ErrorBoundary from './ErrorBoundary';
 
 interface AIEnhancedSearchBarProps {
@@ -117,6 +118,7 @@ export default function AIEnhancedSearchBar({
   dashboardName = 'Dashboard'
 }: AIEnhancedSearchBarProps) {
   const { data: session } = useSession();
+  const { currentDashboard } = useDashboard();
   const { state, search, getSuggestions, clearResults } = useGlobalSearch();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -247,6 +249,16 @@ export default function AIEnhancedSearchBar({
     setIsAILoading(true);
 
     try {
+      const twinBusinessId =
+        dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined;
+
       // 🚀 Use Revolutionary Digital Life Twin endpoint
       const response = await authenticatedApiCall<{ 
         success: boolean;
@@ -269,9 +281,11 @@ export default function AIEnhancedSearchBar({
             provider: selectedProvider,
             context: {
               currentModule: 'search',
+              dashboardId,
               dashboardType,
               dashboardName,
-              urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium'
+              urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
+              ...(twinBusinessId ? { businessId: twinBusinessId } : {}),
             }
           })
         },

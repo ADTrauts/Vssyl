@@ -9,6 +9,19 @@ import { getChatSocketService } from '../services/chatSocketService';
 
 const TIME_FIELD_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
+/** Authorized tenant from scheduling middleware (must match schedule/shift rows). */
+function requireAuthorizedBusinessId(
+  req: AuthenticatedRequest,
+  res: Response
+): string | null {
+  const bid = req.businessId;
+  if (!bid || typeof bid !== 'string') {
+    res.status(400).json({ error: 'businessId is required' });
+    return null;
+  }
+  return bid;
+}
+
 // ============================================================================
 // DASHBOARD SUMMARY (any employee with scheduling access)
 // ============================================================================
@@ -18,11 +31,8 @@ export async function getDashboardSummary(
   res: Response
 ): Promise<void> {
   try {
-    const businessId = (req as AuthenticatedRequest & { businessId?: string }).businessId ?? req.query.businessId;
-    if (!businessId || typeof businessId !== 'string') {
-      res.status(400).json({ error: 'businessId is required' });
-      return;
-    }
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
 
     const now = new Date();
     const inSevenDays = new Date(now);
@@ -81,12 +91,10 @@ export async function getSchedules(
       return;
     }
 
-    const { businessId, status, startDate, endDate } = req.query;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
 
-    if (!businessId || typeof businessId !== 'string') {
-      res.status(400).json({ error: 'Business ID is required' });
-      return;
-    }
+    const { status, startDate, endDate } = req.query;
 
     const where: Prisma.ScheduleWhereInput = {
       businessId
@@ -224,8 +232,11 @@ export async function getScheduleById(
 
     const { id } = req.params;
 
-    const schedule = await prisma.schedule.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const schedule = await prisma.schedule.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       include: {
         shifts: {
           include: {
@@ -300,16 +311,19 @@ export async function createSchedule(
       return;
     }
 
-    const { businessId, name, description, startDate, endDate, timezone, templateId } = req.body;
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
 
-    if (!businessId || !name || !startDate || !endDate) {
-      res.status(400).json({ error: 'Missing required fields: businessId, name, startDate, endDate' });
+    const { name, description, startDate, endDate, timezone, templateId } = req.body;
+
+    if (!name || !startDate || !endDate) {
+      res.status(400).json({ error: 'Missing required fields: name, startDate, endDate' });
       return;
     }
 
     const schedule = await prisma.schedule.create({
       data: {
-        businessId,
+        businessId: authorizedBusinessId,
         name,
         description,
         startDate: new Date(startDate),
@@ -325,7 +339,7 @@ export async function createSchedule(
       operation: 'create_schedule',
       userId: user.id,
       scheduleId: schedule.id,
-      businessId
+      businessId: authorizedBusinessId
     });
 
     res.status(201).json({ schedule });
@@ -353,9 +367,11 @@ export async function updateSchedule(
     const { id } = req.params;
     const { name, description, startDate, endDate, timezone } = req.body;
 
-    // Check if schedule exists
-    const existingSchedule = await prisma.schedule.findUnique({
-      where: { id }
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const existingSchedule = await prisma.schedule.findFirst({
+      where: { id, businessId: authorizedBusinessId }
     });
 
     if (!existingSchedule) {
@@ -407,8 +423,11 @@ export async function deleteSchedule(
 
     const { id } = req.params;
 
-    const schedule = await prisma.schedule.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const schedule = await prisma.schedule.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       include: {
         shifts: {
           select: { id: true, metadata: true }
@@ -512,8 +531,11 @@ export async function publishSchedule(
 
     const { id } = req.params;
 
-    const schedule = await prisma.schedule.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const schedule = await prisma.schedule.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       include: {
         shifts: {
           include: {
@@ -706,8 +728,11 @@ export async function cloneSchedule(
       return;
     }
 
-    const originalSchedule = await prisma.schedule.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const originalSchedule = await prisma.schedule.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       include: {
         shifts: true
       }
@@ -793,9 +818,13 @@ export async function getScheduleShifts(
 
     const { id } = req.params;
 
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
     const shifts = await prisma.scheduleShift.findMany({
       where: {
-        scheduleId: id
+        scheduleId: id,
+        businessId: authorizedBusinessId
       },
       include: {
         employeePosition: {
@@ -857,7 +886,7 @@ export async function createShift(
 
     const {
       scheduleId,
-      businessId,
+      businessId: bodyBusinessId,
       employeePositionId,
       positionId,
       title,
@@ -871,8 +900,26 @@ export async function createShift(
       locationId
     } = req.body;
 
-    if (!scheduleId || !businessId || !title || !startTime || !endTime) {
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    if (bodyBusinessId && bodyBusinessId !== authorizedBusinessId) {
+      res.status(400).json({ error: 'businessId does not match authorized context' });
+      return;
+    }
+
+    if (!scheduleId || !title || !startTime || !endTime) {
       res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    const scheduleForShift = await prisma.schedule.findFirst({
+      where: { id: scheduleId, businessId: authorizedBusinessId },
+      select: { id: true },
+    });
+
+    if (!scheduleForShift) {
+      res.status(404).json({ error: 'Schedule not found' });
       return;
     }
 
@@ -884,7 +931,7 @@ export async function createShift(
       // Check if employee has approved or pending time-off that overlaps with this shift
       const timeOffConflict = await prisma.timeOffRequest.findFirst({
         where: {
-          businessId,
+          businessId: authorizedBusinessId,
           employeePositionId,
           status: { in: ['APPROVED', 'PENDING'] },
           OR: [
@@ -941,7 +988,7 @@ export async function createShift(
     const shift = await prisma.scheduleShift.create({
       data: {
         scheduleId,
-        businessId,
+        businessId: authorizedBusinessId,
         employeePositionId,
         positionId,
         title,
@@ -1002,7 +1049,7 @@ export async function createShift(
     try {
       const socketService = getChatSocketService();
       socketService.broadcastShiftCreated(
-        businessId,
+        authorizedBusinessId,
         scheduleId,
         shift as unknown as Record<string, unknown>
       );
@@ -1050,6 +1097,9 @@ export async function updateShift(
     }
 
     const { id } = req.params;
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
     const {
       title,
       startTime,
@@ -1114,8 +1164,8 @@ export async function updateShift(
     }
 
     // Get current shift to check for time-off conflicts
-    const currentShift = await prisma.scheduleShift.findUnique({
-      where: { id },
+    const currentShift = await prisma.scheduleShift.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       select: { employeePositionId: true, startTime: true, endTime: true }
     });
 
@@ -1136,14 +1186,7 @@ export async function updateShift(
     if (finalEmployeePositionId) {
       const timeOffConflict = await prisma.timeOffRequest.findFirst({
         where: {
-          businessId: (() => {
-            if (req.businessId) return req.businessId;
-            const businessIdParam = req.query.businessId;
-            if (businessIdParam && typeof businessIdParam === 'string') {
-              return businessIdParam;
-            }
-            return undefined;
-          })(),
+          businessId: authorizedBusinessId,
           employeePositionId: finalEmployeePositionId,
           status: { in: ['APPROVED', 'PENDING'] },
           OR: [
@@ -1245,8 +1288,8 @@ export async function updateShift(
     // Broadcast shift updated event via WebSocket
     try {
       const socketService = getChatSocketService();
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: shift.scheduleId },
+      const schedule = await prisma.schedule.findFirst({
+        where: { id: shift.scheduleId, businessId: authorizedBusinessId },
         select: { businessId: true, status: true }
       });
       if (schedule) {
@@ -1308,10 +1351,13 @@ export async function deleteShift(
 
     const { id } = req.params;
 
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
     // Get shift info before deleting for broadcast
-    const shift = await prisma.scheduleShift.findUnique({
-      where: { id },
-      select: { scheduleId: true }
+    const shift = await prisma.scheduleShift.findFirst({
+      where: { id, businessId: authorizedBusinessId },
+      select: { scheduleId: true, businessId: true }
     });
 
     if (!shift) {
@@ -1319,8 +1365,8 @@ export async function deleteShift(
       return;
     }
 
-    const schedule = await prisma.schedule.findUnique({
-      where: { id: shift.scheduleId },
+    const schedule = await prisma.schedule.findFirst({
+      where: { id: shift.scheduleId, businessId: authorizedBusinessId },
       select: { businessId: true }
     });
 
@@ -1379,8 +1425,21 @@ export async function assignShift(
     const { id } = req.params;
     const { employeePositionId } = req.body;
 
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
     if (!employeePositionId) {
       res.status(400).json({ error: 'Employee position ID is required' });
+      return;
+    }
+
+    const existingShift = await prisma.scheduleShift.findFirst({
+      where: { id, businessId: authorizedBusinessId },
+      select: { id: true },
+    });
+
+    if (!existingShift) {
+      res.status(404).json({ error: 'Shift not found' });
       return;
     }
 
@@ -1459,12 +1518,10 @@ export async function getShifts(req: AuthenticatedRequest, res: Response): Promi
       return;
     }
 
-    const { businessId, scheduleId } = req.query;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
 
-    if (!businessId || typeof businessId !== 'string') {
-      res.status(400).json({ error: 'Business ID is required' });
-      return;
-    }
+    const { scheduleId } = req.query;
 
     const where: Prisma.ScheduleShiftWhereInput = {
       businessId: businessId
@@ -1576,8 +1633,11 @@ export async function getShiftById(req: AuthenticatedRequest, res: Response): Pr
 
     const { id } = req.params;
 
-    const shift = await prisma.scheduleShift.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const shift = await prisma.scheduleShift.findFirst({
+      where: { id, businessId: authorizedBusinessId },
       include: {
         employeePosition: {
           include: {
@@ -1662,12 +1722,8 @@ export async function getScheduleTemplates(req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    const { businessId } = req.query;
-
-    if (!businessId || typeof businessId !== 'string') {
-      res.status(400).json({ error: 'Business ID is required' });
-      return;
-    }
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
 
     // Verify user has access to this business
     const member = await prisma.businessMember.findUnique({
@@ -1717,8 +1773,11 @@ export async function getScheduleTemplateById(req: AuthenticatedRequest, res: Re
 
     const { id } = req.params;
 
-    const template = await prisma.scheduleTemplate.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const template = await prisma.scheduleTemplate.findFirst({
+      where: { id, businessId: authorizedBusinessId },
     });
 
     if (!template) {
@@ -1761,16 +1820,19 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
       return;
     }
 
-    const { businessId, name, description, scheduleType, templateData, sourceScheduleId } = req.body;
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
 
-    if (!businessId || !name || !scheduleType) {
-      res.status(400).json({ error: 'Missing required fields: businessId, name, scheduleType' });
+    const { name, description, scheduleType, templateData, sourceScheduleId } = req.body;
+
+    if (!name || !scheduleType) {
+      res.status(400).json({ error: 'Missing required fields: name, scheduleType' });
       return;
     }
 
     // Verify user has access to this business
     const member = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: user.id } },
+      where: { businessId_userId: { businessId: authorizedBusinessId, userId: user.id } },
     });
 
     if (!member || !member.isActive) {
@@ -1782,8 +1844,8 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
 
     // If creating from an existing schedule, extract the pattern
     if (sourceScheduleId) {
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: sourceScheduleId },
+      const schedule = await prisma.schedule.findFirst({
+        where: { id: sourceScheduleId, businessId: authorizedBusinessId },
         include: {
           shifts: {
             include: {
@@ -1800,11 +1862,6 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
 
       if (!schedule) {
         res.status(404).json({ error: 'Source schedule not found' });
-        return;
-      }
-
-      if (schedule.businessId !== businessId) {
-        res.status(403).json({ error: 'Schedule does not belong to this business' });
         return;
       }
 
@@ -1844,7 +1901,7 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
 
     // Check for duplicate name
     const existing = await prisma.scheduleTemplate.findUnique({
-      where: { businessId_name: { businessId, name } },
+      where: { businessId_name: { businessId: authorizedBusinessId, name } },
     });
 
     if (existing) {
@@ -1854,7 +1911,7 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
 
     const template = await prisma.scheduleTemplate.create({
       data: {
-        businessId,
+        businessId: authorizedBusinessId,
         name,
         description: description || null,
         scheduleType,
@@ -1867,7 +1924,7 @@ export async function createScheduleTemplate(req: AuthenticatedRequest, res: Res
       operation: 'create_schedule_template',
       userId: user.id,
       templateId: template.id,
-      businessId,
+      businessId: authorizedBusinessId,
       sourceScheduleId: sourceScheduleId || null,
     });
 
@@ -1893,8 +1950,11 @@ export async function updateScheduleTemplate(req: AuthenticatedRequest, res: Res
     const { id } = req.params;
     const { name, description, scheduleType, templateData, isActive } = req.body;
 
-    const template = await prisma.scheduleTemplate.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const template = await prisma.scheduleTemplate.findFirst({
+      where: { id, businessId: authorizedBusinessId },
     });
 
     if (!template) {
@@ -1915,7 +1975,7 @@ export async function updateScheduleTemplate(req: AuthenticatedRequest, res: Res
     // Check for duplicate name if name is being changed
     if (name && name !== template.name) {
       const existing = await prisma.scheduleTemplate.findUnique({
-        where: { businessId_name: { businessId: template.businessId, name } },
+        where: { businessId_name: { businessId: authorizedBusinessId, name } },
       });
 
       if (existing) {
@@ -1962,8 +2022,11 @@ export async function deleteScheduleTemplate(req: AuthenticatedRequest, res: Res
 
     const { id } = req.params;
 
-    const template = await prisma.scheduleTemplate.findUnique({
-      where: { id },
+    const authorizedBusinessId = requireAuthorizedBusinessId(req, res);
+    if (!authorizedBusinessId) return;
+
+    const template = await prisma.scheduleTemplate.findFirst({
+      where: { id, businessId: authorizedBusinessId },
     });
 
     if (!template) {
@@ -2384,20 +2447,12 @@ export async function denyShiftSwapAdmin(req: AuthenticatedRequest, res: Respons
 export async function getTeamSchedules(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const user = req.user;
-    // Get businessId from middleware or validate from query
-    let businessId: string | undefined = req.businessId;
-    if (!businessId) {
-      const businessIdParam = req.query.businessId;
-      if (businessIdParam && typeof businessIdParam === 'string') {
-        businessId = businessIdParam;
-      } else if (businessIdParam) {
-        res.status(400).json({ error: 'businessId must be a string' });
-        return;
-      }
-    }
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
+
     const directReportIds = req.directReportIds || [];
 
-    if (!user || !businessId) {
+    if (!user) {
       res.status(401).json({ error: 'User not authenticated' });
       return;
     }
@@ -2566,20 +2621,12 @@ export async function getTeamAvailability(req: AuthenticatedRequest, res: Respon
 export async function getPendingShiftSwapRequestsForTeam(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const user = req.user;
-    // Get businessId from middleware or validate from query
-    let businessId: string | undefined = req.businessId;
-    if (!businessId) {
-      const businessIdParam = req.query.businessId;
-      if (businessIdParam && typeof businessIdParam === 'string') {
-        businessId = businessIdParam;
-      } else if (businessIdParam) {
-        res.status(400).json({ error: 'businessId must be a string' });
-        return;
-      }
-    }
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId) return;
+
     const directReportIds = req.directReportIds || [];
 
-    if (!user || !businessId) {
+    if (!user) {
       res.status(401).json({ error: 'User not authenticated' });
       return;
     }

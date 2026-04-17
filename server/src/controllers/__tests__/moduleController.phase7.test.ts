@@ -6,6 +6,7 @@ import { storageService } from '../../services/storageService';
 import {
   finalizeModuleArtifactUpload,
   getMarketplaceModules,
+  getModuleDetails,
   getModuleRuntimeConfig,
   linkModuleToBusiness,
   promoteModuleVersion,
@@ -271,6 +272,55 @@ describe('moduleController Phase 7 critical paths', () => {
         }),
       })
     );
+  });
+
+  const moduleDetailBase = {
+    id: 'm1',
+    name: 'M',
+    description: 'd',
+    version: '1',
+    category: 'PRODUCTIVITY',
+    tags: [],
+    icon: null,
+    screenshots: [],
+    manifest: {},
+    dependencies: [],
+    permissions: [],
+    rating: 0,
+    reviewCount: 0,
+    downloads: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    installations: [],
+    moduleReviews: [],
+  };
+
+  it('getModuleDetails returns 404 for non-approved module when caller is not developer or admin', async () => {
+    vi.spyOn(prisma.module, 'findUnique').mockResolvedValue({
+      ...moduleDetailBase,
+      status: 'PENDING',
+      developerId: 'other-dev',
+      developer: { name: 'X', email: 'x@y.com' },
+    } as any);
+
+    const req = { user: { id: 'u1', role: 'USER' }, params: { moduleId: 'm1' } } as unknown as Request;
+    const res = mockResponse();
+    await getModuleDetails(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  it('getModuleDetails allows developer to read their own non-approved module', async () => {
+    vi.spyOn(prisma.module, 'findUnique').mockResolvedValue({
+      ...moduleDetailBase,
+      status: 'DRAFT',
+      developerId: 'u1',
+      developer: { name: 'Me', email: 'me@y.com' },
+    } as any);
+
+    const req = { user: { id: 'u1', role: 'USER' }, params: { moduleId: 'm1' } } as unknown as Request;
+    const res = mockResponse();
+    await getModuleDetails(req, res);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
   });
 });
 

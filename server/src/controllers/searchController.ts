@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, RelationshipStatus } from '@prisma/client';
 import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -29,6 +29,73 @@ const handleError = async (res: Response, error: unknown, message: string = 'Int
   res.status(500).json({ success: false, error: message });
 };
 
+/** Users discoverable in member search: shared business/household/institution or accepted connection. */
+async function buildMemberSearchVisibilityWhere(
+  searcherId: string
+): Promise<Prisma.UserWhereInput> {
+  const [bizRows, hhRows, instRows] = await Promise.all([
+    prisma.businessMember.findMany({
+      where: { userId: searcherId, isActive: true },
+      select: { businessId: true },
+    }),
+    prisma.householdMember.findMany({
+      where: { userId: searcherId, isActive: true },
+      select: { householdId: true },
+    }),
+    prisma.institutionMember.findMany({
+      where: { userId: searcherId, isActive: true },
+      select: { institutionId: true },
+    }),
+  ]);
+
+  const bizIds = bizRows.map((r) => r.businessId);
+  const hhIds = hhRows.map((r) => r.householdId);
+  const instIds = instRows.map((r) => r.institutionId);
+
+  const or: Prisma.UserWhereInput[] = [];
+
+  if (bizIds.length > 0) {
+    or.push({
+      businesses: {
+        some: { businessId: { in: bizIds }, isActive: true },
+      },
+    });
+  }
+  if (hhIds.length > 0) {
+    or.push({
+      householdMembers: {
+        some: { householdId: { in: hhIds }, isActive: true },
+      },
+    });
+  }
+  if (instIds.length > 0) {
+    or.push({
+      institutionMembers: {
+        some: { institutionId: { in: instIds }, isActive: true },
+      },
+    });
+  }
+
+  or.push({
+    relationshipsReceived: {
+      some: {
+        senderId: searcherId,
+        status: RelationshipStatus.ACCEPTED,
+      },
+    },
+  });
+  or.push({
+    relationshipsSent: {
+      some: {
+        receiverId: searcherId,
+        status: RelationshipStatus.ACCEPTED,
+      },
+    },
+  });
+
+  return { OR: or };
+}
+
 // --- Search Provider Implementations ---
 
 const driveSearchProvider: SearchProvider = {
@@ -56,17 +123,19 @@ const memberSearchProvider: SearchProvider = {
   search: async (query, userId, filters) => {
     // Only search if query is at least 2 characters
     if (!query || query.length < 2) return [];
-    // Search users by name or email, excluding self
+    const visibility = await buildMemberSearchVisibilityWhere(userId);
+    // Search users by name or email, excluding self; restrict to shared orgs or accepted connections
     const users = await prisma.user.findMany({
       where: {
         AND: [
+          { id: { not: userId } },
+          visibility,
           {
             OR: [
               { name: { contains: query, mode: 'insensitive' } },
               { email: { contains: query, mode: 'insensitive' } },
             ],
           },
-          { id: { not: userId } },
         ],
       },
       take: 10,

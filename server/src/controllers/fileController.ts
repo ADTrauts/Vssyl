@@ -10,6 +10,7 @@ import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 
 interface JWTPayload {
   sub?: string;
@@ -217,11 +218,48 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     }
     
     let { folderId, chat, dashboardId } = req.body;
-    
+
+    const toTrimmedString = (v: unknown): string | null => {
+      if (v === undefined || v === null) return null;
+      const s = String(v).trim();
+      return s === '' ? null : s;
+    };
+
     // If this is a chat upload, always use the Chat Files folder
     if (chat) {
       const chatFolder = await getOrCreateChatFilesFolder(userId);
       folderId = chatFolder.id;
+    }
+
+    let folderIdStr = toTrimmedString(folderId);
+    const dashboardIdStr = toTrimmedString(dashboardId);
+
+    let folderRow: { dashboardId: string | null } | null = null;
+    if (folderIdStr) {
+      const folder = await prisma.folder.findFirst({
+        where: { id: folderIdStr, userId, trashedAt: null },
+        select: { dashboardId: true },
+      });
+      if (!folder) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      folderRow = folder;
+      if (dashboardIdStr !== null && (folder.dashboardId ?? null) !== dashboardIdStr) {
+        return res.status(400).json({ message: 'folderId does not match dashboardId' });
+      }
+    }
+
+    const effectiveDashboardId = dashboardIdStr ?? folderRow?.dashboardId ?? null;
+    if (effectiveDashboardId) {
+      try {
+        await assertUserOwnsDashboard(prisma, userId, effectiveDashboardId);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg === 'Task dashboard not found') {
+          return res.status(403).json({ message: 'Access denied' });
+        }
+        throw err;
+      }
     }
     
     const { originalname, mimetype, size } = req.file;
@@ -245,8 +283,8 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       metadata: {
         userId,
         originalName: originalname,
-        folderId: folderId || '',
-        dashboardId: dashboardId || '',
+        folderId: folderIdStr || '',
+        dashboardId: effectiveDashboardId || '',
       },
     });
     
@@ -267,8 +305,8 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
         size,
         url: uploadResult.url,
         path: uploadResult.path,
-        folderId: folderId || null,
-        dashboardId: dashboardId || null,
+        folderId: folderIdStr || null,
+        dashboardId: effectiveDashboardId,
       },
     });
 

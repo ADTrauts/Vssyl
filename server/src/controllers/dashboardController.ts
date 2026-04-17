@@ -45,6 +45,10 @@ export async function createDashboard(req: Request, res: Response, next: NextFun
     res.status(201).json({ dashboard });
     return;
   } catch (err) {
+    if (err instanceof dashboardService.DashboardCreationError) {
+      res.status(err.statusCode).json({ error: err.message });
+      return;
+    }
     next(err);
   }
 }

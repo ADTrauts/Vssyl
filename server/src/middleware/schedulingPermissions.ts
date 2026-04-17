@@ -12,6 +12,36 @@ export interface AuthenticatedRequest extends BaseAuthenticatedRequest {
   moduleInstallation?: ModuleInstallation;
 }
 
+export type SchedulingBusinessIdResult =
+  | { ok: true; businessId: string }
+  | { ok: false; status: number; message: string };
+
+/**
+ * Single source of truth for scheduling tenant: query and body must not disagree (F-027).
+ */
+export function resolveSchedulingBusinessIdFromRequest(
+  req: AuthenticatedRequest
+): SchedulingBusinessIdResult {
+  const qRaw = req.query.businessId;
+  const bRaw = req.body?.businessId;
+  if (qRaw !== undefined && qRaw !== null && typeof qRaw !== 'string') {
+    return { ok: false, status: 400, message: 'businessId query parameter must be a string' };
+  }
+  if (bRaw !== undefined && bRaw !== null && typeof bRaw !== 'string') {
+    return { ok: false, status: 400, message: 'businessId body parameter must be a string' };
+  }
+  const q = typeof qRaw === 'string' ? qRaw : undefined;
+  const b = typeof bRaw === 'string' ? bRaw : undefined;
+  if (q && b && q !== b) {
+    return { ok: false, status: 400, message: 'businessId query and body must match' };
+  }
+  const businessId = q ?? b;
+  if (!businessId) {
+    return { ok: false, status: 401, message: 'Unauthorized' };
+  }
+  return { ok: true, businessId };
+}
+
 /**
  * Check if user is an admin for the business (owner or ADMIN role)
  */
@@ -21,30 +51,23 @@ export const checkSchedulingAdmin = async (
   next: NextFunction
 ): Promise<void> => {
   const user = req.user;
-  // Validate businessId from query or body
-  const businessIdParam = req.query.businessId;
-  const businessIdBody = req.body?.businessId;
-  
-  let businessId: string | undefined;
-  if (businessIdParam) {
-    if (typeof businessIdParam !== 'string') {
-      res.status(400).json({ error: 'businessId query parameter must be a string' });
-      return;
-    }
-    businessId = businessIdParam;
-  } else if (businessIdBody) {
-    if (typeof businessIdBody !== 'string') {
-      res.status(400).json({ error: 'businessId body parameter must be a string' });
-      return;
-    }
-    businessId = businessIdBody;
-  }
-
-  if (!user || !businessId) {
-    logger.warn('Unauthorized access attempt: Missing user or businessId in request for checkSchedulingAdmin');
+  if (!user) {
+    logger.warn('Unauthorized access attempt: Missing user in request for checkSchedulingAdmin');
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
+
+  const resolved = resolveSchedulingBusinessIdFromRequest(req);
+  if (!resolved.ok) {
+    if (resolved.status === 401) {
+      logger.warn('Unauthorized access attempt: Missing businessId in request for checkSchedulingAdmin');
+    }
+    res
+      .status(resolved.status)
+      .json(resolved.status === 401 ? { message: resolved.message } : { error: resolved.message });
+    return;
+  }
+  const businessId = resolved.businessId;
 
   // Attach businessId to request for downstream use
   req.businessId = businessId;
@@ -287,41 +310,23 @@ export const checkSchedulingEmployeeAccess = async (
   next: NextFunction
 ): Promise<void> => {
   const user = req.user;
-  // Validate businessId from query or body
-  const businessIdParam = req.query.businessId;
-  const businessIdBody = req.body?.businessId;
-  
-  let businessId: string | undefined;
-  if (businessIdParam) {
-    if (typeof businessIdParam !== 'string') {
-      res.status(400).json({ error: 'businessId query parameter must be a string' });
-      return;
-    }
-    businessId = businessIdParam;
-  } else if (businessIdBody) {
-    if (typeof businessIdBody !== 'string') {
-      res.status(400).json({ error: 'businessId body parameter must be a string' });
-      return;
-    }
-    businessId = businessIdBody;
-  }
-
-  console.log('🔍 checkSchedulingEmployeeAccess called', {
-    method: req.method,
-    path: req.path,
-    url: req.url,
-    hasUser: !!user,
-    userId: user?.id,
-    businessId,
-    queryBusinessId: req.query.businessId,
-    bodyBusinessId: req.body?.businessId
-  });
-
-  if (!user || !businessId) {
-    logger.warn('Unauthorized access attempt: Missing user or businessId in request for checkSchedulingEmployeeAccess');
+  if (!user) {
+    logger.warn('Unauthorized access attempt: Missing user in request for checkSchedulingEmployeeAccess');
     res.status(401).json({ message: 'Unauthorized' });
     return;
   }
+
+  const resolved = resolveSchedulingBusinessIdFromRequest(req);
+  if (!resolved.ok) {
+    if (resolved.status === 401) {
+      logger.warn('Unauthorized access attempt: Missing businessId in request for checkSchedulingEmployeeAccess');
+    }
+    res
+      .status(resolved.status)
+      .json(resolved.status === 401 ? { message: resolved.message } : { error: resolved.message });
+    return;
+  }
+  const businessId = resolved.businessId;
 
   // Attach businessId to request for downstream use
   req.businessId = businessId;

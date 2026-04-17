@@ -56,8 +56,16 @@ router.get('/ready', async (req, res) => {
   }
 });
 
-// Database schema check endpoint
+// Database schema check endpoint (information_schema — not for public production)
 router.get('/schema', async (req, res) => {
+  const allowSchemaIntrospection =
+    process.env.NODE_ENV !== 'production' ||
+    process.env.ENABLE_PUBLIC_SCHEMA_ROUTE === 'true';
+  if (!allowSchemaIntrospection) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+
   try {
     // Check which tables exist
     const tables = await prisma.$queryRaw`

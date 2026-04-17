@@ -1,36 +1,10 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-import jwt from 'jsonwebtoken';
+import { authenticateJWT, requireRole } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 
 const router: express.Router = express.Router();
 
-// JWT Authentication middleware
-function authenticateJWT(req: express.Request, res: express.Response, next: express.NextFunction) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret', (err, user) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-      req.user = user as any;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
-}
-
-// Admin role check middleware
-function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (req.user && req.user.role === 'ADMIN') {
-    next();
-  } else {
-    res.status(403).json({ error: 'Admin access required' });
-  }
-}
+const requireAdmin = requireRole('ADMIN');
 
 /**
  * GET /api/ai-context-debug/user/:userId

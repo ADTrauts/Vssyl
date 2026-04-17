@@ -1,32 +1,26 @@
 import express from 'express';
-import { authenticateJWT } from '../middleware/auth';
+import { requireRole } from '../middleware/auth';
 import { logController } from '../controllers/logController';
 
 const router: express.Router = express.Router();
 
-// All routes require authentication
-router.use(authenticateJWT);
-
-// Client log collection endpoint (for frontend logs)
+// Client log collection (any authenticated user) — parent mount applies `authenticateJWT`
 router.post('/client', logController.collectClientLog);
 
-// Admin log viewing endpoints
-router.get('/', logController.getLogs);
-router.get('/export', logController.exportLogs);
-router.get('/analytics', logController.getLogAnalytics);
+// Admin-only: viewing, export, retention, alerts (parent mount still authenticates JWT)
+router.get('/', requireRole('ADMIN'), logController.getLogs);
+router.get('/export', requireRole('ADMIN'), logController.exportLogs);
+router.get('/analytics', requireRole('ADMIN'), logController.getLogAnalytics);
 
-// Log alert management
-router.get('/alerts', logController.getLogAlerts);
-router.post('/alerts', logController.createLogAlert);
-router.put('/alerts/:id', logController.updateLogAlert);
-router.delete('/alerts/:id', logController.deleteLogAlert);
+router.get('/alerts', requireRole('ADMIN'), logController.getLogAlerts);
+router.post('/alerts', requireRole('ADMIN'), logController.createLogAlert);
+router.put('/alerts/:id', requireRole('ADMIN'), logController.updateLogAlert);
+router.delete('/alerts/:id', requireRole('ADMIN'), logController.deleteLogAlert);
 
-// Log retention and cleanup
-router.post('/cleanup', logController.cleanupOldLogs);
-router.get('/retention', logController.getRetentionSettings);
-router.put('/retention', logController.updateRetentionSettings);
+router.post('/cleanup', requireRole('ADMIN'), logController.cleanupOldLogs);
+router.get('/retention', requireRole('ADMIN'), logController.getRetentionSettings);
+router.put('/retention', requireRole('ADMIN'), logController.updateRetentionSettings);
 
-// Real-time log streaming (WebSocket endpoint will be handled separately)
-router.get('/stream', logController.getLogStream);
+router.get('/stream', requireRole('ADMIN'), logController.getLogStream);
 
 export { router as adminLogsRouter };

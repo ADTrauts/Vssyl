@@ -562,6 +562,21 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Invitation already accepted' });
     }
 
+    const normalizeEmail = (e: string) => e.trim().toLowerCase();
+    const account = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { email: true },
+    });
+    if (!account?.email) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    if (normalizeEmail(account.email) !== normalizeEmail(invitation.email)) {
+      return res.status(403).json({
+        success: false,
+        error: 'This invitation was sent to a different email address',
+      });
+    }
+
     // Check if user is already a member
     const existingMember = await prisma.businessMember.findFirst({
       where: {

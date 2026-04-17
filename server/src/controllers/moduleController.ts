@@ -1024,6 +1024,14 @@ export const getModuleDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Module not found' });
     }
 
+    if (
+      module.status !== 'APPROVED' &&
+      module.developerId !== user.id &&
+      user.role !== 'ADMIN'
+    ) {
+      return res.status(404).json({ success: false, error: 'Module not found' });
+    }
+
     const moduleData = {
       id: module.id,
       name: module.name,

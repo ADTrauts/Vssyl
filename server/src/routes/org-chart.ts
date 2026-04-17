@@ -2,7 +2,9 @@ import express, { Request } from 'express';
 import { authenticateJWT, requireRole, getUserFromRequest } from '../middleware/auth';
 import orgChartService from '../services/orgChartService';
 import permissionService from '../services/permissionService';
-import employeeManagementService from '../services/employeeManagementService';
+import employeeManagementService, {
+  EmployeeAssignmentValidationError,
+} from '../services/employeeManagementService';
 import {
   requireOrgChartAccess,
   requireManageForOrganizationalTier,
@@ -566,7 +568,10 @@ router.post('/employees/assign', requireOrgChartAccess(fromBody('businessId'), '
     const assignmentData = { ...req.body, assignedById: authUser.id };
     const assignment = await employeeManagementService.assignEmployeeToPosition(assignmentData);
     res.status(201).json(assignment);
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof EmployeeAssignmentValidationError) {
+      return res.status(error.httpStatus).json({ error: error.message });
+    }
     console.error('Error assigning employee:', error);
     res.status(500).json({ error: 'Failed to assign employee' });
   }
@@ -607,7 +612,10 @@ router.post('/employees/transfer', requireOrgChartAccess(fromBody('businessId'),
       effectiveDate ? new Date(effectiveDate) : undefined
     );
     res.status(201).json(transfer);
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof EmployeeAssignmentValidationError) {
+      return res.status(error.httpStatus).json({ error: error.message });
+    }
     console.error('Error transferring employee:', error);
     res.status(500).json({ error: 'Failed to transfer employee' });
   }

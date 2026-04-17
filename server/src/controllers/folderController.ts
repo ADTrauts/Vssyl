@@ -5,6 +5,7 @@ import { canReadFolder, canWriteFolder } from './folderPermissionController';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { getChatSocketService } from '../services/chatSocketService';
 import { Prisma } from '@prisma/client';
+import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
@@ -123,6 +124,21 @@ export async function createFolder(req: Request, res: Response) {
     const userId = (req as AuthenticatedRequest).user?.id || (req.user as any).id || (req.user as any).sub;
     const { name, parentId, dashboardId } = req.body;
     if (!name) return res.status(400).json({ message: 'Name is required' });
+
+    if (dashboardId != null && dashboardId !== '') {
+      if (typeof dashboardId !== 'string') {
+        return res.status(400).json({ message: 'dashboardId must be a string' });
+      }
+      try {
+        await assertUserOwnsDashboard(prisma, userId, dashboardId);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg === 'Task dashboard not found') {
+          return res.status(403).json({ message: 'Access denied' });
+        }
+        throw err;
+      }
+    }
     
     // If creating in a parent folder, check write permissions
     if (parentId) {

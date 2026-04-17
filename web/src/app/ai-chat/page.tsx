@@ -82,7 +82,7 @@ export default function AIChat() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentDashboard } = useDashboard();
+  const { currentDashboard, getDashboardType, getDashboardDisplayName } = useDashboard();
   const { trashItem } = useGlobalTrash();
   const [conversations, setConversations] = useState<AIConversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
@@ -588,16 +588,30 @@ export default function AIChat() {
         }, session.accessToken);
       }
 
+      const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
+      const twinBusinessId =
+        dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined;
+
       const twinBody = {
         query: userQuery,
         provider: selectedProvider,
         ...(selectedModel && { model: selectedModel }),
         context: {
           currentModule: 'ai-chat',
-          dashboardType: 'personal',
+          dashboardId: currentDashboard?.id,
+          dashboardType,
+          dashboardName: currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard',
           urgency: userQuery.toLowerCase().includes('urgent') || userQuery.toLowerCase().includes('asap') ? 'high' : 'medium',
           conversationId: currentConversationId || undefined,
           fileIds: currentAttachedFiles.map((file) => file.id),
+          ...(twinBusinessId ? { businessId: twinBusinessId } : {}),
         },
         stream: true,
       };

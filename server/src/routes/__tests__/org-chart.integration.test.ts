@@ -40,6 +40,7 @@ describe('Org chart routes — tenant isolation', () => {
   let memberUser: User;
   let outsiderUser: User;
   let platformAdmin: User;
+  let managerUser: User;
 
   beforeAll(async () => {
     businessA = await createTestBusiness('Org Chart Test A');
@@ -49,7 +50,8 @@ describe('Org chart routes — tenant isolation', () => {
     memberUser = await createTestUser({ name: 'Org Chart Member' });
     outsiderUser = await createTestUser({ name: 'Org Chart Outsider' });
     platformAdmin = await createTestAdminUser();
-    userIdsToCleanup.push(memberUser.id, outsiderUser.id, platformAdmin.id);
+    managerUser = await createTestUser({ name: 'Org Chart Manager' });
+    userIdsToCleanup.push(memberUser.id, outsiderUser.id, platformAdmin.id, managerUser.id);
 
     await prisma.businessMember.create({
       data: {
@@ -58,6 +60,16 @@ describe('Org chart routes — tenant isolation', () => {
         role: BusinessRole.EMPLOYEE,
         isActive: true,
         canManage: false,
+      },
+    });
+
+    await prisma.businessMember.create({
+      data: {
+        businessId: businessA.id,
+        userId: managerUser.id,
+        role: BusinessRole.MANAGER,
+        isActive: true,
+        canManage: true,
       },
     });
 
@@ -130,6 +142,45 @@ describe('Org chart routes — tenant isolation', () => {
       });
 
     expect(res.status).toBe(403);
+  });
+
+  it('returns 400 when assigning a user who is not an active member of the business', async () => {
+    const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    const tier = await prisma.organizationalTier.create({
+      data: {
+        businessId: businessA.id,
+        name: `Tier ${suffix}`,
+        level: 2,
+      },
+    });
+    const position = await prisma.position.create({
+      data: {
+        businessId: businessA.id,
+        tierId: tier.id,
+        title: `Position ${suffix}`,
+        maxOccupants: 5,
+      },
+    });
+
+    try {
+      const res = await request(app)
+        .post('/api/org-chart/employees/assign')
+        .set(createAuthHeader(managerUser))
+        .send({
+          businessId: businessA.id,
+          userId: outsiderUser.id,
+          positionId: position.id,
+          startDate: new Date().toISOString(),
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        error: 'User is not an active member of this business',
+      });
+    } finally {
+      await prisma.position.deleteMany({ where: { id: position.id } });
+      await prisma.organizationalTier.deleteMany({ where: { id: tier.id } });
+    }
   });
 
   it('returns 403 for global permission catalog unless platform role is ADMIN', async () => {

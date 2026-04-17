@@ -712,8 +712,8 @@ export const inviteEmployee = async (req: Request, res: Response) => {
     }
 
     // Check if user has permission to invite employees
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
 
     if (!currentUserMember || !currentUserMember.canInvite) {
@@ -727,7 +727,7 @@ export const inviteEmployee = async (req: Request, res: Response) => {
         where: { businessId_userId: { businessId, userId: existingUser.id } },
       });
 
-      if (existingMember) {
+      if (existingMember?.isActive) {
         return res.status(400).json({ error: 'User is already a member of this business' });
       }
     }
@@ -808,8 +808,8 @@ export const getBusinessMembers = async (req: Request, res: Response) => {
     }
 
     // Check if user is a member of the business
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
 
     if (!currentUserMember) {
@@ -880,10 +880,10 @@ export const getPinnedColleagues = async (req: Request, res: Response) => {
     const currentUserId = req.user?.id;
     if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const member = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const member = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
-    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+    if (!member) return res.status(403).json({ error: 'Not a member of this business' });
 
     const pinned = await prisma.pinnedColleague.findMany({
       where: { userId: currentUserId, businessId },
@@ -910,15 +910,15 @@ export const pinColleague = async (req: Request, res: Response) => {
     if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
     if (!pinnedUserId || typeof pinnedUserId !== 'string') return res.status(400).json({ error: 'pinnedUserId is required' });
 
-    const member = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const member = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
-    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+    if (!member) return res.status(403).json({ error: 'Not a member of this business' });
 
-    const isColleague = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: pinnedUserId } },
+    const isColleague = await prisma.businessMember.findFirst({
+      where: { businessId, userId: pinnedUserId, isActive: true },
     });
-    if (!isColleague?.isActive) return res.status(400).json({ error: 'User is not a member of this business' });
+    if (!isColleague) return res.status(400).json({ error: 'User is not a member of this business' });
     if (pinnedUserId === currentUserId) return res.status(400).json({ error: 'Cannot pin yourself' });
 
     const existing = await prisma.pinnedColleague.findUnique({
@@ -947,10 +947,10 @@ export const unpinColleague = async (req: Request, res: Response) => {
     const currentUserId = req.user?.id;
     if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const member = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const member = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
-    if (!member?.isActive) return res.status(403).json({ error: 'Not a member of this business' });
+    if (!member) return res.status(403).json({ error: 'Not a member of this business' });
 
     await prisma.pinnedColleague.deleteMany({
       where: { userId: currentUserId, businessId, pinnedUserId },
@@ -985,8 +985,12 @@ export const updateEmployeeRole = async (req: Request, res: Response) => {
     }
 
     // Check if current user has permission to manage this member
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId: member.businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: {
+        businessId: member.businessId,
+        userId: currentUserId,
+        isActive: true,
+      },
     });
 
     if (!currentUserMember || !currentUserMember.canManage) {
@@ -1042,8 +1046,12 @@ export const removeEmployee = async (req: Request, res: Response) => {
     }
 
     // Check if current user has permission to remove members
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId: member.businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: {
+        businessId: member.businessId,
+        userId: currentUserId,
+        isActive: true,
+      },
     });
 
     if (!currentUserMember || !currentUserMember.canManage) {
@@ -1085,8 +1093,8 @@ export const getBusinessInvitations = async (req: Request, res: Response) => {
     }
 
     // Check if user has permission to view invitations
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: { businessId, userId: currentUserId, isActive: true },
     });
 
     if (!currentUserMember || !currentUserMember.canInvite) {
@@ -1136,8 +1144,12 @@ export const resendInvitation = async (req: Request, res: Response) => {
     }
 
     // Check if user has permission to resend invitations
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId: invitation.businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: {
+        businessId: invitation.businessId,
+        userId: currentUserId,
+        isActive: true,
+      },
     });
 
     if (!currentUserMember || !currentUserMember.canInvite) {
@@ -1203,8 +1215,12 @@ export const cancelInvitation = async (req: Request, res: Response) => {
     }
 
     // Check if user has permission to cancel invitations
-    const currentUserMember = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId: invitation.businessId, userId: currentUserId } },
+    const currentUserMember = await prisma.businessMember.findFirst({
+      where: {
+        businessId: invitation.businessId,
+        userId: currentUserId,
+        isActive: true,
+      },
     });
 
     if (!currentUserMember || !currentUserMember.canInvite) {

@@ -6,6 +6,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
 
 // Prisma client includes noteFolder after generate; types may lag in IDE
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,6 +29,26 @@ export async function getFolders(req: Request, res: Response): Promise<void> {
     if (!dashboardId || typeof dashboardId !== 'string') {
       res.status(400).json({ error: 'dashboardId is required' });
       return;
+    }
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        dashboardId,
+        businessId && typeof businessId === 'string' ? businessId : null
+      );
+    } catch (e: unknown) {
+      const msg = (e as Error).message;
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(400).json({ error: 'Dashboard does not match business context' });
+        return;
+      }
+      throw e;
     }
 
     const where: { createdById: string; dashboardId: string; businessId: string | null } = {
@@ -81,6 +102,41 @@ export async function createFolder(req: Request, res: Response): Promise<void> {
     if (!dashboardId || typeof dashboardId !== 'string') {
       res.status(400).json({ error: 'dashboardId is required' });
       return;
+    }
+
+    try {
+      await assertUserOwnedDashboardBusinessAlignment(
+        prisma,
+        userId,
+        dashboardId,
+        businessId && typeof businessId === 'string' ? businessId : null
+      );
+    } catch (e: unknown) {
+      const msg = (e as Error).message;
+      if (msg === 'Task dashboard not found') {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      if (msg === 'Task dashboard context mismatch') {
+        res.status(400).json({ error: 'Dashboard does not match business context' });
+        return;
+      }
+      throw e;
+    }
+
+    if (parentId && typeof parentId === 'string') {
+      const parent = await noteFolderDb.findFirst({
+        where: {
+          id: parentId,
+          createdById: userId,
+          dashboardId,
+          businessId: businessId && typeof businessId === 'string' ? businessId : null,
+        },
+      });
+      if (!parent) {
+        res.status(400).json({ error: 'Parent folder not found or not in this dashboard' });
+        return;
+      }
     }
 
     const folder = await noteFolderDb.create({
@@ -147,7 +203,23 @@ export async function updateFolder(req: Request, res: Response): Promise<void> {
       data.name = name.trim();
     }
     if (parentId !== undefined) {
-      data.parent = parentId && typeof parentId === 'string' ? { connect: { id: parentId } } : { disconnect: true };
+      if (parentId && typeof parentId === 'string') {
+        const parent = await noteFolderDb.findFirst({
+          where: {
+            id: parentId,
+            createdById: userId,
+            dashboardId: existing.dashboardId,
+            businessId: existing.businessId,
+          },
+        });
+        if (!parent) {
+          res.status(400).json({ error: 'Parent folder not found or not in this folder tree' });
+          return;
+        }
+        data.parent = { connect: { id: parentId } };
+      } else {
+        data.parent = { disconnect: true };
+      }
     }
 
     const folder = await noteFolderDb.update({

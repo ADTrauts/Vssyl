@@ -124,6 +124,7 @@ export class DigitalLifeTwinService {
       preferredModel?: string;
       conversationId?: string;
       fileIds?: string[];
+      businessId?: string;
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
     let conversationHistory: ConversationHistoryItem[] = [];
@@ -189,6 +190,7 @@ export class DigitalLifeTwinService {
       preferredModel?: string;
       conversationId?: string;
       fileIds?: string[];
+      businessId?: string;
     },
     res: { setHeader: (name: string, value: string) => void; write: (chunk: string) => void; end: () => void },
     onDone?: (response: DigitalLifeTwinResponse) => Promise<void>
@@ -262,8 +264,8 @@ export class DigitalLifeTwinService {
   /**
    * Get context for specific module with cross-module intelligence
    */
-  async getModuleContext(userId: string, moduleName: string) {
-    return await this.contextEngine.getModuleContext(userId, moduleName);
+  async getModuleContext(userId: string, moduleName: string, businessId?: string) {
+    return await this.contextEngine.getModuleContext(userId, moduleName, businessId);
   }
 
   /**

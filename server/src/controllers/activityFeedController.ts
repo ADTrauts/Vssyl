@@ -5,6 +5,7 @@
  */
 
 import { Request, Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 
@@ -43,11 +44,78 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
     const limit = Math.min(parseInt((req.query.limit as string) || '20', 10) || 20, 50);
     const dashboardId = typeof req.query.dashboardId === 'string' ? req.query.dashboardId : null;
 
+    let scopedDashboard: {
+      id: string;
+      businessId: string | null;
+      householdId: string | null;
+      institutionId: string | null;
+    } | null = null;
+    if (dashboardId) {
+      const d = await prisma.dashboard.findFirst({
+        where: { id: dashboardId, userId },
+        select: {
+          id: true,
+          businessId: true,
+          householdId: true,
+          institutionId: true,
+        },
+      });
+      if (!d) {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      scopedDashboard = d;
+    }
+
     const perSource = Math.ceil(limit / 4);
+
+    const activityWhere: Prisma.ActivityWhereInput = scopedDashboard
+      ? { userId, file: { dashboardId: scopedDashboard.id } }
+      : { userId };
+
+    const messageWhere: Prisma.MessageWhereInput = scopedDashboard
+      ? { senderId: userId, deletedAt: null, conversation: { dashboardId: scopedDashboard.id } }
+      : { senderId: userId, deletedAt: null };
+
+    const taskWhere: Prisma.TaskWhereInput = scopedDashboard
+      ? {
+          OR: [{ createdById: userId }, { assignedToId: userId }],
+          trashedAt: null,
+          dashboardId: scopedDashboard.id,
+        }
+      : {
+          OR: [{ createdById: userId }, { assignedToId: userId }],
+          trashedAt: null,
+        };
+
+    const eventWhere: Prisma.EventWhereInput = scopedDashboard
+      ? {
+          trashedAt: null,
+          calendar: {
+            is: {
+              ...(scopedDashboard.businessId != null
+                ? { contextType: 'BUSINESS' as const, contextId: scopedDashboard.businessId }
+                : scopedDashboard.householdId != null
+                  ? { contextType: 'HOUSEHOLD' as const, contextId: scopedDashboard.householdId }
+                  : scopedDashboard.institutionId != null
+                    ? { contextType: 'BUSINESS' as const, contextId: scopedDashboard.institutionId }
+                    : { contextType: 'PERSONAL' as const, contextId: userId }),
+              members: { some: { userId } },
+            },
+          },
+        }
+      : {
+          calendar: {
+            members: {
+              some: { userId },
+            },
+          },
+          trashedAt: null,
+        };
 
     const [driveActivities, chatMessages, calendarEvents, todoTasks] = await Promise.all([
       prisma.activity.findMany({
-        where: { userId },
+        where: activityWhere,
         include: {
           file: { select: { name: true, id: true } },
           user: { select: { name: true, email: true } },
@@ -57,7 +125,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       }),
 
       prisma.message.findMany({
-        where: { senderId: userId, deletedAt: null },
+        where: messageWhere,
         include: {
           conversation: { select: { name: true, id: true } },
           sender: { select: { name: true, email: true } },
@@ -67,14 +135,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       }),
 
       prisma.event.findMany({
-        where: {
-          calendar: {
-            members: {
-              some: { userId },
-            },
-          },
-          trashedAt: null,
-        },
+        where: eventWhere,
         include: {
           calendar: { select: { name: true } },
         },
@@ -83,10 +144,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       }),
 
       prisma.task.findMany({
-        where: {
-          OR: [{ createdById: userId }, { assignedToId: userId }],
-          trashedAt: null,
-        },
+        where: taskWhere,
         include: {
           createdBy: { select: { name: true, email: true } },
         },

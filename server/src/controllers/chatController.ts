@@ -351,6 +351,101 @@ export const getConversation = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * When `dashboardId` is set: require the caller to own the dashboard, and require every
+ * participant to be eligible for that dashboard context (business / household / institution
+ * membership, or solo-only for personal dashboards with no tenant scope).
+ */
+async function validateConversationDashboardAccess(
+  userId: string,
+  dashboardId: string | undefined,
+  allParticipantIds: string[]
+): Promise<void> {
+  if (!dashboardId) return;
+
+  const dashboard = await prisma.dashboard.findFirst({
+    where: { id: dashboardId, userId },
+    select: {
+      businessId: true,
+      householdId: true,
+      institutionId: true,
+    },
+  });
+  if (!dashboard) {
+    const err = new Error('Dashboard not found or access denied');
+    (err as Error & { status?: number }).status = 403;
+    throw err;
+  }
+
+  const { businessId, householdId, institutionId } = dashboard;
+  const hasTenantScope = Boolean(businessId || householdId || institutionId);
+
+  if (!hasTenantScope) {
+    const invalid = allParticipantIds.some((pid) => pid !== userId);
+    if (invalid) {
+      const err = new Error(
+        'This personal workspace does not allow multi-user conversations on its dashboard'
+      );
+      (err as Error & { status?: number }).status = 400;
+      throw err;
+    }
+    return;
+  }
+
+  if (businessId) {
+    const members = await prisma.businessMember.findMany({
+      where: {
+        businessId,
+        userId: { in: allParticipantIds },
+        isActive: true,
+      },
+      select: { userId: true },
+    });
+    const allowed = new Set(members.map((m) => m.userId));
+    if (allParticipantIds.some((pid) => !allowed.has(pid))) {
+      const err = new Error('All participants must be active members of this business');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+    return;
+  }
+
+  if (householdId) {
+    const members = await prisma.householdMember.findMany({
+      where: {
+        householdId,
+        userId: { in: allParticipantIds },
+        isActive: true,
+      },
+      select: { userId: true },
+    });
+    const allowed = new Set(members.map((m) => m.userId));
+    if (allParticipantIds.some((pid) => !allowed.has(pid))) {
+      const err = new Error('All participants must be active members of this household');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+    return;
+  }
+
+  if (institutionId) {
+    const members = await prisma.institutionMember.findMany({
+      where: {
+        institutionId,
+        userId: { in: allParticipantIds },
+        isActive: true,
+      },
+      select: { userId: true },
+    });
+    const allowed = new Set(members.map((m) => m.userId));
+    if (allParticipantIds.some((pid) => !allowed.has(pid))) {
+      const err = new Error('All participants must be active members of this institution');
+      (err as Error & { status?: number }).status = 403;
+      throw err;
+    }
+  }
+}
+
 export const createConversation = async (req: Request, res: Response) => {
   try {
     const user = getUserFromRequest(req);
@@ -360,8 +455,26 @@ export const createConversation = async (req: Request, res: Response) => {
 
     const { name, type, participantIds, dashboardId }: CreateConversationRequest = req.body;
 
+    if (!Array.isArray(participantIds)) {
+      return res.status(400).json({ success: false, error: 'participantIds must be an array' });
+    }
+    if (participantIds.some((id) => typeof id !== 'string' || id.length === 0)) {
+      return res.status(400).json({ success: false, error: 'Invalid participantIds' });
+    }
+    if (dashboardId !== undefined && dashboardId !== null && typeof dashboardId !== 'string') {
+      return res.status(400).json({ success: false, error: 'dashboardId must be a string' });
+    }
+
     // Ensure current user is included in participants
     const allParticipantIds = [...new Set([user.id, ...participantIds])];
+
+    try {
+      await validateConversationDashboardAccess(user.id, dashboardId, allParticipantIds);
+    } catch (e: unknown) {
+      const err = e as Error & { status?: number };
+      const code = typeof err.status === 'number' ? err.status : 500;
+      return res.status(code).json({ success: false, error: err.message });
+    }
 
     // For direct conversations, check if one already exists
     if (type === 'DIRECT' && participantIds.length === 1) {

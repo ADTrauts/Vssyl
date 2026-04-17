@@ -126,6 +126,8 @@ export interface LifeTwinQuery {
     urgency?: 'low' | 'medium' | 'high';
     // Optional list of Drive file IDs attached to this query
     fileIds?: string[];
+    /** When set (e.g. business workspace), module context fetches use this tenant explicitly. */
+    businessId?: string;
   };
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
@@ -187,8 +189,17 @@ export class DigitalLifeTwinCore {
       let userContext: UserContext;
       let smartContext: Record<string, unknown> | null = null;
       try {
+        const ctx = query.context as Record<string, unknown> | undefined;
+        const businessId =
+          ctx && typeof ctx.businessId === 'string' && ctx.businessId.trim() !== ''
+            ? ctx.businessId.trim()
+            : undefined;
         // Use the NEW intelligent context fetching system
-        smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query);
+        smartContext = await this.contextEngine?.getContextForAIQuery(
+          query.userId,
+          query.query,
+          businessId
+        );
         
         // Convert smart context to UserContext format for backward compatibility
         userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);

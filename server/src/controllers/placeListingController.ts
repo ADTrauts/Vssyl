@@ -267,10 +267,21 @@ export async function updateInteractionLink(req: Request, res: Response): Promis
     const member = await verifyBusinessAdmin(userId, businessId);
     if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
 
+    const existingLink = await prisma.businessInteractionLink.findFirst({
+      where: {
+        id: linkId,
+        listing: { businessId },
+      },
+    });
+    if (!existingLink) {
+      res.status(404).json({ success: false, error: 'Link not found' });
+      return;
+    }
+
     const { type, label, url, sortOrder, isActive } = req.body;
 
     const link = await prisma.businessInteractionLink.update({
-      where: { id: linkId },
+      where: { id: existingLink.id },
       data: {
         ...(type !== undefined && { type }),
         ...(label !== undefined && { label }),
@@ -301,7 +312,18 @@ export async function deleteInteractionLink(req: Request, res: Response): Promis
     const member = await verifyBusinessAdmin(userId, businessId);
     if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
 
-    await prisma.businessInteractionLink.delete({ where: { id: linkId } });
+    const existingLink = await prisma.businessInteractionLink.findFirst({
+      where: {
+        id: linkId,
+        listing: { businessId },
+      },
+    });
+    if (!existingLink) {
+      res.status(404).json({ success: false, error: 'Link not found' });
+      return;
+    }
+
+    await prisma.businessInteractionLink.delete({ where: { id: existingLink.id } });
 
     res.json({ success: true, message: 'Link deleted' });
   } catch (error: unknown) {

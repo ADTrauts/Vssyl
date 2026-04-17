@@ -1,16 +1,12 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 import {
   generateGoogleAuthUrl,
   authenticateGoogleUserForBusiness,
   validateGoogleOAuthConfig,
   GoogleOAuthConfig
 } from '../services/googleOAuthService';
-
-// Helper function to get user from request
-const getUserFromRequest = (req: Request) => {
-  return (req as any).user;
-};
 
 // Helper function to handle errors
 const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
