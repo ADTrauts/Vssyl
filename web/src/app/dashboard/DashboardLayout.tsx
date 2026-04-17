@@ -32,6 +32,9 @@ import { SidebarCustomizationModal } from '../../components/sidebar/SidebarCusto
 import { SidebarCustomizationProvider, useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { SidebarFolderRenderer } from '../../components/sidebar/SidebarFolderRenderer';
 import type { LeftSidebarConfig } from '../../types/sidebar';
+import { MODULE_ICONS } from '../../config/moduleIcons';
+
+export { MODULE_ICONS };
 
 // Add CSS styles for enhanced drag and drop UX
 const dragStyles = `
@@ -101,23 +104,6 @@ const dragStyles = `
     color: #dc2626 !important;
   }
 `;
-
-// Module icons mapping
-export const MODULE_ICONS = {
-  dashboard: LayoutDashboard,
-  drive: Folder,
-  chat: MessageSquare,
-  members: Users,
-  analytics: BarChart3,
-  connections: Users,
-  ai: Brain,
-  calendar: CalendarIcon,
-  todo: CheckSquare,
-  hr: Shield,
-  scheduling: CalendarIcon,
-  admin: Lock,
-  modules: Puzzle,
-};
 
 // Helper function to get sidebar key
 function getSidebarKey(pathname: string | null) {

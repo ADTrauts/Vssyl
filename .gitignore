@@ -28,6 +28,8 @@ vssyl-storage-key.json
 docs/**
 !docs/plans/
 !docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md
+!docs/deployment/
+!docs/deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md
 memory-bank/
 
 # Upload files

@@ -23,7 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import type { RightSidebarConfig } from '../../types/sidebar';
 import type { ModuleConfig } from '../../config/modules';
-import { MODULE_ICONS } from '../../app/dashboard/DashboardLayout';
+import { MODULE_ICONS } from '../../config/moduleIcons';
 
 interface RightSidebarCustomizerProps {
   context: 'personal' | string; // 'personal' or businessId
