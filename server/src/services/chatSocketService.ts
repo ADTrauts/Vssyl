@@ -197,7 +197,7 @@ export class ChatSocketService {
 
       // Handle presence updates
       socket.on('presence_update', (data: PresenceEvent) => {
-        this.handlePresenceUpdate(socket, data);
+        void this.handlePresenceUpdate(socket, data);
       });
 
       // Handle scheduling room joins (tenant-checked; do not trust client-supplied ids alone)
@@ -234,38 +234,39 @@ export class ChatSocketService {
     });
   }
 
+  /** Active conversations the user participates in (for room join + scoped presence). */
+  private async getActiveConversationIdsForUser(userId: string): Promise<string[]> {
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            userId,
+            isActive: true,
+          },
+        },
+      },
+      select: { id: true },
+    });
+    return conversations.map((c) => c.id);
+  }
+
   private async joinUserToConversations(socket: SocketWithData, userId: string) {
     try {
-      // Get all conversations where user is a participant
-      const conversations = await prisma.conversation.findMany({
-        where: {
-          participants: {
-            some: {
-              userId: userId,
-              isActive: true
-            }
-          }
-        },
-        select: { id: true }
-      });
-
-      // Join socket to all conversations
-      conversations.forEach((conversation: { id: string }) => {
-        socket.join(`conversation_${conversation.id}`);
-      });
+      const ids = await this.getActiveConversationIdsForUser(userId);
+      await Promise.all(ids.map((id) => socket.join(`conversation_${id}`)));
 
       await logger.info('User joined conversations', {
         operation: 'socket_user_joined_conversations',
         userId,
-        count: conversations.length
+        count: ids.length,
       });
     } catch (error) {
       await logger.error('Failed to join user to conversations', {
         operation: 'socket_join_conversations_error',
         error: {
           message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        }
+          stack: error instanceof Error ? error.stack : undefined,
+        },
       });
     }
   }
@@ -648,16 +649,35 @@ export class ChatSocketService {
     }
   }
 
-  private handlePresenceUpdate(socket: SocketWithData, data: PresenceEvent) {
+  /**
+   * Presence is scoped to conversation rooms the user belongs to (not global io.emit).
+   * Uses socket.to(room) so the emitting socket does not receive its own event.
+   */
+  private async handlePresenceUpdate(socket: SocketWithData, data: PresenceEvent) {
     const user = socket.data.user as AuthenticatedSocket;
-    
-    // Broadcast presence update to all connected users
-    this.io.emit('user_presence', {
+
+    const payload = {
       userId: user.userId,
       userName: user.userName,
       status: data.status,
-      lastSeen: data.lastSeen
-    });
+      lastSeen: data.lastSeen,
+    };
+
+    try {
+      const conversationIds = await this.getActiveConversationIdsForUser(user.userId);
+      for (const cid of conversationIds) {
+        socket.to(`conversation_${cid}`).emit('user_presence', payload);
+      }
+    } catch (error: unknown) {
+      const err = error as Error;
+      await logger.error('Failed to broadcast presence update', {
+        operation: 'socket_presence_broadcast',
+        error: {
+          message: err.message,
+          stack: err.stack,
+        },
+      });
+    }
   }
 
   private handleDisconnect(socket: SocketWithData) {
