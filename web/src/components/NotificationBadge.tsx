@@ -19,7 +19,7 @@ export default function NotificationBadge({
 }: NotificationBadgeProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const notificationSocket = useNotificationSocket();
+  const { onNotification, onNotificationUpdate } = useNotificationSocket();
 
   // Load unread count from API
   useEffect(() => {
@@ -42,18 +42,19 @@ export default function NotificationBadge({
 
   // Listen for real-time notification updates
   useEffect(() => {
-    notificationSocket.onNotification(() => {
-      // Increment unread count when new notification arrives
-      setUnreadCount(prev => prev + 1);
+    const unsubNew = onNotification(() => {
+      setUnreadCount((prev) => prev + 1);
     });
-
-    notificationSocket.onNotificationUpdate((data) => {
-      // Update count when notifications are marked as read
+    const unsubUpdate = onNotificationUpdate((data) => {
       if (data.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     });
-  }, [notificationSocket]);
+    return () => {
+      unsubNew();
+      unsubUpdate();
+    };
+  }, [onNotification, onNotificationUpdate]);
 
   if (loading) {
     return (

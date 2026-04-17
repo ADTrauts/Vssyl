@@ -502,7 +502,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   const { data: session } = useSession();
   const router = useRouter();
   const { currentDashboard, getDashboardType } = useDashboard();
-  const notificationSocket = useNotificationSocket();
+  const { onNotification } = useNotificationSocket();
   const [fileNotifications, setFileNotifications] = useState<NotificationEvent[]>([]);
   const {
     activeConversation,
@@ -623,12 +623,11 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
       }
     };
 
-    notificationSocket.onNotification(handleNotification);
-
+    const unsub = onNotification(handleNotification);
     return () => {
-      // Cleanup handled by notificationSocket
+      unsub();
     };
-  }, [notificationSocket, router]);
+  }, [onNotification, router]);
 
   // Load threads when conversation changes
   useEffect(() => {

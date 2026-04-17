@@ -79,7 +79,7 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
 export default function NotificationsPage() {
   const { session, status, mounted } = useSafeSession();
   const router = useRouter();
-  const notificationSocket = useNotificationSocket();
+  const { onNotification, onNotificationUpdate, onNotificationDelete } = useNotificationSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -309,16 +309,15 @@ export default function NotificationsPage() {
       }
     };
 
-    notificationSocket.onNotification(handleNewNotification);
-    notificationSocket.onNotificationUpdate(handleNotificationUpdate);
-    notificationSocket.onNotificationDelete(handleNotificationDelete);
-
-    // Cleanup
+    const offNew = onNotification(handleNewNotification);
+    const offUpdate = onNotificationUpdate(handleNotificationUpdate);
+    const offDelete = onNotificationDelete(handleNotificationDelete);
     return () => {
-      // Note: notificationSocket might not have cleanup methods
-      // This is fine - the socket service handles cleanup internally
+      offNew();
+      offUpdate();
+      offDelete();
     };
-  }, [notificationSocket, viewMode, mounted, limit]);
+  }, [onNotification, onNotificationUpdate, onNotificationDelete, viewMode, mounted, limit]);
 
   // Build categories dynamically from module metadata (show all, even with 0 notifications)
   const categories: NotificationCategory[] = useMemo(() => {
