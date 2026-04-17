@@ -2,8 +2,8 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
 /**
- * Server-side gate for admin routes. Unauthenticated users are sent to sign-in (NextAuth).
- * Authenticated non-admin users are redirected to /forbidden instead of the login page.
+ * - /admin-portal/*: requires session; non-ADMIN → /forbidden; unauthenticated → sign-in.
+ * - /profile/*: requires session (unauthenticated → sign-in with callbackUrl).
  */
 export default withAuth(
   function middleware(req) {
@@ -18,7 +18,8 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        if (req.nextUrl.pathname.startsWith('/admin-portal')) {
+        const path = req.nextUrl.pathname;
+        if (path.startsWith('/admin-portal') || path.startsWith('/profile')) {
           return !!token;
         }
         return true;
@@ -28,5 +29,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin-portal/:path*'],
+  matcher: ['/admin-portal/:path*', '/profile/:path*'],
 };

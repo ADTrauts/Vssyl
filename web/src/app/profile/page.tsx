@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 function getAccessToken(session: unknown): string | undefined {
@@ -16,6 +17,7 @@ export default function Profile() {
   const sessionResult = useSession();
   const session = sessionResult?.data;
   const status = sessionResult?.status || 'loading';
+  const router = useRouter();
   const [profile, setProfile] = useState<unknown>(null);
   const [error, setError] = useState('');
   const [editName, setEditName] = useState('');
@@ -44,6 +46,12 @@ export default function Profile() {
     };
     fetchProfile();
   }, [session]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace(`/auth/login?callbackUrl=${encodeURIComponent('/profile')}`);
+    }
+  }, [status, router]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,8 +88,17 @@ export default function Profile() {
     }
   };
 
-  if (status === 'loading') return <div>Loading...</div>;
-  if (!session) return <div>You must be signed in to view this page.</div>;
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-gray-700">
+        {status === 'unauthenticated' ? 'Redirecting to sign in…' : 'Loading…'}
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh', padding: 16 }}>
