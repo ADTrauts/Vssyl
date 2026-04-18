@@ -23,10 +23,6 @@ export const createSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (!tier || !['free', 'standard', 'enterprise'].includes(tier)) {
-      return res.status(400).json({ error: 'Invalid tier' });
-    }
-
     const subscription = await subscriptionService.createSubscription({
       userId,
       businessId,
@@ -58,14 +54,6 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 
     if (!isStripeConfigured()) {
       return res.status(400).json({ error: 'Stripe is not configured' });
-    }
-
-    if (!tier || !['pro', 'business_basic', 'business_advanced', 'enterprise'].includes(tier)) {
-      return res.status(400).json({ error: 'Invalid tier. Must be pro, business_basic, business_advanced, or enterprise' });
-    }
-
-    if (billingCycle !== 'monthly' && billingCycle !== 'yearly') {
-      return res.status(400).json({ error: 'Invalid billing cycle. Must be monthly or yearly' });
     }
 
     // Get pricing configuration to find Stripe price ID
@@ -322,10 +310,6 @@ export const updateSubscriptionEmployeeCount = async (req: Request, res: Respons
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    if (employeeCount === undefined || employeeCount < 0) {
-      return res.status(400).json({ error: 'Valid employee count is required' });
     }
 
     const subscription = await subscriptionService.getSubscription(id);
@@ -850,10 +834,6 @@ export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    if (!paymentMethodId) {
-      return res.status(400).json({ error: 'Payment method ID is required' });
     }
 
     if (!isStripeConfigured()) {

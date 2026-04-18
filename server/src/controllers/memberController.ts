@@ -906,9 +906,8 @@ export const pinColleague = async (req: Request, res: Response) => {
     const businessId = req.params.businessId;
     const currentUserId = req.user?.id;
     const body = req.body as { pinnedUserId?: string };
-    const pinnedUserId = body?.pinnedUserId;
+    const pinnedUserId = body?.pinnedUserId as string;
     if (!currentUserId) return res.status(401).json({ error: 'Unauthorized' });
-    if (!pinnedUserId || typeof pinnedUserId !== 'string') return res.status(400).json({ error: 'pinnedUserId is required' });
 
     const member = await prisma.businessMember.findFirst({
       where: { businessId, userId: currentUserId, isActive: true },
