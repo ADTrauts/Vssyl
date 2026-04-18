@@ -117,16 +117,7 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
 
     const { tier, billingCycle, basePrice: basePriceRaw, perEmployeePrice, includedEmployees, queryPackSmall, queryPackMedium, queryPackLarge, queryPackEnterprise, baseAIAllowance, stripePriceId, perEmployeeStripePriceId, effectiveDate, updateExistingSubscriptions } = req.body;
 
-    if (!tier || !billingCycle || basePriceRaw === undefined) {
-      res.status(400).json({ error: 'Missing required fields: tier, billingCycle, basePrice' });
-      return;
-    }
-
     const basePrice = typeof basePriceRaw === 'string' ? parseFloat(basePriceRaw) : Number(basePriceRaw);
-    if (Number.isNaN(basePrice)) {
-      res.status(400).json({ error: 'Invalid basePrice' });
-      return;
-    }
 
     // Normalize query pack prices
     const normalizedQueryPackSmall = queryPackSmall !== undefined && queryPackSmall !== null ? (typeof queryPackSmall === 'string' ? parseFloat(queryPackSmall) : Number(queryPackSmall)) : undefined;
@@ -619,25 +610,13 @@ export const createTier = async (req: Request, res: Response): Promise<void> => 
 
     const { tier, displayName, basePriceMonthly, basePriceYearly, perEmployeePrice, includedEmployees } = req.body;
 
-    if (!tier || typeof tier !== 'string' || !displayName || typeof displayName !== 'string') {
-      res.status(400).json({ error: 'Missing required fields: tier (slug), displayName' });
-      return;
-    }
-    const tierSlug = tier.trim().toLowerCase().replace(/\s+/g, '_');
+    const tierSlug = String(tier).trim().toLowerCase().replace(/\s+/g, '_');
     if (!/^[a-z0-9_]+$/.test(tierSlug)) {
       res.status(400).json({ error: 'Tier must be a slug: lowercase letters, numbers, underscores only' });
       return;
     }
-    if (basePriceMonthly === undefined || basePriceYearly === undefined) {
-      res.status(400).json({ error: 'Missing required fields: basePriceMonthly, basePriceYearly' });
-      return;
-    }
     const monthly = Number(basePriceMonthly);
     const yearly = Number(basePriceYearly);
-    if (Number.isNaN(monthly) || Number.isNaN(yearly) || monthly < 0 || yearly < 0) {
-      res.status(400).json({ error: 'basePriceMonthly and basePriceYearly must be non-negative numbers' });
-      return;
-    }
 
     // Reject if tier already has a Stripe product (built-in or previously created)
     const existingProductId = await getStripeProductIdForTier(tierSlug);

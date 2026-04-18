@@ -1,5 +1,5 @@
 import express from 'express';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import { authenticateJWT, getUserFromRequest } from '../middleware/auth';
 import { validate } from '../middleware/validateRequest';
 import {
@@ -36,8 +36,29 @@ router.get('/:tier/info', getPricingInfo);
 
 // Admin-only routes (specific paths before /:tier)
 router.post('/seed', authenticateJWT, requireAdmin, seedPricing);
-router.post('/tiers', authenticateJWT, requireAdmin, createTier);
-router.post('/', authenticateJWT, requireAdmin, upsertPricing);
+router.post(
+  '/tiers',
+  authenticateJWT,
+  requireAdmin,
+  validate([
+    body('tier').isString().notEmpty().trim(),
+    body('displayName').isString().notEmpty().trim(),
+    body('basePriceMonthly').isFloat({ min: 0 }),
+    body('basePriceYearly').isFloat({ min: 0 }),
+  ]),
+  createTier
+);
+router.post(
+  '/',
+  authenticateJWT,
+  requireAdmin,
+  validate([
+    body('tier').isString().notEmpty().trim(),
+    body('billingCycle').isIn(['monthly', 'yearly']),
+    body('basePrice').isFloat({ min: 0 }),
+  ]),
+  upsertPricing
+);
 router.post(
   '/calculate-impact',
   authenticateJWT,
@@ -50,7 +71,13 @@ router.post(
   calculatePriceImpact
 );
 router.get('/history/all', authenticateJWT, requireAdmin, getAllPriceHistory);
-router.get('/:pricingConfigId/history', authenticateJWT, requireAdmin, getPriceHistory);
+router.get(
+  '/:pricingConfigId/history',
+  authenticateJWT,
+  requireAdmin,
+  validate([param('pricingConfigId').isUUID()]),
+  getPriceHistory
+);
 router.post('/clear-cache', authenticateJWT, requireAdmin, clearPricingCache);
 
 export default router;
