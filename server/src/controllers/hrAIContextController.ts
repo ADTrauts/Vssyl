@@ -7,6 +7,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 /**
  * GET /api/hr/ai/context/overview
@@ -16,7 +17,7 @@ import { prisma } from '../lib/prisma';
  */
 export async function getHROverviewContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     const { businessId } = req.query;
     
     if (!userId) {
@@ -190,7 +191,7 @@ export async function getHROverviewContext(req: Request, res: Response) {
  */
 export async function getEmployeeHeadcountContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     const { businessId } = req.query;
     
     if (!userId) {
@@ -315,7 +316,7 @@ export async function getEmployeeHeadcountContext(req: Request, res: Response) {
  */
 export async function getTimeOffSummaryContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     const { businessId } = req.query;
     
     if (!userId) {

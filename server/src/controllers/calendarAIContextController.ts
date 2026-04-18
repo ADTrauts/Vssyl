@@ -7,6 +7,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 /**
  * GET /api/calendar/ai/context/upcoming
@@ -16,7 +17,7 @@ import { prisma } from '../lib/prisma';
  */
 export async function getUpcomingEventsContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ 
@@ -124,7 +125,7 @@ export async function getUpcomingEventsContext(req: Request, res: Response) {
  */
 export async function getTodayScheduleContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ 
@@ -251,7 +252,7 @@ export async function getTodayScheduleContext(req: Request, res: Response) {
  */
 export async function checkAvailability(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     const { startTime, endTime } = req.query;
     
     if (!userId) {

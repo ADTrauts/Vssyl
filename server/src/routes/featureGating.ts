@@ -45,7 +45,7 @@ router.use('/check/:featureName', async (req, res, next) => {
   }
 
   // Add feature access info to request
-  (req as any).featureAccess = {
+  req.featureAccess = {
     featureName,
     hasAccess: true,
     usageInfo: access.usageInfo,

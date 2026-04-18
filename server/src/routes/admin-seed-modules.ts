@@ -9,15 +9,9 @@
 
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 const router: express.Router = express.Router();
-
-// Helper to get user from request
-const getUserFromRequest = (req: Request) => {
-  const user = (req as any).user;
-  if (!user) return null;
-  return { ...user, id: user.sub || user.id };
-};
 
 router.post('/seed-core-modules', async (req: Request, res: Response) => {
   try {

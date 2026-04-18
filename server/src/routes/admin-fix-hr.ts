@@ -7,6 +7,7 @@ import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { execSync } from 'child_process';
 import path from 'path';
+import { getUserFromRequest } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 
@@ -17,7 +18,7 @@ const router: express.Router = express.Router();
 router.post('/run-migrations', async (req: Request, res: Response) => {
   try {
     // Check if user is admin
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Admin access required' });
     }
@@ -144,7 +145,7 @@ router.get('/check-db', async (req: Request, res: Response) => {
 router.post('/seed-module', async (req: Request, res: Response) => {
   try {
     // Check if user is admin
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Admin access required' });
     }

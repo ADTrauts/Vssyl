@@ -7,6 +7,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 /**
  * GET /api/chat/ai/context/recent
@@ -16,7 +17,7 @@ import { prisma } from '../lib/prisma';
  */
 export async function getRecentConversationsContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ 
@@ -120,7 +121,7 @@ export async function getRecentConversationsContext(req: Request, res: Response)
  */
 export async function getUnreadMessagesContext(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ 
@@ -237,7 +238,7 @@ export async function getUnreadMessagesContext(req: Request, res: Response) {
  */
 export async function getConversationHistory(req: Request, res: Response) {
   try {
-    const userId = (req as any).user?.id || (req as any).user?.sub;
+    const userId = getUserFromRequest(req)?.id;
     const { conversationId, limit = '20' } = req.query;
     
     if (!userId) {

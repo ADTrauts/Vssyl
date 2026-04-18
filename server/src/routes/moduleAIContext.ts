@@ -11,7 +11,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { authenticateJWT, requireRole } from '../middleware/auth';
+import { authenticateJWT, requireRole, getUserFromRequest } from '../middleware/auth';
 import { moduleAIContextService } from '../ai/services/ModuleAIContextService';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
 import { prisma } from '../lib/prisma';
@@ -33,7 +33,11 @@ router.post(
     try {
       const { moduleId } = req.params;
       const aiContext: ModuleAIContext = req.body;
-      const userId = (req as any).user.id;
+      const user = getUserFromRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const userId = user.id;
 
       // Verify user owns this module or is admin
       const module = await prisma.module.findUnique({
@@ -44,7 +48,7 @@ router.post(
         return res.status(404).json({ error: 'Module not found' });
       }
 
-      if (module.developerId !== userId && (req as any).user.role !== 'ADMIN') {
+      if (module.developerId !== userId && user.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Only module owner can update AI context' });
       }
 
@@ -117,7 +121,11 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { query } = req.body;
-      const userId = (req as any).user.id;
+      const user = getUserFromRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const userId = user.id;
 
       if (!query) {
         return res.status(400).json({ error: 'Query is required' });
@@ -144,7 +152,11 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { moduleId, providerName } = req.params;
-      const userId = (req as any).user.id;
+      const user = getUserFromRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const userId = user.id;
       const parameters = req.query;
 
       const context = await moduleAIContextService.fetchModuleContext(
@@ -172,7 +184,11 @@ router.delete(
   authenticateJWT,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user.id;
+      const user = getUserFromRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const userId = user.id;
 
       await moduleAIContextService.clearUserContextCache(userId);
 

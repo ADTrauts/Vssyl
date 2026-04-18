@@ -38,7 +38,7 @@ export function usageLimitMiddleware(metric: string) {
       }
 
       // Attach usage info to request for potential use in route handler
-      (req as any).usageInfo = limitCheck.usageInfo;
+      req.usageInfo = limitCheck.usageInfo;
 
       next();
     } catch (error) {

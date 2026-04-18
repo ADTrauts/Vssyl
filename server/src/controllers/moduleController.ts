@@ -3,17 +3,12 @@ import crypto from 'crypto';
 import { Prisma, ModuleCategory } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { getUserFromRequest } from '../middleware/auth';
 import { ModuleSecurityService } from '../services/moduleSecurityService';
 import { initializeHrScheduleForBusiness } from '../services/hrScheduleService';
 import { storageService } from '../services/storageService';
 import { runBaselineZipScan } from '../services/moduleArtifactBaselineScan';
 import { runSmartModuleScan } from '../services/moduleArtifactSmartScan';
-
-// Helper function to get user from request
-const getUserFromRequest = (req: Request) => {
-  return (req as AuthenticatedRequest).user;
-};
 
 function asRecordJson(value: unknown): Record<string, unknown> {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
@@ -792,19 +787,12 @@ export const installModule = async (req: Request, res: Response) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    logger.error('Error installing module', {
+    void logger.error('Error installing module', {
       operation: 'module_install',
       error: { message: errorMessage, stack: errorStack },
       moduleId: req.params.moduleId,
-      userId: (req as any).user?.id,
+      userId: getUserFromRequest(req)?.id,
       businessId: typeof req.query.businessId === 'string' ? req.query.businessId : undefined
-    });
-    
-    console.error('Error installing module:', error);
-    console.error('Error details:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: errorMessage,
-      stack: errorStack
     });
     
     // Return more detailed error information in development

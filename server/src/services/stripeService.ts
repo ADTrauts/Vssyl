@@ -6,6 +6,7 @@ import {
 } from '../config/stripe';
 import { AIQueryService } from './aiQueryService';
 import { RevenueSplitService } from './revenueSplitService';
+import { ModuleSubscriptionService } from './moduleSubscriptionService';
 
 // Stripe webhook event interfaces
 export interface StripeWebhookEvent {
@@ -249,6 +250,10 @@ export class StripeService {
         await this.handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
     }
+
+    // Module marketplace subscriptions: past_due / cancelled / active sync (single webhook entrypoint)
+    const moduleSubscriptionService = new ModuleSubscriptionService();
+    await moduleSubscriptionService.handleStripeWebhook(event);
   }
 
   /**
@@ -264,12 +269,16 @@ export class StripeService {
   private static async handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
     const paymentType = paymentIntent.metadata.type;
 
+    if (paymentType === 'module_subscription') {
+      const { PaymentService } = await import('./paymentService');
+      await PaymentService.completeModuleSubscriptionFromPaymentIntent(paymentIntent);
+      return;
+    }
     if (paymentType === 'ai_query_pack') {
       // Handle AI query pack purchase
       const { AIQueryService } = await import('./aiQueryService');
       await AIQueryService.completeQueryPackPurchase(paymentIntent.id);
     }
-    // Other payment intent types can be handled here
   }
 
   /**

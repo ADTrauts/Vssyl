@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { isStripeConfigured } from '../config/stripe';
+import { getUserFromRequest } from '../middleware/auth';
 const subscriptionService = new SubscriptionService();
 const moduleSubscriptionService = new ModuleSubscriptionService();
 
@@ -16,7 +17,7 @@ const moduleSubscriptionService = new ModuleSubscriptionService();
 export const createSubscription = async (req: Request, res: Response) => {
   try {
     const { tier, businessId, stripeCustomerId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -49,7 +50,7 @@ export const createSubscription = async (req: Request, res: Response) => {
 export const createCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { tier, billingCycle = 'monthly', businessId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -147,7 +148,7 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
 export const getSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -179,7 +180,7 @@ export const getSubscription = async (req: Request, res: Response) => {
 
 export const getUserSubscription = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -198,7 +199,7 @@ export const getUserSubscription = async (req: Request, res: Response) => {
         message: errorMessage,
         stack: errorStack
       },
-      userId: (req as any).user?.id
+      userId: getUserFromRequest(req)?.id
     });
 
     // Return 200 with null so billing modal can show "no subscription" instead of breaking
@@ -210,7 +211,7 @@ export const updateSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { tier, businessId, cancelAtPeriodEnd } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -248,7 +249,7 @@ export const updateSubscription = async (req: Request, res: Response) => {
 export const cancelSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -282,7 +283,7 @@ export const cancelSubscription = async (req: Request, res: Response) => {
 export const reactivateSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -317,7 +318,7 @@ export const updateSubscriptionEmployeeCount = async (req: Request, res: Respons
   try {
     const { id } = req.params;
     const { employeeCount } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -358,7 +359,7 @@ export const createModuleSubscription = async (req: Request, res: Response) => {
   try {
     const { moduleId } = req.params;
     const { tier, businessId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -387,7 +388,7 @@ export const createModuleSubscription = async (req: Request, res: Response) => {
 export const getModuleSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -418,7 +419,7 @@ export const getModuleSubscription = async (req: Request, res: Response) => {
 
 export const getUserModuleSubscriptions = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -443,7 +444,7 @@ export const updateModuleSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { tier, status } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -481,7 +482,7 @@ export const updateModuleSubscription = async (req: Request, res: Response) => {
 export const cancelModuleSubscription = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -516,7 +517,7 @@ export const cancelModuleSubscription = async (req: Request, res: Response) => {
 
 export const getUsage = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
     const { businessId } = req.query;
 
     if (!userId) {
@@ -587,7 +588,7 @@ export const getUsage = async (req: Request, res: Response) => {
 export const recordUsage = async (req: Request, res: Response) => {
   try {
     const { subscriptionId, metric, quantity, cost } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -612,7 +613,7 @@ export const recordUsage = async (req: Request, res: Response) => {
 
 export const getInvoices = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -634,7 +635,7 @@ export const getInvoices = async (req: Request, res: Response) => {
         message: errorMessage,
         stack: errorStack
       },
-      userId: (req as any).user?.id
+      userId: getUserFromRequest(req)?.id
     });
 
     // Return 200 with empty list so billing modal can show "no invoices" instead of breaking
@@ -645,7 +646,7 @@ export const getInvoices = async (req: Request, res: Response) => {
 export const getInvoice = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -680,7 +681,7 @@ export const getInvoice = async (req: Request, res: Response) => {
 
 export const getDeveloperRevenue = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -705,7 +706,7 @@ export const getDeveloperRevenue = async (req: Request, res: Response) => {
 
 export const listPaymentMethods = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -742,7 +743,7 @@ export const listPaymentMethods = async (req: Request, res: Response) => {
 
 export const createSetupIntent = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -801,7 +802,7 @@ export const createSetupIntent = async (req: Request, res: Response) => {
 export const deletePaymentMethod = async (req: Request, res: Response) => {
   try {
     const { paymentMethodId } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -845,7 +846,7 @@ export const deletePaymentMethod = async (req: Request, res: Response) => {
 export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
   try {
     const { paymentMethodId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -892,7 +893,7 @@ export const setDefaultPaymentMethod = async (req: Request, res: Response) => {
 
 export const createCustomerPortalSession = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

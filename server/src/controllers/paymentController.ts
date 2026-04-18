@@ -3,11 +3,12 @@ import { StripeService } from '../services/stripeService';
 import { PrismaClient } from '@prisma/client';
 import { isStripeConfigured, getStripeClient } from '../config/stripe';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {
     const { amount, currency = 'usd', metadata } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -59,7 +60,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
 export const createSubscription = async (req: Request, res: Response) => {
   try {
     const { tier, interval = 'month', moduleId } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -172,7 +173,7 @@ export const createSubscription = async (req: Request, res: Response) => {
 export const cancelSubscription = async (req: Request, res: Response) => {
   try {
     const { subscriptionId } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -213,7 +214,7 @@ export const cancelSubscription = async (req: Request, res: Response) => {
 export const reactivateSubscription = async (req: Request, res: Response) => {
   try {
     const { subscriptionId } = req.params;
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -291,7 +292,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
 export const getPaymentMethods = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

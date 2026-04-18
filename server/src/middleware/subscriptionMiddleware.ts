@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
-import { AuthenticatedRequest } from './auth';
+import { logger } from '../lib/logger';
+import { AuthenticatedRequest, getUserFromRequest } from './auth';
 
 export interface SubscriptionTier {
   tier: 'free' | 'standard' | 'enterprise';
@@ -70,8 +71,12 @@ export class SubscriptionMiddleware {
       (req as SubscriptionRequest).userTier = userTier;
       
       next();
-    } catch (error) {
-      console.error('Error checking feature access:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      await logger.error('Error checking feature access', {
+        operation: 'subscription_middleware_check_feature',
+        error: { message: err.message, stack: err.stack },
+      });
       res.status(500).json({ error: 'Failed to check subscription access' });
     }
   }
@@ -128,8 +133,12 @@ export class SubscriptionMiddleware {
       };
       
       next();
-    } catch (error) {
-      console.error('Error checking module access:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      await logger.error('Error checking module access', {
+        operation: 'subscription_middleware_check_module',
+        error: { message: err.message, stack: err.stack },
+      });
       res.status(500).json({ error: 'Failed to check module access' });
     }
   }
@@ -145,7 +154,7 @@ export class SubscriptionMiddleware {
     limit: number
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = getUserFromRequest(req)?.id;
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -179,7 +188,7 @@ export class SubscriptionMiddleware {
       }
 
       // Add usage info to request
-      (req as any).usageInfo = {
+      req.usageInfo = {
         metric,
         currentUsage,
         limit,
@@ -187,8 +196,12 @@ export class SubscriptionMiddleware {
       };
       
       next();
-    } catch (error) {
-      console.error('Error checking usage limit:', error);
+    } catch (error: unknown) {
+      const err = error as Error;
+      await logger.error('Error checking usage limit', {
+        operation: 'subscription_middleware_check_usage_limit',
+        error: { message: err.message, stack: err.stack },
+      });
       res.status(500).json({ error: 'Failed to check usage limit' });
     }
   }

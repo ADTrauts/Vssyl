@@ -123,13 +123,15 @@ import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
 import adminFixSubscriptionsRouter from './routes/admin-fix-subscriptions';
 import aiProviderUsageRouter from './routes/ai-provider-usage';
 import placeRouter from './routes/place';
-import { authenticateJWT, type AuthenticatedRequest } from './middleware/auth';
+import { authenticateJWT, type AuthenticatedRequest, getUserFromRequest } from './middleware/auth';
 import { logger } from './lib/logger';
 
 
 
 const app: express.Application = express();
 const port = process.env.PORT || 5000;
+/** Avoid per-request debug logging in production (scheduling troubleshooting middleware). */
+const isDevRuntime = process.env.NODE_ENV !== 'production';
 
 
 
@@ -150,11 +152,15 @@ export function asyncHandler(fn: (...args: any[]) => Promise<any>): RequestHandl
   };
 }
 
-console.log('Starting server...');
+void logger.info('Starting server', { operation: 'server_boot' });
 
-// CATCH-ALL logger - logs EVERY request before anything else
+// CATCH-ALL logger — scheduling availability (dev-only; was very noisy in production)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.method === 'POST' && req.originalUrl.includes('/api/scheduling/me/availability')) {
+  if (
+    isDevRuntime &&
+    req.method === 'POST' &&
+    req.originalUrl.includes('/api/scheduling/me/availability')
+  ) {
     console.log('🔥 [EXPRESS ENTRY] POST request reached Express:', {
       method: req.method,
       originalUrl: req.originalUrl,
@@ -195,9 +201,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Global request logger for debugging POST requests to scheduling
+// Global request logger for debugging POST requests to scheduling (dev-only)
 // This MUST be after body parser but before routes
 app.use((req: Request, res: Response, next: NextFunction) => {
+  if (!isDevRuntime) {
+    next();
+    return;
+  }
   // Log ALL POST requests to /api/scheduling to help debug
   if (req.method === 'POST' && req.originalUrl.includes('/api/scheduling')) {
     console.log('🌐 [GLOBAL] POST request to /api/scheduling received:', {
@@ -278,7 +288,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.logApiRequest(
       req.method,
       req.originalUrl,
-      (req as any).user?.id,
+      getUserFromRequest(req)?.id,
       duration,
       res.statusCode,
       {
@@ -310,7 +320,12 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
         await prisma.$queryRaw`SELECT 1`;
       } catch (dbTestError) {
         const dbErrorMsg = dbTestError instanceof Error ? dbTestError.message : 'Unknown error';
-        console.error('❌ [REGISTRATION] Database connection test failed:', dbErrorMsg);
+        void logger
+          .error('Registration database connection test failed', {
+            operation: 'user_registration',
+            error: { message: dbErrorMsg },
+          })
+          .catch(() => undefined);
         return res.status(503).json({ 
           message: 'Database connection failed. Please try again later.',
           ...(process.env.NODE_ENV === 'development' && { error: dbErrorMsg })
@@ -799,7 +814,12 @@ app.put('/api/profile', authenticateJWT, async (req, res) => {
     res.json({ user: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('PUT /api/profile failed:', err.message);
+    void logger
+      .error('PUT /api/profile failed', {
+        operation: 'put_profile',
+        error: { message: err.message, stack: err.stack },
+      })
+      .catch(() => undefined);
     res.status(500).json({ message: 'Failed to update profile' });
   }
 });
@@ -816,7 +836,9 @@ app.use('/api', healthRouter);
 app.use('/api/dashboard', authenticateJWT, dashboardRouter);
 app.use('/api/widget', authenticateJWT, widgetRouter);
 app.use('/api/activity-feed', authenticateJWT, activityFeedRouter);
-console.log('[DEBUG] Registering /api/drive route');
+if (isDevRuntime) {
+  console.log('[DEBUG] Registering /api/drive route');
+}
 app.use('/api/drive', driveRouter);
 app.use('/api/todo', todoRouter);
 app.use('/api/notes', notesRouter);
@@ -889,22 +911,27 @@ app.use('/api', moduleAIContextRouter);
 app.use('/api/admin/logs', authenticateJWT, adminLogsRouter);
 app.use('/api/place', placeRouter); // Vssyl Place module routes (includes own auth)
 app.use('/api/hr', hrRouter); // HR module routes (includes own auth checks)
-app.use('/api/scheduling', (req, res, next) => {
-  // Log ALL requests to scheduling routes for debugging
-  console.log('🔍 [INDEX] Request to /api/scheduling - Mount point reached', {
-    method: req.method,
-    path: req.path,
-    originalUrl: req.originalUrl,
-    url: req.url,
-    baseUrl: req.baseUrl,
-    query: req.query,
-    hasBody: !!req.body,
-    contentType: req.headers['content-type'],
-    authorization: req.headers.authorization ? 'present' : 'missing',
-    bodyKeys: req.body ? Object.keys(req.body) : []
-  });
-  next();
-}, schedulingRouter); // Scheduling module routes (includes own auth checks)
+app.use(
+  '/api/scheduling',
+  (req, res, next) => {
+    if (isDevRuntime) {
+      console.log('🔍 [INDEX] Request to /api/scheduling - Mount point reached', {
+        method: req.method,
+        path: req.path,
+        originalUrl: req.originalUrl,
+        url: req.url,
+        baseUrl: req.baseUrl,
+        query: req.query,
+        hasBody: !!req.body,
+        contentType: req.headers['content-type'],
+        authorization: req.headers.authorization ? 'present' : 'missing',
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+      });
+    }
+    next();
+  },
+  schedulingRouter
+); // Scheduling module routes (includes own auth checks)
 
 // Log registered scheduling routes on startup
 if (process.env.NODE_ENV === 'development') {
@@ -960,10 +987,12 @@ app.use('/api/admin/fix-subscriptions', authenticateJWT, adminFixSubscriptionsRo
 // Schedule cleanup jobs
 startCleanupJob();
 
+const isProd = process.env.NODE_ENV === 'production';
+
 // Generic catch-all for unhandled routes
 app.use((req: Request, res: Response) => {
   // Enhanced logging for scheduling availability routes
-  if (req.originalUrl.includes('/scheduling/me/availability') || req.path.includes('/me/availability')) {
+  if (!isProd && (req.originalUrl.includes('/scheduling/me/availability') || req.path.includes('/me/availability'))) {
     console.log(`🚨 [404 HANDLER] Unhandled scheduling availability route: ${req.method} ${req.originalUrl}`, {
       method: req.method,
       path: req.path,
@@ -977,11 +1006,11 @@ app.use((req: Request, res: Response) => {
       }
     });
   }
-  console.log(`[DEBUG] Unhandled route: ${req.method} ${req.originalUrl}`);
+  if (!isProd) {
+    console.log(`[DEBUG] Unhandled route: ${req.method} ${req.originalUrl}`);
+  }
   res.status(404).json({ message: 'Not Found' });
 });
-
-const isProd = process.env.NODE_ENV === 'production';
 
 // Centralized error-handling middleware
 interface ErrorWithStatus extends Error {
@@ -994,8 +1023,12 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   const error = (err instanceof Error ? err : new Error(String(err))) as ErrorWithStatus;
 
   const status = error.status || 500;
+  const publicMessage =
+    isProd && status >= 500
+      ? 'Internal Server Error'
+      : error.message || 'Internal Server Error';
   const response: { message: string; error?: string; code?: string | number } = {
-    message: error.message || 'Internal Server Error',
+    message: publicMessage,
   };
 
   if (!isProd && error.stack) {
@@ -1003,10 +1036,19 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   } else if (error.code) {
     response.code = error.code;
   }
-  // Log error in development
-  if (!isProd) {
-    console.error(err);
-  }
+
+  void logger
+    .error('Unhandled request error', {
+      operation: 'express_error_handler',
+      path: req.originalUrl,
+      method: req.method,
+      status,
+      error: {
+        message: error.message,
+        stack: error.stack,
+      },
+    })
+    .catch(() => undefined);
 
   res.status(status).json(response);
 });
@@ -1016,7 +1058,7 @@ async function runProductionStartupMigrations(): Promise<void> {
     return;
   }
 
-  console.log('🔄 Running production startup migrations...');
+  void logger.info('Running production startup migrations', { operation: 'prisma_migrate_start' }).catch(() => undefined);
 
   const projectRoot = path.join(__dirname, '../..');
   const buildScriptPath = path.join(projectRoot, 'scripts/build-prisma-schema.js');
@@ -1037,8 +1079,11 @@ async function runProductionStartupMigrations(): Promise<void> {
     fs.statSync(path.join(migrationsDir, entry)).isDirectory()
   );
 
-  console.log(`📁 Found ${migrationDirectories.length} migration directories`);
-  console.log('🔨 Building Prisma schema from modules...');
+  void logger.info('Prisma migration directories found', {
+    operation: 'prisma_migrate',
+    count: migrationDirectories.length,
+  }).catch(() => undefined);
+  void logger.info('Building Prisma schema from modules', { operation: 'prisma_schema_build' }).catch(() => undefined);
   execSync(`node "${buildScriptPath}"`, {
     stdio: 'inherit',
     env: process.env,
@@ -1077,14 +1122,16 @@ async function runProductionStartupMigrations(): Promise<void> {
 
   await prisma.$connect();
   await prisma.$queryRaw`SELECT 1`;
-  console.log('✅ Production migrations and database readiness checks passed');
+  void logger.info('Production migrations and database readiness checks passed', {
+    operation: 'prisma_migrate_complete',
+  }).catch(() => undefined);
 }
 
 // Initialize HTTP server
 const httpServer = createServer(app);
 
 async function handleServerListening(): Promise<void> {
-  console.log(`Server listening on port ${port}`);
+  void logger.info('Server listening', { operation: 'http_listen', port }).catch(() => undefined);
 
   // Seed modules if they don't exist (non-blocking)
   try {
@@ -1092,15 +1139,23 @@ async function handleServerListening(): Promise<void> {
     await seedTodoModuleOnStartup();
     await seedNotesModuleOnStartup();
     await seedSchedulingModuleOnStartup();
-  } catch (e) {
-    console.error('Module seed failed (non-critical):', e);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Module seed failed (non-critical)', {
+      operation: 'startup_module_seed',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Register built-in modules if registry is empty (non-blocking)
   try {
     await registerBuiltInModulesOnStartup();
-  } catch (e) {
-    console.error('Module registration startup failed (non-critical):', e);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Module registration startup failed (non-critical)', {
+      operation: 'startup_module_registry',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Run reminder dispatcher every minute (MVP)
@@ -1108,67 +1163,124 @@ async function handleServerListening(): Promise<void> {
     cron.schedule('* * * * *', async () => {
       await dispatchDueReminders(5);
     });
-  } catch (e) {
-    console.error('Failed to schedule reminder dispatcher:', e);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Failed to schedule reminder dispatcher', {
+      operation: 'cron_reminders',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Reset AI query allowances on the 1st of each month at midnight
   try {
     cron.schedule('0 0 1 * *', async () => {
-      console.log('🔄 Running monthly AI query allowance reset...');
+      void logger.info('Running monthly AI query allowance reset', { operation: 'cron_ai_allowance_reset' }).catch(
+        () => undefined
+      );
       try {
         await AIQueryService.resetMonthlyAllowance();
-        console.log('✅ Monthly AI query allowance reset completed');
-      } catch (error) {
-        console.error('❌ Error resetting AI query allowances:', error);
+        void logger.info('Monthly AI query allowance reset completed', {
+          operation: 'cron_ai_allowance_reset',
+        }).catch(() => undefined);
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error resetting AI query allowances', {
+          operation: 'cron_ai_allowance_reset',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
       }
     }, {
       timezone: 'America/New_York'
     });
-    console.log('✅ Monthly AI query allowance reset job scheduled (1st of month at midnight)');
-  } catch (e) {
-    console.error('Failed to schedule AI query allowance reset job:', e);
+    void logger.info('Monthly AI query allowance reset job scheduled', {
+      operation: 'cron_ai_allowance_reset',
+      schedule: '0 0 1 * * America/New_York',
+    }).catch(() => undefined);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Failed to schedule AI query allowance reset job', {
+      operation: 'cron_ai_allowance_reset',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Update developer small business eligibility on the 1st of each month at 1am
   try {
     const { RevenueSplitService } = await import('./services/revenueSplitService');
     cron.schedule('0 1 1 * *', async () => {
-      console.log('🔄 Running monthly developer lifetime revenue calculation...');
+      void logger.info('Running monthly developer lifetime revenue calculation', {
+        operation: 'cron_developer_revenue',
+      }).catch(() => undefined);
       try {
         const result = await RevenueSplitService.updateAllModuleSmallBusinessEligibility();
-        console.log(`✅ Developer lifetime revenue calculation completed (updated: ${result.updated}, errors: ${result.errors})`);
-      } catch (error) {
-        console.error('❌ Error calculating developer lifetime revenue:', error);
+        void logger.info('Developer lifetime revenue calculation completed', {
+          operation: 'cron_developer_revenue',
+          updated: result.updated,
+          errors: result.errors,
+        }).catch(() => undefined);
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error calculating developer lifetime revenue', {
+          operation: 'cron_developer_revenue',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
       }
     }, {
       timezone: 'America/New_York'
     });
-    console.log('✅ Monthly developer lifetime revenue calculation job scheduled (1st of month at 1am)');
-  } catch (e) {
-    console.error('Failed to schedule developer lifetime revenue calculation job:', e);
+    void logger.info('Monthly developer lifetime revenue job scheduled', {
+      operation: 'cron_developer_revenue',
+      schedule: '0 1 1 * * America/New_York',
+    }).catch(() => undefined);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Failed to schedule developer lifetime revenue calculation job', {
+      operation: 'cron_developer_revenue',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Process overage billing daily at 3am
   try {
     cron.schedule('0 3 * * *', async () => {
-      console.log('🔄 Running daily overage billing processing...');
+      void logger.info('Running daily overage billing processing', { operation: 'cron_overage_billing' }).catch(
+        () => undefined
+      );
       try {
         const result = await OverageBillingService.processAllOverageBilling();
         if (result.processed > 0) {
-          console.log(`✅ Overage billing processed (processed: ${result.processed}, successful: ${result.successful}, failed: ${result.failed}, total: $${result.totalOverage.toFixed(2)})`);
+          void logger.info('Overage billing processed', {
+            operation: 'cron_overage_billing',
+            processed: result.processed,
+            successful: result.successful,
+            failed: result.failed,
+            totalOverage: result.totalOverage,
+          }).catch(() => undefined);
         } else {
-          console.log('ℹ️  No subscriptions with ended billing periods found');
+          void logger.info('No subscriptions with ended billing periods (overage)', {
+            operation: 'cron_overage_billing',
+          }).catch(() => undefined);
         }
-      } catch (error) {
-        console.error('❌ Error processing overage billing:', error);
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error processing overage billing', {
+          operation: 'cron_overage_billing',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
       }
     }, {
       timezone: 'America/New_York'
     });
-    console.log('✅ Daily overage billing job scheduled (3am daily)');
-  } catch (e) {
-    console.error('Failed to schedule overage billing job:', e);
+    void logger.info('Daily overage billing job scheduled', {
+      operation: 'cron_overage_billing',
+      schedule: '0 3 * * * America/New_York',
+    }).catch(() => undefined);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Failed to schedule overage billing job', {
+      operation: 'cron_overage_billing',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 
   // Sync AI provider usage/expense data daily at 4am
@@ -1177,23 +1289,42 @@ async function handleServerListening(): Promise<void> {
     const providerSyncService = new ProviderSyncService();
 
     cron.schedule('0 4 * * *', async () => {
-      console.log('🔄 Running daily AI provider data sync...');
+      void logger.info('Running daily AI provider data sync', { operation: 'cron_ai_provider_sync' }).catch(
+        () => undefined
+      );
       try {
         await providerSyncService.syncProviderData();
-        console.log('✅ AI provider data sync completed');
-      } catch (error) {
-        console.error('❌ Error syncing AI provider data:', error);
+        void logger.info('AI provider data sync completed', { operation: 'cron_ai_provider_sync' }).catch(
+          () => undefined
+        );
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error syncing AI provider data', {
+          operation: 'cron_ai_provider_sync',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
       }
     }, {
       timezone: 'America/New_York'
     });
-    console.log('✅ Daily AI provider data sync job scheduled (4am daily)');
+    void logger.info('Daily AI provider data sync job scheduled', {
+      operation: 'cron_ai_provider_sync',
+      schedule: '0 4 * * * America/New_York',
+    }).catch(() => undefined);
 
-    providerSyncService.syncProviderData().catch(error => {
-      console.error('Initial provider sync failed (non-critical):', error);
+    providerSyncService.syncProviderData().catch((error: unknown) => {
+      const err = error as Error;
+      void logger.warn('Initial provider sync failed (non-critical)', {
+        operation: 'ai_provider_sync_initial',
+        error: { message: err.message, stack: err.stack },
+      }).catch(() => undefined);
     });
-  } catch (e) {
-    console.error('Failed to schedule AI provider sync job:', e);
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Failed to schedule AI provider sync job', {
+      operation: 'cron_ai_provider_sync',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
   }
 }
 
@@ -1219,21 +1350,34 @@ async function bootstrap(): Promise<void> {
 
   httpServer
     .listen(port, () => {
-      console.log(`About to listen on port ${port}`);
+      void logger.info('HTTP server bind starting', { operation: 'http_listen', port }).catch(() => undefined);
     })
     .on('listening', () => {
-      handleServerListening().catch((error) => {
-        console.error('Post-listen initialization failed:', error);
+      handleServerListening().catch((error: unknown) => {
+        const err = error as Error;
+        void logger.error('Post-listen initialization failed', {
+          operation: 'http_post_listen',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
       });
     })
-    .on('error', (err) => {
-      console.error('Server startup error:', err);
+    .on('error', (err: Error) => {
+      void logger.error('Server startup error', {
+        operation: 'http_listen_error',
+        error: { message: err.message, stack: err.stack },
+      }).catch(() => undefined);
       process.exit(1);
     });
 }
 
-bootstrap().catch((error) => {
-  console.error('Fatal startup error:', error);
+bootstrap().catch((error: unknown) => {
+  const err = error as Error;
+  void logger
+    .error('Fatal startup error', {
+      operation: 'bootstrap_fatal',
+      error: { message: err.message, stack: err.stack },
+    })
+    .catch(() => undefined);
   process.exit(1);
 });
 

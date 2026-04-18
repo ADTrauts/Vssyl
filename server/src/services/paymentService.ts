@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
-import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 // Initialize Stripe with default API version from SDK types
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {}) : null;
 
@@ -278,80 +278,35 @@ export class PaymentService {
   }
 
   /**
-   * Handle Stripe webhook events
+   * Single webhook entrypoint: delegates to {@link StripeService.handleWebhookEvent} (invoice, subscriptions, payment intents, module subscriptions).
    */
   static async handleWebhookEvent(event: Stripe.Event): Promise<void> {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await this.handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
-        break;
-      case 'payment_intent.payment_failed':
-        await this.handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
-        break;
-      case 'invoice.payment_succeeded':
-        await this.handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
-        break;
-      case 'invoice.payment_failed':
-        await this.handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
-      case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
-        break;
-    }
+    const { StripeService } = await import('./stripeService');
+    await StripeService.handleWebhookEvent(event);
   }
 
-  private static async handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const paymentType = paymentIntent.metadata.type;
-
-    if (paymentType === 'module_subscription') {
-      // Handle module subscription payment
-      const moduleId = paymentIntent.metadata.moduleId;
-      const userId = paymentIntent.metadata.userId;
-      const tier = paymentIntent.metadata.tier as 'premium' | 'enterprise';
-
-      // Create module subscription
-      await this.createModuleSubscription({
-        moduleId,
-        userId,
-        tier,
-        amount: paymentIntent.amount / 100,
-        interval: 'month',
+  /**
+   * Legacy PaymentIntent-based module checkout: invoked from the unified Stripe webhook when `metadata.type === 'module_subscription'`.
+   */
+  static async completeModuleSubscriptionFromPaymentIntent(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+    const moduleId = paymentIntent.metadata.moduleId;
+    const userId = paymentIntent.metadata.userId;
+    const tier = paymentIntent.metadata.tier as 'premium' | 'enterprise' | undefined;
+    if (!moduleId || !userId || !tier) {
+      void logger.warn('module_subscription payment_intent missing metadata', {
+        operation: 'payment_intent_module_subscription',
+        paymentIntentId: paymentIntent.id,
+        metadata: paymentIntent.metadata,
       });
-    } else if (paymentType === 'ai_query_pack') {
-      // Handle AI query pack purchase
-      const { AIQueryService } = await import('./aiQueryService');
-      await AIQueryService.completeQueryPackPurchase(paymentIntent.id);
+      return;
     }
-  }
-
-  private static async handlePaymentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
-    const paymentType = paymentIntent.metadata.type;
-
-    if (paymentType === 'ai_query_pack') {
-      // Handle failed AI query pack purchase
-      const { AIQueryService } = await import('./aiQueryService');
-      await AIQueryService.failQueryPackPurchase(paymentIntent.id);
-    } else {
-      // Handle other failed payments
-      console.log('Payment failed:', paymentIntent.id);
-    }
-  }
-
-  private static async handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
-    // Handle successful invoice payment
-    console.log('Invoice payment succeeded:', invoice.id);
-  }
-
-  private static async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    // Handle failed invoice payment
-    console.log('Invoice payment failed:', invoice.id);
-  }
-
-  private static async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
-    // Update local subscription status
-    await prisma.moduleSubscription.updateMany({
-      where: { stripeSubscriptionId: subscription.id },
-      data: { status: 'cancelled' },
+    await this.createModuleSubscription({
+      moduleId,
+      userId,
+      businessId: paymentIntent.metadata.businessId || undefined,
+      tier,
+      amount: paymentIntent.amount / 100,
+      interval: 'month',
     });
   }
 } 

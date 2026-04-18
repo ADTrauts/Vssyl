@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma';
 import { StripeService } from '../services/stripeService';
 import { stripe, PRICING_CONFIG } from '../config/stripe';
 import { getStripeProductIdForTier, getTierProductConfigKey } from '../lib/getStripeProductIdForTier';
+import { getUserFromRequest } from '../middleware/auth';
 
 /**
  * GET /api/pricing
@@ -108,7 +109,7 @@ export const getPricingInfo = async (req: Request, res: Response): Promise<void>
  */
 export const upsertPricing = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;
@@ -610,7 +611,7 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
  */
 export const createTier = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;
@@ -795,7 +796,7 @@ export const getPriceHistory = async (req: Request, res: Response): Promise<void
  */
 export const clearPricingCache = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;
@@ -821,7 +822,7 @@ export const clearPricingCache = async (req: Request, res: Response): Promise<vo
  */
 export const calculatePriceImpact = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;
@@ -859,7 +860,7 @@ export const calculatePriceImpact = async (req: Request, res: Response): Promise
  */
 export const getAllPriceHistory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;
@@ -979,7 +980,7 @@ export const stripeStatus = async (req: Request, res: Response): Promise<void> =
  */
 export const seedPricing = async (req: Request, res: Response): Promise<void> => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       res.status(403).json({ error: 'Admin access required' });
       return;

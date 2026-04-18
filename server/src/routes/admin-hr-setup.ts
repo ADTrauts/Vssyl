@@ -4,6 +4,7 @@
 
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 const router: express.Router = express.Router();
 
@@ -14,7 +15,7 @@ const router: express.Router = express.Router();
 router.post('/seed', async (req: Request, res: Response) => {
   try {
     // Check if user is admin (basic check)
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user || user.role !== 'ADMIN') {
       return res.status(403).json({ error: 'Admin access required' });
     }

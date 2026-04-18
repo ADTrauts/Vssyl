@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 export async function exportIcs(req: Request, res: Response) {
-  const user = (req as any).user;
+  const user = getUserFromRequest(req);
   if (!user) return res.status(401).end();
   const { calendarId } = req.query as { calendarId?: string };
   if (!calendarId) return res.status(400).json({ error: 'calendarId required' });
@@ -29,7 +30,7 @@ export async function exportIcs(req: Request, res: Response) {
 }
 
 export async function freeBusy(req: Request, res: Response) {
-  const user = (req as any).user;
+  const user = getUserFromRequest(req);
   if (!user) return res.status(401).end();
   const { start, end, calendarIds } = req.query as { start?: string; end?: string; calendarIds?: string | string[] };
   if (!start || !end) return res.status(400).json({ error: 'start and end required' });

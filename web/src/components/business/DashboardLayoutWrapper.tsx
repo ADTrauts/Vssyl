@@ -3,15 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { 
-  LayoutDashboard, 
-  Folder, 
-  MessageSquare, 
-  Users, 
-  Shield, 
-  BarChart3, 
-  Settings, 
-  ChevronLeft, 
+import {
+  Settings,
+  ChevronLeft,
   ChevronRight,
   Plus,
   Briefcase,
@@ -19,9 +13,8 @@ import {
   LogOut,
   Package,
   Brain,
-  Calendar,
-  FileText
 } from 'lucide-react';
+import { MODULE_ICONS } from '../../config/moduleIcons';
 import GlobalTrashBin from '../GlobalTrashBin';
 import { COLORS, getBrandColor } from 'shared/utils/brandColors';
 import { Spinner, Alert } from 'shared/components';
@@ -56,19 +49,6 @@ interface DashboardLayoutWrapperProps {
   business: Business | null;
   children: React.ReactNode;
 }
-
-// Module icons mapping
-const MODULE_ICONS = {
-  dashboard: LayoutDashboard,
-  drive: Folder,
-  chat: MessageSquare,
-  admin: Shield,
-  members: Users,
-  analytics: BarChart3,
-  ai: Brain,
-  calendar: Calendar,
-  notes: FileText,
-};
 
 function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperProps) {
   const nextPathname = usePathname();
@@ -557,7 +537,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                       {sortedLooseModules.map(moduleRef => {
                         const module = displayModules.find(m => m.id === moduleRef.id);
                         if (!module) return null;
-                        const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
+                        const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
                         const isActive = currentModule === module.id;
                         return (
                           <li key={module.id} style={{ marginBottom: 8 }}>
@@ -682,7 +662,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
         }}>
           {/* Fixed Top: Dashboard */}
           {displayModules.filter(m => m.id === 'dashboard').map(module => {
-            const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
+            const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
             const isActive = currentModule === module.id;
             return (
               <button
@@ -723,7 +703,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
               .map(id => displayModules.find(m => m.id === id))
               .filter((module): module is typeof displayModules[0] => module !== undefined)
               .map(module => {
-                const Icon = MODULE_ICONS[module.id as keyof typeof MODULE_ICONS] || LayoutDashboard;
+                const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
                 const isActive = currentModule === module.id;
                 return (
                   <button

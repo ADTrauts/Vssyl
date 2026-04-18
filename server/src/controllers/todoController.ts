@@ -2219,7 +2219,7 @@ export async function uploadTaskAttachment(req: Request, res: Response): Promise
     }
 
     // Check if file was uploaded
-    const file = (req as any).file;
+    const file = req.file;
     if (!file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;

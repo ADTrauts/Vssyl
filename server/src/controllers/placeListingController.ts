@@ -5,11 +5,11 @@ import { z } from 'zod';
 import multer from 'multer';
 import { prisma } from '../lib/prisma';
 import { storageService } from '../services/storageService';
+import { getUserFromRequest } from '../middleware/auth';
 
 function getUserId(req: Request): string | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (req as any).user;
-  return user?.id || user?.sub || null;
+  const user = getUserFromRequest(req);
+  return user?.id ?? null;
 }
 
 async function verifyBusinessAdmin(userId: string, businessId: string) {
@@ -347,7 +347,7 @@ export async function uploadCoverImage(req: Request, res: Response): Promise<voi
     if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const file = (req as any).file;
+    const file = req.file;
     if (!file) { res.status(400).json({ success: false, error: 'No cover image uploaded' }); return; }
 
     const business = await prisma.business.findUnique({ where: { id: businessId } });
@@ -422,7 +422,7 @@ export async function uploadAvatarImage(req: Request, res: Response): Promise<vo
     if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const file = (req as any).file;
+    const file = req.file;
     if (!file) { res.status(400).json({ success: false, error: 'No avatar image uploaded' }); return; }
 
     const business = await prisma.business.findUnique({ where: { id: businessId } });

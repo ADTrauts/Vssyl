@@ -49,18 +49,7 @@ interface UpdateMemberRequest {
   canBilling?: boolean;
 }
 
-import { AuthenticatedRequest } from '../middleware/auth';
-
-// Helper function to get user from request
-const getUserFromRequest = (req: Request) => {
-  const user = (req as AuthenticatedRequest).user;
-  if (!user) return null;
-  
-  return {
-    ...user,
-    id: user.id
-  };
-};
+import { getUserFromRequest } from '../middleware/auth';
 
 // Helper function to handle errors
 const handleError = (res: Response, error: unknown, message: string = 'Internal server error', operation: string = 'business_controller') => {

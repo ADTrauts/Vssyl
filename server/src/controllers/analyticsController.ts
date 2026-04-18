@@ -1,10 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-
-// Helper function to get user from request
-const getUserFromRequest = (req: Request) => {
-  return (req as any).user;
-};
+import { getUserFromRequest } from '../middleware/auth';
 
 // Get personal analytics for the current user
 export const getPersonalAnalytics = async (req: Request, res: Response) => {

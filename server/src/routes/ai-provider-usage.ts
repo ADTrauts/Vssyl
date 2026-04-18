@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateJWT } from '../middleware/auth';
+import { authenticateJWT, getUserFromRequest } from '../middleware/auth';
 import { OpenAIAdminService } from '../services/aiProviderServices/openAIAdminService';
 import { AnthropicAdminService } from '../services/aiProviderServices/anthropicAdminService';
 import { CombinedProviderService } from '../services/aiProviderServices/combinedProviderService';
@@ -11,7 +11,7 @@ const router: express.Router = express.Router();
 // Admin-only middleware
 const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
-    const user = (req as any).user;
+    const user = getUserFromRequest(req);
     if (!user) {
       return res.status(401).json({ error: 'Authentication required' });
     }

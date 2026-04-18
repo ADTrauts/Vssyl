@@ -9,6 +9,7 @@ import { AIQueryService } from '../services/aiQueryService';
 import { AI_QUERY_PACKS, type QueryPackType } from '../config/aiQueryPacks';
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 /**
  * GET /api/ai/queries/balance
@@ -16,12 +17,13 @@ import { prisma } from '../lib/prisma';
  */
 export async function getQueryBalance(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id;
-    const userRole = (req as any).user?.role;
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
+    const userRole = user.role;
 
     const { businessId } = req.query;
     const businessIdParam = typeof businessId === 'string' ? businessId : null;
@@ -53,12 +55,6 @@ export async function getQueryBalance(req: Request, res: Response): Promise<void
     });
   } catch (error: unknown) {
     const err = error as Error;
-    // Log detailed error for debugging
-    console.error('Error in getQueryBalance:', {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
     await logger.error('Failed to get query balance', {
       operation: 'ai_query_get_balance',
       error: { message: err.message, stack: err.stack }
@@ -77,11 +73,12 @@ export async function getQueryBalance(req: Request, res: Response): Promise<void
  */
 export async function consumeQuery(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
 
     const { businessId, amount } = req.body;
     const consumeAmount = typeof amount === 'number' ? amount : 1;
@@ -126,11 +123,12 @@ export async function consumeQuery(req: Request, res: Response): Promise<void> {
  */
 export async function purchaseQueryPack(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
 
     const { packType, businessId } = req.body;
 
@@ -180,11 +178,12 @@ export async function purchaseQueryPack(req: Request, res: Response): Promise<vo
  */
 export async function getPurchaseHistory(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
 
     const { businessId, limit } = req.query;
     const businessIdParam = typeof businessId === 'string' ? businessId : null;
@@ -266,15 +265,16 @@ export async function getQueryPacks(req: Request, res: Response): Promise<void> 
  * Get current spending status and limit
  */
 export async function getSpendingStatus(req: Request, res: Response): Promise<void> {
-  const userId = (req as any).user?.id;
   const { businessId } = req.query;
   const businessIdParam = typeof businessId === 'string' ? businessId : null;
 
   try {
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
 
     const status = await AIQueryService.getSpendingStatus(userId, businessIdParam);
 
@@ -284,7 +284,7 @@ export async function getSpendingStatus(req: Request, res: Response): Promise<vo
     await logger.error('Failed to get spending status', {
       operation: 'ai_query_get_spending',
       error: { message: err.message, stack: err.stack },
-      userId: userId || undefined,
+      userId: getUserFromRequest(req)?.id,
       businessId: businessIdParam || undefined
     });
 
@@ -308,11 +308,12 @@ export async function getSpendingStatus(req: Request, res: Response): Promise<vo
  */
 export async function setSpendingLimit(req: Request, res: Response): Promise<void> {
   try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
+    const user = getUserFromRequest(req);
+    if (!user) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    const userId = user.id;
 
     const { limit, businessId } = req.body;
 

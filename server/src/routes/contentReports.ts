@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { authenticateJWT } from '../middleware/auth';
+import { authenticateJWT, getUserFromRequest } from '../middleware/auth';
 import { AdminService } from '../services/adminService';
 import { prisma } from '../lib/prisma';
 
@@ -8,7 +8,7 @@ const router: express.Router = express.Router();
 // Create a content report (public endpoint for users)
 router.post('/', authenticateJWT, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -60,7 +60,7 @@ router.post('/', authenticateJWT, async (req: Request, res: Response) => {
 // Get user's own reports
 router.get('/my-reports', authenticateJWT, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = getUserFromRequest(req)?.id;
     
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized' });

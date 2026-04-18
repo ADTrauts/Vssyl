@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { RevenueSplitService } from './revenueSplitService';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -56,6 +56,10 @@ export class ModuleSubscriptionService {
     const platformRevenue = revenueSplit.platformShare;
     const developerRevenue = revenueSplit.developerShare;
 
+    if (amount > 0 && stripeCustomerId && stripe) {
+      this.resolveStripePriceId(module, tier);
+    }
+
     // Create subscription in database
     const subscription = await prisma.moduleSubscription.create({
       data: {
@@ -83,11 +87,12 @@ export class ModuleSubscriptionService {
     // If this is a paid module, create Stripe subscription
     if (amount > 0 && stripeCustomerId && stripe) {
       try {
+        const priceId = this.resolveStripePriceId(module, tier);
         const stripeSubscription = await stripe.subscriptions.create({
           customer: stripeCustomerId,
           items: [
             {
-              price: this.getModuleStripePriceId(moduleId, tier),
+              price: priceId,
             },
           ],
           metadata: {
@@ -107,9 +112,19 @@ export class ModuleSubscriptionService {
             stripeSubscriptionId: stripeSubscription.id,
           },
         });
-      } catch (error) {
-        console.error('Error creating Stripe module subscription:', error);
-        // Continue with database subscription even if Stripe fails
+      } catch (error: unknown) {
+        const err = error as Error;
+        await prisma.moduleSubscription.delete({ where: { id: subscription.id } }).catch(() => undefined);
+        void logger.error('Stripe module subscription creation failed; rolled back DB row', {
+          operation: 'create_module_subscription',
+          moduleId,
+          userId,
+          businessId,
+          error: { message: err.message, stack: err.stack },
+        });
+        throw new Error(
+          'Could not activate paid module subscription with Stripe. Check module Stripe price configuration.'
+        );
       }
     }
 
@@ -233,16 +248,22 @@ export class ModuleSubscriptionService {
     // Update Stripe subscription if it exists
     if (subscription.stripeSubscriptionId) {
       try {
+        const priceId = this.resolveStripePriceId(subscription.module, tier || subscription.tier);
         await stripe!.subscriptions.update(subscription.stripeSubscriptionId, {
           items: [
             {
               id: (await stripe!.subscriptions.retrieve(subscription.stripeSubscriptionId)).items.data[0].id,
-              price: this.getModuleStripePriceId(subscription.moduleId, tier || subscription.tier),
+              price: priceId,
             },
           ],
         });
-      } catch (error) {
-        console.error('Error updating Stripe module subscription:', error);
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error updating Stripe module subscription', {
+          operation: 'update_module_subscription',
+          subscriptionId,
+          error: { message: err.message, stack: err.stack },
+        });
       }
     }
 
@@ -280,8 +301,13 @@ export class ModuleSubscriptionService {
     if (subscription.stripeSubscriptionId) {
       try {
         await stripe!.subscriptions.cancel(subscription.stripeSubscriptionId);
-      } catch (error) {
-        console.error('Error cancelling Stripe module subscription:', error);
+      } catch (error: unknown) {
+        const err = error as Error;
+        void logger.error('Error cancelling Stripe module subscription', {
+          operation: 'cancel_module_subscription',
+          subscriptionId,
+          error: { message: err.message, stack: err.stack },
+        });
       }
     }
 
@@ -437,12 +463,29 @@ export class ModuleSubscriptionService {
   }
 
   /**
-   * Get Stripe price ID for module and tier
+   * Resolve Stripe Price ID for a module tier.
+   * Priority: tier-specific env → `Module.stripePriceId` → generic env for module id.
    */
-  private getModuleStripePriceId(moduleId: string, tier: string): string {
-    // This would be configured per module in Stripe
-    // For now, return a placeholder
-    return `price_${moduleId}_${tier}`;
+  private resolveStripePriceId(
+    module: { id: string; stripePriceId: string | null },
+    tier: string
+  ): string {
+    const safe = module.id.replace(/[^a-zA-Z0-9]/g, '_');
+    const tierUpper = tier.toLowerCase() === 'enterprise' ? 'ENTERPRISE' : 'PREMIUM';
+    const envTier = process.env[`STRIPE_MODULE_PRICE_${safe}_${tierUpper}`]?.trim();
+    if (envTier) {
+      return envTier;
+    }
+    if (module.stripePriceId?.trim()) {
+      return module.stripePriceId.trim();
+    }
+    const envFallback = process.env[`STRIPE_MODULE_PRICE_${safe}`]?.trim();
+    if (envFallback) {
+      return envFallback;
+    }
+    throw new Error(
+      `No Stripe price ID for module ${module.id} (${tier}). Set Module.stripePriceId in the database or env STRIPE_MODULE_PRICE_${safe}_${tierUpper}.`
+    );
   }
 
   /**

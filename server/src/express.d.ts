@@ -16,6 +16,22 @@ declare global {
     }
     interface Request {
       user?: User;
+      /** Attached by usage limit middleware (storage, subscription checks, etc.) */
+      usageInfo?: unknown;
+      /** Attached by feature gating when access is granted */
+      featureAccess?: {
+        featureName: string;
+        hasAccess: boolean;
+        usageInfo?: unknown;
+      };
+      /** Multer single-file upload */
+      file?: Express.Multer.File;
+      /** Multer multi-part uploads */
+      files?:
+        | Express.Multer.File[]
+        | {
+            [fieldname: string]: Express.Multer.File[];
+          };
     }
   }
 }

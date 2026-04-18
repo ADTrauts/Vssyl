@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { canReadFolder, canWriteFolder } from './folderPermissionController';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { AuthenticatedRequest, getUserFromRequest } from '../middleware/auth';
 import { getChatSocketService } from '../services/chatSocketService';
 import { Prisma } from '@prisma/client';
 import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
@@ -10,14 +10,15 @@ import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
   try {
-    const userId = (req as AuthenticatedRequest).user?.id || (req.user as any)?.id || (req.user as any)?.sub;
-    
+    const user = getUserFromRequest(req);
+    const userId = user?.id;
+
     // Validate userId exists
     if (!userId) {
       await logger.error('User ID not found in request', {
         operation: 'listFolders',
         user: (req as AuthenticatedRequest).user,
-        reqUser: (req as any).user
+        reqUser: user,
       });
       return res.status(401).json({ message: 'Authentication required' });
     }

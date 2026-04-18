@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
+import { getUserFromRequest } from '../middleware/auth';
 
 function getUserId(req: Request): string | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (req as any).user;
-  return user?.id || user?.sub || null;
+  const user = getUserFromRequest(req);
+  return user?.id ?? null;
 }
 
 /**

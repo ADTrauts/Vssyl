@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { getUserFromRequest } from '../middleware/auth';
 
 function getUserId(req: Request): string | null {
-  const user = (req as any).user;
-  return user?.sub || user?.id || null;
+  const user = getUserFromRequest(req);
+  return user?.id ?? null;
 }
 
 export async function listComments(req: Request, res: Response) {
