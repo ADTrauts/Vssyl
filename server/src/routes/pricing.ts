@@ -1,5 +1,7 @@
 import express from 'express';
+import { body } from 'express-validator';
 import { authenticateJWT, getUserFromRequest } from '../middleware/auth';
+import { validate } from '../middleware/validateRequest';
 import {
   getAllPricing,
   getPricing,
@@ -36,7 +38,17 @@ router.get('/:tier/info', getPricingInfo);
 router.post('/seed', authenticateJWT, requireAdmin, seedPricing);
 router.post('/tiers', authenticateJWT, requireAdmin, createTier);
 router.post('/', authenticateJWT, requireAdmin, upsertPricing);
-router.post('/calculate-impact', authenticateJWT, requireAdmin, calculatePriceImpact);
+router.post(
+  '/calculate-impact',
+  authenticateJWT,
+  requireAdmin,
+  validate([
+    body('tier').isString().notEmpty().trim(),
+    body('newBasePrice').isFloat({ min: 0 }),
+    body('billingCycle').optional().isIn(['monthly', 'yearly']),
+  ]),
+  calculatePriceImpact
+);
 router.get('/history/all', authenticateJWT, requireAdmin, getAllPriceHistory);
 router.get('/:pricingConfigId/history', authenticateJWT, requireAdmin, getPriceHistory);
 router.post('/clear-cache', authenticateJWT, requireAdmin, clearPricingCache);

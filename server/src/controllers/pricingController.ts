@@ -828,17 +828,16 @@ export const calculatePriceImpact = async (req: Request, res: Response): Promise
       return;
     }
 
-    const { tier, newBasePrice, billingCycle } = req.body;
-
-    if (!tier || newBasePrice === undefined) {
-      res.status(400).json({ error: 'Missing required fields: tier, newBasePrice' });
-      return;
-    }
+    const { tier, newBasePrice, billingCycle } = req.body as {
+      tier: string;
+      newBasePrice: number;
+      billingCycle?: string;
+    };
 
     const impact = await PricingService.calculatePriceChangeImpact(
       tier,
-      newBasePrice,
-      billingCycle || 'monthly'
+      typeof newBasePrice === 'number' ? newBasePrice : Number(newBasePrice),
+      (billingCycle === 'yearly' ? 'yearly' : 'monthly') as 'monthly' | 'yearly'
     );
 
     res.json({ impact });
