@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationGroupingService } from '../services/notificationGroupingService';
 import type { ModuleNotificationMetadata } from '../../../shared/src/types/module-notifications';
@@ -208,8 +209,12 @@ export const createNotification = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ notification });
-  } catch (error) {
-    console.error('Error creating notification:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    await logger.error('Error creating notification', {
+      operation: 'notification_create',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ error: 'Failed to create notification' });
   }
 };

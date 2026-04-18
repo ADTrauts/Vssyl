@@ -1,5 +1,7 @@
 import express from 'express';
+import { body, param } from 'express-validator';
 import { authenticateJWT } from '../middleware/auth';
+import { validate } from '../middleware/validateRequest';
 import {
   getNotifications,
   getModuleNotificationTypes,
@@ -45,10 +47,22 @@ router.get('/preferences', getNotificationPreferences);
 router.put('/preferences', saveNotificationPreferences);
 
 // Create notification for current user
-router.post('/', createNotification);
+router.post(
+  '/',
+  validate([
+    body('type').isString().notEmpty().trim(),
+    body('title').isString().notEmpty().trim(),
+    body('body').optional({ values: 'null' }).isString(),
+  ]),
+  createNotification
+);
 
 // Mark notification as read
-router.post('/:id/read', markAsRead);
+router.post(
+  '/:id/read',
+  validate([param('id').isUUID()]),
+  markAsRead
+);
 
 // Mark all notifications as read
 router.post('/mark-all-read', markAllAsRead);

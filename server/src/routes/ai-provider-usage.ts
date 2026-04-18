@@ -1,5 +1,7 @@
 import express from 'express';
+import { query } from 'express-validator';
 import { authenticateJWT, getUserFromRequest } from '../middleware/auth';
+import { validate } from '../middleware/validateRequest';
 import { OpenAIAdminService } from '../services/aiProviderServices/openAIAdminService';
 import { AnthropicAdminService } from '../services/aiProviderServices/anthropicAdminService';
 import { CombinedProviderService } from '../services/aiProviderServices/combinedProviderService';
@@ -7,6 +9,34 @@ import { HistoricalDataService } from '../services/aiProviderServices/historical
 import { logger } from '../lib/logger';
 
 const router: express.Router = express.Router();
+
+/** Optional ISO8601 query dates used by multiple admin usage/expense endpoints */
+const optionalDateRangeQuery = validate([
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+]);
+
+const usageHistoryQuery = validate([
+  query('provider').optional().isIn(['openai', 'anthropic', 'all']),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+  query('groupBy').optional().isIn(['day', 'week', 'month']),
+]);
+
+const historyExpensesQuery = validate([
+  query('provider').optional().isIn(['openai', 'anthropic', 'all']),
+  query('period').optional().isIn(['day', 'week', 'month', 'year']),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+]);
+
+const expensesProvidersQuery = validate([
+  query('period').optional().isString(),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+]);
+
+const openaiExpensesQuery = validate([query('period').optional().isString()]);
 
 // Admin-only middleware
 const requireAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -38,7 +68,7 @@ const requireAdmin = async (req: express.Request, res: express.Response, next: e
  * GET /api/admin/ai-providers/usage/combined
  * Get combined usage data from both providers
  */
-router.get('/usage/combined', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/usage/combined', authenticateJWT, requireAdmin, optionalDateRangeQuery, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -72,7 +102,7 @@ router.get('/usage/combined', authenticateJWT, requireAdmin, async (req, res) =>
  * GET /api/admin/ai-providers/usage/openai
  * Get OpenAI official usage data
  */
-router.get('/usage/openai', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/usage/openai', authenticateJWT, requireAdmin, optionalDateRangeQuery, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -107,7 +137,7 @@ router.get('/usage/openai', authenticateJWT, requireAdmin, async (req, res) => {
  * GET /api/admin/ai-providers/usage/anthropic
  * Get Anthropic official usage data
  */
-router.get('/usage/anthropic', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/usage/anthropic', authenticateJWT, requireAdmin, optionalDateRangeQuery, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -145,7 +175,7 @@ router.get('/usage/anthropic', authenticateJWT, requireAdmin, async (req, res) =
  * GET /api/admin/ai-providers/expenses/openai
  * Get OpenAI billing/expense data
  */
-router.get('/expenses/openai', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/expenses/openai', authenticateJWT, requireAdmin, openaiExpensesQuery, async (req, res) => {
   try {
     const { period = 'month' } = req.query;
 
@@ -177,7 +207,7 @@ router.get('/expenses/openai', authenticateJWT, requireAdmin, async (req, res) =
  * GET /api/admin/ai-providers/expenses/anthropic
  * Get Anthropic billing/expense data
  */
-router.get('/expenses/anthropic', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/expenses/anthropic', authenticateJWT, requireAdmin, optionalDateRangeQuery, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
@@ -215,7 +245,7 @@ router.get('/expenses/anthropic', authenticateJWT, requireAdmin, async (req, res
  * GET /api/admin/ai-providers/expenses/providers
  * Get combined expense data from both providers
  */
-router.get('/expenses/providers', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/expenses/providers', authenticateJWT, requireAdmin, expensesProvidersQuery, async (req, res) => {
   try {
     const { period = 'month', startDate, endDate } = req.query;
 
@@ -273,7 +303,7 @@ router.get('/expenses/providers', authenticateJWT, requireAdmin, async (req, res
  * GET /api/admin/ai-providers/history/usage
  * Get historical usage data
  */
-router.get('/history/usage', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/history/usage', authenticateJWT, requireAdmin, usageHistoryQuery, async (req, res) => {
   try {
     const { provider = 'all', startDate, endDate, groupBy = 'day' } = req.query;
 
@@ -329,7 +359,7 @@ router.get('/history/usage', authenticateJWT, requireAdmin, async (req, res) => 
  * GET /api/admin/ai-providers/history/expenses
  * Get historical expense data
  */
-router.get('/history/expenses', authenticateJWT, requireAdmin, async (req, res) => {
+router.get('/history/expenses', authenticateJWT, requireAdmin, historyExpensesQuery, async (req, res) => {
   try {
     const { provider = 'all', period = 'month', startDate, endDate } = req.query;
 
