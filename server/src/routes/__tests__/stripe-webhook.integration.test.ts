@@ -1,29 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
-import express from 'express';
-import paymentRouter from '../payment';
-import { authenticateJWT } from '../../middleware/auth';
-import { handleWebhook } from '../../controllers/paymentController';
-
-/**
- * Mirrors production middleware order in index.ts for the payment webhook path.
- */
-function createAppWithStripeWebhookMount(): express.Application {
-  const app = express();
-
-  app.post(
-    '/api/payment/webhook',
-    express.raw({ type: 'application/json' }),
-    (req, res, next) => {
-      void handleWebhook(req, res).catch(next);
-    }
-  );
-
-  app.use(express.json());
-  app.use('/api/payment', authenticateJWT, paymentRouter);
-
-  return app;
-}
+import { createAppWithStripeWebhookMount } from '../../__tests__/helpers/stripeWebhookTestApp';
 
 describe('Stripe webhook public mount', () => {
   const app = createAppWithStripeWebhookMount();

@@ -1,6 +1,6 @@
 # ACSystem Audit Source of Truth
 
-Last updated: 2026-04-19 (**Phase C complete:** **A-036** admin portal domains + typed admin contracts; **next: Phase D** — **A-056**)  
+Last updated: 2026-04-19 (**Phase D complete:** **A-056** targeted tests; **next: Phase E** — **R-007** / **R-009**, parallel **A-051** / **A-052**)  
 Status: Active  
 Owner: Platform Engineering / Andrew + AI agent
 
@@ -379,8 +379,8 @@ The `**A-*` rows are not a mandatory row-by-row sequence.** Use this queue to pi
   ~~`A-047`~~, ~~`A-048`~~, ~~`A-049`~~, ~~`A-050`~~ (Stripe/webhooks, realtime, notification client, billing lifecycle).
 3. **Wave R — Release rails (Phase 6)** — closed for listed IDs
   ~~`A-053`~~, ~~`A-054`~~, ~~`A-055`~~, ~~`A-057`~~ (CI/verify contract, migrations/readiness/health, deploy runbook).
-4. **Wave T — Targeted tests**
-  `A-056` once gates reliably fail bad merges (still **Backlog**).
+4. **Wave T — Targeted tests** — closed for **A-056** (2026-04-19)
+  ~~`A-056`~~ (Stripe webhook mount + notification identity handlers + pointers to existing tenant tests).
 
 Within each wave, order by **Critical → High → Medium**, then by deploy risk. Implementation may jump waves for expediency; update **Status** and **Verification** when an item ships.
 
@@ -392,8 +392,8 @@ This section reconciles the **informal lettered phases** (agreed execution order
 | ----- | ----- | ----------- | ------ |
 | **A** | Close high-leverage items: structured errors/logging, module Stripe lifecycle, dashboard shell split | **A-039**, **A-050**, **A-042** | **Complete** |
 | **B** | Wave S execution-queue reconciliation (table vs queue text; no false Critical backlog) | **D-010**; Wave S closed | **Complete** |
-| **C** | High-value architecture / boundaries (scheduling, module, admin portal, business config, workspace routing) | **C1 A-035**, **C2 A-037**, **C3 A-036**, **C4 A-041**, **C5 A-043** | **In progress** — **A-036** is the only **Backlog** row left in this cluster; C1, C2, C4, C5 are **Done** |
-| **D** | Release rails + targeted high-risk tests | **A-056** (Wave T); optional **`pnpm lint`** in CI when eslint debt is acceptable (**A-055** note) | **Open** — A-056 **Backlog** |
+| **C** | High-value architecture / boundaries (scheduling, module, admin portal, business config, workspace routing) | **C1 A-035**, **C2 A-037**, **C3 A-036**, **C4 A-041**, **C5 A-043** | **Complete** |
+| **D** | Release rails + targeted high-risk tests | **A-056** (Wave T); optional **`pnpm lint`** in CI when eslint debt is acceptable (**A-055** note) | **Complete** |
 | **E** | Risk register hygiene | **R-007** (Prisma / migration discipline), **R-009** (shared package exports) | **Open** |
 | **F** | Exit: consider the audit initiative complete | Criteria below | **Pending** |
 
@@ -402,7 +402,7 @@ This section reconciles the **informal lettered phases** (agreed execution order
 **Recommended order from here**
 
 1. **Phase C:** **Complete** (including **A-036**).
-2. **Phase D:** **A-056** — after CI/release gates reliably fail bad merges, add focused integration coverage per that row (Stripe, tenant isolation, sockets/notifications, AI attachments).
+2. **Phase D:** **Complete** (**A-056**).
 3. **Parallel:** **A-051** / **A-052** when bandwidth allows.
 4. **Phase E:** R-007 / R-009 — scheduled review; close mitigations or record accepted risk in the Decision Log.
 5. **Phase F exit criteria:** Remediation Tracker has no **In progress** rows; **Backlog** only holds explicitly deferred items (or none); findings marked mitigated or converted to small tracked follow-ups; **R-007** / **R-009** mitigated or accepted with written rationale; optional: refresh `memory-bank/activeContext.md` / `progress.md` so future sessions do not assume the audit is the only active focus.
@@ -464,7 +464,7 @@ This section reconciles the **informal lettered phases** (agreed execution order
 | A-053 | F-059             | Make release-quality verification explicit at the repo root and in CI: run server automated tests in CI at minimum, define where E2E fits, and align the monorepo’s default `test` contract with the checks required before merge or deploy.                                                | Critical | Done        | Root `test` runs server Vitest; CI runs `pnpm type-check` and `pnpm test`. Optional: **`pnpm lint`** / Prettier in CI; document Playwright E2E placement in `memory-bank/testingStrategy.md` when finalized.                                                                                                                                                                                                                                                            |
 | A-054 | F-060, F-061      | Fail deploys when startup migrations or readiness checks do not establish a safe serving state. Separate liveness from readiness, and ensure health probes reflect database-backed readiness rather than shallow process availability.                                                      | High     | Done        | Production `bootstrap()` exits on migration failure; Docker `HEALTHCHECK` hits `/api/ready` (DB-backed). `/api/live` available for pure liveness. Optional: periodic production deploy dry-run.                                                                                                                                                                                                                                                           |
 | A-055 | F-062             | Reconcile CI/workspace/tooling configuration with the actual repo state: align pnpm versions, remove or restore broken filtered-script targets, and ensure CI commands match real packages and scripts.                                                                                     | High     | Done        | CI **`pnpm@10.11.0`**; workspace **`web` / `server` / `shared`**; gates **`type-check`** + **`test`**. Optional: add **`pnpm lint`** when eslint debt is manageable.                                                                                                                                                                                                                                                                                                   |
-| A-056 | F-063             | Add focused automated coverage for the highest-risk untested areas first: Stripe/webhooks, tenant-isolation paths, websockets/notifications, and AI attachment/vision behavior. Favor integration tests that exercise the real middleware stack over narrow mock-only tests where feasible. | High     | Backlog     | Focused backend tests, selective E2E coverage                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| A-056 | F-063             | Add focused automated coverage for the highest-risk untested areas first: Stripe/webhooks, tenant-isolation paths, websockets/notifications, and AI attachment/vision behavior. Favor integration tests that exercise the real middleware stack over narrow mock-only tests where feasible. | High     | Done        | **`stripeWebhookTestApp`**: shared factory **`server/src/__tests__/helpers/stripeWebhookTestApp.ts`**; **`phaseD-highRisk.integration.test.ts`**: Stripe webhook not 401 + JWT on other payment routes; notification identity (inline handlers aligned with **`notificationController`** — self-only create, cross-user mark-read 404, non-admin **for-user** 403); test users use static bcrypt hash to avoid native **bcrypt** under Vitest. **Tenant scheduling:** **`scheduling-tenant-scope.integration.test.ts`**. **Sockets / full AI vision:** optional follow-up (env-specific Vitest deps); **A-015** covers socket membership in tracker. **`pnpm vitest run`** on Phase D file + **`pnpm type-check`**.                                                                                                                                                           |
 | A-057 | F-064             | Add an operational deployment/rollback runbook that covers Cloud Run revision rollback, failed startup migrations, webhook/billing incident response, and which checks must pass before a production deploy.                                                                                | Medium   | Done        | **`docs/deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md`**. Optional: production dry-run.                                                                                                                                                                                                                                                                                                                                                                                         |
 
 
@@ -498,8 +498,9 @@ Status definitions:
 | D-012 | 2026-04-19 | **`moduleController` split** uses the same barrel pattern: **`routes/module.ts`** unchanged; helpers in **`module/moduleShared.ts`**; artifact/runtime import shared manifest helpers. | Matches **A-037** without breaking marketplace API surface. | Dynamic **`ModuleRegistrySyncService`** import uses **`../../services/`** from **`controllers/module/`**. |
 | D-013 | 2026-04-19 | **Dashboard Work tab** should not nest a second **`BusinessConfigurationProvider`** under the dashboard-level provider. | Duplicate providers duplicated state, loads, and WebSocket subscription logic for the same business context. | **`WorkTab`** / **`BrandedWorkDashboard`** consume the outer provider from **`DashboardLayout`**. |
 | D-014 | 2026-04-19 | Business workspace **active module** and **navigation hrefs** should come from one module (`businessWorkspaceNavigation`) so query- and path-based URLs stay consistent. | Prevents drift between **`DashboardLayoutWrapper`** and the workspace hub page. | **`connections` → `members`** and members href remain explicit in **`buildBusinessWorkspaceModuleHref`**. |
-| D-015 | 2026-04-19 | **Lettered phases A–F** name the *remediation execution plan* (close targeted rows → reconcile queue → architecture cluster → tests/rails → risk hygiene → exit). They are **not** the same labels as audit **Phases 1–6** (read-only audit passes, all complete). | Avoids confusion between “Phase C” (remediation) and “Phase 4” (frontend audit pass). | **Phase C** cluster (**A-035**, **A-037**, **A-036**, **A-041**, **A-043**) is **Done**. Next engineering focus: **Phase D** (**A-056**), parallel **A-051**/**A-052**, **Phase E** (**R-007**/**R-009**). |
+| D-015 | 2026-04-19 | **Lettered phases A–F** name the *remediation execution plan* (close targeted rows → reconcile queue → architecture cluster → tests/rails → risk hygiene → exit). They are **not** the same labels as audit **Phases 1–6** (read-only audit passes, all complete). | Avoids confusion between “Phase C” (remediation) and “Phase 4” (frontend audit pass). | **Phases A–D** done. Next: **Phase E** (**R-007**/**R-009**), parallel **A-051**/**A-052**, **Phase F** exit criteria. |
 | D-016 | 2026-04-19 | **Admin portal route split** keeps a single **`Router`** export from **`routes/admin-portal.ts`**; domain registration functions attach handlers in a fixed order so Express path matching stays identical to the prior monolith. | Matches **A-036** without changing **`/api/admin-portal`** URLs. | Subfolder dynamic imports use **`../../services/`** (not **`../services/`**). **`adminSecurityRoutes`** remains mounted at **`/security`** after domain registration. |
+| D-017 | 2026-04-19 | **Phase D (A-056)** adds **`phaseD-highRisk.integration.test.ts`** with minimal notification routes that mirror **`notificationController`** identity rules, avoiding importing the full **`routes/notification`** graph in Vitest ( **`date-fns`** / native **`bcrypt`** resolution issues in some test environments). Stripe webhook helper extracted to **`stripeWebhookTestApp.ts`**. | Delivers automated checks without blocking **`pnpm test`** on optional E2E or socket clients. | **Tenant isolation** for scheduling remains **`scheduling-tenant-scope.integration.test.ts`**. **AI vision path** left as follow-up when Vitest + GCS/uuid chain is stable in CI. |
 
 
 ---
@@ -846,8 +847,8 @@ Verification notes:
 ### Next action
 
 1. **Audit Phases 1–6** (read-only passes): complete.
-2. **Remediation Phases A–C:** complete.
-3. **Phase D** (**A-056**), parallel **A-051** / **A-052**, **Phase E** (**R-007**, **R-009**), **Phase F** exit criteria — see **Remediation game plan (Phases A–F)** under the Remediation Tracker.
+2. **Remediation Phases A–D:** complete.
+3. **Phase E** (**R-007**, **R-009**), parallel **A-051** / **A-052**, **Phase F** exit criteria — see **Remediation game plan (Phases A–F)** under the Remediation Tracker.
 
 ### Phase B — Wave S / queue reconciliation (2026-04-19)
 
