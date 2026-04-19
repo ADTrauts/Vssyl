@@ -55,6 +55,32 @@ const moveFileBody = validate([
   body('targetFolderId').optional({ nullable: true, values: 'null' }).isUUID(),
 ]);
 
+/** Multipart text fields after multer (folderId / dashboardId from FormData) */
+const uploadMultipartFields = validate([
+  body('folderId')
+    .optional()
+    .custom((v) => v === undefined || v === null || v === '' || (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v))),
+  body('dashboardId')
+    .optional()
+    .custom((v) => v === undefined || v === null || v === '' || (typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v))),
+  body('chat').optional().custom((v) => {
+    if (v === undefined || v === null || v === '') return true;
+    if (typeof v === 'boolean') return true;
+    if (typeof v === 'string') return ['true', 'false', '1', '0'].includes(v);
+    return false;
+  }),
+]);
+
+const putUpdateFileBody = validate([
+  body('name').optional().isString(),
+  body('folderId').optional({ nullable: true, values: 'null' }).isUUID(),
+]);
+
+const putUpdateFilePermissionBody = validate([
+  body('canRead').isBoolean(),
+  body('canWrite').isBoolean(),
+]);
+
 // List all files for the authenticated user (optionally by folder)
 router.get('/', authenticateJWT, listFiles);
 
@@ -62,7 +88,7 @@ router.get('/', authenticateJWT, listFiles);
 router.get('/trashed', authenticateJWT, listTrashedFiles);
 
 // Upload a new file
-router.post('/', authenticateJWT, multerUploadWithErrorHandling, uploadFile);
+router.post('/', authenticateJWT, multerUploadWithErrorHandling, uploadMultipartFields, uploadFile);
 
 // Reorder files within a folder (specific route before parameterized routes)
 router.post(
@@ -110,7 +136,7 @@ router.post('/:id/move', authenticateJWT, fileIdParam, moveFileBody, moveFile);
 
 router.get('/:id', authenticateJWT, fileIdParam, downloadFile);
 
-router.put('/:id', authenticateJWT, fileIdParam, updateFile);
+router.put('/:id', authenticateJWT, fileIdParam, putUpdateFileBody, updateFile);
 
 router.delete('/:id', authenticateJWT, fileIdParam, deleteFile);
 

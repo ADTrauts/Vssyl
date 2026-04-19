@@ -59,6 +59,16 @@ const grantFolderPermissionBody = validate([
   body('canWrite').isBoolean(),
 ]);
 
+const putUpdateFolderBody = validate([
+  body('name').optional().isString(),
+  body('parentId').optional({ nullable: true, values: 'null' }).isUUID(),
+]);
+
+const putUpdateFolderPermissionBody = validate([
+  body('canRead').isBoolean(),
+  body('canWrite').isBoolean(),
+]);
+
 router.get('/', authenticateJWT, listFolders);
 
 router.get('/trashed', authenticateJWT, listTrashedFolders);
@@ -101,6 +111,7 @@ router.put(
   '/:id/permissions/:userId',
   authenticateJWT,
   folderPermissionUserParams,
+  putUpdateFolderPermissionBody,
   updateFolderPermission
 );
 
