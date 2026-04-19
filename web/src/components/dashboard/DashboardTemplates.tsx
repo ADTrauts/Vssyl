@@ -100,7 +100,7 @@ function DashboardTemplateCard({ template, onSelect, isRecommended }: DashboardT
           </span>
         ))}
         {template.widgets.length > 4 && (
-          <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 rounded">
+          <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 rounded">
             +{template.widgets.length - 4}
           </span>
         )}

@@ -1,5 +1,5 @@
-// Shared types and utilities will go here
+/** Public package surface: components, types (includes search + domain barrels), utils, theme. */
 export * from './components';
-export * from './types/search';
+export * from './types';
 export * from './utils';
 export * from './styles/theme';

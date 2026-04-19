@@ -244,7 +244,7 @@ function EmptyDashboard({
       </div>
 
       {/* Or add manually */}
-      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
+      <div className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-400 mb-4">
         <div className="w-12 h-px bg-gray-200" />
         <span>or</span>
         <div className="w-12 h-px bg-gray-200" />

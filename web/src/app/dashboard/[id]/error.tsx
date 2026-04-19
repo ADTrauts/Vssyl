@@ -20,7 +20,7 @@ export default function DashboardError({ error, reset }: ErrorProps) {
         </p>
         {errorStack && process.env.NODE_ENV === 'development' && (
           <details className="mt-4 text-left">
-            <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 mb-2">
+            <summary className="cursor-pointer text-sm text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 mb-2">
               Show error details (development only)
             </summary>
             <pre className="text-xs bg-gray-100 dark:bg-slate-700 p-4 rounded overflow-auto max-h-64 text-gray-800">

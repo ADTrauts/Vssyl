@@ -161,7 +161,7 @@ export default function WidgetPicker({
         {/* Search + Category Tabs */}
         <div className="px-6 pt-4 pb-2 space-y-3 border-b border-gray-100">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
             <input
               type="text"
               placeholder="Search widgets..."
@@ -311,7 +311,7 @@ function WidgetCard({
         className={`p-1.5 rounded-lg transition-colors flex-shrink-0 ${
           justAdded
             ? 'text-green-600 bg-green-100'
-            : 'text-gray-400 group-hover:text-blue-600 group-hover:bg-blue-100'
+            : 'text-gray-600 group-hover:text-blue-600 group-hover:bg-blue-100'
         }`}
         title={`Add another ${entry.name}`}
       >
@@ -330,7 +330,7 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Package className="w-10 h-10 text-gray-300 mb-3" />
+      <Package className="w-10 h-10 text-gray-600 mb-3" />
       <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
         {hasSearch ? 'No widgets found' : 'No widgets available'}
       </p>

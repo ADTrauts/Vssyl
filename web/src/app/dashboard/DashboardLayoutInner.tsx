@@ -1341,7 +1341,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                     <LayoutDashboard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">Blank Tab</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Create a personal dashboard</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-400">Create a personal dashboard</div>
                     </div>
                   </div>
                 </label>
@@ -1359,7 +1359,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                     <Home className="w-5 h-5 text-orange-600" />
                     <div>
                       <div className="font-medium text-gray-900 dark:text-gray-100">Home Tab</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Create a household management dashboard</div>
+                      <div className="text-sm text-gray-700 dark:text-gray-400">Create a household management dashboard</div>
                     </div>
                   </div>
                 </label>
