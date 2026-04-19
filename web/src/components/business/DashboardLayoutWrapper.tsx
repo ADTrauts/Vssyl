@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   Settings,
@@ -31,6 +31,11 @@ import type { LeftSidebarConfig } from '../../types/sidebar';
 import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 import { businessAPI } from '../../api/business';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import {
+  buildBusinessWorkspaceModuleHref,
+  hasNestedWorkspaceRoute,
+  resolveBusinessWorkspaceModule,
+} from '../../lib/businessWorkspaceNavigation';
 
 interface Business {
   id: string;
@@ -52,6 +57,7 @@ interface DashboardLayoutWrapperProps {
 
 function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperProps) {
   const nextPathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [pathname, setPathname] = useState<string>('/');
   
@@ -388,44 +394,21 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
     if (isMobile) setSidebarCollapsed(true);
   }, [isMobile]);
 
-  // Get current module from URL params
-  const getCurrentModule = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('module') || 'dashboard';
-  };
-
   const navigateToModule = (moduleId: string) => {
-    // Update URL to show the module in the main content area
-    // Extract businessId from pathname if business is null
     const businessId = business?.id || pathname?.split('/business/')[1]?.split('/')[0] || '';
     if (!businessId) return;
-    // Members: route to dedicated workspace members page
-    if (moduleId === 'members') {
-      router.push(`/business/${businessId}/workspace/members`);
-      return;
-    }
-    // In business context, "Connections" → Members (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
-    if (moduleId === 'connections') {
-      router.push(`/business/${businessId}/workspace/members`);
-      return;
-    }
-    router.push(`/business/${businessId}/workspace?module=${moduleId}`);
+    router.push(buildBusinessWorkspaceModuleHref(businessId, moduleId));
   };
 
   const handleSwitchToPersonal = () => {
     router.push('/dashboard');
   };
 
-  const afterWorkspace = pathname?.split('/workspace/')[1] || '';
-  const pathSegments = afterWorkspace.split('/').filter(Boolean);
-  const pathModule = pathSegments[0] || null;
-  const hasNestedSegments = pathSegments.length > 1;
-  // When on /workspace/members, current module is 'members'
-  const currentModule = pathModule || getCurrentModule();
+  const currentModule = resolveBusinessWorkspaceModule(pathname || '/', searchParams);
+  const shouldRenderNestedRoute = hasNestedWorkspaceRoute(pathname || '/');
   // Display name for sidebar: in business context show "Members" for members and connections (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
   const getModuleDisplayName = (moduleId: string, name: string) =>
     isBusinessContext && (moduleId === 'members' || moduleId === 'connections') ? 'Members' : name;
-  const shouldRenderNestedRoute = hasNestedSegments;
 
   // Show loading state while session is being determined
   if (status === 'loading') {

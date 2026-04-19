@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { businessAPI } from '../../../../api/business';
 import { Spinner, Alert } from 'shared/components';
 import BusinessWorkspaceContent from '../../../../components/business/BusinessWorkspaceContent';
 import { useDashboard } from '../../../../contexts/DashboardContext';
+import { resolveBusinessWorkspaceModule } from '../../../../lib/businessWorkspaceNavigation';
 
 interface Business {
   id: string;
@@ -43,13 +44,13 @@ interface Business {
 
 export default function BusinessWorkspacePage() {
   const params = useParams();
+  const pathname = usePathname() || '';
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { navigateToDashboard } = useDashboard();
   const businessId = params?.id as string;
-  
-  // Get current module from URL params
-  const currentModule = searchParams?.get('module') || 'dashboard';
+
+  const currentModule = resolveBusinessWorkspaceModule(pathname, searchParams);
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);
