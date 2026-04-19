@@ -31,6 +31,80 @@ const postOwnAvailability = validate([
   body('notes').optional().isString(),
 ]);
 
+/** POST /ai/generate-schedule */
+const postAiGenerateSchedule = validate([
+  body('businessId').isUUID(),
+  body('scheduleId').isUUID(),
+  body('strategy').optional().isString(),
+]);
+
+/** POST /ai/suggest-assignments */
+const postAiSuggestAssignments = validate([
+  body('businessId').isUUID(),
+  body('shiftId').isUUID(),
+  body('scheduleId').optional().isUUID(),
+]);
+
+/** POST /admin/schedules */
+const postAdminCreateSchedule = validate([
+  body('name').isString().notEmpty(),
+  body('startDate').isString().notEmpty(),
+  body('endDate').isString().notEmpty(),
+  body('description').optional().isString(),
+  body('timezone').optional().isString(),
+  body('templateId').optional().isUUID(),
+]);
+
+/** POST /admin/shifts */
+const postAdminCreateShift = validate([
+  body('scheduleId').isUUID(),
+  body('title').isString().notEmpty(),
+  body('startTime').isString().notEmpty(),
+  body('endTime').isString().notEmpty(),
+  body('businessId').optional().isUUID(),
+  body('employeePositionId').optional().isUUID(),
+  body('positionId').optional().isUUID(),
+  body('breakMinutes').optional().isInt({ min: 0 }),
+  body('notes').optional().isString(),
+  body('color').optional().isString(),
+  body('isOpenShift').optional().isBoolean(),
+  body('stationName').optional().isString(),
+  body('locationId').optional().isUUID(),
+]);
+
+/** POST /admin/schedule-templates */
+const postAdminCreateScheduleTemplate = validate([
+  body('name').isString().notEmpty(),
+  body('scheduleType').isString().notEmpty(),
+  body('description').optional().isString(),
+  body('sourceScheduleId').optional().isUUID(),
+]);
+
+/** POST /admin/stations */
+const postAdminCreateBusinessStation = validate([
+  body('businessId').isUUID(),
+  body('name').isString().notEmpty(),
+  body('stationType').isString().notEmpty(),
+  body('jobFunction').optional().isString(),
+  body('description').optional().isString(),
+  body('color').optional().isString(),
+  body('isRequired').optional().isBoolean(),
+  body('priority').optional().isInt(),
+  body('defaultStartTime').optional().isString(),
+  body('defaultEndTime').optional().isString(),
+]);
+
+/** POST /admin/job-locations */
+const postAdminCreateJobLocation = validate([
+  body('businessId').isUUID(),
+  body('name').isString().notEmpty(),
+  body('address').optional().isString(),
+  body('description').optional().isString(),
+  body('phone').optional().isString(),
+  body('email').optional().isString(),
+  body('notes').optional().isString(),
+]);
+
 router.use(authenticateJWT);
 router.use(checkSchedulingModuleInstalled);
 
@@ -41,7 +115,7 @@ router.use(checkSchedulingModuleInstalled);
 
 // Schedules
 router.get('/admin/schedules', checkSchedulingAdmin, schedulingController.getSchedules);
-router.post('/admin/schedules', checkSchedulingAdmin, schedulingController.createSchedule);
+router.post('/admin/schedules', checkSchedulingAdmin, postAdminCreateSchedule, schedulingController.createSchedule);
 router.get('/admin/schedules/:id', checkSchedulingAdmin, idParam, schedulingController.getScheduleById);
 router.put('/admin/schedules/:id', checkSchedulingAdmin, idParam, schedulingController.updateSchedule);
 router.delete('/admin/schedules/:id', checkSchedulingAdmin, idParam, schedulingController.deleteSchedule);
@@ -49,7 +123,7 @@ router.post('/admin/schedules/:id/publish', checkSchedulingAdmin, idParam, sched
 
 // Shifts
 router.get('/admin/shifts', checkSchedulingAdmin, schedulingController.getShifts);
-router.post('/admin/shifts', checkSchedulingAdmin, schedulingController.createShift);
+router.post('/admin/shifts', checkSchedulingAdmin, postAdminCreateShift, schedulingController.createShift);
 router.get('/admin/shifts/:id', checkSchedulingAdmin, idParam, schedulingController.getShiftById);
 router.put('/admin/shifts/:id', checkSchedulingAdmin, idParam, schedulingController.updateShift);
 router.delete('/admin/shifts/:id', checkSchedulingAdmin, idParam, schedulingController.deleteShift);
@@ -63,7 +137,12 @@ router.delete('/admin/templates/:id', checkSchedulingAdmin, idParam, schedulingC
 
 // Schedule Templates
 router.get('/admin/schedule-templates', checkSchedulingAdmin, schedulingController.getScheduleTemplates);
-router.post('/admin/schedule-templates', checkSchedulingAdmin, schedulingController.createScheduleTemplate);
+router.post(
+  '/admin/schedule-templates',
+  checkSchedulingAdmin,
+  postAdminCreateScheduleTemplate,
+  schedulingController.createScheduleTemplate
+);
 router.get('/admin/schedule-templates/:id', checkSchedulingAdmin, idParam, schedulingController.getScheduleTemplateById);
 router.put('/admin/schedule-templates/:id', checkSchedulingAdmin, idParam, schedulingController.updateScheduleTemplate);
 router.delete('/admin/schedule-templates/:id', checkSchedulingAdmin, idParam, schedulingController.deleteScheduleTemplate);
@@ -79,14 +158,24 @@ router.put('/admin/swaps/:id/deny', checkSchedulingAdmin, idParam, schedulingCon
 
 // Business Stations
 router.get('/admin/stations', checkSchedulingAdmin, schedulingController.getBusinessStations);
-router.post('/admin/stations', checkSchedulingAdmin, schedulingController.createBusinessStation);
+router.post(
+  '/admin/stations',
+  checkSchedulingAdmin,
+  postAdminCreateBusinessStation,
+  schedulingController.createBusinessStation
+);
 router.get('/admin/stations/:id', checkSchedulingAdmin, idParam, schedulingController.getBusinessStationById);
 router.put('/admin/stations/:id', checkSchedulingAdmin, idParam, schedulingController.updateBusinessStation);
 router.delete('/admin/stations/:id', checkSchedulingAdmin, idParam, schedulingController.deleteBusinessStation);
 
 // Job Locations
 router.get('/admin/job-locations', checkSchedulingAdmin, schedulingController.getBusinessJobLocations);
-router.post('/admin/job-locations', checkSchedulingAdmin, schedulingController.createBusinessJobLocation);
+router.post(
+  '/admin/job-locations',
+  checkSchedulingAdmin,
+  postAdminCreateJobLocation,
+  schedulingController.createBusinessJobLocation
+);
 router.put('/admin/job-locations/:id', checkSchedulingAdmin, idParam, schedulingController.updateBusinessJobLocation);
 router.delete('/admin/job-locations/:id', checkSchedulingAdmin, idParam, schedulingController.deleteBusinessJobLocation);
 
@@ -97,8 +186,18 @@ router.get('/recommendations', checkSchedulingAdmin, schedulingController.getSch
 // AI-POWERED SCHEDULING
 // ============================================================================
 
-router.post('/ai/generate-schedule', checkSchedulingAdmin, schedulingController.generateAISchedule);
-router.post('/ai/suggest-assignments', checkSchedulingAdmin, schedulingController.suggestShiftAssignments);
+router.post(
+  '/ai/generate-schedule',
+  checkSchedulingAdmin,
+  postAiGenerateSchedule,
+  schedulingController.generateAISchedule
+);
+router.post(
+  '/ai/suggest-assignments',
+  checkSchedulingAdmin,
+  postAiSuggestAssignments,
+  schedulingController.suggestShiftAssignments
+);
 
 // ============================================================================
 // MANAGER ROUTES

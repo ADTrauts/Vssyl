@@ -1,54 +1,114 @@
 import express from 'express';
+import { body, param } from 'express-validator';
 import { authenticateJWT } from '../middleware/auth';
-import { listFolders, createFolder, updateFolder, deleteFolder, listTrashedFolders, restoreFolder, hardDeleteFolder, getRecentActivity, toggleFolderStarred, reorderFolders, moveFolder } from '../controllers/folderController';
-import { listFolderPermissions, grantFolderPermission, updateFolderPermission, revokeFolderPermission } from '../controllers/folderPermissionController';
+import { validate } from '../middleware/validateRequest';
+import {
+  listFolders,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  listTrashedFolders,
+  restoreFolder,
+  hardDeleteFolder,
+  getRecentActivity,
+  toggleFolderStarred,
+  reorderFolders,
+  moveFolder,
+} from '../controllers/folderController';
+import {
+  listFolderPermissions,
+  grantFolderPermission,
+  updateFolderPermission,
+  revokeFolderPermission,
+} from '../controllers/folderPermissionController';
 
 const router: express.Router = express.Router();
 
-// List all folders for the authenticated user (optionally by parent)
+const folderIdParam = validate([param('id').isUUID()]);
+
+const parentIdReorderParam = validate([
+  param('parentId').custom((value: string) => {
+    if (value === 'null') return true;
+    if (typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+      return true;
+    }
+    throw new Error('Invalid parentId');
+  }),
+]);
+
+const reorderFoldersBody = validate([
+  body('folderIds').isArray({ min: 1 }),
+  body('folderIds.*').isUUID(),
+]);
+
+const createFolderBody = validate([
+  body('name').isString().notEmpty(),
+  body('parentId').optional({ nullable: true, values: 'null' }).isUUID(),
+  body('dashboardId').optional({ nullable: true, values: 'null' }).isUUID(),
+]);
+
+const moveFolderBody = validate([
+  body('targetParentId').optional({ nullable: true, values: 'null' }).isUUID(),
+]);
+
+const folderPermissionUserParams = validate([param('id').isUUID(), param('userId').isUUID()]);
+
+const grantFolderPermissionBody = validate([
+  body('userId').isUUID(),
+  body('canRead').isBoolean(),
+  body('canWrite').isBoolean(),
+]);
+
 router.get('/', authenticateJWT, listFolders);
 
-// List trashed folders
 router.get('/trashed', authenticateJWT, listTrashedFolders);
 
-// Create a new folder
-router.post('/', authenticateJWT, createFolder);
+router.post('/', authenticateJWT, createFolderBody, createFolder);
 
-// Update (rename/move) a folder
-router.put('/:id', authenticateJWT, updateFolder);
+router.put('/:id', authenticateJWT, folderIdParam, updateFolder);
 
-// Delete a folder
-router.delete('/:id', authenticateJWT, deleteFolder);
+router.delete('/:id', authenticateJWT, folderIdParam, deleteFolder);
 
-// Restore a trashed folder
-router.post('/:id/restore', authenticateJWT, restoreFolder);
+router.post('/:id/restore', authenticateJWT, folderIdParam, restoreFolder);
 
-// Permanently delete a trashed folder
-router.delete('/:id/hard', authenticateJWT, hardDeleteFolder);
+router.delete('/:id/hard', authenticateJWT, folderIdParam, hardDeleteFolder);
 
-// Toggle the starred status of a folder
-router.put('/:id/star', authenticateJWT, toggleFolderStarred);
+router.put('/:id/star', authenticateJWT, folderIdParam, toggleFolderStarred);
 
-// Get recent activity for the user
 router.get('/activity/recent', authenticateJWT, getRecentActivity);
 
-// Reorder folders within a parent folder
-router.post('/reorder/:parentId', authenticateJWT, reorderFolders);
+router.post(
+  '/reorder/:parentId',
+  authenticateJWT,
+  parentIdReorderParam,
+  reorderFoldersBody,
+  reorderFolders
+);
 
-// Move a folder to a different parent folder
-router.post('/:id/move', authenticateJWT, moveFolder);
+router.post('/:id/move', authenticateJWT, folderIdParam, moveFolderBody, moveFolder);
 
-// Folder permission routes (must come before generic :id routes)
-// List all permissions for a folder
-router.get('/:id/permissions', authenticateJWT, listFolderPermissions);
+router.get('/:id/permissions', authenticateJWT, folderIdParam, listFolderPermissions);
 
-// Grant or update a user's permission for a folder
-router.post('/:id/permissions', authenticateJWT, grantFolderPermission);
+router.post(
+  '/:id/permissions',
+  authenticateJWT,
+  folderIdParam,
+  grantFolderPermissionBody,
+  grantFolderPermission
+);
 
-// Update a user's permission for a folder
-router.put('/:id/permissions/:userId', authenticateJWT, updateFolderPermission);
+router.put(
+  '/:id/permissions/:userId',
+  authenticateJWT,
+  folderPermissionUserParams,
+  updateFolderPermission
+);
 
-// Revoke a user's permission for a folder
-router.delete('/:id/permissions/:userId', authenticateJWT, revokeFolderPermission);
+router.delete(
+  '/:id/permissions/:userId',
+  authenticateJWT,
+  folderPermissionUserParams,
+  revokeFolderPermission
+);
 
-export default router; 
+export default router;

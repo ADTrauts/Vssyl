@@ -1,9 +1,59 @@
 console.log('[DEBUG] fileRouter loaded');
 import express from 'express';
+import { body, param } from 'express-validator';
 import { authenticateJWT } from '../middleware/auth';
-import { listFiles, uploadFile, downloadFile, updateFile, deleteFile, multerUploadWithErrorHandling, listFilePermissions, grantFilePermission, updateFilePermission, revokeFilePermission, listTrashedFiles, restoreFile, hardDeleteFile, toggleFileStarred, reorderFiles, moveFile } from '../controllers/fileController';
+import { validate } from '../middleware/validateRequest';
+import {
+  listFiles,
+  uploadFile,
+  downloadFile,
+  updateFile,
+  deleteFile,
+  multerUploadWithErrorHandling,
+  listFilePermissions,
+  grantFilePermission,
+  updateFilePermission,
+  revokeFilePermission,
+  listTrashedFiles,
+  restoreFile,
+  hardDeleteFile,
+  toggleFileStarred,
+  reorderFiles,
+  moveFile,
+} from '../controllers/fileController';
 
 const router: express.Router = express.Router();
+
+/** File id in path (UUID) */
+const fileIdParam = validate([param('id').isUUID()]);
+
+/** Root folder uses literal `null` in path for reorder */
+const reorderFolderIdParam = validate([
+  param('folderId').custom((value: string) => {
+    if (value === 'null') return true;
+    if (typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+      return true;
+    }
+    throw new Error('Invalid folderId');
+  }),
+]);
+
+const reorderFilesBody = validate([
+  body('fileIds').isArray({ min: 1 }),
+  body('fileIds.*').isUUID(),
+]);
+
+const filePermissionUserParams = validate([param('id').isUUID(), param('userId').isUUID()]);
+
+const grantFilePermissionBody = validate([
+  body('userId').isUUID(),
+  body('canRead').isBoolean(),
+  body('canWrite').isBoolean(),
+]);
+
+const moveFileBody = validate([
+  body('targetFolderId').optional({ nullable: true, values: 'null' }).isUUID(),
+]);
 
 // List all files for the authenticated user (optionally by folder)
 router.get('/', authenticateJWT, listFiles);
@@ -15,64 +65,80 @@ router.get('/trashed', authenticateJWT, listTrashedFiles);
 router.post('/', authenticateJWT, multerUploadWithErrorHandling, uploadFile);
 
 // Reorder files within a folder (specific route before parameterized routes)
-router.post('/reorder/:folderId', authenticateJWT, reorderFiles);
+router.post(
+  '/reorder/:folderId',
+  authenticateJWT,
+  reorderFolderIdParam,
+  reorderFilesBody,
+  reorderFiles
+);
 
 // All specific routes with /:id must come before the generic /:id route
-// Download a file (specific route)
-router.get('/:id/download', authenticateJWT, downloadFile);
+router.get('/:id/download', authenticateJWT, fileIdParam, downloadFile);
 
-// List all permissions for a file
-router.get('/:id/permissions', authenticateJWT, listFilePermissions);
+router.get('/:id/permissions', authenticateJWT, fileIdParam, listFilePermissions);
 
-// Grant or update a user's permission for a file
-router.post('/:id/permissions', authenticateJWT, grantFilePermission);
+router.post(
+  '/:id/permissions',
+  authenticateJWT,
+  fileIdParam,
+  grantFilePermissionBody,
+  grantFilePermission
+);
 
-// Update a user's permission for a file
-router.put('/:id/permissions/:userId', authenticateJWT, updateFilePermission);
+router.put(
+  '/:id/permissions/:userId',
+  authenticateJWT,
+  filePermissionUserParams,
+  updateFilePermission
+);
 
-// Revoke a user's permission for a file
-router.delete('/:id/permissions/:userId', authenticateJWT, revokeFilePermission);
+router.delete(
+  '/:id/permissions/:userId',
+  authenticateJWT,
+  filePermissionUserParams,
+  revokeFilePermission
+);
 
-// Toggle the starred status of a file
-router.put('/:id/star', authenticateJWT, toggleFileStarred);
+router.put('/:id/star', authenticateJWT, fileIdParam, toggleFileStarred);
 
-// Restore a trashed file
-router.post('/:id/restore', authenticateJWT, restoreFile);
+router.post('/:id/restore', authenticateJWT, fileIdParam, restoreFile);
 
-// Permanently delete a trashed file
-router.delete('/:id/hard-delete', authenticateJWT, hardDeleteFile);
+router.delete('/:id/hard-delete', authenticateJWT, fileIdParam, hardDeleteFile);
 
-// Move a file to a different folder
-router.post('/:id/move', authenticateJWT, moveFile);
+router.post('/:id/move', authenticateJWT, fileIdParam, moveFileBody, moveFile);
 
-// Generic routes (must come after all specific routes)
-// Download or preview a file
-router.get('/:id', authenticateJWT, downloadFile);
+router.get('/:id', authenticateJWT, fileIdParam, downloadFile);
 
-// Update (rename/move) a file
-router.put('/:id', authenticateJWT, updateFile);
+router.put('/:id', authenticateJWT, fileIdParam, updateFile);
 
-// Delete a file (move to trash)
-router.delete('/:id', authenticateJWT, deleteFile);
+router.delete('/:id', authenticateJWT, fileIdParam, deleteFile);
 
 export default router;
 
 // Log all registered routes in development (after all routes are registered)
 if (process.env.NODE_ENV === 'development') {
-  // Use setTimeout to ensure this runs after all routes are registered
   setTimeout(() => {
     console.log('📁 File router registered routes:', {
       totalRoutes: router.stack.length,
-      downloadRoute: router.stack.find((layer: any) => 
-        layer.route?.methods?.get && layer.route?.path === '/:id/download'
-      ) ? '✅ Found' : '❌ Missing',
-      directRoute: router.stack.find((layer: any) => 
-        layer.route?.methods?.get && layer.route?.path === '/:id' && !layer.route?.path?.includes('download')
-      ) ? '✅ Found' : '❌ Missing',
-      allRoutes: router.stack.map((layer: any) => ({
-        path: layer.route?.path,
-        methods: Object.keys(layer.route?.methods || {}),
-      })).filter((r: any) => r.path)
+      downloadRoute: router.stack.find(
+        (layer: { route?: { methods?: { get?: boolean }; path?: string } }) =>
+          layer.route?.methods?.get && layer.route?.path === '/:id/download'
+      )
+        ? '✅ Found'
+        : '❌ Missing',
+      directRoute: router.stack.find(
+        (layer: { route?: { methods?: { get?: boolean }; path?: string } }) =>
+          layer.route?.methods?.get && layer.route?.path === '/:id' && !layer.route?.path?.includes('download')
+      )
+        ? '✅ Found'
+        : '❌ Missing',
+      allRoutes: router.stack
+        .map((layer: { route?: { path?: string; methods?: Record<string, boolean> } }) => ({
+          path: layer.route?.path,
+          methods: Object.keys(layer.route?.methods || {}),
+        }))
+        .filter((r: { path?: string }) => r.path),
     });
   }, 100);
-} 
+}
