@@ -13,7 +13,6 @@ import { useGlobalBranding } from '../../contexts/GlobalBrandingContext';
 import { useGlobalSearch } from '../../contexts/GlobalSearchContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useWorkAuth } from '../../contexts/WorkAuthContext';
-import { BusinessConfigurationProvider } from '../../contexts/BusinessConfigurationContext';
 import WorkTab from '../../components/WorkTab';
 import PlaceContent from '../../components/place/PlaceContent';
 import { ModuleConfig } from '../../config/modules';
@@ -1150,9 +1149,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
           transition: 'margin-left 0.2s ease-in-out, padding-right 0.2s ease-in-out',
         }}>
           {showWorkTab ? (
-            <BusinessConfigurationProvider>
-              <WorkTab onSwitchToWork={handleSwitchToWork} />
-            </BusinessConfigurationProvider>
+            <WorkTab onSwitchToWork={handleSwitchToWork} />
           ) : showPlaceTab ? (
             <PlaceContent />
           ) : (
