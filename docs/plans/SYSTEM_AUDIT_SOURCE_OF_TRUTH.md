@@ -1,6 +1,6 @@
 # ACSystem Audit Source of Truth
 
-Last updated: 2026-04-19 (A-035 scheduling, A-037 module, A-041 business config, A-043 workspace URLs)  
+Last updated: 2026-04-19 (remediation Phases A–F reconciled; **next: finish Phase C** via **A-036**)  
 Status: Active  
 Owner: Platform Engineering / Andrew + AI agent
 
@@ -384,6 +384,28 @@ The `**A-*` rows are not a mandatory row-by-row sequence.** Use this queue to pi
 
 Within each wave, order by **Critical → High → Medium**, then by deploy risk. Implementation may jump waves for expediency; update **Status** and **Verification** when an item ships.
 
+### Remediation game plan (Phases A–F)
+
+This section reconciles the **informal lettered phases** (agreed execution order for remediation) with the **`A-*` tracker**. The **Remediation Tracker table** below remains authoritative per ID; this subsection is the **navigation map** for finishing the audit initiative.
+
+| Phase | Scope | Tracker IDs | Status |
+| ----- | ----- | ----------- | ------ |
+| **A** | Close high-leverage items: structured errors/logging, module Stripe lifecycle, dashboard shell split | **A-039**, **A-050**, **A-042** | **Complete** |
+| **B** | Wave S execution-queue reconciliation (table vs queue text; no false Critical backlog) | **D-010**; Wave S closed | **Complete** |
+| **C** | High-value architecture / boundaries (scheduling, module, admin portal, business config, workspace routing) | **C1 A-035**, **C2 A-037**, **C3 A-036**, **C4 A-041**, **C5 A-043** | **In progress** — **A-036** is the only **Backlog** row left in this cluster; C1, C2, C4, C5 are **Done** |
+| **D** | Release rails + targeted high-risk tests | **A-056** (Wave T); optional **`pnpm lint`** in CI when eslint debt is acceptable (**A-055** note) | **Open** — A-056 **Backlog** |
+| **E** | Risk register hygiene | **R-007** (Prisma / migration discipline), **R-009** (shared package exports) | **Open** |
+| **F** | Exit: consider the audit initiative complete | Criteria below | **Pending** |
+
+**Parallel medium work (not blocking Phase C core):** **A-051** (module upload / sandbox / env documentation), **A-052** (explicit multimodal downgrade behavior for AI).
+
+**Recommended order from here**
+
+1. **Finish Phase C:** **A-036** — admin portal bounded domains + typed service contracts (last item from the original Phase C cluster).
+2. **Phase D:** **A-056** — after CI/release gates reliably fail bad merges, add focused integration coverage per that row (Stripe, tenant isolation, sockets/notifications, AI attachments).
+3. **Parallel:** **A-051** / **A-052** when bandwidth allows.
+4. **Phase E:** R-007 / R-009 — scheduled review; close mitigations or record accepted risk in the Decision Log.
+5. **Phase F exit criteria:** Remediation Tracker has no **In progress** rows; **Backlog** only holds explicitly deferred items (or none); findings marked mitigated or converted to small tracked follow-ups; **R-007** / **R-009** mitigated or accepted with written rationale; optional: refresh `memory-bank/activeContext.md` / `progress.md` so future sessions do not assume the audit is the only active focus.
 
 | ID    | Linked Finding(s) | Remediation                                                                                                                                                                                                                                                                                 | Priority | Status      | Verification                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ----- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -476,6 +498,7 @@ Status definitions:
 | D-012 | 2026-04-19 | **`moduleController` split** uses the same barrel pattern: **`routes/module.ts`** unchanged; helpers in **`module/moduleShared.ts`**; artifact/runtime import shared manifest helpers. | Matches **A-037** without breaking marketplace API surface. | Dynamic **`ModuleRegistrySyncService`** import uses **`../../services/`** from **`controllers/module/`**. |
 | D-013 | 2026-04-19 | **Dashboard Work tab** should not nest a second **`BusinessConfigurationProvider`** under the dashboard-level provider. | Duplicate providers duplicated state, loads, and WebSocket subscription logic for the same business context. | **`WorkTab`** / **`BrandedWorkDashboard`** consume the outer provider from **`DashboardLayout`**. |
 | D-014 | 2026-04-19 | Business workspace **active module** and **navigation hrefs** should come from one module (`businessWorkspaceNavigation`) so query- and path-based URLs stay consistent. | Prevents drift between **`DashboardLayoutWrapper`** and the workspace hub page. | **`connections` → `members`** and members href remain explicit in **`buildBusinessWorkspaceModuleHref`**. |
+| D-015 | 2026-04-19 | **Lettered phases A–F** name the *remediation execution plan* (close targeted rows → reconcile queue → architecture cluster → tests/rails → risk hygiene → exit). They are **not** the same labels as audit **Phases 1–6** (read-only audit passes, all complete). | Avoids confusion between “Phase C” (remediation) and “Phase 4” (frontend audit pass). | **Phase C** = A-035/037/036/041/043 cluster; **only A-036** remains **Backlog**. Next engineering focus: **A-036**, then **A-056**, parallel **A-051**/**A-052**, then **R-007**/**R-009**. |
 
 
 ---
@@ -821,9 +844,9 @@ Verification notes:
 
 ### Next action
 
-Phase audit sequence is complete.
-
-Remediation execution continues from the **Remediation Tracker** (remaining **Backlog** items) and periodic hygiene on **R-007** / **R-009**.
+1. **Audit Phases 1–6** (read-only passes): complete.
+2. **Remediation Phases A–B:** complete. **Remediation Phase C:** in progress — finish **A-036** (only Backlog item left in the C-cluster).
+3. Then **Phase D** (**A-056**), parallel **A-051** / **A-052**, **Phase E** (**R-007**, **R-009**), **Phase F** exit criteria — see **Remediation game plan (Phases A–F)** under the Remediation Tracker.
 
 ### Phase B — Wave S / queue reconciliation (2026-04-19)
 
