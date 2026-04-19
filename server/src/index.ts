@@ -125,6 +125,8 @@ import aiProviderUsageRouter from './routes/ai-provider-usage';
 import placeRouter from './routes/place';
 import { authenticateJWT, type AuthenticatedRequest, getUserFromRequest } from './middleware/auth';
 import { logger } from './lib/logger';
+import { logWhenLoggerFails } from './lib/safeLoggerFallback';
+import { buildExpressErrorResponse } from './lib/expressErrorHandlerResponse';
 
 
 
@@ -542,10 +544,8 @@ app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) 
           stack: err instanceof Error ? err.stack : undefined
         }
       });
-    } catch (logError) {
-      // If logging fails, at least log to console
-      console.error('Failed to log registration error:', logError);
-      console.error('Original registration error:', err);
+    } catch (logError: unknown) {
+      logWhenLoggerFails('user_registration_logger', logError, err);
     }
     
     // Handle Prisma unique constraint violations (email already exists)
@@ -589,8 +589,8 @@ app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) =>
             userAgent: req.get('user-agent'),
             reason: 'Database connection failed'
           });
-        } catch (logError) {
-          console.error('Failed to log login database error:', logError);
+        } catch (logError: unknown) {
+          logWhenLoggerFails('login_database_error_logger', logError);
         }
         return res.status(503).json({ message: 'Database temporarily unavailable. Please try again.' });
       }
@@ -604,8 +604,8 @@ app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) =>
           userAgent: req.get('user-agent'),
           reason: info?.message || 'Invalid credentials'
         });
-      } catch (logError) {
-        console.error('Failed to log login failure:', logError);
+      } catch (logError: unknown) {
+        logWhenLoggerFails('login_failed_logger', logError);
       }
       
       return res.status(401).json({ message: info?.message || 'Unauthorized' });
@@ -1022,20 +1022,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   // Ensure we always have an Error object to work with
   const error = (err instanceof Error ? err : new Error(String(err))) as ErrorWithStatus;
 
-  const status = error.status || 500;
-  const publicMessage =
-    isProd && status >= 500
-      ? 'Internal Server Error'
-      : error.message || 'Internal Server Error';
-  const response: { message: string; error?: string; code?: string | number } = {
-    message: publicMessage,
-  };
-
-  if (!isProd && error.stack) {
-    response.error = error.stack;
-  } else if (error.code) {
-    response.code = error.code;
-  }
+  const { status, body } = buildExpressErrorResponse(error, isProd);
 
   void logger
     .error('Unhandled request error', {
@@ -1050,7 +1037,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     })
     .catch(() => undefined);
 
-  res.status(status).json(response);
+  res.status(status).json(body);
 });
 
 async function runProductionStartupMigrations(): Promise<void> {
