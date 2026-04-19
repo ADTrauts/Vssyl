@@ -1276,7 +1276,13 @@ export const createThread = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { conversationId, name, type = 'MESSAGE', parentId, participantIds = [] }: CreateThreadRequest = req.body;
+    const paramCid = (req.params as { conversationId?: string }).conversationId;
+    const { conversationId: bodyCid, name, type = 'MESSAGE', parentId, participantIds = [] }: CreateThreadRequest =
+      req.body;
+    const conversationId = paramCid || bodyCid;
+    if (!conversationId || typeof conversationId !== 'string') {
+      return res.status(400).json({ success: false, error: 'conversationId is required' });
+    }
 
     // Verify user has access to conversation
     const participant = await prisma.conversationParticipant.findFirst({

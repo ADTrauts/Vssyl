@@ -1,24 +1,32 @@
 import { Router } from 'express';
+import { param } from 'express-validator';
 import fileRouter from './file';
 import folderRouter from './folder';
 import { getItemActivity, getSharedItems } from '../controllers/fileController';
-import { 
-  getRecentFilesContext, 
+import {
+  getRecentFilesContext,
   getStorageStatsContext,
-  getFileCount 
+  getFileCount,
 } from '../controllers/driveAIContextController';
 import { authenticateJWT } from '../middleware/auth';
+import { validate } from '../middleware/validateRequest';
 
 const driveRouter: Router = Router();
 
 driveRouter.use('/files', fileRouter);
 driveRouter.use('/folders', folderRouter);
-driveRouter.get('/items/:itemId/activity', getItemActivity);
+
+driveRouter.get(
+  '/items/:itemId/activity',
+  authenticateJWT,
+  validate([param('itemId').isUUID()]),
+  getItemActivity
+);
+
 driveRouter.get('/shared', authenticateJWT, getSharedItems);
 
-// AI Context Provider Endpoints
 driveRouter.get('/ai/context/recent', authenticateJWT, getRecentFilesContext);
 driveRouter.get('/ai/context/storage', authenticateJWT, getStorageStatsContext);
 driveRouter.get('/ai/query/count', authenticateJWT, getFileCount);
 
-export default driveRouter; 
+export default driveRouter;
