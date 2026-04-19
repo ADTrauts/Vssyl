@@ -1,0 +1,1350 @@
+import type { Request, Response } from 'express';
+import type express from 'express';
+import type { Prisma } from '@prisma/client';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { prisma } from '../../lib/prisma';
+import { authenticateJWT } from '../../middleware/auth';
+import { AdminService } from '../../services/adminService';
+import { logger } from '../../lib/logger';
+import { requireAdmin, ALLOWED_CONTENT_REPORT_STATUSES } from './adminPortalShared';
+
+export function registerAdminPortalAnalyticsOpsRoutes(router: express.Router): void {
+// ============================================================================
+// PLATFORM ANALYTICS
+// ============================================================================
+
+// Get system metrics
+router.get('/analytics/system', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { timeRange = '24h' } = req.query;
+    
+    const metrics = await prisma.systemMetrics.findMany({
+      where: {
+        timestamp: {
+          gte: new Date(Date.now() - (timeRange === '24h' ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000))
+        }
+      },
+      orderBy: { timestamp: 'desc' }
+    });
+
+    res.json(metrics);
+  } catch (error) {
+    await logger.error('Failed to fetch system metrics', {
+      operation: 'admin_get_system_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch system metrics' });
+  }
+});
+
+// Get user analytics
+router.get('/analytics/users', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { timeRange = '30d' } = req.query;
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    
+    const userStats = await prisma.user.groupBy({
+      by: ['createdAt'],
+      _count: true,
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    res.json(userStats);
+  } catch (error) {
+    await logger.error('Failed to fetch user analytics', {
+      operation: 'admin_get_user_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch user analytics' });
+  }
+});
+
+// Analytics routes
+router.get('/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const filters = req.query;
+    const analyticsData = await AdminService.getAnalytics(filters);
+    res.json(analyticsData);
+  } catch (error) {
+    await logger.error('Failed to fetch analytics', {
+      operation: 'admin_get_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch analytics data' });
+  }
+});
+
+router.post('/analytics/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { format } = req.query;
+    const filters = req.body;
+    const exportData = await AdminService.exportAnalytics(filters, format as string);
+    
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="analytics-${new Date().toISOString().split('T')[0]}.csv"`);
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="analytics-${new Date().toISOString().split('T')[0]}.json"`);
+    }
+    
+    res.send(exportData);
+  } catch (error) {
+    await logger.error('Failed to export analytics', {
+      operation: 'admin_export_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to export analytics data' });
+  }
+});
+
+router.get('/analytics/realtime', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const realtimeData = await AdminService.getRealTimeMetrics();
+    res.json(realtimeData);
+  } catch (error) {
+    await logger.error('Failed to fetch real-time metrics', {
+      operation: 'admin_get_realtime_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch real-time metrics' });
+  }
+});
+
+router.post('/analytics/custom-report', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const reportConfig = req.body;
+    const customReport = await AdminService.generateCustomReport(reportConfig);
+    res.json(customReport);
+  } catch (error) {
+    await logger.error('Failed to generate custom report', {
+      operation: 'admin_generate_custom_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to generate custom report' });
+  }
+});
+
+// ============================================================================
+// FINANCIAL MANAGEMENT
+// ============================================================================
+
+// Get subscription data
+router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const result = await AdminService.getSubscriptions({
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string
+    });
+
+    if (result.schemaOutOfSync) {
+      return res.json({
+        subscriptions: [],
+        total: 0,
+        page: Number(page),
+        totalPages: 0,
+        schemaOutOfSync: true,
+        summary: result.summary
+      });
+    }
+
+    // Add Stripe URLs and serialize dates
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    const subscriptionsWithUrls = result.subscriptions.map((sub: Record<string, unknown>) => ({
+      id: sub.id,
+      userId: sub.userId,
+      businessId: sub.businessId,
+      tier: sub.tier,
+      status: sub.status,
+      amount: typeof sub.amount === 'number' ? sub.amount : 0,
+      currentPeriodStart: (sub.currentPeriodStart as Date).toISOString(),
+      currentPeriodEnd: (sub.currentPeriodEnd as Date).toISOString(),
+      cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+      stripeSubscriptionId: sub.stripeSubscriptionId,
+      stripeCustomerId: sub.stripeCustomerId,
+      lastSyncedAt: (sub.lastSyncedAt as Date | null)?.toISOString() ?? null,
+      stripeMetadata: sub.stripeMetadata ?? null,
+      employeeCount: sub.employeeCount ?? null,
+      includedEmployees: sub.includedEmployees ?? null,
+      additionalEmployeeCost: sub.additionalEmployeeCost ?? null,
+      createdAt: (sub.createdAt as Date).toISOString(),
+      updatedAt: (sub.updatedAt as Date).toISOString(),
+      userEmail: (sub.user as { email?: string | null } | null)?.email ?? 'Unknown',
+      userName: (sub.user as { name?: string | null } | null)?.name ?? null,
+      stripeUrls: {
+        subscription: StripeSyncService.getStripeSubscriptionUrl(sub.stripeSubscriptionId as string),
+        customer: StripeSyncService.getStripeCustomerUrl(sub.stripeCustomerId as string)
+      }
+    }));
+
+    res.json({
+      subscriptions: subscriptionsWithUrls,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      schemaOutOfSync: false,
+      summary: result.summary
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    await logger.error('Failed to fetch subscriptions', {
+      operation: 'admin_get_subscriptions',
+      error: {
+        message: errorMessage,
+        stack: errorStack
+      }
+    });
+    
+    // Include error details in response for debugging (always include message)
+    res.status(500).json({ 
+      error: 'Failed to fetch subscriptions',
+      details: errorMessage,
+      ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+    });
+  }
+});
+
+// Get payment data
+router.get('/billing/payments', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const result = await AdminService.getPayments({
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string
+    });
+    res.json(result);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    await logger.error('Failed to fetch payments', {
+      operation: 'admin_get_payments',
+      error: {
+        message: errorMessage,
+        stack: errorStack
+      }
+    });
+    
+    // Include error details in response for debugging (always include message)
+    res.status(500).json({ 
+      error: 'Failed to fetch payments',
+      details: errorMessage,
+      ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+    });
+  }
+});
+
+// Get developer payouts
+router.get('/billing/payouts', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, status } = req.query;
+    const result = await AdminService.getDeveloperPayouts({
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string
+    });
+    res.json(result);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    await logger.error('Failed to fetch developer payouts', {
+      operation: 'admin_get_developer_payouts',
+      error: {
+        message: errorMessage,
+        stack: errorStack
+      }
+    });
+    
+    // Include error details in response for debugging (always include message)
+    res.status(500).json({ 
+      error: 'Failed to fetch developer payouts',
+      details: errorMessage,
+      ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+    });
+  }
+});
+
+// Sync subscription from Stripe
+router.post('/billing/subscriptions/:id/sync', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    await StripeSyncService.syncSubscriptionFromStripe(id);
+    res.json({ success: true, message: 'Subscription synced from Stripe' });
+  } catch (error) {
+    await logger.error('Failed to sync subscription from Stripe', {
+      operation: 'admin_sync_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to sync subscription from Stripe' });
+  }
+});
+
+// Sync invoice from Stripe
+router.post('/billing/invoices/:id/sync', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    await StripeSyncService.syncInvoiceFromStripe(id);
+    res.json({ success: true, message: 'Invoice synced from Stripe' });
+  } catch (error) {
+    await logger.error('Failed to sync invoice from Stripe', {
+      operation: 'admin_sync_invoice',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to sync invoice from Stripe' });
+  }
+});
+
+// Sync all subscriptions
+router.post('/billing/subscriptions/sync-all', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId, businessId } = req.body;
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    const synced = await StripeSyncService.syncAllSubscriptions({ userId, businessId });
+    res.json({ success: true, synced, message: `Synced ${synced} subscriptions from Stripe` });
+  } catch (error) {
+    await logger.error('Failed to sync all subscriptions from Stripe', {
+      operation: 'admin_sync_all_subscriptions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to sync subscriptions from Stripe' });
+  }
+});
+
+// Get enhanced subscription data with Stripe info
+router.get('/billing/subscriptions/:id/enhanced', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        user: { select: { email: true, name: true } },
+        business: { select: { name: true } },
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        }
+      }
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Subscription not found' });
+    }
+
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    const stripeUrls = {
+      subscription: StripeSyncService.getStripeSubscriptionUrl(subscription.stripeSubscriptionId),
+      customer: StripeSyncService.getStripeCustomerUrl(subscription.stripeCustomerId)
+    };
+
+    res.json({
+      ...subscription,
+      stripeUrls,
+      metadata: subscription.stripeMetadata || {}
+    });
+  } catch (error) {
+    await logger.error('Failed to fetch enhanced subscription data', {
+      operation: 'admin_get_enhanced_subscription',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch subscription data' });
+  }
+});
+
+// Get enhanced invoice data with Stripe info
+router.get('/billing/invoices/:id/enhanced', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: {
+        subscription: {
+          include: { user: { select: { email: true, name: true } } }
+        },
+        moduleSubscription: {
+          include: { user: { select: { email: true, name: true } } }
+        },
+        refunds: {
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    const { StripeSyncService } = await import('../../services/stripeSyncService');
+    const stripeUrls = {
+      invoice: StripeSyncService.getStripeInvoiceUrl(invoice.stripeInvoiceId),
+      charge: invoice.stripeChargeId 
+        ? `https://dashboard.stripe.com/${process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_') ? 'live' : 'test'}/payments/${invoice.stripeChargeId}`
+        : null,
+      customer: StripeSyncService.getStripeCustomerUrl(invoice.stripeCustomerId)
+    };
+
+    res.json({
+      ...invoice,
+      stripeUrls,
+      metadata: invoice.stripeMetadata || {},
+      netAmount: invoice.stripeNetAmount || invoice.amount,
+      fees: invoice.stripeFee || 0
+    });
+  } catch (error) {
+    await logger.error('Failed to fetch enhanced invoice data', {
+      operation: 'admin_get_enhanced_invoice',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch invoice data' });
+  }
+});
+
+// ============================================================================
+// SECURITY & COMPLIANCE
+// ============================================================================
+
+// Get security events
+router.get('/security/events', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, severity, type } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: Record<string, unknown> = {};
+    if (severity) where.severity = severity;
+    if (type) where.eventType = type;
+
+    const [events, total] = await Promise.all([
+      prisma.securityEvent.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { timestamp: 'desc' }
+      }),
+      prisma.securityEvent.count({ where })
+    ]);
+
+    res.json({
+      events,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
+  } catch (error) {
+    await logger.error('Failed to fetch security events', {
+      operation: 'admin_get_security_events',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch security events' });
+  }
+});
+
+// Get audit logs
+router.get('/security/audit-logs', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 20, adminId, action } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: Record<string, unknown> = {};
+    if (adminId) where.adminId = adminId;
+    if (action) where.action = action;
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where,
+        skip,
+        take: Number(limit),
+        orderBy: { timestamp: 'desc' }
+      }),
+      prisma.auditLog.count({ where })
+    ]);
+
+    res.json({
+      logs,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit))
+    });
+  } catch (error) {
+    await logger.error('Failed to fetch audit logs', {
+      operation: 'admin_get_audit_logs',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch audit logs' });
+  }
+});
+
+// Security routes
+router.get('/security/events', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const filters = req.query;
+    const securityEvents = await AdminService.getSecurityEvents(filters);
+    res.json(securityEvents);
+  } catch (error) {
+    await logger.error('Failed to fetch security events', {
+      operation: 'admin_get_security_events',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch security events' });
+  }
+});
+
+router.get('/security/metrics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const securityMetrics = await AdminService.getSecurityMetrics();
+    res.json(securityMetrics);
+  } catch (error) {
+    await logger.error('Failed to fetch security metrics', {
+      operation: 'admin_get_security_metrics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch security metrics' });
+  }
+});
+
+router.get('/security/compliance', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const complianceStatus = await AdminService.getComplianceStatus();
+    res.json(complianceStatus);
+  } catch (error) {
+    await logger.error('Failed to fetch compliance status', {
+      operation: 'admin_get_compliance_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch compliance status' });
+  }
+});
+
+router.post('/security/events/:eventId/resolve', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.resolveSecurityEvent(eventId, adminUser.id);
+    res.json(result);
+  } catch (error) {
+    await logger.error('Failed to resolve security event', {
+      operation: 'admin_resolve_security_event',
+      eventId: req.params.eventId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to resolve security event' });
+  }
+});
+
+router.post('/security/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { format } = req.query;
+    const filters = req.body;
+    const exportData = await AdminService.exportSecurityReport(filters, format as string);
+    
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="security-report-${new Date().toISOString().split('T')[0]}.csv"`);
+    } else {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="security-report-${new Date().toISOString().split('T')[0]}.json"`);
+    }
+    
+    res.send(exportData);
+  } catch (error) {
+    await logger.error('Failed to export security report', {
+      operation: 'admin_export_security_report',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to export security report' });
+  }
+});
+
+// ============================================================================
+// SYSTEM ADMINISTRATION
+// ============================================================================
+
+// Get system health
+router.get('/system/health', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    // In a real implementation, you would collect actual system metrics
+    // For now, we'll return mock data
+    const systemHealth = {
+      cpu: Math.floor(Math.random() * 30) + 20, // 20-50%
+      memory: Math.floor(Math.random() * 40) + 40, // 40-80%
+      disk: Math.floor(Math.random() * 30) + 50, // 50-80%
+      network: Math.floor(Math.random() * 50) + 10, // 10-60 Mbps
+      uptime: '99.9%',
+      responseTime: Math.floor(Math.random() * 50) + 100, // 100-150ms
+      errorRate: (Math.random() * 0.1).toFixed(3) // 0-0.1%
+    };
+
+    res.json(systemHealth);
+  } catch (error) {
+    await logger.error('Failed to fetch system health', {
+      operation: 'admin_get_system_health',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch system health' });
+  }
+});
+
+// Get system configuration
+router.get('/system/config', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const configs = await prisma.systemConfig.findMany({
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    res.json(configs);
+  } catch (error) {
+    await logger.error('Failed to fetch system configuration', {
+      operation: 'admin_get_system_config',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch system configuration' });
+  }
+});
+
+// Update system configuration
+router.patch('/system/config/:configKey', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { configKey } = req.params;
+    const { configValue, description } = req.body;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const config = await prisma.systemConfig.upsert({
+      where: { configKey },
+      update: {
+        configValue,
+        description,
+        updatedBy: adminUser.id,
+        updatedAt: new Date()
+      },
+      create: {
+        configKey,
+        configValue,
+        description,
+        updatedBy: adminUser.id
+      }
+    });
+
+    await logger.info('Admin updated system configuration', {
+      operation: 'admin_update_system_config',
+      adminId: adminUser.id,
+      configKey
+    });
+
+    res.json(config);
+  } catch (error) {
+    await logger.error('Failed to update system configuration', {
+      operation: 'admin_update_system_config',
+      configKey: req.params.configKey,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to update system configuration' });
+  }
+});
+
+// Moderation routes
+router.get('/moderation/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const stats = await AdminService.getModerationStats();
+    res.json(stats);
+  } catch (error) {
+    await logger.error('Failed to fetch moderation statistics', {
+      operation: 'admin_get_moderation_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch moderation stats' });
+  }
+});
+
+router.get('/moderation/rules', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const rules = await AdminService.getModerationRules();
+    res.json(rules);
+  } catch (error) {
+    await logger.error('Failed to fetch moderation rules', {
+      operation: 'admin_get_moderation_rules',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch moderation rules' });
+  }
+});
+
+router.post('/moderation/bulk-action', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { reportIds, action } = req.body;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.bulkModerationAction(reportIds, action, adminUser.id);
+    res.json(result);
+  } catch (error) {
+    await logger.error('Failed to perform bulk moderation action', {
+      operation: 'admin_bulk_moderate',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to perform bulk moderation action' });
+  }
+});
+
+router.post('/moderation/reports', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const filters = req.body;
+    const reports = await AdminService.getReportedContent(filters);
+    res.json(reports);
+  } catch (error) {
+    await logger.error('Failed to fetch reported content', {
+      operation: 'admin_get_reported_content',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch reported content' });
+  }
+});
+
+router.put('/moderation/reports/:reportId', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { reportId } = req.params;
+    const { status, action, reason } = req.body;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.updateReportStatus(reportId, status, action, reason, adminUser.id);
+    res.json(result);
+  } catch (error) {
+    await logger.error('Failed to update report status', {
+      operation: 'admin_update_report_status',
+      reportId: req.params.reportId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to update report status' });
+  }
+});
+
+// System administration routes
+router.get('/system/backup', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const backupStatus = await AdminService.getBackupStatus();
+    res.json(backupStatus);
+  } catch (error) {
+    await logger.error('Failed to fetch backup status', {
+      operation: 'admin_get_backup_status',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch backup status' });
+  }
+});
+
+router.post('/system/backup', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.createBackup(adminUser.id);
+    res.json(result);
+  } catch (error) {
+    await logger.error('Failed to create backup', {
+      operation: 'admin_create_backup',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to create backup' });
+  }
+});
+
+router.get('/system/maintenance', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const maintenanceMode = await AdminService.getMaintenanceMode();
+    res.json(maintenanceMode);
+  } catch (error) {
+    await logger.error('Failed to fetch maintenance mode', {
+      operation: 'admin_get_maintenance_mode',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to fetch maintenance mode' });
+  }
+});
+
+router.post('/system/maintenance', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { enabled, message } = req.body;
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(500).json({ error: 'User not authenticated' });
+    }
+    
+    const result = await AdminService.setMaintenanceMode(enabled, message, adminUser.id);
+    res.json(result);
+  } catch (error) {
+    await logger.error('Failed to set maintenance mode', {
+      operation: 'admin_set_maintenance_mode',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to set maintenance mode' });
+  }
+});
+
+// Module Management Routes
+router.get('/modules/submissions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { status, category, developer, dateRange } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const submissions = await AdminService.getModuleSubmissions({
+      status: status as string,
+      category: category as string,
+      developerId: developer as string,
+      dateRange: dateRange as string
+    });
+
+    await logger.info('Admin retrieved module submissions', {
+      operation: 'admin_get_module_submissions',
+      adminId: adminUser.id,
+      filters: req.query
+    });
+
+    res.json({
+      success: true,
+      data: submissions
+    });
+  } catch (error) {
+    await logger.error('Failed to get module submissions', {
+      operation: 'admin_get_module_submissions',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to get module submissions' });
+  }
+});
+
+router.get('/modules/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const stats = await AdminService.getModuleStats();
+
+    await logger.info('Admin retrieved module statistics', {
+      operation: 'admin_get_module_stats',
+      adminId: adminUser.id
+    });
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    await logger.error('Failed to get module statistics', {
+      operation: 'admin_get_module_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to get module stats' });
+  }
+});
+
+router.post('/modules/submissions/:submissionId/review', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { submissionId } = req.params;
+    const { action, reviewNotes } = req.body;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const result = await AdminService.reviewModuleSubmission(
+      submissionId,
+      action,
+      reviewNotes,
+      adminUser.id
+    );
+
+    await logger.info('Admin reviewed module submission', {
+      operation: 'admin_review_module_submission',
+      adminId: adminUser.id,
+      submissionId,
+      action
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    await logger.error('Failed to review module submission', {
+      operation: 'admin_review_module_submission',
+      submissionId: req.params.submissionId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to review module submission' });
+  }
+});
+
+router.post('/modules/bulk-action', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { submissionIds, action } = req.body;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const result = await AdminService.bulkModuleAction(
+      submissionIds,
+      action,
+      adminUser.id
+    );
+
+    await logger.info('Admin performed bulk action on module submissions', {
+      operation: 'admin_bulk_module_action',
+      adminId: adminUser.id,
+      submissionCount: submissionIds.length,
+      action
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    await logger.error('Failed to perform bulk module action', {
+      operation: 'admin_bulk_module_action',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to perform bulk module action' });
+  }
+});
+
+router.get('/modules/:moduleId/versions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { moduleId } = req.params;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const versions = await AdminService.getModuleVersions(moduleId);
+
+    await logger.info('Admin retrieved module versions', {
+      operation: 'admin_get_module_versions',
+      adminId: adminUser.id,
+      moduleId,
+    });
+
+    res.json({
+      success: true,
+      data: { versions },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to get module versions';
+    const status = message === 'Module not found' ? 404 : 500;
+    await logger.error('Failed to get module versions', {
+      operation: 'admin_get_module_versions',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(status).json({ error: message });
+  }
+});
+
+router.post(
+  '/modules/:moduleId/versions/promote-previous',
+  authenticateJWT,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { moduleId } = req.params;
+      const adminUser = req.user;
+
+      if (!adminUser) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const result = await AdminService.promotePreviousModuleVersion(moduleId, adminUser.id);
+
+      await logger.info('Admin promoted previous module version', {
+        operation: 'admin_promote_previous_module_version',
+        adminId: adminUser.id,
+        moduleId,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to promote previous module version';
+      const status =
+        message === 'Module not found'
+          ? 404
+          : /No previous|must pass|No current/.test(message)
+            ? 400
+            : 500;
+      await logger.error('Failed to promote previous module version', {
+        operation: 'admin_promote_previous_module_version',
+        moduleId: req.params.moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
+router.post(
+  '/modules/:moduleId/versions/:version/promote',
+  authenticateJWT,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { moduleId, version } = req.params;
+      const adminUser = req.user;
+
+      if (!adminUser) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      const result = await AdminService.promoteModuleVersion(moduleId, version, adminUser.id);
+
+      await logger.info('Admin promoted module version', {
+        operation: 'admin_promote_module_version',
+        adminId: adminUser.id,
+        moduleId,
+        version,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to promote module version';
+      const status =
+        message === 'Module not found' || message === 'Target version not found for this module'
+          ? 404
+          : /must pass/.test(message)
+            ? 400
+            : 500;
+      await logger.error('Failed to promote module version', {
+        operation: 'admin_promote_module_version',
+        moduleId: req.params.moduleId,
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+      res.status(status).json({ error: message });
+    }
+  }
+);
+
+router.get('/modules/analytics', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const analytics = await AdminService.getModuleAnalytics();
+
+    await logger.info('Admin retrieved module analytics', {
+      operation: 'admin_get_module_analytics',
+      adminId: adminUser.id
+    });
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    await logger.error('Failed to get module analytics', {
+      operation: 'admin_get_module_analytics',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to get module analytics' });
+  }
+});
+
+router.get('/modules/developers/stats', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user;
+    
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    const stats = await AdminService.getDeveloperStats();
+
+    await logger.info('Admin retrieved developer statistics', {
+      operation: 'admin_get_developer_stats',
+      adminId: adminUser.id
+    });
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    await logger.error('Failed to get developer statistics', {
+      operation: 'admin_get_developer_stats',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to get developer stats' });
+  }
+});
+
+router.patch('/modules/:moduleId/status', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { moduleId } = req.params;
+    const { status } = req.body;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const result = await AdminService.updateModuleStatus(moduleId, status, adminUser.id);
+
+    await logger.info('Admin updated module status', {
+      operation: 'admin_update_module_status',
+      adminId: adminUser.id,
+      moduleId,
+      status
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    await logger.error('Failed to update module status', {
+      operation: 'admin_update_module_status',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to update module status' });
+  }
+});
+
+router.get('/modules/:moduleId/revenue', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { moduleId } = req.params;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const revenue = await AdminService.getModuleRevenue(moduleId);
+
+    await logger.info('Admin retrieved module revenue', {
+      operation: 'admin_get_module_revenue',
+      adminId: adminUser.id,
+      moduleId
+    });
+
+    res.json({
+      success: true,
+      data: revenue
+    });
+  } catch (error) {
+    await logger.error('Failed to get module revenue', {
+      operation: 'admin_get_module_revenue',
+      moduleId: req.params.moduleId,
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to get module revenue' });
+  }
+});
+
+router.get('/modules/export', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { status, category, developer, dateRange } = req.query;
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const csvData = await AdminService.exportModuleData({
+      status: status as string,
+      category: category as string,
+      developerId: developer as string,
+      dateRange: dateRange as string
+    });
+
+    await logger.info('Admin exported module data', {
+      operation: 'admin_export_module_data',
+      adminId: adminUser.id
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="module-data.csv"');
+    res.send(csvData);
+  } catch (error) {
+    await logger.error('Failed to export module data', {
+      operation: 'admin_export_module_data',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      }
+    });
+    res.status(500).json({ error: 'Failed to export module data' });
+  }
+});
+
+}

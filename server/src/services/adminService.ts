@@ -4,6 +4,31 @@ import * as bcrypt from 'bcrypt';
 import { SupportTicketEmailService } from './supportTicketEmailService';
 import { SecurityService } from './securityService';
 import { logger } from '../lib/logger';
+import type {
+  AdminABTestPayload,
+  AdminABTestResultsPayload,
+  AdminCompetitiveAnalysisPayload,
+  AdminCustomReportPayload,
+  AdminDeveloperStatsPayload,
+  AdminJsonObject,
+  AdminKnowledgeArticleCreateResult,
+  AdminKnowledgeArticleMutationResult,
+  AdminLiveChatJoinResult,
+  AdminModuleAnalyticsPayload,
+  AdminModuleRevenuePayload,
+  AdminModuleStatsPayload,
+  AdminOptimizationRecommendationMutation,
+  AdminPerformanceAlertConfigureResult,
+  AdminPerformanceAlertMutation,
+  AdminPerformanceAnalyticsPayload,
+  AdminPerformanceMetricsPayload,
+  AdminScalabilityMetricsPayload,
+  AdminSupportAnalyticsPayload,
+  AdminSupportStatsPayload,
+  AdminSupportTicketCreateResult,
+  AdminSupportTicketMutationResult,
+  AdminUserSegmentPayload,
+} from './admin/adminServiceContracts';
 
 // ============================================================================
 // INTERFACES
@@ -2040,7 +2065,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleStats(): Promise<unknown> {
+  static async getModuleStats(): Promise<AdminModuleStatsPayload> {
     try {
       const [
         totalSubmissions,
@@ -2137,7 +2162,7 @@ export class AdminService {
     action: 'approve' | 'reject',
     reviewNotes?: string,
     adminId?: string
-  ): Promise<unknown> {
+  ): Promise<AdminJsonObject> {
     try {
       const submission = await prisma.moduleSubmission.findUnique({
         where: { id: submissionId },
@@ -2262,7 +2287,7 @@ export class AdminService {
         }
       });
 
-      return updatedSubmission;
+      return updatedSubmission as unknown as AdminJsonObject;
     } catch (error) {
       await logger.error('Failed to review module submission', {
         operation: 'admin_review_module_submission',
@@ -2279,7 +2304,7 @@ export class AdminService {
     submissionIds: string[],
     action: 'approve' | 'reject',
     adminId?: string
-  ): Promise<unknown> {
+  ): Promise<AdminJsonObject> {
     try {
       const results = await Promise.all(
         submissionIds.map(submissionId =>
@@ -2502,7 +2527,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleAnalytics(): Promise<unknown> {
+  static async getModuleAnalytics(): Promise<AdminModuleAnalyticsPayload> {
     try {
       const [
         categoryStats,
@@ -2570,7 +2595,7 @@ export class AdminService {
     }
   }
 
-  static async getDeveloperStats(): Promise<unknown> {
+  static async getDeveloperStats(): Promise<AdminDeveloperStatsPayload> {
     try {
       const [
         totalDevelopers,
@@ -2718,7 +2743,7 @@ export class AdminService {
     }
   }
 
-  static async getModuleRevenue(moduleId: string): Promise<unknown> {
+  static async getModuleRevenue(moduleId: string): Promise<AdminModuleRevenuePayload> {
     try {
       const revenue = await prisma.moduleSubscription.aggregate({
         where: {
@@ -2885,7 +2910,7 @@ export class AdminService {
     }
   }
 
-  static async createABTest(testData: ABTestData, adminId?: string): Promise<unknown> {
+  static async createABTest(testData: ABTestData, adminId?: string): Promise<AdminABTestPayload> {
     try {
       // In a real implementation, this would create an A/B test in the database
       const test = {
@@ -2924,7 +2949,7 @@ export class AdminService {
     }
   }
 
-  static async getABTestResults(testId: string): Promise<unknown> {
+  static async getABTestResults(testId: string): Promise<AdminABTestResultsPayload> {
     try {
       // Mock A/B test results
       return {
@@ -2957,7 +2982,7 @@ export class AdminService {
     }
   }
 
-  static async updateABTest(testId: string, updates: Partial<ABTestData>, adminId?: string): Promise<unknown> {
+  static async updateABTest(testId: string, updates: Partial<ABTestData>, adminId?: string): Promise<AdminABTestPayload> {
     try {
       // In a real implementation, this would update the A/B test in the database
       const updatedTest = {
@@ -2993,7 +3018,7 @@ export class AdminService {
     }
   }
 
-  static async getUserSegments(): Promise<unknown[]> {
+  static async getUserSegments(): Promise<AdminJsonObject[]> {
     try {
       // Get user segments based on behavior and demographics
       const segments = await prisma.user.groupBy({
@@ -3023,7 +3048,7 @@ export class AdminService {
     }
   }
 
-  static async createUserSegment(segmentData: UserSegmentData, adminId?: string): Promise<unknown> {
+  static async createUserSegment(segmentData: UserSegmentData, adminId?: string): Promise<AdminUserSegmentPayload> {
     try {
       const segment = {
         id: `segment_${Date.now()}`,
@@ -3059,7 +3084,7 @@ export class AdminService {
     }
   }
 
-  static async getPredictiveInsights(): Promise<unknown[]> {
+  static async getPredictiveInsights(): Promise<AdminJsonObject[]> {
     try {
       // Get real predictive insights from CollectiveInsight database
       const collectiveInsights = await prisma.collectiveInsight.findMany({
@@ -3119,7 +3144,7 @@ export class AdminService {
     }
   }
 
-  static async getCompetitiveAnalysis(): Promise<unknown> {
+  static async getCompetitiveAnalysis(): Promise<AdminCompetitiveAnalysisPayload> {
     try {
       // In a real implementation, this would gather data from market research
       return {
@@ -3163,7 +3188,7 @@ export class AdminService {
     }
   }
 
-  static async generateCustomReport(reportConfig: ReportConfig, adminId?: string): Promise<unknown> {
+  static async generateCustomReport(reportConfig: ReportConfig, adminId?: string): Promise<AdminCustomReportPayload> {
     try {
       const report = {
         id: `report_${Date.now()}`,
@@ -3202,7 +3227,7 @@ export class AdminService {
   }
 
   // Helper methods for business intelligence
-  private static async getUserGrowthMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
+  private static async getUserGrowthMetrics(dateRange: { start: Date; end: Date }): Promise<AdminJsonObject> {
     const [totalUsers, newUsers, activeUsers] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({
@@ -3234,7 +3259,7 @@ export class AdminService {
     };
   }
 
-  private static async getRevenueMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
+  private static async getRevenueMetrics(dateRange: { start: Date; end: Date }): Promise<AdminJsonObject> {
     const revenue = await prisma.moduleSubscription.aggregate({
       _sum: {
         amount: true
@@ -3266,7 +3291,7 @@ export class AdminService {
     };
   }
 
-  private static async getEngagementMetrics(dateRange: { start: Date; end: Date }): Promise<unknown> {
+  private static async getEngagementMetrics(dateRange: { start: Date; end: Date }): Promise<AdminJsonObject> {
     return {
       averageSessionDuration: 24.5,
       dailyActiveUsers: 3420,
@@ -3281,7 +3306,7 @@ export class AdminService {
     };
   }
 
-  private static async getABTests(): Promise<unknown[]> {
+  private static async getABTests(): Promise<AdminJsonObject[]> {
     return [
       {
         id: '1',
@@ -3436,7 +3461,7 @@ export class AdminService {
     }
   }
 
-  static async getSupportStats(): Promise<unknown> {
+  static async getSupportStats(): Promise<AdminSupportStatsPayload> {
     try {
       // Get real ticket counts
       const [totalTickets, openTickets, resolvedToday] = await Promise.all([
@@ -3515,7 +3540,7 @@ export class AdminService {
     }
   }
 
-  static async updateSupportTicket(ticketId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<unknown> {
+  static async updateSupportTicket(ticketId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<AdminSupportTicketMutationResult> {
     try {
       let updateData: any = {
         updatedAt: new Date()
@@ -3675,7 +3700,7 @@ export class AdminService {
     }
   }
 
-  static async updateKnowledgeArticle(articleId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<unknown> {
+  static async updateKnowledgeArticle(articleId: string, action: string, data?: Record<string, unknown>, adminId?: string): Promise<AdminKnowledgeArticleMutationResult> {
     try {
       const article = {
         id: articleId,
@@ -3769,7 +3794,7 @@ export class AdminService {
     }
   }
 
-  static async joinLiveChat(chatId: string, adminId?: string): Promise<unknown> {
+  static async joinLiveChat(chatId: string, adminId?: string): Promise<AdminLiveChatJoinResult> {
     try {
       const chat = {
         id: chatId,
@@ -3803,7 +3828,7 @@ export class AdminService {
     }
   }
 
-  static async getSupportAnalytics(): Promise<unknown> {
+  static async getSupportAnalytics(): Promise<AdminSupportAnalyticsPayload> {
     try {
       return {
         responseTime: {
@@ -3852,7 +3877,7 @@ export class AdminService {
     }
   }
 
-  static async createSupportTicket(ticketData: SupportTicketData, adminId?: string): Promise<unknown> {
+  static async createSupportTicket(ticketData: SupportTicketData, adminId?: string): Promise<AdminSupportTicketCreateResult> {
     try {
       const ticket = await prisma.supportTicket.create({
         data: {
@@ -3930,7 +3955,7 @@ export class AdminService {
     }
   }
 
-  static async createKnowledgeArticle(articleData: KnowledgeArticleData, adminId?: string): Promise<unknown> {
+  static async createKnowledgeArticle(articleData: KnowledgeArticleData, adminId?: string): Promise<AdminKnowledgeArticleCreateResult> {
     try {
       const article = await prisma.knowledgeBaseArticle.create({
         data: {
@@ -4032,7 +4057,7 @@ export class AdminService {
   }
 
   // Performance & Scalability Methods
-  static async getPerformanceMetrics(filters: Record<string, unknown> = {}): Promise<unknown> {
+  static async getPerformanceMetrics(filters: Record<string, unknown> = {}): Promise<AdminPerformanceMetricsPayload> {
     try {
       // In a real implementation, this would collect actual system metrics
       return {
@@ -4090,7 +4115,7 @@ export class AdminService {
     }
   }
 
-  static async getScalabilityMetrics(): Promise<unknown> {
+  static async getScalabilityMetrics(): Promise<AdminScalabilityMetricsPayload> {
     try {
       return {
         autoScaling: {
@@ -4204,7 +4229,7 @@ export class AdminService {
     }
   }
 
-  static async updateOptimizationRecommendation(recommendationId: string, action: string, adminId?: string): Promise<unknown> {
+  static async updateOptimizationRecommendation(recommendationId: string, action: string, adminId?: string): Promise<AdminOptimizationRecommendationMutation> {
     try {
       const recommendation = {
         id: recommendationId,
@@ -4312,7 +4337,7 @@ export class AdminService {
     }
   }
 
-  static async updatePerformanceAlert(alertId: string, action: string, adminId?: string): Promise<unknown> {
+  static async updatePerformanceAlert(alertId: string, action: string, adminId?: string): Promise<AdminPerformanceAlertMutation> {
     try {
       const alert = {
         id: alertId,
@@ -4347,7 +4372,7 @@ export class AdminService {
     }
   }
 
-  static async getPerformanceAnalytics(): Promise<unknown> {
+  static async getPerformanceAnalytics(): Promise<AdminPerformanceAnalyticsPayload> {
     try {
       return {
         trends: {
@@ -4409,7 +4434,7 @@ export class AdminService {
     }
   }
 
-  static async configurePerformanceAlert(alertConfig: Record<string, unknown>, adminId?: string): Promise<unknown> {
+  static async configurePerformanceAlert(alertConfig: Record<string, unknown>, adminId?: string): Promise<AdminPerformanceAlertConfigureResult> {
     try {
       const config = {
         id: `config_${Date.now()}`,
