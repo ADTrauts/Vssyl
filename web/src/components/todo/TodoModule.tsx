@@ -25,9 +25,10 @@ type CalendarViewMode = 'month' | 'week' | 'day';
 interface TodoModuleProps {
   dashboardId?: string | null;
   businessId?: string | null;
+  householdId?: string | null;
 }
 
-export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
+export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleProps) {
   const { data: session } = useSession();
   const { currentDashboardId } = useDashboard();
   const [view, setView] = useState<ViewType>('list');
@@ -78,6 +79,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
       const fetchedTasks = await todoAPI.getTasks(session.accessToken, {
         dashboardId: effectiveDashboardId,
         businessId: businessId || undefined,
+        householdId: householdId || undefined,
         projectId: selectedProjectId,
       });
       setTasks(fetchedTasks);
@@ -87,7 +89,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
     } finally {
       setLoading(false);
     }
-  }, [session?.accessToken, effectiveDashboardId, businessId, selectedProjectId]);
+  }, [session?.accessToken, effectiveDashboardId, businessId, householdId, selectedProjectId]);
 
   const loadCalendarEvents = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -191,6 +193,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
         ...taskData,
         dashboardId: effectiveDashboardId,
         businessId: businessId || undefined,
+        householdId: householdId || undefined,
       });
       
       // Create calendar event if requested
@@ -216,7 +219,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
       console.error('Failed to create task:', error);
       toast.error('Failed to create task');
     }
-  }, [session?.accessToken, effectiveDashboardId, businessId, loadTasks, view, loadCalendarEvents]);
+  }, [session?.accessToken, effectiveDashboardId, businessId, householdId, loadTasks, view, loadCalendarEvents]);
 
   const handleTaskUpdate = useCallback(async (taskId: string, data: todoAPI.UpdateTaskInput) => {
     if (!session?.accessToken) return;
@@ -267,6 +270,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
           <QuickTaskInput
             dashboardId={effectiveDashboardId}
             businessId={businessId || undefined}
+            householdId={householdId || undefined}
             onCreateTask={async (data) => {
               await handleTaskCreate({ ...data, createCalendarEvent: false });
             }}
@@ -528,6 +532,7 @@ export function TodoModule({ dashboardId, businessId }: TodoModuleProps) {
           task={editingTask}
           dashboardId={effectiveDashboardId}
           businessId={businessId || undefined}
+          householdId={householdId || undefined}
           initialDueDate={initialDueDate}
           onSave={editingTask 
             ? (data) => handleTaskUpdate(editingTask.id, data)

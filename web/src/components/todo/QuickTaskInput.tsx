@@ -7,6 +7,7 @@ import type { CreateTaskInput } from '@/api/todo';
 interface QuickTaskInputProps {
   dashboardId: string;
   businessId?: string;
+  householdId?: string;
   onCreateTask: (data: CreateTaskInput) => Promise<void>;
   disabled?: boolean;
 }
@@ -22,7 +23,8 @@ interface QuickTaskInputProps {
  */
 export function QuickTaskInput({ 
   dashboardId, 
-  businessId, 
+  businessId,
+  householdId,
   onCreateTask, 
   disabled = false 
 }: QuickTaskInputProps) {
@@ -143,6 +145,7 @@ export function QuickTaskInput({
         title: parsed.title || inputValue.trim(),
         dashboardId,
         businessId,
+        householdId,
         priority: parsed.priority || 'MEDIUM',
         dueDate: parsed.dueDate,
         status: 'TODO',

@@ -11,12 +11,21 @@ interface TaskFormProps {
   task?: Task | null;
   dashboardId: string;
   businessId?: string;
+  householdId?: string;
   initialDueDate?: Date;
   onSave: (data: CreateTaskInput & { createCalendarEvent?: boolean }) => void | Promise<void>;
   onClose: () => void;
 }
 
-export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave, onClose }: TaskFormProps) {
+export function TaskForm({
+  task,
+  dashboardId,
+  businessId,
+  householdId,
+  initialDueDate,
+  onSave,
+  onClose,
+}: TaskFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('TODO');
@@ -77,7 +86,7 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
       const fetchedProjects = await todoAPI.getProjects(
         session.accessToken,
         dashboardId,
-        businessId
+        businessId || undefined
       );
       setProjects(fetchedProjects);
     } catch (error) {
@@ -120,6 +129,7 @@ export function TaskForm({ task, dashboardId, businessId, initialDueDate, onSave
         priority,
         dashboardId,
         businessId,
+        householdId,
         dueDate: dueDateISO,
         category: category.trim() || undefined,
         timeEstimate: timeEstimate ? parseInt(timeEstimate) : undefined,

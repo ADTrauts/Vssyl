@@ -171,7 +171,8 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const { dashboardId, businessId, status, priority, dueDate, assignedToId, projectId } = req.query;
+    const { dashboardId, businessId, householdId, status, priority, dueDate, assignedToId, projectId } =
+      req.query;
 
     const where: Prisma.TaskWhereInput = {
       createdById: userId,
@@ -189,6 +190,11 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
     } else {
       // Personal context: exclude business tasks
       where.businessId = null;
+    }
+
+    // Household scoping (when client sends it — aligns with household dashboard tasks)
+    if (householdId && typeof householdId === 'string') {
+      where.householdId = householdId;
     }
 
     // Status filter
@@ -213,6 +219,11 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
     // Assigned to filter
     if (assignedToId && typeof assignedToId === 'string') {
       where.assignedToId = assignedToId;
+    }
+
+    // Project filter
+    if (projectId && typeof projectId === 'string') {
+      where.projectId = projectId;
     }
 
     const tasks = await prisma.task.findMany({

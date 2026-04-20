@@ -153,6 +153,7 @@ export interface TaskProject {
 export interface GetTasksParams {
   dashboardId?: string;
   businessId?: string;
+  householdId?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
   dueDate?: string;
@@ -174,10 +175,12 @@ export async function getTasks(token: string, params?: GetTasksParams): Promise<
   const queryParams = new URLSearchParams();
   if (params?.dashboardId) queryParams.append('dashboardId', params.dashboardId);
   if (params?.businessId) queryParams.append('businessId', params.businessId);
+  if (params?.householdId) queryParams.append('householdId', params.householdId);
   if (params?.status) queryParams.append('status', params.status);
   if (params?.priority) queryParams.append('priority', params.priority);
   if (params?.dueDate) queryParams.append('dueDate', params.dueDate);
   if (params?.assignedToId) queryParams.append('assignedToId', params.assignedToId);
+  if (params?.projectId) queryParams.append('projectId', params.projectId);
   
   const url = `/api/todo/tasks${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
   const res = await fetch(url, {
