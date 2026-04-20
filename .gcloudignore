@@ -173,4 +173,3 @@ cloudbuild-archive/
 # Documentation (not needed for build)
 docs/
 memory-bank/
-BUILD_CACHING_GUIDE.md

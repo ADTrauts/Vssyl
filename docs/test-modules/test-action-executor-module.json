@@ -1,0 +1,99 @@
+{
+  "name": "Test Action Executor Module",
+  "description": "A test module to verify action executor registration and execution",
+  "version": "1.0.0",
+  "category": "PRODUCTIVITY",
+  "tags": ["test", "demo", "action-executor"],
+  "permissions": ["test-module:read", "test-module:write"],
+  "dependencies": [],
+  "readme": "# Test Action Executor Module\n\nThis is a test module to verify that action executor registration works correctly.\n\n## Features\n\n- AI context registration\n- Action executor registration via manifest\n- Webhook-based executor (using httpbin.org for testing)\n\n## Testing\n\n1. Submit this module through the module submission API\n2. Approve it in the admin portal\n3. Verify the executor is registered in logs\n4. Test AI action execution",
+  "license": "MIT",
+  "manifest": {
+    "name": "Test Action Executor Module",
+    "version": "1.0.0",
+    "description": "Test module for action executor functionality",
+    "author": "Vssyl Test",
+    "license": "MIT",
+    "entryPoint": "/test-action-executor",
+    "permissions": ["test-module:read", "test-module:write"],
+    "runtime": {
+      "apiVersion": "1.0"
+    },
+    "frontend": {
+      "entryUrl": "/test-action-executor"
+    },
+    "aiContext": {
+      "purpose": "Test module for verifying AI action executor registration and execution",
+      "category": "productivity",
+      "keywords": [
+        "test",
+        "demo",
+        "action",
+        "execute",
+        "test item",
+        "test task",
+        "sample"
+      ],
+      "patterns": [
+        "create test item",
+        "add test task",
+        "show test items",
+        "list test data",
+        "execute test action"
+      ],
+      "concepts": [
+        "testing",
+        "demonstration",
+        "action execution"
+      ],
+      "entities": [
+        {
+          "name": "testItem",
+          "pluralName": "testItems",
+          "description": "A test item used for demonstration purposes"
+        }
+      ],
+      "actions": [
+        {
+          "name": "create_test_item",
+          "description": "Creates a new test item",
+          "permissions": ["test-module:write"]
+        },
+        {
+          "name": "update_test_item",
+          "description": "Updates an existing test item",
+          "permissions": ["test-module:write"]
+        },
+        {
+          "name": "delete_test_item",
+          "description": "Deletes a test item",
+          "permissions": ["test-module:write"]
+        },
+        {
+          "name": "list_test_items",
+          "description": "Lists all test items",
+          "permissions": ["test-module:read"]
+        }
+      ],
+      "contextProviders": [
+        {
+          "name": "test_items_overview",
+          "endpoint": "/api/test-action-executor/ai/context/overview",
+          "cacheDuration": 300000,
+          "description": "Get overview of all test items"
+        }
+      ]
+    },
+    "aiActionExecutor": {
+      "executorUrl": "https://httpbin.org/post",
+      "supportedOperations": [
+        "create_test_item",
+        "update_test_item",
+        "delete_test_item",
+        "list_test_items"
+      ],
+      "timeout": 30000
+    }
+  }
+}
+

@@ -8,7 +8,7 @@ Production database is missing `createdAt` (and possibly `version` and `lastUpda
 ### Quick Fix: Apply Migration to Production
 
 ```bash
-# 1. Set production DATABASE_URL (see QUICK_DEPLOY.md for details)
+# 1. Set production DATABASE_URL (see `docs/deployment/QUICK_DEPLOY.md`)
 export DATABASE_URL="postgresql://vssyl_user:PASSWORD@172.30.0.4:5432/vssyl_production?connection_limit=20&pool_timeout=20"
 
 # 2. Apply the fix migration

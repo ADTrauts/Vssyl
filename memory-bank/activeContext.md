@@ -1,0 +1,130 @@
+# Active Context - Vssyl Business Admin & AI Integration
+
+## System audit remediation — Phases A–F closed (April 2026)
+
+Lettered remediation **A–F** for `docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md` is **complete** (**D-020**). There is no open audit execution backlog; optional follow-ups **A-051** / **A-052** are **Deferred** on the tracker. **A-051 (partial):** environment matrix for module upload/GCS vs local and Docker sandbox limits — `docs/guides/MODULE_PLATFORM_ENVIRONMENT_MATRIX.md`. **Consolidated “what’s next” plan:** `docs/plans/PROJECT_NEXT_PHASE_OPEN_WORK.md`. Current engineering focus is normal product roadmap work (this file), not audit closure.
+
+---
+
+## Most Recent UX + Stability Fix: Profile Settings & Avatar Reliability (April 2026) ✅
+
+### **Profile settings now inside dashboard shell + sidebar IA**
+
+**Issue summary**:
+- Avatar menu route `/profile/settings` opened outside the expected global dashboard shell in some flows.
+- Profile settings content was a long single-page stack without internal navigation.
+- Profile photo behavior was inconsistent in production-like Google environments (personal slot breaking after business assignment).
+
+**What was fixed**:
+- Added profile route layout wrapper:
+  - `web/src/app/profile/layout.tsx` now wraps profile pages with `DashboardLayout`.
+- Refactored profile settings UX:
+  - `web/src/app/profile/settings/page.tsx` now uses internal left-sidebar navigation with tabbed sections (`account`, `photos`, `location`, `preferences`) via `?tab=...`.
+- Hardened profile photo serving path:
+  - `server/src/controllers/profilePhotoController.ts` now emits proxy-relative image URLs (`/api/profile-photos/serve/:id?...`) so auth is consistently injected through Next proxy.
+  - Replaced brittle manual storage URL parsing in `serveProfilePhoto` with `storageService.extractPathFromUrl(...)`.
+- Fixed assignment regression causing personal photo breakage:
+  - `assignProfilePhoto` no longer clears the opposite slot when assigning one slot.
+  - Added distinct-slot validation so the same photo cannot be assigned to both personal and business.
+  - Added legacy fallback in `getProfilePhotos` to resolve missing `*_photo_id` from library URLs when older records still have URL but no id.
+
+**Validation status**:
+- Lint checks passed on modified profile settings/controller files.
+- User-confirmed behavior: profile settings layout and avatar flow now working as expected.
+
+---
+
+## Most Recent Completed Project: Module Upload Backend Phases 1-7 (April 2026) ✅
+
+### **Third-party module upload/review/runtime hardening complete**
+
+**Source of truth**: `docs/plans/MODULE_UPLOAD_BACKEND_PHASED_PLAN.md`
+
+**What was completed**:
+- **Phase 1-2**: Enforced module-to-business link policy (active business member allowed), ownership checks, idempotent linking, and audit events.
+- **Phase 3**: Added developer-business designation fields (`isDeveloperBusiness`, `developerBusinessLinkedAt`, `developerBusinessLinkedBy`) and migration.
+- **Phase 4**: Made admin module review operational with checklist signals, sandbox actions, and publish-readiness guardrails.
+- **Phase 5**: Reconciled developer financial paths (subscriptions/revenue/payouts) and aligned API/UI contracts for developer and billing admin pages.
+- **Phase 6**: Hardened marketplace/runtime business-scope checks and fixed business runtime subscription gating (`businessSubscriptions`).
+- **Phase 7**: Added regression tests for critical module controller paths and created deployment runbook:
+  - `server/src/controllers/__tests__/moduleController.phase7.test.ts`
+  - `docs/deployment/MODULE_UPLOAD_PHASE7_ROLLOUT_GUIDE.md`
+
+**Verification status**:
+- Phase 7 test suite passed (`5/5`):
+  - `pnpm vitest run src/controllers/__tests__/moduleController.phase7.test.ts`
+- Lint checks on edited TS files passed.
+
+---
+
+## Most Recent Resolved Incident: Third-party Module Upload Pipeline (April 2026) ✅
+
+### **Module upload to GCS — signing + CORS blockers resolved**
+
+**Issue summary**:
+- `POST /api/modules/:id/uploads/init` intermittently failed with 500.
+- Initial blocker was GCS V4 signed URL generation (`iam.serviceAccounts.signBlob` denied).
+- After signing was fixed, browser upload failed on preflight with GCS CORS error (`No 'Access-Control-Allow-Origin' header`).
+
+**What was verified/fixed**:
+- Confirmed runtime service account for `vssyl-server`: `235369681725-compute@developer.gserviceaccount.com`.
+- Confirmed bucket access existed on `vssyl-storage-472202` (`roles/storage.objectAdmin`).
+- Added missing signing permission: runtime SA granted `roles/iam.serviceAccountTokenCreator` on itself.
+- Applied bucket CORS policy for signed browser uploads:
+  - Origins: `https://vssyl.com`, `https://www.vssyl.com`, local dev origins
+  - Methods: `GET`, `HEAD`, `PUT`, `POST`, `OPTIONS`
+  - Headers include `Content-Type` (required by signed PUT flow)
+
+**Current state**:
+- User confirmed module ZIP upload flow is now working end-to-end.
+- API now returns `errorCode` + `hint` for upload-init failures, and frontend surfaces those hints.
+
+---
+
+## Most Recent UX Hardening: Dashboard Dark Mode Readability (April 2026) ✅
+
+### **Dashboard/module contrast and theming pass**
+
+**Issue summary**:
+- Dark mode dashboard still had low-contrast surfaces and unreadable text in several module widgets.
+- React dev warning surfaced style collisions in dashboard tabs (`border` shorthand mixed with `borderBottom`).
+
+**What was fixed**:
+- `web/src/app/dashboard/DashboardLayout.tsx`
+  - Replaced conflicting tab border style usage with explicit side widths (`borderTop/Right/Left/BottomWidth`) to remove rerender warning.
+  - Improved personal left-sidebar dark-mode fallback colors (background/text/customize button) for readable contrast.
+- `web/src/components/dashboard/WidgetShell.tsx`
+  - Increased visual separation for widgets in dark mode (deeper surface, stronger border, stronger shadow).
+  - Added explicit dark header/content surfaces so module cards pop from the page background.
+- `web/src/components/widgets/DriveWidget.tsx`
+  - Added dark-mode variants for household/family panels, list rows, dividers, and text so File Hub content remains readable.
+- `web/src/components/widgets/NotificationsWidget.tsx`
+  - Added dark-mode row/background/text states (read + unread) and dark-safe select/input styling in settings panel.
+
+**Validation status**:
+- Lint checks clean for edited files.
+- Remaining work is iterative visual QA across authenticated routes (dashboard/chat/drive/admin) for any edge-case contrast regressions.
+
+---
+
+## Most Recent Completed Project: Connections & Member Management (March 2026) ✅
+
+### **Connections & Member Management — Phases 1–4 COMPLETE ✅**
+
+**Build Document**: `memory-bank/CONNECTIONS_AND_MEMBERS_BUILD_PLAN.md`
+
+**Overview**: Aligned personal connections (ALL, Personal, Household, Following, Colleagues), business “Members” experience, and Phase 4 features: pinned colleagues, Place deep link, and colleague presence.
+
+**Phases completed**:
+- **Phase 1**: Personal connections viewer — Household and Following tabs; Colleagues = current colleagues only (filter by shared active business).
+- **Phase 2**: Sidebar “Members” label and route to `/business/:id/workspace/members`; workspace members page uses real API; List / By department view.
+- **Phase 3**: “Add as personal connection” on workspace members; canonical business roster API (member API: getBusinessMembers, updateEmployeeRole, removeEmployee); profile MemberManagement uses member API for update/remove.
+- **Phase 4**: (1) **Pinned colleagues** — `PinnedColleague` model, GET/POST/DELETE `/api/member/business/:id/pinned`, “People I work with most” section and pin/unpin on workspace members. (2) **Place deep link** — `?tab=my-place&highlight=businessId`; PlaceGraph opens business panel when node exists; ConnectionList “View on Place” uses deep link. (3) **Colleague presence** — `User.lastActiveAt`, auth middleware updates on request; `getBusinessMembers` returns `lastActive`; workspace members list shows “Last active”.
+
+**Key files**: `web/src/components/member/ConnectionList.tsx`, `web/src/app/business/[id]/workspace/members/page.tsx`, `web/src/app/business/[id]/profile/MemberManagement.tsx`, `server/src/controllers/memberController.ts`, `server/src/routes/member.ts`, `web/src/api/member.ts`, `web/src/app/place/page.tsx`, `web/src/components/place/PlaceGraph.tsx`, `prisma/modules/auth/user.prisma` (lastActiveAt), `prisma/modules/business/business.prisma` (PinnedColleague).
+
+---
+
+## Older context (archived)
+
+Completed-project narratives and older session history that previously lived in this file were moved to **`docs/archive/session-summaries/active-context-archive-2026-04-pretrim.md`** (April 2026 cleanup). Keep this file focused on the last ~3 months of work; summarize new completions briefly and link to plans or PRs when detail is needed.

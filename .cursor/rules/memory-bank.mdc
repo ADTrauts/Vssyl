@@ -205,9 +205,10 @@ Long-term planning and vision documents:
   - When: Creating deployment procedures
   - Example: `docs/deployment/GOOGLE_CLOUD_DEPLOYMENT.md`
   
-- **Implementation Guides**: `docs/guides/[TOPIC]_GUIDE.md`
+- **Implementation Guides**: `docs/guides/[TOPIC]_GUIDE.md` — index at `docs/guides/README.md`
   - When: Creating technical implementation references
   - Example: `docs/guides/TECHNICAL_IMPLEMENTATION_GUIDE.md`
+- **Plans / roadmaps**: `docs/plans/[NAME].md` — index at `docs/plans/README.md` (do not add loose `.md` under `docs/` root except `docs/README.md`)
   
 - **Session Summaries**: `docs/archive/session-summaries/[SUMMARY_NAME].md`
   - When: Documenting completed work sessions

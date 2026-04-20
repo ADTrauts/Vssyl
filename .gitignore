@@ -24,13 +24,9 @@ server/.env
 .env.backup.*
 vssyl-storage-key.json
 
-# Documentation folders (local by default; audit source-of-truth is versioned for the team)
-docs/**
-!docs/plans/
-!docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md
-!docs/deployment/
-!docs/deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md
-memory-bank/
+# Machine-specific scratch (optional — uncomment if you use these paths locally)
+# docs/local/
+# memory-bank/local/
 
 # Upload files
 server/uploads/
@@ -42,6 +38,16 @@ server/uploads/
 # Test and build output files
 test-upload.txt
 build-output.txt
+
+# Vitest / coverage output (root or package)
+coverage/
+
+# Tool caches
+.eslintcache
+
+# Duplicate / conflict-named lockfiles (e.g. macOS "pnpm-lock 2.yaml")
+pnpm-lock 2.yaml
+**/pnpm-lock 2.yaml
 
 # Local SDK/tools directories
 Google CLI/
