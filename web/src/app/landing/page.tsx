@@ -20,21 +20,40 @@ import { COLORS } from 'shared/styles/theme';
 import {
   type Audience,
   landingContentByAudience,
+  type PricingTierContent,
 } from './landingContent';
+import {
+  type BillingCycle,
+  type PricingApiRow,
+  buildTierPriceMap,
+  getTierPriceDisplay,
+} from './landingPricing';
 
 const LANDING_AUDIENCE_KEY = 'vssyl-landing-audience';
+const LANDING_BILLING_KEY = 'vssyl-landing-billing-cycle';
 
 const featureIcons = [Brain, Zap, Users, BarChart3, Shield, Globe] as const;
 
 const LandingPage = () => {
   const [audience, setAudience] = useState<Audience>('personal');
   const [storageReady, setStorageReady] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+  const [pricingRows, setPricingRows] = useState<PricingApiRow[]>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(LANDING_AUDIENCE_KEY);
       if (raw === 'personal' || raw === 'business') {
         setAudience(raw);
+      }
+    } catch {
+      /* ignore */
+    }
+    try {
+      const b = window.localStorage.getItem(LANDING_BILLING_KEY);
+      if (b === 'monthly' || b === 'yearly') {
+        setBillingCycle(b);
       }
     } catch {
       /* ignore */
@@ -51,7 +70,34 @@ const LandingPage = () => {
     }
   }, [audience, storageReady]);
 
+  useEffect(() => {
+    if (!storageReady) return;
+    try {
+      window.localStorage.setItem(LANDING_BILLING_KEY, billingCycle);
+    } catch {
+      /* ignore */
+    }
+  }, [billingCycle, storageReady]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/pricing')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { pricing?: PricingApiRow[] } | null) => {
+        if (cancelled || !data || !Array.isArray(data.pricing)) return;
+        setPricingRows(data.pricing);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setPricingLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const content = landingContentByAudience[audience];
+  const tierPriceMap = pricingLoaded ? buildTierPriceMap(pricingRows) : null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
@@ -239,22 +285,65 @@ const LandingPage = () => {
             <p className="text-xl text-gray-700 dark:text-gray-400 max-w-3xl mx-auto">
               {content.pricingSectionSubtitle}
             </p>
+            <div className="mt-8 flex justify-center">
+              <div
+                className="inline-flex rounded-lg border border-gray-200 dark:border-slate-600 p-0.5 bg-gray-50 dark:bg-slate-800"
+                role="group"
+                aria-label="Choose monthly or yearly billing"
+              >
+                {(['monthly', 'yearly'] as const).map((cycle) => {
+                  const selected = billingCycle === cycle;
+                  return (
+                    <button
+                      key={cycle}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setBillingCycle(cycle)}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-colors min-w-[7rem] ${
+                        selected
+                          ? 'text-white shadow-sm'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                      }`}
+                      style={
+                        selected
+                          ? { backgroundColor: COLORS.infoBlue }
+                          : { backgroundColor: 'transparent' }
+                      }
+                    >
+                      {cycle === 'monthly' ? 'Monthly' : 'Yearly'}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {content.pricingTiers.map((tier, tierIndex) => {
-              const isPro = tierIndex === 1;
+          <div
+            className={`grid grid-cols-1 gap-8 ${
+              content.pricingTiers.length === 2
+                ? 'md:grid-cols-2 max-w-4xl mx-auto'
+                : 'md:grid-cols-3'
+            }`}
+          >
+            {content.pricingTiers.map((tier: PricingTierContent) => {
+              const highlight = Boolean(tier.highlight);
+              const { main, suffix } = getTierPriceDisplay(
+                tier,
+                billingCycle,
+                tierPriceMap,
+                pricingLoaded
+              );
               return (
                 <div
-                  key={`${audience}-tier-${tier.name}`}
+                  key={`${audience}-tier-${tier.tierKey}`}
                   className={
-                    isPro
+                    highlight
                       ? 'bg-white dark:bg-slate-900 border-2 rounded-lg p-8 shadow-lg relative'
                       : 'bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-8 shadow-md'
                   }
-                  style={isPro ? { borderColor: COLORS.infoBlue } : undefined}
+                  style={highlight ? { borderColor: COLORS.infoBlue } : undefined}
                 >
-                  {isPro && (
+                  {highlight && (
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                       <span
                         className="inline-flex items-center px-4 py-1 rounded-full text-sm font-medium text-white"
@@ -269,10 +358,10 @@ const LandingPage = () => {
                       {tier.name}
                     </h3>
                     <div className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                      {tier.priceMain}
-                      {tier.priceSuffix ? (
+                      {main}
+                      {suffix ? (
                         <span className="text-lg font-normal text-gray-700 dark:text-gray-400">
-                          {tier.priceSuffix}
+                          {suffix}
                         </span>
                       ) : null}
                     </div>
@@ -289,11 +378,11 @@ const LandingPage = () => {
                   <Link
                     href={tier.ctaHref}
                     className={
-                      isPro
+                      highlight
                         ? 'w-full block text-center py-3 px-4 rounded-md text-white hover:opacity-90 transition-opacity'
                         : 'w-full block text-center py-3 px-4 border border-gray-300 dark:border-slate-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors'
                     }
-                    style={isPro ? { backgroundColor: COLORS.infoBlue } : undefined}
+                    style={highlight ? { backgroundColor: COLORS.infoBlue } : undefined}
                   >
                     {tier.ctaLabel}
                   </Link>

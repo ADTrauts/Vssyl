@@ -4,8 +4,15 @@ import path from 'path';
 import { createServer } from 'http';
 import { execSync, spawnSync } from 'child_process';
 
-// Explicitly load .env from the server directory
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Prefer server/.env; fall back to monorepo root when dev runs from `server/` only
+const serverEnvPath = path.resolve(__dirname, '../.env');
+const rootEnvPath = path.resolve(__dirname, '../../.env');
+if (fs.existsSync(serverEnvPath)) {
+  dotenv.config({ path: serverEnvPath });
+}
+if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+}
 
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import passport, { issueJWT, registerUser } from './auth';

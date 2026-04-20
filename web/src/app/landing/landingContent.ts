@@ -11,14 +11,19 @@ export interface ModuleCardContent {
   description: string;
 }
 
+/** Keys must match `pricingConfig.tier` from /api/pricing (lowercase). */
 export interface PricingTierContent {
+  tierKey: string;
   name: string;
-  priceMain: string;
-  priceSuffix: string;
+  /** Shown when /api/pricing is unavailable. */
+  fallbackPriceLabel: string;
+  fallbackYearlyLabel: string;
   subtitle: string;
   features: string[];
   ctaLabel: string;
   ctaHref: string;
+  /** Highlights the tier card (e.g. Pro, Business Advanced). */
+  highlight?: boolean;
 }
 
 export interface LandingAudienceContent {
@@ -37,7 +42,7 @@ export interface LandingAudienceContent {
   moduleCards: ModuleCardContent[];
   pricingSectionTitle: string;
   pricingSectionSubtitle: string;
-  pricingTiers: [PricingTierContent, PricingTierContent, PricingTierContent];
+  pricingTiers: PricingTierContent[];
   ctaTitle: string;
   ctaSubtitle: string;
   ctaPrimary: string;
@@ -115,46 +120,54 @@ const business: LandingAudienceContent = {
       description: 'Intelligent automation and personalized recommendations',
     },
   ],
-  pricingSectionTitle: 'Simple, Transparent Pricing',
-  pricingSectionSubtitle: 'Choose the plan that fits your needs. Start free and scale as you grow.',
+  pricingSectionTitle: 'Vssyl Business pricing',
+  pricingSectionSubtitle:
+    'Three team plans with monthly or yearly billing. Prices update from our billing system when available.',
   pricingTiers: [
     {
-      name: 'Free',
-      priceMain: '$0',
-      priceSuffix: '/month',
-      subtitle: 'Perfect for individuals getting started',
-      features: ['Basic AI assistant', 'Core modules included', '5GB storage', 'Basic analytics'],
-      ctaLabel: 'Get Started Free',
+      tierKey: 'business_basic',
+      name: 'Business Basic',
+      fallbackPriceLabel: '$49.99/mo',
+      fallbackYearlyLabel: '$499.99/yr',
+      subtitle: 'Solid team tools, AI, and collaboration for growing organizations.',
+      features: [
+        'Core business modules',
+        'Team management',
+        'Generous storage',
+        'Business-grade security',
+      ],
+      ctaLabel: 'Get started',
       ctaHref: '/auth/register',
     },
     {
-      name: 'Pro',
-      priceMain: '$29',
-      priceSuffix: '/month',
-      subtitle: 'For professionals and growing teams',
+      tierKey: 'business_advanced',
+      name: 'Business Advanced',
+      fallbackPriceLabel: '$69.99/mo',
+      fallbackYearlyLabel: '$699.99/yr',
+      subtitle: 'Advanced AI, analytics, and controls for larger or regulated teams.',
       features: [
-        'Advanced AI features',
-        'All core modules + premium',
-        '100GB storage',
+        'Everything in Business Basic',
+        'Advanced AI settings',
         'Advanced analytics',
-        'Priority support',
+        'DLP and deeper controls',
       ],
-      ctaLabel: 'Start Pro Trial',
+      ctaLabel: 'Get started',
       ctaHref: '/auth/register',
+      highlight: true,
     },
     {
+      tierKey: 'enterprise',
       name: 'Enterprise',
-      priceMain: 'Custom',
-      priceSuffix: '',
-      subtitle: 'For large organizations with custom needs',
+      fallbackPriceLabel: 'Custom',
+      fallbackYearlyLabel: 'Custom',
+      subtitle: 'Volume, compliance, and integrations tailored to your organization.',
       features: [
-        'Full AI capabilities',
-        'Unlimited modules',
-        'Unlimited storage',
-        'Custom integrations',
-        '24/7 dedicated support',
+        'Custom limits and integrations',
+        'Dedicated support options',
+        'Security and onboarding assistance',
+        'Annual and custom contracts',
       ],
-      ctaLabel: 'Contact Sales',
+      ctaLabel: 'Contact sales',
       ctaHref: '/contact',
     },
   ],
@@ -236,23 +249,26 @@ const personal: LandingAudienceContent = {
       description: 'Ask questions, draft plans, and offload small tasks',
     },
   ],
-  pricingSectionTitle: 'Simple, Transparent Pricing',
-  pricingSectionSubtitle: 'Start free. Upgrade when you want more AI, storage, and power features.',
+  pricingSectionTitle: 'Simple personal pricing',
+  pricingSectionSubtitle:
+    'Free to start, Pro when you want more. Switch between monthly and yearly billing below.',
   pricingTiers: [
     {
+      tierKey: 'free',
       name: 'Free',
-      priceMain: '$0',
-      priceSuffix: '/month',
-      subtitle: 'Great for getting your personal hub set up',
+      fallbackPriceLabel: '$0/mo',
+      fallbackYearlyLabel: '$0/yr',
+      subtitle: 'Get your hub set up with core modules and AI.',
       features: ['Core AI assistant', 'Core modules included', '5GB storage', 'Basic insights'],
-      ctaLabel: 'Get Started Free',
+      ctaLabel: 'Get started free',
       ctaHref: '/auth/register',
     },
     {
+      tierKey: 'pro',
       name: 'Pro',
-      priceMain: '$29',
-      priceSuffix: '/month',
-      subtitle: 'For power users who want the full personal experience',
+      fallbackPriceLabel: '$29/mo',
+      fallbackYearlyLabel: '$290/yr',
+      subtitle: 'Full personal experience—more AI, storage, and priority support.',
       features: [
         'Advanced AI features',
         'All core modules + premium',
@@ -260,23 +276,9 @@ const personal: LandingAudienceContent = {
         'Deeper insights',
         'Priority support',
       ],
-      ctaLabel: 'Start Pro Trial',
+      ctaLabel: 'Start Pro trial',
       ctaHref: '/auth/register',
-    },
-    {
-      name: 'Enterprise',
-      priceMain: 'Custom',
-      priceSuffix: '',
-      subtitle: 'For families or groups with advanced needs',
-      features: [
-        'Full AI capabilities',
-        'Unlimited modules',
-        'Unlimited storage',
-        'Custom integrations',
-        'Dedicated support options',
-      ],
-      ctaLabel: 'Contact Us',
-      ctaHref: '/contact',
+      highlight: true,
     },
   ],
   ctaTitle: 'Ready to Simplify Your Day?',
