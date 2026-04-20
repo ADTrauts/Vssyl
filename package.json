@@ -17,6 +17,7 @@
     "prisma:build": "node scripts/build-prisma-schema.js",
     "prisma:generate": "pnpm run prisma:build && prisma generate",
     "prisma:migrate": "pnpm run prisma:build && prisma migrate dev",
+    "prisma:migrate:deploy": "pnpm run prisma:build && prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:studio": "pnpm run prisma:build && prisma studio",
     "clear-cache": "./scripts/clear-cache.sh",
     "reset": "pnpm clear-cache && pnpm install && pnpm dev",
