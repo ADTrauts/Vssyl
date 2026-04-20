@@ -51,6 +51,7 @@ Technical implementation references and troubleshooting — **index:** [`guides/
 - **ALTERNATIVE_DATABASE_SOLUTIONS.md** - DB options notes
 - **ENTERPRISE_INTEGRATION.md** - Enterprise integration reference
 - **ADMIN_PORTAL.md** - Admin portal overview (moved from `docs/` root April 2026)
+- **THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md** - Partner onboarding index (links pipeline, AI context, notifications)
 
 **AI architecture / module AI guides** were consolidated (April 2026). Living rules: `memory-bank/aiContextSystem.md`. Archived copies: `archive/guides-merged-2026/`. **AI runbooks:** [`ai/README.md`](./ai/README.md).
 
@@ -80,6 +81,7 @@ Historical records and session summaries — **structure:** [`archive/README.md`
 ### For Developers
 
 - [Technical Implementation Guide](./guides/TECHNICAL_IMPLEMENTATION_GUIDE.md)
+- [Third-party module developers](./guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) (marketplace partners)
 - [Troubleshooting Guide](./guides/TROUBLESHOOTING.md)
 - [Build Optimization](./deployment/BUILD_OPTIMIZATION_GUIDE.md)
 

@@ -148,7 +148,7 @@ The Marketplace module enables users and developers to discover, submit, review,
 ## 10. Future Considerations & Ideas
 
 - Full-featured UI for browsing, searching, and managing modules.
-- Third-party developer onboarding and documentation.
+- Third-party developer onboarding: entry guide lives at [`docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](../docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) (April 2026). Dedicated public partner portal / SLA pages remain future work.
 - AI-driven module recommendations and search.
 - Module/plugin analytics and reporting.
 - Team/shared module management.

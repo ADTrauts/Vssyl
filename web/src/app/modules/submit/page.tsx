@@ -17,8 +17,11 @@ import {
   Shield, 
   CheckCircle,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  BookOpen,
+  ExternalLink
 } from 'lucide-react';
+import { getThirdPartyModuleDeveloperGuideUrl } from '../../../lib/developerDocs';
 
 interface ModuleSubmission {
   name: string;
@@ -631,6 +634,18 @@ export default function SubmitModulePage() {
             <div>
               <h4 className="text-sm font-medium text-blue-900">Submission Guidelines</h4>
               <ul className="mt-2 text-sm text-blue-800 space-y-1">
+                <li>
+                  • Read the{' '}
+                  <a
+                    href={getThirdPartyModuleDeveloperGuideUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium underline underline-offset-2 hover:text-blue-900"
+                  >
+                    developer guide
+                  </a>{' '}
+                  (requirements: pipeline, AI context, notifications)
+                </li>
                 <li>• Ensure your module follows security best practices</li>
                 <li>• Provide clear documentation and usage examples</li>
                 <li>• Test your module thoroughly before submission</li>
@@ -669,6 +684,16 @@ export default function SubmitModulePage() {
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Share your module with the community
           </p>
+          <a
+            href={getThirdPartyModuleDeveloperGuideUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            <BookOpen className="w-4 h-4 shrink-0" aria-hidden />
+            Third-party module developer guide
+            <ExternalLink className="w-3.5 h-3.5 shrink-0 opacity-80" aria-hidden />
+          </a>
         </div>
 
         {/* Progress Steps */}
