@@ -179,22 +179,50 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
       trashedAt: null,
     };
 
+    let resolvedDashboard: { businessId: string | null; householdId: string | null } | null = null;
+
     // Dashboard scoping (required for multi-tenant isolation)
     if (dashboardId && typeof dashboardId === 'string') {
       where.dashboardId = dashboardId;
+      resolvedDashboard = await prisma.dashboard.findFirst({
+        where: { id: dashboardId, userId },
+        select: { businessId: true, householdId: true },
+      });
+      if (!resolvedDashboard) {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
     }
 
-    // Business scoping
+    // Business scoping — resolve from dashboard row when query omits businessId (matches DB tasks)
     if (businessId && typeof businessId === 'string') {
+      if (
+        resolvedDashboard &&
+        (resolvedDashboard.businessId ?? null) !== businessId
+      ) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
       where.businessId = businessId;
+    } else if (resolvedDashboard) {
+      where.businessId = resolvedDashboard.businessId ?? null;
     } else {
-      // Personal context: exclude business tasks
       where.businessId = null;
     }
 
-    // Household scoping (when client sends it — aligns with household dashboard tasks)
+    // Household scoping
     if (householdId && typeof householdId === 'string') {
+      if (
+        resolvedDashboard &&
+        resolvedDashboard.householdId &&
+        resolvedDashboard.householdId !== householdId
+      ) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
       where.householdId = householdId;
+    } else if (resolvedDashboard?.householdId) {
+      where.householdId = resolvedDashboard.householdId;
     }
 
     // Status filter
@@ -293,8 +321,7 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
         },
       },
       orderBy: [
-        // Parent recurring tasks first (have recurrenceRule but no parentRecurringTaskId)
-        { parentRecurringTaskId: { sort: 'asc', nulls: 'first' } },
+        { parentRecurringTaskId: 'asc' },
         { dueDate: 'asc' },
         { priority: 'desc' },
         { createdAt: 'desc' },
@@ -2788,10 +2815,20 @@ export async function getProjects(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const businessScope =
-      businessId !== undefined && typeof businessId === 'string' && businessId.trim() !== ''
-        ? businessId
-        : null;
+    let businessScope: string | null = null;
+    if (businessId !== undefined && typeof businessId === 'string' && businessId.trim() !== '') {
+      businessScope = businessId;
+    } else {
+      const dash = await prisma.dashboard.findFirst({
+        where: { id: dashboardId, userId },
+        select: { businessId: true },
+      });
+      if (!dash) {
+        res.status(404).json({ error: 'Dashboard not found' });
+        return;
+      }
+      businessScope = dash.businessId ?? null;
+    }
 
     try {
       await assertUserOwnedDashboardBusinessAlignment(prisma, userId, dashboardId, businessScope);

@@ -35,14 +35,16 @@ const StackableChatContainer: React.FC = () => {
     isModuleActiveOnDashboard
   } = useDashboard();
   
-  // Get all dashboards including business (allDashboards doesn't include business by default)
   const allDashboardsIncludingBusiness = useMemo(() => {
-    // Include all business dashboards (they are already deduplicated in DashboardContext)
     const businessDashboards = dashboards.business || [];
     const combined = [...allDashboards, ...businessDashboards];
-    
-    
-    return combined;
+    const seen = new Set<string>();
+    return combined.filter(d => {
+      if (!d?.id) return false;
+      if (seen.has(d.id)) return false;
+      seen.add(d.id);
+      return true;
+    });
   }, [allDashboards, dashboards.business]);
   
   // Get dashboards with chat enabled, sorted: personal first, then business

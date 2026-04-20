@@ -134,11 +134,17 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   } = useDashboard();
   const router = useRouter();
   
-  // Get all dashboards including business (allDashboards doesn't include business by default)
+  // Merge raw business list with flattened context list; dedupe by id (allDashboards now includes business)
   const allDashboardsIncludingBusiness = useMemo(() => {
-    // Include all business dashboards
     const businessDashboards = dashboards.business || [];
-    return [...allDashboards, ...businessDashboards];
+    const combined = [...allDashboards, ...businessDashboards];
+    const seen = new Set<string>();
+    return combined.filter(d => {
+      if (!d?.id) return false;
+      if (seen.has(d.id)) return false;
+      seen.add(d.id);
+      return true;
+    });
   }, [allDashboards, dashboards.business]);
   
   // Get dashboards with chat enabled, sorted: personal first, then business

@@ -122,12 +122,15 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     d => !businessNames.has(d.name)
   ), [dashboards.personal, businessNames]);
 
-  // Include personal, educational, and household dashboards in the main tab bar
+  // Flat list for URL resolution, getDashboardById, and context switching. Tab UIs filter to
+  // personal-only where needed (e.g. GlobalHeaderTabs); business must be included so
+  // ?dashboard=<businessDashboardId> resolves and module APIs receive correct scope.
   const allDashboards = useMemo(() => [
     ...filteredPersonalDashboards,
+    ...uniqueBusinessDashboards,
     ...uniqueEducationalDashboards,
     ...uniqueHouseholdDashboards
-  ], [filteredPersonalDashboards, uniqueEducationalDashboards, uniqueHouseholdDashboards]);
+  ], [filteredPersonalDashboards, uniqueBusinessDashboards, uniqueEducationalDashboards, uniqueHouseholdDashboards]);
 
   // Debug logging only in development (moved to useEffect to prevent infinite logging)
   // Removed debug logs to clean up console output
