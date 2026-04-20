@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { createServer } from 'http';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 
 // Explicitly load .env from the server directory
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -1040,6 +1040,40 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json(body);
 });
 
+/** Failed deploys left this row in `_prisma_migrations`; Prisma then returns P3009 until resolved. */
+const TAGS_MIGRATION_RECOVERY_NAME = '20260419203000_tasks_tags_not_null_default';
+
+function shouldRecoverFailedTagsMigration(combinedOutput: string): boolean {
+  if (!combinedOutput.includes(TAGS_MIGRATION_RECOVERY_NAME)) {
+    return false;
+  }
+  return (
+    combinedOutput.includes('P3009') ||
+    combinedOutput.includes('P3018') ||
+    combinedOutput.includes('migrate found failed migrations in the target database')
+  );
+}
+
+function spawnPrisma(
+  args: string[],
+  options: { cwd: string; env: NodeJS.ProcessEnv; timeout: number }
+): { ok: boolean; combined: string } {
+  const r = spawnSync('npx', ['prisma', ...args], {
+    cwd: options.cwd,
+    env: options.env,
+    timeout: options.timeout,
+    encoding: 'utf-8',
+    stdio: ['inherit', 'pipe', 'pipe'],
+  });
+  const stdout = typeof r.stdout === 'string' ? r.stdout : '';
+  const stderr = typeof r.stderr === 'string' ? r.stderr : '';
+  if (stdout) process.stdout.write(stdout);
+  if (stderr) process.stderr.write(stderr);
+  const errMsg = r.error instanceof Error ? r.error.message : '';
+  const combined = `${stderr}\n${stdout}\n${errMsg}`;
+  return { ok: r.status === 0, combined };
+}
+
 async function runProductionStartupMigrations(): Promise<void> {
   if (process.env.NODE_ENV !== 'production') {
     return;
@@ -1097,15 +1131,36 @@ async function runProductionStartupMigrations(): Promise<void> {
 
   await prisma.$disconnect().catch(() => undefined);
 
-  execSync(`npx prisma migrate deploy --schema "${schemaPath}"`, {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      DATABASE_URL: migrationUrl,
-    },
-    cwd: projectRoot,
-    timeout: 120000,
-  });
+  const migrateEnv: NodeJS.ProcessEnv = {
+    ...process.env,
+    DATABASE_URL: migrationUrl,
+  };
+  const execOpts = { cwd: projectRoot, env: migrateEnv, timeout: 120000 };
+
+  const deployArgs = ['migrate', 'deploy', '--schema', schemaPath];
+  let first = spawnPrisma(deployArgs, execOpts);
+  if (!first.ok && shouldRecoverFailedTagsMigration(first.combined)) {
+    void logger
+      .warn('Recovering failed tasks tags migration (resolve rolled-back, then redeploy)', {
+        operation: 'prisma_migrate_recovery_tags',
+        migration: TAGS_MIGRATION_RECOVERY_NAME,
+      })
+      .catch(() => undefined);
+
+    const resolveResult = spawnPrisma(
+      ['migrate', 'resolve', '--rolled-back', TAGS_MIGRATION_RECOVERY_NAME, '--schema', schemaPath],
+      execOpts
+    );
+    if (!resolveResult.ok) {
+      throw new Error(
+        `prisma migrate resolve --rolled-back failed for ${TAGS_MIGRATION_RECOVERY_NAME}: ${resolveResult.combined}`
+      );
+    }
+    first = spawnPrisma(deployArgs, execOpts);
+  }
+  if (!first.ok) {
+    throw new Error(`prisma migrate deploy failed: ${first.combined}`);
+  }
 
   await prisma.$connect();
   await prisma.$queryRaw`SELECT 1`;
