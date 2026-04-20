@@ -5624,8 +5624,8 @@ model Task {
   parentRecurringTask Task? @relation("TaskRecurrence", fields: [parentRecurringTaskId], references: [id])
   recurringInstances Task[] @relation("TaskRecurrence")
   
-  // Metadata
-  tags             String[]
+  // Metadata (NOT NULL in DB — Prisma cannot reliably read NULL for scalar lists on Postgres)
+  tags             String[]    @default([])
   category         String?      // Personal: "errands", "health", etc. Business: "project", "support", etc.
   timeEstimate     Int?         // Estimated minutes
   actualTimeSpent  Int?         // Actual minutes (for analytics)

@@ -293,9 +293,11 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
     res.json(tasks);
   } catch (error: unknown) {
     const err = error as Error;
+    const dashboardIdParam = req.query.dashboardId;
     await logger.error('Failed to get tasks', {
       operation: 'todo_get_tasks',
       error: { message: err.message, stack: err.stack },
+      dashboardId: typeof dashboardIdParam === 'string' ? dashboardIdParam : undefined,
     });
     res.status(500).json({ error: 'Failed to fetch tasks' });
   }
