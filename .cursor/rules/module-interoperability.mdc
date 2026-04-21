@@ -1,0 +1,42 @@
+---
+description: Canonical module interoperability contract — permissions, activity events, scoping, parity for first-party and third-party modules
+alwaysApply: true
+---
+
+# Module Interoperability Contract (Enforcement)
+
+## Authoritative source
+
+- **`memory-bank/moduleSpecs.md`** — canonical contract: lifecycle, normalized activity envelope, activity vs analytics, certification checklist, and required contract areas.
+
+First-party and third-party modules **share the same contract**. Differences are only in *how* code is hosted (monorepo vs artifact/iframe), not in *whether* rules apply.
+
+## Non-negotiables for any module change
+
+1. **Order of operations:** `authorize → execute → emit normalized activity → notify/realtime` (as applicable). **Never** emit or persist an activity event for a failed or unauthorized action.
+2. **Tenant scoping:** Every persisted read/write path must scope by authorized context (`dashboardId`, and `businessId` / `householdId` when in that context). Align with `backend-trust-boundaries.mdc` and `coding-standards.mdc` (multi-tenant isolation).
+3. **Normalized events:** Important actions must emit events compatible with the envelope in `moduleSpecs.md` (see `emitModuleActivityEvent` / platform patterns).
+4. **Activity vs analytics:** Immutable activity records describe what happened; analytics are derived separately — do not conflate.
+5. **Realtime:** User-targeted or room events must not leak data across tenants; membership must be proven before join/emit (see `chatSocketService` patterns).
+6. **Notifications:** If the module sends notifications, manifest metadata and `[module]_[event]` types must follow `module-development.mdc` and notification standards in `coding-standards.mdc`.
+7. **AI context:** If the module is AI-exposed, context providers and registration must follow `module-development.mdc` and `memory-bank/aiContextSystem.md`.
+
+## Review and approval gates
+
+- **Marketplace / third-party:** Admin approval must include confirmation against the **module certification checklist** in `moduleSpecs.md`. Reject or defer if compliance cannot be shown. See `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md` (interoperability gate).
+- **First-party PRs:** Reviewers treat the same checklist as merge criteria for new modules or materially new surfaces.
+- **Dry-run references:** Built-in registration `server/src/startup/registerBuiltInModules.ts`; sample manifest under `docs/test-modules/`.
+
+## Where not to drift
+
+- Do not add new module routes or manifests without checking contract alignment.
+- Do not bypass the Next.js API proxy for user-facing client calls (`coding-standards.mdc`).
+- Do not store partner-only analytics in the platform activity log as a substitute for real activity events.
+
+## Related rules
+
+- `module-development.mdc` — AI context, notifications, workspace landing, trash, manifests.
+- `backend-trust-boundaries.mdc` — trust and tenancy.
+- `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md` — partner-facing must-pass list.
+
+**Last updated:** 2026-04-21

@@ -67,7 +67,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       scopedDashboard = d;
     }
 
-    const perSource = Math.ceil(limit / 4);
+    const perSource = Math.ceil(limit / 5);
 
     const activityWhere: Prisma.ActivityWhereInput = scopedDashboard
       ? { userId, file: { dashboardId: scopedDashboard.id } }
@@ -113,7 +113,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
           trashedAt: null,
         };
 
-    const [driveActivities, chatMessages, calendarEvents, todoTasks] = await Promise.all([
+    const [driveActivities, chatMessages, calendarEvents, todoTasks, normalizedEvents] = await Promise.all([
       prisma.activity.findMany({
         where: activityWhere,
         include: {
@@ -150,6 +150,21 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
         },
         orderBy: { updatedAt: 'desc' },
         take: perSource,
+      }),
+      prisma.log.findMany({
+        where: {
+          userId,
+          operation: 'module_activity_event',
+          module: { in: ['drive', 'chat'] },
+        },
+        orderBy: { timestamp: 'desc' },
+        take: perSource,
+        select: {
+          id: true,
+          timestamp: true,
+          module: true,
+          metadata: true,
+        },
       }),
     ]);
 
@@ -207,6 +222,29 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
         createdAt: (t.completedAt ?? t.updatedAt).toISOString(),
         user: t.createdBy ? { name: t.createdBy.name ?? undefined, email: t.createdBy.email ?? undefined } : undefined,
         metadata: { taskId: t.id, status: t.status },
+      });
+    }
+
+    for (const e of normalizedEvents) {
+      const event = (e.metadata ?? {}) as Record<string, unknown>;
+      const target = ((event.target as Record<string, unknown> | undefined) ?? {}) as Record<string, unknown>;
+      const context = ((event.context as Record<string, unknown> | undefined) ?? {}) as Record<string, unknown>;
+      const action = typeof event.action === 'string' ? event.action : 'update';
+      const moduleId = typeof context.moduleId === 'string' ? context.moduleId : (e.module || 'system');
+      const targetType = typeof target.type === 'string' ? target.type : 'item';
+      const targetId = typeof target.id === 'string' ? target.id : undefined;
+
+      items.push({
+        id: `evt-${e.id}`,
+        type: targetType,
+        action,
+        description: `${action} ${targetType}`,
+        module: moduleId,
+        createdAt: e.timestamp.toISOString(),
+        metadata: {
+          source: 'normalized_event',
+          targetId,
+        },
       });
     }
 

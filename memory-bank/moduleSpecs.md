@@ -12,6 +12,113 @@ Update Rules for moduleSpecs.md
 
 > This file documents specifications for all module-related systems, including module management UI, the dynamic module loader, and the module marketplace. It covers both implemented and planned features, and references related backend and frontend code as well as roadmap phases.
 
+## [2026-04-21] Canonical Module Interoperability Contract
+
+This section is the canonical architecture contract for all Vssyl modules (first-party and third-party).  
+If any module-specific document conflicts with this section, this section wins unless explicitly superseded here.
+
+### Required lifecycle for privileged actions
+
+Every important module action must follow this sequence:
+
+1. Authorize (tenant + role/permission check)
+2. Execute (state mutation)
+3. Emit activity event (normalized event envelope)
+4. Notify consumers (realtime + notification surfaces as applicable)
+
+Events must only be emitted for successful, authorized actions.
+
+### Canonical normalized activity event envelope
+
+All modules must emit a compatible event shape:
+
+```typescript
+interface NormalizedActivityEvent {
+  eventId: string;
+  timestamp: string; // ISO
+  actor: {
+    userId: string;
+    role?: string;
+  };
+  action: string; // create|update|delete|share|message|react|...
+  target: {
+    type: string; // file|folder|message|task|...
+    id: string;
+  };
+  parent?: {
+    type: string; // conversation|folder|project|...
+    id: string;
+  };
+  context: {
+    dashboardId?: string;
+    businessId?: string;
+    householdId?: string;
+    moduleId: string;
+  };
+  visibility: {
+    scope: 'personal' | 'business' | 'household' | 'direct-share';
+  };
+  metadata?: Record<string, unknown>;
+}
+```
+
+### Activity vs Analytics (mandatory separation)
+
+1. **Activity**: immutable event records describing what happened.
+2. **Analytics**: derived aggregation/trends built from activity and domain data.
+
+Do not store analytics summaries in activity records, and do not use analytics-only tables as a substitute for activity trails.
+
+### Required module contract areas
+
+Every module must define and implement:
+
+1. **Context scope contract**
+   - Personal/business/household support declaration
+   - Tenant scoping for reads and writes
+2. **Permission contract**
+   - Declared permission set
+   - Runtime enforcement before actions
+3. **Activity contract**
+   - Normalized event emission for key actions
+   - Queryable event retrieval path for UI
+4. **Realtime contract**
+   - Event delivery channels by visibility scope
+   - Idempotent client update behavior
+5. **Notification contract**
+   - Notification type metadata in manifest
+   - Standardized payload identifiers for navigation
+6. **AI context contract**
+   - Context providers and response shape aligned with `aiContextSystem.md`
+7. **API/auth contract**
+   - Proxy-safe API patterns
+   - Authenticated identity and context validation
+8. **Compliance/observability contract**
+   - Structured logs
+   - Auditable privileged actions
+
+### Module certification checklist (must-pass)
+
+A module is not considered interoperable unless all are true:
+
+1. Permission checks block unauthorized actions.
+2. Tenant scoping is enforced for every persisted query path.
+3. Key actions emit normalized activity events.
+4. Realtime updates are scoped and authorized.
+5. Notification metadata is declared and valid (if module emits notifications).
+6. AI context providers are implemented and discoverable (if module is AI-exposed).
+7. Activity and analytics concerns are separated.
+
+### Enforcement path (how this checklist is applied)
+
+| Channel | Responsibility |
+|--------|----------------|
+| **First-party (monorepo)** | PR review uses the same checklist; agents follow `.cursor/rules/module-interoperability.mdc` + `module-development.mdc`. |
+| **Third-party (marketplace)** | Admin approval must not pass if certification items are unmet; see interoperability gate in `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`. |
+| **Automation** | CI (`pnpm type-check`, lint, tests per `release-safety-gates.mdc`) catches regressions but does not fully verify semantic compliance — human or structured review still required. |
+
+**Dry-run references:** `server/src/startup/registerBuiltInModules.ts` (first-party): `docs/test-modules/` sample manifest (third-party-shaped artifact).
+
 ## Module Overview
 - Purpose and scope of the module/feature.
 

@@ -8,6 +8,38 @@ See README for the modular context pattern.
 **Description:**
 This file documents the product context for thread activity logging, analytics, and visualization across all modules.
 
+## [2026-04-21] Activity Interoperability Contract
+
+Thread activity is part of the platform-wide interoperability layer, not an isolated feature.
+
+### Canonical flow
+
+For thread-relevant actions:
+
+1. Authorize actor + context
+2. Execute domain action
+3. Persist normalized activity event
+4. Deliver realtime update to authorized consumers
+5. Render UI updates in thread/activity surfaces
+
+### Canonical event expectations
+
+Thread activity events must include:
+
+1. Actor identity (`userId`, role when applicable)
+2. Action verb (`message`, `edit`, `share`, `react`, `read`, etc.)
+3. Target entity (`message`, `thread`, `file`, etc.)
+4. Parent scope (`conversation`, `folder`, `project`, etc. when relevant)
+5. Tenant context (`dashboardId` and/or `businessId`/`householdId`)
+6. Visibility scope (who can see the event)
+7. Timestamp + metadata payload
+
+### Activity vs analytics boundary
+
+1. Thread activity stores immutable, event-level records ("what happened").
+2. Thread analytics derives aggregates/trends ("how often", "patterns").
+3. Analytics must not replace auditable activity records.
+
 ## 1. Header & Purpose
 - **Purpose:**  
   The Thread Activity module provides event-level logging, audit trails, and real-time engagement features for threads, conversations, and collaborative contexts. It enables users and admins to review what happened in a thread, when, and by whom, supporting compliance, accountability, and workflow analysis. Thread Activity is distinct from Analytics, which focuses on aggregated, cross-thread insights.

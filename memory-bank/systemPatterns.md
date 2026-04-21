@@ -58,6 +58,32 @@ Update Rules for systemPatterns.md
 
 # System Architecture and Patterns
 
+## [2026-04-21] Module Interoperability System Pattern
+
+### Pattern: Authorize -> Execute -> Event -> Realtime -> UI
+
+Cross-module actions should follow one shared architecture pattern:
+
+1. **Authorize**: authenticate identity and validate tenant scope + permission
+2. **Execute**: apply domain mutation/read
+3. **Event**: emit/persist normalized activity event
+4. **Realtime**: publish scoped updates to authorized channels
+5. **UI**: update module and shared surfaces from contract-aligned payloads
+
+### Pattern outcomes
+
+1. Prevents permission drift between modules.
+2. Supports reusable activity feeds and compliance trails.
+3. Reduces ad hoc per-module realtime payload differences.
+4. Improves third-party module interoperability with core module surfaces.
+
+### Contract dependencies
+
+1. `moduleSpecs.md` - canonical module interoperability contract
+2. `permissionsModel.md` - permission boundary and inheritance rules
+3. `threadActivityProductContext.md` - activity event requirements
+4. `compliance.md` - audit/compliance baseline
+
 ## [2025-10-16] Codebase Architecture Overview ✅
 
 ### **Application Flow Architecture**

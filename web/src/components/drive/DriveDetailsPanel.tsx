@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from 'shared/components';
-import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw, Brain } from 'lucide-react';
+import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw, Brain, History } from 'lucide-react';
+import { getItemActivity, type Activity as DriveActivity, type NormalizedModuleActivityLog } from '../../api/drive';
 // DriveItem interface - matches DriveModule.tsx
 interface DriveItem {
   id: string;
@@ -22,6 +24,8 @@ import { PrismAsync as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 interface DriveDetailsPanelProps {
   item: DriveItem | null;
+  /** Incremented when the parent receives a drive WebSocket event for the selected item so activity refetches. */
+  activityRefreshTick?: number;
   isOpen: boolean;
   isCollapsed: boolean;
   onClose: () => void;
@@ -49,6 +53,16 @@ function isTempUploadId(id: string): boolean {
   return typeof id === 'string' && id.startsWith('temp-upload-');
 }
 
+function formatNormalizedActivityLine(meta: Record<string, unknown> | null): string {
+  if (!meta) return 'Activity';
+  const action = typeof meta.action === 'string' ? meta.action : 'event';
+  const target = (meta.target as { type?: string } | undefined) ?? {};
+  const ctx = (meta.context as { moduleId?: string } | undefined) ?? {};
+  const mod = ctx.moduleId ?? 'drive';
+  const tt = target.type ?? 'item';
+  return `${mod} · ${action} ${tt}`;
+}
+
 const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('en-US', {
     month: 'short',
@@ -59,6 +73,7 @@ const formatDate = (dateString: string): string => {
 
 export default function DriveDetailsPanel({
   item,
+  activityRefreshTick = 0,
   isOpen,
   isCollapsed,
   onClose,
@@ -73,6 +88,11 @@ export default function DriveDetailsPanel({
   formatFileSize: formatFileSizeProp,
   formatDate: formatDateProp
 }: DriveDetailsPanelProps) {
+  const { data: session } = useSession();
+  const [legacyActivities, setLegacyActivities] = useState<DriveActivity[]>([]);
+  const [normalizedEvents, setNormalizedEvents] = useState<NormalizedModuleActivityLog[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageZoom, setImageZoom] = useState(1);
@@ -100,6 +120,40 @@ export default function DriveDetailsPanel({
 
   const formatSize = formatFileSizeProp || formatFileSize;
   const formatDateStr = formatDateProp || formatDate;
+
+  useEffect(() => {
+    if (!item?.id || !session?.accessToken || isTempUploadId(item.id)) {
+      setLegacyActivities([]);
+      setNormalizedEvents([]);
+      setActivityError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      setActivityLoading(true);
+      setActivityError(null);
+      try {
+        const res = await getItemActivity(session.accessToken!, item.id);
+        if (cancelled) return;
+        setLegacyActivities(res.activities ?? []);
+        setNormalizedEvents(res.normalizedEvents ?? []);
+      } catch {
+        if (!cancelled) {
+          setActivityError('Could not load activity');
+          setLegacyActivities([]);
+          setNormalizedEvents([]);
+        }
+      } finally {
+        if (!cancelled) setActivityLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [item?.id, item?.type, session?.accessToken, activityRefreshTick]);
 
   // Get code language from file extension
   const getCodeLanguage = (fileName: string, mimeType?: string): string | null => {
@@ -454,7 +508,7 @@ export default function DriveDetailsPanel({
                 </div>
               )}
               <div>
-                <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Modified</dt>
+                <dt className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Modified</dt>
                 <dd className="text-sm text-gray-900 dark:text-gray-100 mt-1">{formatDateStr(item.modifiedAt)}</dd>
               </div>
               {item.createdBy && (
@@ -464,6 +518,51 @@ export default function DriveDetailsPanel({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Activity (legacy file Activity rows + normalized module events) */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <History className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+              Activity
+            </h3>
+            {activityLoading ? (
+              <p className="text-sm text-gray-600 dark:text-gray-400">Loading activity…</p>
+            ) : activityError ? (
+              <p className="text-sm text-gray-700 dark:text-gray-300">{activityError}</p>
+            ) : legacyActivities.length === 0 && normalizedEvents.length === 0 ? (
+              <p className="text-sm text-gray-600 dark:text-gray-400">No recorded activity for this item yet.</p>
+            ) : (
+              <ul className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {normalizedEvents.map((row) => {
+                  const meta = (row.metadata ?? null) as Record<string, unknown> | null;
+                  const ts = row.timestamp
+                    ? new Date(row.timestamp as string | number | Date).toISOString()
+                    : '';
+                  return (
+                    <li key={`n-${row.id}`} className="text-sm text-gray-900 dark:text-gray-100 border-l-2 border-amber-200 dark:border-amber-700 pl-2">
+                      <span className="text-gray-800 dark:text-gray-200">{formatNormalizedActivityLine(meta)}</span>
+                      {ts ? (
+                        <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                          {formatDateStr(ts)}
+                        </span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+                {legacyActivities.map((a) => (
+                  <li key={a.id} className="text-sm text-gray-900 dark:text-gray-100 border-l-2 border-gray-200 dark:border-slate-600 pl-2">
+                    <span className="capitalize">{a.type}</span>
+                    {a.user?.name ? (
+                      <span className="text-gray-700 dark:text-gray-300"> · {a.user.name}</span>
+                    ) : null}
+                    <span className="block text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      {formatDateStr(a.timestamp)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Actions */}

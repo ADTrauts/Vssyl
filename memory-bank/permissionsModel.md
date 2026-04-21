@@ -10,6 +10,31 @@ Update Rules for permissionsModel.md
 
 # Permissions & Data Sharing Model
 
+## [2026-04-21] Canonical Permission Enforcement Lifecycle
+
+All module actions that read or mutate protected resources must follow:
+
+1. Verify authenticated identity
+2. Verify tenant/context scope (personal/business/household/dashboard)
+3. Verify role/permission for action
+4. Execute action
+5. Emit normalized activity event
+6. Trigger realtime/notification delivery for authorized visibility
+
+### Mandatory rules
+
+1. Permission checks are a source-of-truth runtime boundary, not post-action validation.
+2. Unauthorized actions must produce no side effects and no activity emission.
+3. Cross-tenant access is denied by default unless explicitly authorized by sharing semantics.
+4. Permission changes themselves are auditable events.
+
+### Folder/File inheritance policy (required baseline)
+
+1. A folder share policy must declare how file access inheritance works for child files.
+2. Effective access resolution must be consistent across read/write/delete/share paths.
+3. If inheritance can be overridden, override precedence must be explicitly documented in module spec.
+4. UI affordances must match backend effective permission rules.
+
 ## 1. User Roles & Memberships
 - **Customizable Roles:**
   - Each organization (business, school, etc.) can define its own roles and permissions framework.

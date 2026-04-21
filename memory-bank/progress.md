@@ -1,5 +1,15 @@
 # Block-on-Block Platform - Progress
 
+## Module interoperability alignment (April 2026) ✅
+
+**Status:** **COMPLETE** — All five phases in `docs/plans/MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md` finished. Plan document status: **Complete**.
+
+**Outcomes:** Single interoperability contract (`memory-bank/moduleSpecs.md`); backend normalized activity + feed aggregation; realtime/UI alignment for activity surfaces; Cursor rules + marketplace review gates for certification; Phase 5 repo checks passed (`pnpm type-check`, `pnpm test` — 149 server tests).
+
+**Follow-ups:** Non-blocking — see residual risks R1–R3 in the plan (human certification, dual activity storage, shared-resource audit scope).
+
+---
+
 ## Documentation consolidation (April 2026) ✅
 
 Aggressive cleanup: root-level stray `.md` moved into `docs/`; `memory-bank/activeContext.md` trimmed with history in `docs/archive/session-summaries/active-context-archive-2026-04-pretrim.md`; long `troubleshooting` narrative in `docs/archive/troubleshooting-historical-incidents.md` with `memory-bank/troubleshooting.md` as index; HR / Stripe / AI duplicates archived under `docs/archive/hr-merged-2026/`, `docs/archive/stripe-merged-2026/`, `docs/archive/guides-merged-2026/`. **Second pass:** all remaining loose `docs/*.md` (except `README.md`) moved into `docs/plans/`, `docs/guides/`, `docs/setup/`, `docs/deployment/`, or `docs/archive/session-summaries/` (April 2026). See `memory-bank/README.md`, `docs/README.md`, and `docs/plans/README.md`.

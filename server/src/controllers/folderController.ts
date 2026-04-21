@@ -6,6 +6,7 @@ import { AuthenticatedRequest, getUserFromRequest } from '../middleware/auth';
 import { getChatSocketService } from '../services/chatSocketService';
 import { Prisma } from '@prisma/client';
 import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
 
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
@@ -153,10 +154,17 @@ export async function createFolder(req: Request, res: Response) {
       data: { userId, name, parentId: parentId || null, dashboardId: dashboardId || null },
     });
 
-    // Create activity record for folder creation
-    // Note: Since Activity model requires a fileId, we'll create a placeholder activity
-    // or we could modify the schema to make fileId optional for folder activities
-    // For now, we'll skip folder activities until the schema is updated
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'create',
+      targetType: 'folder',
+      targetId: folder.id,
+      parentType: folder.parentId ? 'folder' : undefined,
+      parentId: folder.parentId ?? undefined,
+      dashboardId: folder.dashboardId,
+      metadata: { name: folder.name },
+    });
 
     // Broadcast real-time drive event to owner
     try {
@@ -220,6 +228,22 @@ export async function updateFolder(req: Request, res: Response) {
     });
     if (folder.count === 0) return res.status(404).json({ message: 'Folder not found' });
     const updated = await prisma.folder.findUnique({ where: { id } });
+    if (!updated) return res.status(404).json({ message: 'Folder not found' });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: parentId !== undefined && parentId !== folderBeforeUpdate.parentId ? 'move' : 'update',
+      targetType: 'folder',
+      targetId: updated.id,
+      parentType: updated.parentId ? 'folder' : undefined,
+      parentId: updated.parentId ?? undefined,
+      dashboardId: updated.dashboardId,
+      metadata: {
+        name: updated.name,
+        previousParentId: folderBeforeUpdate.parentId,
+      },
+    });
     
     // Broadcast real-time drive event
     try {
@@ -284,6 +308,18 @@ export async function deleteFolder(req: Request, res: Response) {
       data: { trashedAt: new Date() },
     });
     if (folder.count === 0) return res.status(404).json({ message: 'Folder not found' });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'delete',
+      targetType: 'folder',
+      targetId: folderToDelete.id,
+      parentType: folderToDelete.parentId ? 'folder' : undefined,
+      parentId: folderToDelete.parentId ?? undefined,
+      dashboardId: folderToDelete.dashboardId,
+      metadata: { name: folderToDelete.name, softDelete: true },
+    });
     
     // Broadcast real-time drive event
     try {
@@ -376,7 +412,23 @@ export async function getRecentActivity(req: Request, res: Response) {
         },
       },
     });
-    res.json({ activities });
+    const normalizedLogs = await prisma.log.findMany({
+      where: {
+        userId,
+        operation: 'module_activity_event',
+        module: 'drive',
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        timestamp: true,
+        module: true,
+        metadata: true,
+      },
+    });
+
+    res.json({ activities, normalizedEvents: normalizedLogs });
   } catch (err) {
     res.status(500).json({ message: 'Failed to get recent activity' });
   }
@@ -393,6 +445,18 @@ export async function toggleFolderStarred(req: Request, res: Response) {
     const updatedFolder = await prisma.folder.update({
       where: { id },
       data: { starred: !folder.starred },
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: folder.userId,
+      moduleId: 'drive',
+      action: updatedFolder.starred ? 'pin' : 'unpin',
+      targetType: 'folder',
+      targetId: updatedFolder.id,
+      parentType: updatedFolder.parentId ? 'folder' : undefined,
+      parentId: updatedFolder.parentId ?? undefined,
+      dashboardId: updatedFolder.dashboardId,
+      metadata: { starred: updatedFolder.starred },
     });
     
     // Broadcast real-time drive event
@@ -513,6 +577,20 @@ export async function moveFolder(req: Request, res: Response) {
       data: { parentId: targetParentId || null },
     });
 
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'move',
+      targetType: 'folder',
+      targetId: updatedFolder.id,
+      parentType: updatedFolder.parentId ? 'folder' : undefined,
+      parentId: updatedFolder.parentId ?? undefined,
+      dashboardId: updatedFolder.dashboardId,
+      metadata: {
+        previousParentId: originalParentId,
+      },
+    });
+
     // Broadcast real-time drive event
     try {
       const socketService = getChatSocketService();
@@ -533,9 +611,6 @@ export async function moveFolder(req: Request, res: Response) {
       });
       // Do not fail the operation if socket broadcast fails
     }
-
-    // Note: We could create activity records for folders if we extend the Activity model
-    // For now, we'll skip folder activity tracking
 
     res.json({ folder: updatedFolder, message: 'Folder moved successfully' });
   } catch (err: unknown) {

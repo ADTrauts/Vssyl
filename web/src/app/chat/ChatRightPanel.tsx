@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { 
   ChevronRight, 
@@ -21,7 +21,8 @@ import {
   FileText,
   Calendar,
   Crown,
-  Shield
+  Shield,
+  Activity
 } from 'lucide-react';
 import { ChatPanelState, Conversation, Message, Thread, ConversationParticipant } from 'shared/types/chat';
 import { getConversation, getMessages, createMessage } from '../../api/chat';
@@ -53,7 +54,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'participants' | 'files' | 'threads' | 'enterprise'>('participants');
+  const [activeTab, setActiveTab] = useState<'participants' | 'files' | 'threads' | 'activity' | 'enterprise'>('participants');
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -292,6 +293,12 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const activityTimeline = useMemo(() => {
+    return [...messages]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 15);
+  }, [messages]);
+
   // Handle thread navigation
   const handleThreadClick = (threadId: string) => {
     if (onThreadSelect) {
@@ -464,6 +471,17 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
           <MessageSquare className="w-4 h-4 inline mr-2" />
           Threads
         </button>
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`flex-1 px-4 py-2 text-sm font-medium ${
+            activeTab === 'activity'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+          }`}
+        >
+          <Activity className="w-4 h-4 inline mr-2" />
+          Activity
+        </button>
         {/* Enterprise tab - Only visible for enterprise users */}
         {hasEnterprise && (
           <button
@@ -565,7 +583,7 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          <MessageSquare className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                          <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                           <span className="text-sm font-medium">
                             {thread.name || `Thread ${thread.id.slice(0, 8)}`}
                           </span>
@@ -582,6 +600,26 @@ export default function ChatRightPanel({ panelState, onToggleCollapse, onThreadS
                           {thread.messages[thread.messages.length - 1]?.content || 'No content'}
                         </p>
                       )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Activity tab — recent messages as a lightweight timeline (updates when messages load) */}
+            {activeTab === 'activity' && (
+              <div className="p-4 space-y-3">
+                {activityTimeline.length === 0 ? (
+                  <p className="text-center text-gray-600 dark:text-gray-400">No message activity yet</p>
+                ) : (
+                  activityTimeline.map((m) => (
+                    <div key={m.id} className="border-l-2 border-blue-200 dark:border-blue-800 pl-3 py-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {m.sender?.name || m.sender?.email || 'Someone'} · {formatMessageTime(m.createdAt)}
+                      </p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-3">
+                        {m.type === 'FILE' ? 'Shared a file' : m.content || '(no text)'}
+                      </p>
                     </div>
                   ))
                 )}

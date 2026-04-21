@@ -1,6 +1,6 @@
 # Third-Party Module Pipeline Source of Truth
 
-Last updated: 2026-03-23  
+Last updated: 2026-04-21  
 Status: Active build spec (authoritative)  
 Owner: Platform Engineering
 
@@ -250,6 +250,7 @@ Minimum required checks before publish:
 2. Artifact scan status must be `PASSED`.
 3. Permission audit completed.
 4. Admin review decision recorded.
+5. **Interoperability contract:** reviewer confirms the module meets the **module certification checklist** in [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) (permissions, tenant scoping, normalized activity events, safe realtime assumptions, notification metadata if applicable, AI context if AI-exposed, activity vs analytics). Reject or defer publish until gaps are addressed. Agent guardrails: `.cursor/rules/module-interoperability.mdc`. Partner summary: [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md).
 
 Scan architecture requirements:
 - **Baseline scanner (implemented)**: runs on finalize (`runBaselineZipScan`): unzip with `fflate`, reject empty archives / unsafe paths / excessive size or file counts, require at least one `.html` file. Persists `scanStatus` + `scanSummary` on `ModuleArtifact` (no longer hardcoded `PASSED`).

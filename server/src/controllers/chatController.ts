@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
 
 // Request type definitions
 interface CreateConversationRequest {
@@ -865,6 +866,21 @@ export const createMessage = async (req: Request, res: Response) => {
     const chatSocketService = getChatSocketService();
     chatSocketService.broadcastMessage(conversationId, messageWithFullUrls);
 
+    await emitModuleActivityEvent({
+      actorUserId: user.id,
+      moduleId: 'chat',
+      action: 'message',
+      targetType: 'message',
+      targetId: message.id,
+      parentType: 'conversation',
+      parentId: conversationId,
+      dashboardId: undefined,
+      metadata: {
+        threadId: validatedThreadId,
+        replyToId: replyToId ?? null,
+      },
+    });
+
     // Create notifications for conversation participants
     try {
       // Get conversation participants (excluding sender)
@@ -1110,6 +1126,17 @@ export const addReaction = async (req: Request, res: Response) => {
       }
     }
 
+    await emitModuleActivityEvent({
+      actorUserId: user.id,
+      moduleId: 'chat',
+      action: action === 'added' ? 'react' : 'unreact',
+      targetType: 'message',
+      targetId: messageId,
+      parentType: 'conversation',
+      parentId: message.conversationId,
+      metadata: { emoji },
+    });
+
     res.json({ 
       success: true, 
       data: reactionData, 
@@ -1186,6 +1213,16 @@ export const markAsRead = async (req: Request, res: Response) => {
             }
           }
         }
+      });
+
+      await emitModuleActivityEvent({
+        actorUserId: user.id,
+        moduleId: 'chat',
+        action: 'read',
+        targetType: 'message',
+        targetId: messageId,
+        parentType: 'conversation',
+        parentId: message.conversationId,
       });
 
       res.status(201).json({ success: true, data: receipt });

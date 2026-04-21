@@ -45,6 +45,18 @@ export type Activity = {
   };
 };
 
+/** Log row shape for module_activity_event (metadata holds full normalized envelope) */
+export type NormalizedModuleActivityLog = {
+  id: string;
+  timestamp: Date | string;
+  metadata: Record<string, unknown> | null;
+};
+
+export type ItemActivityResponse = {
+  activities: Activity[];
+  normalizedEvents?: NormalizedModuleActivityLog[];
+};
+
 // Drive API utility
 
 // Helper to add Authorization header
@@ -339,7 +351,7 @@ export const getShareLink = async (token: string, itemId: string): Promise<strin
   return data.link;
 };
 
-export const getItemActivity = async (token: string, itemId: string): Promise<Activity[]> => {
+export const getItemActivity = async (token: string, itemId: string): Promise<ItemActivityResponse> => {
   const response = await fetch(`/api/drive/items/${itemId}/activity`, {
     method: 'GET',
     headers: authHeaders(token, { 'Content-Type': 'application/json' }),
@@ -350,7 +362,10 @@ export const getItemActivity = async (token: string, itemId: string): Promise<Ac
   }
 
   const data = await response.json();
-  return data.activities;
+  return {
+    activities: Array.isArray(data.activities) ? data.activities : [],
+    normalizedEvents: Array.isArray(data.normalizedEvents) ? data.normalizedEvents : [],
+  };
 };
 
 export async function getRecentActivity(token: string): Promise<Activity[]> {

@@ -2,6 +2,15 @@
 
 This directory contains test module manifests that can be used to verify the action executor registration system.
 
+## Interoperability certification dry-run (Phase 4)
+
+To **manually verify** the platform module certification checklist (`memory-bank/moduleSpecs.md`):
+
+- **First-party shape:** compare against built-in registration and controllers linked from `server/src/startup/registerBuiltInModules.ts`.
+- **Third-party / marketplace shape:** use `test-action-executor-module.json` (manifest + AI context) and the zip fixtures under **Module Upload Pipeline Mock Fixtures** below against the same checklist items (permissions story, scoping, declared notifications, AI context, etc.).
+
+Automated CI does not replace this semantic review; use the checklist explicitly when approving submissions or reviewing module PRs.
+
 ## Test Action Executor Module
 
 **File**: `test-action-executor-module.json`

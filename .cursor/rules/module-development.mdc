@@ -6,6 +6,19 @@ This document defines the mandatory requirements and best practices for developi
 
 ---
 
+## Module interoperability contract (read first)
+
+**Canonical spec:** `memory-bank/moduleSpecs.md` — permission lifecycle (`authorize → execute → emit → notify`), normalized activity event envelope, tenant scoping, activity vs analytics, and the **module certification checklist (must-pass)**.
+
+**Parity:** First-party (monorepo / `registerBuiltInModules.ts`) and third-party (marketplace artifacts, iframe runtime) must satisfy the **same** contract; delivery mechanism differs, requirements do not.
+
+**Enforcement for agents:** `.cursor/rules/module-interoperability.mdc`  
+**Partners:** `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md` + `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md` (interoperability review gate).
+
+Do not ship modules that skip permission checks, emit activity before successful authorization, or conflate analytics with activity records.
+
+---
+
 ## 🚨 MANDATORY: Business Module Hub Pattern
 
 ### **Rule: Every Business Module MUST Have a Workspace Landing Page**
@@ -1408,7 +1421,21 @@ Currently supported:
 
 ## ✅ Module Approval Requirements
 
-For marketplace submission, modules must:
+For marketplace submission and **first-party merge review**, modules must satisfy **both**:
+
+### A) Interoperability certification (`memory-bank/moduleSpecs.md`)
+
+1. Permission checks block unauthorized actions.
+2. Tenant scoping on every persisted query path.
+3. Key actions emit normalized activity events (compatible envelope).
+4. Realtime updates scoped and authorized.
+5. Notification metadata valid if the module emits notifications.
+6. AI context implemented if the module is AI-exposed.
+7. Activity and analytics concerns separated.
+
+**Third-party modules cannot be approved without A)** except documented waiver from platform owner (rare).
+
+### B) Product and quality bar (this document)
 
 1. ✅ **Complete AI context** defined and registered
 2. ✅ **Working context providers** responding < 500ms
@@ -1433,7 +1460,7 @@ For marketplace submission, modules must:
 
 ---
 
-**Last Updated**: October 25, 2025  
+**Last Updated**: 2026-04-21  
 **Applies To**: All modules (built-in and third-party)  
-**Enforcement**: Mandatory for marketplace approval
+**Enforcement**: Mandatory for marketplace approval and first-party interoperability review; see `.cursor/rules/module-interoperability.mdc`
 

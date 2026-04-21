@@ -11,6 +11,7 @@ import { getChatSocketService } from '../services/chatSocketService';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
 
 interface JWTPayload {
   sub?: string;
@@ -325,6 +326,22 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       },
     });
 
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'create',
+      targetType: 'file',
+      targetId: fileRecord.id,
+      parentType: fileRecord.folderId ? 'folder' : undefined,
+      parentId: fileRecord.folderId ?? undefined,
+      dashboardId: fileRecord.dashboardId,
+      metadata: {
+        fileName: originalname,
+        fileType: mimetype,
+        fileSize: size,
+      },
+    });
+
     // Phase 7: Proactive suggestion for document uploads (fire-and-forget)
     const { onFileUploaded } = await import('../services/proactiveSuggestionsService');
     onFileUploaded({
@@ -389,9 +406,26 @@ export async function getItemActivity(req: Request, res: Response) {
       where: { id: itemId, userId: userId },
     });
 
-    // If it's a folder, it has no activities per the schema
+    // If it's a folder, return normalized events from module activity log
     if (folder) {
-      return res.json({ activities: [] });
+      const folderEvents = await prisma.log.findMany({
+        where: {
+          userId,
+          operation: 'module_activity_event',
+          module: 'drive',
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 100,
+        select: { id: true, timestamp: true, metadata: true },
+      });
+
+      const filtered = folderEvents.filter((event) => {
+        const metadata = event.metadata as Record<string, unknown> | null;
+        const target = (metadata?.target as Record<string, unknown> | undefined) ?? {};
+        return target.type === 'folder' && target.id === itemId;
+      });
+
+      return res.json({ activities: [], normalizedEvents: filtered });
     }
 
     // Check if the item is a file the user owns or has permission to see
@@ -409,7 +443,24 @@ export async function getItemActivity(req: Request, res: Response) {
       return res.status(404).json({ message: 'Item not found or access denied' });
     }
 
-    // If it's a file, fetch its activities
+    const fileEvents = await prisma.log.findMany({
+      where: {
+        userId,
+        operation: 'module_activity_event',
+        module: 'drive',
+      },
+      orderBy: { timestamp: 'desc' },
+      take: 100,
+      select: { id: true, timestamp: true, metadata: true },
+    });
+
+    const normalizedEvents = fileEvents.filter((event) => {
+      const metadata = event.metadata as Record<string, unknown> | null;
+      const target = (metadata?.target as Record<string, unknown> | undefined) ?? {};
+      return target.type === 'file' && target.id === itemId;
+    });
+
+    // Legacy Activity rows (file-scoped) plus normalized drive events for this file
     const activities = await prisma.activity.findMany({
       where: { fileId: itemId },
       include: {
@@ -422,7 +473,7 @@ export async function getItemActivity(req: Request, res: Response) {
       },
     });
 
-    res.json({ activities });
+    res.json({ activities, normalizedEvents });
   } catch (err) {
     await logger.error('Failed to get item activity', {
       operation: 'file_get_item_activity',
@@ -701,6 +752,21 @@ export async function updateFile(req: Request, res: Response) {
       },
     });
 
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: folderId !== undefined && folderId !== originalFile.folderId ? 'move' : 'update',
+      targetType: 'file',
+      targetId: id,
+      parentType: (updated?.folderId ?? originalFile.folderId) ? 'folder' : undefined,
+      parentId: (updated?.folderId ?? originalFile.folderId) ?? undefined,
+      dashboardId: updated?.dashboardId ?? originalFile.dashboardId,
+      metadata: {
+        originalName: originalFile.name,
+        newName: name || originalFile.name,
+      },
+    });
+
     // Broadcast real-time drive event to owner
     try {
       const socketService = getChatSocketService();
@@ -759,6 +825,21 @@ export async function deleteFile(req: Request, res: Response) {
           fileType: fileToDelete.type,
           fileSize: fileToDelete.size,
         },
+      },
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'delete',
+      targetType: 'file',
+      targetId: id,
+      parentType: fileToDelete.folderId ? 'folder' : undefined,
+      parentId: fileToDelete.folderId ?? undefined,
+      dashboardId: fileToDelete.dashboardId,
+      metadata: {
+        fileName: fileToDelete.name,
+        softDelete: true,
       },
     });
 
@@ -1358,6 +1439,22 @@ export async function moveFile(req: Request, res: Response) {
           originalFolderId: originalFolderId,
           newFolderId: targetFolderId,
         },
+      },
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'move',
+      targetType: 'file',
+      targetId: id,
+      parentType: updatedFile.folderId ? 'folder' : undefined,
+      parentId: updatedFile.folderId ?? undefined,
+      dashboardId: updatedFile.dashboardId,
+      metadata: {
+        fileName: file.name,
+        originalFolderId,
+        newFolderId: targetFolderId,
       },
     });
 

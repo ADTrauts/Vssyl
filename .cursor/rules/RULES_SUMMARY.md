@@ -8,6 +8,7 @@ This is a quick reference guide to all documented rules. For complete details, s
 - **`.cursor/rules/memory-bank.mdc`** - Memory bank structure and documentation placement rules
 - **`.cursor/rules/coding-standards.mdc`** - Broad coding, API, Prisma, logging, storage, and security standards
 - **`.cursor/rules/module-development.mdc`** - Module-specific development requirements
+- **`.cursor/rules/module-interoperability.mdc`** - Canonical interoperability contract enforcement (permissions, activity events, tenant parity for first-party and third-party)
 - **`.cursor/rules/backend-trust-boundaries.mdc`** - Backend auth, tenancy, socket, and webhook guardrails
 - **`.cursor/rules/frontend-proxy-auth-consistency.mdc`** - Frontend proxy, auth UX, and provider consistency guardrails
 - **`.cursor/rules/release-safety-gates.mdc`** - CI, deploy, startup, healthcheck, and rollback guardrails
@@ -98,6 +99,12 @@ This is a quick reference guide to all documented rules. For complete details, s
 - **Context providers**: Must respond < 500ms, use authentication, return 10-20 items max
 - **Registration**: Must register AI context during module installation
 
+### 13b. Module Interoperability (certification)
+- **Authoritative contract**: `memory-bank/moduleSpecs.md`
+- **Lifecycle**: authorize → execute → emit normalized activity → notify/realtime; never emit on failed/unauthorized actions
+- **Parity**: Same checklist for built-in and marketplace modules (see `module-interoperability.mdc`)
+- **Review**: Marketplace approval and first-party module PRs must verify the certification checklist
+
 ### 14. Documentation Rules
 - **NEVER create root-level `.md` files** (except README.md)
 - **Use `memory-bank/`** for AI context and persistent knowledge
@@ -163,8 +170,9 @@ This is a quick reference guide to all documented rules. For complete details, s
 5. Check Memory Bank — Existing patterns and contexts
 
 ### Before Creating Modules
-1. Check `.cursor/rules/module-development.mdc` — Complete requirements
-2. Check Memory Bank module contexts — Existing module patterns
+1. Check `.cursor/rules/module-interoperability.mdc` — Contract and certification gates
+2. Check `.cursor/rules/module-development.mdc` — Complete requirements
+3. Check Memory Bank module contexts — Existing module patterns
 
 ### Before Documenting
 1. Check `.cursor/rules/memory-bank.mdc` — Documentation placement rules
@@ -181,6 +189,7 @@ This is a quick reference guide to all documented rules. For complete details, s
 
 - [ ] Searched codebase for existing equivalent
 - [ ] Checked Memory Bank for patterns
+- [ ] Module work: `module-interoperability.mdc` + `moduleSpecs.md` certification items reviewed
 - [ ] No localhost URLs in production code
 - [ ] Using proper environment variable hierarchy
 - [ ] Multi-tenant data scoping included
@@ -196,7 +205,7 @@ This is a quick reference guide to all documented rules. For complete details, s
 
 ---
 
-**Last Updated**: 2026-04-14  
+**Last Updated**: 2026-04-21  
 **Status**: Comprehensive — includes audit-driven preventive rules  
 **Maintainer**: Development Team
 

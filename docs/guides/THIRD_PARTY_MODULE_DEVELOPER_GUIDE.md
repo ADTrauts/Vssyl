@@ -1,6 +1,6 @@
 # Third-party module developer guide
 
-Last updated: 2026-04-19  
+Last updated: 2026-04-21  
 Audience: External developers and partners building modules for the Vssyl marketplace  
 Status: Entry point (links to authoritative specs)
 
@@ -24,10 +24,11 @@ Use these entry points to create submissions, manage modules, and track status a
 ## Read this material in order
 
 1. **This guide** — scope, obligations, and links.
-2. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
-3. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
-4. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
-5. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
+2. **[`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)** — canonical module interoperability contract (permissions, events, realtime, notifications, AI context, compliance).
+3. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
+4. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
+5. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
+6. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
 
 ---
 
@@ -54,6 +55,41 @@ Summarized from the pipeline source of truth—if anything conflicts, **the pipe
 | **Action execution (if applicable)** | Registry / webhook patterns as implemented for your module class | Platform team + archived examples in `docs/archive/guides-merged-2026/` |
 
 Modules that are not AI-aware or that omit required metadata are likely to **fail review**.
+
+---
+
+## Required interoperability contract (must-pass for review)
+
+Third-party modules must implement the same interoperability structure expected of first-party modules.
+
+1. **Permission-first action flow**
+   - `authorize -> execute -> emit event -> notify/realtime`
+   - No event emission for unauthorized or failed actions
+2. **Tenant context scoping**
+   - All data access paths must scope by authorized context (personal/business/household)
+3. **Normalized activity events**
+   - Emit events compatible with the platform canonical event envelope in `memory-bank/moduleSpecs.md`
+4. **Activity vs analytics separation**
+   - Activity records are immutable "what happened" events
+   - Analytics is derived/aggregated data and must not replace activity logging
+5. **Realtime compatibility**
+   - Realtime updates must be visibility-scoped and authorization-safe
+6. **Notification metadata + payload standards**
+   - Manifest metadata and event payload IDs must support notification center routing
+7. **AI context compliance**
+   - AI context providers are mandatory for AI-exposed modules
+
+Modules that fail these contract requirements should be rejected during review until corrected.
+
+---
+
+## Enforcement path (review → approval)
+
+1. **Automated:** Security scan and artifact gates from [`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) (zip scan, versioning, admin workflow).
+2. **Human review:** Approvers confirm the [module certification checklist](../../memory-bank/moduleSpecs.md#module-certification-checklist-must-pass) (same items first-party modules must meet). No publish if permissions, scoping, activity, or AI obligations are missing or undocumented.
+3. **Repo tooling:** Internal contributors also follow `.cursor/rules/module-interoperability.mdc` so partner-facing rules and monorepo rules stay aligned.
+
+Partners should expect **request changes** or **reject** until the manifest, declared APIs/webhooks, and privacy/scoping story match the contract.
 
 ---
 

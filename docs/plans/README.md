@@ -8,6 +8,7 @@ Long-lived execution plans, audits, and feature roadmaps. **Active “what’s n
 |-------|------|
 | **Open work after audit / AI phases** | `PROJECT_NEXT_PHASE_OPEN_WORK.md` |
 | System audit tracker | `SYSTEM_AUDIT_SOURCE_OF_TRUTH.md` |
+| Module interoperability alignment (core + 3rd-party) — **complete** | `MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md` |
 | Module upload backend | `MODULE_UPLOAD_BACKEND_PHASED_PLAN.md` |
 | AI action / executor | `AI_ACTION_EXECUTOR_IMPLEMENTATION_PLAN.md`, `PHASE_3_ACTION_EXECUTOR_PLAN.md` |
 | AI vision / multimodal | `AI_VISION_AND_MULTIMODAL_PLAN.md` |

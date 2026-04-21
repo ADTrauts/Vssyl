@@ -23,6 +23,24 @@ Update Rules for compliance.md
 
 # Legal & Compliance
 
+## [2026-04-21] Module Interoperability Compliance Baseline
+
+To support enterprise auditability and cross-module consistency, all modules (first-party and third-party) must comply with:
+
+1. **Permission-first execution**
+   - Authorization precedes action execution and event emission.
+2. **Auditable privileged actions**
+   - Access-sensitive and mutation actions must be traceable with actor, action, target, context, timestamp.
+3. **Tenant-safe visibility**
+   - Event and notification visibility must respect context membership and sharing rules.
+4. **Activity/analytics separation**
+   - Immutable activity events are retained for audit/compliance.
+   - Aggregated analytics is derived and not a substitute for audit trails.
+5. **Structured operational logging**
+   - Errors and security-sensitive workflow outcomes use structured logs with minimal data exposure.
+
+These controls are mandatory for module review and production readiness.
+
 ## New-Build Compliance Considerations [2024-06]
 - **Data Privacy & Protection:** Must comply with GDPR/CCPA if serving EU/California users. Includes user data rights, breach notification, and data minimization.
 - **User Consent & Terms:** Users must agree to Terms of Service and Privacy Policy. Privacy Policy must explain data collection, use, and user rights.

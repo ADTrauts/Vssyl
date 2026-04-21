@@ -36,6 +36,8 @@ export interface ChatSocketEvents {
   message_reaction: (data: { messageId: string; reaction: MessageReaction }) => void;
   message_read: (data: { messageId: string; readReceipt: ReadReceipt }) => void;
   user_presence: (data: PresenceEvent) => void;
+  /** Emitted when server broadcasts `activity:feed:refresh` to the user room (module activity log). */
+  activity_feed_refresh: (data: Record<string, unknown>) => void;
   error: (error: { message: string }) => void;
 }
 
@@ -59,6 +61,7 @@ export class ChatSocketClient {
       'message_reaction',
       'message_read',
       'user_presence',
+      'activity_feed_refresh',
       'error'
     ];
 
@@ -150,6 +153,10 @@ export class ChatSocketClient {
 
     this.socket.on('user_presence', (data) => {
       this.emit('user_presence', data);
+    });
+
+    this.socket.on('activity:feed:refresh', (data: Record<string, unknown>) => {
+      this.emit('activity_feed_refresh', data);
     });
 
     this.socket.on('error', (data) => {

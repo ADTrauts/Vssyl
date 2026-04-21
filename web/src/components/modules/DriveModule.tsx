@@ -498,6 +498,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const [detailsPanelOpen, setDetailsPanelOpen] = useState(false);
   const [detailsPanelCollapsed, setDetailsPanelCollapsed] = useState(false);
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<DriveItem | null>(null);
+  const [detailsActivityRefreshTick, setDetailsActivityRefreshTick] = useState(0);
+  const selectedDetailsIdRef = useRef<string | null>(null);
   const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
   const [showKeyboardShortcutsHelp, setShowKeyboardShortcutsHelp] = useState(false);
   const itemsListRef = useRef<HTMLDivElement>(null);
@@ -530,6 +532,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   // Track pending operations to detect conflicts
   const pendingOperationsRef = useRef<Set<string>>(new Set());
 
+  useEffect(() => {
+    selectedDetailsIdRef.current = selectedItemForDetails?.id ?? null;
+  }, [selectedItemForDetails]);
+
   // Real-time File Hub updates via WebSocket: reload on relevant File Hub events
   useDriveWebSocket({
     enabled: true,
@@ -540,6 +546,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         if (itemId && itemId.startsWith('temp-')) {
           // This is our optimistic update being confirmed, no need to reload
           return;
+        }
+        if (itemId && selectedDetailsIdRef.current === itemId) {
+          setDetailsActivityRefreshTick((t) => t + 1);
         }
         await loadFilesAndFolders();
       },
@@ -556,6 +565,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           pendingOperationsRef.current.delete(itemId);
         }
         
+        if (itemId && selectedDetailsIdRef.current === itemId) {
+          setDetailsActivityRefreshTick((t) => t + 1);
+        }
         // Refresh to get latest version (last-write-wins)
         await loadFilesAndFolders();
       },
@@ -566,6 +578,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           // Optimistically remove from UI immediately
           setItems(prev => prev.filter(i => i.id !== itemId));
         }
+        if (itemId && selectedDetailsIdRef.current === itemId) {
+          setDetailsActivityRefreshTick((t) => t + 1);
+        }
         // Still reload to ensure consistency
         await loadFilesAndFolders();
       },
@@ -574,12 +589,18 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         if (itemId) {
           pendingOperationsRef.current.delete(itemId);
         }
+        if (itemId && selectedDetailsIdRef.current === itemId) {
+          setDetailsActivityRefreshTick((t) => t + 1);
+        }
         await loadFilesAndFolders();
       },
       onItemPinned: async (data: Record<string, unknown>) => {
         const itemId = data.itemId as string | undefined;
         if (itemId) {
           pendingOperationsRef.current.delete(itemId);
+        }
+        if (itemId && selectedDetailsIdRef.current === itemId) {
+          setDetailsActivityRefreshTick((t) => t + 1);
         }
         await loadFilesAndFolders();
       },
@@ -2141,6 +2162,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       {detailsPanelOpen && (
         <DriveDetailsPanel
           item={selectedItemForDetails}
+          activityRefreshTick={detailsActivityRefreshTick}
           isOpen={detailsPanelOpen}
           isCollapsed={detailsPanelCollapsed}
           onClose={() => {

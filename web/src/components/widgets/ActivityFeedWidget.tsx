@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { chatSocket } from '../../lib/chatSocket';
 import {
   Activity,
   MessageCircle,
@@ -83,41 +84,12 @@ export default function ActivityFeedWidget({
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialDoneRef = useRef(false);
 
   const safeConfig = config || defaultConfig;
 
-  useEffect(() => {
-    if (!session?.accessToken || !dashboardId) return;
-
-    const fetchActivity = async () => {
-      try {
-        setLoading(true);
-        // Try to fetch from activity feed endpoint
-        const res = await fetch(`/api/activity-feed?dashboardId=${dashboardId}&limit=${safeConfig.maxItems}`, {
-          headers: { Authorization: `Bearer ${session.accessToken}` },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setActivities(data.activities || data.data || []);
-        } else {
-          // Generate placeholder activities from available data
-          setActivities(generatePlaceholderActivities());
-        }
-      } catch {
-        setActivities(generatePlaceholderActivities());
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActivity();
-    const interval = setInterval(fetchActivity, 120_000);
-    return () => clearInterval(interval);
-  }, [session?.accessToken, dashboardId, safeConfig.maxItems]);
-
-  const generatePlaceholderActivities = (): ActivityItem[] => {
-    // Placeholder activities when no API is available
+  const generatePlaceholderActivities = useCallback((): ActivityItem[] => {
     const now = new Date();
     return [
       {
@@ -153,7 +125,69 @@ export default function ActivityFeedWidget({
         createdAt: new Date(now.getTime() - 60 * 60_000).toISOString(),
       },
     ];
-  };
+  }, []);
+
+  const fetchActivity = useCallback(
+    async (opts?: { isInitial?: boolean }) => {
+      const token = session?.accessToken;
+      if (!token || !dashboardId) return;
+
+      const isInitial = opts?.isInitial ?? !initialDoneRef.current;
+      try {
+        if (isInitial) {
+          setLoading(true);
+        }
+        const res = await fetch(
+          `/api/activity-feed?dashboardId=${dashboardId}&limit=${safeConfig.maxItems}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          setActivities(data.activities || data.data || []);
+        } else {
+          setActivities(generatePlaceholderActivities());
+        }
+      } catch {
+        setActivities(generatePlaceholderActivities());
+      } finally {
+        initialDoneRef.current = true;
+        setLoading(false);
+      }
+    },
+    [session?.accessToken, dashboardId, safeConfig.maxItems, generatePlaceholderActivities]
+  );
+
+  useEffect(() => {
+    if (!session?.accessToken || !dashboardId) return;
+
+    initialDoneRef.current = false;
+
+    void fetchActivity({ isInitial: true });
+    const interval = setInterval(() => {
+      void fetchActivity({ isInitial: false });
+    }, 120_000);
+
+    const scheduleRefresh = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        void fetchActivity({ isInitial: false });
+      }, 400);
+    };
+
+    const handler = () => scheduleRefresh();
+    void chatSocket.connect(session.accessToken).then(() => {
+      chatSocket.on('activity_feed_refresh', handler);
+    });
+
+    return () => {
+      clearInterval(interval);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      chatSocket.off('activity_feed_refresh', handler);
+    };
+  }, [session?.accessToken, dashboardId, fetchActivity]);
 
   const filteredActivities = safeConfig.moduleFilters.length > 0
     ? activities.filter((a) => safeConfig.moduleFilters.includes(a.module))
@@ -203,7 +237,7 @@ export default function ActivityFeedWidget({
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">{activity.module}</span>
                     <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
                       {formatRelativeTime(new Date(activity.createdAt), { addSuffix: true })}
                     </span>
                   </div>
