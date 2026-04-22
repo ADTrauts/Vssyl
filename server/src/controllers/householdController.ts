@@ -2,6 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { HouseholdRole, HouseholdType } from '@prisma/client';
 
+/** Owner, Admin, and Adult (parent) can add/remove most household members; role edits are further restricted for Adults below. */
+const HOUSEHOLD_ROSTER_MANAGER_ROLES: HouseholdRole[] = [
+  HouseholdRole.OWNER,
+  HouseholdRole.ADMIN,
+  HouseholdRole.ADULT,
+];
+
+function isRosterManager(role: HouseholdRole | undefined): boolean {
+  return role !== undefined && HOUSEHOLD_ROSTER_MANAGER_ROLES.includes(role);
+}
+
 function hasUserId(user: unknown): user is { id: string } {
   return typeof user === 'object' && user !== null && 'id' in user && typeof (user as Record<string, unknown>).id === 'string';
 }
@@ -377,21 +388,26 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
     const householdId = req.params.id;
     const data: InviteMemberRequest = req.body;
 
-    // Check if user has permission to invite (OWNER or ADMIN)
+    // Owner, Admin, or Adult (parent) may invite
     const userMembership = await prisma.householdMember.findFirst({
       where: {
         householdId: householdId,
         userId: userId,
         isActive: true,
-        role: {
-          in: [HouseholdRole.OWNER, HouseholdRole.ADMIN]
-        }
-      }
+        role: { in: HOUSEHOLD_ROSTER_MANAGER_ROLES },
+      },
     });
 
-    if (!userMembership) {
+    if (!userMembership || !isRosterManager(userMembership.role)) {
       res.status(403).json({ error: 'Insufficient permissions to invite members' });
       return;
+    }
+
+    if (userMembership.role === HouseholdRole.ADULT) {
+      if (data.role === HouseholdRole.ADMIN || data.role === HouseholdRole.OWNER) {
+        res.status(403).json({ error: 'Adults cannot assign admin or owner roles' });
+        return;
+      }
     }
 
     // Find the user to invite
@@ -488,34 +504,53 @@ export async function updateMemberRole(req: Request, res: Response, next: NextFu
     const targetUserId = req.params.userId;
     const data: UpdateMemberRoleRequest = req.body;
 
-    // Check if user has permission to update roles (OWNER or ADMIN)
     const userMembership = await prisma.householdMember.findFirst({
       where: {
         householdId: householdId,
         userId: userId,
         isActive: true,
-        role: {
-          in: [HouseholdRole.OWNER, HouseholdRole.ADMIN]
-        }
-      }
+        role: { in: HOUSEHOLD_ROSTER_MANAGER_ROLES },
+      },
     });
 
-    if (!userMembership) {
+    if (!userMembership || !isRosterManager(userMembership.role)) {
       res.status(403).json({ error: 'Insufficient permissions to update member roles' });
       return;
     }
 
+    const targetMembership = await prisma.householdMember.findFirst({
+      where: {
+        householdId: householdId,
+        userId: targetUserId,
+        isActive: true,
+      },
+    });
+
+    if (!targetMembership) {
+      res.status(404).json({ error: 'Member not found' });
+      return;
+    }
+
+    // Adults (non-owner/admin) may only change roles for teens, children, and guests — not owner/admin/other adults
+    if (userMembership.role === HouseholdRole.ADULT) {
+      const adultManagedRoles: HouseholdRole[] = [
+        HouseholdRole.TEEN,
+        HouseholdRole.CHILD,
+        HouseholdRole.TEMPORARY_GUEST,
+      ];
+      if (!adultManagedRoles.includes(targetMembership.role)) {
+        res.status(403).json({ error: 'Adults can only update roles for teens, children, and guests' });
+        return;
+      }
+      if (data.role === HouseholdRole.OWNER || data.role === HouseholdRole.ADMIN) {
+        res.status(403).json({ error: 'Insufficient permissions for this role assignment' });
+        return;
+      }
+    }
+
     // Prevent non-owners from changing owner role or making someone else owner
     if (userMembership.role !== HouseholdRole.OWNER) {
-      const targetMembership = await prisma.householdMember.findFirst({
-        where: {
-          householdId: householdId,
-          userId: targetUserId,
-          isActive: true
-        }
-      });
-
-      if (targetMembership?.role === HouseholdRole.OWNER || data.role === HouseholdRole.OWNER) {
+      if (targetMembership.role === HouseholdRole.OWNER || data.role === HouseholdRole.OWNER) {
         res.status(403).json({ error: 'Only household owner can change owner role' });
         return;
       }
@@ -561,36 +596,45 @@ export async function removeMember(req: Request, res: Response, next: NextFuncti
     const householdId = req.params.id;
     const targetUserId = req.params.userId;
 
-    // Check if user has permission to remove members (OWNER or ADMIN)
     const userMembership = await prisma.householdMember.findFirst({
       where: {
         householdId: householdId,
         userId: userId,
         isActive: true,
-        role: {
-          in: [HouseholdRole.OWNER, HouseholdRole.ADMIN]
-        }
-      }
+        role: { in: HOUSEHOLD_ROSTER_MANAGER_ROLES },
+      },
     });
 
-    if (!userMembership) {
+    if (!userMembership || !isRosterManager(userMembership.role)) {
       res.status(403).json({ error: 'Insufficient permissions to remove members' });
       return;
     }
 
-    // Prevent removing the household owner (unless self-removal)
     if (targetUserId !== userId) {
       const targetMembership = await prisma.householdMember.findFirst({
         where: {
           householdId: householdId,
           userId: targetUserId,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       if (targetMembership?.role === HouseholdRole.OWNER) {
         res.status(403).json({ error: 'Cannot remove household owner' });
         return;
+      }
+
+      // Adult members cannot remove admins or other adults (only teens, children, guests)
+      if (userMembership.role === HouseholdRole.ADULT) {
+        const removableByAdult: HouseholdRole[] = [
+          HouseholdRole.TEEN,
+          HouseholdRole.CHILD,
+          HouseholdRole.TEMPORARY_GUEST,
+        ];
+        if (!targetMembership || !removableByAdult.includes(targetMembership.role)) {
+          res.status(403).json({ error: 'Adults can only remove teens, children, and guests from the household' });
+          return;
+        }
       }
     }
 

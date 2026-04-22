@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getDashboards, createDashboard, getDashboard } from '../../api/dashboard';
+import { getHousehold } from '../../api/household';
 import { createWidget, deleteWidget, updateWidget, batchUpdateWidgetPositions } from '../../api/widget';
 import { Dashboard } from 'shared/types';
 import { Widget } from 'shared/types/widget';
@@ -36,6 +37,9 @@ import DashboardTemplates, { DashboardTemplate } from '../../components/dashboar
 import DashboardBuildOutModal from '../../components/DashboardBuildOutModal';
 import ModuleManagementModal from '../../components/ModuleManagementModal';
 import { DashboardSkeleton } from '../../components/SkeletonComponents';
+import { Modal } from 'shared/components';
+import HouseholdMemberManager from '../../components/household/HouseholdMemberManager';
+import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 
 
 interface DashboardClientProps {
@@ -286,6 +290,8 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const [pendingDashboard, setPendingDashboard] = useState<Dashboard | null>(null);
   const [showModuleManagement, setShowModuleManagement] = useState(false);
   const [showAddWidget, setShowAddWidget] = useState(false);
+  const [showHouseholdMembersModal, setShowHouseholdMembersModal] = useState(false);
+  const [householdRosterCanManage, setHouseholdRosterCanManage] = useState(false);
   const [hasShownBuildOut, setHasShownBuildOut] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -299,6 +305,57 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   });
 
   const activeDashboardId = (params?.id as string) || dashboardId;
+
+  type DashboardWithHousehold = Dashboard & {
+    householdId?: string | null;
+    household?: { id: string; name?: string; type?: string; isPrimary?: boolean };
+  };
+
+  const resolvedHouseholdId = useMemo(() => {
+    if (!currentDashboard) return null;
+    const d = currentDashboard as DashboardWithHousehold;
+    if (d.household?.id) return d.household.id;
+    if (typeof d.householdId === 'string' && d.householdId.length > 0) return d.householdId;
+    return null;
+  }, [currentDashboard]);
+
+  useEffect(() => {
+    if (!resolvedHouseholdId || !session?.accessToken) {
+      setHouseholdRosterCanManage(false);
+      return;
+    }
+    let cancelled = false;
+    const uid = (session.user as { id?: string })?.id;
+    if (!uid) {
+      setHouseholdRosterCanManage(false);
+      return;
+    }
+    getHousehold(session.accessToken, resolvedHouseholdId)
+      .then((h) => {
+        if (cancelled) return;
+        const me = h.members.find((m) => m.userId === uid);
+        setHouseholdRosterCanManage(isHouseholdRosterManager(me?.role));
+      })
+      .catch(() => {
+        if (!cancelled) setHouseholdRosterCanManage(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [resolvedHouseholdId, session?.accessToken, session?.user]);
+
+  const refreshHouseholdRosterPermission = useCallback(async () => {
+    if (!session?.accessToken || !resolvedHouseholdId) return;
+    const uid = (session.user as { id?: string })?.id;
+    if (!uid) return;
+    try {
+      const h = await getHousehold(session.accessToken, resolvedHouseholdId);
+      const me = h.members.find((m) => m.userId === uid);
+      setHouseholdRosterCanManage(isHouseholdRosterManager(me?.role));
+    } catch {
+      setHouseholdRosterCanManage(false);
+    }
+  }, [session?.accessToken, session?.user, resolvedHouseholdId]);
 
   const handleSavePositions = useCallback(async (positions: WidgetLayoutUpdate[]) => {
     if (!currentDashboard?.id || !session?.accessToken) return;
@@ -547,7 +604,9 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
           break;
         case 'escape':
           // Exit edit mode or close modals
-          if (showAddWidget) {
+          if (showHouseholdMembersModal) {
+            setShowHouseholdMembersModal(false);
+          } else if (showAddWidget) {
             setShowAddWidget(false);
           } else if (isEditMode) {
             toggleEditMode();
@@ -565,7 +624,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditMode, showAddWidget, toggleEditMode]);
+  }, [isEditMode, showAddWidget, showHouseholdMembersModal, toggleEditMode]);
 
   // Dashboard context for widgets (include businessId for business dashboards)
   const dashboardContext = currentDashboard
@@ -638,7 +697,25 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
         widgetCount={widgets.length}
         stats={stats}
         statsLoading={statsLoading}
+        showManageHouseholdMembers={householdRosterCanManage && !!resolvedHouseholdId}
+        onManageHouseholdMembers={() => setShowHouseholdMembersModal(true)}
       />
+
+      {resolvedHouseholdId && (
+        <Modal
+          open={showHouseholdMembersModal}
+          onClose={() => setShowHouseholdMembersModal(false)}
+          title="Household members"
+          size="xlarge"
+        >
+          <div className="max-h-[min(70vh,640px)] overflow-y-auto pr-1 -mr-1">
+            <HouseholdMemberManager
+              householdId={resolvedHouseholdId}
+              onRosterChanged={refreshHouseholdRosterPermission}
+            />
+          </div>
+        </Modal>
+      )}
 
       {/* Widget Picker Modal */}
       <WidgetPicker

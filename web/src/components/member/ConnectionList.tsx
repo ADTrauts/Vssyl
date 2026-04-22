@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Avatar, Badge, Button, Card, Spinner, Checkbox } from 'shared/components';
+import { Avatar, Badge, Button, Card, Spinner, Checkbox, Modal } from 'shared/components';
+import HouseholdMemberManager from '../household/HouseholdMemberManager';
+import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 import { getConnections, Connection, removeConnection, bulkRemoveConnections } from '../../api/member';
 import { getHouseholds, type Household } from '../../api/household';
 import { getUserFollowing } from '../../api/business';
-import { Trash2, Building2, Users, MapPin } from 'lucide-react';
+import { Trash2, Building2, Users, MapPin, UserPlus } from 'lucide-react';
 import { BulkActionBar } from './BulkActionBar';
 import toast from 'react-hot-toast';
 
@@ -28,6 +30,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [selectedConnections, setSelectedConnections] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [managingHouseholdId, setManagingHouseholdId] = useState<string | null>(null);
 
   const loadConnections = async () => {
     if (filter === 'household' || filter === 'businesses') return;
@@ -206,6 +209,24 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
 
   return (
     <div className={className}>
+      <Modal
+        open={managingHouseholdId !== null}
+        onClose={() => setManagingHouseholdId(null)}
+        title="Household members"
+        size="xlarge"
+      >
+        {managingHouseholdId && (
+          <div className="max-h-[min(70vh,640px)] overflow-y-auto pr-1 -mr-1">
+            <HouseholdMemberManager
+              householdId={managingHouseholdId}
+              onRosterChanged={() => {
+                void loadHouseholds();
+              }}
+            />
+          </div>
+        )}
+      </Modal>
+
       {/* Filter Tabs */}
       <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-slate-700 rounded-lg p-1 flex-wrap gap-1">
         {[
@@ -243,13 +264,30 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
               </p>
             </div>
           ) : (
-            households.map((h) => (
+            households.map((h) => {
+              const myId = session?.user?.id;
+              const myRole = myId ? h.members?.find((m) => m.userId === myId)?.role : undefined;
+              const canManageThisHousehold = isHouseholdRosterManager(myRole);
+              return (
               <Card key={h.id} className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100">{h.name}</h3>
-                  {h.isPrimary && (
-                    <Badge color="blue">Primary</Badge>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{h.name}</h3>
+                    {h.isPrimary && (
+                      <Badge color="blue">Primary</Badge>
+                    )}
+                  </div>
+                  {canManageThisHousehold && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="flex items-center gap-1.5"
+                      onClick={() => setManagingHouseholdId(h.id)}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Add / remove members
+                    </Button>
                   )}
                 </div>
                 <ul className="space-y-2 pl-7">
@@ -265,7 +303,8 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
                   ))}
                 </ul>
               </Card>
-            ))
+            );
+            })
           )}
         </div>
       )}

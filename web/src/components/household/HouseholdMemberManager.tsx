@@ -33,9 +33,12 @@ import {
 import { HouseholdRole } from '@prisma/client';
 import { formatRelativeTime } from '../../utils/format';
 import { toast } from 'react-hot-toast';
+import { isHouseholdRosterManager, canModifyHouseholdMemberAsManager } from '../../lib/householdPermissions';
 
 interface HouseholdMemberManagerProps {
   householdId: string;
+  /** Called after invite, remove, or role change so parent UIs can refresh lists. */
+  onRosterChanged?: () => void;
 }
 
 interface InviteModalState {
@@ -68,7 +71,7 @@ const defaultRoleEditState: RoleEditModalState = {
   newExpiresAt: ''
 };
 
-export default function HouseholdMemberManager({ householdId }: HouseholdMemberManagerProps) {
+export default function HouseholdMemberManager({ householdId, onRosterChanged }: HouseholdMemberManagerProps) {
   const { data: session } = useSession();
   const [household, setHousehold] = useState<Household | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,11 +107,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
     return member?.role || null;
   };
 
-  // Check if current user can manage members
-  const canManageMembers = (): boolean => {
-    const role = getCurrentUserRole();
-    return role === 'OWNER' || role === 'ADMIN';
-  };
+  const canManageMembers = (): boolean => isHouseholdRosterManager(getCurrentUserRole());
 
   // Get role icon
   const getRoleIcon = (role: HouseholdRole) => {
@@ -146,7 +145,8 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       await inviteMember(session.accessToken, householdId, inviteData);
       toast.success('Member invited successfully');
       setInviteModal(defaultInviteState);
-      loadHousehold(); // Refresh data
+      await loadHousehold();
+      onRosterChanged?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to invite member');
     } finally {
@@ -169,7 +169,8 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       await updateMemberRole(session.accessToken, householdId, roleEditModal.member.userId, updateData);
       toast.success('Member role updated successfully');
       setRoleEditModal(defaultRoleEditState);
-      loadHousehold(); // Refresh data
+      await loadHousehold();
+      onRosterChanged?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update member role');
     } finally {
@@ -191,7 +192,8 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
       setActionLoading(`remove-${member.id}`);
       await removeMember(session.accessToken, householdId, member.userId);
       toast.success('Member removed successfully');
-      loadHousehold(); // Refresh data
+      await loadHousehold();
+      onRosterChanged?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to remove member');
     } finally {
@@ -322,7 +324,7 @@ export default function HouseholdMemberManager({ householdId }: HouseholdMemberM
                   <span>{getRoleDisplayName(member.role)}</span>
                 </Badge>
 
-                {canManageMembers() && member.role !== 'OWNER' && (
+                {canModifyHouseholdMemberAsManager(getCurrentUserRole(), member.role) && (
                   <div className="flex items-center space-x-1">
                     <Button
                       size="sm"

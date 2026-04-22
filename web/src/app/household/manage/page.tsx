@@ -33,25 +33,32 @@ export default function HouseholdManagePage() {
         setLoading(true);
         setError(null);
 
-        // Load dashboard first to get context
+        let dashboardData: Dashboard | null = null;
         if (dashboardId) {
-          const dashboardData = await getDashboard(session.accessToken!, dashboardId);
+          dashboardData = await getDashboard(session.accessToken!, dashboardId);
           setDashboard(dashboardData);
         }
 
-        // Load user's households to find the one associated with this dashboard
         const households = await getHouseholds(session.accessToken!);
-        
-        // For now, we'll use the first household or primary household
-        // In the future, we should match by dashboard.householdId
-        const primaryHousehold = households.find(h => h.isPrimary) || households[0];
-        
-        if (!primaryHousehold) {
-          setError('No household found. Please create a household first.');
+
+        const dashHouseholdId =
+          dashboardData &&
+          'householdId' in dashboardData &&
+          typeof (dashboardData as { householdId?: string }).householdId === 'string'
+            ? (dashboardData as { householdId: string }).householdId
+            : undefined;
+
+        const matched =
+          (dashHouseholdId && households.find((h) => h.id === dashHouseholdId)) ||
+          households.find((h) => h.isPrimary) ||
+          households[0];
+
+        if (!matched) {
+          setError('No household found. Please create a household from the Home tab first.');
           return;
         }
 
-        setHousehold(primaryHousehold);
+        setHousehold(matched);
       } catch (err) {
         console.error('Error loading household data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load household data');

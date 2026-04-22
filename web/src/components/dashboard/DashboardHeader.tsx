@@ -9,6 +9,7 @@ import {
   MessageCircle,
   CheckSquare,
   Calendar,
+  Users,
 } from 'lucide-react';
 import type { DashboardStats } from '../../hooks/useDashboardStats';
 
@@ -21,6 +22,9 @@ interface DashboardHeaderProps {
   widgetCount: number;
   stats?: DashboardStats | null;
   statsLoading?: boolean;
+  /** Home (household) tab: parents/admins/owner can open household roster management. */
+  onManageHouseholdMembers?: () => void;
+  showManageHouseholdMembers?: boolean;
 }
 
 function getGreeting(): string {
@@ -62,6 +66,8 @@ export default function DashboardHeader({
   widgetCount,
   stats,
   statsLoading,
+  onManageHouseholdMembers,
+  showManageHouseholdMembers,
 }: DashboardHeaderProps) {
   const firstName = userName?.split(' ')[0] || 'there';
   const greeting = getGreeting();
@@ -122,6 +128,18 @@ export default function DashboardHeader({
           <Plus className="w-4 h-4" />
           Add Widget
         </button>
+
+        {showManageHouseholdMembers && onManageHouseholdMembers && (
+          <button
+            type="button"
+            onClick={onManageHouseholdMembers}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200 dark:text-orange-100 dark:bg-orange-950/40 dark:border-orange-800 dark:hover:bg-orange-900/30"
+            title="Add or remove people on this Home tab"
+          >
+            <Users className="w-4 h-4" />
+            Add Members
+          </button>
+        )}
 
         <button
           onClick={onToggleEditMode}
