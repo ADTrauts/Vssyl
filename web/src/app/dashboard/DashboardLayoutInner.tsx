@@ -325,7 +325,10 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     borderLeftWidth: 1,
     borderBottomWidth: 0,
     borderRadius,
-    padding: '8px 24px 10px 24px',
+    boxSizing: 'border-box' as const,
+    minHeight: 44,
+    height: 44,
+    padding: '0 24px',
     marginLeft,
     fontWeight: 700,
     fontSize: 16,
@@ -697,7 +700,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         height: 64,
         ...getHeaderStyle(isBusinessContext, isBusinessContext ? getHeaderStyles().backgroundColor : undefined),
         display: 'flex',
-        alignItems: isMobile ? 'flex-start' : 'center',
+        alignItems: isMobile ? 'flex-start' : 'stretch',
         flexDirection: isMobile ? 'column' : 'row',
         padding: isMobile ? '0 12px' : '0 32px',
         flexShrink: 0,
@@ -722,10 +725,26 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
             {isBusinessContext ? currentBranding?.name : 'Vssyl'}
           </h1>
         </div>
-        <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', marginTop: isMobile ? 8 : 0, overflow: 'hidden' }}>
+        <div style={{
+          flex: '1 1 auto',
+          display: 'flex',
+          justifyContent: 'center',
+          marginTop: isMobile ? 8 : 0,
+          overflow: 'hidden',
+          minWidth: 0,
+          ...(isMobile ? {} : { alignItems: 'flex-end' as const }),
+        }}>
           {/* Search functionality moved to GlobalHeaderTabs */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 0, maxWidth: '100%', overflow: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
+          <nav style={{
+            display: 'flex',
+            alignItems: isMobile ? 'center' : 'stretch',
+            gap: 0,
+            maxWidth: '100%',
+            overflow: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}>
+            <div style={{ display: 'flex', alignItems: isMobile ? 'center' : 'stretch', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
               {/* Vssyl Place tab (always first) */}
               <button
                 onClick={() => handleTabClick('place')}
@@ -848,7 +867,10 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                     borderLeftWidth: 1,
                     borderBottomWidth: 0,
                     borderRadius: '0',
-                    padding: '8px 24px 10px 24px',
+                    boxSizing: 'border-box',
+                    minHeight: 44,
+                    height: 44,
+                    padding: '0 24px',
                     marginLeft: -1,
                     fontWeight: 700,
                     fontSize: 16,
@@ -857,7 +879,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                     gap: 8,
                   }}
                 >
-                  <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>+</span>
+                  <span style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>+</span>
                   New Tab
                 </button>
               )}
@@ -866,12 +888,12 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                 onClick={() => setEditMode((v) => !v)}
                 style={getTabStyle(editMode, '0 8px 0 0', -1)}
               >
-                <span style={{ fontSize: 20, fontWeight: 700, marginRight: 4 }}>+/-</span>
+                <span style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>+/-</span>
               </button>
             </div>
           </nav>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto', alignSelf: isMobile ? 'auto' : 'center' }}>
           {/* Search Button */}
           <CompactSearchButton />
           
