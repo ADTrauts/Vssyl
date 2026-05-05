@@ -1,0 +1,24 @@
+---
+description: storageService, GCS, and AI vision/attachments on Cloud Run
+globs:
+  - server/src/services/**
+  - server/src/ai/**
+---
+
+# Storage and AI attachments
+
+## Storage abstraction
+
+- Use **`storageService`** for uploads, deletes, URLs, buffers — not ad hoc `fs` in controllers/services that must run in Cloud Run.
+- **Production:** `STORAGE_PROVIDER=gcs` with project/bucket env vars; ADC on Cloud Run (no key file required in the standard setup).
+- **Local:** `STORAGE_PROVIDER=local` and `LOCAL_UPLOAD_DIR` as configured.
+
+## AI vision and attachments
+
+- When attachments exist, ensure the vision pipeline (e.g. `getVisionImageParts` / **visionImageParts**) reaches the provider — text-only requests never “see” images.
+- **Do not assume** a persistent **`/uploads`** tree on Cloud Run. Resolve paths/URLs and read via **GCS + `storageService`** (`resolveStoragePath`, `getFileBuffer`, etc.).
+- Prefer **GCS fetch + `/tmp` or in-memory** steps for transforms (e.g. PDF→image); clean up temp files.
+- New providers: declare capabilities in `server/src/ai/providers/capabilities.ts`; use a **vision-capable** model when images are present.
+- Log with **`[VISION_PIPELINE]`**: file counts, vision part counts, model id, multimodal vs text-only. See `docs/ai/RUNBOOK.md` and `docs/ai/GOLDEN_RULES.md`.
+
+**Last updated:** 2026-05-05

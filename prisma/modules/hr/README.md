@@ -160,9 +160,9 @@ Planned feature files:
 
 ## Questions?
 
-Refer to `.cursor/rules/coding-standards.mdc` for:
-- TypeScript standards
-- API routing patterns
-- Multi-tenant data isolation requirements
-- Prisma schema best practices
+Refer to `.cursor/rules/database-prisma.mdc`, `.cursor/rules/api-and-auth.mdc`, `.cursor/rules/typescript-quality.mdc`, and `.cursor/rules/coding-standards.mdc` (index) for:
+- TypeScript standards (`typescript-quality.mdc`)
+- API routing patterns (`api-and-auth.mdc`)
+- Multi-tenant data isolation requirements (`api-and-auth.mdc`)
+- Prisma schema best practices (`database-prisma.mdc`)
 

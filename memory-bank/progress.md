@@ -1,5 +1,17 @@
 # Block-on-Block Platform - Progress
 
+## GitHub Actions CI — verify workflow (May 2026) ✅
+
+**Status:** **`CI / verify` green** on `main` — install → **build `shared`** → `prisma:generate` → `migrate deploy` → `type-check` → `test`.
+
+**Fixes:**
+- Workflow builds `shared` (`pnpm run build` in `./shared`) before workspace `type-check`, eliminating `TS6305` missing `shared/dist` outputs on fresh runners.
+- Server integration tests: scheduling tenant-scope suite self-seeds `scheduling` module; admin analytics dashboard-stats test bounded to avoid flake from parallel user churn.
+
+**Reference:** `memory-bank/activeContext.md` (GitHub Actions CI section, May 2026).
+
+---
+
 ## Module interoperability alignment (April 2026) ✅
 
 **Status:** **COMPLETE** — All five phases in `docs/plans/MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md` finished. Plan document status: **Complete**.

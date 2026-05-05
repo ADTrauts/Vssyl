@@ -1,6 +1,6 @@
 # Troubleshooting Guide - Vssyl Platform
 
-> **📚 Prevent These Errors:** See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) for comprehensive coding rules that prevent these recurring issues.
+> **📚 Prevent These Errors:** See [../.cursor/rules/RULES_SUMMARY.md](../.cursor/rules/RULES_SUMMARY.md) and topic rules under [../.cursor/rules/](../.cursor/rules/) (e.g. `api-and-auth.mdc`, `database-prisma.mdc`).
 
 ## Current Session Issues & Solutions (February 2025)
 

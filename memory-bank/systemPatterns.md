@@ -46,7 +46,7 @@ Update Rules for systemPatterns.md
 - [Add future major changes here.]
 
 ## Cross-References & Modular Context Pattern
-- **See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) for comprehensive AI coding rules** covering Google Cloud, environment variables, authentication, API routing, TypeScript standards, database patterns, and storage configuration.
+- **See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) (index)** and split rules: `api-and-auth.mdc`, `database-prisma.mdc`, `storage-and-ai-attachments.mdc`, `ui-standards.mdc`, `typescript-quality.mdc`; quick list: [../.cursor/rules/RULES_SUMMARY.md](../.cursor/rules/RULES_SUMMARY.md).
 - See [projectbrief.md](./projectbrief.md) for project vision and requirements.
 - See [moduleSpecs.md](./moduleSpecs.md) for module and feature specifications.
 - See [designPatterns.md](./designPatterns.md) for UI/UX and code design patterns.

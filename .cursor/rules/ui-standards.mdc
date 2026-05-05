@@ -1,0 +1,32 @@
+---
+description: Shared components import path, Button/Card usage, text contrast
+globs:
+  - web/**/*.tsx
+  - shared/**/*.tsx
+---
+
+# UI standards
+
+## Shared components
+
+```typescript
+import { Button, Card, Spinner } from 'shared/components';
+```
+
+Do not import from `@/components/ui/*` or deep `shared/src/...` paths unless the repo already standardizes an exception.
+
+**Button:** variants `primary` | `secondary` | `ghost` only; sizes `sm` | `md` | `lg`.
+
+**Card:** simple wrapper — **no** `CardHeader` / `CardTitle` / `CardContent` subcomponents.
+
+Other building blocks: `Alert`, `Badge`, `Spinner`, `Tabs`, `Switch`, `Modal`, `Input`, `Textarea` — see `shared/src/components/`.
+
+## Text contrast (readability)
+
+On **light** backgrounds (white, gray-50/100): use **`text-gray-700` or darker** for primary copy; **`text-gray-600` minimum** for secondary. Avoid `text-gray-500` / `400` / `300` on light surfaces.
+
+On **dark** backgrounds: `text-gray-300`+ or `text-white` as appropriate.
+
+Inactive UI should stay readable — prefer **`text-gray-600` minimum**, not `text-gray-500`, on light backgrounds.
+
+**Last updated:** 2026-05-05

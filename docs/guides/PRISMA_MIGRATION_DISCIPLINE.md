@@ -1,6 +1,6 @@
 # Prisma migration discipline (R-007)
 
-Operational playbook for schema changes and CI. Aligns with `.cursor/rules/coding-standards.mdc` (Prisma section).
+Operational playbook for schema changes and CI. Aligns with `.cursor/rules/database-prisma.mdc` and the Prisma index entry in `.cursor/rules/coding-standards.mdc`.
 
 ## Rules
 

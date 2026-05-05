@@ -1,0 +1,16 @@
+---
+description: Repo vs Memory Bank authority and conflict handling before coding
+alwaysApply: true
+---
+
+# Source of truth
+
+Before making changes:
+
+1. Read **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — baseline for what is canonical where.
+2. **GitHub repo** is canonical for **implementation** (code, configs, migrations as applied).
+3. **Memory Bank** (`memory-bank/`) is canonical for **product intent, architecture, status, and decisions** — see `activeContext.md`, `progress.md`, and task-relevant `*ProductContext.md` / specs.
+4. If **repo and Memory Bank conflict**, **stop** and surface the conflict to the user **before** coding or documenting new truth.
+5. Do **not** add duplicate docs, routes, models, components, or modules without a **brief rationale** for why an existing one cannot be extended (see `core.mdc` reuse-first).
+
+When updating truth after a major change: adjust Memory Bank status/progress as appropriate; archive superseded docs per `VSSYL_SOURCE_OF_TRUTH.md` (do not silently delete history).

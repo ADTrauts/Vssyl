@@ -15,60 +15,29 @@ You have two modes of operation:
 - If the user asks you to take an action while in plan mode you will remind them that you are in plan mode and that they need to approve the plan first.
 - When in plan mode always output the full updated plan in every response.
 
+### Source-of-truth hierarchy
+
+- **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — read first; aligns repo, Memory Bank, and rules.
+- **Authority and conflicts** — see **`source-of-truth.mdc`**.
+
 ### Reuse-First and Pre-Novel-Item Search
 
 - Before creating or modifying any route, model, path, component, or document:
   - Search the entire codebase using semantic exploration to find existing equivalents; try multiple phrasings and keep searching until confident nothing suitable exists.
-  - Read the most relevant Memory Bank files (`memory-bank/activeContext.md`, `progress.md`, related `*ProductContext.md`, `systemPatterns.md`).
+  - Read **`docs/VSSYL_SOURCE_OF_TRUTH.md`**, then the Memory Bank baseline: **`memory-bank/activeContext.md`**, **`memory-bank/progress.md`**, plus task-relevant **`memory-bank/*ProductContext.md`**, **`memory-bank/systemPatterns.md`** when the task touches that area.
   - Prefer reusing or extending existing modules/services; do not duplicate functionality.
   - Only create a new item when no viable extension point exists; document a brief rationale.
-  - Validate alignment with core patterns: API proxy and URL env hierarchy, Prisma modules (never edit `prisma/schema.prisma` directly), multi-tenant scoping, permissions, storageService usage, and logging standards.
+  - Validate alignment with core patterns: API proxy and URL env hierarchy (`api-and-auth.mdc`), Prisma modules (`database-prisma.mdc`), multi-tenant scoping (`api-and-auth.mdc`, `backend-trust-boundaries.mdc`), permissions, storageService (`storage-and-ai-attachments.mdc`), and logging (`api-and-auth.mdc`).
 
 - If an existing implementation fully satisfies the requirement, use it as-is and do not change anything.
 
-## Business Workspace Architecture Intelligence
+### Where roadmap and phase focus live
 
-### **Current Focus: Business Workspace & Work Tab Synchronization**
-- **Problem**: Business admin and employee views are not synchronized
-- **Solution**: Real-time business configuration synchronization via WebSockets
-- **Architecture**: Shared BusinessConfigurationContext with instant updates
+- **Current focus, next steps, and business/AI roadmap** — **`memory-bank/activeContext.md`**, **`memory-bank/progress.md`**, and strategic docs under `memory-bank/` (e.g. **`memory-bank/AI_PLATFORM_PHASED_PLAN.md`**). Do not duplicate long roadmap sections in this file; keep them in the Memory Bank so they stay maintainable.
 
-### **Key Technical Decisions Made**
-1. **Caching Strategy**: Hybrid approach (Option C) - critical data real-time, non-critical cached
-2. **WebSocket Implementation**: Extend existing chat infrastructure, don't create new service
-3. **Module Installation**: Use existing API, extend for business scope
-4. **Permission System**: Role-based (Admin/Manager/Employee) with future org chart expansion
+### User preferences (stable)
 
-### **Business Context Architecture**
-- **Business Creation** → **Business Profile Page** (setup) → **Business Workspace** (daily work)
-- **Work Tab** → Shows affiliated businesses → **Business Workspace** (job-specific tools)
-- **Business Profile Page**: Business setup, branding, module selection, admin functions
-- **Business Workspace**: Daily work tools, module access, employee workspace
-
-### **Synchronization Requirements**
-- **Real-time updates**: Business changes reflect instantly in work tab
-- **Module consistency**: Employees only see business-enabled modules
-- **No page refresh**: Instant synchronization between contexts
-- **Single source of truth**: Business configuration context
-
-### **Implementation Phases**
-1. **Phase 1**: Business Configuration Context & WebSockets (current focus)
-2. **Phase 2**: Business Module Management (leverage existing marketplace)
-3. **Phase 3**: Permission System Foundation (basic role-based access)
-4. **Phase 4**: Org Chart & Advanced Permissions (departments, custom roles)
-
-### **Key Files to Modify**
-- **Frontend**: BusinessConfigurationContext (NEW), BrandedWorkDashboard, Business Workspace
-- **Backend**: Extend chatSocketService, business routes, module routes
-- **Database**: Business module installations and permissions schema
-
-### **User Preferences**
-- **End users cannot easily change their Block ID** (admin-only)
-- **Work on entire set of tasks at once** (don't stop between actions)
-- **Consistent global font and matching icons** (prefer Drive module icons)
-- **Run both Next.js frontend and Express backend** with `pnpm dev` from root
-
-### **AI Platform Phased Plan**
-- When building the AI platform roadmap, follow **memory-bank/AI_PLATFORM_PHASED_PLAN.md** phase by phase.
-- **Do not start the next phase** until the current phase is complete and the user confirms.
-- At the end of each phase, ask: **"Phase N is complete. Ready to start Phase N+1?"** and wait for the user to say yes (e.g. "Yes, start Phase N+1" or "ACT" with that intent).
+- **End users cannot easily change their Block ID** (admin-only).
+- **Work on entire set of tasks at once** (do not stop between actions without cause).
+- **Consistent global font and matching icons** (prefer Drive module icons).
+- **Run both Next.js frontend and Express backend** with `pnpm dev` from root.

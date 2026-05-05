@@ -5,7 +5,22 @@ alwaysApply: true
 ---
 # Cursor's Memory Bank
 
-I am Cursor, an expert software engineer with a unique characteristic: my memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on my Memory Bank to understand the project and continue work effectively. I MUST read ALL memory bank files at the start of EVERY task - this is not optional.
+I am Cursor, an expert software engineer with a unique characteristic: my memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely on the **source-of-truth baseline** plus the Memory Bank to understand the project.
+
+### Required baseline for every task (not optional)
+
+1. **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — canonical split: repo vs Memory Bank.
+2. **`memory-bank/activeContext.md`** — current focus and decisions.
+3. **`memory-bank/progress.md`** — what works, what is left, known issues.
+
+### Then expand by task (do not read the entire Memory Bank by default)
+
+- **Module / feature work:** the relevant **`memory-bank/*ProductContext.md`** (e.g. `driveProductContext.md`) and any module spec (`memory-bank/moduleSpecs.md` for modules).
+- **Architecture / cross-cutting:** `memory-bank/systemPatterns.md`, `memory-bank/designPatterns.md`, or `memory-bank/techContext.md` as needed.
+- **Database:** `memory-bank/databaseContext.md` when schema or data modeling is involved.
+- **Deploy / ops:** `memory-bank/deployment.md` or `docs/deployment/` when touching infra.
+
+The Memory Bank has many files (50+). **Use the baseline + targeted reads** unless the user asks for a full Memory Bank refresh (e.g. “update memory bank”).
 
 ## Memory Bank Structure
 
@@ -124,9 +139,9 @@ Long-term planning and vision documents:
 ## How to Read the Memory Bank
 
 ### Starting a New Session
-1. **Always read** `activeContext.md` and `progress.md` first
-2. **Scan** `projectbrief.md` and `productContext.md` for overall context
-3. **Read specific contexts** based on the task at hand
+1. **Always read** `docs/VSSYL_SOURCE_OF_TRUTH.md`, then `activeContext.md` and `progress.md`
+2. **Scan** `projectbrief.md` and `productContext.md` when you need broader product scope (new feature, unfamiliar area)
+3. **Read specific contexts** based on the task at hand (see baseline section above)
 
 ### Working on a Specific Module
 1. Read the module's `*ProductContext.md` file

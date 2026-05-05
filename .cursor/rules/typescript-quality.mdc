@@ -1,0 +1,33 @@
+---
+description: TypeScript safety, Express routers, Prisma JSON, when any is acceptable
+alwaysApply: true
+---
+
+# TypeScript quality
+
+## Default: no `any`
+
+Prefer specific interfaces, `unknown`, or `Record<string, unknown>`. Use **type guards** for runtime checks (e.g. `req.user`).
+
+## Express routers
+
+```typescript
+import express from 'express';
+const router: express.Router = express.Router();
+```
+
+## Prisma JSON
+
+Use `Prisma.InputJsonValue` for JSON columns on writes.
+
+## When `any` is acceptable
+
+Only with **eslint-disable** and a one-line reason, for genuinely dynamic shapes: some AI events, dynamic query builders, socket event payloads, or heterogeneous third-party payloads. Do **not** use `any` for ordinary helpers or known DTOs.
+
+## Common fixes
+
+- Replace `catch (error)` logging with `catch (error: unknown)` and normalize to `Error`.  
+- Avoid `let x: any = await prisma...` — let Prisma infer.  
+- Replace `req.query.foo as string` with validated string checks.
+
+**Last updated:** 2026-05-05

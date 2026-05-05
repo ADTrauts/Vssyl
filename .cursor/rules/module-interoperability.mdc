@@ -14,11 +14,11 @@ First-party and third-party modules **share the same contract**. Differences are
 ## Non-negotiables for any module change
 
 1. **Order of operations:** `authorize → execute → emit normalized activity → notify/realtime` (as applicable). **Never** emit or persist an activity event for a failed or unauthorized action.
-2. **Tenant scoping:** Every persisted read/write path must scope by authorized context (`dashboardId`, and `businessId` / `householdId` when in that context). Align with `backend-trust-boundaries.mdc` and `coding-standards.mdc` (multi-tenant isolation).
+2. **Tenant scoping:** Every persisted read/write path must scope by authorized context (`dashboardId`, and `businessId` / `householdId` when in that context). Align with `backend-trust-boundaries.mdc` and `api-and-auth.mdc` (multi-tenant isolation).
 3. **Normalized events:** Important actions must emit events compatible with the envelope in `moduleSpecs.md` (see `emitModuleActivityEvent` / platform patterns).
 4. **Activity vs analytics:** Immutable activity records describe what happened; analytics are derived separately — do not conflate.
 5. **Realtime:** User-targeted or room events must not leak data across tenants; membership must be proven before join/emit (see `chatSocketService` patterns).
-6. **Notifications:** If the module sends notifications, manifest metadata and `[module]_[event]` types must follow `module-development.mdc` and notification standards in `coding-standards.mdc`.
+6. **Notifications:** If the module sends notifications, manifest metadata and `[module]_[event]` types must follow `module-development.mdc` and `docs/guides/NOTIFICATION_METADATA_GUIDE.md`.
 7. **AI context:** If the module is AI-exposed, context providers and registration must follow `module-development.mdc` and `memory-bank/aiContextSystem.md`.
 
 ## Review and approval gates
@@ -30,7 +30,7 @@ First-party and third-party modules **share the same contract**. Differences are
 ## Where not to drift
 
 - Do not add new module routes or manifests without checking contract alignment.
-- Do not bypass the Next.js API proxy for user-facing client calls (`coding-standards.mdc`).
+- Do not bypass the Next.js API proxy for user-facing client calls (`api-and-auth.mdc`, `frontend-proxy-auth-consistency.mdc`).
 - Do not store partner-only analytics in the platform activity log as a substitute for real activity events.
 
 ## Related rules

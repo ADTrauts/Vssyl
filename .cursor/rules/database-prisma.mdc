@@ -1,0 +1,49 @@
+---
+description: Modular Prisma schema, pnpm commands, migrations, drift, connection pooling
+globs:
+  - prisma/**
+  - server/**
+---
+
+# Database and Prisma
+
+## Modular schema
+
+- Edit **`prisma/modules/**/*.prisma`** only.
+- **`prisma/schema.prisma` is generated** — never edit by hand.
+
+## Commands (pnpm only)
+
+Order: `pnpm prisma:build` → `pnpm prisma:generate` → migrate as needed. Use **`pnpm`** for Prisma, not `npx` / ad hoc `npm run` (lockfile version).
+
+## Drift and resets
+
+- Check **`pnpm prisma migrate status`** before destructive steps.
+- Prefer **`--create-only`** to review SQL before apply.
+- Use **`prisma migrate resolve`** when history and DB already match.
+- **Do not reset** the database to fix drift unless the user explicitly wants data loss.
+
+## Schema changes require migrations
+
+Any new model/field/relation must go through **`pnpm prisma migrate dev`** (or production `deploy`) after review. Skipping migrations has caused production breakage and data-loss risk.
+
+**Never edit applied migration files** — add a new migration instead.
+
+## Connection string and client
+
+- Production pool params: include `connection_limit` and `pool_timeout` (and appropriate timeouts) per `server/src/lib/prisma.ts`.
+- Encode special characters in URLs with `encodeURIComponent`.
+- Singleton `PrismaClient` via `global.prisma` pattern.
+
+## Examples: JSON fields
+
+Use `Prisma.InputJsonValue` for JSON columns in writes.
+
+## Quick “red flags”
+
+- Schema changed in modules but **no new migration folder**.  
+- Code references columns that **do not exist** in DB.  
+- Prisma reports **drift** — fix before shipping.
+
+**Operational detail:** `docs/guides/PRISMA_MIGRATION_DISCIPLINE.md`  
+**Last updated:** 2026-05-05
