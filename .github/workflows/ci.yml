@@ -38,6 +38,8 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+        working-directory: ./shared
       - run: pnpm prisma:generate
       - run: pnpm exec prisma migrate deploy --schema prisma/schema.prisma
       - run: pnpm type-check
