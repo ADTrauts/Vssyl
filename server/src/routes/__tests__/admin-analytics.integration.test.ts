@@ -88,16 +88,29 @@ describe('Admin Portal - Analytics Integration', () => {
       });
       userIdsToCleanup.push(newUser.id);
 
+      // Ensure the created user exists before reading aggregated stats
+      const persistedUser = await prisma.user.findUnique({ where: { id: newUser.id } });
+      expect(persistedUser).not.toBeNull();
+
+      // Other suites can create/delete users concurrently; bound expected value by
+      // counts sampled around the stats request.
+      const usersBeforeStats = await prisma.user.count();
+
       // Get updated stats
       const updatedResponse = await request(app)
         .get('/api/admin-portal/dashboard/stats')
         .set(createAuthHeader(adminUser))
         .expect(200);
+      const usersAfterStats = await prisma.user.count();
 
       const updatedStats = updatedResponse.body.data;
 
-      // User count should have increased
-      expect(updatedStats.totalUsers).toBeGreaterThanOrEqual(initialUserCount);
+      // User total should remain within observed bounds during this request window.
+      const lowerBound = Math.min(usersBeforeStats, usersAfterStats);
+      const upperBound = Math.max(usersBeforeStats, usersAfterStats);
+      expect(updatedStats.totalUsers).toBeGreaterThanOrEqual(lowerBound);
+      expect(updatedStats.totalUsers).toBeLessThanOrEqual(upperBound);
+      expect(updatedStats.totalUsers).toBeGreaterThan(0);
     });
   });
 
