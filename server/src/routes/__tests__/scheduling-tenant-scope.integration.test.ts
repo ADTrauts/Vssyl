@@ -38,6 +38,56 @@ async function createTestBusiness(name: string): Promise<Business> {
   });
 }
 
+async function ensureSchedulingModuleExists(): Promise<void> {
+  const existingModule = await prisma.module.findUnique({ where: { id: 'scheduling' } });
+  if (existingModule) return;
+
+  let developer = await prisma.user.findFirst({ select: { id: true } });
+  if (!developer) {
+    const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+    developer = await prisma.user.create({
+      data: {
+        email: `test-scheduling-dev-${suffix}@example.com`,
+        password: 'test-password',
+        name: 'Scheduling Test Developer',
+        role: 'ADMIN',
+      },
+      select: { id: true },
+    });
+  }
+
+  await prisma.module.create({
+    data: {
+      id: 'scheduling',
+      name: 'Employee Scheduling',
+      description:
+        'Employee shift scheduling and workforce planning for businesses with shift management, availability, and swap requests',
+      version: '1.0.0',
+      category: 'PRODUCTIVITY',
+      tags: ['scheduling', 'shifts', 'roster', 'staffing'],
+      icon: 'clock',
+      screenshots: [],
+      developerId: developer.id,
+      status: 'APPROVED',
+      downloads: 0,
+      rating: 0,
+      reviewCount: 0,
+      manifest: {
+        entryPoint: '/business/[id]/admin/scheduling',
+        permissions: ['scheduling:admin', 'scheduling:schedules:write'],
+        isBuiltIn: true,
+      },
+      dependencies: [],
+      permissions: ['scheduling:admin', 'scheduling:schedules:write'],
+      pricingTier: 'premium',
+      basePrice: 0,
+      enterprisePrice: 0,
+      isProprietary: true,
+      revenueSplit: 0,
+    },
+  });
+}
+
 describe('Scheduling admin — tenant scope (F-026 / F-027)', () => {
   const app = createSchedulingTestApp();
   const userIdsToCleanup: string[] = [];
@@ -51,12 +101,7 @@ describe('Scheduling admin — tenant scope (F-026 / F-027)', () => {
   let scheduleInAId: string;
 
   beforeAll(async () => {
-    const schedulingModule = await prisma.module.findUnique({ where: { id: 'scheduling' } });
-    if (!schedulingModule) {
-      throw new Error(
-        'Test requires Module id "scheduling" in DB (run server seed or registerBuiltInModules)'
-      );
-    }
+    await ensureSchedulingModuleExists();
 
     businessA = await createTestBusiness('Sched scope A');
     businessB = await createTestBusiness('Sched scope B');
