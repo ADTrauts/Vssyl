@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
+import Link from 'next/link';
 import { 
   Play, 
   CheckCircle, 
@@ -193,6 +194,34 @@ export default function TestingPage() {
           </div>
         </button>
       </div>
+
+      {/* Diagnostic Tools */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Diagnostic Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link
+            href="/admin-portal/test-auth"
+            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Test Auth</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Validate admin authentication flow</p>
+          </Link>
+          <Link
+            href="/admin-portal/test-api"
+            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Test API</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Run direct admin API checks</p>
+          </Link>
+          <Link
+            href="/admin-portal/debug-session"
+            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900 dark:text-gray-100">Debug Session</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Inspect session and client debug data</p>
+          </Link>
+        </div>
+      </Card>
 
       {/* Test Files List */}
       <Card className="p-6">

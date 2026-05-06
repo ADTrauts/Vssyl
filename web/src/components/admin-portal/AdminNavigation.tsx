@@ -1,25 +1,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Shield, 
-  BarChart3, 
-  CreditCard, 
-  Code, 
-  Lock, 
+import {
+  LayoutDashboard,
+  Users,
+  Shield,
+  BarChart3,
+  CreditCard,
+  Code,
+  Lock,
   Settings,
   Activity,
-  LogOut,
-  User,
   Eye,
-  Home,
-  DollarSign,
   Package,
   UserCheck,
-  Key,
-  Bug,
   Brain,
   MessageSquare,
   Gauge
@@ -87,10 +81,8 @@ const adminNavigation: AdminNavItem[] = [
   { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
   { id: 'performance', label: 'Performance & Scalability', icon: Gauge, path: '/admin-portal/performance' },
   { id: 'impersonation', label: 'Impersonation Lab', icon: Eye, path: '/admin-portal/impersonate' },
+  { id: 'testing', label: 'Testing & Debug', icon: Activity, path: '/admin-portal/testing' },
   { id: 'test-impersonation', label: 'Test Impersonation', icon: UserCheck, path: '/admin-portal/test-impersonation' },
-  { id: 'test-auth', label: 'Test Auth', icon: Key, path: '/admin-portal/test-auth' },
-  { id: 'debug-session', label: 'Debug Session', icon: Bug, path: '/admin-portal/debug-session' },
-  { id: 'test-api', label: 'Test API', icon: Code, path: '/admin-portal/test-api' },
 ];
 
 interface AdminNavigationProps {

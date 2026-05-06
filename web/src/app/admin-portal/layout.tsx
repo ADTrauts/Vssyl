@@ -94,11 +94,8 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
     { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
     { id: 'performance', label: 'Performance & Scalability', icon: Gauge, path: '/admin-portal/performance' },
-    { id: 'testing', label: 'Testing', icon: Activity, path: '/admin-portal/testing' },
+    { id: 'testing', label: 'Testing & Debug', icon: Activity, path: '/admin-portal/testing' },
     { id: 'impersonate', label: 'Impersonation Lab', icon: Eye, path: '/admin-portal/impersonate' },
-    { id: 'test-auth', label: 'Test Auth', icon: Key, path: '/admin-portal/test-auth' },
-    { id: 'debug-session', label: 'Debug Session', icon: Bug, path: '/admin-portal/debug-session' },
-    { id: 'test-api', label: 'Test API', icon: Code, path: '/admin-portal/test-api' },
   ];
 
   const currentSection = (pathname || '').split('/')[2] || 'dashboard';
