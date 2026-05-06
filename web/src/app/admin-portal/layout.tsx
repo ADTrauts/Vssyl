@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Shield, LayoutDashboard, Users, BarChart3, CreditCard, Code, Lock, Settings, Activity, LogOut, User, Eye, Home, DollarSign, Package, UserCheck, Key, Bug, Brain, MessageSquare, Search, FileText, Gauge } from 'lucide-react';
+import { Shield, Users, BarChart3, Code, Lock, Settings, Activity, Eye, Home, DollarSign, Package, Key, Brain, MessageSquare, FileText, Gauge, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
@@ -14,11 +14,25 @@ interface AdminPortalLayoutProps {
   children: React.ReactNode;
 }
 
+interface AdminNavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  path: string;
+}
+
+interface AdminNavSection {
+  id: string;
+  label: string;
+  items: AdminNavItem[];
+}
+
 const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pathname, setPathname] = useState<string>('/admin-portal/dashboard');
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   
   // Get pathname from Next.js hook - may return null during SSR
   const nextPathname = usePathname();
@@ -78,27 +92,84 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     );
   }
 
-  const adminNavigation = [
-    { id: 'dashboard', label: 'Overview', icon: Home, path: '/admin-portal/dashboard' },
-    { id: 'users', label: 'User Management', icon: Users, path: '/admin-portal/users' },
-    { id: 'overrides', label: 'Admin Overrides', icon: Key, path: '/admin-portal/overrides' },
-    { id: 'moderation', label: 'Content Moderation', icon: Shield, path: '/admin-portal/moderation' },
-    { id: 'analytics', label: 'Platform Analytics', icon: BarChart3, path: '/admin-portal/analytics' },
-    { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },
-    { id: 'pricing', label: 'Pricing Management', icon: DollarSign, path: '/admin-portal/pricing' },
-    { id: 'developers', label: 'Developer Management', icon: Code, path: '/admin-portal/developers' },
-    { id: 'security', label: 'Security & Compliance', icon: Lock, path: '/admin-portal/security' },
-    { id: 'system-logs', label: 'System Logs', icon: FileText, path: '/admin-portal/system-logs' },
-    { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
-    { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
-    { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
-    { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
-    { id: 'performance', label: 'Performance & Scalability', icon: Gauge, path: '/admin-portal/performance' },
-    { id: 'testing', label: 'Testing & Debug', icon: Activity, path: '/admin-portal/testing' },
-    { id: 'impersonate', label: 'Impersonation Lab', icon: Eye, path: '/admin-portal/impersonate' },
+  const adminNavigationSections: AdminNavSection[] = [
+    {
+      id: 'operations',
+      label: 'Operations',
+      items: [
+        { id: 'dashboard', label: 'Overview', icon: Home, path: '/admin-portal/dashboard' },
+        { id: 'users', label: 'User Management', icon: Users, path: '/admin-portal/users' },
+        { id: 'moderation', label: 'Content Moderation', icon: Shield, path: '/admin-portal/moderation' },
+        { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
+      ],
+    },
+    {
+      id: 'commercial',
+      label: 'Commercial',
+      items: [
+        { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },
+        { id: 'pricing', label: 'Pricing Management', icon: DollarSign, path: '/admin-portal/pricing' },
+        { id: 'business-intelligence', label: 'Business Intelligence', icon: Brain, path: '/admin-portal/business-intelligence' },
+      ],
+    },
+    {
+      id: 'platform',
+      label: 'Platform',
+      items: [
+        { id: 'analytics', label: 'Platform Analytics', icon: BarChart3, path: '/admin-portal/analytics' },
+        { id: 'performance', label: 'Performance & Scalability', icon: Gauge, path: '/admin-portal/performance' },
+        { id: 'security', label: 'Security & Compliance', icon: Lock, path: '/admin-portal/security' },
+        { id: 'system-logs', label: 'System Logs', icon: FileText, path: '/admin-portal/system-logs' },
+        { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
+      ],
+    },
+    {
+      id: 'developer-modules',
+      label: 'Developer & Modules',
+      items: [
+        { id: 'developers', label: 'Developer Management', icon: Code, path: '/admin-portal/developers' },
+        { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
+        { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
+      ],
+    },
+    {
+      id: 'admin-labs',
+      label: 'Admin Labs',
+      items: [
+        { id: 'overrides', label: 'Admin Overrides', icon: Key, path: '/admin-portal/overrides' },
+        { id: 'testing', label: 'Testing & Debug', icon: Activity, path: '/admin-portal/testing' },
+        { id: 'impersonate', label: 'Impersonation Lab', icon: Eye, path: '/admin-portal/impersonate' },
+      ],
+    },
   ];
 
   const currentSection = (pathname || '').split('/')[2] || 'dashboard';
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
+
+  useEffect(() => {
+    const activeParentSection = adminNavigationSections.find((section) =>
+      section.items.some((item) => item.id === currentSection)
+    );
+
+    if (activeParentSection) {
+      setCollapsedSections((prev) => {
+        if (!prev[activeParentSection.id]) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [activeParentSection.id]: false,
+        };
+      });
+    }
+  }, [currentSection, adminNavigationSections]);
 
   return (
     <ImpersonationProvider>
@@ -126,23 +197,41 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
         </header>
         <div className="flex">
           <aside className={`bg-gray-900 text-white flex flex-col transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-            <nav className="flex-1 py-4">
-              {adminNavigation.map(item => {
-                const Icon = item.icon;
-                const isActive = currentSection === item.id;
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.path}
-                    className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
-                      isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 mr-3" />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 py-4 overflow-y-auto">
+              {adminNavigationSections.map((section) => (
+                <div key={section.id} className="mb-4">
+                  {!sidebarCollapsed && (
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.id)}
+                      className="w-full flex items-center justify-between px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 hover:text-gray-200 transition-colors"
+                    >
+                      <span>{section.label}</span>
+                      {collapsedSections[section.id] ? (
+                        <ChevronRight className="w-3 h-3" />
+                      ) : (
+                        <ChevronDown className="w-3 h-3" />
+                      )}
+                    </button>
+                  )}
+                  {!collapsedSections[section.id] && section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentSection === item.id;
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.path}
+                        className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 mr-3" />
+                        {!sidebarCollapsed && <span>{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
             <div className="p-4 border-t border-gray-800">
               <button
