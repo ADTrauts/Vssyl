@@ -109,6 +109,13 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
       items: [
         { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },
         { id: 'pricing', label: 'Pricing Management', icon: DollarSign, path: '/admin-portal/pricing' },
+      ],
+    },
+    {
+      id: 'ai',
+      label: 'AI',
+      items: [
+        { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
         { id: 'business-intelligence', label: 'Business Intelligence', icon: Brain, path: '/admin-portal/business-intelligence' },
       ],
     },
@@ -129,7 +136,6 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
       items: [
         { id: 'developers', label: 'Developer Management', icon: Code, path: '/admin-portal/developers' },
         { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
-        { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
       ],
     },
     {
