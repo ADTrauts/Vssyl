@@ -194,7 +194,6 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     setReplyToMessage,
     setDashboardOverride,
     clearDashboardOverride,
-    loadConversations,
   } = useChat();
   
   // UI state (local only)
@@ -215,10 +214,9 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
       if (firstPersonal) {
         setSelectedDashboardId(firstPersonal.id);
         setDashboardOverride(firstPersonal.id);
-        loadConversations();
       }
     }
-  }, [chatDashboards, selectedDashboardId, getDashboardType, setDashboardOverride, loadConversations]);
+  }, [chatDashboards, selectedDashboardId, getDashboardType, setDashboardOverride]);
   
   // Calculate unread counts per dashboard (stops polling on 403 to avoid log spam after session expiry)
   useEffect(() => {
@@ -275,12 +273,9 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     if (dashboardId) {
       setDashboardOverride(dashboardId);
       setSelectedDashboardId(dashboardId);
-      // Reload conversations for selected dashboard
-      loadConversations();
     } else {
       clearDashboardOverride();
       setSelectedDashboardId(null);
-      loadConversations();
     }
   };
 

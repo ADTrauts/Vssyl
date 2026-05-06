@@ -85,7 +85,6 @@ const StackableChatContainer: React.FC = () => {
     removeReaction,
     setDashboardOverride,
     clearDashboardOverride,
-    loadConversations,
   } = useChat();
 
   // Local state for chat window management
@@ -110,10 +109,9 @@ const StackableChatContainer: React.FC = () => {
       if (firstPersonal) {
         setChatState(prev => ({ ...prev, selectedDashboardId: firstPersonal.id }));
         setDashboardOverride(firstPersonal.id);
-        loadConversations();
       }
     }
-  }, [chatDashboards, chatState.selectedDashboardId, getDashboardType, setDashboardOverride, loadConversations]);
+  }, [chatDashboards, chatState.selectedDashboardId, getDashboardType, setDashboardOverride]);
   
   // Calculate unread counts per dashboard (stops polling on 403 to avoid log spam after session expiry)
   useEffect(() => {
@@ -170,11 +168,9 @@ const StackableChatContainer: React.FC = () => {
     if (dashboardId) {
       setDashboardOverride(dashboardId);
       setChatState(prev => ({ ...prev, selectedDashboardId: dashboardId }));
-      loadConversations();
     } else {
       clearDashboardOverride();
       setChatState(prev => ({ ...prev, selectedDashboardId: null }));
-      loadConversations();
     }
   };
 

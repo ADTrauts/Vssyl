@@ -58,6 +58,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [attachments, setAttachments] = useState<Array<{ file: File; id: string; uploading: boolean; error?: string }>>([]);
   const [dashboardOverride, setDashboardOverrideState] = useState<string | null>(null);
+  const conversationsRequestInFlightRef = useRef<string | null>(null);
+  const lastConversationsRequestAtRef = useRef<Map<string, number>>(new Map());
   
   const effectiveDashboardId = dashboardOverride ?? currentDashboardId ?? undefined;
 
@@ -66,6 +68,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // Load conversations
   const loadConversations = useCallback(async () => {
     if (!session?.accessToken) return;
+
+    const requestKey = `${session?.user?.id ?? 'unknown'}:${effectiveDashboardId ?? 'all'}`;
+    const now = Date.now();
+    const lastRunAt = lastConversationsRequestAtRef.current.get(requestKey);
+
+    // Ignore near-simultaneous duplicate loads for the same dashboard/user scope.
+    if (conversationsRequestInFlightRef.current === requestKey) {
+      return;
+    }
+
+    if (typeof lastRunAt === 'number' && now - lastRunAt < 500) {
+      return;
+    }
+
+    conversationsRequestInFlightRef.current = requestKey;
+    lastConversationsRequestAtRef.current.set(requestKey, now);
 
     try {
       setIsLoading(true);
@@ -88,6 +106,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       console.error('Failed to load conversations:', error);
       setError('Failed to load conversations');
     } finally {
+      if (conversationsRequestInFlightRef.current === requestKey) {
+        conversationsRequestInFlightRef.current = null;
+      }
       setIsLoading(false);
     }
   }, [session?.accessToken, session?.user?.id, effectiveDashboardId]);

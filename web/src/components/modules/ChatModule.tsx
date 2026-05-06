@@ -36,12 +36,11 @@ export default function ChatModule({
     }
 
     setDashboardOverride(dashboardId);
-    void loadConversations();
 
     return () => {
       clearDashboardOverride(dashboardId);
     };
-  }, [dashboardId, setDashboardOverride, clearDashboardOverride, loadConversations]);
+  }, [dashboardId, setDashboardOverride, clearDashboardOverride]);
 
   // Listen for item restored events from trash
   useEffect(() => {
