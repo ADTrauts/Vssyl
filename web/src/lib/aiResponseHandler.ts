@@ -23,6 +23,7 @@ export interface TwinResponseData {
   fileIssues?: FileIssue[];
   /** Optional: true when the model used vision parts (images) in this reply; UI shows "Image used in this reply". */
   usedVisionParts?: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AIConversationItemBase {
@@ -78,6 +79,7 @@ export function buildAIConversationItemFromTwinData(
     metadata: {
       reasoning: data.reasoning,
       actions: Array.isArray(data.actions) ? data.actions : [],
+      ...(data.metadata ? { twinMetadata: data.metadata } : {}),
     },
   };
 
@@ -108,6 +110,9 @@ export function buildAddMessagePayloadFromTwinData(data: TwinResponseData): {
     reasoning: data.reasoning,
     actions: Array.isArray(data.actions) ? data.actions : [],
   };
+  if (data.metadata != null) metadata.twinMetadata = data.metadata;
+  if (data.metadata?.continuityState != null) metadata.continuityState = data.metadata.continuityState;
+  if (data.metadata?.activeTopic != null) metadata.activeTopic = data.metadata.activeTopic;
   if (data.structured != null) metadata.structured = data.structured;
   if (Array.isArray(data.fileIssues) && data.fileIssues.length > 0) metadata.fileIssues = data.fileIssues;
   if (data.usedVisionParts === true) metadata.usedVisionParts = true;

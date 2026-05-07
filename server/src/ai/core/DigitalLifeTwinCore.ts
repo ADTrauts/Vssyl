@@ -18,6 +18,12 @@ import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
 import { assembleAIContext } from '../context/AIContextAssembler';
 import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
+import {
+  updateConversationContinuityState,
+  type ConversationContinuityState,
+  type ActiveTopicState,
+} from '../utils/conversationContinuity';
+import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -61,6 +67,9 @@ export interface DigitalLifeTwinResponse {
     };
     /** Debug: quality guardrail warnings from validateAIResponseQuality (additive). */
     aiResponseQualityWarnings?: string[];
+    responseMode?: AIResponseMode;
+    continuityState?: ConversationContinuityState;
+    activeTopic?: ActiveTopicState;
   };
 }
 
@@ -109,6 +118,7 @@ export interface ConversationHistoryItem {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp?: Date | string;
+  metadata?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -132,9 +142,13 @@ export interface LifeTwinQuery {
     fileIds?: string[];
     /** When set (e.g. business workspace), module context fetches use this tenant explicitly. */
     businessId?: string;
+    /** Optional response mode override from caller. */
+    responseMode?: AIResponseMode;
   };
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
+  continuityState?: ConversationContinuityState;
+  activeTopic?: ActiveTopicState;
   preferredProvider?: 'auto' | 'openai' | 'anthropic';
   /** Optional model id override (e.g. gpt-4o-mini). Validated in Core against modelCatalog. */
   preferredModel?: string;
@@ -581,6 +595,16 @@ export class DigitalLifeTwinCore {
 
       // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
       const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
+      const responseMode = inferResponseMode({
+        query: query.query,
+        explicitMode: query.context.responseMode,
+      });
+      const continuityUpdate = updateConversationContinuityState({
+        latestUserMessage: query.query,
+        recentMessages: query.conversationHistory ?? [],
+        previousState: query.continuityState,
+        previousTopic: query.activeTopic,
+      });
       
       // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, attached file context, and vision images)
       const t0_provider = Date.now();
@@ -593,6 +617,9 @@ export class DigitalLifeTwinCore {
         semanticEnhancement,
         userDefinedContext,
         globalPatterns,
+        responseMode,
+        continuityUpdate.continuity,
+        continuityUpdate.activeTopic,
         attachedFiles,
         visionImageParts,
         { requestId, conversationId, userId: query.userId },
@@ -721,6 +748,9 @@ export class DigitalLifeTwinCore {
           patternMatches: response.patternMatches || [],
           processingTime,
           provider: response.provider || 'hybrid',
+          responseMode,
+          continuityState: continuityUpdate.continuity,
+          activeTopic: continuityUpdate.activeTopic,
           ...(response.aiResponseQualityWarnings &&
             response.aiResponseQualityWarnings.length > 0 && {
               aiResponseQualityWarnings: response.aiResponseQualityWarnings,
@@ -802,7 +832,8 @@ export class DigitalLifeTwinCore {
       relevantRelationships,
       requiresAction: this.requiresAction(queryLower),
       moduleContext: query.context.currentModule,
-      complexity: this.calculateQueryComplexity(queryLower, scope, relevantPatterns.length)
+      complexity: this.calculateQueryComplexity(queryLower, scope, relevantPatterns.length),
+      responseMode: inferResponseMode({ query: query.query, explicitMode: query.context.responseMode }),
     };
   }
 
@@ -819,6 +850,9 @@ export class DigitalLifeTwinCore {
     semanticEnhancement?: any,
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
+    responseMode?: AIResponseMode,
+    continuityState?: ConversationContinuityState,
+    activeTopic?: ActiveTopicState,
     attachedFiles?: AttachedFileContext[],
     visionImageParts?: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>,
     traceContext?: { requestId?: string; conversationId?: string; userId?: string },
@@ -834,6 +868,9 @@ export class DigitalLifeTwinCore {
       semanticEnhancement,
       userDefinedContext,
       globalPatterns,
+      responseMode,
+      continuityState,
+      activeTopic,
       attachedFiles
     );
     
@@ -1090,6 +1127,9 @@ export class DigitalLifeTwinCore {
     semanticEnhancement?: any,
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
+    responseMode?: AIResponseMode,
+    continuityState?: ConversationContinuityState,
+    activeTopic?: ActiveTopicState,
     attachedFiles?: AttachedFileContext[]
   ): string {
     const currentTime = new Date().toLocaleString();
@@ -1221,6 +1261,19 @@ ${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ?
 - Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
 - Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
 
+RESPONSE MODE:
+- ${responseMode || 'conversational'}
+
+CONVERSATION CONTINUITY (PRIVATE):
+${continuityState ? `- Current topic: ${continuityState.currentTopic || 'n/a'}
+- Active entities: ${(continuityState.activeEntities || []).join(', ') || 'n/a'}
+- User goal: ${continuityState.userGoal || 'n/a'}
+- Emotional tone: ${continuityState.emotionalTone || 'n/a'}
+- Momentum: ${continuityState.conversationMomentum || 'n/a'}` : '- No continuity state available'}
+${activeTopic ? `- Active topic label: ${activeTopic.label}
+- Active topic entities: ${activeTopic.entities.join(', ') || 'n/a'}
+- Active topic confidence: ${Math.round(activeTopic.confidence * 100)}%` : '- No active topic available'}
+
 ${attachedFilesSection}
 
 COLLECTIVE LEARNING (System-wide patterns from all users):
@@ -1261,6 +1314,8 @@ Your response should:
 - Show awareness of their current context and priorities
 - Be helpful while respecting their autonomy preferences
 - CRITICALLY: Follow any user-defined context instructions above - these are explicit preferences and workflows the user has defined${userContextSection}
+- In conversational mode, do not expose internal scaffolding terms like "assumptions", "risks", "based on", or confidence labels in the user-facing prose.
+- Only expose internal scaffolding directly when response mode is debug.
 
 FORMATTING FOR READABILITY:
 - Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.

@@ -12,7 +12,11 @@ export interface AIContextAssemblyQuery {
   userId: string;
   context: Record<string, unknown>;
   conversationHistory?: Array<{ role: string; content: string; timestamp?: Date | string }>;
+  continuityState?: unknown;
+  activeTopic?: unknown;
 }
+
+export type AIContextTier = 'tier1_recent_conversation' | 'tier2_continuity' | 'tier3_profile' | 'tier4_cross_module';
 
 export interface AIContextAssemblyAttachedFile {
   id: string;
@@ -49,6 +53,8 @@ export interface AIAssembledContext {
     sourceType: AIAssembledEvidenceSourceType;
     content: unknown;
     priority: 'low' | 'medium' | 'high';
+    tier?: AIContextTier;
+    inclusionReason?: string;
     /** Set after relevance ranking (debug / tuning). */
     relevanceScore?: number;
     /** Estimated tokens for this block after budgeting (debug / tuning). */
@@ -224,6 +230,11 @@ export function scoreContextBlock(input: {
   let score =
     block.priority === 'high' ? 60 : block.priority === 'medium' ? 40 : 20;
 
+  if (block.tier === 'tier1_recent_conversation') score += 22;
+  if (block.tier === 'tier2_continuity') score += 16;
+  if (block.tier === 'tier3_profile') score += 8;
+  if (block.tier === 'tier4_cross_module') score -= 4;
+
   const tokens = queryTokens(queryText);
   for (const t of tokens) {
     if (titleLower.includes(t) || source === t) {
@@ -289,10 +300,16 @@ function rankContextBlocksForProvider(
     ...b,
     relevanceScore: scoreContextBlock({ queryText, block: b, currentModule }),
   }));
-  scored.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
+  const filtered = scored.filter((b) => {
+    if (b.tier === 'tier4_cross_module') {
+      return (b.relevanceScore ?? 0) >= 35 || b.priority === 'high';
+    }
+    return true;
+  });
+  filtered.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
 
-  const highs = scored.filter((b) => b.priority === 'high');
-  const others = scored.filter((b) => b.priority !== 'high');
+  const highs = filtered.filter((b) => b.priority === 'high');
+  const others = filtered.filter((b) => b.priority !== 'high');
   const out: typeof scored = [...highs];
   for (const b of others) {
     if (out.length >= MAX_CONTEXT_BLOCKS_AFTER_RANK) break;
@@ -302,11 +319,13 @@ function rankContextBlocksForProvider(
   void logger.debug('[AI_CONTEXT_RELEVANCE]', {
     totalBlocksBefore,
     totalBlocksAfter: out.length,
-    topBlocks: scored.slice(0, 5).map((b) => ({
+    topBlocks: filtered.slice(0, 5).map((b) => ({
       title: b.title,
       sourceType: b.sourceType,
+      tier: b.tier,
       priority: b.priority,
       score: b.relevanceScore,
+      inclusionReason: b.inclusionReason,
     })),
   });
 
@@ -407,6 +426,17 @@ export function applyContextBudget(input: {
     blocksBefore,
     blocksAfter: result.length,
     estimatedTokensKept,
+    considered: blocksBefore,
+    injected: result.length,
+    topRelevanceScores: blocks
+      .map((b) => ({ title: b.title, score: b.relevanceScore ?? 0, tier: b.tier }))
+      .sort((a, c) => c.score - a.score)
+      .slice(0, 5),
+    inclusionReasons: result.slice(0, 8).map((b) => ({
+      title: b.title,
+      tier: b.tier,
+      reason: b.inclusionReason ?? 'ranked within budget',
+    })),
   });
 
   return result;
@@ -438,6 +468,17 @@ function inferIntent(queryText: string): AIAssembledContext['intent'] {
   if (/\b(compare|versus|vs\.?|difference)\b/.test(q)) return 'comparison';
   if (/\b(status|update|progress)\b/.test(q)) return 'status_update';
   return 'answer';
+}
+
+function inferTierForBlock(block: AIAssembledContext['contextBlocks'][number]): AIContextTier {
+  if (block.tier) return block.tier;
+  const title = block.title.toLowerCase();
+  if (title.includes('conversation history')) return 'tier1_recent_conversation';
+  if (title.includes('continuity') || title.includes('active topic')) return 'tier2_continuity';
+  if (title.includes('user-defined') || title.includes('preferences') || title.includes('personality')) {
+    return 'tier3_profile';
+  }
+  return 'tier4_cross_module';
 }
 
 function countDistinctContextSources(blocks: AIAssembledContext['contextBlocks']): number {
@@ -514,6 +555,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       currentModule: currentModule ?? null,
     },
     priority: 'high',
+    tier: 'tier4_cross_module',
+    inclusionReason: 'module focus baseline',
   });
   evidence.push({
     label: 'User module context (active modules & focus)',
@@ -523,12 +566,54 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   });
 
   const recentActivity = ctx.recentActivity;
+  if (query.continuityState || query.activeTopic) {
+    contextBlocks.push({
+      title: 'Conversation continuity state',
+      sourceType: 'chat',
+      content: {
+        continuityState: query.continuityState ?? null,
+        activeTopic: query.activeTopic ?? null,
+      },
+      priority: 'high',
+      tier: 'tier2_continuity',
+      inclusionReason: 'carry forward active topic and user goal',
+    });
+    evidence.push({
+      label: 'Continuity/topic state from prior turns',
+      sourceType: 'chat',
+      confidence: 'high',
+    });
+  }
+
+  const history = query.conversationHistory;
+  if (Array.isArray(history) && history.length > 0) {
+    contextBlocks.push({
+      title: 'Conversation history (excerpt)',
+      sourceType: 'chat',
+      content: history.slice(-10).map((m) => ({
+        role: m.role,
+        content: typeof m.content === 'string' ? truncateString(m.content, 800) : m.content,
+      })),
+      priority: 'high',
+      tier: 'tier1_recent_conversation',
+      inclusionReason: 'maintain recent conversational continuity',
+    });
+    evidence.push({
+      label: 'Prior messages in this conversation',
+      sourceType: 'chat',
+      detail: `${history.length} message(s)`,
+      confidence: 'high',
+    });
+  }
+
   if (Array.isArray(recentActivity) && recentActivity.length > 0) {
     contextBlocks.push({
       title: 'Recent activity (request context)',
       sourceType: 'system',
       content: recentActivity.slice(0, 20),
       priority: 'medium',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'request-supplied recent activity context',
     });
     evidence.push({
       label: 'Recent activity items supplied with the request',
@@ -551,6 +636,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         sourceType: 'calendar',
         content: calendarSlice,
         priority: 'medium',
+        tier: 'tier4_cross_module',
+        inclusionReason: 'calendar relevance from activity context',
       });
       evidence.push({
         label: 'Calendar-tagged items in recent activity',
@@ -571,6 +658,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         modules: i.modules,
       })),
       priority: 'medium',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'cross-module insights for broader context',
     });
     evidence.push({
       label: 'Cross-module insights from context engine',
@@ -590,6 +679,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         confidence: p.confidence,
       })),
       priority: 'low',
+      tier: 'tier3_profile',
+      inclusionReason: 'persistent user behavior patterns',
     });
     evidence.push({
       label: 'Behavioral/context patterns',
@@ -645,6 +736,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         content: typeof c.content === 'string' ? truncateString(c.content, 2000) : c.content,
       })),
       priority: 'high',
+      tier: 'tier3_profile',
+      inclusionReason: 'explicit user-defined preferences/instructions',
     });
     evidence.push({
       label: 'User-defined context entries',
@@ -660,6 +753,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       sourceType: 'system',
       content: globalPatterns.slice(0, 8),
       priority: 'low',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'collective patterns when relevant',
     });
     evidence.push({
       label: 'Global/collective patterns',
@@ -677,6 +772,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         dashboardBusinessPresent: !!dashboardCtx?.business,
       },
       priority: 'high',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'tenant isolation and scope guardrail',
     });
     evidence.push({
       label: 'Business tenant context',
@@ -692,6 +789,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       sourceType: 'personal',
       content: { householdPresent: true },
       priority: 'medium',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'household tenant scope context',
     });
     evidence.push({
       label: 'Household dashboard context',
@@ -700,24 +799,6 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     });
   }
 
-  const history = query.conversationHistory;
-  if (Array.isArray(history) && history.length > 0) {
-    contextBlocks.push({
-      title: 'Conversation history (excerpt)',
-      sourceType: 'chat',
-      content: history.slice(-10).map((m) => ({
-        role: m.role,
-        content: typeof m.content === 'string' ? truncateString(m.content, 800) : m.content,
-      })),
-      priority: 'medium',
-    });
-    evidence.push({
-      label: 'Prior messages in this conversation',
-      sourceType: 'chat',
-      detail: `${history.length} message(s)`,
-      confidence: 'high',
-    });
-  }
 
   const queryMentionsFile = /\b(file|files|document|pdf|attachment|drive|upload|spreadsheet)\b/i.test(query.query);
   const hasFiles = !!(attachedFiles && attachedFiles.length > 0);
@@ -759,6 +840,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
 
   const compressedBlocks = contextBlocks.map((block) => ({
     ...block,
+    tier: inferTierForBlock(block),
+    inclusionReason: block.inclusionReason ?? 'context block selected for provider prompt',
     content: compressBlockContent(block),
   }));
 

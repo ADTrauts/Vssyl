@@ -10,6 +10,7 @@ import { ActionExecutor } from './ActionExecutor';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type ConversationHistoryItem } from './DigitalLifeTwinCore';
 import type { StructuredAIResponse } from '../types/structuredResponse';
+import type { ConversationContinuityState, ActiveTopicState } from '../utils/conversationContinuity';
 
 export interface AIRequest {
   id: string;
@@ -128,6 +129,7 @@ export class DigitalLifeTwinService {
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
     let conversationHistory: ConversationHistoryItem[] = [];
+    let continuityContext: { continuityState?: ConversationContinuityState; activeTopic?: ActiveTopicState } = {};
 
     if (context.conversationId && typeof context.conversationId === 'string') {
       try {
@@ -148,6 +150,10 @@ export class DigitalLifeTwinService {
             role: m.role as ConversationHistoryItem['role'],
             content: m.content,
             timestamp: m.createdAt,
+            metadata:
+              m.metadata && typeof m.metadata === 'object' && !Array.isArray(m.metadata)
+                ? (m.metadata as Record<string, unknown>)
+                : undefined,
           }));
           // Skip duplicate: frontend already saved the current message, so drop it if it matches
           const last = reversed[reversed.length - 1];
@@ -155,6 +161,22 @@ export class DigitalLifeTwinService {
             reversed.pop();
           }
           conversationHistory = reversed;
+          const lastAssistantWithMetadata = [...messages]
+            .reverse()
+            .find((m) => m.role === 'assistant' && m.metadata && typeof m.metadata === 'object');
+          if (lastAssistantWithMetadata?.metadata && typeof lastAssistantWithMetadata.metadata === 'object') {
+            const meta = lastAssistantWithMetadata.metadata as Record<string, unknown>;
+            continuityContext = {
+              continuityState:
+                meta.continuityState && typeof meta.continuityState === 'object' && !Array.isArray(meta.continuityState)
+                  ? (meta.continuityState as ConversationContinuityState)
+                  : undefined,
+              activeTopic:
+                meta.activeTopic && typeof meta.activeTopic === 'object' && !Array.isArray(meta.activeTopic)
+                  ? (meta.activeTopic as ActiveTopicState)
+                  : undefined,
+            };
+          }
         }
       } catch (err) {
         console.warn('Failed to load conversation history for twin:', err);
@@ -166,6 +188,7 @@ export class DigitalLifeTwinService {
       userId,
       context: context as Record<string, unknown>,
       conversationHistory,
+      ...continuityContext,
       preferredProvider: context.preferredProvider,
       preferredModel: context.preferredModel,
     };
@@ -196,6 +219,7 @@ export class DigitalLifeTwinService {
     onDone?: (response: DigitalLifeTwinResponse) => Promise<void>
   ): Promise<void> {
     let conversationHistory: ConversationHistoryItem[] = [];
+    let continuityContext: { continuityState?: ConversationContinuityState; activeTopic?: ActiveTopicState } = {};
     if (context.conversationId && typeof context.conversationId === 'string') {
       try {
         const conversation = await this.prisma.aIConversation.findFirst({
@@ -211,12 +235,32 @@ export class DigitalLifeTwinService {
             role: m.role as ConversationHistoryItem['role'],
             content: m.content,
             timestamp: m.createdAt,
+            metadata:
+              m.metadata && typeof m.metadata === 'object' && !Array.isArray(m.metadata)
+                ? (m.metadata as Record<string, unknown>)
+                : undefined,
           }));
           const last = reversed[reversed.length - 1];
           if (last?.role === 'user' && (last.content || '').trim() === (query || '').trim()) {
             reversed.pop();
           }
           conversationHistory = reversed;
+          const lastAssistantWithMetadata = [...messages]
+            .reverse()
+            .find((m) => m.role === 'assistant' && m.metadata && typeof m.metadata === 'object');
+          if (lastAssistantWithMetadata?.metadata && typeof lastAssistantWithMetadata.metadata === 'object') {
+            const meta = lastAssistantWithMetadata.metadata as Record<string, unknown>;
+            continuityContext = {
+              continuityState:
+                meta.continuityState && typeof meta.continuityState === 'object' && !Array.isArray(meta.continuityState)
+                  ? (meta.continuityState as ConversationContinuityState)
+                  : undefined,
+              activeTopic:
+                meta.activeTopic && typeof meta.activeTopic === 'object' && !Array.isArray(meta.activeTopic)
+                  ? (meta.activeTopic as ActiveTopicState)
+                  : undefined,
+            };
+          }
         }
       } catch (err) {
         console.warn('Failed to load conversation history for twin (streaming):', err);
@@ -227,6 +271,7 @@ export class DigitalLifeTwinService {
       userId,
       context: context as Record<string, unknown>,
       conversationHistory,
+      ...continuityContext,
       preferredProvider: context.preferredProvider,
       preferredModel: context.preferredModel,
     };

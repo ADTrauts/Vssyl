@@ -13,6 +13,7 @@ import {
   type AIResponseMode,
   type StructuredResponseType,
 } from '../types/structuredResponse';
+import { polishConversationalResponse } from './conversationalPolish';
 
 /**
  * Extract JSON from markdown code blocks (```json ... ```) or return the string as-is.
@@ -123,7 +124,7 @@ function plainTextFromStructured(structured: StructuredAIResponse): string {
       }
     });
   }
-  return parts.join('\n').trim() || 'No content';
+  return polishConversationalResponse(parts.join('\n').trim() || 'No content');
 }
 
 function isStructuredAIResponse(value: unknown): value is StructuredAIResponse {
@@ -324,7 +325,7 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
       structured.summary = response.slice(0, 240) || 'No content';
     }
     return {
-      response,
+      response: polishConversationalResponse(response),
       confidence,
       reasoning,
       actions: actions as Array<Record<string, unknown>> | undefined,
@@ -340,7 +341,7 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
         ? parsedRecord.message.trim()
         : '';
   return {
-    response: response || 'No response generated.',
+    response: polishConversationalResponse(response || 'No response generated.'),
     confidence,
     reasoning,
     actions: actions as Array<Record<string, unknown>> | undefined,

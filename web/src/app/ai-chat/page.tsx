@@ -123,6 +123,8 @@ export default function AIChat() {
   const [editImageBackground, setEditImageBackground] = useState<'auto' | 'transparent' | 'opaque'>('auto');
   const [isEditingImage, setIsEditingImage] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  // TODO(ai-debug): wire to admin/developer toggle when debug mode surface is introduced.
+  const showAIDetails = false;
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -643,7 +645,7 @@ export default function AIChat() {
         let buffer = '';
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let fullData: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse } | undefined;
+        let fullData: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } | undefined;
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -664,7 +666,7 @@ export default function AIChat() {
                   ));
                 }
                 if (payload.done === true && payload.data) {
-                  fullData = payload.data as { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse };
+                  fullData = payload.data as { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> };
                 }
               } catch (e) {
                 if (e instanceof SyntaxError) continue;
@@ -683,7 +685,7 @@ export default function AIChat() {
           }
         }
       } else {
-        const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse } };
+        const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } };
         if (!json.success || !json.data) {
           throw new Error('Invalid response structure from AI service');
         }
@@ -2063,6 +2065,7 @@ export default function AIChat() {
                                   confidence={item.confidence}
                                   textColor="text-gray-700"
                                   collapsibleSections
+                                  showOrchestrationDetails={showAIDetails}
                                   onAction={(action) => {
                                     if (action.href) {
                                       if (action.href.startsWith('http')) window.open(action.href, '_blank');
@@ -2089,22 +2092,6 @@ export default function AIChat() {
                             ) : (
                               <>
                                 <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
-                                {item.confidence !== undefined && (
-                                  <div className="flex items-center space-x-2 mt-2">
-                                    <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                                      <div 
-                                        className={`h-1.5 rounded-full ${
-                                          item.confidence > 0.7 ? 'bg-green-500' :
-                                          item.confidence > 0.4 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}
-                                        style={{ width: `${item.confidence * 100}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                                      {Math.round(item.confidence * 100)}%
-                                    </span>
-                                  </div>
-                                )}
                                 {item.fileIssues && item.fileIssues.length > 0 && (
                                   <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>

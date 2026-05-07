@@ -7,6 +7,7 @@ Long-lived execution plans, audits, and feature roadmaps. **Active “what’s n
 | Topic | File |
 |-------|------|
 | **Open work after audit / AI phases** | `PROJECT_NEXT_PHASE_OPEN_WORK.md` |
+| AI conversational continuity + rendering source of truth | `AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` |
 | System audit tracker | `SYSTEM_AUDIT_SOURCE_OF_TRUTH.md` |
 | Module interoperability alignment (core + 3rd-party) — **complete** | `MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md` |
 | Module upload backend | `MODULE_UPLOAD_BACKEND_PHASED_PLAN.md` |

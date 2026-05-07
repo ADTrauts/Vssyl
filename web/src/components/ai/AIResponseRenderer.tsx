@@ -101,6 +101,8 @@ export interface AIResponseRendererProps {
   allowMarkdown?: boolean;
   /** When true, section content is collapsible via the heading */
   collapsibleSections?: boolean;
+  /** Internal orchestration/debug details (evidence, assumptions, risks, confidence, rec actions). */
+  showOrchestrationDetails?: boolean;
 }
 
 function isV2Structured(s: StructuredAIResponse): boolean {
@@ -131,6 +133,7 @@ export default function AIResponseRenderer({
   onAction,
   allowMarkdown = true,
   collapsibleSections = false,
+  showOrchestrationDetails = false,
 }: AIResponseRendererProps) {
   const isV2 = useMemo(() => isV2Structured(structured), [structured]);
 
@@ -248,7 +251,7 @@ export default function AIResponseRenderer({
           </div>
         ) : null}
 
-        {keyInsights.length > 0 ? (
+        {showOrchestrationDetails && keyInsights.length > 0 ? (
           <div className="rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200 mb-1.5">
               <Lightbulb className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
@@ -262,7 +265,7 @@ export default function AIResponseRenderer({
           </div>
         ) : null}
 
-        {evidence.length > 0 ? (
+        {showOrchestrationDetails && evidence.length > 0 ? (
           <div className="rounded-md border border-gray-200 dark:border-slate-600 bg-gray-50/80 dark:bg-slate-800/50 px-3 py-2">
             <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 mb-1.5">
               <Link2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
@@ -286,7 +289,7 @@ export default function AIResponseRenderer({
           </div>
         ) : null}
 
-        {watchoutCount > 0 ? (
+        {showOrchestrationDetails && watchoutCount > 0 ? (
           <div className="rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-900/40 px-3 py-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 mb-2">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
@@ -358,7 +361,7 @@ export default function AIResponseRenderer({
           </div>
         ) : null}
 
-        {recActions.length > 0 ? (
+        {showOrchestrationDetails && recActions.length > 0 ? (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">Recommended actions</p>
             <ul className="space-y-2">
@@ -382,7 +385,7 @@ export default function AIResponseRenderer({
           </div>
         ) : null}
 
-        {structured.confidence?.level ? (
+        {showOrchestrationDetails && structured.confidence?.level ? (
           <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-slate-700">
             <ShieldCheck className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 opacity-80" aria-hidden />
             <div>
@@ -550,6 +553,7 @@ export default function AIResponseRenderer({
   );
 
   const showNumericConfidence =
+    showOrchestrationDetails &&
     confidence !== undefined &&
     confidence < 1 &&
     !(isV2 && structured.confidence?.level);

@@ -149,6 +149,8 @@ export default function AIChatDropdown({
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestionActionId, setSuggestionActionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // TODO(ai-debug): wire to admin/developer toggle for internal AI details.
+  const showAIDetails = false;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -536,6 +538,7 @@ export default function AIChatDropdown({
             reasoning: string;
           }>;
           structured?: StructuredAIResponse;
+          metadata?: Record<string, unknown>;
         }
       }>(
         '/api/ai/twin',
@@ -973,6 +976,9 @@ export default function AIChatDropdown({
           content: msg.content,
           timestamp: new Date(msg.createdAt),
           confidence: msg.confidence,
+          structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+          fileIssues: msg.metadata?.fileIssues as FileIssue[] | undefined,
+          usedVisionParts: msg.metadata?.usedVisionParts as boolean | undefined,
           aiResponse: msg.role === 'assistant' ? {
             id: msg.id,
             response: msg.content,
@@ -1245,6 +1251,7 @@ export default function AIChatDropdown({
                                     structured={item.structured}
                                     confidence={item.confidence}
                                     textColor="text-gray-700"
+                                    showOrchestrationDetails={showAIDetails}
                                     onAction={(action) => {
                                       if (action.href) {
                                         if (action.href.startsWith('http')) window.open(action.href, '_blank');
@@ -1271,27 +1278,6 @@ export default function AIChatDropdown({
                               ) : (
                                 <>
                                   <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
-                                  {item.aiResponse?.actions && item.aiResponse.actions.length > 0 && (
-                                    <div className="mt-2 space-y-1">
-                                      {item.aiResponse.actions.map((action, index) => (
-                                        <div key={index} className="bg-purple-50 rounded px-2 py-1">
-                                          <span className="text-xs text-purple-700">
-                                            {action.type}: {action.operation}
-                                          </span>
-                                          {action.requiresApproval && (
-                                            <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
-                                              Approval Required
-                                            </span>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {item.confidence !== undefined && (
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                      Confidence: {Math.round(item.confidence * 100)}%
-                                    </p>
-                                  )}
                                   {item.fileIssues && item.fileIssues.length > 0 && (
                                     <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>

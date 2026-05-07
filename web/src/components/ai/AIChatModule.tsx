@@ -25,6 +25,7 @@ import {
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
+import type { FileIssue } from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 
@@ -36,6 +37,8 @@ interface ConversationItem {
   confidence?: number;
   metadata?: Record<string, unknown>;
   structured?: StructuredAIResponse;
+  fileIssues?: FileIssue[];
+  usedVisionParts?: boolean;
   attachments?: { fileIds: string[] };
 }
 
@@ -74,6 +77,8 @@ export default function AIChatModule({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
+  // TODO(ai-debug): wire to admin/developer toggle for internal AI details.
+  const showAIDetails = false;
 
   // Auto-scroll to bottom of conversation
   useEffect(() => {
@@ -171,6 +176,9 @@ export default function AIChatModule({
           timestamp: new Date(msg.createdAt),
           confidence: msg.confidence,
           metadata: msg.metadata,
+          structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+          fileIssues: msg.metadata?.fileIssues as FileIssue[] | undefined,
+          usedVisionParts: msg.metadata?.usedVisionParts as boolean | undefined,
           attachments: msg.attachments
         }));
 
@@ -877,63 +885,50 @@ export default function AIChatModule({
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             {item.structured ? (
-                              <AIResponseRenderer
-                                structured={item.structured}
-                                confidence={item.confidence}
-                                textColor="text-gray-700"
-                                onAction={(action) => {
-                                  if (action.href) {
-                                    if (action.href.startsWith('http')) window.open(action.href, '_blank');
-                                    else router.push(action.href);
-                                  } else if (action.fileId) {
-                                    router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
-                                  }
-                                }}
-                              />
+                              <>
+                                <AIResponseRenderer
+                                  structured={item.structured}
+                                  confidence={item.confidence}
+                                  textColor="text-gray-700"
+                                  showOrchestrationDetails={showAIDetails}
+                                  onAction={(action) => {
+                                    if (action.href) {
+                                      if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                      else router.push(action.href);
+                                    } else if (action.fileId) {
+                                      router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                    }
+                                  }}
+                                />
+                                {item.fileIssues && item.fileIssues.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                                      {item.fileIssues.map((issue, i) => (
+                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {item.usedVisionParts && (
+                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
+                                )}
+                              </>
                             ) : (
                               <>
                                 <AIMessageContent content={item.content} textColor="text-gray-800" />
-                                {item.metadata?.actions && Array.isArray(item.metadata.actions) && item.metadata.actions.length > 0 ? (
-                                  <div className="mt-3 space-y-2">
-                                    {item.metadata.actions.map((action: Record<string, unknown>, index: number) => (
-                                      <div key={index} className="bg-purple-50 rounded-lg p-3">
-                                        <div className="flex items-center justify-between">
-                                          <div>
-                                            <p className="text-sm font-medium text-purple-900">
-                                              {String(action.type || 'Action')}: {String(action.operation || 'Unknown')}
-                                            </p>
-                                            <p className="text-xs text-purple-700 mt-1">
-                                              {String(action.reasoning || 'No reasoning provided')}
-                                            </p>
-                                          </div>
-                                          {Boolean(action.requiresApproval) && (
-                                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                                              Approval Required
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
+                                {item.fileIssues && item.fileIssues.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                                      {item.fileIssues.map((issue, i) => (
+                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                      ))}
+                                    </ul>
                                   </div>
-                                ) : null}
-                                {item.confidence !== undefined && (
-                                  <div className="mt-2">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-xs text-gray-600 dark:text-gray-400">Confidence:</span>
-                                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                        <div
-                                          className={`h-2 rounded-full ${
-                                            item.confidence > 0.8 ? 'bg-green-500' :
-                                            item.confidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'
-                                          }`}
-                                          style={{ width: `${item.confidence * 100}%` }}
-                                        />
-                                      </div>
-                                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                                        {Math.round(item.confidence * 100)}%
-                                      </span>
-                                    </div>
-                                  </div>
+                                )}
+                                {item.usedVisionParts && (
+                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                 )}
                               </>
                             )}
