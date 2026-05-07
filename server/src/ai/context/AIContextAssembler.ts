@@ -51,6 +51,8 @@ export interface AIAssembledContext {
     priority: 'low' | 'medium' | 'high';
     /** Set after relevance ranking (debug / tuning). */
     relevanceScore?: number;
+    /** Estimated tokens for this block after budgeting (debug / tuning). */
+    budgetTokensEstimate?: number;
   }>;
   assumptions: string[];
   risks: string[];
@@ -75,6 +77,8 @@ export interface AIContextAssemblyInput {
 const MAX_STRING = 4000;
 const MAX_ITEMS = 30;
 const MAX_CONTEXT_BLOCKS_AFTER_RANK = 12;
+/** Rough provider prompt budget for assembled context blocks only (chars/4 heuristic). */
+const DEFAULT_CONTEXT_BUDGET_ESTIMATED_TOKENS = 6000;
 
 /** Deterministic context compression (before ranking / provider). */
 const COMPRESS_STRING_MAX = 800;
@@ -307,6 +311,105 @@ function rankContextBlocksForProvider(
   });
 
   return out;
+}
+
+function blockPayloadForTokenEstimate(b: AIAssembledContext['contextBlocks'][number]): Record<string, unknown> {
+  return {
+    title: b.title,
+    sourceType: b.sourceType,
+    priority: b.priority,
+    content: b.content,
+    relevanceScore: b.relevanceScore,
+  };
+}
+
+/**
+ * Cheap deterministic size proxy (~4 chars per token).
+ */
+export function estimateTokenCount(value: unknown): number {
+  try {
+    const s = typeof value === 'string' ? value : JSON.stringify(value);
+    return Math.ceil(s.length / 4);
+  } catch {
+    return 0;
+  }
+}
+
+function estimateBlockTokens(b: AIAssembledContext['contextBlocks'][number]): number {
+  return estimateTokenCount(blockPayloadForTokenEstimate(b));
+}
+
+/**
+ * Trim ranked blocks to an estimated token budget; highs kept even if over budget.
+ */
+export function applyContextBudget(input: {
+  blocks: AIAssembledContext['contextBlocks'];
+  maxEstimatedTokens: number;
+}): AIAssembledContext['contextBlocks'] {
+  const { blocks, maxEstimatedTokens } = input;
+  const blocksBefore = blocks.length;
+  const keptIndices = new Set<number>();
+
+  let totalTokens = 0;
+
+  const highEntries = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.priority === 'high');
+  const restEntries = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.priority !== 'high');
+
+  for (const { b, i } of highEntries) {
+    keptIndices.add(i);
+    totalTokens += estimateBlockTokens(b);
+  }
+
+  for (const { b, i } of restEntries) {
+    const cost = estimateBlockTokens(b);
+    if (totalTokens + cost <= maxEstimatedTokens) {
+      keptIndices.add(i);
+      totalTokens += cost;
+    }
+  }
+
+  const typesInRanked = [...new Set(blocks.map((bl) => bl.sourceType))];
+  const typesInKept = new Set([...keptIndices].map((idx) => blocks[idx].sourceType));
+  const missingTypes = typesInRanked.filter((t) => !typesInKept.has(t));
+
+  const smallestPerMissingType: Array<{ b: AIAssembledContext['contextBlocks'][number]; idx: number }> =
+    [];
+  for (const st of missingTypes) {
+    const candidates = blocks
+      .map((b, idx) => ({ b, idx }))
+      .filter(({ b, idx }) => b.sourceType === st && !keptIndices.has(idx))
+      .sort((a, c) => estimateBlockTokens(a.b) - estimateBlockTokens(c.b));
+    const first = candidates[0];
+    if (first) smallestPerMissingType.push(first);
+  }
+  smallestPerMissingType.sort((a, c) => estimateBlockTokens(a.b) - estimateBlockTokens(c.b));
+
+  for (const pick of smallestPerMissingType) {
+    const cost = estimateBlockTokens(pick.b);
+    if (totalTokens + cost <= maxEstimatedTokens) {
+      keptIndices.add(pick.idx);
+      totalTokens += cost;
+    }
+  }
+
+  const result: AIAssembledContext['contextBlocks'] = blocks
+    .map((b, idx) => ({ b, idx }))
+    .filter(({ idx }) => keptIndices.has(idx))
+    .map(({ b }) => {
+      const budgetTokensEstimate = estimateBlockTokens(b);
+      return { ...b, budgetTokensEstimate };
+    });
+
+  const estimatedTokensKept = result.reduce((sum, b) => sum + (b.budgetTokensEstimate ?? 0), 0);
+
+  void logger.debug('[AI_CONTEXT_BUDGET]', {
+    maxEstimatedTokens,
+    blocksBefore,
+    blocksAfter: result.length,
+    estimatedTokensKept,
+  });
+
+  return result;
 }
 
 function truncateString(s: string, max = MAX_STRING): string {
@@ -669,13 +772,18 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     currentModule || undefined
   );
 
+  const budgetedContextBlocks = applyContextBudget({
+    blocks: rankedContextBlocks,
+    maxEstimatedTokens: DEFAULT_CONTEXT_BUDGET_ESTIMATED_TOKENS,
+  });
+
   return {
     scope,
     intent,
     currentModule: currentModule || undefined,
     usedModules,
     evidence,
-    contextBlocks: rankedContextBlocks,
+    contextBlocks: budgetedContextBlocks,
     assumptions,
     risks,
     missingContext,

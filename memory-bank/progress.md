@@ -1,5 +1,15 @@
 # Block-on-Block Platform - Progress
 
+## AI context assembler — token budgeting (May 2026) ✅
+
+**Status:** **`AIContextAssembler`** trims ranked context blocks to an estimated token budget (~6000 default) after compression + relevance ranking. High-priority blocks always kept; medium/low by score within budget; optional per-`sourceType` diversity when budget allows. Kept blocks may carry `budgetTokensEstimate`; debug log `[AI_CONTEXT_BUDGET]`.
+
+**Files:** `server/src/ai/context/AIContextAssembler.ts` (`estimateTokenCount`, `applyContextBudget`).
+
+**Reference:** `memory-bank/activeContext.md` (AI assembled context section).
+
+---
+
 ## GitHub Actions CI — verify workflow (May 2026) ✅
 
 **Status:** **`CI / verify` green** on `main` — install → **build `shared`** → `prisma:generate` → `migrate deploy` → `type-check` → `test`.

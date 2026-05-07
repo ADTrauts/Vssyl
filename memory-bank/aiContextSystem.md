@@ -697,6 +697,18 @@ The AI context system is designed to grow:
 
 ---
 
+## Assembled context pipeline (Digital Twin, May 2026)
+
+Server-side **`AIContextAssembler`** (`server/src/ai/context/AIContextAssembler.ts`) turns raw module/context payloads into **`AIAssembledContext`** for `DigitalLifeTwinCore` / provider prompts:
+
+1. **Compression** — deterministic shrinking of block content (logged `[AI_CONTEXT_COMPRESSION]`).
+2. **Relevance ranking** — keyword scoring vs user query + current module; capped ordered list (logged `[AI_CONTEXT_RELEVANCE]`).
+3. **Token budgeting** — conservative estimated-token cap (**default ~6000**, ~4 chars per token). **High** priority blocks are always kept; **medium/low** blocks fill remaining budget by relevance order; a **diversity** step tries not to drop every block from a given **`sourceType`** when budget allows. Very large **high** blocks stay rather than being dropped. Kept blocks may include **`budgetTokensEstimate`**; **`[AI_CONTEXT_BUDGET]`** structured debug log.
+
+No embeddings or AI summarization in this path—purely deterministic heuristics.
+
+---
+
 ## Conclusion
 
 **AI Context is Non-Negotiable**: Every module must implement AI context providers. This is what makes Vssyl intelligent and differentiated from competitors.
@@ -811,9 +823,10 @@ The AI context system is the bridge between raw data and intelligent assistance.
 
 ---
 
-**Last Updated**: April 2026
+**Last Updated**: May 2026
 
 **Recent Updates**:
+- ✅ Assembled context pipeline: compression → relevance rank → estimated-token budget in `AIContextAssembler` (May 2026)
 - ✅ Module AI Context Dashboard added to Admin Portal (January 2025)
 - ✅ Registration logic fixed to register missing modules incrementally
 - ✅ View Details and Test Providers functionality implemented
