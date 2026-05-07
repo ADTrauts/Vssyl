@@ -6,10 +6,11 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export async function seedNotesModuleOnStartup(): Promise<void> {
   try {
-    console.log('📦 Checking Notes module registration...');
+    void logger.debug('Checking Notes module registration', { operation: 'seed_notes_module_start' });
 
     let existing;
     try {
@@ -19,20 +20,20 @@ export async function seedNotesModuleOnStartup(): Promise<void> {
     } catch (dbError) {
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database not available during startup');
-        console.log('   Notes module seed will be skipped');
-        console.log('   Server will continue, but Notes module may not be available.\n');
+        void logger.warn('Notes module seed skipped because database is not available during startup', {
+          operation: 'seed_notes_module_db_unavailable',
+        });
         return;
       }
       throw dbError;
     }
 
     if (existing) {
-      console.log('   ✅ Notes module already registered');
+      void logger.debug('Notes module already registered', { operation: 'seed_notes_module_exists' });
       return;
     }
 
-    console.log('   📝 Creating Notes module record...');
+    void logger.info('Creating Notes module record', { operation: 'seed_notes_module_create' });
 
     let systemUser;
     try {
@@ -48,16 +49,18 @@ export async function seedNotesModuleOnStartup(): Promise<void> {
     } catch (dbError) {
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database connection lost during seeding');
-        console.log('   Notes module seed will be skipped');
-        console.log('   Server will continue, but Notes module may not be available.\n');
+        void logger.warn('Notes module seed skipped because database connection was lost during seeding', {
+          operation: 'seed_notes_module_db_lost',
+        });
         return;
       }
       throw dbError;
     }
 
     if (!systemUser) {
-      console.warn('   ⚠️  No user found. Notes module seed will retry on next startup.');
+      void logger.warn('No user found. Notes module seed will retry on next startup', {
+        operation: 'seed_notes_module_no_user',
+      });
       return;
     }
 
@@ -139,9 +142,12 @@ export async function seedNotesModuleOnStartup(): Promise<void> {
       },
     });
 
-    console.log('   ✅ Notes module registered successfully');
-  } catch (error) {
-    console.error('   ❌ Notes module seed failed:', error);
-    console.error('   Server will continue, but Notes module may not be available.');
+    void logger.info('Notes module registered successfully', { operation: 'seed_notes_module_success' });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Notes module seed failed; server will continue but Notes module may not be available', {
+      operation: 'seed_notes_module_failure',
+      error: { message: err.message, stack: err.stack },
+    });
   }
 }

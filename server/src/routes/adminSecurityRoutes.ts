@@ -5,6 +5,31 @@ import { SecurityPoliciesService } from '../services/securityPoliciesService';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 const router: express.Router = express.Router();
 
 // Initialize services
@@ -15,7 +40,7 @@ const policiesService = new SecurityPoliciesService(prisma);
 // Get security metrics
 router.get('/metrics', async (req, res) => {
   try {
-    console.log('📊 Loading security metrics...');
+    logSrvDebug('adminsecurityroutes_loading_security_metrics', '📊 Loading security metrics...');
     
     // Get basic metrics from database
     const totalModules = await prisma.module.count();
@@ -35,7 +60,7 @@ router.get('/metrics', async (req, res) => {
 
     res.json({ success: true, data: metrics });
   } catch (error) {
-    console.error('Error loading security metrics:', error);
+    logSrvErr('adminsecurityroutes_error_loading_security_metrics', 'Error loading security metrics:', error);
     await logger.error('Security metrics loading failed', {
       operation: 'security_metrics',
       error: {
@@ -50,7 +75,7 @@ router.get('/metrics', async (req, res) => {
 // Get security alerts
 router.get('/alerts', async (req, res) => {
   try {
-    console.log('🚨 Loading security alerts...');
+    logSrvDebug('adminsecurityroutes_loading_security_alerts', '🚨 Loading security alerts...');
     
     // Mock alerts for now - in production, these would come from real monitoring data
     const alerts = [
@@ -78,7 +103,7 @@ router.get('/alerts', async (req, res) => {
 
     res.json({ success: true, data: alerts });
   } catch (error) {
-    console.error('Error loading security alerts:', error);
+    logSrvErr('adminsecurityroutes_error_loading_security_alerts', 'Error loading security alerts:', error);
     await logger.error('Security alerts loading failed', {
       operation: 'security_alerts',
       error: {
@@ -93,7 +118,7 @@ router.get('/alerts', async (req, res) => {
 // Get monitoring status
 router.get('/monitoring', async (req, res) => {
   try {
-    console.log('🔍 Loading monitoring status...');
+    logSrvDebug('adminsecurityroutes_loading_monitoring_status', '🔍 Loading monitoring status...');
     
     // Get approved modules
     const modules = await prisma.module.findMany({
@@ -119,7 +144,7 @@ router.get('/monitoring', async (req, res) => {
 
     res.json({ success: true, data: monitoringStatus });
   } catch (error) {
-    console.error('Error loading monitoring status:', error);
+    logSrvErr('adminsecurityroutes_error_loading_monitoring_status', 'Error loading monitoring status:', error);
     await logger.error('Monitoring status loading failed', {
       operation: 'monitoring_status',
       error: {
@@ -135,7 +160,7 @@ router.get('/monitoring', async (req, res) => {
 router.post('/monitoring/:moduleId/start', async (req, res) => {
   try {
     const { moduleId } = req.params;
-    console.log(`🔍 Starting monitoring for module: ${moduleId}`);
+    logSrvDebug('adminsecurity_monitoring_start', 'Starting monitoring for module', { moduleId });
     
     // Get module data
     const module = await prisma.module.findUnique({
@@ -168,7 +193,7 @@ router.post('/monitoring/:moduleId/start', async (req, res) => {
       message: `Monitoring started for module: ${module.name}` 
     });
   } catch (error) {
-    console.error('Error starting monitoring:', error);
+    logSrvErr('adminsecurityroutes_error_starting_monitoring', 'Error starting monitoring:', error);
     await logger.error('Monitoring start failed', {
       operation: 'monitoring_start',
       moduleId: req.params.moduleId,
@@ -185,7 +210,7 @@ router.post('/monitoring/:moduleId/start', async (req, res) => {
 router.post('/monitoring/:moduleId/stop', async (req, res) => {
   try {
     const { moduleId } = req.params;
-    console.log(`🛑 Stopping monitoring for module: ${moduleId}`);
+    logSrvDebug('adminsecurity_monitoring_stop', 'Stopping monitoring for module', { moduleId });
     
     // Stop monitoring
     await monitoringService.stopMonitoringModule(moduleId);
@@ -195,7 +220,7 @@ router.post('/monitoring/:moduleId/stop', async (req, res) => {
       message: `Monitoring stopped for module: ${moduleId}` 
     });
   } catch (error) {
-    console.error('Error stopping monitoring:', error);
+    logSrvErr('adminsecurityroutes_error_stopping_monitoring', 'Error stopping monitoring:', error);
     await logger.error('Monitoring stop failed', {
       operation: 'monitoring_stop',
       moduleId: req.params.moduleId,
@@ -212,7 +237,7 @@ router.post('/monitoring/:moduleId/stop', async (req, res) => {
 router.post('/test/:moduleId', async (req, res) => {
   try {
     const { moduleId } = req.params;
-    console.log(`🔒 Running security test for module: ${moduleId}`);
+    logSrvDebug('adminsecurity_test_run', 'Running security test for module', { moduleId });
     
     // Get module data
     const module = await prisma.module.findUnique({
@@ -247,7 +272,7 @@ router.post('/test/:moduleId', async (req, res) => {
       data: testResult
     });
   } catch (error) {
-    console.error('Error running security test:', error);
+    logSrvErr('adminsecurityroutes_error_running_security_test', 'Error running security test:', error);
     await logger.error('Security test failed', {
       operation: 'security_test',
       moduleId: req.params.moduleId,
@@ -263,7 +288,7 @@ router.post('/test/:moduleId', async (req, res) => {
 // Get security policies
 router.get('/policies', async (req, res) => {
   try {
-    console.log('📋 Loading security policies...');
+    logSrvDebug('adminsecurityroutes_loading_security_policies', '📋 Loading security policies...');
     
     // Mock policies for now - in production, these would come from the policies service
     const policies = [
@@ -295,7 +320,7 @@ router.get('/policies', async (req, res) => {
 
     res.json({ success: true, data: policies });
   } catch (error) {
-    console.error('Error loading security policies:', error);
+    logSrvErr('adminsecurityroutes_error_loading_security_policies', 'Error loading security policies:', error);
     await logger.error('Security policies loading failed', {
       operation: 'security_policies',
       error: {

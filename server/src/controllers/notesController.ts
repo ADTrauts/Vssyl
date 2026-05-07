@@ -5,7 +5,16 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
+
+function logNotesError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 import { Prisma } from '@prisma/client';
 import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
 
@@ -96,7 +105,7 @@ export async function getNotes(req: Request, res: Response): Promise<void> {
     res.json({ notes: notesWithOwner });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in getNotes:', err);
+    logNotesError('Error in getNotes', 'notes_list', err);
     res.status(500).json({ error: 'Failed to fetch notes' });
   }
 }
@@ -161,7 +170,7 @@ export async function getNoteById(req: Request, res: Response): Promise<void> {
     res.json({ ...noteData, canEdit, isOwner });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in getNoteById:', err);
+    logNotesError('Error in getNoteById', 'notes_get', err);
     res.status(500).json({ error: 'Failed to fetch note' });
   }
 }
@@ -245,7 +254,7 @@ export async function createNote(req: Request, res: Response): Promise<void> {
     res.status(201).json(note);
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in createNote:', err);
+    logNotesError('Error in createNote', 'notes_create', err);
     res.status(500).json({ error: 'Failed to create note' });
   }
 }
@@ -314,7 +323,7 @@ export async function updateNote(req: Request, res: Response): Promise<void> {
     res.json(note);
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in updateNote:', err);
+    logNotesError('Error in updateNote', 'notes_update', err);
     res.status(500).json({ error: 'Failed to update note' });
   }
 }
@@ -360,7 +369,7 @@ export async function deleteNote(req: Request, res: Response): Promise<void> {
     res.status(204).send();
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in deleteNote:', err);
+    logNotesError('Error in deleteNote', 'notes_delete', err);
     res.status(500).json({ error: 'Failed to delete note' });
   }
 }

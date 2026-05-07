@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -27,8 +28,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error emptying trash:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Trash API: failed to empty trash', {
+      operation: 'trash_proxy',
+      error: { message: err.message, stack: err.stack },
+    });
     return NextResponse.json({ error: 'Failed to empty trash' }, { status: 500 });
   }
 } 

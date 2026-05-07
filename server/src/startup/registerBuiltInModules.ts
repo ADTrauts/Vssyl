@@ -14,6 +14,7 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import type { ModuleAIContext } from 'shared/types/module-ai-context';
 
 // ============================================================================
@@ -797,8 +798,8 @@ async function getSystemDeveloperId(): Promise<string | null> {
     });
 
     return anyUser?.id || null;
-  } catch (error) {
-    console.error('   ❌ Error finding system developer:', error);
+  } catch (error: unknown) {
+    logRegistrationError('Error finding system developer', 'register_modules_find_system_developer', error);
     return null;
   }
 }
@@ -812,7 +813,7 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
     // Find module definition
     const moduleDef = BUILT_IN_MODULE_DEFINITIONS.find(m => m.id === moduleId);
     if (!moduleDef) {
-      console.error(`   ⚠️  No module definition found for '${moduleId}'`);
+      logRegistrationWarn('No module definition found', 'register_modules_missing_definition', { moduleId });
       return false;
     }
 
@@ -824,7 +825,11 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
     if (existingModule) {
       // Update if name or description has changed (e.g., "Drive" → "File Hub")
       if (existingModule.name !== moduleDef.name || existingModule.description !== moduleDef.description) {
-        console.error(`   📝 Updating Module '${existingModule.name}' → '${moduleDef.name}'...`);
+        logRegistrationInfo('Updating module metadata', 'register_modules_update_module', {
+          moduleId,
+          previousName: existingModule.name,
+          nextName: moduleDef.name,
+        });
         await prisma.module.update({
           where: { id: moduleId },
           data: {
@@ -835,13 +840,19 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
             category: moduleDef.category,
           },
         });
-        console.error(`   ✅ Module '${moduleDef.name}' updated successfully`);
+        logRegistrationInfo('Module updated successfully', 'register_modules_update_module_success', {
+          moduleId,
+          moduleName: moduleDef.name,
+        });
       }
       return true;
     }
 
     // Create the module if it doesn't exist
-    console.error(`   📦 Creating Module record for '${moduleDef.name}'...`);
+    logRegistrationInfo('Creating module record', 'register_modules_create_module', {
+      moduleId,
+      moduleName: moduleDef.name,
+    });
     await prisma.module.create({
       data: {
         id: moduleDef.id,
@@ -871,10 +882,15 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
       },
     });
 
-    console.error(`   ✅ Module '${moduleDef.name}' created successfully`);
+    logRegistrationInfo('Module created successfully', 'register_modules_create_module_success', {
+      moduleId,
+      moduleName: moduleDef.name,
+    });
     return true;
-  } catch (error) {
-    console.error(`   ❌ Error ensuring module '${moduleId}' exists:`, error);
+  } catch (error: unknown) {
+    logRegistrationError('Error ensuring module exists', 'register_modules_ensure_module_exists', error, {
+      moduleId,
+    });
     return false;
   }
 }
@@ -884,6 +900,32 @@ interface RegisterModuleResult {
   success: boolean;
   action?: 'created' | 'updated';
   error?: string;
+}
+
+function logRegistrationDebug(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...context });
+}
+
+function logRegistrationInfo(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.info(message, { operation, ...context });
+}
+
+function logRegistrationWarn(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.warn(message, { operation, ...context });
+}
+
+function logRegistrationError(
+  message: string,
+  operation: string,
+  error: unknown,
+  context?: Record<string, unknown>
+): void {
+  const err = error instanceof Error ? error : new Error(String(error));
+  void logger.error(message, {
+    operation,
+    error: { message: err.message, stack: err.stack },
+    ...context,
+  });
 }
 
 /**
@@ -929,9 +971,13 @@ async function ensureLegacyRegistryCompatibility(): Promise<void> {
         END IF;
       END $$;
     `);
-  } catch (error) {
+  } catch (error: unknown) {
     // Non-fatal: registration still attempts normal path.
-    console.error('   ⚠️ Could not run legacy registry compatibility check:', error);
+    logRegistrationWarn(
+      'Could not run legacy registry compatibility check',
+      'register_modules_legacy_registry_compatibility',
+      { errorMessage: error instanceof Error ? error.message : String(error) }
+    );
   }
 }
 
@@ -946,13 +992,16 @@ async function registerModule(
   developerId: string
 ): Promise<RegisterModuleResult> {
   try {
-    console.error(`   📝 Registering: ${moduleName} (ID: ${moduleId})...`);
+    logRegistrationInfo('Registering built-in module AI context', 'register_modules_register_context', {
+      moduleId,
+      moduleName,
+    });
 
     // Step 1: Ensure the module exists in the Module table
     const moduleCreated = await ensureModuleExists(moduleId, developerId);
     if (!moduleCreated) {
       const msg = `Could not ensure Module '${moduleId}' exists`;
-      console.error(`   ⚠️  ${msg}`);
+      logRegistrationWarn(msg, 'register_modules_ensure_module_failed', { moduleId, moduleName });
       return { success: false, error: msg };
     }
 
@@ -980,12 +1029,18 @@ async function registerModule(
           lastUpdated: new Date(),
         },
       });
-      console.error(`   🔄 ${moduleName} AI context updated`);
+      logRegistrationInfo('Module AI context updated', 'register_modules_context_updated', {
+        moduleId,
+        moduleName,
+      });
       return { success: true, action: 'updated' };
     }
 
     // Step 3: Register the AI context
-    console.error(`      Creating AI context registry entry for ${moduleName}...`);
+    logRegistrationInfo('Creating module AI context registry entry', 'register_modules_context_create', {
+      moduleId,
+      moduleName,
+    });
     
     const created = await prisma.moduleAIContextRegistry.create({
       data: {
@@ -1006,12 +1061,19 @@ async function registerModule(
       },
     });
 
-    console.error(`   ✅ ${moduleName} AI context registered (ID: ${created.id})`);
+    logRegistrationInfo('Module AI context registered', 'register_modules_context_created', {
+      moduleId,
+      moduleName,
+      registryEntryId: created.id,
+    });
     return { success: true, action: 'created' };
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     const msg = `${moduleName}: ${err.message}`;
-    console.error(`   ❌ Error registering ${moduleName}:`, err.message);
+    logRegistrationError('Error registering module AI context', 'register_modules_context_error', err, {
+      moduleId,
+      moduleName,
+    });
     return { success: false, error: msg };
   }
 }
@@ -1036,20 +1098,20 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
   try {
     await ensureLegacyRegistryCompatibility();
 
-    console.error('\n🤖 ============================================');
-    console.error('🤖 Module AI Context Registry - Startup Check');
-    console.error('🤖 ============================================\n');
+    logRegistrationInfo('Module AI Context Registry startup check started', 'register_modules_startup_check');
 
     // Check if registry is empty
     let registryCount: number;
     try {
       registryCount = await prisma.moduleAIContextRegistry.count();
-      console.error(`📊 Current registry count: ${registryCount}`);
+      logRegistrationDebug('Current registry count fetched', 'register_modules_registry_count', { registryCount });
     } catch (dbError) {
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
-      console.error(`❌ Database error during count: ${errorMessage}`);
+      logRegistrationError('Database error during registry count', 'register_modules_registry_count_error', dbError, {
+        errorMessage,
+      });
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.error('⚠️  Database not available during startup');
+        logRegistrationWarn('Database not available during startup', 'register_modules_db_unavailable_startup');
         return emptyResult;
       }
       throw dbError;
@@ -1057,30 +1119,42 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
 
     const developerId = await getSystemDeveloperId();
     if (!developerId) {
-      console.error('⚠️  No users found in database - cannot create Module records');
+      logRegistrationWarn(
+        'No users found in database; cannot create built-in module records',
+        'register_modules_no_system_developer'
+      );
       return emptyResult;
     }
-    console.error(`📋 Using developer ID: ${developerId.substring(0, 8)}...`);
+    logRegistrationDebug('Using system developer for module creation', 'register_modules_using_developer', {
+      developerIdPrefix: developerId.substring(0, 8),
+    });
 
     if (registryCount > 0) {
       const registered = await prisma.moduleAIContextRegistry.findMany({
         select: { moduleId: true },
       });
-      console.error(`📋 Found ${registryCount} registered entries: ${registered.map((r: { moduleId: string }) => r.moduleId).join(', ')}`);
+      logRegistrationDebug('Found existing module AI context entries', 'register_modules_existing_entries', {
+        registryCount,
+        registeredModuleIds: registered.map((r: { moduleId: string }) => r.moduleId),
+      });
     } else {
-      console.error('📋 Registry is empty - will create all built-in modules');
+      logRegistrationInfo('Registry is empty; all built-in modules will be created', 'register_modules_registry_empty');
     }
 
     const modulesToRegister = BUILT_IN_MODULES;
 
-    console.error(`📦 Built-in modules to process: ${modulesToRegister.map(m => m.moduleId).join(', ')}`);
+    logRegistrationInfo('Built-in modules selected for processing', 'register_modules_to_process', {
+      moduleIds: modulesToRegister.map(m => m.moduleId),
+    });
 
     if (modulesToRegister.length === 0) {
-      console.error(`✅ No built-in modules configured\n`);
+      logRegistrationInfo('No built-in modules configured', 'register_modules_none_configured');
       return emptyResult;
     }
 
-    console.error(`📦 Processing ${modulesToRegister.length} built-in module context(s)...\n`);
+    logRegistrationInfo('Processing built-in module AI contexts', 'register_modules_processing', {
+      moduleCount: modulesToRegister.length,
+    });
 
     let successCount = 0;
     let createdCount = 0;
@@ -1100,19 +1174,24 @@ export async function registerBuiltInModulesOnStartup(): Promise<RegistrationRes
       } catch (dbError) {
         const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
         if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-          console.error('\n⚠️  Database connection lost');
+          logRegistrationWarn('Database connection lost during registration', 'register_modules_db_connection_lost');
           return { successCount, createdCount, updatedCount, errors: registrationErrors };
         }
         registrationErrors.push(`${moduleName}: ${errorMessage}`);
       }
     }
 
-    console.error(`\n📊 Summary: processed=${successCount}, created=${createdCount}, updated=${updatedCount}, errors=${registrationErrors.length}`);
+    logRegistrationInfo('Built-in module registration completed', 'register_modules_complete', {
+      successCount,
+      createdCount,
+      updatedCount,
+      errorsCount: registrationErrors.length,
+    });
 
     return { successCount, createdCount, updatedCount, errors: registrationErrors };
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('❌ Error during module registration:', err.message);
+    logRegistrationError('Error during built-in module registration', 'register_modules_fatal_error', err);
     return { successCount: 0, createdCount: 0, updatedCount: 0, errors: [err.message] };
   }
 }

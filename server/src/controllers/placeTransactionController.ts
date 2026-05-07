@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceTransactionError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -51,7 +60,7 @@ export async function createTransaction(req: Request, res: Response): Promise<vo
     res.status(201).json({ success: true, data: transaction });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error creating transaction:', err.message);
+    logPlaceTransactionError('Error creating transaction', 'place_transaction_create', err);
     res.status(500).json({ success: false, error: 'Failed to create transaction' });
   }
 }
@@ -90,7 +99,7 @@ export async function getTransactions(req: Request, res: Response): Promise<void
     res.json({ success: true, data: transactions, pagination: { total, limit: take, offset: skip } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching transactions:', err.message);
+    logPlaceTransactionError('Error fetching transactions', 'place_transaction_list', err);
     res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
   }
 }
@@ -121,7 +130,7 @@ export async function getTransaction(req: Request, res: Response): Promise<void>
     res.json({ success: true, data: transaction });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching transaction:', err.message);
+    logPlaceTransactionError('Error fetching transaction', 'place_transaction_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch transaction' });
   }
 }
@@ -157,7 +166,7 @@ export async function updateTransactionPrivacy(req: Request, res: Response): Pro
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating transaction privacy:', err.message);
+    logPlaceTransactionError('Error updating transaction privacy', 'place_transaction_privacy', err);
     res.status(500).json({ success: false, error: 'Failed to update privacy' });
   }
 }
@@ -215,7 +224,7 @@ export async function getTransactionSummary(req: Request, res: Response): Promis
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching summary:', err.message);
+    logPlaceTransactionError('Error fetching summary', 'place_transaction_summary', err);
     res.status(500).json({ success: false, error: 'Failed to fetch summary' });
   }
 }
@@ -269,7 +278,7 @@ export async function trackInteractionClick(req: Request, res: Response): Promis
     res.json({ success: true, message: 'Click tracked' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error tracking click:', err.message);
+    logPlaceTransactionError('Error tracking click', 'place_transaction_click', err);
     res.status(500).json({ success: false, error: 'Failed to track click' });
   }
 }
@@ -324,7 +333,7 @@ export async function getInteractionStats(req: Request, res: Response): Promise<
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching stats:', err.message);
+    logPlaceTransactionError('Error fetching stats', 'place_transaction_stats', err);
     res.status(500).json({ success: false, error: 'Failed to fetch stats' });
   }
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 // Helper function to get user from request
@@ -8,6 +9,14 @@ const getUserFromRequest = (req: Request) => {
   if (!user) return null;
   return user;
 };
+
+function logPrivacyError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 // Get user privacy settings
 export const getUserPrivacySettings = async (req: Request, res: Response) => {
@@ -42,7 +51,7 @@ export const getUserPrivacySettings = async (req: Request, res: Response) => {
       data: settings
     });
   } catch (error) {
-    console.error('Error getting user privacy settings:', error);
+    logPrivacyError('Error getting user privacy settings', 'privacy_settings_get', error);
     res.status(500).json({ success: false, error: 'Failed to get privacy settings' });
   }
 };
@@ -93,7 +102,7 @@ export const updateUserPrivacySettings = async (req: Request, res: Response) => 
       data: settings
     });
   } catch (error) {
-    console.error('Error updating user privacy settings:', error);
+    logPrivacyError('Error updating user privacy settings', 'privacy_settings_update', error);
     res.status(500).json({ success: false, error: 'Failed to update privacy settings' });
   }
 };
@@ -116,7 +125,7 @@ export const getUserConsents = async (req: Request, res: Response) => {
       data: consents
     });
   } catch (error) {
-    console.error('Error getting user consents:', error);
+    logPrivacyError('Error getting user consents', 'privacy_consents_list', error);
     res.status(500).json({ success: false, error: 'Failed to get consent history' });
   }
 };
@@ -166,7 +175,7 @@ export const grantConsent = async (req: Request, res: Response) => {
       data: consent
     });
   } catch (error) {
-    console.error('Error granting consent:', error);
+    logPrivacyError('Error granting consent', 'privacy_consent_grant', error);
     res.status(500).json({ success: false, error: 'Failed to grant consent' });
   }
 };
@@ -204,7 +213,7 @@ export const revokeConsent = async (req: Request, res: Response) => {
       data: consent
     });
   } catch (error) {
-    console.error('Error revoking consent:', error);
+    logPrivacyError('Error revoking consent', 'privacy_consent_revoke', error);
     res.status(500).json({ success: false, error: 'Failed to revoke consent' });
   }
 };
@@ -247,7 +256,7 @@ export const requestDataDeletion = async (req: Request, res: Response) => {
       data: deletionRequest
     });
   } catch (error) {
-    console.error('Error requesting data deletion:', error);
+    logPrivacyError('Error requesting data deletion', 'privacy_deletion_request', error);
     res.status(500).json({ success: false, error: 'Failed to request data deletion' });
   }
 };
@@ -270,7 +279,7 @@ export const getUserDeletionRequests = async (req: Request, res: Response) => {
       data: requests
     });
   } catch (error) {
-    console.error('Error getting user deletion requests:', error);
+    logPrivacyError('Error getting user deletion requests', 'privacy_deletion_requests', error);
     res.status(500).json({ success: false, error: 'Failed to get deletion requests' });
   }
 };
@@ -379,7 +388,7 @@ export const exportUserData = async (req: Request, res: Response) => {
       data: exportData
     });
   } catch (error) {
-    console.error('Error exporting user data:', error);
+    logPrivacyError('Error exporting user data', 'privacy_export', error);
     res.status(500).json({ success: false, error: 'Failed to export user data' });
   }
 }; 

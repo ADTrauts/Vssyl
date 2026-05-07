@@ -2,6 +2,32 @@ import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import { getUserPreference, setUserPreference } from '../services/userPreferenceService';
 import { getModel } from '../ai/providers/modelCatalog';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -35,7 +61,7 @@ router.get('/preferences', authenticateJWT, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get AI preferences error:', error);
+    logSrvErr('ai_preferences_get_ai_preferences_error', 'Get AI preferences error:', error);
     res.status(500).json({
       error: 'Failed to get AI preferences',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -105,7 +131,7 @@ router.put('/preferences', authenticateJWT, async (req, res) => {
       message: 'AI preferences updated successfully'
     });
   } catch (error) {
-    console.error('Update AI preferences error:', error);
+    logSrvErr('ai_preferences_update_ai_preferences_error', 'Update AI preferences error:', error);
     res.status(500).json({
       error: 'Failed to update AI preferences',
       message: error instanceof Error ? error.message : 'Unknown error occurred'

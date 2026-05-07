@@ -1,6 +1,32 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { EmployeePosition, Position, User, Business } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface CustomPermission {
   id: string;
@@ -653,8 +679,12 @@ export class EmployeeManagementService {
       try {
         const result = await this.assignEmployeeToPosition(assignment);
         results.push(result);
-      } catch (error) {
-        console.error(`Failed to assign employee ${assignment.userId} to position ${assignment.positionId}:`, error);
+      } catch (error: unknown) {
+        logSrvErr('employeemanagementservice_bulk_assign_failed', 'Failed to assign employee to position', error, {
+          userId: assignment.userId,
+          positionId: assignment.positionId,
+          businessId: assignment.businessId,
+        });
         throw error;
       }
     }

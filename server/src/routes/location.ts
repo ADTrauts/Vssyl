@@ -3,6 +3,31 @@ import { locationService } from '../services/locationService';
 import { authenticateJWT } from '../middleware/auth';
 import { logger } from '../lib/logger';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 const router: express.Router = express.Router();
 
 // Get all countries
@@ -11,7 +36,7 @@ router.get('/countries', async (req: Request, res: Response) => {
     const countries = await locationService.getCountries();
     res.json(countries);
   } catch (error) {
-    console.error('Error fetching countries:', error);
+    logSrvErr('location_error_fetching_countries', 'Error fetching countries:', error);
     res.status(500).json({ message: 'Failed to fetch countries' });
   }
 });
@@ -23,7 +48,7 @@ router.get('/regions/:countryId', async (req: Request, res: Response) => {
     const regions = await locationService.getRegionsByCountry(countryId);
     res.json(regions);
   } catch (error) {
-    console.error('Error fetching regions:', error);
+    logSrvErr('location_error_fetching_regions', 'Error fetching regions:', error);
     res.status(500).json({ message: 'Failed to fetch regions' });
   }
 });
@@ -35,7 +60,7 @@ router.get('/towns/:regionId', async (req: Request, res: Response) => {
     const towns = await locationService.getTownsByRegion(regionId);
     res.json(towns);
   } catch (error) {
-    console.error('Error fetching towns:', error);
+    logSrvErr('location_error_fetching_towns', 'Error fetching towns:', error);
     res.status(500).json({ message: 'Failed to fetch towns' });
   }
 });

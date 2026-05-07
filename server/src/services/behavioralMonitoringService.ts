@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
-import { logger } from '../lib/logger';
 import {
   BehavioralMonitoringEvent,
   SecurityViolation,
@@ -9,6 +8,31 @@ import {
   ComplianceCheck,
   RiskAssessment
 } from '../../../shared/dist/types/monitoring';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
 
 /**
  * Behavioral Monitoring Service
@@ -37,7 +61,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    */
   async startMonitoringModule(moduleId: string, moduleData: Record<string, unknown>): Promise<void> {
     try {
-      console.log(`🔍 Starting behavioral monitoring for module: ${moduleId}`);
+      logSrvDebug('behavioralmonitoringservice_starting_monitoring', 'Starting behavioral monitoring for module', { moduleId });
       
       // Create monitoring configuration
       const monitoringConfig = await this.createMonitoringConfiguration(moduleId, moduleData);
@@ -65,10 +89,10 @@ export class BehavioralMonitoringService extends EventEmitter {
         monitoringRules: monitoringConfig.rules.length
       });
 
-      console.log(`✅ Behavioral monitoring started for module: ${moduleId}`);
+      logSrvDebug('behavioralmonitoringservice_monitoring_started', 'Behavioral monitoring started for module', { moduleId });
 
-    } catch (error) {
-      console.error(`❌ Error starting behavioral monitoring for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('behavioralmonitoringservice_start_monitoring', 'Error starting behavioral monitoring for module', error, { moduleId });
       await logger.error('Behavioral monitoring start failed', {
         operation: 'behavioral_monitoring_start',
         moduleId,
@@ -87,7 +111,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    */
   async stopMonitoringModule(moduleId: string): Promise<void> {
     try {
-      console.log(`🛑 Stopping behavioral monitoring for module: ${moduleId}`);
+      logSrvDebug('behavioralmonitoringservice_stopping_monitoring', 'Stopping behavioral monitoring for module', { moduleId });
       
       // Stop monitoring intervals
       const monitorInterval = this.activeMonitors.get(moduleId);
@@ -109,10 +133,10 @@ export class BehavioralMonitoringService extends EventEmitter {
         moduleId
       });
 
-      console.log(`✅ Behavioral monitoring stopped for module: ${moduleId}`);
+      logSrvDebug('behavioralmonitoringservice_monitoring_stopped', 'Behavioral monitoring stopped for module', { moduleId });
 
-    } catch (error) {
-      console.error(`❌ Error stopping behavioral monitoring for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('behavioralmonitoringservice_stop_monitoring', 'Error stopping behavioral monitoring for module', error, { moduleId });
       await logger.error('Behavioral monitoring stop failed', {
         operation: 'behavioral_monitoring_stop',
         moduleId,
@@ -145,7 +169,7 @@ export class BehavioralMonitoringService extends EventEmitter {
       this.emit('behavioralEventRecorded', { moduleId, event, violations });
       
     } catch (error) {
-      console.error('❌ Error recording behavioral event:', error);
+      logSrvErr('behavioralmonitoringservice_error_recording_behavioral_event', '❌ Error recording behavioral event:', error);
       await logger.error('Behavioral event recording failed', {
         operation: 'behavioral_event_recording',
         moduleId,
@@ -180,8 +204,8 @@ export class BehavioralMonitoringService extends EventEmitter {
         await this.handleHighRiskAssessment(moduleId, riskAssessment);
       }
       
-    } catch (error) {
-      console.error(`❌ Error in behavioral analysis for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('behavioralmonitoringservice_behavioral_analysis', 'Error in behavioral analysis for module', error, { moduleId });
     }
   }
 
@@ -331,7 +355,7 @@ export class BehavioralMonitoringService extends EventEmitter {
           return false;
       }
     } catch (error) {
-      console.error('Error evaluating rule condition:', error);
+      logSrvErr('behavioralmonitoringservice_error_evaluating_rule_condition', 'Error evaluating rule condition:', error);
       return false;
     }
   }
@@ -373,7 +397,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle critical security violations
    */
   private async handleCriticalViolation(moduleId: string, violation: SecurityViolation): Promise<void> {
-    console.log(`🚨 CRITICAL security violation detected for module ${moduleId}: ${violation.type}`);
+    logSrvWarn('behavioralmonitoringservice_critical_violation', 'Critical security violation detected', undefined, { moduleId, violationType: violation.type });
     
     // Immediately disable module
     await this.disableModule(moduleId, 'Critical security violation detected');
@@ -386,7 +410,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle high severity violations
    */
   private async handleHighViolation(moduleId: string, violation: SecurityViolation): Promise<void> {
-    console.log(`⚠️ HIGH security violation detected for module ${moduleId}: ${violation.type}`);
+    logSrvWarn('behavioralmonitoringservice_high_violation', 'High security violation detected', undefined, { moduleId, violationType: violation.type });
     
     // Send alert
     this.emit('highSecurityViolation', { moduleId, violation });
@@ -396,7 +420,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle medium severity violations
    */
   private async handleMediumViolation(moduleId: string, violation: SecurityViolation): Promise<void> {
-    console.log(`⚠️ MEDIUM security violation detected for module ${moduleId}: ${violation.type}`);
+    logSrvWarn('behavioralmonitoringservice_medium_violation', 'Medium security violation detected', undefined, { moduleId, violationType: violation.type });
     
     // Send alert
     this.emit('mediumSecurityViolation', { moduleId, violation });
@@ -406,7 +430,7 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle low severity violations
    */
   private async handleLowViolation(moduleId: string, violation: SecurityViolation): Promise<void> {
-    console.log(`ℹ️ LOW security violation detected for module ${moduleId}: ${violation.type}`);
+    logSrvDebug('behavioralmonitoringservice_low_violation', 'Low security violation detected', { moduleId, violationType: violation.type });
     
     // Log for trend analysis
     this.emit('lowSecurityViolation', { moduleId, violation });
@@ -517,8 +541,8 @@ export class BehavioralMonitoringService extends EventEmitter {
         await this.handleComplianceViolations(moduleId, nonCompliantChecks);
       }
       
-    } catch (error) {
-      console.error(`❌ Error in compliance check for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('behavioralmonitoringservice_compliance_check', 'Error in compliance check for module', error, { moduleId });
     }
   }
 
@@ -549,7 +573,10 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle compliance violations
    */
   private async handleComplianceViolations(moduleId: string, violations: ComplianceCheck[]): Promise<void> {
-    console.log(`⚠️ Compliance violations detected for module ${moduleId}:`, violations.map(v => v.name));
+    logSrvWarn('behavioralmonitoringservice_compliance_violations', 'Compliance violations detected for module', undefined, {
+      moduleId,
+      violations: violations.map(v => v.name),
+    });
     
     // Send compliance violation alerts
     this.emit('complianceViolation', { moduleId, violations });
@@ -574,7 +601,10 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle threat detection
    */
   private async handleThreatDetection(moduleId: string, threatDetection: ThreatDetectionResult): Promise<void> {
-    console.log(`🚨 Threat detected for module ${moduleId}:`, threatDetection.threatTypes);
+    logSrvWarn('behavioralmonitoringservice_threat_detected', 'Threat detected for module', undefined, {
+      moduleId,
+      threatTypes: threatDetection.threatTypes,
+    });
     
     // Send threat detection alert
     this.emit('threatDetected', { moduleId, threatDetection });
@@ -584,7 +614,10 @@ export class BehavioralMonitoringService extends EventEmitter {
    * Handle high risk assessment
    */
   private async handleHighRiskAssessment(moduleId: string, riskAssessment: RiskAssessment): Promise<void> {
-    console.log(`⚠️ High risk assessment for module ${moduleId}: ${riskAssessment.riskLevel}`);
+    logSrvWarn('behavioralmonitoringservice_high_risk_assessment', 'High risk assessment for module', undefined, {
+      moduleId,
+      riskLevel: riskAssessment.riskLevel,
+    });
     
     // Send risk assessment alert
     this.emit('highRiskAssessment', { moduleId, riskAssessment });
@@ -601,13 +634,13 @@ export class BehavioralMonitoringService extends EventEmitter {
         data: { status: 'SUSPENDED' }
       });
       
-      console.log(`🔒 Module ${moduleId} disabled due to: ${reason}`);
+      logSrvWarn('behavioralmonitoringservice_module_disabled', 'Module disabled due to security reason', undefined, { moduleId, reason });
       
       // Emit module disabled event
       this.emit('moduleDisabled', { moduleId, reason });
       
-    } catch (error) {
-      console.error(`❌ Error disabling module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('behavioralmonitoringservice_disable_module', 'Error disabling module', error, { moduleId, reason });
     }
   }
 
@@ -644,7 +677,7 @@ export class BehavioralMonitoringService extends EventEmitter {
         return;
       }
       // Log other errors
-      console.error('❌ Error in global security scan:', error);
+      logSrvErr('behavioralmonitoringservice_error_in_global_security_scan', '❌ Error in global security scan:', error);
     }
   }
 

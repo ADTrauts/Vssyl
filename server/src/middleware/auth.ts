@@ -81,7 +81,8 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
       ipAddress: req.ip
     });
     if (process.env.NODE_ENV === 'development') {
-      console.log('❌ [AUTH] No token provided:', {
+      await logger.debug('[AUTH] No token provided', {
+        operation: 'auth_dev_no_token',
         path: req.path,
         method: req.method,
         hasAuthHeader: !!authHeader
@@ -93,7 +94,8 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
   try {
     // Additional logging in development for token verification errors
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 [AUTH] Attempting to verify token:', {
+      await logger.debug('[AUTH] Attempting to verify token', {
+        operation: 'auth_dev_verify_attempt',
         tokenLength: token.length,
         tokenPrefix: token.substring(0, 20) + '...',
         path: req.path,
@@ -112,7 +114,8 @@ export async function authenticateJWT(req: Request, res: Response, next: NextFun
     
     // Additional logging in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔐 [AUTH] Token verified successfully:', {
+      await logger.debug('[AUTH] Token verified successfully', {
+        operation: 'auth_dev_verify_success',
         userId: decoded.sub,
         email: decoded.email,
         role: decoded.role,

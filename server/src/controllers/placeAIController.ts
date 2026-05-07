@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceAIError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -117,7 +126,7 @@ export async function getAIRecommendations(req: Request, res: Response): Promise
     res.json({ success: true, data: recommendations });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error generating AI recommendations:', err.message);
+    logPlaceAIError('Error generating AI recommendations', 'place_ai_recommendations', err);
     res.status(500).json({ success: false, error: 'Failed to generate recommendations' });
   }
 }
@@ -256,7 +265,7 @@ export async function getPurchaseHelp(req: Request, res: Response): Promise<void
     }
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in purchase help:', err.message);
+    logPlaceAIError('Error in purchase help', 'place_ai_purchase_help', err);
     res.status(500).json({ success: false, error: 'Failed to process request' });
   }
 }
@@ -335,7 +344,7 @@ export async function getReservationHelp(req: Request, res: Response): Promise<v
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in reservation help:', err.message);
+    logPlaceAIError('Error in reservation help', 'place_ai_reservation_help', err);
     res.status(500).json({ success: false, error: 'Failed to process request' });
   }
 }
@@ -420,7 +429,7 @@ export async function getPlaceActivityContext(req: Request, res: Response): Prom
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching activity context:', err.message);
+    logPlaceAIError('Error fetching activity context', 'place_ai_activity_ctx', err);
     res.status(500).json({ success: false, error: 'Failed to fetch activity context' });
   }
 }

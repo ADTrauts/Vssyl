@@ -1,4 +1,3 @@
-console.log('[DEBUG] fileRouter loaded');
 import express from 'express';
 import { body, param } from 'express-validator';
 import { authenticateJWT } from '../middleware/auth';
@@ -21,6 +20,31 @@ import {
   reorderFiles,
   moveFile,
 } from '../controllers/fileController';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
 
 const router: express.Router = express.Router();
 
@@ -145,20 +169,20 @@ export default router;
 // Log all registered routes in development (after all routes are registered)
 if (process.env.NODE_ENV === 'development') {
   setTimeout(() => {
-    console.log('📁 File router registered routes:', {
+    logSrvDebug('file_router_registered_routes', 'File router registered routes', {
       totalRoutes: router.stack.length,
       downloadRoute: router.stack.find(
         (layer: { route?: { methods?: { get?: boolean }; path?: string } }) =>
           layer.route?.methods?.get && layer.route?.path === '/:id/download'
       )
-        ? '✅ Found'
-        : '❌ Missing',
+        ? 'found'
+        : 'missing',
       directRoute: router.stack.find(
         (layer: { route?: { methods?: { get?: boolean }; path?: string } }) =>
           layer.route?.methods?.get && layer.route?.path === '/:id' && !layer.route?.path?.includes('download')
       )
-        ? '✅ Found'
-        : '❌ Missing',
+        ? 'found'
+        : 'missing',
       allRoutes: router.stack
         .map((layer: { route?: { path?: string; methods?: Record<string, boolean> } }) => ({
           path: layer.route?.path,

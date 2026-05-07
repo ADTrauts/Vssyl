@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceCommunityError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -47,7 +56,7 @@ export async function createCommunity(req: Request, res: Response): Promise<void
     res.status(201).json({ success: true, data: community });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error creating community:', err.message);
+    logPlaceCommunityError('Error creating community', 'place_community_create', err);
     res.status(500).json({ success: false, error: 'Failed to create community' });
   }
 }
@@ -105,7 +114,7 @@ export async function getCommunities(req: Request, res: Response): Promise<void>
     res.json({ success: true, data: communities });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching communities:', err.message);
+    logPlaceCommunityError('Error fetching communities', 'place_community_list', err);
     res.status(500).json({ success: false, error: 'Failed to fetch communities' });
   }
 }
@@ -147,7 +156,7 @@ export async function getCommunity(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: community });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching community:', err.message);
+    logPlaceCommunityError('Error fetching community', 'place_community_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch community' });
   }
 }
@@ -188,7 +197,7 @@ export async function joinCommunity(req: Request, res: Response): Promise<void> 
     res.json({ success: true, message: 'Joined community' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error joining community:', err.message);
+    logPlaceCommunityError('Error joining community', 'place_community_join', err);
     res.status(500).json({ success: false, error: 'Failed to join community' });
   }
 }
@@ -219,7 +228,7 @@ export async function leaveCommunity(req: Request, res: Response): Promise<void>
     res.json({ success: true, message: 'Left community' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error leaving community:', err.message);
+    logPlaceCommunityError('Error leaving community', 'place_community_leave', err);
     res.status(500).json({ success: false, error: 'Failed to leave community' });
   }
 }
@@ -308,7 +317,7 @@ export async function generateAutoClusters(req: Request, res: Response): Promise
     res.json({ success: true, data: { clustersCreated } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error generating clusters:', err.message);
+    logPlaceCommunityError('Error generating clusters', 'place_community_clusters', err);
     res.status(500).json({ success: false, error: 'Failed to generate clusters' });
   }
 }

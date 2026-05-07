@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,8 +27,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error fetching trash items:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Trash API: failed to fetch items', {
+      operation: 'trash_proxy',
+      error: { message: err.message, stack: err.stack },
+    });
     return NextResponse.json({ error: 'Failed to fetch trash items' }, { status: 500 });
   }
 }
@@ -62,8 +67,12 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error trashing item:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Trash API: failed to trash item', {
+      operation: 'trash_proxy',
+      error: { message: err.message, stack: err.stack },
+    });
     return NextResponse.json({ error: 'Failed to trash item' }, { status: 500 });
   }
 } 

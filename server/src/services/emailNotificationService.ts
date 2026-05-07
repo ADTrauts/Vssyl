@@ -1,5 +1,31 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface EmailNotificationData {
   to: string;
@@ -61,16 +87,16 @@ export class EmailNotificationService {
 
     // Check if email configuration is available
     if (!emailConfig.host || !emailConfig.auth.user || !emailConfig.auth.pass) {
-      console.warn('⚠️ Email configuration not found. Email notifications will be disabled.');
+      logSrvWarn('emailnotificationservice_missing_config', 'Email configuration not found. Email notifications will be disabled.');
       return;
     }
 
     try {
       this.transporter = nodemailer.createTransport(emailConfig);
       this.isInitialized = true;
-      console.log('✅ Email notification service initialized');
+      logSrvDebug('emailnotificationservice_email_notification_service_initialized', '✅ Email notification service initialized');
     } catch (error) {
-      console.error('Error initializing email service:', error);
+      logSrvErr('emailnotificationservice_error_initializing_email_service', 'Error initializing email service:', error);
     }
   }
 
@@ -79,7 +105,7 @@ export class EmailNotificationService {
    */
   async sendEmail(data: EmailNotificationData): Promise<boolean> {
     if (!this.isInitialized || !this.transporter) {
-      console.warn('Email service not initialized');
+      logSrvWarn('emailnotificationservice_not_initialized_send_email', 'Email service not initialized');
       return false;
     }
 
@@ -94,10 +120,13 @@ export class EmailNotificationService {
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent to ${data.to}: ${result.messageId}`);
+      logSrvDebug('emailnotificationservice_email_sent', 'Email sent', {
+        to: data.to,
+        messageId: result.messageId,
+      });
       return true;
     } catch (error) {
-      console.error('Error sending email:', error);
+      logSrvErr('emailnotificationservice_error_sending_email', 'Error sending email:', error);
       return false;
     }
   }
@@ -113,7 +142,7 @@ export class EmailNotificationService {
       });
 
       if (!user) {
-        console.error(`User not found: ${userId}`);
+        logSrvErr('emailnotificationservice_send_to_user_user_not_found', 'User not found', new Error('User not found'), { userId });
         return false;
       }
 
@@ -126,7 +155,7 @@ export class EmailNotificationService {
 
       return await this.sendEmail(emailData);
     } catch (error) {
-      console.error('Error sending email to user:', error);
+      logSrvErr('emailnotificationservice_error_sending_email_to_user', 'Error sending email to user:', error);
       return false;
     }
   }
@@ -136,7 +165,7 @@ export class EmailNotificationService {
    */
   async sendToMultipleUsers(userIds: string[], template: EmailTemplate): Promise<number> {
     if (!this.isInitialized) {
-      console.warn('Email service not initialized');
+      logSrvWarn('emailnotificationservice_not_initialized_send_multiple', 'Email service not initialized');
       return 0;
     }
 
@@ -161,10 +190,13 @@ export class EmailNotificationService {
         result.status === 'fulfilled' && result.value === true
       ).length;
 
-      console.log(`📧 Email notification sent to ${successCount}/${users.length} users`);
+      logSrvDebug('emailnotificationservice_bulk_sent', 'Email notification sent to users', {
+        successCount,
+        totalUsers: users.length,
+      });
       return successCount;
     } catch (error) {
-      console.error('Error sending emails to multiple users:', error);
+      logSrvErr('emailnotificationservice_error_sending_emails_to_multiple_users', 'Error sending emails to multiple users:', error);
       return 0;
     }
   }

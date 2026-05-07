@@ -6,6 +6,7 @@ import { User, Prisma } from '@prisma/client';
 import { prisma } from './lib/prisma';
 import { geolocationService } from './services/geolocationService';
 import { userNumberService } from './services/userNumberService';
+import { logger } from './lib/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -23,7 +24,10 @@ passport.use(new LocalStrategy(
         await prisma.$queryRaw`SELECT 1`;
       } catch (dbError) {
         const dbErrorMsg = dbError instanceof Error ? dbError.message : 'Unknown database error';
-        console.error('❌ [LOGIN] Database connection test failed:', dbErrorMsg);
+        void logger.error('[LOGIN] Database connection test failed', {
+          operation: 'auth_login_db_ping',
+          error: { message: dbErrorMsg },
+        });
         // Return a specific error that can be caught by the login handler
         return done(new Error('Database connection failed'), false, { message: 'Database temporarily unavailable. Please try again.' });
       }
@@ -39,7 +43,9 @@ passport.use(new LocalStrategy(
         // retry with explicit select excluding those fields
         const errorMsg = schemaError instanceof Error ? schemaError.message : String(schemaError);
         if (errorMsg.includes('personalPhotoId') || errorMsg.includes('businessPhotoId')) {
-          console.warn('⚠️ [LOGIN] personalPhotoId/businessPhotoId columns missing, using fallback query');
+          void logger.warn('[LOGIN] personalPhotoId/businessPhotoId columns missing, using fallback query', {
+            operation: 'auth_login_schema_fallback',
+          });
           user = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -91,11 +97,17 @@ passport.use(new LocalStrategy(
           (typeof error === 'object' && error && 'code' in error && 
            ((error as Record<string, unknown>).code === 'P1001' || 
             (error as Record<string, unknown>).code === 'P1002'))) {
-        console.error('❌ [LOGIN] Database error during authentication:', errorMessage);
+        void logger.error('[LOGIN] Database error during authentication', {
+          operation: 'auth_login_db_error',
+          error: { message: errorMessage },
+        });
         return done(new Error('Database connection failed'), false, { message: 'Database temporarily unavailable. Please try again.' });
       }
       // For other errors, log and return generic error
-      console.error('❌ [LOGIN] Authentication error:', errorMessage);
+      void logger.error('[LOGIN] Authentication error', {
+        operation: 'auth_login_unknown_error',
+        error: { message: errorMessage },
+      });
       return done(error);
     }
   }
@@ -127,8 +139,12 @@ export async function registerUser(
   let location;
   try {
     location = await geolocationService.detectUserLocation(clientIP);
-  } catch (error) {
-    console.error('Geolocation error during registration, using default location:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.warn('Geolocation error during registration, using default location', {
+      operation: 'auth_register_geolocation_fallback',
+      error: { message: err.message, stack: err.stack },
+    });
     // Use default location if geolocation fails
     location = {
       country: 'United States',
@@ -145,12 +161,17 @@ export async function registerUser(
     userNumberData = await userNumberService.generateUserNumber(location);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('User number generation error during registration:', errorMessage);
+    void logger.error('User number generation error during registration', {
+      operation: 'auth_register_user_number_error',
+      error: { message: errorMessage },
+    });
     
     // If database error, try to continue without location data
     // This allows registration to work even if location tables aren't set up
     if (errorMessage.includes('database') || errorMessage.includes('connection') || errorMessage.includes('empty host') || errorMessage.includes('Invalid')) {
-      console.warn('⚠️  User number generation failed, continuing without location data. Registration will proceed with minimal user setup.');
+      void logger.warn('User number generation failed, continuing without location data', {
+        operation: 'auth_register_user_number_fallback',
+      });
       // userNumberData remains null - we'll handle this below
     } else {
       // Re-throw non-database errors

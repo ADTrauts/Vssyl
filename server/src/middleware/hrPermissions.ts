@@ -10,6 +10,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Extend Express Request to include HR-specific data
 declare global {
@@ -85,8 +86,12 @@ export async function checkHRAdmin(
     }
     
     next();
-  } catch (error) {
-    console.error('HR admin permission check error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('HR admin permission check error', {
+      operation: 'hr_permissions_check_admin',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ error: 'Permission check failed' });
   }
 }
@@ -157,8 +162,12 @@ export async function checkManagerAccess(
     // TODO: Check for explicit hr:team:view permission
     
     next();
-  } catch (error) {
-    console.error('Manager access check error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Manager access check error', {
+      operation: 'hr_permissions_check_manager',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ error: 'Permission check failed' });
   }
 }
@@ -211,8 +220,12 @@ export async function checkEmployeeAccess(
     }
     
     next();
-  } catch (error) {
-    console.error('Employee access check error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Employee access check error', {
+      operation: 'hr_permissions_check_employee',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ error: 'Permission check failed' });
   }
 }
@@ -256,8 +269,14 @@ export async function getHRAccessLevel(
     
     // Default: employee access
     return 'employee';
-  } catch (error) {
-    console.error('Error getting HR access level:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting HR access level', {
+      operation: 'hr_permissions_get_access_level',
+      error: { message: err.message, stack: err.stack },
+      userId,
+      businessId,
+    });
     return null;
   }
 }

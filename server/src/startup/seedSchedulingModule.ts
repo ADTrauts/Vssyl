@@ -6,10 +6,11 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export async function seedSchedulingModuleOnStartup(): Promise<void> {
   try {
-    console.log('📦 Checking Scheduling module registration...');
+    void logger.debug('Checking Scheduling module registration', { operation: 'seed_scheduling_module_start' });
     
     // Check if Scheduling module already exists
     let existing;
@@ -21,9 +22,9 @@ export async function seedSchedulingModuleOnStartup(): Promise<void> {
       // Database might not be available during startup
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database not available during startup');
-        console.log('   Scheduling module seed will be skipped');
-        console.log('   Server will continue, but Scheduling module may not be available.\n');
+        void logger.warn('Scheduling module seed skipped because database is not available during startup', {
+          operation: 'seed_scheduling_module_db_unavailable',
+        });
         return;
       }
       // Re-throw if it's a different database error
@@ -31,11 +32,11 @@ export async function seedSchedulingModuleOnStartup(): Promise<void> {
     }
     
     if (existing) {
-      console.log('   ✅ Scheduling module already registered');
+      void logger.debug('Scheduling module already registered', { operation: 'seed_scheduling_module_exists' });
       return;
     }
     
-    console.log('   📝 Creating Scheduling module record...');
+    void logger.info('Creating Scheduling module record', { operation: 'seed_scheduling_module_create' });
     
     // Get a user to be the developer (first admin)
     let systemUser;
@@ -47,16 +48,18 @@ export async function seedSchedulingModuleOnStartup(): Promise<void> {
       // Database connection lost during seeding
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database connection lost during seeding');
-        console.log('   Scheduling module seed will be skipped');
-        console.log('   Server will continue, but Scheduling module may not be available.\n');
+        void logger.warn('Scheduling module seed skipped because database connection was lost during seeding', {
+          operation: 'seed_scheduling_module_db_lost',
+        });
         return;
       }
       throw dbError;
     }
     
     if (!systemUser) {
-      console.warn('   ⚠️  No admin user found. Scheduling module seed will retry on next startup.');
+      void logger.warn('No admin user found; Scheduling module seed will retry on next startup', {
+        operation: 'seed_scheduling_module_no_admin',
+      });
       return;
     }
     
@@ -102,10 +105,13 @@ export async function seedSchedulingModuleOnStartup(): Promise<void> {
       }
     });
     
-    console.log('   ✅ Scheduling module registered successfully');
-  } catch (error) {
-    console.error('   ❌ Scheduling module seed failed:', error);
-    console.error('   Server will continue, but Scheduling module may not be available.');
+    void logger.info('Scheduling module registered successfully', { operation: 'seed_scheduling_module_success' });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Scheduling module seed failed; server will continue but Scheduling module may not be available', {
+      operation: 'seed_scheduling_module_failure',
+      error: { message: err.message, stack: err.stack },
+    });
   }
 }
 

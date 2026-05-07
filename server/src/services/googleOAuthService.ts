@@ -1,6 +1,32 @@
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../lib/prisma';
 import { getUserWorkCredentials, generateWorkCredentials } from './ssoService';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 interface GoogleWorkspaceUser {
   id: string;
@@ -204,7 +230,7 @@ export async function authenticateGoogleUserForBusiness(
 
     return { success: true, workToken };
   } catch (error) {
-    console.error('Google OAuth authentication error:', error);
+    logSrvErr('googleoauthservice_google_oauth_authentication_error', 'Google OAuth authentication error:', error);
     return { success: false, error: 'Authentication failed' };
   }
 }
@@ -224,7 +250,7 @@ export async function refreshGoogleAccessToken(
     const { credentials } = await oauth2Client.refreshAccessToken();
     return credentials.access_token || null;
   } catch (error) {
-    console.error('Failed to refresh Google access token:', error);
+    logSrvErr('googleoauthservice_failed_to_refresh_google_access_token', 'Failed to refresh Google access token:', error);
     return null;
   }
 }
@@ -250,7 +276,7 @@ export async function getGoogleWorkspaceUsers(
     const responseData = response.data as any;
     return responseData.users || [];
   } catch (error) {
-    console.error('Failed to get Google Workspace users:', error);
+    logSrvErr('googleoauthservice_failed_to_get_google_workspace_users', 'Failed to get Google Workspace users:', error);
     return [];
   }
 } 

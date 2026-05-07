@@ -13,8 +13,30 @@
 
 import { PrismaClient } from '@prisma/client';
 import type { ModuleAIContext } from 'shared/types/module-ai-context';
+import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();
+
+function logScriptDebug(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...context });
+}
+
+function logScriptInfo(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.info(message, { operation, ...context });
+}
+
+function logScriptWarn(message: string, operation: string, context?: Record<string, unknown>): void {
+  void logger.warn(message, { operation, ...context });
+}
+
+function logScriptError(message: string, operation: string, error: unknown, context?: Record<string, unknown>): void {
+  const err = error instanceof Error ? error : new Error(String(error));
+  void logger.error(message, {
+    operation,
+    error: { message: err.message, stack: err.stack },
+    ...context,
+  });
+}
 
 // ============================================================================
 // AI CONTEXT DEFINITIONS FOR BUILT-IN MODULES
@@ -490,7 +512,10 @@ async function registerModuleContext(
   aiContext: ModuleAIContext
 ) {
   try {
-    console.log(`\n📝 Registering: ${moduleName}...`);
+    logScriptInfo('Registering module AI context', 'register_builtin_modules_script_register', {
+      moduleId,
+      moduleName,
+    });
     
     // Check if module exists in modules table
     const module = await prisma.module.findUnique({
@@ -498,7 +523,9 @@ async function registerModuleContext(
     });
     
     if (!module) {
-      console.log(`⚠️  Warning: Module '${moduleId}' not found in modules table. Creating entry...`);
+      logScriptWarn('Module not found in modules table', 'register_builtin_modules_script_module_missing', {
+        moduleId,
+      });
       // For built-in modules, we might need to create a basic entry
       // In production, these should already exist
     }
@@ -509,7 +536,9 @@ async function registerModuleContext(
     });
     
     if (existing) {
-      console.log(`   Updating existing entry...`);
+      logScriptDebug('Updating existing module AI context registry entry', 'register_builtin_modules_script_update', {
+        moduleId,
+      });
       await prisma.moduleAIContextRegistry.update({
         where: { moduleId },
         data: {
@@ -528,9 +557,11 @@ async function registerModuleContext(
           lastUpdated: new Date()
         }
       });
-      console.log(`✅ Updated: ${moduleName}`);
+      logScriptInfo('Updated module AI context', 'register_builtin_modules_script_update_success', { moduleId, moduleName });
     } else {
-      console.log(`   Creating new entry...`);
+      logScriptDebug('Creating new module AI context registry entry', 'register_builtin_modules_script_create', {
+        moduleId,
+      });
       await prisma.moduleAIContextRegistry.create({
         data: {
           moduleId,
@@ -548,16 +579,22 @@ async function registerModuleContext(
           fullAIContext: aiContext as any
         }
       });
-      console.log(`✅ Created: ${moduleName}`);
+      logScriptInfo('Created module AI context', 'register_builtin_modules_script_create_success', { moduleId, moduleName });
     }
     
     // Log summary
-    console.log(`   Keywords: ${aiContext.keywords.length}`);
-    console.log(`   Patterns: ${aiContext.patterns.length}`);
-    console.log(`   Context Providers: ${aiContext.contextProviders.length}`);
+    logScriptDebug('Module AI context summary', 'register_builtin_modules_script_summary', {
+      moduleId,
+      keywords: aiContext.keywords.length,
+      patterns: aiContext.patterns.length,
+      contextProviders: aiContext.contextProviders.length,
+    });
     
   } catch (error) {
-    console.error(`❌ Error registering ${moduleName}:`, error);
+    logScriptError('Error registering module AI context', 'register_builtin_modules_script_register_error', error, {
+      moduleId,
+      moduleName,
+    });
     throw error;
   }
 }
@@ -567,16 +604,9 @@ async function registerModuleContext(
 // ============================================================================
 
 async function main() {
-  console.log('🤖 ============================================');
-  console.log('🤖 VSSYL - Built-in Module Registration');
-  console.log('🤖 ============================================\n');
-  
-  console.log('📊 This script will register AI contexts for:');
-  console.log('   • File Hub');
-  console.log('   • Chat');
-  console.log('   • Calendar');
-  console.log('   • Household');
-  console.log('   • Business\n');
+  logScriptInfo('Starting built-in module registration script', 'register_builtin_modules_script_start', {
+    modules: ['drive', 'chat', 'calendar', 'household', 'business'],
+  });
   
   try {
     // Register all built-in modules
@@ -586,21 +616,24 @@ async function main() {
     await registerModuleContext('household', 'Household', HOUSEHOLD_AI_CONTEXT);
     await registerModuleContext('business', 'Business', BUSINESS_AI_CONTEXT);
     
-    console.log('\n✅ ============================================');
-    console.log('✅ All built-in modules registered successfully!');
-    console.log('✅ ============================================\n');
+    logScriptInfo(
+      'All built-in modules registered successfully',
+      'register_builtin_modules_script_complete'
+    );
     
     // Show summary
     const registryCount = await prisma.moduleAIContextRegistry.count();
-    console.log(`📊 Total modules in AI registry: ${registryCount}`);
+    logScriptInfo('Total modules in AI registry', 'register_builtin_modules_script_registry_count', {
+      registryCount,
+    });
     
-    console.log('\n🎯 Next Steps:');
-    console.log('   1. Check the admin portal: /admin-portal/ai-learning → Module Analytics');
-    console.log('   2. Build context provider endpoints for each module');
-    console.log('   3. Test AI queries to verify module detection works\n');
+    logScriptInfo(
+      'Next steps: check admin portal module analytics, build context providers, and verify AI module detection',
+      'register_builtin_modules_script_next_steps'
+    );
     
   } catch (error) {
-    console.error('\n❌ Registration failed:', error);
+    logScriptError('Built-in module registration script failed', 'register_builtin_modules_script_fatal_error', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

@@ -8,6 +8,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logHrAiCtxError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 /**
  * GET /api/hr/ai/context/overview
@@ -174,7 +184,7 @@ export async function getHROverviewContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getHROverviewContext:', error);
+    logHrAiCtxError('Error in getHROverviewContext', 'ai_ctx_hr_overview', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch HR overview context',
@@ -299,7 +309,7 @@ export async function getEmployeeHeadcountContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getEmployeeHeadcountContext:', error);
+    logHrAiCtxError('Error in getEmployeeHeadcountContext', 'ai_ctx_hr_headcount', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch headcount context',
@@ -484,7 +494,7 @@ export async function getTimeOffSummaryContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getTimeOffSummaryContext:', error);
+    logHrAiCtxError('Error in getTimeOffSummaryContext', 'ai_ctx_hr_timeoff', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch time-off summary context',

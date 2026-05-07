@@ -80,7 +80,10 @@ export const submitModule = async (req: Request, res: Response) => {
 
     // Log security warnings if any
     if (securityValidation.warnings.length > 0) {
-      console.warn('⚠️ Module submission has security warnings:', securityValidation.warnings);
+      void logger.warn('Module submission has security warnings', {
+        operation: 'submit_module',
+        context: { warnings: securityValidation.warnings },
+      });
     }
 
     // Create the module
@@ -156,7 +159,6 @@ export const submitModule = async (req: Request, res: Response) => {
     });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
-    console.error('Error submitting module:', err);
     void logger.error('Error submitting module', {
       operation: 'submit_module',
       error: { message: err.message, stack: err.stack },
@@ -234,8 +236,12 @@ export const getModuleSubmissions = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, data: submissions });
-  } catch (error) {
-    console.error('Error getting module submissions:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting module submissions', {
+      operation: 'module_submissions_list',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to get module submissions' });
   }
 };
@@ -376,11 +382,17 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
       try {
         const { moduleRegistrySyncService } = await import('../../services/ModuleRegistrySyncService');
         await moduleRegistrySyncService.syncModule(submission.moduleId);
-        console.log(`✅ Module AI context synced for: ${submission.module.name}`);
-      } catch (syncError) {
-        // Log error but don't fail the approval
-        console.error(`⚠️  Failed to sync AI context for module ${submission.module.name}:`, syncError);
-        console.error('   Module is approved, but AI context may need manual sync');
+        void logger.info('Module AI context synced after approval', {
+          operation: 'module_approve_sync_ai',
+          context: { moduleId: submission.moduleId, moduleName: submission.module.name },
+        });
+      } catch (syncError: unknown) {
+        const se = syncError instanceof Error ? syncError : new Error(String(syncError));
+        void logger.error('Failed to sync AI context for approved module', {
+          operation: 'module_approve_sync_ai',
+          context: { moduleId: submission.moduleId, moduleName: submission.module.name },
+          error: { message: se.message, stack: se.stack },
+        });
       }
     } else if (latestVersion) {
       await prisma.moduleVersion.update({
@@ -401,8 +413,12 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
         submission: updatedSubmission 
       } 
     });
-  } catch (error) {
-    console.error('Error reviewing module submission:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error reviewing module submission', {
+      operation: 'module_submission_review',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to review module submission' });
   }
 };
@@ -554,8 +570,12 @@ export const getUserSubmissions = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, data: submissions });
-  } catch (error) {
-    console.error('Error getting user submissions:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting user submissions', {
+      operation: 'module_user_submissions',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to get user submissions' });
   }
 };
@@ -734,8 +754,12 @@ export const linkModuleToBusiness = async (req: Request, res: Response) => {
         module: updatedModule,
       },
     });
-  } catch (error) {
-    console.error('Error linking module to business:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error linking module to business', {
+      operation: 'module_link_business',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to link module to business' });
   }
 };
@@ -786,8 +810,12 @@ export const getBusinessModules = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, data: modules });
-  } catch (error) {
-    console.error('Error getting business modules:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting business modules', {
+      operation: 'module_business_list',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to get business modules' });
   }
 }; 

@@ -1,6 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { HouseholdRole, HouseholdType } from '@prisma/client';
+
+function logHouseholdError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 /** Owner, Admin, and Adult (parent) can add/remove most household members; role edits are further restricted for Adults below. */
 const HOUSEHOLD_ROSTER_MANAGER_ROLES: HouseholdRole[] = [
@@ -38,8 +47,8 @@ async function addHouseholdToPlace(userId: string, householdId: string, househol
         label: householdName,
       },
     });
-  } catch (e) {
-    console.error('Failed to add household to Place:', e);
+  } catch (e: unknown) {
+    logHouseholdError('Failed to add household to Place', 'household_place_node', e);
   }
 }
 
@@ -206,8 +215,8 @@ export async function createHousehold(req: Request, res: Response, next: NextFun
           }
         });
       }
-    } catch (e) {
-      console.error('Failed to auto-provision household calendar:', e);
+    } catch (e: unknown) {
+      logHouseholdError('Failed to auto-provision household calendar', 'household_calendar_provision', e);
     }
 
     await addHouseholdToPlace(userId, household.id, data.name);

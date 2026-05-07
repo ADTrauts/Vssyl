@@ -2,22 +2,48 @@ import express from 'express';
 import { BusinessAIDigitalTwinService } from '../ai/enterprise/BusinessAIDigitalTwinService';
 import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 const businessAIService = new BusinessAIDigitalTwinService(prisma);
 
-console.log('BusinessAI routes loaded');
+logSrvDebug('businessai_businessai_routes_loaded', 'BusinessAI routes loaded');
 
 router.use(authenticateJWT);
 
 // Debug middleware to log all requests
 router.use((req, res, next) => {
-  console.log('BusinessAI - Request received:', {
+  logSrvDebug('businessai_request', 'BusinessAI - Request received', {
     method: req.method,
     path: req.path,
     url: req.url,
-    params: req.params,
-    query: req.query
+    params: req.params as Record<string, unknown>,
+    query: req.query as Record<string, unknown>,
   });
   next();
 });
@@ -27,13 +53,19 @@ router.use((req, res, next) => {
  * POST /api/business-ai/:businessId/initialize
  */
 router.post('/:businessId/initialize', async (req: express.Request, res: express.Response) => {
-  console.log('BusinessAI - Initialize route hit:', req.params.businessId);
+  logSrvDebug('businessai_initialize_hit', 'BusinessAI - Initialize route hit', {
+    businessId: req.params.businessId,
+  });
   try {
     const { businessId } = req.params;
     const userId = (req as AuthenticatedRequest).user!.id;
     const config = req.body;
 
-    console.log('BusinessAI - Initializing with:', { businessId, userId, config });
+    logSrvDebug('businessai_initializing', 'BusinessAI - Initializing with', {
+      businessId,
+      userId,
+      config: config as Record<string, unknown>,
+    });
 
     const businessAI = await businessAIService.initializeBusinessAI(businessId, userId, config);
 
@@ -43,7 +75,7 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
       data: businessAI
     });
   } catch (error: unknown) {
-    console.error('Failed to initialize business AI:', error);
+    logSrvErr('businessai_failed_to_initialize_business_ai', 'Failed to initialize business AI:', error);
     res.status(400).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to initialize business AI'
@@ -56,7 +88,9 @@ router.post('/:businessId/initialize', async (req: express.Request, res: express
  * GET /api/business-ai/:businessId/config
  */
 router.get('/:businessId/config', async (req: express.Request, res: express.Response) => {
-  console.log('BusinessAI - Config route hit:', req.params.businessId);
+  logSrvDebug('businessai_config_hit', 'BusinessAI - Config route hit', {
+    businessId: req.params.businessId,
+  });
   try {
     const { businessId } = req.params;
     const userId = (req as AuthenticatedRequest).user!.id;
@@ -117,7 +151,7 @@ router.get('/:businessId/config', async (req: express.Request, res: express.Resp
       });
     }
   } catch (error: unknown) {
-    console.error('Failed to get business AI config:', error);
+    logSrvErr('businessai_failed_to_get_business_ai_config', 'Failed to get business AI config:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get business AI configuration'
@@ -142,7 +176,7 @@ router.put('/:businessId/config', async (req: express.Request, res: express.Resp
       message: 'Business AI configuration updated successfully'
     });
   } catch (error: unknown) {
-    console.error('Failed to update business AI config:', error);
+    logSrvErr('businessai_failed_to_update_business_ai_config', 'Failed to update business AI config:', error);
     res.status(400).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to update business AI configuration'
@@ -179,7 +213,7 @@ router.post('/:businessId/interact', async (req: express.Request, res: express.R
       data: response
     });
   } catch (error: unknown) {
-    console.error('Business AI interaction failed:', error);
+    logSrvErr('businessai_business_ai_interaction_failed', 'Business AI interaction failed:', error);
     res.status(400).json({
       success: false,
       message: error instanceof Error ? error.message : 'AI interaction failed'
@@ -192,21 +226,21 @@ router.post('/:businessId/interact', async (req: express.Request, res: express.R
  * GET /api/business-ai/:businessId/employee-access
  */
 router.get('/:businessId/employee-access', async (req: express.Request, res: express.Response) => {
-  console.log('BusinessAI - Employee access route hit:', {
+  logSrvDebug('businessai_employee_access_hit', 'BusinessAI - Employee access route hit', {
     businessId: req.params.businessId,
     method: req.method,
     path: req.path,
-    url: req.url
+    url: req.url,
   });
-  
+
   try {
     const { businessId } = req.params;
     const userId = (req as AuthenticatedRequest).user!.id;
-    
-    console.log('BusinessAI - Employee access request:', {
+
+    logSrvDebug('businessai_employee_access_request', 'BusinessAI - Employee access request', {
       businessId,
       userId,
-      hasUserId: !!userId
+      hasUserId: !!userId,
     });
 
     // Check if user is business member
@@ -263,7 +297,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
       }
     });
   } catch (error: unknown) {
-    console.error('Failed to get employee AI access:', error);
+    logSrvErr('businessai_failed_to_get_employee_ai_access', 'Failed to get employee AI access:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get AI access information'
@@ -315,7 +349,7 @@ router.get('/:businessId/analytics', async (req: express.Request, res: express.R
       data: analytics
     });
   } catch (error: unknown) {
-    console.error('Failed to get business AI analytics:', error);
+    logSrvErr('businessai_failed_to_get_business_ai_analytics', 'Failed to get business AI analytics:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get analytics'
@@ -382,7 +416,7 @@ router.get('/:businessId/learning-events', async (req: express.Request, res: exp
       data: learningEvents
     });
   } catch (error: unknown) {
-    console.error('Failed to get learning events:', error);
+    logSrvErr('businessai_failed_to_get_learning_events', 'Failed to get learning events:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get learning events'
@@ -430,7 +464,7 @@ router.get('/:businessId/centralized-insights', async (req: express.Request, res
       data: insights
     });
   } catch (error: unknown) {
-    console.error('Failed to get centralized insights:', error);
+    logSrvErr('businessai_failed_to_get_centralized_insights', 'Failed to get centralized insights:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get centralized insights'
@@ -507,7 +541,7 @@ router.put('/:businessId/learning-events/:eventId/review', async (req: express.R
       data: updatedEvent
     });
   } catch (error: unknown) {
-    console.error('Failed to review learning event:', error);
+    logSrvErr('businessai_failed_to_review_learning_event', 'Failed to review learning event:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to review learning event'

@@ -1,8 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { geolocationService } from '../services/geolocationService';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceDiscoveryError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -82,7 +91,7 @@ export async function getLocalSuggestions(req: Request, res: Response): Promise<
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching local suggestions:', err.message);
+    logPlaceDiscoveryError('Error fetching local suggestions', 'place_discovery_local', err);
     res.status(500).json({ success: false, error: 'Failed to fetch local suggestions' });
   }
 }
@@ -201,7 +210,7 @@ export async function getForYouSuggestions(req: Request, res: Response): Promise
     res.json({ success: true, data: results.slice(0, 15) });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching for-you suggestions:', err.message);
+    logPlaceDiscoveryError('Error fetching for-you suggestions', 'place_discovery_foryou', err);
     res.status(500).json({ success: false, error: 'Failed to fetch suggestions' });
   }
 }
@@ -231,7 +240,7 @@ export async function dismissSuggestion(req: Request, res: Response): Promise<vo
     res.json({ success: true, message: 'Suggestion dismissed' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error dismissing suggestion:', err.message);
+    logPlaceDiscoveryError('Error dismissing suggestion', 'place_discovery_dismiss', err);
     res.status(500).json({ success: false, error: 'Failed to dismiss suggestion' });
   }
 }
@@ -291,7 +300,7 @@ export async function getPlaceConnectionsContext(req: Request, res: Response): P
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching connections context:', err.message);
+    logPlaceDiscoveryError('Error fetching connections context', 'place_discovery_connections_ctx', err);
     res.status(500).json({ success: false, error: 'Failed to fetch connections context' });
   }
 }
@@ -349,7 +358,7 @@ export async function getPlaceDiscoveriesContext(req: Request, res: Response): P
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching discoveries context:', err.message);
+    logPlaceDiscoveryError('Error fetching discoveries context', 'place_discovery_discoveries_ctx', err);
     res.status(500).json({ success: false, error: 'Failed to fetch discoveries context' });
   }
 }

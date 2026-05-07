@@ -2,6 +2,32 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -100,7 +126,7 @@ router.get('/stats', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching AI stats:', error);
+    logSrvErr('ai_stats_error_fetching_ai_stats', 'Error fetching AI stats:', error);
     res.status(500).json({ 
       error: 'Failed to fetch AI statistics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -165,7 +191,7 @@ router.get('/health', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error checking AI health:', error);
+    logSrvErr('ai_stats_error_checking_ai_health', 'Error checking AI health:', error);
     res.status(500).json({ 
       error: 'Failed to check AI health',
       details: error instanceof Error ? error.message : 'Unknown error'

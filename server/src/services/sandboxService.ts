@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
-import { logger } from '../lib/logger';
 import Docker from 'dockerode';
 import {
   SandboxTestResult,
@@ -10,6 +9,31 @@ import {
   SecurityViolation,
   PerformanceMetrics
 } from '../../../shared/dist/types/sandbox';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
 
 /**
  * Sandbox Testing Service
@@ -36,7 +60,7 @@ export class SandboxService extends EventEmitter {
    */
   async testModuleInSandbox(moduleData: Record<string, unknown>): Promise<SandboxTestResult> {
     try {
-      console.log('🏗️ Starting sandbox testing for module...');
+      logSrvDebug('sandboxservice_starting_sandbox_testing_for_module', '🏗️ Starting sandbox testing for module...');
       
       const testEnvironment = await this.createSandboxEnvironment(moduleData);
       const testScenarios = this.generateTestScenarios(moduleData);
@@ -85,11 +109,13 @@ export class SandboxService extends EventEmitter {
         violations: results.results.securityViolations.length
       });
 
-      console.log(`✅ Sandbox testing completed for module ${moduleData.name}`);
+      logSrvDebug('sandboxservice_testing_completed', 'Sandbox testing completed for module', {
+        moduleName: moduleData.name as string,
+      });
       return results;
 
     } catch (error) {
-      console.error('❌ Error in sandbox testing:', error);
+      logSrvErr('sandboxservice_error_in_sandbox_testing', '❌ Error in sandbox testing:', error);
       await logger.error('Sandbox testing failed', {
         operation: 'sandbox_testing',
         error: {
@@ -204,34 +230,36 @@ export class SandboxService extends EventEmitter {
           
           // Monitor network requests
           page.on('request', request => {
-            console.log('NETWORK_REQUEST:', JSON.stringify({
+            process.stdout.write('NETWORK_REQUEST:' + JSON.stringify({
               url: request.url(),
               method: request.method(),
               headers: request.headers()
-            }));
+            }) + '\\n');
           });
           
           // Monitor console logs
           page.on('console', msg => {
-            console.log('CONSOLE_LOG:', JSON.stringify({
+            process.stdout.write('CONSOLE_LOG:' + JSON.stringify({
               type: msg.type(),
               text: msg.text()
-            }));
+            }) + '\\n');
           });
           
           try {
             await page.goto('${entryUrl}', { timeout: 30000 });
             await page.waitForTimeout(5000); // Wait 5 seconds for module to load
           } catch (error) {
-            console.log('MODULE_ERROR:', JSON.stringify({
+            process.stdout.write('MODULE_ERROR:' + JSON.stringify({
               error: error.message
-            }));
+            }) + '\\n');
           }
           
           await browser.close();
         }
         
-        testModule().catch(console.error);
+        testModule().catch((error) => {
+          process.stderr.write(String(error) + '\\n');
+        });
       `],
       HostConfig: {
         Memory: this.MAX_CONTAINER_MEMORY,
@@ -278,7 +306,7 @@ export class SandboxService extends EventEmitter {
       const containerPromise = new Promise<void>((resolve) => {
         container.wait((err: Error | null, data: unknown) => {
           if (err) {
-            console.error('Container wait error:', err);
+            logSrvErr('sandboxservice_container_wait_error', 'Container wait error:', err);
           }
           resolve();
         });
@@ -325,7 +353,7 @@ export class SandboxService extends EventEmitter {
       const logs = await container.logs({ stdout: true, stderr: true });
       return logs.toString();
     } catch (error) {
-      console.error('Error getting container logs:', error);
+      logSrvErr('sandboxservice_error_getting_container_logs', 'Error getting container logs:', error);
       return '';
     }
   }
@@ -430,7 +458,7 @@ export class SandboxService extends EventEmitter {
       const stats = await container.stats();
       return stats as unknown as Record<string, unknown>;
     } catch (error) {
-      console.error('Error getting container stats:', error);
+      logSrvErr('sandboxservice_error_getting_container_stats', 'Error getting container stats:', error);
       return {};
     }
   }
@@ -474,9 +502,9 @@ export class SandboxService extends EventEmitter {
     try {
       await container.stop();
       await container.remove();
-      console.log('✅ Sandbox container cleaned up');
+      logSrvDebug('sandboxservice_sandbox_container_cleaned_up', '✅ Sandbox container cleaned up');
     } catch (error) {
-      console.error('❌ Error cleaning up sandbox container:', error);
+      logSrvErr('sandboxservice_error_cleaning_up_sandbox_container', '❌ Error cleaning up sandbox container:', error);
     }
   }
 }

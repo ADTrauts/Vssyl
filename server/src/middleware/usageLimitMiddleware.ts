@@ -85,9 +85,13 @@ export function recordUsageMiddleware(
           }
 
           await UsageTrackingService.recordUsage(userId, metric, quantity, 0, businessId);
-        } catch (error) {
-          // Silently fail - usage recording shouldn't break responses
-          console.error('Error recording usage:', error);
+        } catch (error: unknown) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          await logger.error('Error recording usage', {
+            operation: 'usage_limit_record_usage',
+            metric,
+            error: { message: err.message, stack: err.stack },
+          });
         }
       });
 
@@ -141,8 +145,13 @@ export function usageLimitWithRecording(
       }
 
       await UsageTrackingService.recordUsage(userId!, metric, quantity, 0, businessId);
-          } catch (error) {
-            console.error('Error recording usage:', error);
+          } catch (error: unknown) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            await logger.error('Error recording usage', {
+              operation: 'usage_limit_with_recording_record_usage',
+              metric,
+              error: { message: err.message, stack: err.stack },
+            });
           }
         });
 

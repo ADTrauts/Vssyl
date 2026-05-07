@@ -156,16 +156,16 @@ export async function getOwnSchedule(req: AuthenticatedRequest, res: Response): 
  * Set employee availability
  */
 export async function setOwnAvailability(req: AuthenticatedRequest, res: Response): Promise<void> {
-  console.log('🔍 setOwnAvailability controller called', {
-    method: req.method,
-    path: req.path,
-    url: req.url,
-    hasUser: !!req.user,
-    userId: req.user?.id,
-    businessId: req.businessId,
-    queryBusinessId: req.query.businessId,
-    bodyKeys: req.body ? Object.keys(req.body) : [],
-    body: req.body
+  void logger.debug('setOwnAvailability invoked', {
+    operation: 'set_own_availability',
+    context: {
+      method: req.method,
+      path: req.path,
+      hasUser: !!req.user,
+      userId: req.user?.id,
+      businessId: req.businessId,
+      bodyKeys: req.body && typeof req.body === 'object' ? Object.keys(req.body as object) : [],
+    },
   });
   try {
     const user = req.user;

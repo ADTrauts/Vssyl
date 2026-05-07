@@ -13,6 +13,31 @@ import { ensureEmployeeDocumentsFolder } from './driveService';
 import { storageService } from './storageService';
 import { NotificationService } from './notificationService';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 type JsonInput = Prisma.InputJsonValue | null | undefined;
 
 export interface OnboardingTaskTemplateInput {
@@ -709,7 +734,7 @@ export async function deliverOnboardingDocuments(params: {
 
   const dashboard = await ensureBusinessDashboardForUser(employeeUserId, businessId);
   if (!dashboard) {
-    console.error('Failed to create or retrieve dashboard for employee:', employeeUserId);
+    logSrvErr('hronboardingservice_failed_to_create_or_retrieve_dashboard_for_employee', 'Failed to create or retrieve dashboard for employee:', employeeUserId);
     return [];
   }
   const folder = await ensureEmployeeDocumentsFolder(employeeUserId, dashboard.id);

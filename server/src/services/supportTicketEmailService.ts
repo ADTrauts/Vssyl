@@ -1,5 +1,31 @@
 import { EmailNotificationService, EmailTemplate } from './emailNotificationService';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export class SupportTicketEmailService {
   private emailService: EmailNotificationService;
@@ -22,7 +48,10 @@ export class SupportTicketEmailService {
       });
 
       if (!ticket || !ticket.customer) {
-        console.error('Ticket or customer not found for assignment email');
+        logSrvErr('supportticketemailservice_assignment_missing_ticket_or_customer', 'Ticket or customer not found for assignment email', new Error('Ticket or customer not found'), {
+          ticketId,
+          assignedToId,
+        });
         return false;
       }
 
@@ -34,7 +63,7 @@ export class SupportTicketEmailService {
         text: template.text
       });
     } catch (error) {
-      console.error('Error sending ticket assigned email:', error);
+      logSrvErr('supportticketemailservice_error_sending_ticket_assigned_email', 'Error sending ticket assigned email:', error);
       return false;
     }
   }
@@ -53,7 +82,9 @@ export class SupportTicketEmailService {
       });
 
       if (!ticket || !ticket.customer) {
-        console.error('Ticket or customer not found for in-progress email');
+        logSrvErr('supportticketemailservice_in_progress_missing_ticket_or_customer', 'Ticket or customer not found for in-progress email', new Error('Ticket or customer not found'), {
+          ticketId,
+        });
         return false;
       }
 
@@ -65,7 +96,7 @@ export class SupportTicketEmailService {
         text: template.text
       });
     } catch (error) {
-      console.error('Error sending ticket in-progress email:', error);
+      logSrvErr('supportticketemailservice_error_sending_ticket_in_progress_email', 'Error sending ticket in-progress email:', error);
       return false;
     }
   }
@@ -84,7 +115,9 @@ export class SupportTicketEmailService {
       });
 
       if (!ticket || !ticket.customer) {
-        console.error('Ticket or customer not found for resolved email');
+        logSrvErr('supportticketemailservice_resolved_missing_ticket_or_customer', 'Ticket or customer not found for resolved email', new Error('Ticket or customer not found'), {
+          ticketId,
+        });
         return false;
       }
 
@@ -96,7 +129,7 @@ export class SupportTicketEmailService {
         text: template.text
       });
     } catch (error) {
-      console.error('Error sending ticket resolved email:', error);
+      logSrvErr('supportticketemailservice_error_sending_ticket_resolved_email', 'Error sending ticket resolved email:', error);
       return false;
     }
   }

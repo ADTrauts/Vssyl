@@ -7,6 +7,32 @@
 
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -50,7 +76,7 @@ router.get('/modules', async (req: Request, res: Response) => {
       }))
     });
   } catch (error) {
-    console.error('Error fetching modules:', error);
+    logSrvErr('debug_modules_error_fetching_modules', 'Error fetching modules:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch modules',
@@ -95,7 +121,7 @@ router.get('/modules/:id', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching module:', error);
+    logSrvErr('debug_modules_error_fetching_module', 'Error fetching module:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch module',
@@ -129,7 +155,7 @@ router.get('/ai-contexts', async (req: Request, res: Response) => {
       contexts
     });
   } catch (error) {
-    console.error('Error fetching AI contexts:', error);
+    logSrvErr('debug_modules_error_fetching_ai_contexts', 'Error fetching AI contexts:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch AI contexts'

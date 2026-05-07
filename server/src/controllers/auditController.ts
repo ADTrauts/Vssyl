@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
+
+function logAuditError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
@@ -104,7 +114,7 @@ export const getPersonalAuditLogs = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting personal audit logs:', error);
+    logAuditError('Error getting personal audit logs', 'audit_logs_list', error);
     res.status(500).json({ success: false, error: 'Failed to get audit logs' });
   }
 };
@@ -192,7 +202,7 @@ export const exportPersonalAuditLogs = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('Error exporting personal audit logs:', error);
+    logAuditError('Error exporting personal audit logs', 'audit_logs_export', error);
     res.status(500).json({ success: false, error: 'Failed to export audit logs' });
   }
 };
@@ -278,7 +288,7 @@ export const getPersonalAuditStats = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting personal audit stats:', error);
+    logAuditError('Error getting personal audit stats', 'audit_stats', error);
     res.status(500).json({ success: false, error: 'Failed to get audit statistics' });
   }
 };

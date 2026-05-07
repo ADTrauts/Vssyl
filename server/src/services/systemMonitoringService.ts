@@ -2,6 +2,32 @@ import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const execAsync = promisify(exec);
 
@@ -57,7 +83,7 @@ export class SystemMonitoringService {
       
       return metrics;
     } catch (error) {
-      console.error('Error collecting system metrics:', error);
+      logSrvErr('systemmonitoringservice_error_collecting_system_metrics', 'Error collecting system metrics:', error);
       // Return cached metrics if available
       return this.lastMetrics || this.getDefaultMetrics();
     }
@@ -273,7 +299,7 @@ export class SystemMonitoringService {
         ]
       });
     } catch (error) {
-      console.error('Error storing system metrics:', error);
+      logSrvErr('systemmonitoringservice_error_storing_system_metrics', 'Error storing system metrics:', error);
     }
   }
 
@@ -312,7 +338,7 @@ export class SystemMonitoringService {
         retentionDays: 30
       };
     } catch (error) {
-      console.error('Error getting backup status:', error);
+      logSrvErr('systemmonitoringservice_error_getting_backup_status', 'Error getting backup status:', error);
       return {
         lastBackup: new Date().toISOString(),
         nextBackup: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -350,7 +376,7 @@ export class SystemMonitoringService {
         scheduledEnd: undefined
       };
     } catch (error) {
-      console.error('Error getting maintenance mode:', error);
+      logSrvErr('systemmonitoringservice_error_getting_maintenance_mode', 'Error getting maintenance mode:', error);
       return {
         enabled: false,
         message: 'System is currently under maintenance.',
@@ -387,7 +413,7 @@ export class SystemMonitoringService {
         }
       });
     } catch (error) {
-      console.error('Error setting maintenance mode:', error);
+      logSrvErr('systemmonitoringservice_error_setting_maintenance_mode', 'Error setting maintenance mode:', error);
       throw error;
     }
   }

@@ -1,6 +1,32 @@
 import { prisma } from '../lib/prisma';
 import { AIQueryService } from './aiQueryService';
 import { isUnlimitedTier } from '../config/aiQueryPacks';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface FeatureConfig {
   name: string;
@@ -176,7 +202,7 @@ export class FeatureGatingService {
       
       userTier = subscription?.tier || 'free';
     } catch (dbError) {
-      console.error('Database error in feature gating:', dbError);
+      logSrvErr('featuregatingservice_database_error_in_feature_gating', 'Database error in feature gating:', dbError);
       // If database query fails, default to free tier
       userTier = 'free';
     }
@@ -224,7 +250,7 @@ export class FeatureGatingService {
           },
         };
       } catch (queryError) {
-        console.error('Query balance check error in feature gating:', queryError);
+        logSrvErr('featuregatingservice_query_balance_check_error_in_feature_gating', 'Query balance check error in feature gating:', queryError);
         // If query check fails, allow access (fail open)
         return { hasAccess: true };
       }
@@ -245,7 +271,7 @@ export class FeatureGatingService {
 
         return { hasAccess: true, usageInfo };
       } catch (usageError) {
-        console.error('Usage check error in feature gating:', usageError);
+        logSrvErr('featuregatingservice_usage_check_error_in_feature_gating', 'Usage check error in feature gating:', usageError);
         // If usage check fails, allow access (fail open)
         return { hasAccess: true };
       }

@@ -12,6 +12,18 @@
 
 ---
 
+## Structured logging migration — `console.*` → `logger` (May 2026) 🟡
+
+**Status:** Major server + web proxy/trash paths migrated; Stripe setup/sync scripts and built-in module registration/seeding logs converted to structured `logger` with `operation` metadata.
+
+**Remaining:** Several non-test server files still use `console.*` (AI model/workflow/learning services, `SSOIntegrationService`, some scripts). Next batches should finish those, then sweep `web/` outside already-migrated API routes if any `console.*` remain.
+
+**Guardrail:** Do not re-run `scripts/patch-console-to-logger.js` as-is until multi-line import insertion is fixed.
+
+**Check:** `pnpm exec tsc --noEmit -p server` after substantive edits.
+
+---
+
 ## Module interoperability alignment (April 2026) ✅
 
 **Status:** **COMPLETE** — All five phases in `docs/plans/MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md` finished. Plan document status: **Complete**.

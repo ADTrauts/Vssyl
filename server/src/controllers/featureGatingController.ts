@@ -2,6 +2,16 @@ import { Request, Response } from 'express';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { SubscriptionMiddleware } from '../middleware/subscriptionMiddleware';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logFeatureGatingError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 export const checkFeatureAccess = async (req: Request, res: Response) => {
   try {
@@ -25,7 +35,7 @@ export const checkFeatureAccess = async (req: Request, res: Response) => {
       usageInfo: access.usageInfo,
     });
   } catch (error) {
-    console.error('Error checking feature access:', error);
+    logFeatureGatingError('Error checking feature access', 'features_check_access', error);
     res.status(500).json({ error: 'Failed to check feature access' });
   }
 };
@@ -46,7 +56,7 @@ export const getUserFeatures = async (req: Request, res: Response) => {
 
     res.json({ features });
   } catch (error) {
-    console.error('Error getting user features:', error);
+    logFeatureGatingError('Error getting user features', 'features_user_list', error);
     res.status(500).json({ error: 'Failed to get user features' });
   }
 };
@@ -67,7 +77,7 @@ export const getUserUsage = async (req: Request, res: Response) => {
 
     res.json({ usage });
   } catch (error) {
-    console.error('Error getting user usage:', error);
+    logFeatureGatingError('Error getting user usage', 'features_usage', error);
     res.status(500).json({ error: 'Failed to get user usage' });
   }
 };
@@ -89,7 +99,7 @@ export const recordUsage = async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Usage recorded successfully' });
   } catch (error) {
-    console.error('Error recording usage:', error);
+    logFeatureGatingError('Error recording usage', 'features_record_usage', error);
     res.status(500).json({ error: 'Failed to record usage' });
   }
 };
@@ -110,7 +120,7 @@ export const getSubscriptionInfo = async (req: Request, res: Response) => {
       moduleAccess,
     });
   } catch (error) {
-    console.error('Error getting subscription info:', error);
+    logFeatureGatingError('Error getting subscription info', 'features_subscription', error);
     res.status(500).json({ error: 'Failed to get subscription info' });
   }
 }; 

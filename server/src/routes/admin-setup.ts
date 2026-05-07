@@ -4,6 +4,31 @@ import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcrypt';
 import { logger } from '../lib/logger';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 const router: express.Router = express.Router();
 
 /**
@@ -51,7 +76,7 @@ router.use(requireAdminSetupSecret);
 // This is a one-time setup endpoint that should be removed after use
 router.post('/create-andrew-admin', async (req: Request, res: Response) => {
   try {
-    console.log('🚀 Creating Andrew admin user in production...');
+    logSrvDebug('admin_setup_creating_andrew_admin_user_in_production', '🚀 Creating Andrew admin user in production...');
     
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -115,7 +140,7 @@ router.post('/create-andrew-admin', async (req: Request, res: Response) => {
     }
 
   } catch (error) {
-    console.error('❌ Error creating admin user:', error);
+    logSrvErr('admin_setup_error_creating_admin_user', '❌ Error creating admin user:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to create admin user',
@@ -136,7 +161,7 @@ router.post('/update-andrew-password', async (req: Request, res: Response) => {
       });
     }
 
-    console.log('🔐 Updating Andrew admin password...');
+    logSrvDebug('admin_setup_updating_andrew_admin_password', '🔐 Updating Andrew admin password...');
     
     const hashedPassword = await bcrypt.hash(password, 10);
     
@@ -157,7 +182,7 @@ router.post('/update-andrew-password', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ Error updating admin password:', error);
+    logSrvErr('admin_setup_error_updating_admin_password', '❌ Error updating admin password:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to update admin password',
@@ -178,7 +203,7 @@ router.post('/promote-existing-user', async (req: Request, res: Response) => {
       });
     }
 
-    console.log(`🔍 Looking for existing user: ${email}`);
+    logSrvDebug('admin_setup_promote_lookup', 'Looking for existing user', { email });
     
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -224,7 +249,7 @@ router.post('/promote-existing-user', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ Error promoting user:', error);
+    logSrvErr('admin_setup_error_promoting_user', '❌ Error promoting user:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to promote user',
@@ -236,7 +261,7 @@ router.post('/promote-existing-user', async (req: Request, res: Response) => {
 // Delete duplicate admin account
 router.delete('/delete-duplicate-admin', async (req: Request, res: Response) => {
   try {
-    console.log('🗑️ Deleting duplicate admin account...');
+    logSrvDebug('admin_setup_deleting_duplicate_admin_account', '🗑️ Deleting duplicate admin account...');
     
     const deletedUser = await prisma.user.delete({
       where: { email: 'Andrew.Trautman@Vssyl.con' },
@@ -250,7 +275,7 @@ router.delete('/delete-duplicate-admin', async (req: Request, res: Response) => 
     });
 
   } catch (error) {
-    console.error('❌ Error deleting duplicate admin:', error);
+    logSrvErr('admin_setup_error_deleting_duplicate_admin', '❌ Error deleting duplicate admin:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to delete duplicate admin',
@@ -273,7 +298,7 @@ router.get('/admin-users', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching admin users:', error);
+    logSrvErr('admin_setup_error_fetching_admin_users', '❌ Error fetching admin users:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch admin users'
@@ -296,7 +321,7 @@ router.get('/all-users', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching all users:', error);
+    logSrvErr('admin_setup_error_fetching_all_users', '❌ Error fetching all users:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch all users'

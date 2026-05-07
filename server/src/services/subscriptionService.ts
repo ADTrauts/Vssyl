@@ -1,6 +1,32 @@
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
 }) : null;
@@ -113,7 +139,7 @@ export class SubscriptionService {
           },
         });
       } catch (error) {
-        console.error('Error creating Stripe subscription:', error);
+        logSrvErr('subscriptionservice_error_creating_stripe_subscription', 'Error creating Stripe subscription:', error);
         // Continue with database subscription even if Stripe fails
       }
     }
@@ -208,7 +234,7 @@ export class SubscriptionService {
           await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
         }
       } catch (error) {
-        console.error('Error updating Stripe subscription:', error);
+        logSrvErr('subscriptionservice_error_updating_stripe_subscription', 'Error updating Stripe subscription:', error);
       }
     }
 
@@ -245,7 +271,7 @@ export class SubscriptionService {
       try {
         await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
       } catch (error) {
-        console.error('Error cancelling Stripe subscription:', error);
+        logSrvErr('subscriptionservice_error_cancelling_stripe_subscription', 'Error cancelling Stripe subscription:', error);
       }
     }
 
@@ -350,7 +376,7 @@ export class SubscriptionService {
           });
         }
       } catch (error) {
-        console.error('Error updating Stripe subscription employee count:', error);
+        logSrvErr('subscriptionservice_error_updating_stripe_subscription_employee_count', 'Error updating Stripe subscription employee count:', error);
         // Continue even if Stripe update fails - database is already updated
       }
     }
@@ -390,7 +416,7 @@ export class SubscriptionService {
           cancel_at_period_end: false,
         });
       } catch (error) {
-        console.error('Error reactivating Stripe subscription:', error);
+        logSrvErr('subscriptionservice_error_reactivating_stripe_subscription', 'Error reactivating Stripe subscription:', error);
       }
     }
 
@@ -444,7 +470,7 @@ export class SubscriptionService {
         return pricing.stripePriceId;
       }
     } catch (error) {
-      console.warn('Failed to get Stripe price ID from database, using fallback:', error);
+      logSrvWarn('subscriptionservice_failed_to_get_stripe_price_id_from_database_using_fallba', 'Failed to get Stripe price ID from database, using fallback:', error);
     }
 
     // Fallback to environment variables (for backward compatibility)

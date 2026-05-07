@@ -522,12 +522,21 @@ export const upsertPricing = async (req: Request, res: Response): Promise<void> 
               newPrice: basePrice,
               effectiveDate: effectiveDateObj,
               userName: sub.user.name || undefined,
-            }).catch((err) => {
-              console.error(`Failed to send notification to ${sub.user.email}:`, err);
+            }).catch((err: unknown) => {
+              const e = err instanceof Error ? err : new Error(String(err));
+              void logger.error('Failed to send price change notification', {
+                operation: 'pricing_notify_subscriber',
+                context: { toEmail: sub.user.email },
+                error: { message: e.message, stack: e.stack },
+              });
             })
           )
-        ).catch((err) => {
-          console.error('Error sending price change notifications:', err);
+        ).catch((err: unknown) => {
+          const e = err instanceof Error ? err : new Error(String(err));
+          void logger.error('Error sending price change notifications', {
+            operation: 'pricing_notify_batch',
+            error: { message: e.message, stack: e.stack },
+          });
         });
 
         // Mark price change as notification sent

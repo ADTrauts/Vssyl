@@ -1,6 +1,32 @@
 import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import businessFrontPageService from '../services/businessFrontPageService';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -26,15 +52,13 @@ router.get('/:businessId/config', async (req, res) => {
     const config = await businessFrontPageService.getOrCreateConfig(businessId);
     res.json(config);
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error fetching front page config:', {
-      error: err.message,
-      stack: err.stack,
-      businessId: req.params.businessId
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('businessfrontpage_fetch_config', 'Error fetching front page config', error, {
+      businessId: req.params.businessId,
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch front page configuration',
-      message: err.message 
+      message: err.message,
     });
   }
 });
@@ -48,8 +72,8 @@ router.post('/:businessId/config', async (req, res) => {
     const { businessId } = req.params;
     const config = await businessFrontPageService.createDefaultConfig(businessId);
     res.status(201).json(config);
-  } catch (error) {
-    console.error('Error creating front page config:', error);
+  } catch (error: unknown) {
+    logSrvErr('businessfrontpage_error_creating_front_page_config', 'Error creating front page config', error);
     res.status(500).json({ error: 'Failed to create front page configuration' });
   }
 });
@@ -72,7 +96,7 @@ router.put('/:businessId/config', async (req, res) => {
 
     res.json(config);
   } catch (error) {
-    console.error('Error updating front page config:', error);
+    logSrvErr('businessfrontpage_error_updating_front_page_config', 'Error updating front page config:', error);
     res.status(500).json({ error: 'Failed to update front page configuration' });
   }
 });
@@ -87,7 +111,7 @@ router.delete('/:businessId/config', async (req, res) => {
     await businessFrontPageService.deleteConfig(businessId);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting front page config:', error);
+    logSrvErr('businessfrontpage_error_deleting_front_page_config', 'Error deleting front page config:', error);
     res.status(500).json({ error: 'Failed to delete front page configuration' });
   }
 });
@@ -108,7 +132,7 @@ router.post('/:businessId/widgets', async (req, res) => {
     const widget = await businessFrontPageService.addWidget(businessId, widgetData);
     res.status(201).json(widget);
   } catch (error) {
-    console.error('Error adding widget:', error);
+    logSrvErr('businessfrontpage_error_adding_widget', 'Error adding widget:', error);
     res.status(500).json({ error: 'Failed to add widget' });
   }
 });
@@ -125,7 +149,7 @@ router.put('/:businessId/widgets/:widgetId', async (req, res) => {
     const widget = await businessFrontPageService.updateWidget(widgetId, widgetData);
     res.json(widget);
   } catch (error) {
-    console.error('Error updating widget:', error);
+    logSrvErr('businessfrontpage_error_updating_widget', 'Error updating widget:', error);
     res.status(500).json({ error: 'Failed to update widget' });
   }
 });
@@ -140,7 +164,7 @@ router.delete('/:businessId/widgets/:widgetId', async (req, res) => {
     await businessFrontPageService.deleteWidget(widgetId);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting widget:', error);
+    logSrvErr('businessfrontpage_error_deleting_widget', 'Error deleting widget:', error);
     res.status(500).json({ error: 'Failed to delete widget' });
   }
 });
@@ -157,7 +181,7 @@ router.post('/:businessId/widgets/reorder', async (req, res) => {
     const config = await businessFrontPageService.reorderWidgets(businessId, widgetOrders);
     res.json(config);
   } catch (error) {
-    console.error('Error reordering widgets:', error);
+    logSrvErr('businessfrontpage_error_reordering_widgets', 'Error reordering widgets:', error);
     res.status(500).json({ error: 'Failed to reorder widgets' });
   }
 });
@@ -182,7 +206,7 @@ router.get('/:businessId/view', async (req, res) => {
     const view = await businessFrontPageService.getUserView(businessId, userId);
     res.json(view);
   } catch (error) {
-    console.error('Error fetching user view:', error);
+    logSrvErr('businessfrontpage_error_fetching_user_view', 'Error fetching user view:', error);
     res.status(500).json({ error: 'Failed to fetch personalized view' });
   }
 });
@@ -203,7 +227,7 @@ router.get('/:businessId/widgets/visible', async (req, res) => {
     const widgets = await businessFrontPageService.getVisibleWidgets(businessId, userId);
     res.json(widgets);
   } catch (error) {
-    console.error('Error fetching visible widgets:', error);
+    logSrvErr('businessfrontpage_error_fetching_visible_widgets', 'Error fetching visible widgets:', error);
     res.status(500).json({ error: 'Failed to fetch visible widgets' });
   }
 });
@@ -228,7 +252,7 @@ router.get('/:businessId/my-customization', async (req, res) => {
     const view = await businessFrontPageService.getUserView(businessId, userId);
     res.json(view.userCustomization);
   } catch (error) {
-    console.error('Error fetching user customization:', error);
+    logSrvErr('businessfrontpage_error_fetching_user_customization', 'Error fetching user customization:', error);
     res.status(500).json({ error: 'Failed to fetch customization' });
   }
 });
@@ -255,7 +279,7 @@ router.put('/:businessId/my-customization', async (req, res) => {
 
     res.json(customization);
   } catch (error) {
-    console.error('Error saving user customization:', error);
+    logSrvErr('businessfrontpage_error_saving_user_customization', 'Error saving user customization:', error);
     if (error instanceof Error && error.message.includes('not enabled')) {
       res.status(403).json({ error: error.message });
     } else {
@@ -280,7 +304,7 @@ router.delete('/:businessId/my-customization', async (req, res) => {
     await businessFrontPageService.resetUserCustomization(businessId, userId);
     res.status(204).send();
   } catch (error) {
-    console.error('Error resetting user customization:', error);
+    logSrvErr('businessfrontpage_error_resetting_user_customization', 'Error resetting user customization:', error);
     res.status(500).json({ error: 'Failed to reset customization' });
   }
 });
@@ -305,7 +329,7 @@ router.post('/:businessId/preview', async (req, res) => {
       preview: true
     });
   } catch (error) {
-    console.error('Error generating preview:', error);
+    logSrvErr('businessfrontpage_error_generating_preview', 'Error generating preview:', error);
     res.status(500).json({ error: 'Failed to generate preview' });
   }
 });

@@ -10,6 +10,32 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -103,14 +129,14 @@ router.post('/seed-core-modules', async (req: Request, res: Response) => {
             }
           });
           results.modulesCreated++;
-          console.log(`✅ Created Module: ${name}`);
+          logSrvDebug('admin_seed_module_created', 'Created module', { name, moduleId });
         } else {
           results.modulesUpdated++;
-          console.log(`ℹ️  Module already exists: ${name}`);
+          logSrvDebug('admin_seed_module_exists', 'Module already exists', { name, moduleId });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         results.errors.push(`Failed to create module ${name}: ${err}`);
-        console.error(`❌ Error creating module ${name}:`, err);
+        logSrvErr('admin_seed_module_create', `Error creating module ${name}`, err, { name, moduleId });
       }
     }
 
@@ -145,11 +171,21 @@ router.post('/seed-core-modules', async (req: Request, res: Response) => {
               }
             });
             results.installationsCreated++;
-            console.log(`✅ Installed ${name} for ${business.name}`);
+            logSrvDebug('admin_seed_install', 'Installed module for business', {
+              name,
+              moduleId,
+              businessId: business.id,
+              businessName: business.name,
+            });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           results.errors.push(`Failed to install ${name} for ${business.name}: ${err}`);
-          console.error(`❌ Error installing ${name} for ${business.name}:`, err);
+          logSrvErr('admin_seed_install', `Error installing ${name} for ${business.name}`, err, {
+            name,
+            moduleId,
+            businessId: business.id,
+            businessName: business.name,
+          });
         }
       }
     }
@@ -161,7 +197,7 @@ router.post('/seed-core-modules', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error('Seed error:', error);
+    logSrvErr('admin_seed_modules_seed_error', 'Seed error:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to seed core modules' 

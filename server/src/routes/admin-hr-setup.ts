@@ -5,6 +5,32 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -20,7 +46,7 @@ router.post('/seed', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    console.log('Manual HR module seeding requested...');
+    logSrvDebug('admin_hr_setup_manual_hr_module_seeding_requested', 'Manual HR module seeding requested...');
     
     // Check if HR module already exists
     const existing = await prisma.module.findUnique({
@@ -107,7 +133,7 @@ router.post('/seed', async (req: Request, res: Response) => {
       }
     });
     
-    console.log('✅ HR module created successfully');
+    logSrvDebug('admin_hr_setup_hr_module_created_successfully', '✅ HR module created successfully');
     
     return res.json({
       success: true,
@@ -121,7 +147,7 @@ router.post('/seed', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Error seeding HR module:', error);
+    logSrvErr('admin_hr_setup_error_seeding_hr_module', 'Error seeding HR module:', error);
     return res.status(500).json({
       error: 'Failed to seed HR module',
       details: error instanceof Error ? error.message : String(error)
@@ -189,7 +215,7 @@ router.get('/status', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Error checking HR status:', error);
+    logSrvErr('admin_hr_setup_error_checking_hr_status', 'Error checking HR status:', error);
     return res.status(500).json({
       error: 'Failed to check HR status',
       details: error instanceof Error ? error.message : String(error)

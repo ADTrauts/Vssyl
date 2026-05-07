@@ -18,10 +18,15 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import Stripe from 'stripe';
 import { isStripeConfigured } from '../config/stripe';
+import { logger } from '../lib/logger';
 
 if (!isStripeConfigured() || !process.env.STRIPE_SECRET_KEY) {
-  console.error('❌ Error: STRIPE_SECRET_KEY environment variable is required');
-  console.log('💡 Set it in server/.env file');
+  void logger.error('STRIPE_SECRET_KEY environment variable is required', {
+    operation: 'setup_stripe_products_missing_secret',
+  });
+  void logger.info('Set STRIPE_SECRET_KEY in server/.env', {
+    operation: 'setup_stripe_products_missing_secret_help',
+  });
   process.exit(1);
 }
 
@@ -29,7 +34,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
 });
 
-console.log('🚀 Setting up Stripe products for Vssyl...\n');
+void logger.info('Setting up Stripe products for Vssyl', { operation: 'setup_stripe_products_start' });
 
 // Product and price configurations matching your new simplified structure
 const PRODUCTS_CONFIG = [
@@ -134,7 +139,11 @@ interface ProductConfig {
 
 async function createProduct(productConfig: ProductConfig) {
   try {
-    console.log(`📦 Creating product: ${productConfig.name}`);
+    void logger.info('Creating Stripe product', {
+      operation: 'setup_stripe_products_create_product',
+      productId: productConfig.id,
+      productName: productConfig.name,
+    });
 
     // Create the product
     const product = await stripe.products.create({
@@ -144,11 +153,18 @@ async function createProduct(productConfig: ProductConfig) {
       type: 'service',
     });
 
-    console.log(`✅ Product created: ${product.id}`);
+    void logger.info('Stripe product created', {
+      operation: 'setup_stripe_products_create_product_success',
+      productId: product.id,
+    });
 
     // Create prices for this product
     for (const priceConfig of productConfig.prices) {
-      console.log(`  💰 Creating price: ${priceConfig.nickname}`);
+      void logger.debug('Creating Stripe price', {
+        operation: 'setup_stripe_products_create_price',
+        productId: product.id,
+        nickname: priceConfig.nickname,
+      });
 
       // Note: Stripe doesn't allow custom IDs for prices, only products
       // We'll create the price and then sync the ID to database
@@ -162,22 +178,31 @@ async function createProduct(productConfig: ProductConfig) {
         nickname: priceConfig.nickname,
       });
 
-      console.log(
-        `  ✅ Price created: ${price.id} ($${priceConfig.amount / 100}/${priceConfig.interval})`
-      );
+      void logger.info('Stripe price created', {
+        operation: 'setup_stripe_products_create_price_success',
+        priceId: price.id,
+        amount: priceConfig.amount / 100,
+        interval: priceConfig.interval,
+      });
     }
 
-    console.log();
     return product;
   } catch (error: unknown) {
     const err = error as Stripe.errors.StripeError;
     if (err.code === 'resource_already_exists') {
-      console.log(`⚠️  Product ${productConfig.id} already exists, skipping...`);
+      void logger.warn('Stripe product already exists; continuing with prices', {
+        operation: 'setup_stripe_products_product_exists',
+        productId: productConfig.id,
+      });
 
       // Still try to create prices if product exists
       for (const priceConfig of productConfig.prices) {
         try {
-          console.log(`  💰 Creating price: ${priceConfig.nickname}`);
+          void logger.debug('Creating Stripe price for existing product', {
+            operation: 'setup_stripe_products_create_price_existing_product',
+            productId: productConfig.id,
+            nickname: priceConfig.nickname,
+          });
 
           // Note: Stripe doesn't allow custom IDs for prices, only products
           // We'll create the price and then sync the ID to database
@@ -191,21 +216,34 @@ async function createProduct(productConfig: ProductConfig) {
             nickname: priceConfig.nickname,
           });
 
-          console.log(
-            `  ✅ Price created: ${price.id} ($${priceConfig.amount / 100}/${priceConfig.interval})`
-          );
+          void logger.info('Stripe price created for existing product', {
+            operation: 'setup_stripe_products_create_price_existing_product_success',
+            priceId: price.id,
+            amount: priceConfig.amount / 100,
+            interval: priceConfig.interval,
+          });
         } catch (priceError: unknown) {
           const priceErr = priceError as Stripe.errors.StripeError;
           if (priceErr.code === 'resource_already_exists') {
-            console.log(`  ⚠️  Price ${priceConfig.id} already exists, skipping...`);
+            void logger.warn('Stripe price already exists; skipping', {
+              operation: 'setup_stripe_products_price_exists',
+              priceConfigId: priceConfig.id,
+            });
           } else {
-            console.error(`  ❌ Error creating price ${priceConfig.id}:`, priceErr.message);
+            void logger.error('Error creating Stripe price', {
+              operation: 'setup_stripe_products_create_price_error',
+              priceConfigId: priceConfig.id,
+              error: { message: priceErr.message },
+            });
           }
         }
       }
-      console.log();
     } else {
-      console.error(`❌ Error creating product ${productConfig.id}:`, err.message);
+      void logger.error('Error creating Stripe product', {
+        operation: 'setup_stripe_products_create_product_error',
+        productId: productConfig.id,
+        error: { message: err.message },
+      });
       throw error;
     }
   }
@@ -215,34 +253,46 @@ async function setupStripeProducts() {
   try {
     const keyPreview = process.env.STRIPE_SECRET_KEY?.substring(0, 12) || 'unknown';
     const isTest = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || false;
-    console.log(`🔑 Using Stripe key: ${keyPreview}...`);
-    console.log(`🌍 Environment: ${isTest ? 'TEST' : 'LIVE'}`);
-    console.log();
+    void logger.info('Using Stripe key and environment', {
+      operation: 'setup_stripe_products_key_info',
+      keyPreview,
+      environment: isTest ? 'TEST' : 'LIVE',
+    });
 
     // Create all products and prices
     for (const productConfig of PRODUCTS_CONFIG) {
       await createProduct(productConfig);
     }
 
-    console.log('🎉 All Stripe products and prices created successfully!');
-    console.log();
-    console.log('📋 Summary:');
-    console.log('Products created:');
+    void logger.info('All Stripe products and prices created successfully', {
+      operation: 'setup_stripe_products_success',
+    });
     PRODUCTS_CONFIG.forEach((product) => {
-      console.log(`  • ${product.name} (${product.id})`);
+      void logger.info('Product summary', {
+        operation: 'setup_stripe_products_summary_product',
+        productName: product.name,
+        productId: product.id,
+      });
       product.prices.forEach((price) => {
-        console.log(`    - ${price.nickname}: $${price.amount / 100}/${price.interval}`);
+        void logger.info('Price summary', {
+          operation: 'setup_stripe_products_summary_price',
+          nickname: price.nickname,
+          amount: price.amount / 100,
+          interval: price.interval,
+        });
       });
     });
 
-    console.log();
-    console.log('🔗 Next Steps:');
-    console.log('1. Run: pnpm stripe:sync (to sync price IDs to database)');
-    console.log('2. Verify: pnpm stripe:verify (to confirm everything is set up)');
-    console.log('3. Test subscription creation in your application');
-  } catch (error) {
+    void logger.info(
+      'Next steps: run stripe:sync, stripe:verify, and test subscription creation',
+      { operation: 'setup_stripe_products_next_steps' }
+    );
+  } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Setup failed:', err.message);
+    void logger.error('Stripe product setup failed', {
+      operation: 'setup_stripe_products_failed',
+      error: { message: err.message, stack: err.stack },
+    });
     process.exit(1);
   }
 }
@@ -250,8 +300,12 @@ async function setupStripeProducts() {
 // Run if called directly
 if (require.main === module) {
   setupStripeProducts()
-    .catch((error) => {
-      console.error('❌ Error:', error);
+    .catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Unexpected error in setupStripeProducts', {
+        operation: 'setup_stripe_products_unhandled',
+        error: { message: err.message, stack: err.stack },
+      });
       process.exit(1);
     });
 }

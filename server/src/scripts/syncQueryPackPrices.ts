@@ -22,10 +22,15 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import { isStripeConfigured, STRIPE_PRODUCTS } from '../config/stripe';
 import { AI_QUERY_PACKS } from '../config/aiQueryPacks';
 import Stripe from 'stripe';
+import { logger } from '../lib/logger';
 
 if (!isStripeConfigured() || !process.env.STRIPE_SECRET_KEY) {
-  console.error('❌ Error: STRIPE_SECRET_KEY environment variable is required');
-  console.log('💡 Set it in server/.env file');
+  void logger.error('STRIPE_SECRET_KEY environment variable is required', {
+    operation: 'sync_query_pack_prices_missing_secret',
+  });
+  void logger.info('Set STRIPE_SECRET_KEY in server/.env', {
+    operation: 'sync_query_pack_prices_missing_secret_help',
+  });
   process.exit(1);
 }
 
@@ -34,13 +39,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 async function syncQueryPackPrices() {
-  console.log('🔄 Syncing Stripe price IDs for AI Query Packs...\n');
+  void logger.info('Syncing Stripe price IDs for AI query packs', {
+    operation: 'sync_query_pack_prices_start',
+  });
 
   const keyPreview = process.env.STRIPE_SECRET_KEY?.substring(0, 12) || 'unknown';
   const isTest = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || false;
-  console.log(`🔑 Using Stripe key: ${keyPreview}...`);
-  console.log(`🌍 Environment: ${isTest ? 'TEST' : 'LIVE'}`);
-  console.log();
+  void logger.info('Using Stripe key and environment', {
+    operation: 'sync_query_pack_prices_key_info',
+    keyPreview,
+    environment: isTest ? 'TEST' : 'LIVE',
+  });
 
   try {
     const productId = STRIPE_PRODUCTS.AI_QUERY_PACKS;
@@ -53,12 +62,19 @@ async function syncQueryPackPrices() {
     });
 
     if (prices.data.length === 0) {
-      console.log('⚠️  No prices found for AI Query Packs product');
-      console.log('💡 Run: pnpm stripe:setup-query-packs first');
+      void logger.warn('No prices found for AI query packs product', {
+        operation: 'sync_query_pack_prices_none_found',
+      });
+      void logger.info('Run pnpm stripe:setup-query-packs first', {
+        operation: 'sync_query_pack_prices_none_found_help',
+      });
       return;
     }
 
-    console.log(`Found ${prices.data.length} prices for AI Query Packs\n`);
+    void logger.info('Found Stripe prices for AI query packs', {
+      operation: 'sync_query_pack_prices_found',
+      count: prices.data.length,
+    });
 
     // Match prices to pack types by metadata
     const packTypes = Object.keys(AI_QUERY_PACKS) as Array<keyof typeof AI_QUERY_PACKS>;
@@ -74,30 +90,49 @@ async function syncQueryPackPrices() {
 
       if (matchingPrice) {
         priceMap[packType] = matchingPrice.id;
-        console.log(`✅ ${pack.name}:`);
-        console.log(`   Price ID: ${matchingPrice.id}`);
-        console.log(`   Amount: $${(matchingPrice.unit_amount || 0) / 100}/${pack.queries.toLocaleString()} queries`);
-        console.log();
+        void logger.info('Matched query pack Stripe price', {
+          operation: 'sync_query_pack_prices_match',
+          packType,
+          packName: pack.name,
+          priceId: matchingPrice.id,
+          amount: (matchingPrice.unit_amount || 0) / 100,
+          queries: pack.queries,
+        });
       } else {
-        console.log(`⚠️  No Stripe price found for ${pack.name} (${packType})`);
-        console.log();
+        void logger.warn('No Stripe price found for query pack', {
+          operation: 'sync_query_pack_prices_missing_pack',
+          packType,
+          packName: pack.name,
+        });
       }
     }
 
     // Output environment variables to add to .env
-    console.log('📋 Add these to your server/.env file:');
-    console.log();
+    void logger.info('Add these values to server/.env', {
+      operation: 'sync_query_pack_prices_env_instructions',
+    });
     for (const [packType, priceId] of Object.entries(priceMap)) {
       const envVarName = `STRIPE_QUERY_PACK_${packType.toUpperCase()}_PRICE_ID`;
-      console.log(`${envVarName}=${priceId}`);
+      void logger.info(`${envVarName}=${priceId}`, {
+        operation: 'sync_query_pack_prices_env_value',
+        packType,
+        priceId,
+      });
     }
-    console.log();
-    console.log('✅ Price IDs synced!');
-    console.log('💡 After adding to .env, restart your server for changes to take effect');
+    void logger.info('Query pack Stripe price IDs synced', {
+      operation: 'sync_query_pack_prices_done',
+      count: Object.keys(priceMap).length,
+    });
+    void logger.info('After adding to .env, restart server for changes to take effect', {
+      operation: 'sync_query_pack_prices_done_help',
+    });
 
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Error syncing price IDs:', err.message);
+    void logger.error('Error syncing query pack price IDs', {
+      operation: 'sync_query_pack_prices_error',
+      error: { message: err.message, stack: err.stack },
+    });
     process.exit(1);
   }
 }
@@ -106,11 +141,17 @@ async function syncQueryPackPrices() {
 if (require.main === module) {
   syncQueryPackPrices()
     .then(() => {
-      console.log('✅ Done!');
+      void logger.info('Done syncing query pack price IDs', {
+        operation: 'sync_query_pack_prices_done_exit',
+      });
       process.exit(0);
     })
-    .catch((error) => {
-      console.error('❌ Error:', error);
+    .catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Unexpected error syncing query pack price IDs', {
+        operation: 'sync_query_pack_prices_unhandled',
+        error: { message: err.message, stack: err.stack },
+      });
       process.exit(1);
     });
 }

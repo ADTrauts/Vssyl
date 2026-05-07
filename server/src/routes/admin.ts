@@ -3,6 +3,32 @@ import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { AuditService } from '../services/auditService';
 import { userNumberService } from '../services/userNumberService';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -36,7 +62,7 @@ router.get('/users/block-ids', authenticateJWT, requireAdmin, async (req: Reques
 
     res.json({ users });
   } catch (error) {
-    console.error('Error fetching users with Block IDs:', error);
+    logSrvErr('admin_error_fetching_users_with_block_ids', 'Error fetching users with Block IDs:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -130,7 +156,7 @@ router.put('/users/:userId/location', authenticateJWT, requireAdmin, async (req:
       newBlockId: newUserNumberData.userNumber
     });
   } catch (error) {
-    console.error('Error updating user location:', error);
+    logSrvErr('admin_error_updating_user_location', 'Error updating user location:', error);
     res.status(500).json({ error: 'Failed to update user location' });
   }
 });
@@ -149,7 +175,7 @@ router.get('/users/:userId/audit-logs', authenticateJWT, requireAdmin, async (re
 
     res.json({ logs });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logSrvErr('admin_error_fetching_audit_logs', 'Error fetching audit logs:', error);
     res.status(500).json({ error: 'Failed to fetch audit logs' });
   }
 });
@@ -168,7 +194,7 @@ router.get('/block-ids/:blockId/audit-logs', authenticateJWT, requireAdmin, asyn
 
     res.json({ logs });
   } catch (error) {
-    console.error('Error fetching Block ID audit logs:', error);
+    logSrvErr('admin_error_fetching_block_id_audit_logs', 'Error fetching Block ID audit logs:', error);
     res.status(500).json({ error: 'Failed to fetch audit logs' });
   }
 });

@@ -1,6 +1,32 @@
 import { prisma } from '../lib/prisma';
 import { NotificationService } from './notificationService';
 import { getLocalYmd, zonedTimeToUtc } from '../utils/timezone';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 // Minimal reminder dispatcher: check reminders within next N minutes and send in-app notifications
 export async function dispatchDueReminders(lookaheadMinutes: number = 5): Promise<void> {
@@ -54,7 +80,7 @@ export async function dispatchDueReminders(lookaheadMinutes: number = 5): Promis
               data: { eventId: ev.id, calendarId: ev.calendarId, reminderId: reminder.id }
             });
           } catch (e) {
-            console.error('Failed to send reminder notification:', e);
+            logSrvErr('reminderservice_failed_to_send_reminder_notification', 'Failed to send reminder notification:', e);
           }
         }
         try {
@@ -63,7 +89,7 @@ export async function dispatchDueReminders(lookaheadMinutes: number = 5): Promis
           // Log but don't fail if reminder update fails
           const errorMessage = updateError instanceof Error ? updateError.message : 'Unknown error';
           if (!errorMessage.includes("Can't reach database") && !errorMessage.includes('localhost:5432')) {
-            console.error('Failed to update reminder dispatchedAt:', updateError);
+            logSrvErr('reminderservice_failed_to_update_reminder_dispatchedat', 'Failed to update reminder dispatchedAt:', updateError);
           }
         }
       }
@@ -76,7 +102,7 @@ export async function dispatchDueReminders(lookaheadMinutes: number = 5): Promis
       return;
     }
     // Log other errors
-    console.error('❌ Error in reminder dispatcher:', error);
+    logSrvErr('reminderservice_error_in_reminder_dispatcher', '❌ Error in reminder dispatcher:', error);
   }
 }
 

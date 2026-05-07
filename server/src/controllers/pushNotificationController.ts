@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { PushNotificationService, PushSubscription } from '../services/pushNotificationService';
+import { logger } from '../lib/logger';
+
+function logPushNotifyError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 // Save push subscription for the current user
 export const savePushSubscription = async (req: Request, res: Response) => {
@@ -21,7 +31,7 @@ export const savePushSubscription = async (req: Request, res: Response) => {
 
     res.status(201).json({ success: true });
   } catch (error) {
-    console.error('Error saving push subscription:', error);
+    logPushNotifyError('Error saving push subscription', 'push_sub_save', error);
     res.status(500).json({ error: 'Failed to save push subscription' });
   }
 };
@@ -45,7 +55,7 @@ export const removePushSubscription = async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Error removing push subscription:', error);
+    logPushNotifyError('Error removing push subscription', 'push_sub_remove', error);
     res.status(500).json({ error: 'Failed to remove push subscription' });
   }
 };
@@ -63,7 +73,7 @@ export const getPushSubscriptions = async (req: Request, res: Response) => {
 
     res.json({ subscriptions });
   } catch (error) {
-    console.error('Error getting push subscriptions:', error);
+    logPushNotifyError('Error getting push subscriptions', 'push_sub_list', error);
     res.status(500).json({ error: 'Failed to get push subscriptions' });
   }
 };
@@ -80,7 +90,7 @@ export const getVapidPublicKey = async (req: Request, res: Response) => {
 
     res.json({ publicKey });
   } catch (error) {
-    console.error('Error getting VAPID public key:', error);
+    logPushNotifyError('Error getting VAPID public key', 'push_vapid', error);
     res.status(500).json({ error: 'Failed to get VAPID public key' });
   }
 };
@@ -124,7 +134,7 @@ export const testPushNotification = async (req: Request, res: Response) => {
       res.status(400).json({ error: 'No push subscriptions found for user' });
     }
   } catch (error) {
-    console.error('Error sending test push notification:', error);
+    logPushNotifyError('Error sending test push notification', 'push_test', error);
     res.status(500).json({ error: 'Failed to send test notification' });
   }
 }; 

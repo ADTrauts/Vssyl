@@ -1006,10 +1006,7 @@ export async function createShift(
       error: { message: errorMessage, stack: errorStack },
       requestBody: req.body
     });
-    
-    console.error('❌ Create shift error:', error);
-    console.error('Request body:', req.body);
-    
+
     res.status(500).json({ 
       error: 'Failed to create shift',
       message: errorMessage

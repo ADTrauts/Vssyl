@@ -1,5 +1,31 @@
 import { prisma } from '../lib/prisma';
 import { JsonValue } from '@prisma/client/runtime/library';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface NotificationData {
   id: string;
@@ -123,7 +149,7 @@ export class NotificationGroupingService {
 
       return this.groupNotifications(notifications);
     } catch (error) {
-      console.error('Error getting grouped notifications:', error);
+      logSrvErr('notificationgroupingservice_error_getting_grouped_notifications', 'Error getting grouped notifications:', error);
       return [];
     }
   }
@@ -336,7 +362,7 @@ export class NotificationGroupingService {
 
       return true;
     } catch (error) {
-      console.error('Error marking group as read:', error);
+      logSrvErr('notificationgroupingservice_error_marking_group_as_read', 'Error marking group as read:', error);
       return false;
     }
   }
@@ -359,7 +385,7 @@ export class NotificationGroupingService {
       const groups = this.groupNotifications(notifications);
       return groups.find(group => group.id === groupId) || null;
     } catch (error) {
-      console.error('Error getting group by ID:', error);
+      logSrvErr('notificationgroupingservice_error_getting_group_by_id', 'Error getting group by ID:', error);
       return null;
     }
   }
@@ -400,7 +426,7 @@ export class NotificationGroupingService {
         byPriority
       };
     } catch (error) {
-      console.error('Error getting notification stats:', error);
+      logSrvErr('notificationgroupingservice_error_getting_notification_stats', 'Error getting notification stats:', error);
       return {
         total: 0,
         unread: 0,

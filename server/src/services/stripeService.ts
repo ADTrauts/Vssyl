@@ -7,6 +7,32 @@ import {
 import { AIQueryService } from './aiQueryService';
 import { RevenueSplitService } from './revenueSplitService';
 import { ModuleSubscriptionService } from './moduleSubscriptionService';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 // Stripe webhook event interfaces
 export interface StripeWebhookEvent {
@@ -301,14 +327,17 @@ export class StripeService {
     try {
       // The payment method is already attached to the customer when setup intent succeeds
       // We just need to log it or perform any additional actions
-      console.log('Setup intent succeeded:', setupIntent.id);
+      logSrvDebug('stripeservice_setup_intent_succeeded', 'Setup intent succeeded', { setupIntentId: setupIntent.id });
       
       if (setupIntent.payment_method && typeof setupIntent.payment_method === 'string') {
         const paymentMethod = await stripe!.paymentMethods.retrieve(setupIntent.payment_method);
-        console.log('Payment method attached:', paymentMethod.id, 'to customer:', paymentMethod.customer);
+        logSrvDebug('stripeservice_payment_method_attached', 'Payment method attached to customer', {
+          paymentMethodId: paymentMethod.id,
+          customerId: paymentMethod.customer,
+        });
       }
     } catch (error) {
-      console.error('Error handling setup intent succeeded:', error);
+      logSrvErr('stripeservice_error_handling_setup_intent_succeeded', 'Error handling setup intent succeeded:', error);
     }
   }
 
@@ -356,12 +385,12 @@ export class StripeService {
         }
       }
     } catch (error) {
-      console.error('Error handling checkout session completed:', error);
+      logSrvErr('stripeservice_error_handling_checkout_session_completed', 'Error handling checkout session completed:', error);
     }
   }
 
   private static async handlePaymentSucceeded(invoice: Stripe.Invoice) {
-    console.log('Payment succeeded:', invoice.id);
+    logSrvDebug('stripeservice_payment_succeeded', 'Payment succeeded', { invoiceId: invoice.id });
     
     // Update invoice record
     await prisma.invoice.updateMany({
@@ -421,7 +450,7 @@ export class StripeService {
    * Handle payment failed
    */
   private static async handlePaymentFailed(invoice: Stripe.Invoice) {
-    console.log('Payment failed:', invoice.id);
+    logSrvWarn('stripeservice_payment_failed', 'Payment failed', undefined, { invoiceId: invoice.id });
     
     // Update invoice record
     await prisma.invoice.updateMany({

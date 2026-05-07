@@ -14,8 +14,12 @@ export const getModuleCategories = async (req: Request, res: Response) => {
   try {
     const categories = Object.values(require('@prisma/client').ModuleCategory);
     res.json({ success: true, data: categories });
-  } catch (error) {
-    console.error('Error getting module categories:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting module categories', {
+      operation: 'module_categories',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to get module categories' });
   }
 };
@@ -100,8 +104,12 @@ export const getModuleDetails = async (req: Request, res: Response) => {
     };
 
     res.json({ success: true, data: moduleData });
-  } catch (error) {
-    console.error('Error getting module details:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error getting module details', {
+      operation: 'module_details',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to get module details' });
   }
 }; 

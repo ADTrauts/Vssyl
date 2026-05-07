@@ -8,6 +8,32 @@
 import { prisma } from '../lib/prisma';
 import Stripe from 'stripe';
 import { AI_QUERY_PACKS, AI_BASE_ALLOWANCES, getBaseAllowance, isUnlimitedTier, type QueryPackType, AI_QUERY_OVERAGE_CONFIG } from '../config/aiQueryPacks';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
@@ -105,12 +131,9 @@ export class AIQueryService {
         },
         isUnlimited: false,
       };
-    } catch (error) {
-      // Log detailed error for debugging
-      const err = error as Error;
-      console.error('Error in checkQueryAvailability:', {
-        message: err.message,
-        stack: err.stack,
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logSrvErr('aiqueryservice_check_query_availability', 'Error in checkQueryAvailability', error, {
         name: err.name,
         userId,
         businessId: businessId ?? null,

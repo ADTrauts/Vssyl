@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(
   request: NextRequest,
@@ -30,8 +31,13 @@ export async function POST(
     }
 
     return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error restoring item:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Trash API: failed to restore item', {
+      operation: 'trash_proxy',
+      context: { id: params.id },
+      error: { message: err.message, stack: err.stack },
+    });
     return NextResponse.json({ error: 'Failed to restore item' }, { status: 500 });
   }
 } 

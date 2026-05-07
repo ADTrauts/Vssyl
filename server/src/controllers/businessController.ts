@@ -139,8 +139,12 @@ export const createBusiness = async (req: Request, res: Response) => {
           members: { create: { userId: user.id, role: 'OWNER' } }
         }
       });
-    } catch (e) {
-      console.error('Failed to auto-provision business calendar:', e);
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      void logger.error('Failed to auto-provision business calendar', {
+        operation: 'business_create_calendar',
+        error: { message: err.message, stack: err.stack },
+      });
     }
 
     // Auto-install core business modules (Drive, Chat, Calendar)
@@ -170,8 +174,11 @@ export const createBusiness = async (req: Request, res: Response) => {
     ];
 
     try {
-      console.log(`🔧 Auto-installing core modules for business: ${business.id}`);
-      
+      void logger.info('Auto-installing core modules for business', {
+        operation: 'business_core_modules',
+        businessId: business.id,
+      });
+
       for (const { moduleId, name, category, description, version } of coreModules) {
         // STEP 1: Ensure Module record exists (create if needed)
         let module = await prisma.module.findUnique({
@@ -179,7 +186,11 @@ export const createBusiness = async (req: Request, res: Response) => {
         });
 
         if (!module) {
-          console.log(`   📝 Creating Module record for ${name}...`);
+          void logger.debug(`Creating Module record for core module: ${name}`, {
+            operation: 'business_core_modules',
+            businessId: business.id,
+            moduleId,
+          });
           module = await prisma.module.create({
             data: {
               id: moduleId,
@@ -217,7 +228,11 @@ export const createBusiness = async (req: Request, res: Response) => {
               reviewCount: 0
             }
           });
-          console.log(`   ✅ Created Module record for ${name}`);
+          void logger.debug(`Created Module record for core module: ${name}`, {
+            operation: 'business_core_modules',
+            businessId: business.id,
+            moduleId,
+          });
         }
 
         // STEP 2: Check if already installed for this business
@@ -241,17 +256,31 @@ export const createBusiness = async (req: Request, res: Response) => {
               }
             }
           });
-          console.log(`   ✅ Installed core module: ${name} (${moduleId})`);
+          void logger.debug(`Installed core module: ${name}`, {
+            operation: 'business_core_modules',
+            businessId: business.id,
+            moduleId,
+          });
         } else {
-          console.log(`   ℹ️  Core module already installed: ${name} (${moduleId})`);
+          void logger.debug(`Core module already installed: ${name}`, {
+            operation: 'business_core_modules',
+            businessId: business.id,
+            moduleId,
+          });
         }
       }
-      
-      console.log(`✅ Core modules installed for business: ${business.name}`);
-    } catch (moduleError) {
-      // Don't fail business creation if module installation fails
-      console.error('❌ Failed to auto-install core modules:', moduleError);
-      console.error('Business creation succeeded, but module installation failed. Admin can manually install modules.');
+
+      void logger.info('Core modules auto-install finished', {
+        operation: 'business_core_modules',
+        businessId: business.id,
+        businessName: business.name,
+      });
+    } catch (moduleError: unknown) {
+      const err = moduleError instanceof Error ? moduleError : new Error(String(moduleError));
+      void logger.error('Failed to auto-install core modules (business creation still succeeded)', {
+        operation: 'business_core_modules',
+        error: { message: err.message, stack: err.stack },
+      });
     }
 
     res.status(201).json({ success: true, data: business });
@@ -481,8 +510,12 @@ export const inviteMember = async (req: Request, res: Response) => {
         undefined, // message
         user.userNumber || undefined // Include inviter's Block ID (convert null to undefined)
       );
-    } catch (emailError) {
-      console.error('Error sending business invitation email:', emailError);
+    } catch (emailError: unknown) {
+      const err = emailError instanceof Error ? emailError : new Error(String(emailError));
+      void logger.error('Error sending business invitation email', {
+        operation: 'business_invite_email',
+        error: { message: err.message, stack: err.stack },
+      });
       // Don't fail the invitation if email fails
     }
 
@@ -511,8 +544,12 @@ export const inviteMember = async (req: Request, res: Response) => {
           senderId: user.id
         });
       }
-    } catch (notificationError) {
-      console.error('Error creating business invitation notification:', notificationError);
+    } catch (notificationError: unknown) {
+      const err = notificationError instanceof Error ? notificationError : new Error(String(notificationError));
+      void logger.error('Error creating business invitation notification', {
+        operation: 'business_invite_notification',
+        error: { message: err.message, stack: err.stack },
+      });
       // Don't fail the invitation if notification fails
     }
 
@@ -640,14 +677,22 @@ export const acceptInvitation = async (req: Request, res: Response) => {
           create: { calendarId: existingCal.id, userId: user.id, role: 'READER' }
         });
       }
-    } catch (e) {
-      console.error('Failed to ensure business calendar on invitation accept:', e);
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      void logger.error('Failed to ensure business calendar on invitation accept', {
+        operation: 'business_invite_calendar',
+        error: { message: err.message, stack: err.stack },
+      });
     }
 
     try {
       await addUsersToScheduleCalendar(invitation.businessId, [user.id]);
-    } catch (scheduleError) {
-      console.error('Failed to add user to HR schedule calendar:', scheduleError);
+    } catch (scheduleError: unknown) {
+      const err = scheduleError instanceof Error ? scheduleError : new Error(String(scheduleError));
+      void logger.error('Failed to add user to HR schedule calendar', {
+        operation: 'business_invite_hr_schedule',
+        error: { message: err.message, stack: err.stack },
+      });
     }
 
     res.json({ success: true, data: { member, dashboard } });

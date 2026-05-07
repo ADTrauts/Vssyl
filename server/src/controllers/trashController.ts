@@ -602,8 +602,12 @@ export async function trashItem(req: Request, res: Response) {
     }
 
     res.json({ success: true, message: 'Item moved to trash' });
-  } catch (error) {
-    console.error('Error trashing item:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error trashing item', {
+      operation: 'trash_item',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ message: 'Failed to trash item' });
   }
 }
@@ -713,8 +717,12 @@ export async function restoreItem(req: Request, res: Response) {
     }
 
     res.json({ success: true, message: 'Item restored' });
-  } catch (error) {
-    console.error('Error restoring item:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error restoring item', {
+      operation: 'trash_restore',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ message: 'Failed to restore item' });
   }
 }
@@ -816,8 +824,12 @@ export async function deleteItem(req: Request, res: Response) {
     }
 
     res.json({ success: true, message: 'Item deleted permanently' });
-  } catch (error) {
-    console.error('Error deleting item:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error deleting trashed item', {
+      operation: 'trash_delete',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ message: 'Failed to delete item' });
   }
 }
@@ -892,8 +904,12 @@ export async function emptyTrash(req: Request, res: Response) {
     ]);
 
     res.json({ success: true, message: 'Trash emptied' });
-  } catch (error) {
-    console.error('Error emptying trash:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error emptying trash', {
+      operation: 'trash_empty',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ message: 'Failed to empty trash' });
   }
 } 

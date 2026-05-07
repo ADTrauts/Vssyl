@@ -14,6 +14,31 @@ import {
   requireEmployeeUserOrManager,
   requireManageForPermissionSetId,
 } from '../middleware/orgChartPermissions';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
 
 const router: express.Router = express.Router();
 
@@ -48,7 +73,7 @@ router.get('/tiers/:businessId', requireOrgChartAccess(fromParam('businessId'), 
     const tiers = await orgChartService.getOrganizationalTiers(businessId);
     res.json(tiers);
   } catch (error) {
-    console.error('Error fetching organizational tiers:', error);
+    logSrvErr('org_chart_error_fetching_organizational_tiers', 'Error fetching organizational tiers:', error);
     res.status(500).json({ error: 'Failed to fetch organizational tiers' });
   }
 });
@@ -63,7 +88,7 @@ router.post('/tiers', requireOrgChartAccess(fromBody('businessId'), 'manage'), a
     const tier = await orgChartService.createOrganizationalTier(tierData);
     res.status(201).json(tier);
   } catch (error) {
-    console.error('Error creating organizational tier:', error);
+    logSrvErr('org_chart_error_creating_organizational_tier', 'Error creating organizational tier:', error);
     res.status(500).json({ error: 'Failed to create organizational tier' });
   }
 });
@@ -79,7 +104,7 @@ router.put('/tiers/:id', requireManageForOrganizationalTier(), async (req, res) 
     const tier = await orgChartService.updateOrganizationalTier(id, updateData);
     res.json(tier);
   } catch (error) {
-    console.error('Error updating organizational tier:', error);
+    logSrvErr('org_chart_error_updating_organizational_tier', 'Error updating organizational tier:', error);
     res.status(500).json({ error: 'Failed to update organizational tier' });
   }
 });
@@ -94,7 +119,7 @@ router.delete('/tiers/:id', requireManageForOrganizationalTier(), async (req, re
     await orgChartService.deleteOrganizationalTier(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting organizational tier:', error);
+    logSrvErr('org_chart_error_deleting_organizational_tier', 'Error deleting organizational tier:', error);
     res.status(500).json({ error: 'Failed to delete organizational tier' });
   }
 });
@@ -120,7 +145,7 @@ router.get('/departments/:businessId', requireOrgChartAccess(fromParam('business
       res.json(departments);
     }
   } catch (error) {
-    console.error('Error fetching departments:', error);
+    logSrvErr('org_chart_error_fetching_departments', 'Error fetching departments:', error);
     res.status(500).json({ error: 'Failed to fetch departments' });
   }
 });
@@ -135,7 +160,7 @@ router.post('/departments', requireOrgChartAccess(fromBody('businessId'), 'manag
     const department = await orgChartService.createDepartment(departmentData);
     res.status(201).json(department);
   } catch (error) {
-    console.error('Error creating department:', error);
+    logSrvErr('org_chart_error_creating_department', 'Error creating department:', error);
     res.status(500).json({ error: 'Failed to create department' });
   }
 });
@@ -151,7 +176,7 @@ router.put('/departments/:id', requireManageForDepartment(), async (req, res) =>
     const department = await orgChartService.updateDepartment(id, updateData);
     res.json(department);
   } catch (error) {
-    console.error('Error updating department:', error);
+    logSrvErr('org_chart_error_updating_department', 'Error updating department:', error);
     res.status(500).json({ error: 'Failed to update department' });
   }
 });
@@ -166,7 +191,7 @@ router.delete('/departments/:id', requireManageForDepartment(), async (req, res)
     await orgChartService.deleteDepartment(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting department:', error);
+    logSrvErr('org_chart_error_deleting_department', 'Error deleting department:', error);
     res.status(500).json({ error: 'Failed to delete department' });
   }
 });
@@ -192,7 +217,7 @@ router.get('/positions/:businessId', requireOrgChartAccess(fromParam('businessId
       res.json(positions);
     }
   } catch (error) {
-    console.error('Error fetching positions:', error);
+    logSrvErr('org_chart_error_fetching_positions', 'Error fetching positions:', error);
     res.status(500).json({ error: 'Failed to fetch positions' });
   }
 });
@@ -207,7 +232,7 @@ router.post('/positions', requireOrgChartAccess(fromBody('businessId'), 'manage'
     const position = await orgChartService.createPosition(positionData);
     res.status(201).json(position);
   } catch (error) {
-    console.error('Error creating position:', error);
+    logSrvErr('org_chart_error_creating_position', 'Error creating position:', error);
     res.status(500).json({ error: 'Failed to create position' });
   }
 });
@@ -223,7 +248,7 @@ router.put('/positions/:id', requireManageForPosition(), async (req, res) => {
     const position = await orgChartService.updatePosition(id, updateData);
     res.json(position);
   } catch (error) {
-    console.error('Error updating position:', error);
+    logSrvErr('org_chart_error_updating_position', 'Error updating position:', error);
     res.status(500).json({ error: 'Failed to update position' });
   }
 });
@@ -238,7 +263,7 @@ router.delete('/positions/:id', requireManageForPosition(), async (req, res) => 
     await orgChartService.deletePosition(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting position:', error);
+    logSrvErr('org_chart_error_deleting_position', 'Error deleting position:', error);
     res.status(500).json({ error: 'Failed to delete position' });
   }
 });
@@ -280,11 +305,9 @@ router.get('/structure/:businessId', requireOrgChartAccess(fromParam('businessId
     
     res.json(response);
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error fetching org chart structure:', {
-      error: err.message,
-      stack: err.stack,
-      businessId: req.params.businessId
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('org_chart_structure_fetch', 'Error fetching org chart structure', error, {
+      businessId: req.params.businessId,
     });
     res.status(500).json({ 
       success: false, 
@@ -313,13 +336,11 @@ router.post('/structure/:businessId/default', requireOrgChartAccess(fromParam('b
       message: 'Default org chart structure created successfully' 
     });
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error creating default org chart structure:', {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('org_chart_structure_default_create', 'Error creating default org chart structure', error, {
       businessId: req.params.businessId,
-      error: err.message,
-      stack: err.stack,
     });
-    
+
     // Provide more specific error messages
     if (err.message.includes('not found')) {
       return res.status(404).json({ 
@@ -346,7 +367,7 @@ router.get('/validate/:businessId', requireOrgChartAccess(fromParam('businessId'
     const validation = await orgChartService.validateOrgChartStructure(businessId);
     res.json(validation);
   } catch (error) {
-    console.error('Error validating org chart structure:', error);
+    logSrvErr('org_chart_error_validating_org_chart_structure', 'Error validating org chart structure:', error);
     res.status(500).json({ error: 'Failed to validate org chart structure' });
   }
 });
@@ -374,7 +395,7 @@ router.get('/permissions', requireRole('ADMIN'), async (req, res) => {
     
     res.json(permissions);
   } catch (error) {
-    console.error('Error fetching permissions:', error);
+    logSrvErr('org_chart_error_fetching_permissions', 'Error fetching permissions:', error);
     res.status(500).json({ error: 'Failed to fetch permissions' });
   }
 });
@@ -402,7 +423,7 @@ router.get('/permissions/check', requirePermissionCheckAccess, async (req, res) 
     
     res.json(result);
   } catch (error) {
-    console.error('Error checking permission:', error);
+    logSrvErr('org_chart_error_checking_permission', 'Error checking permission:', error);
     res.status(500).json({ error: 'Failed to check permission' });
   }
 });
@@ -420,7 +441,7 @@ router.get(
     const permissions = await permissionService.getUserPermissions(userId, businessId);
     res.json(permissions);
   } catch (error) {
-    console.error('Error fetching user permissions:', error);
+    logSrvErr('org_chart_error_fetching_user_permissions', 'Error fetching user permissions:', error);
     res.status(500).json({ error: 'Failed to fetch user permissions' });
   }
 });
@@ -435,7 +456,7 @@ router.get('/permissions/:businessId', requireOrgChartAccess(fromParam('business
     const permissions = await permissionService.getAllPermissions();
     res.json({ success: true, data: permissions });
   } catch (error) {
-    console.error('Error fetching permissions:', error);
+    logSrvErr('org_chart_error_fetching_permissions', 'Error fetching permissions:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch permissions' });
   }
 });
@@ -454,7 +475,7 @@ router.get('/permission-sets/templates', async (req, res) => {
     const templates = await permissionService.getTemplatePermissionSets();
     res.json(templates);
   } catch (error) {
-    console.error('Error fetching template permission sets:', error);
+    logSrvErr('org_chart_error_fetching_template_permission_sets', 'Error fetching template permission sets:', error);
     res.status(500).json({ error: 'Failed to fetch template permission sets' });
   }
 });
@@ -469,7 +490,7 @@ router.get('/permission-sets/:businessId', requireOrgChartAccess(fromParam('busi
     const permissionSets = await permissionService.getPermissionSets(businessId);
     res.json(permissionSets);
   } catch (error) {
-    console.error('Error fetching permission sets:', error);
+    logSrvErr('org_chart_error_fetching_permission_sets', 'Error fetching permission sets:', error);
     res.status(500).json({ error: 'Failed to fetch permission sets' });
   }
 });
@@ -484,7 +505,7 @@ router.post('/permission-sets', requireOrgChartAccess(fromBody('businessId'), 'm
     const permissionSet = await permissionService.createPermissionSet(permissionSetData);
     res.status(201).json(permissionSet);
   } catch (error) {
-    console.error('Error creating permission set:', error);
+    logSrvErr('org_chart_error_creating_permission_set', 'Error creating permission set:', error);
     res.status(500).json({ error: 'Failed to create permission set' });
   }
 });
@@ -500,7 +521,7 @@ router.put('/permission-sets/:id', requireManageForPermissionSetId, async (req, 
     const permissionSet = await permissionService.updatePermissionSet(id, updateData);
     res.json(permissionSet);
   } catch (error) {
-    console.error('Error updating permission set:', error);
+    logSrvErr('org_chart_error_updating_permission_set', 'Error updating permission set:', error);
     res.status(500).json({ error: 'Failed to update permission set' });
   }
 });
@@ -515,7 +536,7 @@ router.delete('/permission-sets/:id', requireManageForPermissionSetId, async (re
     await permissionService.deletePermissionSet(id);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting permission set:', error);
+    logSrvErr('org_chart_error_deleting_permission_set', 'Error deleting permission set:', error);
     res.status(500).json({ error: 'Failed to delete permission set' });
   }
 });
@@ -545,7 +566,7 @@ router.post(
     
     res.status(201).json(permissionSet);
   } catch (error) {
-    console.error('Error copying permission set:', error);
+    logSrvErr('org_chart_error_copying_permission_set', 'Error copying permission set:', error);
     res.status(500).json({ error: 'Failed to copy permission set' });
   }
 });
@@ -572,7 +593,7 @@ router.post('/employees/assign', requireOrgChartAccess(fromBody('businessId'), '
     if (error instanceof EmployeeAssignmentValidationError) {
       return res.status(error.httpStatus).json({ error: error.message });
     }
-    console.error('Error assigning employee:', error);
+    logSrvErr('org_chart_error_assigning_employee', 'Error assigning employee:', error);
     res.status(500).json({ error: 'Failed to assign employee' });
   }
 });
@@ -587,7 +608,7 @@ router.delete('/employees/remove', requireOrgChartAccess(fromBody('businessId'),
     await employeeManagementService.removeEmployeeFromPosition(userId, positionId, businessId);
     res.status(204).send();
   } catch (error) {
-    console.error('Error removing employee:', error);
+    logSrvErr('org_chart_error_removing_employee', 'Error removing employee:', error);
     res.status(500).json({ error: 'Failed to remove employee' });
   }
 });
@@ -616,7 +637,7 @@ router.post('/employees/transfer', requireOrgChartAccess(fromBody('businessId'),
     if (error instanceof EmployeeAssignmentValidationError) {
       return res.status(error.httpStatus).json({ error: error.message });
     }
-    console.error('Error transferring employee:', error);
+    logSrvErr('org_chart_error_transferring_employee', 'Error transferring employee:', error);
     res.status(500).json({ error: 'Failed to transfer employee' });
   }
 });
@@ -631,7 +652,7 @@ router.post('/employees/validate', requireOrgChartAccess(fromBody('businessId'),
     const validation = await employeeManagementService.validateEmployeeAssignment(userId, positionId, businessId);
     res.json(validation);
   } catch (error) {
-    console.error('Error validating employee assignment:', error);
+    logSrvErr('org_chart_error_validating_employee_assignment', 'Error validating employee assignment:', error);
     res.status(500).json({ error: 'Failed to validate employee assignment' });
   }
 });
@@ -649,7 +670,7 @@ router.get(
     const positions = await employeeManagementService.getEmployeePositions(userId, businessId);
     res.json(positions);
   } catch (error) {
-    console.error('Error fetching employee positions:', error);
+    logSrvErr('org_chart_error_fetching_employee_positions', 'Error fetching employee positions:', error);
     res.status(500).json({ error: 'Failed to fetch employee positions' });
   }
 });
@@ -667,7 +688,7 @@ router.get(
     const history = await employeeManagementService.getEmployeeAssignmentHistory(userId, businessId);
     res.json(history);
   } catch (error) {
-    console.error('Error fetching employee assignment history:', error);
+    logSrvErr('org_chart_error_fetching_employee_assignment_history', 'Error fetching employee assignment history:', error);
     res.status(500).json({ error: 'Failed to fetch employee assignment history' });
   }
 });
@@ -685,7 +706,7 @@ router.get(
     const employees = await employeeManagementService.getEmployeesByDepartment(businessId, departmentId);
     res.json(employees);
   } catch (error) {
-    console.error('Error fetching employees by department:', error);
+    logSrvErr('org_chart_error_fetching_employees_by_department', 'Error fetching employees by department:', error);
     res.status(500).json({ error: 'Failed to fetch employees by department' });
   }
 });
@@ -703,7 +724,7 @@ router.get(
     const employees = await employeeManagementService.getEmployeesByTier(businessId, tierId);
     res.json(employees);
   } catch (error) {
-    console.error('Error fetching employees by tier:', error);
+    logSrvErr('org_chart_error_fetching_employees_by_tier', 'Error fetching employees by tier:', error);
     res.status(500).json({ error: 'Failed to fetch employees by tier' });
   }
 });
@@ -718,7 +739,7 @@ router.get('/employees/summary/:businessId', requireOrgChartAccess(fromParam('bu
     const summary = await employeeManagementService.getBusinessEmployeeSummary(businessId);
     res.json(summary);
   } catch (error) {
-    console.error('Error fetching employee summary:', error);
+    logSrvErr('org_chart_error_fetching_employee_summary', 'Error fetching employee summary:', error);
     res.status(500).json({ error: 'Failed to fetch employee summary' });
   }
 });
@@ -733,7 +754,7 @@ router.get('/employees/capacity/:businessId', requireOrgChartAccess(fromParam('b
     const positionsWithCapacity = await employeeManagementService.getPositionsWithCapacity(businessId);
     res.json(positionsWithCapacity);
   } catch (error) {
-    console.error('Error fetching positions with capacity:', error);
+    logSrvErr('org_chart_error_fetching_positions_with_capacity', 'Error fetching positions with capacity:', error);
     res.status(500).json({ error: 'Failed to fetch positions with capacity' });
   }
 });
@@ -748,7 +769,7 @@ router.get('/employees/:businessId/vacant', requireOrgChartAccess(fromParam('bus
     const vacantPositions = await employeeManagementService.getVacantPositions(businessId);
     res.json({ success: true, data: vacantPositions });
   } catch (error) {
-    console.error('Error fetching vacant positions:', error);
+    logSrvErr('org_chart_error_fetching_vacant_positions', 'Error fetching vacant positions:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch vacant positions' });
   }
 });
@@ -764,7 +785,7 @@ router.get('/employees/:businessId', requireOrgChartAccess(fromParam('businessId
     const employees = await employeeManagementService.getBusinessEmployees(businessId);
     res.json({ success: true, data: employees });
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    logSrvErr('org_chart_error_fetching_employees', 'Error fetching employees:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch employees' });
   }
 });
@@ -801,11 +822,9 @@ router.get('/:businessId', requireOrgChartAccess(fromParam('businessId'), 'membe
     
     res.json(response);
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error fetching org chart:', {
-      error: err.message,
-      stack: err.stack,
-      businessId: req.params.businessId
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('org_chart_fetch', 'Error fetching org chart', error, {
+      businessId: req.params.businessId,
     });
     res.status(500).json({ 
       success: false, 

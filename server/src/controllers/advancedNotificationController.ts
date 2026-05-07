@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logAdvNotifyError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 export const createNotification = async (req: Request, res: Response) => {
   try {
@@ -38,7 +48,7 @@ export const createNotification = async (req: Request, res: Response) => {
       notification
     });
   } catch (error) {
-    console.error('Error creating notification:', error);
+    logAdvNotifyError('Error creating notification', 'adv_notify_create', error);
     res.status(500).json({ message: 'Failed to create notification' });
   }
 };
@@ -82,7 +92,7 @@ export const getUserNotifications = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    logAdvNotifyError('Error fetching notifications', 'adv_notify_list', error);
     res.status(500).json({ message: 'Failed to fetch notifications' });
   }
 };
@@ -125,7 +135,7 @@ export const updateNotification = async (req: Request, res: Response) => {
       notification: updatedNotification
     });
   } catch (error) {
-    console.error('Error updating notification:', error);
+    logAdvNotifyError('Error updating notification', 'adv_notify_update', error);
     res.status(500).json({ message: 'Failed to update notification' });
   }
 };
@@ -156,7 +166,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
 
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {
-    console.error('Error deleting notification:', error);
+    logAdvNotifyError('Error deleting notification', 'adv_notify_delete', error);
     res.status(500).json({ message: 'Failed to delete notification' });
   }
 };
@@ -193,7 +203,7 @@ export const markNotificationAsRead = async (req: Request, res: Response) => {
       notification: updatedNotification
     });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logAdvNotifyError('Error marking notification as read', 'adv_notify_mark_read', error);
     res.status(500).json({ message: 'Failed to mark notification as read' });
   }
 };
@@ -227,7 +237,7 @@ export const getNotificationStats = async (req: Request, res: Response) => {
       unreadPercentage: total > 0 ? Math.round((unread / total) * 100) : 0
     });
   } catch (error) {
-    console.error('Error fetching notification stats:', error);
+    logAdvNotifyError('Error fetching notification stats', 'adv_notify_stats', error);
     res.status(500).json({ message: 'Failed to fetch notification stats' });
   }
 };
@@ -264,7 +274,7 @@ export const getGroupedNotifications = async (req: Request, res: Response) => {
 
     res.json(grouped);
   } catch (error) {
-    console.error('Error fetching grouped notifications:', error);
+    logAdvNotifyError('Error fetching grouped notifications', 'adv_notify_grouped', error);
     res.status(500).json({ message: 'Failed to fetch grouped notifications' });
   }
 };
@@ -291,7 +301,7 @@ export const getNotificationGroup = async (req: Request, res: Response) => {
 
     res.json(notifications);
   } catch (error) {
-    console.error('Error fetching notification group:', error);
+    logAdvNotifyError('Error fetching notification group', 'adv_notify_group', error);
     res.status(500).json({ message: 'Failed to fetch notification group' });
   }
 };
@@ -318,7 +328,7 @@ export const markGroupAsRead = async (req: Request, res: Response) => {
 
     res.json({ message: 'Group marked as read successfully' });
   } catch (error) {
-    console.error('Error marking group as read:', error);
+    logAdvNotifyError('Error marking group as read', 'adv_notify_group_read', error);
     res.status(500).json({ message: 'Failed to mark group as read' });
   }
 };
@@ -352,7 +362,7 @@ export const getNotificationDigest = async (req: Request, res: Response) => {
 
     res.json(digest);
   } catch (error) {
-    console.error('Error fetching notification digest:', error);
+    logAdvNotifyError('Error fetching notification digest', 'adv_notify_digest', error);
     res.status(500).json({ message: 'Failed to fetch notification digest' });
   }
 };
@@ -394,7 +404,7 @@ export const getSmartFilters = async (req: Request, res: Response) => {
 
     res.json(filters);
   } catch (error) {
-    console.error('Error fetching smart filters:', error);
+    logAdvNotifyError('Error fetching smart filters', 'adv_notify_filters', error);
     res.status(500).json({ message: 'Failed to fetch smart filters' });
   }
 }; 

@@ -1,8 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getChatSocketService } from '../services/chatSocketService';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceMeetingError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -123,7 +132,7 @@ export async function createMeeting(req: Request, res: Response): Promise<void> 
     res.status(201).json({ success: true, data: full });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error creating meeting:', err.message);
+    logPlaceMeetingError('Error creating meeting', 'place_meeting_create', err);
     res.status(500).json({ success: false, error: 'Failed to create meeting' });
   }
 }
@@ -164,7 +173,7 @@ export async function getMeetings(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: meetings });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching meetings:', err.message);
+    logPlaceMeetingError('Error fetching meetings', 'place_meeting_list', err);
     res.status(500).json({ success: false, error: 'Failed to fetch meetings' });
   }
 }
@@ -205,7 +214,7 @@ export async function getMeeting(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: meeting });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching meeting:', err.message);
+    logPlaceMeetingError('Error fetching meeting', 'place_meeting_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch meeting' });
   }
 }
@@ -250,7 +259,7 @@ export async function updateMeeting(req: Request, res: Response): Promise<void> 
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating meeting:', err.message);
+    logPlaceMeetingError('Error updating meeting', 'place_meeting_update', err);
     res.status(500).json({ success: false, error: 'Failed to update meeting' });
   }
 }
@@ -280,7 +289,7 @@ export async function deleteMeeting(req: Request, res: Response): Promise<void> 
     res.json({ success: true, message: 'Meeting cancelled' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error deleting meeting:', err.message);
+    logPlaceMeetingError('Error deleting meeting', 'place_meeting_delete', err);
     res.status(500).json({ success: false, error: 'Failed to delete meeting' });
   }
 }
@@ -348,7 +357,7 @@ export async function rsvpMeeting(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in RSVP:', err.message);
+    logPlaceMeetingError('Error in RSVP', 'place_meeting_rsvp', err);
     res.status(500).json({ success: false, error: 'Failed to RSVP' });
   }
 }
@@ -448,7 +457,7 @@ export async function linkToCalendar(req: Request, res: Response): Promise<void>
     res.json({ success: true, data: { meetingId: updated.id, eventId } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error linking to calendar:', err.message);
+    logPlaceMeetingError('Error linking to calendar', 'place_meeting_calendar_link', err);
     res.status(500).json({ success: false, error: 'Failed to link to calendar' });
   }
 }
@@ -477,7 +486,7 @@ export async function getLocationPrivacy(req: Request, res: Response): Promise<v
     res.json({ success: true, data: privacy });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching location privacy:', err.message);
+    logPlaceMeetingError('Error fetching location privacy', 'place_meeting_location_privacy_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch privacy settings' });
   }
 }
@@ -507,7 +516,7 @@ export async function updateLocationPrivacy(req: Request, res: Response): Promis
     res.json({ success: true, data: privacy });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating location privacy:', err.message);
+    logPlaceMeetingError('Error updating location privacy', 'place_meeting_location_privacy_update', err);
     res.status(500).json({ success: false, error: 'Failed to update privacy settings' });
   }
 }

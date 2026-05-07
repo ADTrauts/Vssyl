@@ -11,6 +11,32 @@ const predictiveEngine = new PredictiveIntelligenceEngine(prisma);
 const recommendationsEngine = new IntelligentRecommendationsEngine(prisma);
 
 import { authenticateJWT } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 // Learning Engine Endpoints
 
@@ -44,7 +70,7 @@ router.post('/learning/event', authenticateJWT, async (req, res) => {
       message: 'Learning event processed successfully'
     });
   } catch (error) {
-    console.error('Error processing learning event:', error);
+    logSrvErr('ai_intelligence_error_processing_learning_event', 'Error processing learning event:', error);
     res.status(500).json({ 
       error: 'Failed to process learning event',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -72,7 +98,7 @@ router.get('/learning/analytics', authenticateJWT, async (req, res) => {
       message: 'Learning analytics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting learning analytics:', error);
+    logSrvErr('ai_intelligence_error_getting_learning_analytics', 'Error getting learning analytics:', error);
     res.status(500).json({ 
       error: 'Failed to get learning analytics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -100,7 +126,7 @@ router.get('/learning/patterns', authenticateJWT, async (req, res) => {
       message: 'Learning patterns retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting learning patterns:', error);
+    logSrvErr('ai_intelligence_error_getting_learning_patterns', 'Error getting learning patterns:', error);
     res.status(500).json({ 
       error: 'Failed to get learning patterns',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -131,7 +157,7 @@ router.post('/predictive/analyze', authenticateJWT, async (req, res) => {
       message: 'Predictive analysis generated successfully'
     });
   } catch (error) {
-    console.error('Error generating predictive analysis:', error);
+    logSrvErr('ai_intelligence_error_generating_predictive_analysis', 'Error generating predictive analysis:', error);
     res.status(500).json({ 
       error: 'Failed to generate predictive analysis',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -159,7 +185,7 @@ router.get('/predictive/analytics', authenticateJWT, async (req, res) => {
       message: 'Predictive analytics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting predictive analytics:', error);
+    logSrvErr('ai_intelligence_error_getting_predictive_analytics', 'Error getting predictive analytics:', error);
     res.status(500).json({ 
       error: 'Failed to get predictive analytics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -190,7 +216,7 @@ router.post('/recommendations/generate', authenticateJWT, async (req, res) => {
       message: 'Intelligent recommendations generated successfully'
     });
   } catch (error) {
-    console.error('Error generating recommendations:', error);
+    logSrvErr('ai_intelligence_error_generating_recommendations', 'Error generating recommendations:', error);
     res.status(500).json({ 
       error: 'Failed to generate recommendations',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -218,7 +244,7 @@ router.get('/recommendations/analytics', authenticateJWT, async (req, res) => {
       message: 'Recommendation analytics retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting recommendation analytics:', error);
+    logSrvErr('ai_intelligence_error_getting_recommendation_analytics', 'Error getting recommendation analytics:', error);
     res.status(500).json({ 
       error: 'Failed to get recommendation analytics',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -266,7 +292,7 @@ router.put('/recommendations/:recommendationId/status', authenticateJWT, async (
       message: 'Recommendation status updated successfully'
     });
   } catch (error) {
-    console.error('Error updating recommendation status:', error);
+    logSrvErr('ai_intelligence_error_updating_recommendation_status', 'Error updating recommendation status:', error);
     res.status(500).json({ 
       error: 'Failed to update recommendation status',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -332,7 +358,7 @@ router.get('/dashboard', authenticateJWT, async (req, res) => {
       message: 'Intelligence dashboard data retrieved successfully'
     });
   } catch (error) {
-    console.error('Error getting intelligence dashboard:', error);
+    logSrvErr('ai_intelligence_error_getting_intelligence_dashboard', 'Error getting intelligence dashboard:', error);
     res.status(500).json({ 
       error: 'Failed to get intelligence dashboard',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -386,7 +412,7 @@ router.post('/insights/generate', authenticateJWT, async (req, res) => {
       message: 'Comprehensive insights generated successfully'
     });
   } catch (error) {
-    console.error('Error generating insights:', error);
+    logSrvErr('ai_intelligence_error_generating_insights', 'Error generating insights:', error);
     res.status(500).json({ 
       error: 'Failed to generate insights',
       details: error instanceof Error ? error.message : 'Unknown error'

@@ -4,6 +4,32 @@ import { getChatSocketService } from './chatSocketService';
 import { PushNotificationService } from './pushNotificationService';
 import { EmailNotificationService } from './emailNotificationService';
 import type { ModuleNotificationType } from '../../../shared/src/types/module-notifications';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 interface QuietHoursDay {
   enabled: boolean;
@@ -39,7 +65,7 @@ async function isDoNotDisturbEnabled(userId: string): Promise<boolean> {
     });
     return preference?.value === 'true';
   } catch (error) {
-    console.error('Error checking do not disturb status:', error);
+    logSrvErr('notificationservice_error_checking_do_not_disturb_status', 'Error checking do not disturb status:', error);
     return false; // Default to allowing notifications if check fails
   }
 }
@@ -98,7 +124,7 @@ async function isQuietHoursActive(userId: string): Promise<boolean> {
       return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes < endTimeMinutes;
     }
   } catch (error) {
-    console.error('Error checking quiet hours:', error);
+    logSrvErr('notificationservice_error_checking_quiet_hours', 'Error checking quiet hours:', error);
     return false; // Default to allowing notifications if check fails
   }
 }
@@ -147,7 +173,11 @@ export class NotificationService {
     try {
       // Validate userId before proceeding
       if (!data.userId || typeof data.userId !== 'string' || data.userId.trim() === '') {
-        console.error('Invalid userId provided to createNotification:', { userId: data.userId, type: data.type, title: data.title });
+        logSrvErr('notificationservice_invalid_user_id', 'Invalid userId provided to createNotification', new Error('Invalid userId'), {
+          userId: data.userId,
+          type: data.type,
+          title: data.title,
+        });
         throw new Error('Invalid userId: userId must be a non-empty string');
       }
 
@@ -171,7 +201,7 @@ export class NotificationService {
           }
         }
       } catch (error) {
-        console.error('Error calculating notification priority:', error);
+        logSrvErr('notificationservice_error_calculating_notification_priority', 'Error calculating notification priority:', error);
         // Continue without priority if lookup fails
       }
 
@@ -208,7 +238,7 @@ export class NotificationService {
           read: notification.read
         });
       } catch (socketError) {
-        console.error('Error broadcasting notification via WebSocket:', socketError);
+        logSrvErr('notificationservice_error_broadcasting_notification_via_websocket', 'Error broadcasting notification via WebSocket:', socketError);
         // Don't fail notification creation if WebSocket fails
       }
 
@@ -226,11 +256,14 @@ export class NotificationService {
           });
           await pushService.sendToUser(data.userId, pushPayload);
         } catch (pushError) {
-          console.error('Error sending push notification:', pushError);
+          logSrvErr('notificationservice_error_sending_push_notification', 'Error sending push notification:', pushError);
           // Don't fail notification creation if push notification fails
         }
       } else {
-        console.log(`Push notification silenced for user ${data.userId} (Do Not Disturb or Quiet Hours active)`);
+        logSrvDebug('notificationservice_push_silenced', 'Push notification silenced for user', {
+          userId: data.userId,
+          reason: 'do_not_disturb_or_quiet_hours',
+        });
       }
 
       // Send email notification (only if not silenced)
@@ -253,16 +286,19 @@ export class NotificationService {
             }
           }
         } catch (emailError) {
-          console.error('Error sending email notification:', emailError);
+          logSrvErr('notificationservice_error_sending_email_notification', 'Error sending email notification:', emailError);
           // Don't fail notification creation if email notification fails
         }
       } else {
-        console.log(`Email notification silenced for user ${data.userId} (Do Not Disturb or Quiet Hours active)`);
+        logSrvDebug('notificationservice_email_silenced', 'Email notification silenced for user', {
+          userId: data.userId,
+          reason: 'do_not_disturb_or_quiet_hours',
+        });
       }
 
       return notification;
     } catch (error) {
-      console.error('Error creating notification:', error);
+      logSrvErr('notificationservice_error_creating_notification', 'Error creating notification:', error);
       throw error;
     }
   }
@@ -297,13 +333,13 @@ export class NotificationService {
           });
         });
       } catch (socketError) {
-        console.error('Error broadcasting notifications via WebSocket:', socketError);
+        logSrvErr('notificationservice_error_broadcasting_notifications_via_websocket', 'Error broadcasting notifications via WebSocket:', socketError);
         // Don't fail notification creation if WebSocket fails
       }
 
       return createdNotifications;
     } catch (error) {
-      console.error('Error creating notifications for users:', error);
+      logSrvErr('notificationservice_error_creating_notifications_for_users', 'Error creating notifications for users:', error);
       throw error;
     }
   }
@@ -454,7 +490,7 @@ export class NotificationService {
         }
       });
     } catch (error) {
-      console.error('Error getting unread count:', error);
+      logSrvErr('notificationservice_error_getting_unread_count', 'Error getting unread count:', error);
       return 0;
     }
   }
@@ -479,7 +515,7 @@ export class NotificationService {
         data: { read: true }
       });
     } catch (error) {
-      console.error('Error marking notifications as read:', error);
+      logSrvErr('notificationservice_error_marking_notifications_as_read', 'Error marking notifications as read:', error);
       throw error;
     }
   }

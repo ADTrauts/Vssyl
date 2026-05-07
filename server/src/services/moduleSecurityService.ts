@@ -22,6 +22,31 @@ import {
 } from '../../../shared/dist/types/policies';
 import { validateModuleHostedUrl } from './moduleHostedUrlValidation';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 /**
  * Module Security Service
  * Handles security validation, malware scanning, and vulnerability checks for module submissions
@@ -51,7 +76,7 @@ export class ModuleSecurityService extends EventEmitter {
    */
   async validateModuleSubmission(submissionData: Record<string, unknown>): Promise<SecurityValidationResult> {
     try {
-      console.log('🔒 Starting module security validation...');
+      logSrvDebug('modulesecurityservice_starting_module_security_validation', '🔒 Starting module security validation...');
       
       const validationDetails: ModuleSecurityValidation = {
         staticCodeAnalysis: {
@@ -159,11 +184,11 @@ export class ModuleSecurityService extends EventEmitter {
         warningsCount: warnings.length
       });
 
-      console.log(`✅ Module security validation completed. Score: ${securityScore}/100`);
+      logSrvDebug('modulesecurityservice_validation_completed', 'Module security validation completed', { securityScore });
       return result;
 
     } catch (error) {
-      console.error('❌ Error in module security validation:', error);
+      logSrvErr('modulesecurityservice_error_in_module_security_validation', '❌ Error in module security validation:', error);
       await logger.error('Module security validation failed', {
         operation: 'module_security_validation',
         error: {
@@ -283,14 +308,14 @@ export class ModuleSecurityService extends EventEmitter {
    */
   async performComprehensiveSecurityTest(submissionData: Record<string, unknown>): Promise<SecurityScanReport> {
     try {
-      console.log('🔒 Starting comprehensive security testing...');
+      logSrvDebug('modulesecurityservice_starting_comprehensive_security_testing', '🔒 Starting comprehensive security testing...');
       
       // Generate security scan report
       const securityReport = await this.malwareScanningService.generateSecurityScanReport(submissionData);
       
       // If basic security checks pass, run sandbox testing
       if (securityReport.overallStatus === 'passed') {
-        console.log('✅ Basic security checks passed, running sandbox testing...');
+        logSrvDebug('modulesecurityservice_basic_security_checks_passed_running_sandbox_testing', '✅ Basic security checks passed, running sandbox testing...');
         
         try {
           const sandboxResult = await this.sandboxService.testModuleInSandbox(submissionData);
@@ -312,7 +337,7 @@ export class ModuleSecurityService extends EventEmitter {
           }
           
         } catch (sandboxError) {
-          console.warn('⚠️ Sandbox testing failed, but basic security checks passed:', sandboxError);
+          logSrvWarn('modulesecurityservice_sandbox_testing_failed_but_basic_security_checks_passed', '⚠️ Sandbox testing failed, but basic security checks passed:', sandboxError);
           securityReport.recommendations.push('Sandbox testing failed - manual review required');
         }
       }
@@ -326,11 +351,13 @@ export class ModuleSecurityService extends EventEmitter {
         securityScore: securityReport.securityScore
       });
 
-      console.log(`✅ Comprehensive security testing completed. Status: ${securityReport.overallStatus}`);
+      logSrvDebug('modulesecurityservice_comprehensive_test_completed', 'Comprehensive security testing completed', {
+        overallStatus: securityReport.overallStatus,
+      });
       return securityReport;
 
     } catch (error) {
-      console.error('❌ Error in comprehensive security testing:', error);
+      logSrvErr('modulesecurityservice_error_in_comprehensive_security_testing', '❌ Error in comprehensive security testing:', error);
       await logger.error('Comprehensive security testing failed', {
         operation: 'comprehensive_security_testing',
         moduleId: submissionData.id,
@@ -356,7 +383,7 @@ export class ModuleSecurityService extends EventEmitter {
     recommendations: string[];
   }> {
     try {
-      console.log('🔒 Starting enterprise-grade security testing...');
+      logSrvDebug('modulesecurityservice_starting_enterprise_grade_security_testing', '🔒 Starting enterprise-grade security testing...');
       
       // 1. Perform comprehensive security testing
       const securityReport = await this.performComprehensiveSecurityTest(submissionData);
@@ -405,11 +432,14 @@ export class ModuleSecurityService extends EventEmitter {
         complianceScore: policyCompliance.score
       });
 
-      console.log(`✅ Enterprise security testing completed. Status: ${overallStatus}, Score: ${overallScore}/100`);
+      logSrvDebug('modulesecurityservice_enterprise_test_completed', 'Enterprise security testing completed', {
+        overallStatus,
+        overallScore,
+      });
       return result;
 
     } catch (error) {
-      console.error('❌ Error in enterprise security testing:', error);
+      logSrvErr('modulesecurityservice_error_in_enterprise_security_testing', '❌ Error in enterprise security testing:', error);
       await logger.error('Enterprise security testing failed', {
         operation: 'enterprise_security_testing',
         moduleId: submissionData.id,
@@ -429,7 +459,7 @@ export class ModuleSecurityService extends EventEmitter {
    */
   async startRuntimeMonitoring(moduleId: string, moduleData: Record<string, unknown>): Promise<void> {
     try {
-      console.log(`🔍 Starting runtime monitoring for approved module: ${moduleId}`);
+      logSrvDebug('modulesecurityservice_runtime_monitoring_starting', 'Starting runtime monitoring for approved module', { moduleId });
       
       // Start behavioral monitoring
       await this.behavioralMonitoringService.startMonitoringModule(moduleId, moduleData);
@@ -441,10 +471,10 @@ export class ModuleSecurityService extends EventEmitter {
         moduleId
       });
 
-      console.log(`✅ Runtime monitoring started for module: ${moduleId}`);
+      logSrvDebug('modulesecurityservice_runtime_monitoring_started', 'Runtime monitoring started for module', { moduleId });
 
-    } catch (error) {
-      console.error(`❌ Error starting runtime monitoring for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('modulesecurityservice_runtime_monitoring_start', 'Error starting runtime monitoring for module', error, { moduleId });
       await logger.error('Runtime monitoring start failed', {
         operation: 'runtime_monitoring_start',
         moduleId,
@@ -463,7 +493,7 @@ export class ModuleSecurityService extends EventEmitter {
    */
   async stopRuntimeMonitoring(moduleId: string): Promise<void> {
     try {
-      console.log(`🛑 Stopping runtime monitoring for module: ${moduleId}`);
+      logSrvDebug('modulesecurityservice_runtime_monitoring_stopping', 'Stopping runtime monitoring for module', { moduleId });
       
       // Stop behavioral monitoring
       await this.behavioralMonitoringService.stopMonitoringModule(moduleId);
@@ -475,10 +505,10 @@ export class ModuleSecurityService extends EventEmitter {
         moduleId
       });
 
-      console.log(`✅ Runtime monitoring stopped for module: ${moduleId}`);
+      logSrvDebug('modulesecurityservice_runtime_monitoring_stopped', 'Runtime monitoring stopped for module', { moduleId });
 
-    } catch (error) {
-      console.error(`❌ Error stopping runtime monitoring for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('modulesecurityservice_runtime_monitoring_stop', 'Error stopping runtime monitoring for module', error, { moduleId });
       await logger.error('Runtime monitoring stop failed', {
         operation: 'runtime_monitoring_stop',
         moduleId,

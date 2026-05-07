@@ -1,6 +1,32 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Business, OrganizationalTier, Department, Position } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface PermissionData {
   moduleId: string;
@@ -351,15 +377,15 @@ export class OrgChartService {
           where: { id: businessId },
         }),
         this.getOrganizationalTiers(businessId).catch((err) => {
-          console.error('Error fetching organizational tiers:', err);
+          logSrvErr('orgchartservice_error_fetching_organizational_tiers', 'Error fetching organizational tiers:', err);
           return [];
         }),
         this.getDepartments(businessId).catch((err) => {
-          console.error('Error fetching departments:', err);
+          logSrvErr('orgchartservice_error_fetching_departments', 'Error fetching departments:', err);
           return [];
         }),
         this.getPositions(businessId).catch((err) => {
-          console.error('Error fetching positions:', err);
+          logSrvErr('orgchartservice_error_fetching_positions', 'Error fetching positions:', err);
           return [];
         }),
       ]);
@@ -375,11 +401,9 @@ export class OrgChartService {
         positions,
       };
     } catch (error: unknown) {
-      const err = error as Error;
-      console.error('Error in getOrgChartStructure:', {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logSrvErr('orgchartservice_get_org_chart_structure', 'Error in getOrgChartStructure', error, {
         businessId,
-        error: err.message,
-        stack: err.stack
       });
       throw err;
     }
@@ -404,7 +428,9 @@ export class OrgChartService {
       const existingDepartments = await this.getDepartments(businessId);
 
       if (existingTiers.length > 0 || existingDepartments.length > 0) {
-        console.log(`Org chart structure already exists for business ${businessId}. Skipping creation.`);
+        logSrvDebug('orgchartservice_default_structure_exists', 'Org chart structure already exists for business; skipping creation', {
+          businessId,
+        });
         return;
       }
 
@@ -453,12 +479,10 @@ export class OrgChartService {
         }
       }
     } catch (error: unknown) {
-      const err = error as Error;
-      console.error('Error in createDefaultOrgChart:', {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logSrvErr('orgchartservice_create_default_org_chart', 'Error in createDefaultOrgChart', error, {
         businessId,
         industry,
-        error: err.message,
-        stack: err.stack,
       });
       throw err;
     }

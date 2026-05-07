@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { logger } from '../lib/logger';
 
 // Normalize key (trim so Secret Manager / env trailing newline doesn't break auth)
 const rawSecretKey = process.env.STRIPE_SECRET_KEY ?? '';
@@ -15,11 +16,16 @@ export const STRIPE_CONFIG = {
 // Fail-fast / runtime check: in production, log clearly if key is missing or which mode is loaded
 if (process.env.NODE_ENV === 'production') {
   if (!STRIPE_CONFIG.secretKey) {
-    console.error('[Stripe] STRIPE_SECRET_KEY is not set at runtime. Stripe API calls will fail. Check Cloud Run env/secrets and Secret Manager access.');
+    void logger.error('[Stripe] STRIPE_SECRET_KEY is not set at runtime. Stripe API calls will fail. Check Cloud Run env/secrets and Secret Manager access.', {
+      operation: 'stripe_config_runtime_check',
+    });
   } else {
     // Masked: only prefix so you can verify test vs live in Cloud Run logs (e.g. sk_test_ vs sk_live_)
     const prefix = STRIPE_CONFIG.secretKey.slice(0, 8);
-    console.log('[Stripe] Key loaded at runtime, prefix:', prefix);
+    void logger.info('[Stripe] Key loaded at runtime', {
+      operation: 'stripe_config_runtime_check',
+      keyPrefix: prefix,
+    });
   }
 }
 
@@ -103,8 +109,12 @@ export async function getPricingConfig(tier: string) {
     if (pricing) {
       return pricing;
     }
-  } catch (error) {
-    console.warn('Failed to get pricing from database, using fallback:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.warn('Failed to get pricing from database, using fallback', {
+      operation: 'stripe_config_get_pricing_fallback',
+      error: { message: err.message, stack: err.stack },
+    });
   }
   
   // Fallback to hardcoded config

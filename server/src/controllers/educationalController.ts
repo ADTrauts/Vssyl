@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Request type definitions
 interface CreateInstitutionRequest {
@@ -35,8 +36,13 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
-  console.error('Educational Controller Error:', error);
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error instanceof Error ? error : new Error(String(error));
+  void logger.error('Educational controller error', {
+    operation: 'educational_controller',
+    error: { message: err.message, stack: err.stack },
+    context: { clientMessage: message },
+  });
   res.status(500).json({ success: false, error: message });
 };
 

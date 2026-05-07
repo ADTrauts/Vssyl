@@ -1,5 +1,31 @@
 import express from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -22,7 +48,7 @@ router.get('/health', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Health check failed:', error);
+    logSrvErr('health_health_check_failed', 'Health check failed:', error);
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -47,7 +73,7 @@ router.get('/ready', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Readiness check failed:', error);
+    logSrvErr('health_readiness_check_failed', 'Readiness check failed:', error);
     res.status(503).json({
       status: 'not ready',
       timestamp: new Date().toISOString(),
@@ -92,7 +118,7 @@ router.get('/schema', async (req, res) => {
       hasLocationTables: (locationTables as any[]).length === 4
     });
   } catch (error) {
-    console.error('Schema check failed:', error);
+    logSrvErr('health_schema_check_failed', 'Schema check failed:', error);
     res.status(500).json({
       status: 'error',
       timestamp: new Date().toISOString(),

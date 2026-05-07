@@ -10,6 +10,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 /**
  * HR Features by Tier
@@ -309,8 +310,12 @@ export function checkHRFeature(featureName: string) {
       req.hrFeatures = features as any;
       
       next();
-    } catch (error) {
-      console.error('HR feature gate check error:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('HR feature gate check error', {
+        operation: 'hr_feature_gate_check',
+        error: { message: err.message, stack: err.stack },
+      });
       return res.status(500).json({ error: 'Feature check failed' });
     }
   };
@@ -368,8 +373,12 @@ export async function checkBusinessAdvancedOrHigher(
     req.hrFeatures = features as any;
     
     next();
-  } catch (error) {
-    console.error('Tier check error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Tier check error', {
+      operation: 'hr_tier_check',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ error: 'Tier check failed' });
   }
 }
@@ -407,8 +416,12 @@ export async function checkHRModuleInstalled(
     }
     
     next();
-  } catch (error) {
-    console.error('Module installation check error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Module installation check error', {
+      operation: 'hr_module_installation_check',
+      error: { message: err.message, stack: err.stack },
+    });
     return res.status(500).json({ error: 'Module check failed' });
   }
 }

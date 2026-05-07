@@ -5,7 +5,16 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
+
+function logNotesFolderError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
 
 // Prisma client includes noteFolder after generate; types may lag in IDE
@@ -75,7 +84,7 @@ export async function getFolders(req: Request, res: Response): Promise<void> {
     res.json({ folders });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in getFolders:', err);
+    logNotesFolderError('Error in getFolders', 'notes_folders_list', err);
     res.status(500).json({ error: 'Failed to fetch folders' });
   }
 }
@@ -161,7 +170,7 @@ export async function createFolder(req: Request, res: Response): Promise<void> {
     res.status(201).json(folder);
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in createFolder:', err);
+    logNotesFolderError('Error in createFolder', 'notes_folder_create', err);
     res.status(500).json({ error: 'Failed to create folder' });
   }
 }
@@ -239,7 +248,7 @@ export async function updateFolder(req: Request, res: Response): Promise<void> {
     res.json(folder);
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in updateFolder:', err);
+    logNotesFolderError('Error in updateFolder', 'notes_folder_update', err);
     res.status(500).json({ error: 'Failed to update folder' });
   }
 }
@@ -281,7 +290,7 @@ export async function deleteFolder(req: Request, res: Response): Promise<void> {
     res.status(204).send();
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in deleteFolder:', err);
+    logNotesFolderError('Error in deleteFolder', 'notes_folder_delete', err);
     res.status(500).json({ error: 'Failed to delete folder' });
   }
 }

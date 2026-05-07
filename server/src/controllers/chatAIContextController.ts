@@ -8,6 +8,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logChatAiCtxError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 /**
  * GET /api/chat/ai/context/recent
@@ -104,7 +114,7 @@ export async function getRecentConversationsContext(req: Request, res: Response)
     });
     
   } catch (error) {
-    console.error('Error in getRecentConversationsContext:', error);
+    logChatAiCtxError('Error in getRecentConversationsContext', 'ai_ctx_chat_recent', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch recent conversations context',
@@ -221,7 +231,7 @@ export async function getUnreadMessagesContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getUnreadMessagesContext:', error);
+    logChatAiCtxError('Error in getUnreadMessagesContext', 'ai_ctx_chat_unread', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch unread messages context',
@@ -312,7 +322,7 @@ export async function getConversationHistory(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getConversationHistory:', error);
+    logChatAiCtxError('Error in getConversationHistory', 'ai_ctx_chat_history', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to get conversation history',

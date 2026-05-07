@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
+import { logger } from '../lib/logger';
 
 export interface ComplianceFramework {
   id: string;
@@ -249,10 +250,17 @@ export class EnterpriseSecurityService extends EventEmitter {
         this.complianceFrameworks.set(framework.id, framework);
       });
 
-      console.log(`✅ Initialized ${frameworks.length} compliance frameworks`);
+      void logger.info('Initialized compliance frameworks', {
+        operation: 'enterprise_security_init_frameworks',
+        frameworksCount: frameworks.length,
+      });
 
-    } catch (error) {
-      console.error('Error initializing compliance frameworks:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error initializing compliance frameworks', {
+        operation: 'enterprise_security_init_frameworks',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -287,11 +295,19 @@ export class EnterpriseSecurityService extends EventEmitter {
       this.complianceFrameworks.set(framework.id, framework);
       this.emit('framework_created', framework);
 
-      console.log(`✅ Created compliance framework: ${framework.name}`);
+      void logger.info('Created compliance framework', {
+        operation: 'enterprise_security_create_framework',
+        frameworkId: framework.id,
+        frameworkName: framework.name,
+      });
       return framework;
 
-    } catch (error) {
-      console.error('Error creating compliance framework:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating compliance framework', {
+        operation: 'enterprise_security_create_framework',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -318,11 +334,19 @@ export class EnterpriseSecurityService extends EventEmitter {
       this.complianceFrameworks.set(frameworkId, updatedFramework);
       this.emit('framework_updated', updatedFramework);
 
-      console.log(`✅ Updated compliance framework: ${updatedFramework.name}`);
+      void logger.info('Updated compliance framework', {
+        operation: 'enterprise_security_update_framework',
+        frameworkId,
+        frameworkName: updatedFramework.name,
+      });
       return updatedFramework;
 
-    } catch (error) {
-      console.error('Error updating compliance framework:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error updating compliance framework', {
+        operation: 'enterprise_security_update_framework',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -352,11 +376,20 @@ export class EnterpriseSecurityService extends EventEmitter {
       // Update security metrics
       await this.updateSecurityMetrics();
 
-      console.log(`🚨 Created security incident: ${incident.title}`);
+      void logger.warn('Created security incident', {
+        operation: 'enterprise_security_create_incident',
+        incidentId: incident.id,
+        incidentTitle: incident.title,
+        severity: incident.severity,
+      });
       return incident;
 
-    } catch (error) {
-      console.error('Error creating security incident:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating security incident', {
+        operation: 'enterprise_security_create_incident',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -388,11 +421,20 @@ export class EnterpriseSecurityService extends EventEmitter {
         await this.handleIncidentResolution(updatedIncident);
       }
 
-      console.log(`✅ Updated security incident: ${updatedIncident.title}`);
+      void logger.info('Updated security incident', {
+        operation: 'enterprise_security_update_incident',
+        incidentId,
+        incidentTitle: updatedIncident.title,
+        status: updatedIncident.status,
+      });
       return updatedIncident;
 
-    } catch (error) {
-      console.error('Error updating security incident:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error updating security incident', {
+        operation: 'enterprise_security_update_incident',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -435,8 +477,12 @@ export class EnterpriseSecurityService extends EventEmitter {
 
       return incidents;
 
-    } catch (error) {
-      console.error('Error getting security incidents:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting security incidents', {
+        operation: 'enterprise_security_get_incidents',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -458,11 +504,19 @@ export class EnterpriseSecurityService extends EventEmitter {
       this.securityAudits.set(audit.id, audit);
       this.emit('audit_created', audit);
 
-      console.log(`🔍 Created security audit: ${audit.title}`);
+      void logger.info('Created security audit', {
+        operation: 'enterprise_security_create_audit',
+        auditId: audit.id,
+        auditTitle: audit.title,
+      });
       return audit;
 
-    } catch (error) {
-      console.error('Error creating security audit:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating security audit', {
+        operation: 'enterprise_security_create_audit',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -489,11 +543,19 @@ export class EnterpriseSecurityService extends EventEmitter {
         await this.handleDataSubjectRequest(report);
       }
 
-      console.log(`📋 Created data privacy report: ${report.requestType} request`);
+      void logger.info('Created data privacy report', {
+        operation: 'enterprise_security_create_privacy_report',
+        reportId: report.id,
+        requestType: report.requestType,
+      });
       return report;
 
-    } catch (error) {
-      console.error('Error creating data privacy report:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating data privacy report', {
+        operation: 'enterprise_security_create_privacy_report',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -556,8 +618,12 @@ export class EnterpriseSecurityService extends EventEmitter {
         recentIncidents
       };
 
-    } catch (error) {
-      console.error('Error getting compliance status:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting compliance status', {
+        operation: 'enterprise_security_get_compliance_status',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -622,8 +688,12 @@ export class EnterpriseSecurityService extends EventEmitter {
         actionItems
       };
 
-    } catch (error) {
-      console.error('Error generating compliance report:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error generating compliance report', {
+        operation: 'enterprise_security_generate_compliance_report',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -639,8 +709,12 @@ export class EnterpriseSecurityService extends EventEmitter {
 
       return metrics;
 
-    } catch (error) {
-      console.error('Error getting security metrics:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting security metrics', {
+        operation: 'enterprise_security_get_metrics',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -694,8 +768,12 @@ export class EnterpriseSecurityService extends EventEmitter {
       this.securityMetrics.set(metrics.id, metrics);
       this.emit('metrics_updated', metrics);
 
-    } catch (error) {
-      console.error('Error updating security metrics:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error updating security metrics', {
+        operation: 'enterprise_security_update_metrics',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -778,19 +856,31 @@ export class EnterpriseSecurityService extends EventEmitter {
 
   private async escalateIncident(incident: SecurityIncident): Promise<void> {
     // In a real implementation, this would send notifications to stakeholders
-    console.log(`🚨 Escalating critical incident: ${incident.title}`);
+    void logger.warn('Escalating critical incident', {
+      operation: 'enterprise_security_escalate_incident',
+      incidentId: incident.id,
+      incidentTitle: incident.title,
+    });
     this.emit('incident_escalated', incident);
   }
 
   private async handleIncidentResolution(incident: SecurityIncident): Promise<void> {
     // In a real implementation, this would trigger post-incident review
-    console.log(`✅ Incident resolved: ${incident.title}`);
+    void logger.info('Incident resolved', {
+      operation: 'enterprise_security_incident_resolved',
+      incidentId: incident.id,
+      incidentTitle: incident.title,
+    });
     this.emit('incident_resolved', incident);
   }
 
   private async handleDataSubjectRequest(report: DataPrivacyReport): Promise<void> {
     // In a real implementation, this would trigger data subject request workflow
-    console.log(`📋 Processing data subject request: ${report.requestType}`);
+    void logger.info('Processing data subject request', {
+      operation: 'enterprise_security_data_subject_request',
+      reportId: report.id,
+      requestType: report.requestType,
+    });
     this.emit('data_subject_request_received', report);
   }
 

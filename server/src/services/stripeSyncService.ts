@@ -3,6 +3,31 @@ import { prisma } from '../lib/prisma';
 import { getStripeClient, isStripeConfigured } from '../config/stripe';
 import { logger } from '../lib/logger';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 export class StripeSyncService {
   /**
    * Sync subscription data from Stripe
@@ -299,9 +324,11 @@ export class StripeSyncService {
           await this.syncSubscriptionFromStripe(subscription.id);
           synced++;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         // Continue with other subscriptions even if one fails
-        console.error(`Failed to sync subscription ${subscription.id}:`, error);
+        logSrvErr('stripesyncservice_sync_subscription_failed', 'Failed to sync subscription', error, {
+          subscriptionId: subscription.id,
+        });
       }
     }
 
@@ -327,9 +354,11 @@ export class StripeSyncService {
         try {
           await this.syncInvoiceFromStripe(invoice.id);
           synced++;
-        } catch (error) {
+        } catch (error: unknown) {
           // Continue with other invoices even if one fails
-          console.error(`Failed to sync invoice ${invoice.id}:`, error);
+          logSrvErr('stripesyncservice_sync_invoice_failed', 'Failed to sync invoice', error, {
+            invoiceId: invoice.id,
+          });
         }
       }
     }

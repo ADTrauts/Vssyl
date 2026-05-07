@@ -103,8 +103,11 @@ export async function shareNote(req: Request, res: Response): Promise<void> {
 
     res.status(201).json(share);
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error in shareNote:', err);
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error in shareNote', {
+      operation: 'notes_share',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ error: 'Failed to share note' });
   }
 }
@@ -150,8 +153,11 @@ export async function revokeShare(req: Request, res: Response): Promise<void> {
 
     res.status(204).send();
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error in revokeShare:', err);
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error in revokeShare', {
+      operation: 'notes_revoke_share',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ error: 'Failed to revoke share' });
   }
 }
@@ -203,8 +209,11 @@ export async function getNoteShares(req: Request, res: Response): Promise<void> 
 
     res.json({ shares });
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('Error in getNoteShares:', err);
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error in getNoteShares', {
+      operation: 'notes_list_shares',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ error: 'Failed to list shares' });
   }
 }

@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
+
+function logAnalyticsError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 // Get personal analytics for the current user
 export const getPersonalAnalytics = async (req: Request, res: Response) => {
@@ -142,7 +152,7 @@ export const getPersonalAnalytics = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: analytics });
   } catch (error) {
-    console.error('Error getting personal analytics:', error);
+    logAnalyticsError('Error getting personal analytics', 'analytics_personal', error);
     res.status(500).json({ success: false, error: 'Failed to get personal analytics' });
   }
 };
@@ -270,7 +280,7 @@ export const getModuleAnalytics = async (req: Request, res: Response) => {
 
     res.json({ success: true, data: moduleAnalytics });
   } catch (error) {
-    console.error('Error getting module analytics:', error);
+    logAnalyticsError('Error getting module analytics', 'analytics_module', error);
     res.status(500).json({ success: false, error: 'Failed to get module analytics' });
   }
 };
@@ -295,7 +305,7 @@ export const exportAnalytics = async (req: Request, res: Response) => {
     // TODO: Implement CSV export
     res.json({ success: false, error: 'Export format not yet implemented' });
   } catch (error) {
-    console.error('Error exporting analytics:', error);
+    logAnalyticsError('Error exporting analytics', 'analytics_export', error);
     res.status(500).json({ success: false, error: 'Failed to export analytics' });
   }
 }; 

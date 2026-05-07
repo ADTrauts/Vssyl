@@ -1,6 +1,32 @@
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
 }) : null;
@@ -231,7 +257,11 @@ export class DeveloperPortalService {
         // For now, just mark as pending since we don't have stripeCustomerId
         // In a real implementation, you would need to set up Stripe Connect
         // or use a different payout method
-        console.log(`Payout requested for developer ${developerId}: $${amount}`);
+        logSrvDebug('developerportalservice_payout_requested', 'Payout requested for developer', {
+          developerId,
+          amount,
+          hasUser: !!user,
+        });
         
         // Update payout status to processing
         await prisma.developerRevenue.update({
@@ -241,7 +271,7 @@ export class DeveloperPortalService {
           },
         });
       } catch (error) {
-        console.error('Payout processing failed:', error);
+        logSrvErr('developerportalservice_payout_processing_failed', 'Payout processing failed:', error);
         // Keep payout as pending for manual processing
       }
     }

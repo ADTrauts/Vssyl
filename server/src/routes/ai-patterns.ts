@@ -3,6 +3,32 @@ import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
 import { SmartPatternEngine } from '../ai/intelligence/SmartPatternEngine';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 const smartPatternEngine = new SmartPatternEngine(prisma);
@@ -73,7 +99,7 @@ router.get('/analysis', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting pattern analysis:', error);
+    logSrvErr('ai_patterns_error_getting_pattern_analysis', 'Error getting pattern analysis:', error);
     res.status(500).json({ 
       error: 'Failed to get pattern analysis',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -108,7 +134,7 @@ router.post('/rediscover', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error rediscovering patterns:', error);
+    logSrvErr('ai_patterns_error_rediscovering_patterns', 'Error rediscovering patterns:', error);
     res.status(500).json({ 
       error: 'Failed to rediscover patterns',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -184,7 +210,7 @@ router.get('/insights/:timeframe', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting pattern insights:', error);
+    logSrvErr('ai_patterns_error_getting_pattern_insights', 'Error getting pattern insights:', error);
     res.status(500).json({ 
       error: 'Failed to get pattern insights',
       details: error instanceof Error ? error.message : 'Unknown error'

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 import {
   generateGoogleAuthUrl,
@@ -9,8 +10,12 @@ import {
 } from '../services/googleOAuthService';
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
-  console.error(message, error);
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error instanceof Error ? error : new Error(String(error));
+  void logger.error(message, {
+    operation: 'google_oauth_controller',
+    error: { message: err.message, stack: err.stack },
+  });
   res.status(500).json({ success: false, error: message });
 };
 

@@ -7,6 +7,32 @@ import { ActionTemplates } from '../../ai/actions/ActionTemplates';
 import { DigitalLifeTwinCore } from '../../ai/core/DigitalLifeTwinCore';
 import { CrossModuleContextEngine } from '../../ai/context/CrossModuleContextEngine';
 import { prisma } from '../../lib/prisma';
+import { logger } from '../../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -60,7 +86,7 @@ router.post('/execute', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error executing autonomous action:', error);
+    logSrvErr('autonomous_error_executing_autonomous_action', 'Error executing autonomous action:', error);
     res.status(500).json({ 
       error: 'Failed to execute autonomous action',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -88,7 +114,7 @@ router.get('/pending-approvals', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting pending approvals:', error);
+    logSrvErr('autonomous_error_getting_pending_approvals', 'Error getting pending approvals:', error);
     res.status(500).json({ 
       error: 'Failed to get pending approvals',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -127,7 +153,7 @@ router.post('/approval/:actionId', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error handling approval:', error);
+    logSrvErr('autonomous_error_handling_approval', 'Error handling approval:', error);
     res.status(500).json({ 
       error: 'Failed to handle approval',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -173,7 +199,7 @@ router.post('/suggest', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error generating action suggestions:', error);
+    logSrvErr('autonomous_error_generating_action_suggestions', 'Error generating action suggestions:', error);
     res.status(500).json({ 
       error: 'Failed to generate suggestions',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -231,7 +257,7 @@ router.get('/history', authenticateJWT, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting action history:', error);
+    logSrvErr('autonomous_error_getting_action_history', 'Error getting action history:', error);
     res.status(500).json({ 
       error: 'Failed to get action history',
       details: error instanceof Error ? error.message : 'Unknown error'

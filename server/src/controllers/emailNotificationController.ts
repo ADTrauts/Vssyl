@@ -1,6 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { EmailNotificationService } from '../services/emailNotificationService';
+import { logger } from '../lib/logger';
+
+function logEmailNotifyError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 // Test email service (users can test to their own email)
 export const testEmailService = async (req: Request, res: Response) => {
@@ -52,7 +62,7 @@ export const testEmailService = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('Error testing email service:', error);
+    logEmailNotifyError('Error testing email service', 'email_test', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({ 
       error: 'Failed to test email service',
@@ -71,7 +81,7 @@ export const getEmailServiceStatus = async (req: Request, res: Response) => {
       configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
     });
   } catch (error) {
-    console.error('Error getting email service status:', error);
+    logEmailNotifyError('Error getting email service status', 'email_status', error);
     res.status(500).json({ error: 'Failed to get email service status' });
   }
 };
@@ -120,7 +130,7 @@ export const sendEmailNotification = async (req: Request, res: Response) => {
       res.status(500).json({ error: 'Failed to send email notification' });
     }
   } catch (error) {
-    console.error('Error sending email notification:', error);
+    logEmailNotifyError('Error sending email notification', 'email_send', error);
     res.status(500).json({ error: 'Failed to send email notification' });
   }
 };
@@ -148,7 +158,7 @@ export const getUserEmailPreferences = async (req: Request, res: Response) => {
 
     res.json({ preferences: emailPreferences });
   } catch (error) {
-    console.error('Error getting user email preferences:', error);
+    logEmailNotifyError('Error getting user email preferences', 'email_prefs_get', error);
     res.status(500).json({ error: 'Failed to get email preferences' });
   }
 };
@@ -185,7 +195,7 @@ export const updateUserEmailPreferences = async (req: Request, res: Response) =>
 
     res.json({ success: true, message: 'Email preferences updated successfully' });
   } catch (error) {
-    console.error('Error updating email preferences:', error);
+    logEmailNotifyError('Error updating email preferences', 'email_prefs_update', error);
     res.status(500).json({ error: 'Failed to update email preferences' });
   }
 }; 

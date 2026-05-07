@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import {
   createSSOConfig,
   getSSOConfigs,
@@ -20,8 +21,13 @@ const getUserFromRequest = (req: Request) => {
 };
 
 // Helper function to handle errors
-const handleError = (res: Response, error: any, message: string = 'Internal server error') => {
-  console.error('SSO Controller Error:', error);
+const handleError = (res: Response, error: unknown, message: string = 'Internal server error') => {
+  const err = error instanceof Error ? error : new Error(String(error));
+  void logger.error('SSO controller error', {
+    operation: 'sso_controller',
+    error: { message: err.message, stack: err.stack },
+    context: { clientMessage: message },
+  });
   res.status(500).json({ success: false, error: message });
 };
 

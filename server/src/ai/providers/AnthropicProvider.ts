@@ -290,9 +290,9 @@ export class AnthropicProvider {
     const personality = context.personality || {};
     const autonomySettings = context.autonomySettings || {};
     
-    return `You are an advanced analytical AI serving as the user's Digital Life Twin. Your specialty is deep analysis, reasoning, and understanding complex patterns across the user's digital life.
+    return `You are Vssyl's AI assistant, with strong analytical depth. You help the user understand their personal, business, and module context through reasoning and pattern awareness. You may represent the user's context accurately, but you must not claim to be the user.
 
-PERSONALITY PROFILE:
+PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
 ${JSON.stringify(personality, null, 2)}
 
 AUTONOMY SETTINGS:
@@ -311,27 +311,74 @@ ANALYTICAL CAPABILITIES:
 - Pattern recognition in communication, work, and personal habits
 - Understanding of context and nuance in all interactions
 
-RESPONSE FORMAT (use structured format for summaries, lists, document answers, or multi-part answers):
-Always respond with a valid JSON object. Prefer the structured format so the UI can render sections and actions cleanly.
+RESPONSE FORMAT — structured output only:
+Respond with a single valid JSON object and nothing else: no markdown fences, no commentary outside JSON.
 
-Structured format (preferred when you have distinct sections, e.g. document summary, list of points, steps, or tabular data):
+Use this v2 shape (omit optional keys when not needed):
+
 {
-  "type": "summary" | "answer" | "list" | "steps" | "actionable" | "table",
-  "title": "Short title (e.g. Document Summary, Key Points)",
+  "mode": "answer | summary | analysis | recommendation | action_plan | comparison | status_update | error",
+  "summary": "A clear 1-3 sentence answer or summary.",
+  "keyInsights": ["Most important insight 1", "Most important insight 2"],
   "sections": [
-    { "heading": "Section heading", "content": "Section body text. Be concise.", "icon": "optional emoji or icon name" }
+    {
+      "title": "Section title",
+      "content": "Clear explanation",
+      "bullets": ["Optional bullet"]
+    }
   ],
-  "table": { "columns": ["Col1", "Col2"], "rows": [["a", "b"], ["c", "d"]] },
-  "actions": [{ "label": "Button label", "action": "optional_action_id", "fileId": "optional_file_id" }],
-  "confidence": 0.0-1.0,
-  "reasoning": "Brief explanation of your process"
+  "evidence": [
+    {
+      "label": "What this is based on",
+      "sourceType": "module | file | chat | calendar | drive | business | personal | system | unknown",
+      "sourceId": "optional-id",
+      "detail": "optional supporting detail"
+    }
+  ],
+  "assumptions": ["Only include when making an inference not directly proven."],
+  "risks": ["Missing data, uncertainty, operational risk, or possible issue."],
+  "recommendedActions": [
+    {
+      "title": "Action title",
+      "description": "Practical next step",
+      "priority": "low | medium | high",
+      "actionType": "manual | suggested | automated",
+      "targetModule": "optional-module-name"
+    }
+  ],
+  "confidence": {
+    "level": "low | medium | high",
+    "explanation": "Why this confidence level was chosen."
+  },
+  "style": {
+    "tone": "clear | professional | concise | operator | supportive",
+    "format": "standard | executive_summary | step_by_step | diagnostic"
+  },
+  "metadata": {
+    "responseVersion": "v2"
+  }
 }
-When type is "table", provide "table" with "columns" (array of strings) and "rows" (array of string arrays). Sections can be empty.
 
-Legacy format (allowed for very short replies only):
-{ "response": "Plain text reply.", "confidence": 0.0-1.0, "reasoning": "...", "actions": [] }
+Required fields: always include "mode", "summary", "confidence" (object with "level" and "explanation"), and "metadata" with "responseVersion": "v2".
 
-Rules: Use "summary" for document/content summaries; "list" for bullet-style answers; "steps" for procedures; "table" for tabular data; "answer" for single-block. Optional "icon" per section (emoji or name). Never return raw markdown outside JSON. Section "content" should be plain text, not markdown.
+Minimum structure requirements:
+
+* Always include 'keyInsights' when mode is 'analysis', 'recommendation', 'action_plan', or 'comparison'
+* Always include 'evidence' when any context data (files, modules, chat, etc.) is present
+* Always include at least one of: 'assumptions' or 'risks' when confidence is not 'high'
+* Always include 'recommendedActions' when mode is 'recommendation' or 'action_plan'
+
+Field guidance:
+- Include "keyInsights" when the answer involves analysis, recommendations, summaries, or business/module/file/chat/calendar context.
+- Include "evidence" when drawing on provided context (files, modules, chat, Drive, calendar, business, personal).
+- Include "assumptions" for inferences not directly proven.
+- Include "risks" for missing data, low confidence, or operational/compliance concerns.
+- Include "recommendedActions" only when supportable from context; do not invent unsupported actions.
+- Never present inference as fact; use "assumptions" or "risks".
+- If context is insufficient, state that in "summary", "risks", and/or "assumptions".
+- Avoid generic filler. Section "content" and "summary": plain language; avoid markdown inside JSON strings when possible.
+
+Legacy fallback (rare): { "response": "plain text", "confidence": 0.85, "reasoning": "..." } — prefer v2.
 
 ANALYTICAL APPROACH:
 - Consider long-term implications of decisions and actions
@@ -342,7 +389,7 @@ ANALYTICAL APPROACH:
 - Identify optimization opportunities across the user's digital life
 - Consider work-life balance and personal well-being in recommendations
 
-FORMATTING: Format the response text for readability: use clear paragraph breaks between ideas, keep paragraphs short, and use bullet points for lists or steps.`;
+FORMATTING: Keep "summary" and section "content" readable (short paragraphs); use "bullets" inside sections for lists.`;
   }
 
   /**
@@ -350,9 +397,14 @@ FORMATTING: Format the response text for readability: use clear paragraph breaks
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     const safeData = this.sanitizeDataForPrompt(data);
+    const assembled = safeData.assembledContext;
+    const assembledSection =
+      assembled && typeof assembled === 'object'
+        ? `ASSEMBLED CONTEXT:\n${JSON.stringify(assembled, null, 2)}\n\n`
+        : '';
     return `ANALYTICAL REQUEST: ${request.query}
 
-AVAILABLE DATA FOR ANALYSIS:
+${assembledSection}AVAILABLE DATA FOR ANALYSIS:
 ${JSON.stringify(safeData, null, 2)}
 
 REQUEST CONTEXT:
@@ -360,15 +412,15 @@ REQUEST CONTEXT:
 - Timestamp: ${request.timestamp.toISOString()}
 - Module Context: ${(safeData as any).currentModule || 'Cross-module'}
 
-Please provide a thorough analysis as my Digital Life Twin, considering:
+Please provide a thorough analysis as Vssyl's AI assistant, considering:
 1. Patterns in the data and their implications
 2. Relationships and interpersonal dynamics
 3. Long-term consequences of potential actions
 4. Ethical considerations for any recommendations
-5. Optimization opportunities for my digital life
+5. Optimization opportunities for the user's digital life
 6. Work-life balance and well-being implications
 
-Focus on deep understanding and nuanced reasoning rather than quick responses.`;
+Follow the v2 JSON response format from your instructions. Focus on deep understanding and nuanced reasoning rather than quick responses.`;
   }
 
   /**
@@ -447,8 +499,12 @@ Provide insights on:
           specialization: 'relationship_analysis'
         }
       };
-    } catch (error) {
-      console.error('Relationship analysis error:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Relationship analysis error', {
+        operation: 'anthropic_relationship_analysis',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -540,8 +596,12 @@ Consider:
       });
       
       return response.content.length > 0;
-    } catch (error) {
-      console.error('Anthropic health check failed:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Anthropic health check failed', {
+        operation: 'anthropic_health_check',
+        error: { message: err.message, stack: err.stack },
+      });
       return false;
     }
   }

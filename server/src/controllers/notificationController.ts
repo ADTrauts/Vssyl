@@ -6,6 +6,22 @@ import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationGroupingService } from '../services/notificationGroupingService';
 import type { ModuleNotificationMetadata } from '../../../shared/src/types/module-notifications';
 
+function logNotifyErr(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
+function logNotifyWsFail(err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.warn('Notification WebSocket broadcast failed', {
+    operation: 'notification_ws',
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 // Get all notifications for the current user
 export const getNotifications = async (req: Request, res: Response) => {
   try {
@@ -107,8 +123,8 @@ export const getNotifications = async (req: Request, res: Response) => {
       },
       unreadCount
     });
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching notifications', 'notifications_list', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 };
@@ -164,8 +180,8 @@ export const getModuleNotificationTypes = async (req: Request, res: Response) =>
     }
 
     res.json({ modules: moduleNotifications });
-  } catch (error) {
-    console.error('Error fetching module notification types:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching module notification types', 'notifications_module_types', error);
     res.status(500).json({ error: 'Failed to fetch module notification types' });
   }
 };
@@ -258,14 +274,14 @@ export const markAsRead = async (req: Request, res: Response) => {
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, id, { read: true });
-    } catch (socketError) {
-      console.error('Error broadcasting notification update via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
       // Don't fail the operation if WebSocket fails
     }
 
     res.json({ notification: updatedNotification });
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error marking notification as read', 'notifications_mark_read', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 };
@@ -300,14 +316,14 @@ export const markAllAsRead = async (req: Request, res: Response) => {
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, 'all', { read: true });
-    } catch (socketError) {
-      console.error('Error broadcasting notification updates via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
       // Don't fail the operation if WebSocket fails
     }
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error marking all notifications as read', 'notifications_mark_all_read', error);
     res.status(500).json({ error: 'Failed to mark notifications as read' });
   }
 };
@@ -351,13 +367,13 @@ export const archiveNotification = async (req: Request, res: Response) => {
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, id, { deleted: true });
-    } catch (socketError) {
-      console.error('Error broadcasting notification update via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
     }
 
     res.json({ notification: updatedNotification });
-  } catch (error) {
-    console.error('Error archiving notification:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error archiving notification', 'notifications_archive', error);
     res.status(500).json({ error: 'Failed to archive notification' });
   }
 };
@@ -390,13 +406,13 @@ export const archiveMultipleNotifications = async (req: Request, res: Response) 
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, 'bulk', { deleted: true });
-    } catch (socketError) {
-      console.error('Error broadcasting notification updates via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
     }
 
     res.json({ success: true, message: `${ids.length} notifications archived` });
-  } catch (error) {
-    console.error('Error archiving notifications:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error archiving notifications', 'notifications_archive_bulk', error);
     res.status(500).json({ error: 'Failed to archive notifications' });
   }
 };
@@ -428,8 +444,8 @@ export const deleteNotification = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting notification:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error deleting notification', 'notifications_delete', error);
     res.status(500).json({ error: 'Failed to delete notification' });
   }
 };
@@ -457,8 +473,8 @@ export const deleteMultipleNotifications = async (req: Request, res: Response) =
     });
 
     res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting multiple notifications:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error deleting multiple notifications', 'notifications_delete_bulk', error);
     res.status(500).json({ error: 'Failed to delete notifications' });
   }
 };
@@ -515,8 +531,8 @@ export const getNotificationStats = async (req: Request, res: Response) => {
     };
 
     res.json(stats);
-  } catch (error) {
-    console.error('Error fetching notification stats:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching notification stats', 'notifications_stats', error);
     res.status(500).json({ error: 'Failed to fetch notification statistics' });
   }
 };
@@ -565,8 +581,8 @@ export const createNotificationForUser = async (req: Request, res: Response) => 
     });
 
     res.status(201).json({ notification });
-  } catch (error) {
-    console.error('Error creating notification for user:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error creating notification for user', 'notifications_admin_create', error);
     res.status(500).json({ error: 'Failed to create notification' });
   }
 };
@@ -607,8 +623,8 @@ export const getNotificationPreferences = async (req: Request, res: Response) =>
     }
 
     res.json({ preferences: prefs });
-  } catch (error) {
-    console.error('Error fetching notification preferences:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching notification preferences', 'notifications_prefs_get', error);
     res.status(500).json({ error: 'Failed to fetch notification preferences' });
   }
 };
@@ -648,8 +664,8 @@ export const saveNotificationPreferences = async (req: Request, res: Response) =
     await Promise.all(updates);
 
     res.json({ success: true, message: 'Notification preferences saved successfully' });
-  } catch (error) {
-    console.error('Error saving notification preferences:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error saving notification preferences', 'notifications_prefs_save', error);
     res.status(500).json({ error: 'Failed to save notification preferences' });
   }
 };
@@ -676,8 +692,8 @@ export const getQuietHours = async (req: Request, res: Response) => {
       try {
         const settings = JSON.parse(preference.value);
         return res.json({ settings });
-      } catch (parseError) {
-        console.error('Error parsing quiet hours settings:', parseError);
+      } catch (parseError: unknown) {
+        logNotifyErr('Error parsing quiet hours settings', 'notifications_quiet_hours_parse', parseError);
       }
     }
 
@@ -696,8 +712,8 @@ export const getQuietHours = async (req: Request, res: Response) => {
     };
 
     res.json({ settings: defaultSettings });
-  } catch (error) {
-    console.error('Error fetching quiet hours:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching quiet hours', 'notifications_quiet_hours_get', error);
     res.status(500).json({ error: 'Failed to fetch quiet hours settings' });
   }
 };
@@ -743,8 +759,8 @@ export const saveQuietHours = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, message: 'Quiet hours settings saved successfully' });
-  } catch (error) {
-    console.error('Error saving quiet hours:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error saving quiet hours', 'notifications_quiet_hours_save', error);
     res.status(500).json({ error: 'Failed to save quiet hours settings' });
   }
 };
@@ -768,8 +784,8 @@ export const getDoNotDisturb = async (req: Request, res: Response) => {
 
     const enabled = preference?.value === 'true';
     res.json({ enabled });
-  } catch (error) {
-    console.error('Error fetching do not disturb status:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching do not disturb status', 'notifications_dnd_get', error);
     res.status(500).json({ error: 'Failed to fetch do not disturb status' });
   }
 };
@@ -805,8 +821,8 @@ export const saveDoNotDisturb = async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, message: 'Do not disturb status updated successfully' });
-  } catch (error) {
-    console.error('Error saving do not disturb status:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error saving do not disturb status', 'notifications_dnd_save', error);
     res.status(500).json({ error: 'Failed to save do not disturb status' });
   }
 };
@@ -843,8 +859,8 @@ export const getGroupedNotifications = async (req: Request, res: Response) => {
     }));
 
     res.json({ groups: formattedGroups });
-  } catch (error) {
-    console.error('Error fetching grouped notifications:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error fetching grouped notifications', 'notifications_grouped_list', error);
     res.status(500).json({ error: 'Failed to fetch grouped notifications' });
   }
 };
@@ -867,16 +883,16 @@ export const markGroupAsRead = async (req: Request, res: Response) => {
       try {
         const chatSocketService = getChatSocketService();
         chatSocketService.broadcastNotificationUpdate(userId, groupId, { read: true });
-      } catch (socketError) {
-        console.error('Error broadcasting notification updates via WebSocket:', socketError);
+      } catch (socketError: unknown) {
+        logNotifyWsFail(socketError);
       }
 
       res.json({ success: true, message: 'Notification group marked as read' });
     } else {
       res.status(404).json({ error: 'Notification group not found' });
     }
-  } catch (error) {
-    console.error('Error marking group as read:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error marking group as read', 'notifications_group_read', error);
     res.status(500).json({ error: 'Failed to mark group as read' });
   }
 };
@@ -943,13 +959,13 @@ export const snoozeNotification = async (req: Request, res: Response) => {
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, id, { snoozedUntil: snoozedUntil.toISOString() });
-    } catch (socketError) {
-      console.error('Error broadcasting notification update via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
     }
 
     res.json({ notification: updatedNotification });
-  } catch (error) {
-    console.error('Error snoozing notification:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error snoozing notification', 'notifications_snooze', error);
     res.status(500).json({ error: 'Failed to snooze notification' });
   }
 };
@@ -993,13 +1009,13 @@ export const unsnoozeNotification = async (req: Request, res: Response) => {
     try {
       const chatSocketService = getChatSocketService();
       chatSocketService.broadcastNotificationUpdate(userId, id, { snoozedUntil: null });
-    } catch (socketError) {
-      console.error('Error broadcasting notification update via WebSocket:', socketError);
+    } catch (socketError: unknown) {
+      logNotifyWsFail(socketError);
     }
 
     res.json({ notification: updatedNotification });
-  } catch (error) {
-    console.error('Error unsnoozing notification:', error);
+  } catch (error: unknown) {
+    logNotifyErr('Error unsnoozing notification', 'notifications_unsnooze', error);
     res.status(500).json({ error: 'Failed to unsnooze notification' });
   }
 };

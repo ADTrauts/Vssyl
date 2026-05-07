@@ -2,6 +2,31 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { Prisma } from '@prisma/client';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 interface LogEntry {
   id: string;
   level: 'debug' | 'info' | 'warn' | 'error';
@@ -91,17 +116,22 @@ class LogService {
         setInterval(async () => {
           try {
             await this.cleanupOldLogs(policy.defaultRetentionDays);
-          } catch (error) {
-            // Silently fail cleanup - database might be temporarily unavailable
-            console.error('[LogService] Auto-cleanup failed:', error instanceof Error ? error.message : 'Unknown error');
+          } catch (error: unknown) {
+            logSrvErr(
+              'logservice_auto_cleanup',
+              '[LogService] Auto-cleanup failed',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }, 24 * 60 * 60 * 1000); // Run daily
       }
-    } catch (error) {
-      // Database might not be available during initialization
-      // Log error but don't crash the service
-      console.error('[LogService] Failed to initialize auto-cleanup:', error instanceof Error ? error.message : 'Unknown error');
-      console.log('[LogService] Auto-cleanup will be retried on next log operation');
+    } catch (error: unknown) {
+      logSrvErr(
+        'logservice_auto_cleanup_init',
+        '[LogService] Failed to initialize auto-cleanup',
+        error instanceof Error ? error : new Error(String(error))
+      );
+      logSrvDebug('logservice_auto_cleanup_retry', '[LogService] Auto-cleanup will be retried on next log operation');
     }
   }
 
@@ -122,9 +152,12 @@ class LogService {
       }
       
       return policy;
-    } catch (error) {
-      // If database is unavailable, return default policy
-      console.warn('[LogService] Database unavailable, using default retention policy');
+    } catch (error: unknown) {
+      logSrvWarn(
+        'logservice_retention_db_unavailable',
+        '[LogService] Database unavailable, using default retention policy',
+        error
+      );
       return {
         id: 'default',
         defaultRetentionDays: 30,
@@ -161,7 +194,7 @@ class LogService {
         service: logEntry.service
       });
     } catch (error) {
-      console.error('Error storing client log:', error);
+      logSrvErr('logservice_error_storing_client_log', 'Error storing client log:', error);
       // Don't throw - logging should not break the main flow
     }
   }
@@ -244,7 +277,7 @@ class LogService {
         hasMore: offset + limit < total
       };
     } catch (error) {
-      console.error('Error getting logs (returning empty):', error);
+      logSrvErr('logservice_error_getting_logs_returning_empty', 'Error getting logs (returning empty):', error);
       // Return empty result if database query fails (schema mismatch)
       return {
         entries: [],
@@ -411,7 +444,7 @@ class LogService {
         }
       };
     } catch (error) {
-      console.error('Error getting log analytics (returning empty):', error);
+      logSrvErr('logservice_error_getting_log_analytics_returning_empty', 'Error getting log analytics (returning empty):', error);
       // Return empty analytics if database query fails (schema mismatch)
       return {
         totalLogs: 0,
@@ -445,7 +478,7 @@ class LogService {
         updatedAt: alert.updatedAt.toISOString()
       }));
     } catch (error) {
-      console.error('Error getting log alerts (returning empty):', error);
+      logSrvErr('logservice_error_getting_log_alerts_returning_empty', 'Error getting log alerts (returning empty):', error);
       // Return empty array if database query fails (schema mismatch)
       return [];
     }
@@ -480,7 +513,7 @@ class LogService {
         updatedAt: alert.updatedAt.toISOString()
       };
     } catch (error) {
-      console.error('Error creating log alert:', error);
+      logSrvErr('logservice_error_creating_log_alert', 'Error creating log alert:', error);
       throw error;
     }
   }
@@ -516,7 +549,7 @@ class LogService {
         updatedAt: alert.updatedAt.toISOString()
       };
     } catch (error) {
-      console.error('Error updating log alert:', error);
+      logSrvErr('logservice_error_updating_log_alert', 'Error updating log alert:', error);
       throw error;
     }
   }
@@ -532,7 +565,7 @@ class LogService {
         alertId: alertId
       });
     } catch (error) {
-      console.error('Error deleting log alert:', error);
+      logSrvErr('logservice_error_deleting_log_alert', 'Error deleting log alert:', error);
       throw error;
     }
   }
@@ -564,7 +597,7 @@ class LogService {
 
       return { deletedCount: result.count };
     } catch (error) {
-      console.error('Error cleaning up old logs:', error);
+      logSrvErr('logservice_error_cleaning_up_old_logs', 'Error cleaning up old logs:', error);
       throw error;
     }
   }
@@ -581,7 +614,7 @@ class LogService {
         autoCleanup: policy.autoCleanup
       };
     } catch (error) {
-      console.error('Error getting retention settings:', error);
+      logSrvErr('logservice_error_getting_retention_settings', 'Error getting retention settings:', error);
       throw error;
     }
   }
@@ -615,7 +648,7 @@ class LogService {
         autoCleanup: updatedPolicy.autoCleanup
       };
     } catch (error) {
-      console.error('Error updating retention settings:', error);
+      logSrvErr('logservice_error_updating_retention_settings', 'Error updating retention settings:', error);
       throw error;
     }
   }

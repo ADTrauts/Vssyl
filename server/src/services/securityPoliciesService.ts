@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
-import { logger } from '../lib/logger';
 import {
   SecurityPolicy,
   SecurityPolicyRule,
@@ -9,6 +8,31 @@ import {
   SecurityPolicyViolation,
   PolicyEnforcementResult
 } from '../../../shared/dist/types/policies';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
 
 /**
  * Security Policies Service
@@ -58,7 +82,6 @@ export class SecurityPoliciesService extends EventEmitter {
       return sortedPolicies[0];
       
     } catch (error) {
-      console.error(`❌ Error getting security policy for module ${moduleId}:`, error);
       await logger.error('Security policy retrieval failed', {
         operation: 'security_policy_retrieval',
         moduleId,
@@ -79,7 +102,7 @@ export class SecurityPoliciesService extends EventEmitter {
    */
   async checkModuleCompliance(moduleId: string, moduleData: Record<string, unknown>): Promise<PolicyEnforcementResult> {
     try {
-      console.log(`🔍 Checking compliance for module: ${moduleId}`);
+      logSrvDebug('securitypoliciesservice_checking_compliance', 'Checking compliance for module', { moduleId });
       
       const securityPolicy = await this.getSecurityPolicyForModule(moduleId, moduleData);
       const complianceFrameworks = await this.getApplicableComplianceFrameworks(moduleId, moduleData);
@@ -127,11 +150,14 @@ export class SecurityPoliciesService extends EventEmitter {
         score: result.score
       });
       
-      console.log(`✅ Compliance check completed for module ${moduleId}. Score: ${result.score}/100`);
+      logSrvDebug('securitypoliciesservice_compliance_completed', 'Compliance check completed for module', {
+        moduleId,
+        score: result.score,
+      });
       return result;
       
-    } catch (error) {
-      console.error(`❌ Error checking compliance for module ${moduleId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('securitypoliciesservice_check_module_compliance', 'Error checking compliance for module', error, { moduleId });
       await logger.error('Module compliance check failed', {
         operation: 'module_compliance_check',
         moduleId,
@@ -151,7 +177,7 @@ export class SecurityPoliciesService extends EventEmitter {
    */
   async createSecurityPolicy(policyData: Omit<SecurityPolicy, 'id' | 'createdAt' | 'updatedAt'>): Promise<SecurityPolicy> {
     try {
-      console.log(`📝 Creating security policy: ${policyData.name}`);
+      logSrvDebug('securitypoliciesservice_creating_policy', 'Creating security policy', { policyName: policyData.name });
       
       const policy: SecurityPolicy = {
         id: `policy_${Date.now()}`,
@@ -172,11 +198,11 @@ export class SecurityPoliciesService extends EventEmitter {
         enforcement: policy.enforcement
       });
       
-      console.log(`✅ Security policy created: ${policy.name}`);
+      logSrvDebug('securitypoliciesservice_policy_created', 'Security policy created', { policyName: policy.name, policyId: policy.id });
       return policy;
       
     } catch (error) {
-      console.error('❌ Error creating security policy:', error);
+      logSrvErr('securitypoliciesservice_error_creating_security_policy', '❌ Error creating security policy:', error);
       await logger.error('Security policy creation failed', {
         operation: 'security_policy_creation',
         error: {
@@ -196,7 +222,7 @@ export class SecurityPoliciesService extends EventEmitter {
    */
   async updateSecurityPolicy(policyId: string, updates: Partial<SecurityPolicy>): Promise<SecurityPolicy> {
     try {
-      console.log(`📝 Updating security policy: ${policyId}`);
+      logSrvDebug('securitypoliciesservice_updating_policy', 'Updating security policy', { policyId });
       
       const existingPolicy = this.securityPolicies.get(policyId);
       if (!existingPolicy) {
@@ -219,11 +245,11 @@ export class SecurityPoliciesService extends EventEmitter {
         updates: Object.keys(updates)
       });
       
-      console.log(`✅ Security policy updated: ${policyId}`);
+      logSrvDebug('securitypoliciesservice_policy_updated', 'Security policy updated', { policyId });
       return updatedPolicy;
       
-    } catch (error) {
-      console.error(`❌ Error updating security policy ${policyId}:`, error);
+    } catch (error: unknown) {
+      logSrvErr('securitypoliciesservice_update_policy', 'Error updating security policy', error, { policyId });
       await logger.error('Security policy update failed', {
         operation: 'security_policy_update',
         policyId,
@@ -581,7 +607,7 @@ export class SecurityPoliciesService extends EventEmitter {
           return false;
       }
     } catch (error) {
-      console.error('Error evaluating rule condition:', error);
+      logSrvErr('securitypoliciesservice_error_evaluating_rule_condition', 'Error evaluating rule condition:', error);
       return false;
     }
   }
@@ -631,9 +657,9 @@ export class SecurityPoliciesService extends EventEmitter {
   private async updatePoliciesFromDatabase(): Promise<void> {
     try {
       // In a real implementation, this would fetch policies from the database
-      console.log('🔄 Updating security policies from database...');
+      logSrvDebug('securitypoliciesservice_updating_security_policies_from_database', '🔄 Updating security policies from database...');
     } catch (error) {
-      console.error('❌ Error updating policies from database:', error);
+      logSrvErr('securitypoliciesservice_error_updating_policies_from_database', '❌ Error updating policies from database:', error);
     }
   }
 }

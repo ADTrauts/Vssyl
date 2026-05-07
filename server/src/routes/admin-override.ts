@@ -12,6 +12,32 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -60,7 +86,7 @@ router.get('/users', authenticateJWT, requireAdmin, async (req: Request, res: Re
       users
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logSrvErr('admin_override_error_fetching_users', 'Error fetching users:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch users'
@@ -91,7 +117,7 @@ router.post('/users/:userId/make-admin', authenticateJWT, requireAdmin, async (r
       }
     });
   } catch (error) {
-    console.error('Error granting admin access:', error);
+    logSrvErr('admin_override_error_granting_admin_access', 'Error granting admin access:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to grant admin access'
@@ -122,7 +148,7 @@ router.post('/users/:userId/revoke-admin', authenticateJWT, requireAdmin, async 
       }
     });
   } catch (error) {
-    console.error('Error revoking admin access:', error);
+    logSrvErr('admin_override_error_revoking_admin_access', 'Error revoking admin access:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to revoke admin access'
@@ -182,7 +208,7 @@ router.get('/businesses', authenticateJWT, requireAdmin, async (req: Request, re
       }))
     });
   } catch (error) {
-    console.error('Error fetching businesses:', error);
+    logSrvErr('admin_override_error_fetching_businesses', 'Error fetching businesses:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch businesses'
@@ -200,7 +226,7 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
     const { businessId } = req.params;
     const { tier } = req.body;
 
-    console.log('Setting tier:', { businessId, tier });
+    logSrvDebug('admin_override_set_tier', 'Setting tier', { businessId, tier });
 
     const validTiers = ['free', 'business_basic', 'business_advanced', 'enterprise'];
 
@@ -223,7 +249,9 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
       }
     });
 
-    console.log('Business tier updated successfully:', business);
+    logSrvDebug('admin_override_tier_updated', 'Business tier updated successfully', {
+      business: business as Record<string, unknown>,
+    });
 
     res.json({
       success: true,
@@ -234,10 +262,9 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
         tier: business.tier
       }
     });
-  } catch (error) {
-    console.error('Error setting business tier:', error);
+  } catch (error: unknown) {
+    logSrvErr('admin_override_error_setting_business_tier', 'Error setting business tier', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('Error details:', errorMessage);
     res.status(500).json({
       success: false,
       error: 'Failed to set business tier',
@@ -279,7 +306,7 @@ router.post('/quick-fix-tier', authenticateJWT, requireAdmin, async (req: Reques
       note: 'Business tier updated. HR module and other enterprise features are now available.'
     });
   } catch (error) {
-    console.error('Error setting tier:', error);
+    logSrvErr('admin_override_error_setting_tier', 'Error setting tier:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to set tier',

@@ -10,6 +10,31 @@ import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
+
 interface ExtractedFact {
   title: string;
   content: string;
@@ -99,14 +124,14 @@ export class FactExtractionService {
             });
           } catch (saveError) {
             // Log but don't fail - fact extraction is non-critical
-            console.warn('Failed to save extracted fact:', saveError);
+            logSrvWarn('factextractionservice_failed_to_save_extracted_fact', 'Failed to save extracted fact:', saveError);
           }
         }
       }
     } catch (error) {
       // Log but don't fail - fact extraction should never break the main flow
       const err = error instanceof Error ? error : new Error('Unknown error');
-      console.warn('Error in fact extraction:', err);
+      logSrvWarn('factextractionservice_error_in_fact_extraction', 'Error in fact extraction:', err);
       await logger.warn('Fact extraction failed', {
         operation: 'fact_extraction',
         userId,
@@ -214,7 +239,7 @@ If no important facts found, return { "facts": [] }.`;
 
       return [];
     } catch (error) {
-      console.warn('Error extracting facts with AI:', error);
+      logSrvWarn('factextractionservice_error_extracting_facts_with_ai', 'Error extracting facts with AI:', error);
       return [];
     }
   }

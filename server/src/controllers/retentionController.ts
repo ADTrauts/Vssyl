@@ -1,10 +1,19 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
   return req.user;
 };
+
+function logRetentionError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 // Get all retention policies
 export const getRetentionPolicies = async (req: Request, res: Response) => {
@@ -27,8 +36,8 @@ export const getRetentionPolicies = async (req: Request, res: Response) => {
       success: true,
       data: policies
     });
-  } catch (error) {
-    console.error('Error getting retention policies:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error getting retention policies', 'retention_policies_list', error);
     res.status(500).json({ success: false, error: 'Failed to get retention policies' });
   }
 };
@@ -80,8 +89,8 @@ export const createRetentionPolicy = async (req: Request, res: Response) => {
       success: true,
       data: policy
     });
-  } catch (error) {
-    console.error('Error creating retention policy:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error creating retention policy', 'retention_policy_create', error);
     res.status(500).json({ success: false, error: 'Failed to create retention policy' });
   }
 };
@@ -127,8 +136,8 @@ export const updateRetentionPolicy = async (req: Request, res: Response) => {
       success: true,
       data: policy
     });
-  } catch (error) {
-    console.error('Error updating retention policy:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error updating retention policy', 'retention_policy_update', error);
     res.status(500).json({ success: false, error: 'Failed to update retention policy' });
   }
 };
@@ -156,8 +165,8 @@ export const deleteRetentionPolicy = async (req: Request, res: Response) => {
       success: true,
       message: 'Retention policy deleted successfully'
     });
-  } catch (error) {
-    console.error('Error deleting retention policy:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error deleting retention policy', 'retention_policy_delete', error);
     res.status(500).json({ success: false, error: 'Failed to delete retention policy' });
   }
 };
@@ -209,8 +218,8 @@ export const getRetentionStatus = async (req: Request, res: Response) => {
       success: true,
       data: status
     });
-  } catch (error) {
-    console.error('Error getting retention status:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error getting retention status', 'retention_status', error);
     res.status(500).json({ success: false, error: 'Failed to get retention status' });
   }
 };
@@ -282,7 +291,10 @@ export const triggerCleanup = async (req: Request, res: Response) => {
           break;
 
         default:
-          console.log(`No cleanup implemented for resource type: ${resourceType}`);
+          void logger.debug('No cleanup implemented for resource type', {
+            operation: 'retention_cleanup_skip',
+            context: { resourceType },
+          });
       }
 
       cleanupResults.push({
@@ -301,8 +313,8 @@ export const triggerCleanup = async (req: Request, res: Response) => {
         results: cleanupResults
       }
     });
-  } catch (error) {
-    console.error('Error triggering cleanup:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error triggering cleanup', 'retention_cleanup', error);
     res.status(500).json({ success: false, error: 'Failed to trigger cleanup' });
   }
 };
@@ -346,7 +358,7 @@ export const getDataClassifications = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting data classifications:', error);
+    logRetentionError('Error getting data classifications', 'retention_classifications_list', error);
     res.status(500).json({ success: false, error: 'Failed to get data classifications' });
   }
 };
@@ -402,7 +414,7 @@ export const classifyData = async (req: Request, res: Response) => {
       data: classification
     });
   } catch (error) {
-    console.error('Error classifying data:', error);
+    logRetentionError('Error classifying data', 'retention_classify', error);
     res.status(500).json({ success: false, error: 'Failed to classify data' });
   }
 };
@@ -451,7 +463,7 @@ export const getBackupRecords = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting backup records:', error);
+    logRetentionError('Error getting backup records', 'retention_backups_list', error);
     res.status(500).json({ success: false, error: 'Failed to get backup records' });
   }
 };
@@ -498,7 +510,7 @@ export const createBackup = async (req: Request, res: Response) => {
       data: backup
     });
   } catch (error) {
-    console.error('Error creating backup:', error);
+    logRetentionError('Error creating backup', 'retention_backup_create', error);
     res.status(500).json({ success: false, error: 'Failed to create backup' });
   }
 }; 
@@ -536,7 +548,7 @@ export const getClassificationRules = async (req: Request, res: Response) => {
       data: rules
     });
   } catch (error) {
-    console.error('Error getting classification rules:', error);
+    logRetentionError('Error getting classification rules', 'retention_rules_list', error);
     res.status(500).json({ success: false, error: 'Failed to get classification rules' });
   }
 };
@@ -589,7 +601,7 @@ export const createClassificationRule = async (req: Request, res: Response) => {
       data: rule
     });
   } catch (error) {
-    console.error('Error creating classification rule:', error);
+    logRetentionError('Error creating classification rule', 'retention_rule_create', error);
     res.status(500).json({ success: false, error: 'Failed to create classification rule' });
   }
 };
@@ -636,7 +648,7 @@ export const updateClassificationRule = async (req: Request, res: Response) => {
       data: rule
     });
   } catch (error) {
-    console.error('Error updating classification rule:', error);
+    logRetentionError('Error updating classification rule', 'retention_rule_update', error);
     res.status(500).json({ success: false, error: 'Failed to update classification rule' });
   }
 };
@@ -665,7 +677,7 @@ export const deleteClassificationRule = async (req: Request, res: Response) => {
       message: 'Classification rule deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting classification rule:', error);
+    logRetentionError('Error deleting classification rule', 'retention_rule_delete', error);
     res.status(500).json({ success: false, error: 'Failed to delete classification rule' });
   }
 };
@@ -687,7 +699,7 @@ export const getClassificationTemplates = async (req: Request, res: Response) =>
       data: templates
     });
   } catch (error) {
-    console.error('Error getting classification templates:', error);
+    logRetentionError('Error getting classification templates', 'retention_templates_list', error);
     res.status(500).json({ success: false, error: 'Failed to get classification templates' });
   }
 };
@@ -730,8 +742,8 @@ export const createClassificationTemplate = async (req: Request, res: Response) 
       success: true,
       data: template
     });
-  } catch (error) {
-    console.error('Error creating classification template:', error);
+  } catch (error: unknown) {
+    logRetentionError('Error creating classification template', 'retention_template_create', error);
     res.status(500).json({ success: false, error: 'Failed to create classification template' });
   }
 };
@@ -808,7 +820,7 @@ export const bulkClassifyData = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error bulk classifying data:', error);
+    logRetentionError('Error bulk classifying data', 'retention_bulk_classify', error);
     res.status(500).json({ success: false, error: 'Failed to bulk classify data' });
   }
 };
@@ -862,7 +874,7 @@ export const getExpiringClassifications = async (req: Request, res: Response) =>
       }
     });
   } catch (error) {
-    console.error('Error getting expiring classifications:', error);
+    logRetentionError('Error getting expiring classifications', 'retention_expiring_classifications', error);
     res.status(500).json({ success: false, error: 'Failed to get expiring classifications' });
   }
 };
@@ -905,8 +917,13 @@ export const autoClassifyData = async (req: Request, res: Response) => {
           matchedSensitivity = rule.sensitivity;
           break;
         }
-      } catch (error) {
-        console.error(`Invalid regex pattern in rule ${rule.id}:`, rule.pattern);
+      } catch (regexErr: unknown) {
+        const e = regexErr instanceof Error ? regexErr : new Error(String(regexErr));
+        void logger.warn('Invalid regex pattern in classification rule', {
+          operation: 'retention_classification_regex',
+          context: { ruleId: rule.id, pattern: rule.pattern },
+          error: { message: e.message, stack: e.stack },
+        });
         continue;
       }
     }
@@ -953,7 +970,7 @@ export const autoClassifyData = async (req: Request, res: Response) => {
       });
     }
   } catch (error) {
-    console.error('Error auto-classifying data:', error);
+    logRetentionError('Error auto-classifying data', 'retention_auto_classify', error);
     res.status(500).json({ success: false, error: 'Failed to auto-classify data' });
   }
 }; 

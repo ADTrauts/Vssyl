@@ -8,6 +8,32 @@ import { prisma } from '../lib/prisma';
 import { execSync } from 'child_process';
 import path from 'path';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -23,7 +49,7 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    console.log('🔧 Running HR migrations manually...');
+    logSrvDebug('admin_fix_hr_running_hr_migrations_manually', '🔧 Running HR migrations manually...');
     
     // Check if HR tables exist
     const tablesCheck = await prisma.$queryRaw<Array<{table_name: string}>>`
@@ -34,7 +60,7 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
     `;
     
     const existingTables = tablesCheck.map(t => t.table_name);
-    console.log('Existing HR tables:', existingTables);
+    logSrvDebug('admin_fix_hr_existing_tables', 'Existing HR tables', { existingTables });
     
     if (existingTables.length === 3) {
       return res.json({
@@ -45,7 +71,7 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
     }
     
     // Run the migration manually
-    console.log('Running Prisma migrate deploy...');
+    logSrvDebug('admin_fix_hr_running_prisma_migrate_deploy', 'Running Prisma migrate deploy...');
     
     try {
       const result = execSync('npx prisma migrate deploy', {
@@ -54,7 +80,9 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
         env: { ...process.env }
       });
       
-      console.log('Migration output:', result);
+      logSrvDebug('admin_fix_hr_migration_output', 'Migration output', {
+        output: result.length > 4000 ? `${result.slice(0, 4000)}…` : result,
+      });
       
       return res.json({
         success: true,
@@ -62,7 +90,7 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
         output: result
       });
     } catch (migrationError) {
-      console.error('Migration error:', migrationError);
+      logSrvErr('admin_fix_hr_migration_error', 'Migration error:', migrationError);
       return res.status(500).json({
         success: false,
         error: 'Migration failed',
@@ -71,7 +99,7 @@ router.post('/run-migrations', async (req: Request, res: Response) => {
     }
     
   } catch (error) {
-    console.error('Error in run-migrations:', error);
+    logSrvErr('admin_fix_hr_error_in_run_migrations', 'Error in run-migrations:', error);
     return res.status(500).json({
       error: 'Failed to run migrations',
       details: error instanceof Error ? error.message : String(error)
@@ -130,7 +158,7 @@ router.get('/check-db', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Error checking database:', error);
+    logSrvErr('admin_fix_hr_error_checking_database', 'Error checking database:', error);
     return res.status(500).json({
       error: 'Database check failed',
       details: error instanceof Error ? error.message : String(error)
@@ -150,7 +178,7 @@ router.post('/seed-module', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    console.log('🌱 Seeding HR module...');
+    logSrvDebug('admin_fix_hr_seeding_hr_module', '🌱 Seeding HR module...');
     
     // Check if already exists
     const existingCheck = await prisma.$queryRaw<Array<{id: string}>>`
@@ -210,7 +238,7 @@ router.post('/seed-module', async (req: Request, res: Response) => {
       );
     `;
     
-    console.log('✅ HR module seeded successfully');
+    logSrvDebug('admin_fix_hr_hr_module_seeded_successfully', '✅ HR module seeded successfully');
     
     return res.json({
       success: true,
@@ -219,7 +247,7 @@ router.post('/seed-module', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Error seeding HR module:', error);
+    logSrvErr('admin_fix_hr_error_seeding_hr_module', 'Error seeding HR module:', error);
     return res.status(500).json({
       error: 'Failed to seed HR module',
       details: error instanceof Error ? error.message : String(error)

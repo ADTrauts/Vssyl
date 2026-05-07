@@ -2,6 +2,32 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -72,7 +98,7 @@ router.get('/global', async (req: express.Request, res: express.Response) => {
     });
 
   } catch (error: unknown) {
-    console.error('Failed to get global business AI data:', error);
+    logSrvErr('adminbusinessai_failed_to_get_global_business_ai_data', 'Failed to get global business AI data:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get global business AI data'
@@ -129,7 +155,7 @@ router.get('/patterns', async (req: express.Request, res: express.Response) => {
     });
 
   } catch (error: unknown) {
-    console.error('Failed to get cross-business patterns:', error);
+    logSrvErr('adminbusinessai_failed_to_get_cross_business_patterns', 'Failed to get cross-business patterns:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get cross-business patterns'
@@ -169,7 +195,7 @@ router.post('/:businessAIId/enable-centralized-learning', async (req: express.Re
     });
 
   } catch (error: unknown) {
-    console.error('Failed to enable centralized learning:', error);
+    logSrvErr('adminbusinessai_failed_to_enable_centralized_learning', 'Failed to enable centralized learning:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to enable centralized learning'
@@ -209,7 +235,7 @@ router.post('/:businessAIId/disable-centralized-learning', async (req: express.R
     });
 
   } catch (error: unknown) {
-    console.error('Failed to disable centralized learning:', error);
+    logSrvErr('adminbusinessai_failed_to_disable_centralized_learning', 'Failed to disable centralized learning:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to disable centralized learning'
@@ -301,7 +327,7 @@ router.get('/:businessAIId/analytics', async (req: express.Request, res: express
     });
 
   } catch (error: unknown) {
-    console.error('Failed to get business AI analytics:', error);
+    logSrvErr('adminbusinessai_failed_to_get_business_ai_analytics', 'Failed to get business AI analytics:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get business AI analytics'

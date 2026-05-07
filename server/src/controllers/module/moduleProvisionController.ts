@@ -767,8 +767,12 @@ export const uninstallModule = async (req: Request, res: Response) => {
     await prisma.moduleInstallation.delete({ where: { moduleId_userId: { moduleId, userId: user.id } } });
 
     res.json({ success: true, data: { message: 'Module uninstalled successfully' } });
-  } catch (error) {
-    console.error('Error uninstalling module:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error uninstalling module', {
+      operation: 'module_uninstall',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to uninstall module' });
   }
 };
@@ -859,8 +863,12 @@ export const configureModule = async (req: Request, res: Response) => {
         installation: updatedInstallation 
       } 
     });
-  } catch (error) {
-    console.error('Error configuring module:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error configuring module', {
+      operation: 'module_configure',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to configure module' });
   }
 };

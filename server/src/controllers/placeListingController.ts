@@ -4,9 +4,18 @@ import fs from 'fs';
 import { z } from 'zod';
 import multer from 'multer';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { storageService } from '../services/storageService';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceListingError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -126,7 +135,7 @@ export async function getListing(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: listing });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching listing:', err.message);
+    logPlaceListingError('Error fetching listing', 'place_listing_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch listing' });
   }
 }
@@ -208,7 +217,7 @@ export async function upsertListing(req: Request, res: Response): Promise<void> 
     res.json({ success: true, data: listing, flagged });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error upserting listing:', err.message);
+    logPlaceListingError('Error upserting listing', 'place_listing_upsert', err);
     res.status(500).json({ success: false, error: 'Failed to save listing' });
   }
 }
@@ -249,7 +258,7 @@ export async function addInteractionLink(req: Request, res: Response): Promise<v
     res.status(201).json({ success: true, data: link });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error adding interaction link:', err.message);
+    logPlaceListingError('Error adding interaction link', 'place_listing_link_add', err);
     res.status(500).json({ success: false, error: 'Failed to add link' });
   }
 }
@@ -294,7 +303,7 @@ export async function updateInteractionLink(req: Request, res: Response): Promis
     res.json({ success: true, data: link });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating link:', err.message);
+    logPlaceListingError('Error updating link', 'place_listing_link_update', err);
     res.status(500).json({ success: false, error: 'Failed to update link' });
   }
 }
@@ -328,7 +337,7 @@ export async function deleteInteractionLink(req: Request, res: Response): Promis
     res.json({ success: true, message: 'Link deleted' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error deleting link:', err.message);
+    logPlaceListingError('Error deleting link', 'place_listing_link_delete', err);
     res.status(500).json({ success: false, error: 'Failed to delete link' });
   }
 }
@@ -377,7 +386,7 @@ export async function uploadCoverImage(req: Request, res: Response): Promise<voi
     res.json({ success: true, data: { coverImage: uploadResult.url } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error uploading cover:', err.message);
+    logPlaceListingError('Error uploading cover', 'place_listing_cover_upload', err);
     res.status(500).json({ success: false, error: 'Failed to upload cover image' });
   }
 }
@@ -403,7 +412,7 @@ export async function deleteCoverImage(req: Request, res: Response): Promise<voi
     res.json({ success: true, message: 'Cover image removed', data: { coverImage: null } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error deleting cover:', err.message);
+    logPlaceListingError('Error deleting cover', 'place_listing_cover_delete', err);
     res.status(500).json({ success: false, error: 'Failed to remove cover image' });
   }
 }
@@ -452,7 +461,7 @@ export async function uploadAvatarImage(req: Request, res: Response): Promise<vo
     res.json({ success: true, data: { avatarImage: uploadResult.url } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error uploading avatar:', err.message);
+    logPlaceListingError('Error uploading avatar', 'place_listing_avatar_upload', err);
     res.status(500).json({ success: false, error: 'Failed to upload avatar image' });
   }
 }
@@ -478,7 +487,7 @@ export async function deleteAvatarImage(req: Request, res: Response): Promise<vo
     res.json({ success: true, message: 'Avatar image removed', data: { avatarImage: null } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error deleting avatar:', err.message);
+    logPlaceListingError('Error deleting avatar', 'place_listing_avatar_delete', err);
     res.status(500).json({ success: false, error: 'Failed to remove avatar image' });
   }
 }
@@ -536,7 +545,7 @@ export async function explorePlaces(req: Request, res: Response): Promise<void> 
     res.json({ success: true, data: listings, pagination: { total, limit: take, offset: skip } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error exploring places:', err.message);
+    logPlaceListingError('Error exploring places', 'place_listing_explore', err);
     res.status(500).json({ success: false, error: 'Failed to explore places' });
   }
 }
@@ -585,7 +594,7 @@ export async function getBusinessProfile(req: Request, res: Response): Promise<v
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching business profile:', err.message);
+    logPlaceListingError('Error fetching business profile', 'place_listing_business_profile', err);
     res.status(500).json({ success: false, error: 'Failed to fetch profile' });
   }
 }
@@ -643,7 +652,7 @@ export async function reportListing(req: Request, res: Response): Promise<void> 
     res.status(201).json({ success: true, data: { reportId: report.id } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error reporting listing:', err.message);
+    logPlaceListingError('Error reporting listing', 'place_listing_report', err);
     res.status(500).json({ success: false, error: 'Failed to submit report' });
   }
 }

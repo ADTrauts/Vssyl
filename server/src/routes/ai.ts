@@ -12,6 +12,32 @@ import { prisma } from '../lib/prisma';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
@@ -67,7 +93,7 @@ router.get('/models', authenticateJWT, (_req, res) => {
     const models = getModelsGroupedByProvider();
     res.json({ success: true, data: models });
   } catch (err) {
-    console.error('[AI models] Failed to get models:', err);
+    logSrvErr('ai_ai_models_failed_to_get_models', '[AI models] Failed to get models:', err);
     res.status(500).json({ success: false, error: 'Failed to load models' });
   }
 });
@@ -82,14 +108,14 @@ router.post('/twin', authenticateJWT, async (req, res) => {
     const userId = req.user?.id;
     const businessId = context.businessId || null;
 
-    console.log('[AI Twin Route] Request received:', {
+    logSrvDebug('ai_twin_request', '[AI Twin Route] Request received', {
       userId,
       queryLength: query?.length,
       provider,
       model,
       hasFileIds: !!context.fileIds,
       fileIdsCount: Array.isArray(context.fileIds) ? context.fileIds.length : 0,
-      fileIds: context.fileIds
+      fileIds: context.fileIds,
     });
 
     if (!userId) {
@@ -178,7 +204,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
             try {
               await AIQueryService.consumeQuery(userId, businessId, 1);
             } catch (e) {
-              console.error('Stream: consume query failed', e);
+              logSrvErr('ai_stream_consume_query_failed', 'Stream: consume query failed', e);
             }
           }
           try {
@@ -203,7 +229,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
               },
             });
           } catch (e) {
-            console.error('Stream: save history failed', e);
+            logSrvErr('ai_stream_save_history_failed', 'Stream: save history failed', e);
           }
           if (response.actions?.length) {
             const actionsRequiringApproval = response.actions.filter((a: { requiresApproval?: boolean }) => a.requiresApproval);
@@ -221,7 +247,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
                   },
                 });
               } catch (e) {
-                console.error('Stream: approval create failed', e);
+                logSrvErr('ai_stream_approval_create_failed', 'Stream: approval create failed', e);
               }
             }
           }
@@ -257,10 +283,12 @@ router.post('/twin', authenticateJWT, async (req, res) => {
         const queryCost = typeof modelUsed === 'string' ? getQueryCostForModel(modelUsed) : 1;
         const consumeResult = await AIQueryService.consumeQuery(userId, businessId, queryCost);
         if (!consumeResult.success) {
-          console.warn('Query consumption failed after processing:', consumeResult.error);
+          logSrvWarn('ai_query_consume_soft_fail', 'Query consumption failed after processing', undefined, {
+            consumeError: consumeResult.error,
+          });
         }
       } catch (consumeError) {
-        console.error('Error consuming query after processing:', consumeError);
+        logSrvErr('ai_error_consuming_query_after_processing', 'Error consuming query after processing:', consumeError);
       }
     }
 
@@ -342,7 +370,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Digital Life Twin error:', error);
+    logSrvErr('ai_digital_life_twin_error', 'Digital Life Twin error:', error);
     res.status(500).json({
       error: 'Failed to process Digital Life Twin request',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -386,7 +414,7 @@ router.post('/generate-image', authenticateJWT, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Generate image error:', error);
+    logSrvErr('ai_generate_image_error', 'Generate image error:', error);
     res.status(500).json({
       error: 'Failed to generate image',
       message: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -466,7 +494,7 @@ router.post('/generate-image/save-to-drive', authenticateJWT, async (req, res) =
       },
     });
   } catch (error) {
-    console.error('Save generated image to Drive error:', error);
+    logSrvErr('ai_save_generated_image_to_drive_error', 'Save generated image to Drive error:', error);
     res.status(500).json({
       error: 'Failed to save image to Drive',
       message: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -488,15 +516,26 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
     if (!fileId || typeof fileId !== 'string' || !prompt || typeof prompt !== 'string' || !prompt.trim()) {
       return res.status(400).json({ error: 'fileId and prompt are required' });
     }
-    console.log('[edit-image] Request:', { fileId, userId, promptLength: prompt.length, background, saveToDrive });
+    logSrvDebug('ai_edit_image_request', '[edit-image] Request', {
+      fileId,
+      userId,
+      promptLength: prompt.length,
+      background,
+      saveToDrive,
+    });
     const file = await prisma.file.findFirst({
       where: { id: fileId, userId, trashedAt: null },
     });
     if (!file) {
-      console.warn('[edit-image] File not found:', { fileId, userId });
+      logSrvWarn('ai_edit_image_file_missing', '[edit-image] File not found', undefined, { fileId, userId });
       return res.status(404).json({ error: 'File not found or access denied' });
     }
-    console.log('[edit-image] File found:', { fileId: file.id, name: file.name, path: file.path, url: file.url?.substring(0, 50) });
+    logSrvDebug('ai_edit_image_file_found', '[edit-image] File found', {
+      fileId: file.id,
+      name: file.name,
+      path: file.path,
+      url: file.url?.substring(0, 50),
+    });
     const { getProviderCapabilities } = await import('../ai/providers/capabilities');
     const caps = getProviderCapabilities('openai');
     if (!caps.supportsImageEdit) {
@@ -520,7 +559,7 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
       }
     } catch (loadErr) {
       const msg = loadErr instanceof Error ? loadErr.message : 'Failed to load image';
-      console.error('[edit-image] Failed to load image:', loadErr);
+      logSrvErr('ai_edit_image_failed_to_load_image', '[edit-image] Failed to load image:', loadErr);
       return res.status(502).json({ error: `Could not load image: ${msg}` });
     }
     const { OpenAIProvider } = await import('../ai/providers/OpenAIProvider');
@@ -592,7 +631,7 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
     });
   } catch (error) {
     const err = error instanceof Error ? error : new Error('Unknown error');
-    console.error('Edit image error:', err.message, err.stack);
+    logSrvErr('ai_edit_image', 'Edit image error', error);
     res.status(500).json({
       error: err.message || 'Failed to edit image',
       message: err.message,
@@ -662,7 +701,7 @@ router.post('/extract-document', authenticateJWT, async (req, res) => {
     }
     return res.json({ success: true, data: result.data });
   } catch (error) {
-    console.error('Extract document error:', error);
+    logSrvErr('ai_extract_document_error', 'Extract document error:', error);
     res.status(500).json({
       error: 'Failed to extract document',
       message: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -730,7 +769,7 @@ router.post('/create-expense-from-extraction', authenticateJWT, async (req, res)
       },
     });
   } catch (error) {
-    console.error('Create expense from extraction error:', error);
+    logSrvErr('ai_create_expense_from_extraction_error', 'Create expense from extraction error:', error);
     res.status(500).json({
       error: 'Failed to create expense',
       message: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -785,7 +824,7 @@ router.post('/transcribe', authenticateJWT, (req, res, next) => {
     const text = (transcription as { text?: string }).text ?? '';
     res.json({ success: true, transcript: text });
   } catch (error) {
-    console.error('Transcribe error:', error);
+    logSrvErr('ai_transcribe_error', 'Transcribe error:', error);
     res.status(500).json({
       error: 'Transcription failed',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -828,7 +867,7 @@ router.post('/speech', authenticateJWT, async (req, res) => {
     res.setHeader('Content-Type', 'audio/mpeg');
     res.send(buffer);
   } catch (error) {
-    console.error('TTS error:', error);
+    logSrvErr('ai_tts_error', 'TTS error:', error);
     res.status(500).json({
       error: 'Speech synthesis failed',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -853,7 +892,7 @@ router.get('/suggestions', authenticateJWT, async (req, res) => {
     });
     res.json({ success: true, data: list });
   } catch (error) {
-    console.error('List suggestions error:', error);
+    logSrvErr('ai_list_suggestions_error', 'List suggestions error:', error);
     res.status(500).json({
       error: 'Failed to list suggestions',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -898,7 +937,7 @@ router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Accept suggestion error:', error);
+    logSrvErr('ai_accept_suggestion_error', 'Accept suggestion error:', error);
     res.status(500).json({
       error: 'Failed to accept suggestion',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -932,7 +971,7 @@ router.post('/suggestions/:id/dismiss', authenticateJWT, async (req, res) => {
     });
     res.json({ success: true, data: { suggestionId: id } });
   } catch (error) {
-    console.error('Dismiss suggestion error:', error);
+    logSrvErr('ai_dismiss_suggestion_error', 'Dismiss suggestion error:', error);
     res.status(500).json({
       error: 'Failed to dismiss suggestion',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -959,7 +998,7 @@ router.get('/context', authenticateJWT, async (req, res) => {
       data: context
     });
   } catch (error) {
-    console.error('Get context error:', error);
+    logSrvErr('ai_get_context_error', 'Get context error:', error);
     res.status(500).json({
       error: 'Failed to get cross-module context',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -993,7 +1032,7 @@ router.get('/context/:module', authenticateJWT, async (req, res) => {
       data: moduleContext
     });
   } catch (error) {
-    console.error('Get module context error:', error);
+    logSrvErr('ai_get_module_context_error', 'Get module context error:', error);
     res.status(500).json({
       error: 'Failed to get module context',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1015,7 +1054,7 @@ router.get('/learning/my-patterns', authenticateJWT, async (req, res) => {
     const patterns = raw.map(formatPatternForUser);
     res.json({ success: true, patterns });
   } catch (error) {
-    console.error('Get my-patterns error:', error);
+    logSrvErr('ai_get_my_patterns_error', 'Get my-patterns error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to load learned patterns',
@@ -1057,7 +1096,7 @@ router.post('/chat', authenticateJWT, async (req, res) => {
       data: response
     });
   } catch (error) {
-    console.error('AI chat error:', error);
+    logSrvErr('ai_ai_chat_error', 'AI chat error:', error);
     res.status(500).json({
       error: 'Failed to process AI request',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1083,7 +1122,7 @@ router.get('/personality', authenticateJWT, async (req, res) => {
       data: personality
     });
   } catch (error) {
-    console.error('Get personality error:', error);
+    logSrvErr('ai_get_personality_error', 'Get personality error:', error);
     res.status(500).json({
       error: 'Failed to get personality profile',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1115,7 +1154,7 @@ router.put('/personality', authenticateJWT, async (req, res) => {
       data: updatedPersonality
     });
   } catch (error) {
-    console.error('Update personality error:', error);
+    logSrvErr('ai_update_personality_error', 'Update personality error:', error);
     res.status(500).json({
       error: 'Failed to update personality profile',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1164,7 +1203,7 @@ router.get('/autonomy', authenticateJWT, async (req, res) => {
       data: settings
     });
   } catch (error) {
-    console.error('Get autonomy settings error:', error);
+    logSrvErr('ai_get_autonomy_settings_error', 'Get autonomy settings error:', error);
     res.status(500).json({
       error: 'Failed to get autonomy settings',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1199,7 +1238,7 @@ router.put('/autonomy', authenticateJWT, async (req, res) => {
       data: updatedSettings
     });
   } catch (error) {
-    console.error('Update autonomy settings error:', error);
+    logSrvErr('ai_update_autonomy_settings_error', 'Update autonomy settings error:', error);
     res.status(500).json({
       error: 'Failed to update autonomy settings',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1237,7 +1276,7 @@ router.get('/approvals', authenticateJWT, async (req, res) => {
       data: approvals
     });
   } catch (error) {
-    console.error('Get approvals error:', error);
+    logSrvErr('ai_get_approvals_error', 'Get approvals error:', error);
     res.status(500).json({
       error: 'Failed to get approval requests',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1298,7 +1337,9 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
     // If approved, execute the action
     if (response === 'approve') {
       // TODO: Execute the approved action
-      console.log('Action approved, executing:', approval.actionData);
+      logSrvDebug('ai_approval_execute', 'Action approved, executing', {
+        actionData: approval.actionData as Record<string, unknown>,
+      });
     }
 
     res.json({
@@ -1306,7 +1347,7 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
       data: updatedApproval
     });
   } catch (error) {
-    console.error('Respond to approval error:', error);
+    logSrvErr('ai_respond_to_approval_error', 'Respond to approval error:', error);
     res.status(500).json({
       error: 'Failed to respond to approval request',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1346,7 +1387,7 @@ router.get('/history', authenticateJWT, async (req, res) => {
       data: history
     });
   } catch (error) {
-    console.error('Get AI history error:', error);
+    logSrvErr('ai_get_ai_history_error', 'Get AI history error:', error);
     res.status(500).json({
       error: 'Failed to get conversation history',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1398,7 +1439,7 @@ router.post('/feedback', authenticateJWT, async (req, res) => {
       message: 'Feedback recorded successfully'
     });
   } catch (error) {
-    console.error('AI feedback error:', error);
+    logSrvErr('ai_ai_feedback_error', 'AI feedback error:', error);
     res.status(500).json({
       error: 'Failed to record feedback',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1449,7 +1490,7 @@ router.get('/usage', authenticateJWT, async (req, res) => {
       data: usage
     });
   } catch (error) {
-    console.error('Get AI usage error:', error);
+    logSrvErr('ai_get_ai_usage_error', 'Get AI usage error:', error);
     res.status(500).json({
       error: 'Failed to get usage statistics',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1500,7 +1541,7 @@ router.get('/insights', authenticateJWT, async (req, res) => {
       data: insights
     });
   } catch (error) {
-    console.error('Get AI insights error:', error);
+    logSrvErr('ai_get_ai_insights_error', 'Get AI insights error:', error);
     res.status(500).json({
       error: 'Failed to generate insights',
       message: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -1548,7 +1589,7 @@ router.post('/teach', authenticateJWT, async (req, res) => {
       message: 'Preference learned successfully'
     });
   } catch (error) {
-    console.error('AI teach error:', error);
+    logSrvErr('ai_ai_teach_error', 'AI teach error:', error);
     res.status(500).json({
       error: 'Failed to record preference',
       message: error instanceof Error ? error.message : 'Unknown error occurred'

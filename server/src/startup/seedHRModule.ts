@@ -6,10 +6,11 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 export async function seedHRModuleOnStartup(): Promise<void> {
   try {
-    console.log('📦 Checking HR module registration...');
+    void logger.debug('Checking HR module registration', { operation: 'seed_hr_module_start' });
     
     // Check if HR module already exists
     let existing;
@@ -21,9 +22,9 @@ export async function seedHRModuleOnStartup(): Promise<void> {
       // Database might not be available during startup
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database not available during startup');
-        console.log('   HR module seed will be skipped');
-        console.log('   Server will continue, but HR module may not be available.\n');
+        void logger.warn('HR module seed skipped because database is not available during startup', {
+          operation: 'seed_hr_module_db_unavailable',
+        });
         return;
       }
       // Re-throw if it's a different database error
@@ -31,11 +32,11 @@ export async function seedHRModuleOnStartup(): Promise<void> {
     }
     
     if (existing) {
-      console.log('   ✅ HR module already registered');
+      void logger.debug('HR module already registered', { operation: 'seed_hr_module_exists' });
       return;
     }
     
-    console.log('   📝 Creating HR module record...');
+    void logger.info('Creating HR module record', { operation: 'seed_hr_module_create' });
     
     // Get a user to be the developer (first admin)
     let systemUser;
@@ -47,16 +48,18 @@ export async function seedHRModuleOnStartup(): Promise<void> {
       // Database connection lost during seeding
       const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
       if (errorMessage.includes("Can't reach database") || errorMessage.includes('localhost:5432')) {
-        console.log('   ⚠️  Database connection lost during seeding');
-        console.log('   HR module seed will be skipped');
-        console.log('   Server will continue, but HR module may not be available.\n');
+        void logger.warn('HR module seed skipped because database connection was lost during seeding', {
+          operation: 'seed_hr_module_db_lost',
+        });
         return;
       }
       throw dbError;
     }
     
     if (!systemUser) {
-      console.warn('   ⚠️  No admin user found. HR module seed will retry on next startup.');
+      void logger.warn('No admin user found; HR module seed will retry on next startup', {
+        operation: 'seed_hr_module_no_admin',
+      });
       return;
     }
     
@@ -160,10 +163,13 @@ export async function seedHRModuleOnStartup(): Promise<void> {
       }
     });
     
-    console.log('   ✅ HR module registered successfully');
-  } catch (error) {
-    console.error('   ❌ HR module seed failed:', error);
-    console.error('   Server will continue, but HR module may not be available.');
+    void logger.info('HR module registered successfully', { operation: 'seed_hr_module_success' });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('HR module seed failed; server will continue but HR module may not be available', {
+      operation: 'seed_hr_module_failure',
+      error: { message: err.message, stack: err.stack },
+    });
   }
 }
 

@@ -1,7 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 
 // Helper function to get user from request (same pattern as other controllers)
+
+function logGovernanceError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 const getUserFromRequest = (req: Request) => {
   return req.user;
 };
@@ -78,7 +88,7 @@ export const getGovernancePolicies = async (req: Request, res: Response) => {
       data: policies
     });
   } catch (error) {
-    console.error('Error getting governance policies:', error);
+    logGovernanceError('Error getting governance policies', 'governance_policies_list', error);
     res.status(500).json({ success: false, error: 'Failed to get governance policies' });
   }
 };
@@ -127,7 +137,7 @@ export const createGovernancePolicy = async (req: Request, res: Response) => {
       data: policy
     });
   } catch (error) {
-    console.error('Error creating governance policy:', error);
+    logGovernanceError('Error creating governance policy', 'governance_policy_create', error);
     res.status(500).json({ success: false, error: 'Failed to create governance policy' });
   }
 };
@@ -170,7 +180,7 @@ export const updateGovernancePolicy = async (req: Request, res: Response) => {
       data: policy
     });
   } catch (error) {
-    console.error('Error updating governance policy:', error);
+    logGovernanceError('Error updating governance policy', 'governance_policy_update', error);
     res.status(500).json({ success: false, error: 'Failed to update governance policy' });
   }
 };
@@ -199,7 +209,7 @@ export const deleteGovernancePolicy = async (req: Request, res: Response) => {
       message: 'Governance policy deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting governance policy:', error);
+    logGovernanceError('Error deleting governance policy', 'governance_policy_delete', error);
     res.status(500).json({ success: false, error: 'Failed to delete governance policy' });
   }
 };
@@ -282,7 +292,7 @@ export const enforceGovernancePolicies = async (req: Request, res: Response) => 
       }
     });
   } catch (error) {
-    console.error('Error enforcing governance policies:', error);
+    logGovernanceError('Error enforcing governance policies', 'governance_enforce', error);
     res.status(500).json({ success: false, error: 'Failed to enforce governance policies' });
   }
 };
@@ -342,7 +352,7 @@ export const getPolicyViolations = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error getting policy violations:', error);
+    logGovernanceError('Error getting policy violations', 'governance_violations_list', error);
     res.status(500).json({ success: false, error: 'Failed to get policy violations' });
   }
 };
@@ -377,7 +387,7 @@ export const resolvePolicyViolation = async (req: Request, res: Response) => {
       data: violation
     });
   } catch (error) {
-    console.error('Error resolving policy violation:', error);
+    logGovernanceError('Error resolving policy violation', 'governance_violation_resolve', error);
     res.status(500).json({ success: false, error: 'Failed to resolve policy violation' });
   }
 };
@@ -492,7 +502,7 @@ async function executePolicyActions(actions: PolicyAction[], userId: string): Pr
         executedAt: new Date()
       });
     } catch (error) {
-      console.error('Error executing policy action:', error);
+      logGovernanceError('Error executing policy action', 'governance_policy_action', error);
       executedActions.push({
         ...action,
         executed: false,

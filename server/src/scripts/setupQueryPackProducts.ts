@@ -19,10 +19,15 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import Stripe from 'stripe';
 import { isStripeConfigured, STRIPE_PRODUCTS } from '../config/stripe';
 import { AI_QUERY_PACKS } from '../config/aiQueryPacks';
+import { logger } from '../lib/logger';
 
 if (!isStripeConfigured() || !process.env.STRIPE_SECRET_KEY) {
-  console.error('❌ Error: STRIPE_SECRET_KEY environment variable is required');
-  console.log('💡 Set it in server/.env file');
+  void logger.error('STRIPE_SECRET_KEY environment variable is required', {
+    operation: 'setup_query_pack_products_missing_secret',
+  });
+  void logger.info('Set STRIPE_SECRET_KEY in server/.env', {
+    operation: 'setup_query_pack_products_missing_secret_help',
+  });
   process.exit(1);
 }
 
@@ -30,20 +35,27 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
 });
 
-console.log('🚀 Setting up Stripe products for AI Query Packs...\n');
+void logger.info('Setting up Stripe products for AI query packs', {
+  operation: 'setup_query_pack_products_start',
+});
 
 const keyPreview = process.env.STRIPE_SECRET_KEY?.substring(0, 12) || 'unknown';
 const isTest = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || false;
-console.log(`🔑 Using Stripe key: ${keyPreview}...`);
-console.log(`🌍 Environment: ${isTest ? 'TEST' : 'LIVE'}`);
-console.log();
+void logger.info('Using Stripe key and environment', {
+  operation: 'setup_query_pack_products_key_info',
+  keyPreview,
+  environment: isTest ? 'TEST' : 'LIVE',
+});
 
 async function setupQueryPackProducts() {
   try {
     // Create product for AI Query Packs
     const productId = STRIPE_PRODUCTS.AI_QUERY_PACKS;
     
-    console.log(`📦 Creating product: AI Query Packs`);
+    void logger.info('Creating AI query packs product', {
+      operation: 'setup_query_pack_products_create_product',
+      productId,
+    });
     
     let product;
     try {
@@ -53,25 +65,33 @@ async function setupQueryPackProducts() {
         description: 'One-time purchase of additional AI queries that never expire',
         type: 'service',
       });
-      console.log(`✅ Product created: ${product.id}`);
+      void logger.info('AI query packs product created', {
+        operation: 'setup_query_pack_products_create_product_success',
+        productId: product.id,
+      });
     } catch (error: unknown) {
       const err = error as Stripe.errors.StripeError;
       if (err.code === 'resource_already_exists') {
-        console.log(`⚠️  Product ${productId} already exists, using existing product...`);
+        void logger.warn('AI query packs product already exists; using existing product', {
+          operation: 'setup_query_pack_products_product_exists',
+          productId,
+        });
         product = await stripe.products.retrieve(productId);
       } else {
         throw error;
       }
     }
 
-    console.log();
-
     // Create prices for each query pack
     const packTypes = Object.keys(AI_QUERY_PACKS) as Array<keyof typeof AI_QUERY_PACKS>;
     
     for (const packType of packTypes) {
       const pack = AI_QUERY_PACKS[packType];
-      console.log(`💰 Creating price for ${pack.name}...`);
+      void logger.debug('Creating price for AI query pack', {
+        operation: 'setup_query_pack_products_create_price',
+        packType,
+        packName: pack.name,
+      });
 
       try {
         const price = await stripe.prices.create({
@@ -86,38 +106,59 @@ async function setupQueryPackProducts() {
           nickname: `${pack.name} - ${pack.queries.toLocaleString()} queries`,
         });
 
-        console.log(`  ✅ Price created: ${price.id}`);
-        console.log(`     Amount: $${pack.price.toFixed(2)} (${pack.queries.toLocaleString()} queries)`);
-        console.log();
+        void logger.info('AI query pack price created', {
+          operation: 'setup_query_pack_products_create_price_success',
+          packType,
+          packName: pack.name,
+          priceId: price.id,
+          amount: pack.price,
+          queries: pack.queries,
+        });
       } catch (error: unknown) {
         const err = error as Stripe.errors.StripeError;
         if (err.code === 'resource_already_exists') {
-          console.log(`  ⚠️  Price for ${pack.name} already exists, skipping...`);
-          console.log();
+          void logger.warn('AI query pack price already exists; skipping', {
+            operation: 'setup_query_pack_products_price_exists',
+            packType,
+            packName: pack.name,
+          });
         } else {
-          console.error(`  ❌ Error creating price for ${pack.name}:`, err.message);
-          console.log();
+          void logger.error('Error creating AI query pack price', {
+            operation: 'setup_query_pack_products_create_price_error',
+            packType,
+            packName: pack.name,
+            error: { message: err.message },
+          });
         }
       }
     }
 
-    console.log('🎉 AI Query Pack products and prices setup complete!');
-    console.log();
-    console.log('📋 Summary:');
-    console.log(`  Product: ${product.name} (${product.id})`);
-    console.log(`  Packs created: ${packTypes.length}`);
+    void logger.info('AI query pack products and prices setup complete', {
+      operation: 'setup_query_pack_products_complete',
+      productId: product.id,
+      productName: product.name,
+      packsCount: packTypes.length,
+    });
     packTypes.forEach(packType => {
       const pack = AI_QUERY_PACKS[packType];
-      console.log(`    • ${pack.name}: $${pack.price.toFixed(2)} (${pack.queries.toLocaleString()} queries)`);
+      void logger.info('AI query pack summary', {
+        operation: 'setup_query_pack_products_summary',
+        packType,
+        packName: pack.name,
+        amount: pack.price,
+        queries: pack.queries,
+      });
     });
-    console.log();
-    console.log('💡 Next Steps:');
-    console.log('1. Run: pnpm stripe:sync-query-pack-prices (to sync price IDs to config)');
-    console.log('2. Update code to use Stripe Price IDs instead of hardcoded amounts');
-    console.log('3. Test query pack purchase flow');
-  } catch (error) {
+    void logger.info(
+      'Next steps: sync query pack price IDs, update code to use Stripe IDs, and test purchase flow',
+      { operation: 'setup_query_pack_products_next_steps' }
+    );
+  } catch (error: unknown) {
     const err = error as Error;
-    console.error('❌ Setup failed:', err.message);
+    void logger.error('AI query pack setup failed', {
+      operation: 'setup_query_pack_products_failed',
+      error: { message: err.message, stack: err.stack },
+    });
     process.exit(1);
   }
 }
@@ -125,8 +166,12 @@ async function setupQueryPackProducts() {
 // Run if called directly
 if (require.main === module) {
   setupQueryPackProducts()
-    .catch((error) => {
-      console.error('❌ Error:', error);
+    .catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Unexpected error in setupQueryPackProducts', {
+        operation: 'setup_query_pack_products_unhandled',
+        error: { message: err.message, stack: err.stack },
+      });
       process.exit(1);
     });
 }

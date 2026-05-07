@@ -1,5 +1,31 @@
 import axios from 'axios';
 import { Request } from 'express';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface LocationData {
   country: string;
@@ -39,7 +65,7 @@ class GeolocationService {
         error: 'Unable to determine location from IP'
       };
     } catch (error) {
-      console.error('IP geolocation error:', error);
+      logSrvErr('geolocationservice_ip_geolocation_error', 'IP geolocation error:', error);
       return {
         success: false,
         error: 'IP geolocation service unavailable'

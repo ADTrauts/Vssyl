@@ -37,7 +37,8 @@ export const checkSchedulingModuleInstalled = async (
 
   // Enhanced logging for availability routes
   if (req.method === 'POST' && (req.path?.includes('/me/availability') || req.url?.includes('/me/availability'))) {
-    console.log('🔍 [MODULE CHECK] checkSchedulingModuleInstalled called', {
+    void logger.debug('[MODULE CHECK] checkSchedulingModuleInstalled called', {
+      operation: 'scheduling_module_check_availability_route',
       method: req.method,
       path: req.path,
       url: req.url,
@@ -88,7 +89,8 @@ export const checkSchedulingModuleInstalled = async (
 
     // Enhanced logging for availability routes
     if (req.method === 'POST' && (req.path?.includes('/me/availability') || req.url?.includes('/me/availability'))) {
-      console.log('✅ [MODULE CHECK] Scheduling module installed, proceeding', {
+      void logger.debug('[MODULE CHECK] Scheduling module installed, proceeding', {
+        operation: 'scheduling_module_check_installed',
         businessId,
         installationId: installation.id
       });

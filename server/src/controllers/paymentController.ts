@@ -3,7 +3,16 @@ import { StripeService } from '../services/stripeService';
 import { PrismaClient } from '@prisma/client';
 import { isStripeConfigured, getStripeClient } from '../config/stripe';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
+
+function logPaymentError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {
@@ -52,7 +61,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
       paymentIntentId: paymentIntent.id,
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    logPaymentError('Error creating payment intent', 'payment_intent_create', error);
     res.status(500).json({ error: 'Failed to create payment intent' });
   }
 };
@@ -165,7 +174,7 @@ export const createSubscription = async (req: Request, res: Response) => {
       clientSecret: (subscription as any).latest_invoice?.payment_intent?.client_secret,
     });
   } catch (error) {
-    console.error('Error creating subscription:', error);
+    logPaymentError('Error creating subscription', 'payment_subscription_create', error);
     res.status(500).json({ error: 'Failed to create subscription' });
   }
 };
@@ -206,7 +215,7 @@ export const cancelSubscription = async (req: Request, res: Response) => {
 
     res.json({ message: 'Subscription cancelled successfully' });
   } catch (error) {
-    console.error('Error cancelling subscription:', error);
+    logPaymentError('Error cancelling subscription', 'payment_subscription_cancel', error);
     res.status(500).json({ error: 'Failed to cancel subscription' });
   }
 };
@@ -247,7 +256,7 @@ export const reactivateSubscription = async (req: Request, res: Response) => {
 
     res.json({ message: 'Subscription reactivated successfully' });
   } catch (error) {
-    console.error('Error reactivating subscription:', error);
+    logPaymentError('Error reactivating subscription', 'payment_subscription_reactivate', error);
     res.status(500).json({ error: 'Failed to reactivate subscription' });
   }
 };
@@ -276,7 +285,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
       event = stripe.webhooks.constructEvent(req.body, sig as string, webhookSecret);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Webhook signature verification failed:', message);
+      void logger.warn('Webhook signature verification failed', {
+        operation: 'stripe_webhook_verify',
+        context: { message },
+      });
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
@@ -285,7 +297,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    logPaymentError('Error handling webhook', 'stripe_webhook_handle', error);
     res.status(500).json({ error: 'Failed to handle webhook' });
   }
 };
@@ -322,7 +334,7 @@ export const getPaymentMethods = async (req: Request, res: Response) => {
 
     res.json({ paymentMethods: paymentMethods.data });
   } catch (error) {
-    console.error('Error getting payment methods:', error);
+    logPaymentError('Error getting payment methods', 'payment_methods_list', error);
     res.status(500).json({ error: 'Failed to get payment methods' });
   }
 }; 

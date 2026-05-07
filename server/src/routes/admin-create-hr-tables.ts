@@ -5,6 +5,32 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -20,7 +46,7 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    console.log('Manually creating HR tables...');
+    logSrvDebug('admin_create_hr_tables_manually_creating_hr_tables', 'Manually creating HR tables...');
     
     // Check if tables already exist
     const tablesCheck = await prisma.$queryRaw<Array<{table_name: string}>>`
@@ -124,7 +150,7 @@ router.post('/', async (req: Request, res: Response) => {
     await prisma.$executeRaw`CREATE UNIQUE INDEX IF NOT EXISTS "hr_module_settings_businessId_key" ON "hr_module_settings"("businessId");`;
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "hr_module_settings_businessId_idx" ON "hr_module_settings"("businessId");`;
     
-    console.log('✅ HR tables created successfully');
+    logSrvDebug('admin_create_hr_tables_hr_tables_created_successfully', '✅ HR tables created successfully');
     
     return res.json({
       success: true,
@@ -133,7 +159,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('Error creating HR tables:', error);
+    logSrvErr('admin_create_hr_tables_error_creating_hr_tables', 'Error creating HR tables:', error);
     return res.status(500).json({
       error: 'Failed to create HR tables',
       details: error instanceof Error ? error.message : String(error)

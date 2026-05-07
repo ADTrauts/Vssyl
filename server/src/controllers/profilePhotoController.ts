@@ -137,18 +137,23 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
       if (req.file.buffer) {
         originalBuffer = req.file.buffer as Buffer;
       } else {
-        console.error('GCS storage but req.file.buffer is missing');
+        void logger.error('GCS storage but req.file.buffer is missing', {
+          operation: 'profile_photo_upload',
+        });
         return res.status(400).json({ error: 'Failed to process uploaded file: buffer missing' });
       }
     } else {
       // Local storage: read file from disk
       if (!req.file.path) {
-        console.error('Local storage but req.file.path is missing. File info:', {
-          fieldname: req.file.fieldname,
-          originalname: req.file.originalname,
-          encoding: req.file.encoding,
-          mimetype: req.file.mimetype,
-          size: req.file.size,
+        void logger.error('Local storage but req.file.path is missing', {
+          operation: 'profile_photo_upload',
+          context: {
+            fieldname: req.file.fieldname,
+            originalname: req.file.originalname,
+            encoding: req.file.encoding,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          },
         });
         return res.status(400).json({ error: 'Failed to process uploaded file: file path missing' });
       }
@@ -156,18 +161,28 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
       try {
         // Check if file exists
         if (!fs.existsSync(req.file.path)) {
-          console.error('File does not exist at path:', req.file.path);
+          void logger.error('Profile photo file does not exist at path', {
+            operation: 'profile_photo_upload',
+            context: { path: req.file.path },
+          });
           return res.status(400).json({ error: 'Failed to process uploaded file: file not found on disk' });
         }
         originalBuffer = await fs.promises.readFile(req.file.path);
-      } catch (err) {
-        console.error('Error reading file from disk:', err);
+      } catch (err: unknown) {
+        const e = err instanceof Error ? err : new Error(String(err));
+        void logger.error('Error reading profile photo file from disk', {
+          operation: 'profile_photo_upload',
+          error: { message: e.message, stack: e.stack },
+        });
         return res.status(400).json({ error: 'Failed to read uploaded file from disk' });
       }
     }
 
     if (!originalBuffer) {
-      console.error('originalBuffer is null after processing. Provider:', provider);
+      void logger.error('originalBuffer is null after profile photo processing', {
+        operation: 'profile_photo_upload',
+        context: { provider },
+      });
       return res.status(400).json({ error: 'Failed to process uploaded file' });
     }
 
@@ -494,11 +509,18 @@ export async function removeProfilePhoto(req: Request, res: Response) {
       
       const deleteResult = await storageService.deleteFile(filePath);
       if (!deleteResult.success) {
-        console.warn(`Failed to delete file from storage: ${deleteResult.error}`);
+        void logger.warn('Failed to delete profile photo file from storage', {
+          operation: 'profile_photo_delete',
+          context: { error: deleteResult.error },
+        });
         // Continue with database update even if storage deletion fails
       }
-    } catch (error) {
-      console.error('Error deleting file from storage:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error deleting profile photo file from storage', {
+        operation: 'profile_photo_delete',
+        error: { message: err.message, stack: err.stack },
+      });
       // Continue with database update even if file deletion fails
     }
 

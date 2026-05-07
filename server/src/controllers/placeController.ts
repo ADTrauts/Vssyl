@@ -1,7 +1,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getChatSocketService } from '../services/chatSocketService';
 import { getUserFromRequest } from '../middleware/auth';
+
+function logPlaceError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
@@ -107,7 +116,7 @@ export async function getPlace(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: { ...place, nodes: enrichedNodes } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching place:', err.message);
+    logPlaceError('Error fetching place', 'place_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch place' });
   }
 }
@@ -166,7 +175,7 @@ export async function updatePlaceSettings(req: Request, res: Response): Promise<
     res.json({ success: true, data: settings });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating place settings:', err.message);
+    logPlaceError('Error updating place settings', 'place_settings_update', err);
     res.status(500).json({ success: false, error: 'Failed to update settings' });
   }
 }
@@ -229,7 +238,7 @@ export async function addNode(req: Request, res: Response): Promise<void> {
       res.status(409).json({ success: false, error: 'This node already exists in your place' });
       return;
     }
-    console.error('Error adding node:', err.message);
+    logPlaceError('Error adding node', 'place_node_add', err);
     res.status(500).json({ success: false, error: 'Failed to add node' });
   }
 }
@@ -273,7 +282,7 @@ export async function updateNode(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating node:', err.message);
+    logPlaceError('Error updating node', 'place_node_update', err);
     res.status(500).json({ success: false, error: 'Failed to update node' });
   }
 }
@@ -318,7 +327,7 @@ export async function removeNode(req: Request, res: Response): Promise<void> {
     res.json({ success: true, message: 'Node removed' });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error removing node:', err.message);
+    logPlaceError('Error removing node', 'place_node_remove', err);
     res.status(500).json({ success: false, error: 'Failed to remove node' });
   }
 }
@@ -361,7 +370,7 @@ export async function setInterests(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: interests });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error setting interests:', err.message);
+    logPlaceError('Error setting interests', 'place_interests', err);
     res.status(500).json({ success: false, error: 'Failed to set interests' });
   }
 }
@@ -391,7 +400,7 @@ export async function completeSetup(req: Request, res: Response): Promise<void> 
     res.json({ success: true, data: place });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error completing setup:', err.message);
+    logPlaceError('Error completing setup', 'place_setup_complete', err);
     res.status(500).json({ success: false, error: 'Failed to complete setup' });
   }
 }
@@ -413,7 +422,7 @@ export async function getFollowVisibility(req: Request, res: Response): Promise<
     res.json({ success: true, data: visibility || { userId, businessId, isVisible: false } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching follow visibility:', err.message);
+    logPlaceError('Error fetching follow visibility', 'place_follow_visibility_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch follow visibility' });
   }
 }
@@ -447,7 +456,7 @@ export async function updateFollowVisibility(req: Request, res: Response): Promi
     res.json({ success: true, data: visibility });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error updating follow visibility:', err.message);
+    logPlaceError('Error updating follow visibility', 'place_follow_visibility_update', err);
     res.status(500).json({ success: false, error: 'Failed to update follow visibility' });
   }
 }
@@ -516,7 +525,7 @@ export async function getPlaceContextOverview(req: Request, res: Response): Prom
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching place context:', err.message);
+    logPlaceError('Error fetching place context', 'place_context', err);
     res.status(500).json({ success: false, error: 'Failed to fetch place context' });
   }
 }
@@ -553,7 +562,7 @@ export async function getConnections(req: Request, res: Response): Promise<void>
     res.json({ success: true, data: connections });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching connections:', err.message);
+    logPlaceError('Error fetching connections', 'place_connections_list', err);
     res.status(500).json({ success: false, error: 'Failed to fetch connections' });
   }
 }
@@ -610,7 +619,7 @@ export async function searchUsers(req: Request, res: Response): Promise<void> {
     res.json({ success: true, data: results });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error searching users:', err.message);
+    logPlaceError('Error searching users', 'place_user_search', err);
     res.status(500).json({ success: false, error: 'Failed to search users' });
   }
 }
@@ -657,7 +666,7 @@ export async function sendConnectionRequest(req: Request, res: Response): Promis
     res.status(201).json({ success: true, data: relationship });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error sending connection request:', err.message);
+    logPlaceError('Error sending connection request', 'place_connection_request', err);
     res.status(500).json({ success: false, error: 'Failed to send request' });
   }
 }
@@ -724,7 +733,7 @@ export async function acceptConnection(req: Request, res: Response): Promise<voi
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error accepting connection:', err.message);
+    logPlaceError('Error accepting connection', 'place_connection_accept', err);
     res.status(500).json({ success: false, error: 'Failed to accept connection' });
   }
 }

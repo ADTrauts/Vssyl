@@ -2,6 +2,16 @@ import { Request, Response } from 'express';
 import { DeveloperPortalService } from '../services/developerPortalService';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logDeveloperPortalError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 export const getDeveloperStats = async (req: Request, res: Response) => {
   try {
@@ -17,7 +27,7 @@ export const getDeveloperStats = async (req: Request, res: Response) => {
     const stats = await DeveloperPortalService.getDeveloperStats(userId, businessId);
     res.json({ stats });
   } catch (error) {
-    console.error('Error getting developer stats:', error);
+    logDeveloperPortalError('Error getting developer stats', 'devportal_stats', error);
     res.status(500).json({ error: 'Failed to get developer stats' });
   }
 };
@@ -36,7 +46,7 @@ export const getModuleRevenue = async (req: Request, res: Response) => {
     const moduleRevenue = await DeveloperPortalService.getModuleRevenue(userId, businessId);
     res.json({ moduleRevenue });
   } catch (error) {
-    console.error('Error getting module revenue:', error);
+    logDeveloperPortalError('Error getting module revenue', 'devportal_revenue', error);
     res.status(500).json({ error: 'Failed to get module revenue' });
   }
 };
@@ -65,7 +75,7 @@ export const getModuleAnalytics = async (req: Request, res: Response) => {
     const analytics = await DeveloperPortalService.getModuleAnalytics(moduleId);
     res.json({ analytics });
   } catch (error) {
-    console.error('Error getting module analytics:', error);
+    logDeveloperPortalError('Error getting module analytics', 'devportal_module_analytics', error);
     res.status(500).json({ error: 'Failed to get module analytics' });
   }
 };
@@ -89,7 +99,7 @@ export const requestPayout = async (req: Request, res: Response) => {
       payout,
     });
   } catch (error) {
-    console.error('Error requesting payout:', error);
+    logDeveloperPortalError('Error requesting payout', 'devportal_payout_request', error);
     res.status(500).json({ error: 'Failed to request payout' });
   }
 };
@@ -105,7 +115,7 @@ export const getPayoutHistory = async (req: Request, res: Response) => {
     const payoutHistory = await DeveloperPortalService.getPayoutHistory(userId);
     res.json({ payoutHistory });
   } catch (error) {
-    console.error('Error getting payout history:', error);
+    logDeveloperPortalError('Error getting payout history', 'devportal_payout_history', error);
     res.status(500).json({ error: 'Failed to get payout history' });
   }
 };
@@ -143,7 +153,7 @@ export const updateModulePricing = async (req: Request, res: Response) => {
       module: updatedModule,
     });
   } catch (error) {
-    console.error('Error updating module pricing:', error);
+    logDeveloperPortalError('Error updating module pricing', 'devportal_pricing', error);
     res.status(500).json({ error: 'Failed to update module pricing' });
   }
 };
@@ -162,7 +172,7 @@ export const getDeveloperDashboard = async (req: Request, res: Response) => {
     const dashboard = await DeveloperPortalService.getDeveloperDashboard(userId, businessId);
     res.json({ dashboard });
   } catch (error) {
-    console.error('Error getting developer dashboard:', error);
+    logDeveloperPortalError('Error getting developer dashboard', 'devportal_dashboard', error);
     res.status(500).json({ error: 'Failed to get developer dashboard' });
   }
 }; 

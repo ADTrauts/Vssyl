@@ -1,8 +1,17 @@
 import { Request, Response } from 'express';
 import { Prisma, PlaceActivityType } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 
+
+function logPlaceAnalyticsError(desc: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(desc, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
@@ -60,7 +69,7 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
     res.json({ success: true, data: items, pagination: { total, limit: take, offset: skip } });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching feed:', err.message);
+    logPlaceAnalyticsError('Error fetching feed', 'place_analytics_feed', err);
     res.status(500).json({ success: false, error: 'Failed to fetch feed' });
   }
 }
@@ -247,7 +256,7 @@ export async function getPersonalAnalytics(req: Request, res: Response): Promise
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching analytics:', err.message);
+    logPlaceAnalyticsError('Error fetching analytics', 'place_analytics_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch analytics' });
   }
 }
@@ -358,7 +367,7 @@ export async function exportUserData(req: Request, res: Response): Promise<void>
     res.json(exportData);
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error exporting data:', err.message);
+    logPlaceAnalyticsError('Error exporting data', 'place_analytics_export', err);
     res.status(500).json({ success: false, error: 'Failed to export data' });
   }
 }
@@ -425,7 +434,7 @@ export async function getPlaceAnalyticsContext(req: Request, res: Response): Pro
     });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error fetching analytics context:', err.message);
+    logPlaceAnalyticsError('Error fetching analytics context', 'place_analytics_ctx', err);
     res.status(500).json({ success: false, error: 'Failed to fetch analytics context' });
   }
 }

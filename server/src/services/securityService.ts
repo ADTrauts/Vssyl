@@ -1,4 +1,30 @@
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 export interface SecurityEventData {
   eventType: string;
@@ -42,7 +68,7 @@ export class SecurityService {
         }
       });
     } catch (error) {
-      console.error('Error logging security event:', error);
+      logSrvErr('securityservice_error_logging_security_event', 'Error logging security event:', error);
       // Don't throw - security logging should not break the main flow
     }
   }
@@ -218,7 +244,7 @@ export class SecurityService {
         }))
       };
     } catch (error) {
-      console.error('Error getting security metrics:', error);
+      logSrvErr('securityservice_error_getting_security_metrics', 'Error getting security metrics:', error);
       // Return default values instead of throwing to prevent 500 errors
       return {
         totalEvents: 0,
@@ -288,7 +314,7 @@ export class SecurityService {
         checks: complianceChecks
       };
     } catch (error) {
-      console.error('Error getting compliance status:', error);
+      logSrvErr('securityservice_error_getting_compliance_status', 'Error getting compliance status:', error);
       throw error;
     }
   }
@@ -482,7 +508,7 @@ export class SecurityService {
         }
       });
     } catch (error) {
-      console.error('Error resolving security event:', error);
+      logSrvErr('securityservice_error_resolving_security_event', 'Error resolving security event:', error);
       throw error;
     }
   }

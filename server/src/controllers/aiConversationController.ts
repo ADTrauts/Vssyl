@@ -1,7 +1,22 @@
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { z } from 'zod';
+
+function logAiConversationError(
+  message: string,
+  operation: string,
+  err: unknown,
+  context?: Record<string, unknown>
+): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
 
 // Type guard for user with id
 function hasUserId(user: unknown): user is { id: string } {
@@ -125,18 +140,20 @@ export const getConversations = async (req: Request, res: Response) => {
         },
       },
     });
-  } catch (error) {
-    console.error('Error fetching AI conversations:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      userId: userId || 'not yet assigned',
-      where: where || 'not yet assigned'
+  } catch (error: unknown) {
+    logAiConversationError('Error fetching AI conversations', 'ai_conversations_list', error, {
+      userId: userId ?? 'not yet assigned',
+      where: where ?? 'not yet assigned',
     });
     res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch conversations',
-      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+      details:
+        process.env.NODE_ENV === 'development'
+          ? error instanceof Error
+            ? error.message
+            : 'Unknown error'
+          : undefined
     });
   }
 };
@@ -191,7 +208,7 @@ export const getConversation = async (req: Request, res: Response) => {
       data: conversation,
     });
   } catch (error) {
-    console.error('Error fetching AI conversation:', error);
+    logAiConversationError('Error fetching AI conversation', 'ai_conversation_get', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch conversation' 
@@ -248,7 +265,7 @@ export const createConversation = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error creating AI conversation:', error);
+    logAiConversationError('Error creating AI conversation', 'ai_conversation_create', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to create conversation' 
@@ -318,7 +335,7 @@ export const updateConversation = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error updating AI conversation:', error);
+    logAiConversationError('Error updating AI conversation', 'ai_conversation_update', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update conversation' 
@@ -366,7 +383,7 @@ export const deleteConversation = async (req: Request, res: Response) => {
       message: 'Conversation moved to trash successfully',
     });
   } catch (error) {
-    console.error('Error deleting AI conversation:', error);
+    logAiConversationError('Error deleting AI conversation', 'ai_conversation_delete', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to delete conversation' 
@@ -471,7 +488,7 @@ export const addMessage = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error adding message to AI conversation:', error);
+    logAiConversationError('Error adding message to AI conversation', 'ai_conversation_message_add', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to add message' 
@@ -537,7 +554,7 @@ export const getMessages = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching AI conversation messages:', error);
+    logAiConversationError('Error fetching AI conversation messages', 'ai_conversation_messages', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch messages' 

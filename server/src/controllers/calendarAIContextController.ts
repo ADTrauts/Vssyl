@@ -8,6 +8,16 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { getUserFromRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logCalendarAiCtxError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
+
 
 /**
  * GET /api/calendar/ai/context/upcoming
@@ -108,7 +118,7 @@ export async function getUpcomingEventsContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getUpcomingEventsContext:', error);
+    logCalendarAiCtxError('Error in getUpcomingEventsContext', 'ai_ctx_calendar_upcoming', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch upcoming events context',
@@ -235,7 +245,7 @@ export async function getTodayScheduleContext(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in getTodayScheduleContext:', error);
+    logCalendarAiCtxError('Error in getTodayScheduleContext', 'ai_ctx_calendar_today', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch today schedule context',
@@ -348,7 +358,7 @@ export async function checkAvailability(req: Request, res: Response) {
     });
     
   } catch (error) {
-    console.error('Error in checkAvailability:', error);
+    logCalendarAiCtxError('Error in checkAvailability', 'ai_ctx_calendar_availability', error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to check availability',

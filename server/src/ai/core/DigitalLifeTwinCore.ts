@@ -16,6 +16,8 @@ import { executeTool } from '../tools/toolExecutor';
 import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
+import { assembleAIContext } from '../context/AIContextAssembler';
+import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -57,6 +59,8 @@ export interface DigitalLifeTwinResponse {
         totalModulesAvailable: number;
       };
     };
+    /** Debug: quality guardrail warnings from validateAIResponseQuality (additive). */
+    aiResponseQualityWarnings?: string[];
   };
 }
 
@@ -158,8 +162,12 @@ export class DigitalLifeTwinCore {
       this.actionExecutor = new ActionExecutor(this.prisma);
       this.smartPatternEngine = new SmartPatternEngine(this.prisma);
       this.centralizedLearning = new CentralizedLearningEngine(this.prisma);
-    } catch (error) {
-      console.error('Error initializing DigitalLifeTwinCore engines:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error initializing DigitalLifeTwinCore engines', {
+        operation: 'digital_life_twin_core_init',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error; // Re-throw to prevent using uninitialized engines
     }
   }
@@ -204,14 +212,25 @@ export class DigitalLifeTwinCore {
         // Convert smart context to UserContext format for backward compatibility
         userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
         
-        console.log(`✨ Smart Context: Analyzed query and fetched from ${smartContext?.relevantModuleCount || 0} relevant modules (instead of all)`);
-      } catch (error) {
-        console.warn('Error getting smart context, falling back to full context:', error);
+        void logger.info('Smart context fetched', {
+          operation: 'digital_life_twin_smart_context',
+          relevantModuleCount: (smartContext as Record<string, unknown>)?.relevantModuleCount ?? 0,
+        });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting smart context, falling back to full context', {
+          operation: 'digital_life_twin_smart_context_fallback',
+          error: { message: err.message, stack: err.stack },
+        });
         // Fallback to old method if smart context fails
         try {
           userContext = await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
-        } catch (fallbackError) {
-          console.warn('Error getting user context:', fallbackError);
+        } catch (fallbackError: unknown) {
+          const err = fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError));
+          void logger.warn('Error getting user context', {
+            operation: 'digital_life_twin_user_context_error',
+            error: { message: err.message, stack: err.stack },
+          });
           userContext = this.createFallbackUserContext(query.userId);
         }
       }
@@ -445,8 +464,12 @@ export class DigitalLifeTwinCore {
       let personality;
       try {
         personality = await this.personalityEngine?.getPersonalityProfile(query.userId) || {};
-      } catch (error) {
-        console.warn('Error getting personality profile:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting personality profile', {
+          operation: 'digital_life_twin_personality_profile_error',
+          error: { message: err.message, stack: err.stack },
+        });
         personality = {};
       }
 
@@ -472,8 +495,12 @@ export class DigitalLifeTwinCore {
           content: ctx.content,
           tags: ctx.tags
         }));
-      } catch (error) {
-        console.warn('Error getting user-defined context:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting user-defined context', {
+          operation: 'digital_life_twin_user_defined_context_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
 
       // 2b. Get relevant global patterns (collective learning) - makes system smarter for everyone
@@ -510,8 +537,12 @@ export class DigitalLifeTwinCore {
             modules: p.modules
           }));
         }
-      } catch (error) {
-        console.warn('Error getting global patterns:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting global patterns', {
+          operation: 'digital_life_twin_global_patterns_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
       
       // 3. Get smart pattern analysis and predictions
@@ -522,8 +553,12 @@ export class DigitalLifeTwinCore {
           currentModule: query.context.currentModule,
           urgency: query.context.urgency
         }) || smartAnalysis;
-      } catch (error) {
-        console.warn('Error getting smart pattern analysis:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting smart pattern analysis', {
+          operation: 'digital_life_twin_smart_analysis_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
 
       // 4. Enhance query with semantic understanding
@@ -536,8 +571,12 @@ export class DigitalLifeTwinCore {
       };
       try {
         semanticEnhancement = await this.smartPatternEngine?.enhanceQueryWithSemantics(query.query, query.userId) || semanticEnhancement;
-      } catch (error) {
-        console.warn('Error enhancing query with semantics:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error enhancing query with semantics', {
+          operation: 'digital_life_twin_semantics_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
 
       // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
@@ -574,32 +613,48 @@ export class DigitalLifeTwinCore {
       let connections: CrossModuleConnection[] = [];
       try {
         connections = await this.identifyCrossModuleConnections(query, userContext, response);
-      } catch (error) {
-        console.warn('Error identifying cross-module connections:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error identifying cross-module connections', {
+          operation: 'digital_life_twin_connections_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
       
       // 6. Determine actions the Digital Life Twin should take (with error handling)
       let actions: LifeTwinAction[] = [];
       try {
         actions = await this.determineActions(query, userContext, personality, response);
-      } catch (error) {
-        console.warn('Error determining actions:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error determining actions', {
+          operation: 'digital_life_twin_actions_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
       
       // 7. Extract relevant insights (with error handling)
       let relevantInsights: CrossModuleInsight[] = [];
       try {
         relevantInsights = this.extractRelevantInsights(userContext, query);
-      } catch (error) {
-        console.warn('Error extracting insights:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error extracting insights', {
+          operation: 'digital_life_twin_insights_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
       
       // 8. Calculate personality alignment (with error handling)
       let personalityAlignment = 0.5;
       try {
         personalityAlignment = this.calculatePersonalityAlignment(response, personality);
-      } catch (error) {
-        console.warn('Error calculating personality alignment:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error calculating personality alignment', {
+          operation: 'digital_life_twin_alignment_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
       
       // 9. Learn from this interaction (using mock AIRequest/AIResponse for now)
@@ -666,6 +721,10 @@ export class DigitalLifeTwinCore {
           patternMatches: response.patternMatches || [],
           processingTime,
           provider: response.provider || 'hybrid',
+          ...(response.aiResponseQualityWarnings &&
+            response.aiResponseQualityWarnings.length > 0 && {
+              aiResponseQualityWarnings: response.aiResponseQualityWarnings,
+            }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
@@ -682,8 +741,12 @@ export class DigitalLifeTwinCore {
           } : undefined
         }
       };
-    } catch (error) {
-      console.error('Error in Digital Life Twin processing:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error in Digital Life Twin processing', {
+        operation: 'digital_life_twin_processing_error',
+        error: { message: err.message, stack: err.stack },
+      });
       
       return {
         response: "I apologize, but I'm having trouble accessing your full digital context right now. Let me try to help with what I can access.",
@@ -784,8 +847,12 @@ export class DigitalLifeTwinCore {
         if (userPref && userPref.value !== 'auto') {
           preferredProvider = userPref.value as 'auto' | 'openai' | 'anthropic';
         }
-      } catch (error) {
-        console.warn('Error getting user provider preference:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting user provider preference', {
+          operation: 'digital_life_twin_provider_pref_error',
+          error: { message: err.message, stack: err.stack },
+        });
       }
     }
     
@@ -809,8 +876,12 @@ export class DigitalLifeTwinCore {
             if (def && def.provider === provider) resolvedModel = userPref.value.trim();
           }
         }
-      } catch (err) {
-        console.warn('Error getting user model preference:', err);
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        void logger.warn('Error getting user model preference', {
+          operation: 'digital_life_twin_model_pref_error',
+          error: { message: error.message, stack: error.stack },
+        });
       }
     }
 
@@ -876,6 +947,27 @@ export class DigitalLifeTwinCore {
     if (modelOverride && (provider === 'openai' || provider === 'anthropic')) {
       options.modelOverride = modelOverride;
     }
+
+    const assembledContext = assembleAIContext({
+      query,
+      userContext: userContext as UserContext & { dashboardContext?: Record<string, unknown> },
+      analysis,
+      attachedFiles,
+      smartAnalysis,
+      semanticEnhancement,
+      userDefinedContext,
+      globalPatterns,
+    });
+    options.assembledContext = assembledContext;
+
+    void logger.debug('[AI_CONTEXT_ASSEMBLY] assembled context', {
+      scope: assembledContext.scope,
+      intent: assembledContext.intent,
+      usedModules: assembledContext.usedModules,
+      evidenceCount: assembledContext.evidence.length,
+      contextBlockCount: assembledContext.contextBlocks.length,
+      missingContextCount: assembledContext.missingContext.length,
+    });
 
     // Phase 0.15: providerData trace before callAIProvider
     const dataKeys = Object.keys(options);
@@ -948,15 +1040,40 @@ export class DigitalLifeTwinCore {
     const usedVisionParts = hasVisionParts && !finalProviderErrored;
     const effectiveProvider = shouldFallback ? (provider === 'openai' ? 'anthropic' : 'openai') : provider;
 
+    const assembledForQuality =
+      options?.assembledContext && typeof options.assembledContext === 'object'
+        ? (options.assembledContext as {
+            evidence?: unknown[];
+            missingContext?: string[];
+            risks?: string[];
+          })
+        : undefined;
+    const quality = validateAIResponseQuality({
+      structured: aiResponse.structured as StructuredAIResponse | undefined,
+      response,
+      assembledContext: assembledForQuality,
+      currentConfidence: confidence,
+    });
+    if (quality.warnings.length > 0) {
+      void logger.debug('[AI_RESPONSE_QUALITY]', {
+        warnings: quality.warnings,
+        adjustedConfidence: quality.adjustedConfidence,
+        provider: effectiveProvider,
+      });
+    }
+    const confidenceAfterQuality =
+      typeof quality.adjustedConfidence === 'number' ? quality.adjustedConfidence : confidence;
+
     return {
       response,
-      confidence,
+      confidence: confidenceAfterQuality,
       reasoning,
       modulesFocused: (analysis as any)?.scope?.modules || [],
       patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
       provider: effectiveProvider,
       structured: aiResponse.structured,
       usedVisionParts,
+      ...(quality.warnings.length > 0 && { aiResponseQualityWarnings: quality.warnings }),
     };
   }
 
@@ -1067,7 +1184,7 @@ If a file shows "No text could be extracted", say only that you could not read i
       }
     }
 
-    return `You are ${personality?.traits?.name || 'the user'}'s Digital Life Twin - an AI that understands and operates as their digital representation across their entire life ecosystem.
+    return `You are Vssyl's AI assistant for this user. You help interpret their personal, business, and module context, and you may represent their context accurately, but you must not claim to be the user.
 
 PERSONALITY PROFILE:
 - Openness: ${personality?.traits?.openness || 50}/100
@@ -1131,7 +1248,7 @@ The following is the user's latest message in this conversation. Respond in cont
 USER QUERY: "${query.query}"
 
 INSTRUCTIONS:
-Respond as the user's Digital Life Twin, demonstrating deep understanding of their:
+Respond as Vssyl's assistant, demonstrating deep understanding of their:
 1. Personality and communication style
 2. Current life situation and priorities  
 3. Patterns and behaviors across all modules
@@ -1150,7 +1267,7 @@ FORMATTING FOR READABILITY:
 - Prefer short paragraphs; avoid long run-on blocks of text.
 - Use bullet points or numbered lists when listing items, steps, or options.
 
-Respond naturally as if you ARE them, making decisions and suggestions they would make.`;
+Respond as Vssyl's assistant, using the user's context to provide grounded insights, recommendations, and next steps. Do not speak as if you are the user, and do not make unsupported decisions on their behalf.`;
   }
 
   /**
@@ -1589,6 +1706,18 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         providerData.stream = true;
         providerData.onChunk = options.onChunk;
       }
+      if (options?.assembledContext && typeof options.assembledContext === 'object') {
+        providerData.assembledContext = options.assembledContext;
+      }
+      if (providerData.assembledContext && typeof providerData.assembledContext === 'object') {
+        const ac = providerData.assembledContext as Record<string, unknown>;
+        await logger.debug('[AI_CONTEXT_PROVIDER]', {
+          scope: ac.scope,
+          intent: ac.intent,
+          evidenceCount: Array.isArray(ac.evidence) ? ac.evidence.length : 0,
+          contextBlockCount: Array.isArray(ac.contextBlocks) ? ac.contextBlocks.length : 0,
+        });
+      }
       if (provider === 'openai') {
         const openaiProvider = new OpenAIProvider();
         response = await openaiProvider.process(aiRequestTyped, userContextTyped, providerData);
@@ -1609,8 +1738,13 @@ Respond naturally as if you ARE them, making decisions and suggestions they woul
         structured: response.structured,
         metadata: response.metadata,
       };
-    } catch (error) {
-      console.error(`Error calling AI provider ${provider}:`, error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error(`Error calling AI provider ${provider}`, {
+        operation: 'digital_life_twin_call_provider_error',
+        error: { message: err.message, stack: err.stack },
+        provider,
+      });
       const errMessage = error instanceof Error ? error.message : 'Unknown error';
       // Fallback to mock response if AI provider fails; include metadata.error so Core can set usedVisionParts = false
       return {

@@ -21,6 +21,7 @@ import {
 } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { z } from 'zod';
 import { syncTimeOffRequestCalendar } from '../services/hrScheduleService';
 import {
@@ -55,6 +56,14 @@ import { NotificationService } from '../services/notificationService';
 import { ensureBusinessDashboardForUser } from '../services/dashboardService';
 import { ensureEmployeeDocumentsFolder } from '../services/driveService';
 import { getBusinessHRFeatures } from '../middleware/hrFeatureGating';
+
+function logHrControllerError(message: string, operation: string, err: unknown): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+  });
+}
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -235,7 +244,7 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load HR summary';
-    console.error('Error fetching HR dashboard summary:', error);
+    logHrControllerError('Error fetching HR dashboard summary', 'hr_dashboard_summary', error);
     res.status(500).json({ error: message });
   }
 };
@@ -462,7 +471,7 @@ const logEmployeeAudit = async ({ force = false, changes, ...payload }: Employee
       }
     });
   } catch (error) {
-    console.error('Error logging audit entry:', error);
+    logHrControllerError('Error logging audit entry', 'hr_audit_log', error);
   }
 };
 
@@ -647,7 +656,7 @@ export const getAdminEmployees = async (req: Request, res: Response) => {
       features: req.hrFeatures
     });
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    logHrControllerError('Error fetching employees', 'hr_employees_list', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch employees';
     res.status(500).json({ error: errorMessage });
   }
@@ -691,7 +700,7 @@ export const getEmployeeFilterOptions = async (req: Request, res: Response) => {
       positions
     });
   } catch (error) {
-    console.error('Error fetching filter options:', error);
+    logHrControllerError('Error fetching filter options', 'hr_filter_options', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch filter options';
     res.status(500).json({ error: errorMessage });
   }
@@ -734,7 +743,7 @@ export const getAdminEmployee = async (req: Request, res: Response) => {
     
     res.json({ employee });
   } catch (error) {
-    console.error('Error fetching employee:', error);
+    logHrControllerError('Error fetching employee', 'hr_employee_get', error);
     res.status(500).json({ error: 'Failed to fetch employee' });
   }
 };
@@ -856,7 +865,7 @@ export const createEmployee = async (req: Request, res: Response) => {
 
     return res.json({ message: 'Employee profile created', hrProfile });
   } catch (error) {
-    console.error('Error creating employee:', error);
+    logHrControllerError('Error creating employee', 'hr_employee_create', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to create employee';
     res.status(500).json({ error: errorMessage });
   }
@@ -971,7 +980,7 @@ export const updateEmployee = async (req: Request, res: Response) => {
 
     return res.json({ message: 'Employee profile updated', hrProfile: updated });
   } catch (error) {
-    console.error('Error updating employee:', error);
+    logHrControllerError('Error updating employee', 'hr_employee_update', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update employee';
     res.status(500).json({ error: errorMessage });
   }
@@ -1006,7 +1015,7 @@ export const deleteEmployee = async (req: Request, res: Response) => {
 
     return res.json({ message: 'Employee HR profile soft-deleted' });
   } catch (error) {
-    console.error('Error deleting employee:', error);
+    logHrControllerError('Error deleting employee', 'hr_employee_delete', error);
     res.status(500).json({ error: 'Failed to delete employee' });
   }
 };
@@ -1025,7 +1034,7 @@ export const getOnboardingTemplates = async (req: Request, res: Response) => {
     const templates = await listOnboardingTemplatesService(businessId);
     return res.json({ templates });
   } catch (error) {
-    console.error('Error fetching onboarding templates:', error);
+    logHrControllerError('Error fetching onboarding templates', 'hr_onboarding_templates_list', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch onboarding templates';
     return res.status(500).json({ error: message });
   }
@@ -1054,7 +1063,7 @@ export const createOnboardingTemplate = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error creating onboarding template:', error);
+    logHrControllerError('Error creating onboarding template', 'hr_onboarding_template_create', error);
     const message = error instanceof Error ? error.message : 'Failed to create onboarding template';
     return res.status(500).json({ error: message });
   }
@@ -1084,7 +1093,7 @@ export const updateOnboardingTemplate = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error updating onboarding template:', error);
+    logHrControllerError('Error updating onboarding template', 'hr_onboarding_template_update', error);
     const message = error instanceof Error ? error.message : 'Failed to update onboarding template';
     return res.status(500).json({ error: message });
   }
@@ -1102,7 +1111,7 @@ export const deleteOnboardingTemplate = async (req: Request, res: Response) => {
 
     return res.json({ success: true });
   } catch (error) {
-    console.error('Error archiving onboarding template:', error);
+    logHrControllerError('Error archiving onboarding template', 'hr_onboarding_template_archive', error);
     const message = error instanceof Error ? error.message : 'Failed to archive onboarding template';
     return res.status(500).json({ error: message });
   }
@@ -1151,7 +1160,7 @@ export const getOnboardingDocumentLibrary = async (req: Request, res: Response) 
       files
     });
   } catch (error) {
-    console.error('Error fetching onboarding document library:', error);
+    logHrControllerError('Error fetching onboarding document library', 'hr_onboarding_document_library', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch onboarding documents';
     return res.status(500).json({ error: message });
   }
@@ -1193,7 +1202,7 @@ export const startOnboardingJourney = async (req: Request, res: Response) => {
         });
       }
     } catch (deliveryError) {
-      console.error('Error delivering onboarding documents:', deliveryError);
+      logHrControllerError('Error delivering onboarding documents', 'hr_onboarding_documents_deliver', deliveryError);
     }
 
     return res.status(201).json({ journey, deliveredDocuments });
@@ -1206,7 +1215,7 @@ export const startOnboardingJourney = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error starting onboarding journey:', error);
+    logHrControllerError('Error starting onboarding journey', 'hr_onboarding_journey_start', error);
     const message = error instanceof Error ? error.message : 'Failed to start onboarding journey';
     return res.status(500).json({ error: message });
   }
@@ -1232,7 +1241,7 @@ export const getOnboardingJourneys = async (req: Request, res: Response) => {
     const journeys = await listAllOnboardingJourneys(businessId);
     return res.json({ journeys });
   } catch (error) {
-    console.error('Error fetching onboarding journeys:', error);
+    logHrControllerError('Error fetching onboarding journeys', 'hr_onboarding_journeys_list', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch onboarding journeys';
     return res.status(500).json({ error: message });
   }
@@ -1274,7 +1283,7 @@ export const completeOnboardingTask = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error completing onboarding task:', error);
+    logHrControllerError('Error completing onboarding task', 'hr_onboarding_task_complete', error);
     const message = error instanceof Error ? error.message : 'Failed to complete onboarding task';
     return res.status(500).json({ error: message });
   }
@@ -1299,7 +1308,7 @@ export const getMyOnboardingJourneys = async (req: Request, res: Response) => {
     const { profile, journeys } = await listEmployeeJourneysForUser(businessId, userId);
     return res.json({ profile, journeys });
   } catch (error) {
-    console.error('Error fetching self onboarding journeys:', error);
+    logHrControllerError('Error fetching self onboarding journeys', 'hr_self_onboarding_journeys', error);
     return res.json({
       profile: null,
       journeys: [],
@@ -1366,7 +1375,7 @@ export const completeMyOnboardingTask = async (req: Request, res: Response) => {
       });
     }
 
-    console.error('Error completing self onboarding task:', error);
+    logHrControllerError('Error completing self onboarding task', 'hr_self_onboarding_task_complete', error);
     const message = error instanceof Error ? error.message : 'Failed to complete onboarding task';
     return res.status(500).json({ error: message });
   }
@@ -1399,7 +1408,7 @@ export const getTeamOnboardingTasks = async (req: Request, res: Response) => {
 
     return res.json({ tasks });
   } catch (error) {
-    console.error('Error fetching team onboarding tasks:', error);
+    logHrControllerError('Error fetching team onboarding tasks', 'hr_team_onboarding_tasks', error);
     const message = error instanceof Error ? error.message : 'Failed to load onboarding tasks';
     return res.status(500).json({ error: message });
   }
@@ -1477,7 +1486,7 @@ export const completeTeamOnboardingTask = async (req: Request, res: Response) =>
       });
     }
 
-    console.error('Error completing team onboarding task:', error);
+    logHrControllerError('Error completing team onboarding task', 'hr_team_onboarding_task_complete', error);
     const message = error instanceof Error ? error.message : 'Failed to complete onboarding task';
     return res.status(500).json({ error: message });
   }
@@ -1500,7 +1509,7 @@ export const getAttendanceOverview = async (req: Request, res: Response) => {
     const overview = await getAttendanceOverviewService(businessId);
     return res.json({ overview });
   } catch (error) {
-    console.error('Error fetching attendance overview:', error);
+    logHrControllerError('Error fetching attendance overview', 'hr_attendance_overview', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch attendance overview';
     return res.status(500).json({ error: message });
   }
@@ -1519,7 +1528,7 @@ export const getAttendancePolicies = async (req: Request, res: Response) => {
     const policies = await listAttendancePolicies(businessId);
     return res.json({ policies });
   } catch (error) {
-    console.error('Error listing attendance policies:', error);
+    logHrControllerError('Error listing attendance policies', 'hr_attendance_policies_list', error);
     const message = error instanceof Error ? error.message : 'Failed to list attendance policies';
     return res.status(500).json({ error: message });
   }
@@ -1676,7 +1685,7 @@ export const createAttendancePolicy = async (req: Request, res: Response) => {
       return res.status(400).json({ error: error.message, field: error.field, details: error.details });
     }
 
-    console.error('Error creating attendance policy:', error);
+    logHrControllerError('Error creating attendance policy', 'hr_attendance_policy_create', error);
     const message = error instanceof Error ? error.message : 'Failed to create attendance policy';
     return res.status(500).json({ error: message });
   }
@@ -1711,7 +1720,7 @@ export const updateAttendancePolicy = async (req: Request, res: Response) => {
       return res.status(400).json({ error: error.message, field: error.field, details: error.details });
     }
 
-    console.error('Error updating attendance policy:', error);
+    logHrControllerError('Error updating attendance policy', 'hr_attendance_policy_update', error);
     const message = error instanceof Error ? error.message : 'Failed to update attendance policy';
     return res.status(500).json({ error: message });
   }
@@ -1778,7 +1787,7 @@ export const recordSelfAttendancePunchIn = async (req: Request, res: Response) =
       return res.status(409).json({ error: error.message });
     }
 
-    console.error('Error recording attendance punch-in:', error);
+    logHrControllerError('Error recording attendance punch-in', 'hr_attendance_punch_in', error);
     const message = error instanceof Error ? error.message : 'Failed to record attendance punch-in';
     return res.status(500).json({ error: message });
   }
@@ -1829,7 +1838,7 @@ export const recordSelfAttendancePunchOut = async (req: Request, res: Response) 
       return res.status(404).json({ error: error.message });
     }
 
-    console.error('Error recording attendance punch-out:', error);
+    logHrControllerError('Error recording attendance punch-out', 'hr_attendance_punch_out', error);
     const message = error instanceof Error ? error.message : 'Failed to record attendance punch-out';
     return res.status(500).json({ error: message });
   }
@@ -1867,7 +1876,7 @@ export const getMyAttendanceRecords = async (req: Request, res: Response) => {
     const records = await listEmployeeAttendanceRecords(businessId, employeePositionId, take);
     return res.json({ records });
   } catch (error) {
-    console.error('Error fetching attendance records:', error);
+    logHrControllerError('Error fetching attendance records', 'hr_attendance_records', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch attendance records';
     return res.status(500).json({ error: message });
   }
@@ -1921,7 +1930,7 @@ export const getEmployeeAuditLogs = async (req: Request, res: Response) => {
 
     return res.json({ auditLogs });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    logHrControllerError('Error fetching audit logs', 'hr_audit_logs_list', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch audit logs';
     res.status(500).json({ error: errorMessage });
   }
@@ -2048,7 +2057,7 @@ export const terminateEmployee = async (req: Request, res: Response) => {
       positionVacant: true
     });
   } catch (error) {
-    console.error('Error terminating employee:', error);
+    logHrControllerError('Error terminating employee', 'hr_employee_terminate', error);
     return res.status(500).json({ error: 'Failed to terminate employee' });
   }
 };
@@ -2075,7 +2084,7 @@ export const getHRSettings = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching HR settings:', error);
+    logHrControllerError('Error fetching HR settings', 'hr_settings_get', error);
     res.status(500).json({ error: 'Failed to fetch HR settings' });
   }
 };
@@ -2092,7 +2101,7 @@ export const updateHRSettings = async (req: Request, res: Response) => {
       note: 'Feature implementation pending'
     });
   } catch (error) {
-    console.error('Error updating HR settings:', error);
+    logHrControllerError('Error updating HR settings', 'hr_settings_update', error);
     res.status(500).json({ error: 'Failed to update HR settings' });
   }
 };
@@ -2111,7 +2120,7 @@ export const getHRFeatureAvailability = async (req: Request, res: Response) => {
       features
     });
   } catch (error) {
-    console.error('Error fetching HR feature availability:', error);
+    logHrControllerError('Error fetching HR feature availability', 'hr_features_availability', error);
     return res.status(500).json({ error: 'Failed to load HR feature availability' });
   }
 };
@@ -2163,7 +2172,7 @@ export const getTeamEmployees = async (req: Request, res: Response) => {
       count: teamEmployees.length
     });
   } catch (error) {
-    console.error('Error fetching team employees:', error);
+    logHrControllerError('Error fetching team employees', 'hr_team_employees', error);
     res.status(500).json({ error: 'Failed to fetch team employees' });
   }
 };
@@ -2255,7 +2264,7 @@ export const getTeamAttendanceExceptions = async (req: Request, res: Response) =
 
     return res.json(result);
   } catch (error) {
-    console.error('Error fetching attendance exceptions:', error);
+    logHrControllerError('Error fetching attendance exceptions', 'hr_attendance_exceptions', error);
     return res.status(500).json({ error: 'Failed to fetch attendance exceptions' });
   }
 };
@@ -2409,7 +2418,7 @@ export const resolveTeamAttendanceException = async (req: Request, res: Response
 
     return res.json({ exception: refreshed });
   } catch (error) {
-    console.error('Error resolving attendance exception:', error);
+    logHrControllerError('Error resolving attendance exception', 'hr_attendance_exception_resolve', error);
     return res.status(500).json({ error: 'Failed to resolve attendance exception' });
   }
 };
@@ -2481,7 +2490,7 @@ export const getOwnHRData = async (req: Request, res: Response) => {
     
     res.json({ employee: employeePosition });
   } catch (error) {
-    console.error('Error fetching own HR data:', error);
+    logHrControllerError('Error fetching own HR data', 'hr_own_profile_get', error);
     res.status(500).json({ error: 'Failed to fetch your HR data' });
   }
 };
@@ -2498,7 +2507,7 @@ export const updateOwnHRData = async (req: Request, res: Response) => {
       note: 'Feature implementation pending'
     });
   } catch (error) {
-    console.error('Error updating own HR data:', error);
+    logHrControllerError('Error updating own HR data', 'hr_own_profile_update', error);
     res.status(500).json({ error: 'Failed to update your HR data' });
   }
 };
@@ -2729,7 +2738,7 @@ export const requestTimeOff = async (req: Request, res: Response) => {
           });
         } catch (notificationError) {
           // Don't fail request if notification fails
-          console.error('Error sending balance low notification:', notificationError);
+          logHrControllerError('Error sending balance low notification', 'hr_timeoff_balance_notification', notificationError);
         }
       }
     }
@@ -2772,7 +2781,7 @@ export const requestTimeOff = async (req: Request, res: Response) => {
     try {
       await syncTimeOffRequestCalendar(request.id);
     } catch (syncError) {
-      console.error('Error syncing time-off calendar:', syncError);
+      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
     }
 
     // Notify manager about time-off request
@@ -2803,12 +2812,12 @@ export const requestTimeOff = async (req: Request, res: Response) => {
       }
     } catch (notificationError) {
       // Don't fail request creation if notification fails
-      console.error('Error sending time-off request notification:', notificationError);
+      logHrControllerError('Error sending time-off request notification', 'hr_timeoff_request_notification', notificationError);
     }
 
     return res.json({ message: 'Time-off request submitted', request });
   } catch (error) {
-    console.error('Error creating time-off request:', error);
+    logHrControllerError('Error creating time-off request', 'hr_timeoff_request_create', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to submit time-off request';
     return res.status(500).json({ error: errorMessage });
   }
@@ -2851,7 +2860,7 @@ export const getPendingTeamTimeOff = async (req: Request, res: Response) => {
 
     return res.json({ requests });
   } catch (error) {
-    console.error('Error fetching pending time-off:', error);
+    logHrControllerError('Error fetching pending time-off', 'hr_timeoff_pending', error);
     return res.status(500).json({ error: 'Failed to fetch pending time-off' });
   }
 };
@@ -2898,7 +2907,7 @@ export const approveTeamTimeOff = async (req: Request, res: Response) => {
     try {
       await syncTimeOffRequestCalendar(id);
     } catch (syncError) {
-      console.error('Error syncing time-off calendar:', syncError);
+      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
     }
 
     // Notify employee about approval/denial
@@ -2942,12 +2951,12 @@ export const approveTeamTimeOff = async (req: Request, res: Response) => {
       }
     } catch (notificationError) {
       // Don't fail approval if notification fails
-      console.error('Error sending time-off approval notification:', notificationError);
+      logHrControllerError('Error sending time-off approval notification', 'hr_timeoff_approval_notification', notificationError);
     }
 
     return res.json({ message: `Request ${status.toLowerCase()}` });
   } catch (error) {
-    console.error('Error approving time-off:', error);
+    logHrControllerError('Error approving time-off', 'hr_timeoff_approve', error);
     return res.status(500).json({ error: 'Failed to process approval' });
   }
 };
@@ -2999,7 +3008,7 @@ export const getTimeOffBalance = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching time-off balance:', error);
+    logHrControllerError('Error fetching time-off balance', 'hr_timeoff_balance', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch time-off balance';
     return res.status(500).json({ error: errorMessage });
   }
@@ -3032,7 +3041,7 @@ export const getMyTimeOffRequests = async (req: Request, res: Response) => {
 
     return res.json({ requests, count: total, page, pageSize });
   } catch (error) {
-    console.error('Error fetching my time-off requests:', error);
+    logHrControllerError('Error fetching my time-off requests', 'hr_timeoff_my_requests', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch your time-off requests';
     return res.status(500).json({ error: errorMessage });
   }
@@ -3084,12 +3093,12 @@ export const cancelTimeOffRequest = async (req: Request, res: Response) => {
     try {
       await syncTimeOffRequestCalendar(id);
     } catch (syncError) {
-      console.error('Error syncing time-off calendar:', syncError);
+      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
     }
 
     return res.json({ message: 'Time-off request canceled' });
   } catch (error) {
-    console.error('Error canceling time-off request:', error);
+    logHrControllerError('Error canceling time-off request', 'hr_timeoff_cancel', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to cancel time-off request';
     return res.status(500).json({ error: errorMessage });
   }
@@ -3186,7 +3195,7 @@ export const getTimeOffCalendar = async (req: Request, res: Response) => {
 
     return res.json({ requests });
   } catch (error) {
-    console.error('Error fetching time-off calendar:', error);
+    logHrControllerError('Error fetching time-off calendar', 'hr_timeoff_calendar_get', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch time-off calendar';
     return res.status(500).json({ error: errorMessage });
   }
@@ -3313,7 +3322,7 @@ export const getTimeOffReports = async (req: Request, res: Response) => {
       }))
     });
   } catch (error) {
-    console.error('Error generating time-off reports:', error);
+    logHrControllerError('Error generating time-off reports', 'hr_timeoff_reports', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate reports';
     return res.status(500).json({ error: errorMessage });
   }
@@ -3595,7 +3604,7 @@ export const importEmployeesCSV = async (req: Request & { file?: Express.Multer.
       results
     });
   } catch (error) {
-    console.error('Error importing employees:', error);
+    logHrControllerError('Error importing employees', 'hr_employees_import', error);
     return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to import employees' 
     });
@@ -3735,7 +3744,7 @@ export const exportEmployeesCSV = async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="employees-${status.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv"`);
     res.send(csvContent);
   } catch (error) {
-    console.error('Error exporting employees:', error);
+    logHrControllerError('Error exporting employees', 'hr_employees_export', error);
     return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to export employees' 
     });
@@ -3763,7 +3772,7 @@ export const getOnboardingAnalyticsController = async (req: Request, res: Respon
     const analytics = await getOnboardingAnalytics(businessId, startDate, endDate);
     return res.json(analytics);
   } catch (error) {
-    console.error('Error fetching onboarding analytics:', error);
+    logHrControllerError('Error fetching onboarding analytics', 'hr_analytics_onboarding', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch onboarding analytics';
     return res.status(500).json({ error: message });
   }
@@ -3786,7 +3795,7 @@ export const getAttendanceAnalyticsController = async (req: Request, res: Respon
     const analytics = await getAttendanceAnalytics(businessId, startDate, endDate);
     return res.json(analytics);
   } catch (error) {
-    console.error('Error fetching attendance analytics:', error);
+    logHrControllerError('Error fetching attendance analytics', 'hr_analytics_attendance', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch attendance analytics';
     return res.status(500).json({ error: message });
   }
@@ -3809,7 +3818,7 @@ export const getTimeOffAnalyticsController = async (req: Request, res: Response)
     const analytics = await getTimeOffAnalytics(businessId, startDate, endDate);
     return res.json(analytics);
   } catch (error) {
-    console.error('Error fetching time-off analytics:', error);
+    logHrControllerError('Error fetching time-off analytics', 'hr_analytics_timeoff', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch time-off analytics';
     return res.status(500).json({ error: message });
   }

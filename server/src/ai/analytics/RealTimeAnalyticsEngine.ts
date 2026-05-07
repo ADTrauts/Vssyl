@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter } from 'events';
 import * as crypto from 'crypto';
+import { logger } from '../../lib/logger';
 
 export interface DataStream {
   id: string;
@@ -415,10 +416,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
         this.dashboards.set(dashboard.id, dashboard);
       });
 
-      console.log(`✅ Initialized ${mockStreams.length} data streams, ${mockMetrics.length} metrics, and ${mockDashboards.length} dashboards`);
+      void logger.info('Initialized real-time analytics mock data', {
+        operation: 'realtime_analytics_init',
+        streams: mockStreams.length,
+        metrics: mockMetrics.length,
+        dashboards: mockDashboards.length,
+      });
 
-    } catch (error) {
-      console.error('Error initializing analytics data:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error initializing analytics data', {
+        operation: 'realtime_analytics_init',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -440,11 +450,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       this.subscriptions.set(stream.id, []);
 
       this.emit('stream_created', stream);
-      console.log(`✅ Created data stream: ${stream.name}`);
+      void logger.info('Created data stream', {
+        operation: 'realtime_analytics_create_stream',
+        streamId: stream.id,
+        streamName: stream.name,
+      });
       return stream;
 
-    } catch (error) {
-      console.error('Error creating data stream:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating data stream', {
+        operation: 'realtime_analytics_create_stream',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -480,8 +498,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return streams;
 
-    } catch (error) {
-      console.error('Error getting data streams:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting data streams', {
+        operation: 'realtime_analytics_get_streams',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -529,11 +551,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       // Emit event for real-time updates
       this.emit('data_point_added', { streamId, dataPoint });
 
-      console.log(`📊 Added data point to stream ${streamId}`);
+      void logger.debug('Added data point to stream', {
+        operation: 'realtime_analytics_add_data_point',
+        streamId,
+        dataPointId: dataPoint.id,
+      });
       return dataPoint;
 
-    } catch (error) {
-      console.error('Error adding data point:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error adding data point', {
+        operation: 'realtime_analytics_add_data_point',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -574,8 +604,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return filteredPoints;
 
-    } catch (error) {
-      console.error('Error getting data points:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting data points', {
+        operation: 'realtime_analytics_get_data_points',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -598,11 +632,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       this.alerts.set(metric.id, []);
 
       this.emit('metric_created', metric);
-      console.log(`✅ Created real-time metric: ${metric.name}`);
+      void logger.info('Created real-time metric', {
+        operation: 'realtime_analytics_create_metric',
+        metricId: metric.id,
+        metricName: metric.name,
+      });
       return metric;
 
-    } catch (error) {
-      console.error('Error creating real-time metric:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating real-time metric', {
+        operation: 'realtime_analytics_create_metric',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -634,8 +676,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return metrics;
 
-    } catch (error) {
-      console.error('Error getting real-time metrics:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting real-time metrics', {
+        operation: 'realtime_analytics_get_metrics',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -655,11 +701,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       this.dashboards.set(dashboard.id, dashboard);
       this.emit('dashboard_created', dashboard);
 
-      console.log(`✅ Created analytics dashboard: ${dashboard.name}`);
+      void logger.info('Created analytics dashboard', {
+        operation: 'realtime_analytics_create_dashboard',
+        dashboardId: dashboard.id,
+        dashboardName: dashboard.name,
+      });
       return dashboard;
 
-    } catch (error) {
-      console.error('Error creating analytics dashboard:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error creating analytics dashboard', {
+        operation: 'realtime_analytics_create_dashboard',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -695,8 +749,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return dashboards;
 
-    } catch (error) {
-      console.error('Error getting analytics dashboards:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting analytics dashboards', {
+        operation: 'realtime_analytics_get_dashboards',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -722,8 +780,13 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
           const data = await this.getWidgetData(widget);
           widgetData[widget.id] = data;
           widget.lastUpdate = new Date();
-        } catch (error) {
-          console.error(`Error getting data for widget ${widget.id}:`, error);
+        } catch (error: unknown) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          void logger.error(`Error getting data for widget ${widget.id}`, {
+            operation: 'realtime_analytics_widget_data',
+            error: { message: err.message, stack: err.stack },
+            widgetId: widget.id,
+          });
           widgetData[widget.id] = { error: 'Failed to load data' };
         }
       }
@@ -735,8 +798,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return { dashboard, widgetData };
 
-    } catch (error) {
-      console.error('Error getting dashboard data:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting dashboard data', {
+        operation: 'realtime_analytics_get_dashboard_data',
+        error: { message: err.message, stack: err.stack },
+      });
       throw error;
     }
   }
@@ -788,8 +855,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return { error: 'Unknown data source' };
 
-    } catch (error) {
-      console.error('Error getting widget data:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting widget data', {
+        operation: 'realtime_analytics_get_widget_data',
+        error: { message: err.message, stack: err.stack },
+      });
       return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -859,15 +930,24 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
           
           this.processors.set(streamId, streamProcessors);
           
-        } catch (error) {
-          console.error(`Error in processor ${processor.id}:`, error);
+        } catch (error: unknown) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          void logger.error(`Error in processor ${processor.id}`, {
+            operation: 'realtime_analytics_process_stream_data',
+            error: { message: err.message, stack: err.stack },
+            processorId: processor.id,
+          });
           processor.status = 'error';
           processor.performance.errorRate = (processor.performance.errorRate || 0) + 1;
         }
       }
 
-    } catch (error) {
-      console.error('Error processing stream data:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error processing stream data', {
+        operation: 'realtime_analytics_process_stream_data',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -886,8 +966,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
         if (!filterFn(processedData)) {
           return null; // Data filtered out
         }
-      } catch (error) {
-        console.error('Error applying filter:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Error applying filter', {
+          operation: 'realtime_analytics_apply_processor',
+          error: { message: err.message, stack: err.stack },
+        });
       }
     }
 
@@ -896,8 +980,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       try {
         const transformFn = new Function('data', `return ${transform}`);
         processedData = transformFn(processedData);
-      } catch (error) {
-        console.error('Error applying transform:', error);
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Error applying transform', {
+          operation: 'realtime_analytics_apply_processor',
+          error: { message: err.message, stack: err.stack },
+        });
       }
     }
 
@@ -919,7 +1007,11 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
     return processedData;
 
   } catch (error: unknown) {
-    console.error('Error applying processor:', error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Error applying processor', {
+      operation: 'realtime_analytics_apply_processor',
+      error: { message: err.message, stack: err.stack },
+    });
     throw error;
   }
 
@@ -961,12 +1053,21 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
           this.metrics.set(metric.id, metric);
 
         } catch (error: unknown) {
-          console.error(`Error checking metric ${metric.id}:`, error);
+          const err = error instanceof Error ? error : new Error(String(error));
+          void logger.error(`Error checking metric ${metric.id}`, {
+            operation: 'realtime_analytics_check_metrics',
+            error: { message: err.message, stack: err.stack },
+            metricId: metric.id,
+          });
         }
       }
 
     } catch (error: unknown) {
-      console.error('Error checking metrics:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error checking metrics', {
+        operation: 'realtime_analytics_check_metrics',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -1025,10 +1126,19 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
       // Emit alert event
       this.emit('alert_generated', alert);
 
-      console.log(`🚨 Generated alert: ${alert.message}`);
+      void logger.warn('Generated alert', {
+        operation: 'realtime_analytics_generate_alert',
+        alertId: alert.id,
+        message: alert.message,
+        severity: alert.severity,
+      });
 
-    } catch (error) {
-      console.error('Error generating alert:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error generating alert', {
+        operation: 'realtime_analytics_generate_alert',
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
@@ -1068,8 +1178,12 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
 
       return allAlerts;
 
-    } catch (error) {
-      console.error('Error getting alerts:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error getting alerts', {
+        operation: 'realtime_analytics_get_alerts',
+        error: { message: err.message, stack: err.stack },
+      });
       return [];
     }
   }
@@ -1090,15 +1204,24 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
           this.alerts.set(metricId, metricAlerts);
           this.emit('alert_acknowledged', alert);
           
-          console.log(`✅ Alert acknowledged: ${alert.message}`);
+          void logger.info('Alert acknowledged', {
+            operation: 'realtime_analytics_acknowledge_alert',
+            alertId: alert.id,
+            message: alert.message,
+            acknowledgedBy: userId,
+          });
           return alert;
         }
       }
 
       return null;
 
-    } catch (error) {
-      console.error('Error acknowledging alert:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error acknowledging alert', {
+        operation: 'realtime_analytics_acknowledge_alert',
+        error: { message: err.message, stack: err.stack },
+      });
       return null;
     }
   }
@@ -1118,15 +1241,23 @@ export class RealTimeAnalyticsEngine extends EventEmitter {
           this.alerts.set(metricId, metricAlerts);
           this.emit('alert_resolved', alert);
           
-          console.log(`✅ Alert resolved: ${alert.message}`);
+          void logger.info('Alert resolved', {
+            operation: 'realtime_analytics_resolve_alert',
+            alertId: alert.id,
+            message: alert.message,
+          });
           return alert;
         }
       }
 
       return null;
 
-    } catch (error) {
-      console.error('Error resolving alert:', error);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Error resolving alert', {
+        operation: 'realtime_analytics_resolve_alert',
+        error: { message: err.message, stack: err.stack },
+      });
       return null;
     }
   }

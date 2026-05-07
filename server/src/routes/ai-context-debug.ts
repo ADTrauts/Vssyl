@@ -1,6 +1,32 @@
 import express from 'express';
 import { authenticateJWT, requireRole } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -126,7 +152,7 @@ router.get('/user/:userId', authenticateJWT, requireAdmin, async (req, res) => {
 
     res.json({ success: true, data: context });
   } catch (error) {
-    console.error('Error fetching AI context:', error);
+    logSrvErr('ai_context_debug_error_fetching_ai_context', 'Error fetching AI context:', error);
     res.status(500).json({ error: 'Failed to fetch AI context' });
   }
 });
@@ -187,7 +213,7 @@ router.get('/session/:sessionId', authenticateJWT, requireAdmin, async (req, res
       }
     });
   } catch (error) {
-    console.error('Error fetching AI session:', error);
+    logSrvErr('ai_context_debug_error_fetching_ai_session', 'Error fetching AI session:', error);
     res.status(500).json({ error: 'Failed to fetch AI session' });
   }
 });
@@ -294,7 +320,7 @@ router.post('/validate', authenticateJWT, requireAdmin, async (req, res) => {
 
     res.json({ success: true, data: validationResults });
   } catch (error) {
-    console.error('Error validating AI context:', error);
+    logSrvErr('ai_context_debug_error_validating_ai_context', 'Error validating AI context:', error);
     res.status(500).json({ error: 'Failed to validate AI context' });
   }
 });
@@ -413,7 +439,7 @@ router.get('/cross-module/:userId', authenticateJWT, requireAdmin, async (req, r
 
     res.json({ success: true, data: crossModuleContext });
   } catch (error) {
-    console.error('Error fetching cross-module context:', error);
+    logSrvErr('ai_context_debug_error_fetching_cross_module_context', 'Error fetching cross-module context:', error);
     res.status(500).json({ error: 'Failed to fetch cross-module context' });
   }
 });
@@ -487,7 +513,7 @@ router.get('/stats', authenticateJWT, requireAdmin, async (req, res) => {
 
     res.json({ success: true, data: stats });
   } catch (error) {
-    console.error('Error fetching AI context stats:', error);
+    logSrvErr('ai_context_debug_error_fetching_ai_context_stats', 'Error fetching AI context stats:', error);
     res.status(500).json({ error: 'Failed to fetch AI context stats' });
   }
 });

@@ -18,21 +18,30 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { stripe, isStripeConfigured } from '../config/stripe';
 import { STRIPE_PRODUCTS } from '../config/stripe';
+import { logger } from '../lib/logger';
 
 if (!isStripeConfigured() || !stripe) {
-  console.error('❌ Error: STRIPE_SECRET_KEY environment variable is required');
-  console.log('💡 Set it in server/.env file');
+  void logger.error('STRIPE_SECRET_KEY environment variable is required', {
+    operation: 'list_per_employee_prices_missing_secret',
+  });
+  void logger.info('Set STRIPE_SECRET_KEY in server/.env', {
+    operation: 'list_per_employee_prices_missing_secret_help',
+  });
   process.exit(1);
 }
 
 async function listPerEmployeePrices() {
-  console.log('🔍 Listing all per-employee Stripe prices...\n');
+  void logger.info('Listing all per-employee Stripe prices', {
+    operation: 'list_per_employee_prices_start',
+  });
 
   const keyPreview = process.env.STRIPE_SECRET_KEY?.substring(0, 12) || 'unknown';
   const isTest = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || false;
-  console.log(`🔑 Using Stripe key: ${keyPreview}...`);
-  console.log(`🌍 Environment: ${isTest ? 'TEST' : 'LIVE'}`);
-  console.log();
+  void logger.info('Using Stripe key and environment', {
+    operation: 'list_per_employee_prices_key_info',
+    keyPreview,
+    environment: isTest ? 'TEST' : 'LIVE',
+  });
 
   // Map of product IDs to tier names
   const productIdToTier: Record<string, string> = {
@@ -52,7 +61,9 @@ async function listPerEmployeePrices() {
     const tier = productIdToTier[productId] || 'unknown';
     
     if (!stripe) {
-      console.error('❌ Stripe client not available');
+      void logger.error('Stripe client not available', {
+        operation: 'list_per_employee_prices_no_client',
+      });
       continue;
     }
     
@@ -65,11 +76,20 @@ async function listPerEmployeePrices() {
       });
 
       if (prices.data.length === 0) {
-        console.log(`📦 ${tier.toUpperCase()}: No prices found`);
+        void logger.info('No Stripe prices found for tier', {
+          operation: 'list_per_employee_prices_none_for_tier',
+          tier,
+          productId,
+        });
         continue;
       }
 
-      console.log(`📦 ${tier.toUpperCase()} (${productId}):`);
+      void logger.info('Found Stripe prices for tier', {
+        operation: 'list_per_employee_prices_tier_found',
+        tier,
+        productId,
+        count: prices.data.length,
+      });
       
       // Separate base prices from per-employee prices
       const basePrices = prices.data.filter(
@@ -81,57 +101,82 @@ async function listPerEmployeePrices() {
 
       // Display base prices
       if (basePrices.length > 0) {
-        console.log('  Base Prices:');
+        void logger.info('Base prices', {
+          operation: 'list_per_employee_prices_base_header',
+          tier,
+          count: basePrices.length,
+        });
         for (const price of basePrices) {
           const amount = (price.unit_amount || 0) / 100;
           const interval = price.recurring?.interval || 'one-time';
           const nickname = price.nickname || 'No nickname';
-          console.log(`    • ${nickname}`);
-          console.log(`      Price ID: ${price.id}`);
-          console.log(`      Amount: $${amount.toFixed(2)}/${interval}`);
-          console.log(`      Created: ${new Date(price.created * 1000).toLocaleDateString()}`);
+          void logger.info('Base price detail', {
+            operation: 'list_per_employee_prices_base_detail',
+            tier,
+            nickname,
+            priceId: price.id,
+            amount,
+            interval,
+            createdDate: new Date(price.created * 1000).toLocaleDateString(),
+          });
           totalBasePrices++;
         }
       }
 
       // Display per-employee prices
       if (perEmployeePrices.length > 0) {
-        console.log('  Per-Employee Prices:');
+        void logger.info('Per-employee prices', {
+          operation: 'list_per_employee_prices_per_employee_header',
+          tier,
+          count: perEmployeePrices.length,
+        });
         for (const price of perEmployeePrices) {
           const amount = (price.unit_amount || 0) / 100;
           const interval = price.recurring?.interval || 'one-time';
           const tierFromMeta = price.metadata?.tier || 'unknown';
           const billingCycle = price.metadata?.billingCycle || 'unknown';
           
-          console.log(`    ✅ Per-Employee Price`);
-          console.log(`       Price ID: ${price.id}`);
-          console.log(`       Amount: $${amount.toFixed(2)}/${interval}`);
-          console.log(`       Tier: ${tierFromMeta}`);
-          console.log(`       Billing Cycle: ${billingCycle}`);
-          console.log(`       Created: ${new Date(price.created * 1000).toLocaleDateString()}`);
+          void logger.info('Per-employee price detail', {
+            operation: 'list_per_employee_prices_per_employee_detail',
+            tier,
+            priceId: price.id,
+            amount,
+            interval,
+            tierFromMeta,
+            billingCycle,
+            createdDate: new Date(price.created * 1000).toLocaleDateString(),
+          });
           totalPerEmployeePrices++;
         }
       } else {
-        console.log('  ⚠️  No per-employee prices found');
+        void logger.warn('No per-employee prices found for tier', {
+          operation: 'list_per_employee_prices_none_per_employee',
+          tier,
+          productId,
+        });
       }
-
-      console.log();
-    } catch (error) {
+    } catch (error: unknown) {
       const err = error as Error;
-      console.error(`❌ Error fetching prices for ${tier}:`, err.message);
-      console.log();
+      void logger.error('Error fetching Stripe prices for tier', {
+        operation: 'list_per_employee_prices_fetch_error',
+        tier,
+        productId,
+        error: { message: err.message, stack: err.stack },
+      });
     }
   }
 
-  console.log('📊 Summary:');
-  console.log(`   Base prices: ${totalBasePrices}`);
-  console.log(`   Per-employee prices: ${totalPerEmployeePrices}`);
-  console.log();
+  void logger.info('Per-employee Stripe price listing summary', {
+    operation: 'list_per_employee_prices_summary',
+    totalBasePrices,
+    totalPerEmployeePrices,
+  });
 
   if (totalPerEmployeePrices === 0) {
-    console.log('💡 Tip: Per-employee prices are created automatically when you update');
-    console.log('   pricing in the admin portal with a per-employee price set.');
-    console.log('   They are identified by metadata.type = "per_employee"');
+    void logger.info(
+      'Per-employee prices are created automatically when admin pricing is updated with per-employee values; identified by metadata.type=per_employee',
+      { operation: 'list_per_employee_prices_tip' }
+    );
   }
 }
 
@@ -139,11 +184,17 @@ async function listPerEmployeePrices() {
 if (require.main === module) {
   listPerEmployeePrices()
     .then(() => {
-      console.log('✅ Done!');
+      void logger.info('Done listing per-employee Stripe prices', {
+        operation: 'list_per_employee_prices_done',
+      });
       process.exit(0);
     })
-    .catch((error) => {
-      console.error('❌ Error:', error);
+    .catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Unexpected error while listing per-employee Stripe prices', {
+        operation: 'list_per_employee_prices_unhandled',
+        error: { message: err.message, stack: err.stack },
+      });
       process.exit(1);
     });
 }

@@ -1,6 +1,32 @@
 import express, { Request, Response } from 'express';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { authenticateJWT } from '../middleware/auth';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: express.Router = express.Router();
 
@@ -20,7 +46,7 @@ router.get('/all', async (req: Request, res: Response) => {
       features
     });
   } catch (error) {
-    console.error('Error getting all features:', error);
+    logSrvErr('features_error_getting_all_features', 'Error getting all features:', error);
     res.status(500).json({
       error: 'Failed to get features',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -58,7 +84,7 @@ router.get('/check', async (req: Request, res: Response) => {
       usageInfo: access.usageInfo
     });
   } catch (error) {
-    console.error('Error checking feature access:', error);
+    logSrvErr('features_error_checking_feature_access', 'Error checking feature access:', error);
     res.status(500).json({
       error: 'Failed to check feature access',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -95,7 +121,7 @@ router.get('/module', async (req: Request, res: Response) => {
       access
     });
   } catch (error) {
-    console.error('Error getting module feature access:', error);
+    logSrvErr('features_error_getting_module_feature_access', 'Error getting module feature access:', error);
     res.status(500).json({
       error: 'Failed to get module feature access',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -139,7 +165,7 @@ router.post('/usage', async (req: Request, res: Response) => {
       message: 'Usage recorded successfully'
     });
   } catch (error) {
-    console.error('Error recording feature usage:', error);
+    logSrvErr('features_error_recording_feature_usage', 'Error recording feature usage:', error);
     res.status(500).json({
       error: 'Failed to record usage',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -171,7 +197,7 @@ router.get('/by-category', async (req: Request, res: Response) => {
       features
     });
   } catch (error) {
-    console.error('Error getting features by category:', error);
+    logSrvErr('features_error_getting_features_by_category', 'Error getting features by category:', error);
     res.status(500).json({
       error: 'Failed to get features by category',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -203,7 +229,7 @@ router.get('/by-tier', async (req: Request, res: Response) => {
       features
     });
   } catch (error) {
-    console.error('Error getting features by tier:', error);
+    logSrvErr('features_error_getting_features_by_tier', 'Error getting features by tier:', error);
     res.status(500).json({
       error: 'Failed to get features by tier',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -235,8 +261,8 @@ router.get('/user-summary', async (req: Request, res: Response) => {
           module,
           businessId as string | undefined
         );
-      } catch (error) {
-        console.error(`Failed to get access for module ${module}:`, error);
+      } catch (error: unknown) {
+        logSrvErr('features_module_access', `Failed to get access for module ${module}`, error, { module });
         moduleAccess[module] = {
           core: { available: [], locked: [] },
           premium: { available: [], locked: [] },
@@ -256,7 +282,7 @@ router.get('/user-summary', async (req: Request, res: Response) => {
       usage
     });
   } catch (error) {
-    console.error('Error getting user feature summary:', error);
+    logSrvErr('features_error_getting_user_feature_summary', 'Error getting user feature summary:', error);
     res.status(500).json({
       error: 'Failed to get user feature summary',
       details: error instanceof Error ? error.message : 'Unknown error'

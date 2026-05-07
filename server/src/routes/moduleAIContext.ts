@@ -15,6 +15,32 @@ import { authenticateJWT, requireRole, getUserFromRequest } from '../middleware/
 import { moduleAIContextService } from '../ai/services/ModuleAIContextService';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
+
+function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
+  const e = err instanceof Error ? err : new Error(String(err));
+  void logger.error(message, {
+    operation,
+    error: { message: e.message, stack: e.stack },
+    ...(context ? { context } : {}),
+  });
+}
+function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
+  if (err !== undefined) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    void logger.warn(message, {
+      operation,
+      error: { message: e.message, stack: e.stack },
+      ...(context ? { context } : {}),
+    });
+  } else {
+    void logger.warn(message, { operation, ...(context ? { context } : {}) });
+  }
+}
+function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
+  void logger.debug(message, { operation, ...(context ? { context } : {}) });
+}
+
 
 const router: Router = Router();
 
@@ -73,7 +99,7 @@ router.post(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error registering module AI context:', error);
+      logSrvErr('moduleaicontext_error_registering_module_ai_context', 'Error registering module AI context:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -101,7 +127,7 @@ router.get(
       res.json(registry);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting module AI context:', error);
+      logSrvErr('moduleaicontext_error_getting_module_ai_context', 'Error getting module AI context:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -136,7 +162,7 @@ router.post(
       res.json(analysis);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error analyzing query:', error);
+      logSrvErr('moduleaicontext_error_analyzing_query', 'Error analyzing query:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -169,7 +195,7 @@ router.get(
       res.json(context);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error fetching module context:', error);
+      logSrvErr('moduleaicontext_error_fetching_module_context', 'Error fetching module context:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -198,7 +224,7 @@ router.delete(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error clearing context cache:', error);
+      logSrvErr('moduleaicontext_error_clearing_context_cache', 'Error clearing context cache:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -224,7 +250,7 @@ router.delete(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error invalidating module cache:', error);
+      logSrvErr('moduleaicontext_error_invalidating_module_cache', 'Error invalidating module cache:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -262,7 +288,7 @@ router.get(
       res.json(registries);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting module registries:', error);
+      logSrvErr('moduleaicontext_error_getting_module_registries', 'Error getting module registries:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -403,19 +429,14 @@ router.get(
         },
       });
     } catch (error: unknown) {
-      const err = error as Error;
-      console.error('Error getting module AI status:', {
-        message: err.message,
-        stack: err.stack,
+      const err = error instanceof Error ? error : new Error(String(error));
+      logSrvErr('module_ai_status', 'Error getting module AI status', error, {
         name: err.name,
-        error: error
+        ...(process.env.NODE_ENV === 'development'
+          ? { serialized: JSON.stringify(error, Object.getOwnPropertyNames(error)) }
+          : {}),
       });
-      
-      // Log more details in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      }
-      
+
       res.status(500).json({ 
         success: false,
         error: err.message || 'Failed to get module AI status',
@@ -446,7 +467,7 @@ router.get(
       res.json(analytics);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting module analytics:', error);
+      logSrvErr('moduleaicontext_error_getting_module_analytics', 'Error getting module analytics:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -554,7 +575,7 @@ router.get(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting module performance:', error);
+      logSrvErr('moduleaicontext_error_getting_module_performance', 'Error getting module performance:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -577,7 +598,7 @@ router.get(
       res.json(modules);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting modules by category:', error);
+      logSrvErr('moduleaicontext_error_getting_modules_by_category', 'Error getting modules by category:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -604,7 +625,7 @@ router.post(
       res.json(modules);
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error searching modules by keywords:', error);
+      logSrvErr('moduleaicontext_error_searching_modules_by_keywords', 'Error searching modules by keywords:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -625,39 +646,21 @@ router.post(
   requireRole('ADMIN'),
   async (req: Request, res: Response) => {
     try {
-      console.error('='.repeat(60)); // Using console.error to ensure it appears in logs
-      console.error('🤖 ADMIN-TRIGGERED MODULE REGISTRATION');
-      console.error('='.repeat(60));
-      
-      // Get count BEFORE registration
       const beforeCount = await prisma.moduleAIContextRegistry.count();
-      console.error(`📊 Registry count BEFORE registration: ${beforeCount}`);
-      
-      // Import and call the startup registration function
+
       const { registerBuiltInModulesOnStartup } = await import('../startup/registerBuiltInModules');
-      
-      // Call the registration function
-      console.error('🚀 Calling registerBuiltInModulesOnStartup()...');
       const regResult = await registerBuiltInModulesOnStartup();
-      console.error(`✅ Completed: processed=${regResult.successCount}, created=${regResult.createdCount}, updated=${regResult.updatedCount}, errors=${regResult.errors.length}`);
-      
-      // Get detailed status AFTER registration
+
       const registryEntries = await prisma.moduleAIContextRegistry.findMany({
         select: { moduleId: true, moduleName: true, createdAt: true },
       });
-      
+
       const afterCount = registryEntries.length;
-      console.error(`📊 Registry count AFTER registration: ${afterCount}`);
-      console.error(`📊 New registrations: ${afterCount - beforeCount}`);
-      
+
       const allModules = await prisma.module.findMany({
         select: { id: true, name: true, status: true },
       });
-      
-      console.error(`📊 Total modules in Module table: ${allModules.length}`);
-      console.error(`📊 Module IDs: ${allModules.map((m: { id: string }) => m.id).join(', ')}`);
-      
-      // Check which built-in modules exist and which are registered
+
       const builtInIds = ['drive', 'chat', 'calendar', 'hr', 'scheduling', 'todo', 'notes', 'place', 'dashboard'];
       const moduleStatus = builtInIds.map((id: string) => {
         const moduleExists = allModules.find((m: { id: string; name: string; status: string }) => m.id === id);
@@ -671,13 +674,25 @@ router.post(
           registryCreatedAt: registryExists?.createdAt || null,
         };
       });
-      
-      console.error('📊 Built-in module status:');
-      moduleStatus.forEach((m: { moduleId: string; moduleExists: boolean; registryExists: boolean }) => {
-        console.error(`   - ${m.moduleId}: module=${m.moduleExists ? 'EXISTS' : 'MISSING'}, registry=${m.registryExists ? 'REGISTERED' : 'NOT_REGISTERED'}`);
+
+      void logger.info('Admin built-in module AI registration completed', {
+        operation: 'module_ai_register_builtins',
+        context: {
+          beforeCount,
+          afterCount,
+          newRegistrations: afterCount - beforeCount,
+          regResult: {
+            successCount: regResult.successCount,
+            createdCount: regResult.createdCount,
+            updatedCount: regResult.updatedCount,
+            errorCount: regResult.errors.length,
+          },
+          totalModulesInDb: allModules.length,
+          moduleIds: allModules.map((m: { id: string }) => m.id),
+          builtInModuleStatus: moduleStatus,
+        },
       });
-      console.error('='.repeat(60));
-      
+
       res.json({
         success: true,
         message: 'Module registration completed',
@@ -693,7 +708,7 @@ router.post(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error in manual module registration:', error);
+      logSrvErr('moduleaicontext_error_in_manual_module_registration', 'Error in manual module registration:', error);
       res.status(500).json({ 
         success: false,
         error: err.message,
@@ -716,7 +731,7 @@ router.post(
   requireRole('ADMIN'),
   async (req: Request, res: Response) => {
     try {
-      console.log('🔄 Admin/Cron triggered module registry sync');
+      logSrvDebug('moduleaicontext_admin_cron_triggered_module_registry_sync', '🔄 Admin/Cron triggered module registry sync');
 
       const { moduleRegistrySyncService } = await import('../services/ModuleRegistrySyncService');
       
@@ -737,7 +752,7 @@ router.post(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error in module registry sync:', error);
+      logSrvErr('moduleaicontext_error_in_module_registry_sync', 'Error in module registry sync:', error);
       res.status(500).json({ error: err.message });
     }
   }
@@ -766,7 +781,7 @@ router.get(
       });
     } catch (error: unknown) {
       const err = error as Error;
-      console.error('Error getting sync status:', error);
+      logSrvErr('moduleaicontext_error_getting_sync_status', 'Error getting sync status:', error);
       res.status(500).json({ error: err.message });
     }
   }

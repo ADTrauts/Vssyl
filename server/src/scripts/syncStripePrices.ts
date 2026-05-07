@@ -21,15 +21,16 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { prisma } from '../lib/prisma';
 import { stripe, isStripeConfigured } from '../config/stripe';
+import { logger } from '../lib/logger';
 
 async function syncStripePrices() {
   if (!isStripeConfigured() || !stripe) {
-    console.error('❌ Stripe is not configured');
-    console.log('💡 Set STRIPE_SECRET_KEY environment variable');
+    void logger.error('Stripe is not configured', { operation: 'sync_stripe_prices_not_configured' });
+    void logger.info('Set STRIPE_SECRET_KEY environment variable', { operation: 'sync_stripe_prices_not_configured_help' });
     process.exit(1);
   }
 
-  console.log('🔄 Syncing Stripe prices to database...\n');
+  void logger.info('Syncing Stripe prices to database', { operation: 'sync_stripe_prices_start' });
 
   // Map of tier names (database) to product IDs (Stripe)
   const tierToProductId: Record<string, string> = {
@@ -55,12 +56,18 @@ async function syncStripePrices() {
     ],
   });
 
-  console.log(`Found ${pricingConfigs.length} pricing configs to sync\n`);
+  void logger.info('Found pricing configs to sync', {
+    operation: 'sync_stripe_prices_configs_found',
+    count: pricingConfigs.length,
+  });
 
   for (const config of pricingConfigs) {
     const productId = tierToProductId[config.tier];
     if (!productId) {
-      console.log(`⚠️  No product ID mapping for tier: ${config.tier}`);
+      void logger.warn('No product ID mapping for tier', {
+        operation: 'sync_stripe_prices_missing_product_mapping',
+        tier: config.tier,
+      });
       skipped++;
       continue;
     }
@@ -79,8 +86,13 @@ async function syncStripePrices() {
       );
 
       if (!matchingPrice) {
-        console.log(`⚠️  No Stripe price found for ${config.tier}/${config.billingCycle}`);
-        console.log(`   Product ID: ${productId}, Interval: ${interval}`);
+        void logger.warn('No Stripe price found for pricing config', {
+          operation: 'sync_stripe_prices_missing_matching_price',
+          tier: config.tier,
+          billingCycle: config.billingCycle,
+          productId,
+          interval,
+        });
         skipped++;
         continue;
       }
@@ -89,13 +101,23 @@ async function syncStripePrices() {
       const expectedAmount = Math.round(config.basePrice * 100);
       const actualAmount = matchingPrice.unit_amount || 0;
       if (Math.abs(expectedAmount - actualAmount) > 1) {
-        console.log(`⚠️  Price mismatch for ${config.tier}/${config.billingCycle} (syncing ID anyway):`);
-        console.log(`   Database display: $${config.basePrice.toFixed(2)} | Stripe: $${(actualAmount / 100).toFixed(2)}`);
+        void logger.warn('Price mismatch detected; syncing Stripe ID anyway', {
+          operation: 'sync_stripe_prices_amount_mismatch',
+          tier: config.tier,
+          billingCycle: config.billingCycle,
+          databaseAmount: config.basePrice,
+          stripeAmount: actualAmount / 100,
+        });
       }
 
       // Check if already synced
       if (config.stripePriceId === matchingPrice.id) {
-        console.log(`✓ Already synced ${config.tier}/${config.billingCycle}: ${matchingPrice.id}`);
+        void logger.debug('Pricing config already synced', {
+          operation: 'sync_stripe_prices_already_synced',
+          tier: config.tier,
+          billingCycle: config.billingCycle,
+          stripePriceId: matchingPrice.id,
+        });
         skipped++;
         continue;
       }
@@ -106,35 +128,59 @@ async function syncStripePrices() {
         data: { stripePriceId: matchingPrice.id },
       });
 
-      console.log(`✅ Synced ${config.tier}/${config.billingCycle}: ${matchingPrice.id}`);
+      void logger.info('Synced Stripe price ID to pricing config', {
+        operation: 'sync_stripe_prices_synced',
+        tier: config.tier,
+        billingCycle: config.billingCycle,
+        stripePriceId: matchingPrice.id,
+      });
       synced++;
-    } catch (error) {
+    } catch (error: unknown) {
       const err = error as Error;
-      console.error(`❌ Error syncing ${config.tier}/${config.billingCycle}:`, err.message);
+      void logger.error('Error syncing pricing config', {
+        operation: 'sync_stripe_prices_error',
+        tier: config.tier,
+        billingCycle: config.billingCycle,
+        error: { message: err.message, stack: err.stack },
+      });
       errors++;
     }
   }
 
-  console.log(`\n📊 Sync Summary:`);
-  console.log(`   ✅ Synced: ${synced}`);
-  console.log(`   ⏭️  Skipped: ${skipped}`);
-  console.log(`   ❌ Errors: ${errors}`);
-  console.log(`   📦 Total: ${pricingConfigs.length}`);
+  void logger.info('Stripe price sync summary', {
+    operation: 'sync_stripe_prices_summary',
+    synced,
+    skipped,
+    errors,
+    total: pricingConfigs.length,
+  });
 
   if (synced > 0) {
-    console.log(`\n🎉 Sync completed! ${synced} price(s) synced to database.`);
+    void logger.info('Stripe price sync completed successfully', {
+      operation: 'sync_stripe_prices_done_success',
+      synced,
+    });
   } else if (errors === 0) {
-    console.log(`\n✅ All prices already synced or skipped.`);
+    void logger.info('All Stripe prices already synced or skipped', {
+      operation: 'sync_stripe_prices_done_no_changes',
+    });
   } else {
-    console.log(`\n⚠️  Sync completed with errors. Please review above.`);
+    void logger.warn('Stripe price sync completed with errors', {
+      operation: 'sync_stripe_prices_done_with_errors',
+      errors,
+    });
   }
 }
 
 // Run if called directly
 if (require.main === module) {
   syncStripePrices()
-    .catch((error) => {
-      console.error('❌ Error syncing prices:', error);
+    .catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.error('Unexpected error syncing Stripe prices', {
+        operation: 'sync_stripe_prices_unhandled',
+        error: { message: err.message, stack: err.stack },
+      });
       process.exit(1);
     })
     .finally(async () => {

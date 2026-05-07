@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { logger } from '@/lib/logger';
 
 // Force dynamic rendering to ensure route is always handled
 export const dynamic = 'force-dynamic';
@@ -15,42 +16,72 @@ const backendUrl = process.env.BACKEND_URL ||
                    process.env.NEXT_PUBLIC_API_BASE_URL || 
                    (isDevelopment ? 'http://localhost:5000' : 'https://vssyl-server-235369681725.us-central1.run.app');
 
+function redactedHeaderSnapshot(headers: Headers): Record<string, string> {
+  const snapshot: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (
+      lower === 'authorization' ||
+      lower === 'cookie' ||
+      lower === 'set-cookie' ||
+      lower === 'x-impersonation-token'
+    ) {
+      snapshot[key] = value ? '[redacted]' : '';
+    } else {
+      snapshot[key] = value;
+    }
+  });
+  return snapshot;
+}
+
 async function handler(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   const url = `${backendUrl}${pathname}${search}`;
   
-  // Always log requests, especially for debugging
-  console.log('API Proxy - Request:', {
-    method: req.method,
-    pathname,
-    search,
-    backendUrl,
-    fullUrl: url
-  });
-
-  // Special logging for file download requests
-  if (req.method === 'GET' && pathname.includes('/drive/files/') && (pathname.includes('/download') || pathname.match(/\/drive\/files\/[^/]+$/))) {
-    console.log('📥 [API PROXY] File download request detected:', {
-      method: req.method,
-      pathname,
-      fullUrl: url,
-      backendUrl,
-      timestamp: new Date().toISOString()
-    });
-  }
-  
-  // Special logging for scheduling availability routes
-  if (req.method === 'POST' && pathname.includes('/scheduling/me/availability')) {
-    console.log('🚨 [API PROXY] POST /scheduling/me/availability detected at handler entry', {
+  void logger.debug('API proxy request', {
+    operation: 'api_proxy',
+    context: {
       method: req.method,
       pathname,
       search,
-      url,
       backendUrl,
-      timestamp: new Date().toISOString()
+      fullUrl: url,
+    },
+  });
+
+  const isDriveFileDownload =
+    req.method === 'GET' &&
+    pathname.includes('/drive/files/') &&
+    (pathname.includes('/download') || /\/drive\/files\/[^/]+$/.test(pathname));
+
+  if (isDriveFileDownload) {
+    void logger.debug('API proxy file download request', {
+      operation: 'api_proxy',
+      context: {
+        method: req.method,
+        pathname,
+        fullUrl: url,
+        backendUrl,
+      },
     });
   }
-  
+
+  const isSchedulingAvailabilityPost =
+    req.method === 'POST' && pathname.includes('/scheduling/me/availability');
+
+  if (isSchedulingAvailabilityPost) {
+    void logger.debug('API proxy scheduling availability POST at handler entry', {
+      operation: 'api_proxy',
+      context: {
+        method: req.method,
+        pathname,
+        search,
+        url,
+        backendUrl,
+      },
+    });
+  }
+
 
 
   // Clone headers and add authorization
@@ -78,13 +109,19 @@ async function handler(req: NextRequest) {
 
   if (authToken) {
     headers.set('authorization', authToken);
-    console.log('API Proxy - Setting auth header:', { 
-      hasToken: !!authToken, 
-      tokenLength: authToken?.length,
-      path: pathname 
+    void logger.debug('API proxy auth header set', {
+      operation: 'api_proxy',
+      context: {
+        hasToken: true,
+        tokenLength: authToken.length,
+        pathname,
+      },
     });
   } else {
-    console.log('API Proxy - No auth token found for path:', pathname);
+    void logger.debug('API proxy no auth token for path', {
+      operation: 'api_proxy',
+      context: { pathname },
+    });
   }
 
   if (impersonationCookie && !pathname.startsWith('/api/admin-portal')) {
@@ -117,12 +154,15 @@ async function handler(req: NextRequest) {
           }
           // Remove any existing content-length header - let fetch set it automatically
           headers.delete('content-length');
-          console.log('API Proxy - Body:', { 
-            pathname, 
-            bodyLength: bodyText.length, 
-            bodyPreview: bodyText.substring(0, 200),
-            contentType,
-            hasBody: !!bodyText
+          void logger.debug('API proxy request body', {
+            operation: 'api_proxy',
+            context: {
+              pathname,
+              bodyLength: bodyText.length,
+              bodyPreview: bodyText.substring(0, 200),
+              contentType,
+              hasBody: !!bodyText,
+            },
           });
         }
       } else if (req.body) {
@@ -151,32 +191,28 @@ async function handler(req: NextRequest) {
       }
     }
 
-    // Debug logging for POST requests that are failing
-    if (req.method === 'POST' && pathname.includes('/scheduling/me/availability')) {
-      const debugHeaders = headersForFetch instanceof Headers 
-        ? Object.fromEntries(headersForFetch.entries())
-        : headersForFetch;
-      console.log('API Proxy - DEBUG POST Request:', {
-        url,
-        method: fetchOptions.method,
-        headers: debugHeaders,
-        bodyType: typeof requestBody,
-        bodyLength: requestBody ? (typeof requestBody === 'string' ? requestBody.length : 'stream') : 0,
-        hasBody: !!requestBody,
-        contentType: headers.get('content-type'),
-        authorization: headers.get('authorization') ? 'present' : 'missing'
-      });
-    }
-
-    // Log 404 requests to help debug routing issues
-    if (req.method === 'POST' && pathname.includes('/scheduling/me/availability')) {
-      console.log('🚨 [API PROXY] About to fetch:', {
-        url,
-        method: fetchOptions.method,
-        headers: Object.fromEntries(headers.entries()),
-        bodyLength: requestBody ? (typeof requestBody === 'string' ? requestBody.length : 'stream') : 0,
-        hasBody: !!requestBody,
-        backendUrl
+    if (isSchedulingAvailabilityPost) {
+      const debugHeaders =
+        headersForFetch instanceof Headers
+          ? redactedHeaderSnapshot(headersForFetch)
+          : headersForFetch;
+      void logger.debug('API proxy scheduling availability POST before fetch', {
+        operation: 'api_proxy',
+        context: {
+          url,
+          method: fetchOptions.method,
+          headers: debugHeaders,
+          bodyType: typeof requestBody,
+          bodyLength: requestBody
+            ? typeof requestBody === 'string'
+              ? requestBody.length
+              : 'stream'
+            : 0,
+          hasBody: !!requestBody,
+          contentType: headers.get('content-type'),
+          authorization: headers.get('authorization') ? 'present' : 'missing',
+          backendUrl,
+        },
       });
     }
 
@@ -200,12 +236,15 @@ async function handler(req: NextRequest) {
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
       const isAborted = fetchError instanceof Error && fetchError.name === 'AbortError';
       
-      console.error('🚨 [API PROXY] Fetch failed:', {
-        error: errorMessage,
-        isAborted,
-        url,
-        backendUrl,
-        pathname
+      void logger.error('API proxy fetch failed', {
+        operation: 'api_proxy',
+        context: {
+          errorMessage,
+          isAborted,
+          url,
+          backendUrl,
+          pathname,
+        },
       });
       
       if (isAborted) {
@@ -217,43 +256,53 @@ async function handler(req: NextRequest) {
     // Log 404 responses to help debug
     if (response.status === 404) {
       const responseText = await response.clone().text().catch(() => 'Unable to read response');
-      console.error('🚨 [API PROXY] 404 Response from backend:', {
-        url,
-        pathname,
-        status: response.status,
-        responseText: responseText.substring(0, 200),
-        backendUrl,
-        hasAuth: !!authToken,
-        isDownloadRequest: pathname.includes('/drive/files/') && (pathname.includes('/download') || pathname.match(/\/drive\/files\/[^/]+$/))
+      void logger.error('API proxy backend returned 404', {
+        operation: 'api_proxy',
+        context: {
+          url,
+          pathname,
+          status: response.status,
+          responseText: responseText.substring(0, 200),
+          backendUrl,
+          hasAuth: !!authToken,
+          isDownloadRequest: isDriveFileDownload,
+        },
       });
     }
 
-    console.log('API Proxy - Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      pathname,
-      hasAuth: !!authToken,
-      backendUrl
-    });
-
-    // Log authentication issues for debugging
-    if (response.status === 401 || response.status === 403) {
-      console.warn('API Proxy - Authentication error:', {
-        status: response.status,
-        pathname,
-        hasAuthToken: !!authToken,
-        tokenLength: authToken?.length,
-        backendUrl
-      });
-    }
-
-    // Log server errors for debugging
-    if (response.status >= 500) {
-      console.error('API Proxy - Server error:', {
+    void logger.debug('API proxy response', {
+      operation: 'api_proxy',
+      context: {
         status: response.status,
         statusText: response.statusText,
         pathname,
-        backendUrl
+        hasAuth: !!authToken,
+        backendUrl,
+      },
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      void logger.warn('API proxy authentication error', {
+        operation: 'api_proxy',
+        context: {
+          status: response.status,
+          pathname,
+          hasAuthToken: !!authToken,
+          tokenLength: authToken?.length,
+          backendUrl,
+        },
+      });
+    }
+
+    if (response.status >= 500) {
+      void logger.error('API proxy upstream server error', {
+        operation: 'api_proxy',
+        context: {
+          status: response.status,
+          statusText: response.statusText,
+          pathname,
+          backendUrl,
+        },
       });
     }
 
@@ -270,15 +319,18 @@ async function handler(req: NextRequest) {
     }
 
     return response;
-  } catch (error) {
-    console.error('API proxy error:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      url,
-      method: req.method,
-      pathname,
-      hasAuthToken: !!authToken,
-      backendUrl
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('API proxy handler error', {
+      operation: 'api_proxy',
+      error: { message: err.message, stack: err.stack },
+      context: {
+        url,
+        method: req.method,
+        pathname,
+        hasAuthToken: !!authToken,
+        backendUrl,
+      },
     });
     
     // Determine error type and appropriate status code

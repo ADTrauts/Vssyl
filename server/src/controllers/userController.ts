@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { getUserPreference, setUserPreference } from '../services/userPreferenceService';
 
 export const searchUsers = async (req: Request, res: Response) => {
@@ -23,8 +24,12 @@ export const searchUsers = async (req: Request, res: Response) => {
       take: 10,
     });
     res.json({ success: true, data: users });
-  } catch (error) {
-    console.error('User search error:', error);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('User search error', {
+      operation: 'user_search',
+      error: { message: err.message, stack: err.stack },
+    });
     res.status(500).json({ success: false, error: 'Failed to search users.' });
   }
 };
