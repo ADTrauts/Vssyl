@@ -217,6 +217,51 @@ Acceptance:
 - Analytical/planning modes are available when asked.
 - Debug mode can show internals without affecting default UX.
 
+### Phase E: Hardening and QA (validation-focused)
+
+Status:
+- Planned and documented.
+- Execution intentionally deferred until explicitly scheduled.
+- No broad refactors allowed in this phase.
+
+Goal:
+- Validate that Phases A-D behave correctly in production-like usage, then fix only defects discovered during validation.
+
+Validation checklist:
+1. Normal chat never shows orchestration metadata by default.
+2. `fileIssues` still render normally.
+3. Streaming and non-streaming responses each persist exactly one assistant message.
+4. `continuityState` and `activeTopic` persist through assistant message metadata.
+5. Follow-up questions use prior conversation/topic context.
+6. Debug/admin details remain hidden unless explicitly enabled.
+7. `responseMode` is inferred correctly.
+8. Tiered context assembly does not over-inject broad module context for casual follow-ups.
+
+Required targeted tests:
+- Conversational follow-up:
+  - "I like Charleston but I'm intrigued by Cancun."
+  - Follow-up: "Which one feels more relaxing?"
+- Debug request:
+  - "why did the AI answer this way?"
+- Planning request:
+  - "give me next steps"
+- File issue response rendering/preservation.
+- Streaming response persistence (single assistant message saved).
+- Structured renderer behavior with:
+  - `showOrchestrationDetails = false`
+  - `showOrchestrationDetails = true`
+
+Execution guardrails:
+- Do not perform broad architecture changes.
+- Do not alter API contracts unless required to fix validated defects.
+- Prefer targeted utility/test updates and small UI/server patches.
+
+Completion outputs:
+- List of tests added/updated.
+- Defects found and fixed.
+- Files changed.
+- Remaining known limitations and follow-up work.
+
 ## Data Model Guidance
 
 Before schema additions:

@@ -19,7 +19,14 @@ import {
   type AIMessage 
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
-import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, type FileIssue } from '../../lib/aiResponseHandler';
+import {
+  buildAIConversationItemFromTwinData,
+  buildAddMessagePayloadFromTwinData,
+  buildErrorConversationItem,
+  isLikelyStructuredJSONStream,
+  buildSafeStreamFallbackContent,
+  type FileIssue,
+} from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
@@ -645,6 +652,8 @@ export default function AIChat() {
         let buffer = '';
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
+        let streamedRawText = '';
+        let suppressRawJsonRendering = false;
         let fullData: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } | undefined;
         try {
           while (true) {
@@ -661,9 +670,17 @@ export default function AIChat() {
                   throw new Error(payload.message);
                 }
                 if (typeof payload.text === 'string') {
-                  setConversation((prev) => prev.map((item) =>
-                    item.id === streamId ? { ...item, content: item.content + payload.text } : item
-                  ));
+                  streamedRawText += payload.text;
+                  if (!suppressRawJsonRendering && isLikelyStructuredJSONStream(streamedRawText)) {
+                    suppressRawJsonRendering = true;
+                    setConversation((prev) => prev.map((item) =>
+                      item.id === streamId ? { ...item, content: '' } : item
+                    ));
+                  } else if (!suppressRawJsonRendering) {
+                    setConversation((prev) => prev.map((item) =>
+                      item.id === streamId ? { ...item, content: item.content + payload.text } : item
+                    ));
+                  }
                 }
                 if (payload.done === true && payload.data) {
                   fullData = payload.data as { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> };
@@ -682,6 +699,21 @@ export default function AIChat() {
           setConversation((prev) => prev.map((item) => (item.id === streamId ? { ...aiItem, id: streamId } : item)));
           if (conversationId) {
             await addMessage(conversationId, buildAddMessagePayloadFromTwinData(fullData), session.accessToken);
+          }
+        } else if (streamedRawText.trim()) {
+          const safeFallback = buildSafeStreamFallbackContent(streamedRawText);
+          const aiItem = buildAIConversationItemFromTwinData({
+            response: safeFallback,
+            confidence: 0.5,
+          }) as ConversationItem;
+          setConversation((prev) => prev.map((item) => (item.id === streamId ? { ...aiItem, id: streamId } : item)));
+          if (conversationId) {
+            await addMessage(conversationId, {
+              role: 'assistant',
+              content: safeFallback,
+              confidence: 0.5,
+              metadata: { streamFallback: true },
+            }, session.accessToken);
           }
         }
       } else {

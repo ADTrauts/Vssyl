@@ -54,6 +54,63 @@ export interface AIConversationItemWithLegacy extends AIConversationItemBase {
 
 const FALLBACK_CONTENT = "I apologize, but I couldn't generate a proper response.";
 
+const STRUCTURED_STREAM_KEYS = [
+  '"mode"',
+  '"summary"',
+  '"sections"',
+  '"keyInsights"',
+  '"evidence"',
+  '"recommendedActions"',
+  '"confidence"',
+  '"metadata"',
+  '"responseVersion"',
+];
+
+export function isLikelyStructuredJSONStream(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  const startsLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
+  if (!startsLikeJson) return false;
+  const keyHits = STRUCTURED_STREAM_KEYS.filter((k) => trimmed.includes(k)).length;
+  return keyHits >= 2;
+}
+
+function stripJsonArtifacts(text: string): string {
+  return text
+    .replace(/^\s*[\{\[]+/, '')
+    .replace(/[\}\]]+\s*$/, '')
+    .replace(/"\w+"\s*:\s*/g, '')
+    .replace(/,\s*"/g, '\n')
+    .trim();
+}
+
+/**
+ * Never return raw JSON to the user. Try to extract useful text from a structured
+ * payload; otherwise return a generic fallback.
+ */
+export function buildSafeStreamFallbackContent(rawStreamText: string): string {
+  const trimmed = rawStreamText.trim();
+  if (!trimmed) return FALLBACK_CONTENT;
+
+  if (isLikelyStructuredJSONStream(trimmed)) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      if (typeof parsed.summary === 'string' && parsed.summary.trim()) return parsed.summary.trim();
+      if (typeof parsed.response === 'string' && parsed.response.trim()) return parsed.response.trim();
+      if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+        const first = parsed.sections[0] as Record<string, unknown>;
+        if (typeof first.content === 'string' && first.content.trim()) return first.content.trim();
+      }
+      const stripped = stripJsonArtifacts(trimmed);
+      return stripped && !stripped.startsWith('"') ? stripped : "I couldn't format that response cleanly. Please try again.";
+    } catch {
+      return "I couldn't format that response cleanly. Please try again.";
+    }
+  }
+
+  return trimmed;
+}
+
 /**
  * Build an AI conversation item from /api/ai/twin response data.
  * Use this in ai-chat page, AIChatDropdown, and AIChatModule after a successful twin call.
