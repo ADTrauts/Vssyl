@@ -1,5 +1,37 @@
 # Block-on-Block Platform - Progress
 
+## Workspace Runtime Foundation v1 (May 2026) ✅
+
+**Status:** **COMPLETE** — Additive module/widget contracts and workspace runtime helpers; legacy rendering paths preserved.
+
+**Principle:** Module = capability; widget = projection.
+
+**Deliverables:**
+- `web/src/runtime/` — types, `coreModuleRegistry`, `moduleRegistry`, adapters, workspace helpers, optional `WorkspaceRuntimeProvider`
+- `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`
+- Read-only integrations: `WidgetPicker`, `BusinessWorkspaceContent` (metadata), `BrandedWorkDashboard` (display names)
+- Web vitest: `pnpm --filter vssyl-web test` (13 tests); lockfile includes `vitest` on `vssyl-web`
+
+**Not in scope (v1):** Provider mounted at app roots; `permissionSnapshot` from business config; CI web test job; switch/registry migration.
+
+**Next (scheduled follow-up):** Mount provider + permission snapshot; consolidate `getModuleIcon` / `getModuleName` duplicates; add web tests to `.github/workflows/ci.yml`.
+
+**Reference:** `memory-bank/activeContext.md` (Workspace Runtime Foundation v1).
+
+---
+
+## AI conversational continuity + rendering + streaming guard (May 2026) ✅ / 🟡
+
+**Status:** Core **Phases A–D** implemented (natural rendering defaults, continuity/topic utilities, tiered context behavior, conversational polish + response-mode inference, SSE streaming guard so raw structured JSON does not flash). **Phase E** (validation/hardening only) is documented in `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` — execution deferred until explicitly scheduled.
+
+**Notable commit:** `19c2cc56` — `feat(ai): prevent raw JSON streaming flashes in chat`.
+
+**Key files:** `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`; `web/src/components/ai/AIResponseRenderer.tsx`; `web/src/lib/aiResponseHandler.ts`; `web/src/app/ai-chat/page.tsx` (SSE path); `server/src/ai/core/DigitalLifeTwinCore.ts`; `server/src/ai/core/DigitalLifeTwinService.ts`; `server/src/ai/context/AIContextAssembler.ts`; `server/src/ai/utils/normalizeAIResponse.ts`; `server/src/ai/utils/conversationalPolish.ts`; `server/src/ai/utils/conversationContinuity.ts`; `server/src/ai/utils/responseMode.ts`.
+
+**Reference:** `memory-bank/activeContext.md` (AI conversational continuity section).
+
+---
+
 ## AI context assembler — token budgeting (May 2026) ✅
 
 **Status:** **`AIContextAssembler`** trims ranked context blocks to an estimated token budget (~6000 default) after compression + relevance ranking. High-priority blocks always kept; medium/low by score within budget; optional per-`sourceType` diversity when budget allows. Kept blocks may carry `budgetTokensEstimate`; debug log `[AI_CONTEXT_BUDGET]`.

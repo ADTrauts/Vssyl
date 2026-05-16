@@ -1,5 +1,60 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## Workspace Runtime Foundation v1 (May 2026) ✅
+
+**Principle:** **Module = capability; widget = projection.**
+
+**Source of truth:** `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`
+
+**Goal:** Additive frontend contracts so personal, business, and future household/education contexts can derive available modules/widgets consistently—without replacing legacy registries or switch-based rendering.
+
+**Shipped:**
+
+| Area | What |
+|------|------|
+| **Contracts** | `web/src/runtime/modules/types.ts` — `ModuleDefinition`, `WidgetDefinition`, `RouteDefinition`; optional `source` (`core` \| `marketplace` \| `custom`), `capabilities`, `status` |
+| **Core registry** | `web/src/runtime/modules/coreModuleRegistry.ts` — 17 first-party modules (dashboard, drive, chat, calendar, todo, notes, ai, utility widgets, hr, scheduling, analytics, members, admin) |
+| **Lookup** | `web/src/runtime/modules/moduleRegistry.ts` — `normalizeModuleId`, `getModuleDefinition`, context filter; `connections` → `members` |
+| **Adapters** | `fromWidgetRegistry.ts`, `widgetPickerAdapter.ts` — read-only bridge to `WIDGET_REGISTRY` (legacy registry unchanged) |
+| **Runtime** | `web/src/runtime/workspace/` — pure helpers (`canRenderModule`, `deriveAvailableWidgets`, …), optional `WorkspaceRuntimeProvider`; placeholders `realtimeSubscriptions`, `activeSocketRooms` (not wired) |
+| **Integrations** | `WidgetPicker` uses contract adapter + legacy fallback; `BusinessWorkspaceContent` read-only contract lookup (switch unchanged); `BrandedWorkDashboard` display names via `getModuleDisplayName` |
+| **Tests** | `pnpm --filter vssyl-web test` — 13 unit tests under `web/src/runtime/__tests__/`; **not yet in root CI** |
+
+**Explicitly not replaced:** `WIDGET_REGISTRY`, `BusinessWorkspaceContent` `switch`, routing, widget components, business front-page `WidgetRegistry.tsx`.
+
+**Follow-up (later PR):**
+1. Mount `WorkspaceRuntimeProvider` at dashboard + business workspace roots.
+2. Feed `permissionSnapshot` from `BusinessConfigurationContext`.
+3. Replace duplicate module name/icon helpers with `getModuleDefinition` + `MODULE_ICONS`.
+4. Add `pnpm --filter vssyl-web test` to CI after scoped command is stable in practice.
+
+**Cross-ref:** `memory-bank/progress.md` (Workspace Runtime v1); `memory-bank/dashboardProductContext.md` (§ Workspace runtime); `memory-bank/systemPatterns.md` (Business workspace + runtime layer).
+
+---
+
+## AI conversational continuity, rendering, and streaming UX (May 2026) ✅ / 🟡
+
+**Source of truth:** `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` (indexed in `docs/plans/README.md`). **Phase E** (hardening/QA checklist) is documented there and intentionally not executed as a broad refactor until scheduled.
+
+**Goal:** Move the Digital Life Twin from “structured report” tone to natural conversation while keeping a strict internal contract: orchestration metadata stays internal unless debug/analytical modes apply; users see conversational text first; `fileIssues` / vision badges remain visible.
+
+**Shipped (implementation wave on `main`, includes commit `19c2cc56` for streaming guard):**
+
+| Area | What |
+|------|------|
+| **UI** | `AIResponseRenderer` gains `showOrchestrationDetails` (default off). Full chat, header dropdown, and embed module hide key insights, evidence, assumptions/risks, recommended actions, and numeric confidence unless explicitly enabled. |
+| **Server text** | `polishConversationalResponse` + integration in `normalizeAIResponse.ts` strips internal phrasing (“Based on conversation history”, scaffold headings) from plain-text `response`. |
+| **Continuity & topic** | `conversationContinuity.ts`: `ConversationContinuityState` + `ActiveTopicState`, transition classification, prompt injection via `DigitalLifeTwinCore` / `DigitalLifeTwinService` (persisted on assistant message metadata where applicable). |
+| **Context tiers** | `AIContextAssembler` + Core scoring: tier labels (`tier1`–`tier4`), stricter trimming of broad cross-module blocks; richer `[AI_CONTEXT_BUDGET]` / relevance logging. |
+| **Response modes** | `responseMode.ts` + prompt sections: inferred `conversational` / `analytical` / `planning` / `debug` / etc., wired through twin metadata. |
+| **Streaming contract** | `web/src/lib/aiResponseHandler.ts`: `isLikelyStructuredJSONStream`, `buildSafeStreamFallbackContent`. `ai-chat` SSE path buffers structured JSON chunks instead of flashing raw JSON; final message comes from `done` payload or safe fallback (never raw JSON). |
+
+**Tests:** Server-side guard test reads `AIResponseRenderer.tsx` source for orchestration gating (`server/src/ai/utils/__tests__/aiResponseRendererVisibility.test.ts`). Stream-helper unit tests must live in `web/` if added (avoid server importing `web/` — breaks `server` tsconfig rootDir).
+
+**Residual / next:** Execute Phase E checklist in the plan doc; optional web-side vitest for stream helpers; wire `showAIDetails` to a real debug toggle when product exposes it.
+
+---
+
 ## AI assembled context — compression, relevance, token budget (May 2026) ✅
 
 **Goal:** Keep provider prompts focused and cheaper by trimming assembled context blocks after deterministic compression and keyword relevance ranking—without embeddings, summarization, provider refactors, or frontend changes.

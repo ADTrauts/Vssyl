@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import * as dashboardService from '../services/dashboardService';
 import * as fileMigrationService from '../services/fileMigrationService';
 import { CreateDashboardRequest, UpdateDashboardRequest } from 'shared/types';
+import { authorize } from '../auth/policyEngine';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 function hasUserId(user: any): user is { id: string } {
   return user && typeof user.id === 'string';
@@ -61,6 +63,29 @@ export async function getDashboardById(req: Request, res: Response, next: NextFu
     }
     const userId = req.user.id;
     const dashboardId = req.params.id;
+    if (typeof dashboardId !== 'string' || !dashboardId) {
+      res.status(400).json({ message: 'Invalid dashboard id' });
+      return;
+    }
+
+    const businessIdQ = req.query.businessId;
+    const householdIdQ = req.query.householdId;
+    const policyDecision = await authorize({
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceType: 'dashboard',
+      resourceId: dashboardId,
+      scope: {
+        dashboardId,
+        ...(typeof businessIdQ === 'string' ? { businessId: businessIdQ } : {}),
+        ...(typeof householdIdQ === 'string' ? { householdId: householdIdQ } : {}),
+      },
+    });
+    if (!policyDecision.allow) {
+      res.status(403).json({ message: 'Access denied', reason: policyDecision.reason });
+      return;
+    }
+
     const dashboard = await dashboardService.getDashboardById(userId, dashboardId);
     if (!dashboard) {
       res.sendStatus(404);

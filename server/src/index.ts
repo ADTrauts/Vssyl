@@ -57,6 +57,7 @@ import {
 } from './services/emailService';
 import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService, getChatSocketService } from './services/chatSocketService';
+import { registerDomainEventSubscribers } from './events/registerDomainEventSubscribers';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
@@ -1395,6 +1396,7 @@ async function bootstrap(): Promise<void> {
   }
 
   initializeChatSocketService(httpServer);
+  registerDomainEventSubscribers();
   await getChatSocketService().attachRedisAdapterIfConfigured();
 
   httpServer

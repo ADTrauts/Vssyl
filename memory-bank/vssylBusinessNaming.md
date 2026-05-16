@@ -2,7 +2,7 @@
 
 **Purpose:** Single place to align language for the **business and enterprise** product area so specs, code, and AI sessions do not use conflicting names.
 
-**Last updated:** 2026-04-22
+**Last updated:** 2026-05-16
 
 ## Cross-references
 
@@ -35,7 +35,7 @@ Use these terms in PRs, Memory Bank updates, and plans:
 | **Personal dashboard shell** | Logged-in home with global tabs and sidebars | `/dashboard/...`, `DashboardLayoutInner`, `DashboardClient` |
 | **Work tab** | Tab **inside the personal shell** for employer “go to work” | `web/src/components/WorkTab.tsx`; `showWorkTab` in layout/header |
 | **Branded work landing** | Full-width chooser / work authentication UI after opening Work; uses business branding | `web/src/components/BrandedWorkDashboard.tsx` |
-| **Business workspace** | Day-to-day employer tools: sidebar, business-scoped modules | Route family **`/business/:id/workspace/...`**. URL helpers: `web/src/lib/businessWorkspaceNavigation.ts` |
+| **Business workspace** | Day-to-day employer tools: sidebar, business-scoped modules | Route family **`/business/:id/workspace/...`**. URL helpers: `web/src/lib/businessWorkspaceNavigation.ts`. Module contracts (v1, read-only metadata): `web/src/runtime/modules/` — see `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md` |
 | **Business admin hub** | Business setup, module install, HR/admin, AI admin, etc. | **`/business/:id`** and nested admin routes (broader than workspace-only) |
 
 **Rule:** In prose, **“business workspace”** = the **`/business/:id/workspace`** experience, not the Work tab alone.

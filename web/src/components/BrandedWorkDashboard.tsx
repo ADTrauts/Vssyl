@@ -24,6 +24,7 @@ import { useBusinessConfiguration, BusinessModule } from '../contexts/BusinessCo
 import { useBusinessBranding, BusinessBrandingProvider, BrandedHeader, BrandedButton, BrandedCard } from './BusinessBranding';
 import { getBusiness } from '../api/business';
 import { EmployeeAIAssistant } from './work/EmployeeAIAssistant';
+import { getModuleDisplayName, normalizeModuleId } from '../runtime/modules/moduleRegistry';
 
 interface Business {
   id: string;
@@ -140,17 +141,7 @@ export default function BrandedWorkDashboard({
   };
 
   const getModuleName = (module: string) => {
-    switch (module) {
-      case 'dashboard': return 'Dashboard';
-      case 'drive': return 'Drive';
-      case 'chat': return 'Chat';
-      case 'calendar': return 'Calendar';
-      case 'members': return 'Members';
-      case 'hr': return 'HR';
-      case 'scheduling': return 'Scheduling';
-      case 'admin': return 'Admin';
-      default: return module.charAt(0).toUpperCase() + module.slice(1);
-    }
+    return getModuleDisplayName(normalizeModuleId(module));
   };
 
   // Normalize module IDs coming from config/installed modules to route-safe IDs

@@ -3,6 +3,8 @@ import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
+import { authorize } from '../auth/policyEngine';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
@@ -16,8 +18,19 @@ export async function listFolderPermissions(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req as AuthenticatedRequest).user?.id;
+    const userId = req.user.id;
     const { id } = req.params; // folder id
+    const dashboardIdQ = req.query.dashboardId;
+    const policyDecision = await authorize({
+      userId,
+      action: POLICY_ACTIONS.FILE_READ,
+      resourceType: 'folder',
+      resourceId: id,
+      scope: typeof dashboardIdQ === 'string' ? { dashboardId: dashboardIdQ } : undefined,
+    });
+    if (!policyDecision.allow) {
+      return res.status(403).json({ message: 'Forbidden', reason: policyDecision.reason });
+    }
     // Only owner can list permissions
     const folder = await prisma.folder.findUnique({ where: { id } });
     if (!folder || folder.userId !== userId) {

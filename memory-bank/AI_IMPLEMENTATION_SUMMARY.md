@@ -6,6 +6,8 @@
 **Status**: ✅ **COMPLETE** - AI Control Center + Provider Management + Learning System Integration + Vision Optional Items  
 **Latest**: AI Vision Optional Items (image resize, CSV tables, DALL·E, usedVisionParts badge)
 
+**May 2026 addition (conversational twin + UX):** Default chat UI hides orchestration sections (`showOrchestrationDetails`); server-side conversational polish strips internal scaffold phrasing from plain text; continuity/topic state and tiered context assembly improve prompt focus; streaming path avoids flashing raw structured JSON. Canonical plan: `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`. See `memory-bank/activeContext.md`.
+
 ---
 
 ## 🆕 **Latest Enhancements (February 2025)**

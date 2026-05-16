@@ -216,7 +216,26 @@ The Dashboard is the front page and central hub of the user experience. The layo
 - [systemPatterns.md] (system architecture, navigation, and modular context pattern)
 - Material Design, Tailwind UI (component inspiration)
 
-## 10a. Global Components & Integration Points
+## 10a. Workspace Runtime Foundation v1 (May 2026)
+
+**Principle:** **Module = capability; widget = projection.**
+
+Additive contracts under `web/src/runtime/` unify how the platform *describes* modules and dashboard widgets across personal, business, household, and education contexts. **Rendering still uses legacy paths** in v1.
+
+| Layer | Location | Role |
+|-------|----------|------|
+| Module contracts | `web/src/runtime/modules/` | `ModuleDefinition`, `coreModuleRegistry`, `moduleRegistry` |
+| Widget contracts | Adapters from `web/src/components/dashboard/widgetRegistry.ts` | `WidgetDefinition` via `componentKey`; **`WIDGET_REGISTRY` unchanged** |
+| Workspace runtime | `web/src/runtime/workspace/` | Filter available modules/widgets; optional `WorkspaceRuntimeProvider` |
+| Docs | `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md` | Canonical architecture note |
+
+**v1 integrations:** `WidgetPicker` (`getWidgetPickerAvailableEntries`), business workspace metadata lookup, `BrandedWorkDashboard` names from contracts.
+
+**Deferred:** Mount provider at dashboard/business roots; `permissionSnapshot` from `BusinessConfigurationContext`; replace duplicate icon/name switches; CI web tests.
+
+See `memory-bank/activeContext.md` and `memory-bank/progress.md`.
+
+## 10b. Global Components & Integration Points
 - Main header, right sidebar, and chat pop-up are global and must be implemented as persistent layout components.
 - Widgets integrate with core/proprietary modules (Chat, Drive, Analytics, Marketplace, etc.).
 - User preferences and layouts should be persisted (future data model).
@@ -241,5 +260,6 @@ The Dashboard is the front page and central hub of the user experience. The layo
   - Auto-unpin when modules are removed from left sidebar
   - Full TypeScript type safety and API integration
 - **2025-01:** Right Sidebar Visibility Fix - Fixed bug in `DashboardLayoutWrapper.tsx` where right sidebar disappeared when left sidebar was collapsed in workspace. Right sidebar now always visible, independent of left sidebar collapse state. Main content padding updated to always account for right sidebar.
+- **2026-05:** Workspace Runtime Foundation v1 — module/widget contracts (`web/src/runtime/`), adapters to `WIDGET_REGISTRY`, workspace runtime helpers, scoped web vitest; legacy widget registry and business workspace switch unchanged. See `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`.
 - **2026-02–03:** Dashboard Revitalization Project — Full UX overhaul: react-grid-layout grid (drag/resize), WidgetShell, Widget Picker (scoped to installed modules), 5 new utility widgets, templates, AI context, keyboard shortcuts. Post-completion refinements: multi-add in picker, filter already-added widgets, full-header drag handle, inlined grid CSS, Add Widget always visible. See `DASHBOARD_REVITALIZATION_PROJECT.md` and `activeContext.md`.
 - **2026-04:** Dashboard dark-mode readability hardening — fixed tab border style collision warning, improved sidebar contrast in dark mode, strengthened widget-shell dark surfaces, and patched unreadable text/surfaces in Drive and Notifications widgets. See `activeContext.md` and `progress.md`.

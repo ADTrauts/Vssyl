@@ -46,6 +46,7 @@ Update Rules for systemPatterns.md
 - [Add future major changes here.]
 
 ## Cross-References & Modular Context Pattern
+- **Visual maps:** consolidated Mermaid diagrams (platform, interoperability lifecycle, module surfaces) → **[applicationMermaidDiagrams.md](./applicationMermaidDiagrams.md)**.
 - **See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) (index)** and split rules: `api-and-auth.mdc`, `database-prisma.mdc`, `storage-and-ai-attachments.mdc`, `ui-standards.mdc`, `typescript-quality.mdc`; quick list: [../.cursor/rules/RULES_SUMMARY.md](../.cursor/rules/RULES_SUMMARY.md).
 - See [projectbrief.md](./projectbrief.md) for project vision and requirements.
 - See [moduleSpecs.md](./moduleSpecs.md) for module and feature specifications.
@@ -240,6 +241,23 @@ All modules scoped by businessDashboardId + businessId
 - All module data scoped by both `dashboardId` AND `businessId`
 - Prevents data leakage between personal and business contexts
 - Ensures proper multi-tenancy
+
+#### **Workspace Runtime Layer (v1, May 2026)**
+
+Additive frontend contracts—**does not replace** `WIDGET_REGISTRY` or `BusinessWorkspaceContent` switch rendering.
+
+```
+coreModuleRegistry + WIDGET_REGISTRY adapters
+    ↓
+workspaceRuntimeHelpers (context + install filter + permission snapshot)
+    ↓
+WidgetPicker / optional WorkspaceRuntimeProvider (future: dashboard + business roots)
+```
+
+- **Module = capability; widget = projection** — see `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`
+- **Paths:** `web/src/runtime/modules/`, `web/src/runtime/workspace/`
+- **Context alias:** canonical `education` ↔ legacy `educational` (`contextMapping.ts`)
+- **Follow-up:** mount provider, feed `BusinessConfigurationContext` permissions, consolidate duplicate `getModuleIcon` / `getModuleName` helpers
 
 ### **Module Architecture Patterns**
 

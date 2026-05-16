@@ -32,6 +32,7 @@ import DriveSidebar from '../../app/drive/DriveSidebar';
 import CalendarListSidebar from '../calendar/CalendarListSidebar';
 import HRLayout from '../hr/HRLayout';
 import SchedulingLayout from '../scheduling/SchedulingLayout';
+import { getModuleDefinition, normalizeModuleId } from '../../runtime/modules/moduleRegistry';
 
 interface Business {
   id: string;
@@ -577,6 +578,10 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
   }, [navigateToDashboard, router, business.id]);
 
   const renderModuleContent = () => {
+    // Read-only contract lookup for metadata; switch rendering unchanged.
+    const _moduleContract = getModuleDefinition(normalizeModuleId(currentModule));
+    void _moduleContract;
+
     switch (currentModule) {
       case 'dashboard':
         return <BusinessDashboardWidget />;

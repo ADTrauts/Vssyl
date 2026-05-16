@@ -30,7 +30,9 @@ flowchart TD
 
 ## Module and domain contexts
 
-`*ProductContext.md` files (drive, chat, hr, scheduling, admin, etc.), plus `businessWorkspaceArchitecture.md`, `permissionsModel.md`, `aiContextSystem.md`, `deployment.md`, `roadmap.md`, and phased plans (`AI_PLATFORM_PHASED_PLAN.md`, `BILLING_*`, org chart summaries, …).
+`*ProductContext.md` files (drive, chat, hr, scheduling, admin, etc.), plus `businessWorkspaceArchitecture.md`, **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `permissionsModel.md`, `aiContextSystem.md`, `deployment.md`, `roadmap.md`, and phased plans (`AI_PLATFORM_PHASED_PLAN.md`, `BILLING_*`, org chart summaries, …).
+
+**Workspace runtime (May 2026):** Frontend module/widget contracts — `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`; code under `web/src/runtime/`; status in `activeContext.md` / `progress.md` / `dashboardProductContext.md` §10a.
 
 ## Documentation cleanup (April 2026)
 

@@ -55,6 +55,12 @@ Technical implementation references and troubleshooting — **index:** [`guides/
 
 **AI architecture / module AI guides** were consolidated (April 2026). Living rules: `memory-bank/aiContextSystem.md`. Archived copies: `archive/guides-merged-2026/`. **AI runbooks:** [`ai/README.md`](./ai/README.md).
 
+### Architecture (`architecture/`)
+
+Cross-cutting design notes (complement `memory-bank/systemPatterns.md`):
+
+- **WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md** — Workspace Runtime Foundation v1: module = capability, widget = projection; `web/src/runtime/` contracts and legacy adapter rollout
+
 ### Archive (`archive/`)
 
 Historical records and session summaries — **structure:** [`archive/README.md`](./archive/README.md).

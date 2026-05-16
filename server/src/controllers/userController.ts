@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserPreference, setUserPreference } from '../services/userPreferenceService';
+import { emitDomainEvent } from '../events/emitDomainEvent';
 
 export const searchUsers = async (req: Request, res: Response) => {
   const { query } = req.query;
@@ -40,7 +41,7 @@ export const getUserPreferenceByKey = async (req: Request, res: Response) => {
   try {
     const value = await getUserPreference(req.user.id, key);
     res.json({ success: true, key, value });
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, error: 'Failed to get user preference' });
   }
 };
@@ -52,8 +53,16 @@ export const setUserPreferenceByKey = async (req: Request, res: Response) => {
   if (typeof value !== 'string') return res.status(400).json({ success: false, error: 'Value must be a string' });
   try {
     await setUserPreference(req.user.id, key, value);
+    emitDomainEvent({
+      type: 'user.preference.updated',
+      actorUserId: req.user.id,
+      entityType: 'UserPreference',
+      entityId: key,
+      action: 'update',
+      metadata: { key },
+    });
     res.json({ success: true });
-  } catch (error) {
+  } catch {
     res.status(500).json({ success: false, error: 'Failed to set user preference' });
   }
 }; 

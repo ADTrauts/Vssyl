@@ -13,6 +13,7 @@ import {
   type WidgetRegistryEntry,
   type WidgetCategory,
 } from './widgetRegistry';
+import { getWidgetPickerAvailableEntries } from '../../runtime/modules/adapters/widgetPickerAdapter';
 
 type DashboardType = 'personal' | 'business' | 'educational' | 'household';
 
@@ -75,10 +76,13 @@ export default function WidgetPicker({
     }
   };
 
-  const availableWidgets = useMemo(
-    () => getAvailableWidgets(installedModuleIds, dashboardType),
-    [installedModuleIds, dashboardType]
-  );
+  const availableWidgets = useMemo(() => {
+    const fromContracts = getWidgetPickerAvailableEntries(installedModuleIds, dashboardType);
+    if (fromContracts.length > 0) {
+      return fromContracts;
+    }
+    return getAvailableWidgets(installedModuleIds, dashboardType);
+  }, [installedModuleIds, dashboardType]);
 
   const filteredWidgets = useMemo(() => {
     let widgets = availableWidgets;

@@ -75,6 +75,14 @@ The AI Context System is a **mandatory component** of every module in the Vssyl 
 9. **CSV files**: Parsed via `parseCsvToMarkdownTable` and sent as structured markdown tables
 10. **"Image used in this reply"**: When vision parts are sent, `usedVisionParts` is set and the UI shows a badge
 
+### Streaming chat UX guard (May 2026)
+
+When `/api/ai/twin` streams with `text/event-stream`, the provider may still emit **structured JSON** token-by-token. The **full-page AI chat** client detects likely structured JSON streams and **does not append those chunks to visible message text**; the user sees the normalized result from the final `done` event (or a safe plain-text fallback — never raw JSON). Helpers live in `web/src/lib/aiResponseHandler.ts` (`isLikelyStructuredJSONStream`, `buildSafeStreamFallbackContent`). Plan and phases: `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`.
+
+### Assembled context tiering and continuity (May 2026)
+
+`AIContextAssembler` attaches **tier** metadata to blocks (recent conversation and continuity state favored; broad cross-module context trimmed more aggressively). `DigitalLifeTwinCore` passes **conversation continuity** and **active topic** derived each turn into assembly and prompts. Details: `memory-bank/activeContext.md` and the plan doc above.
+
 ---
 
 ## Why AI Context is Mandatory
