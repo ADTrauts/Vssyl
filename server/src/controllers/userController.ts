@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserPreference, setUserPreference } from '../services/userPreferenceService';
-import { emitDomainEvent } from '../events/emitDomainEvent';
+import { emitUserPreferenceUpdatedEvent } from '../events/domainEventEmitters';
 
 export const searchUsers = async (req: Request, res: Response) => {
   const { query } = req.query;
@@ -53,13 +53,9 @@ export const setUserPreferenceByKey = async (req: Request, res: Response) => {
   if (typeof value !== 'string') return res.status(400).json({ success: false, error: 'Value must be a string' });
   try {
     await setUserPreference(req.user.id, key, value);
-    emitDomainEvent({
-      type: 'user.preference.updated',
+    emitUserPreferenceUpdatedEvent({
       actorUserId: req.user.id,
-      entityType: 'UserPreference',
-      entityId: key,
-      action: 'update',
-      metadata: { key },
+      preferenceKey: key,
     });
     res.json({ success: true });
   } catch {

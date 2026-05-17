@@ -41,3 +41,11 @@ You have two modes of operation:
 - **Work on entire set of tasks at once** (do not stop between actions without cause).
 - **Consistent global font and matching icons** (prefer Drive module icons).
 - **Run both Next.js frontend and Express backend** with `pnpm dev` from root.
+
+### Rule and documentation placement
+
+- **Agent must/must-not** → `.cursor/rules/*.mdc` (short; see `RULES_SUMMARY.md`).
+- **Architecture (why, checklists)** → `docs/architecture/`.
+- **How-to / onboarding** → `docs/guides/` (`DOCUMENTATION_PLACEMENT.md`).
+- **Product truth / status** → `memory-bank/`.
+- Prefer **updating** an existing focused rule over adding a new file; cross-link long docs instead of duplicating.

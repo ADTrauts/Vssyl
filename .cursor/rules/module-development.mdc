@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Module development (short rule)
 
-**Full templates, examples, troubleshooting:** `docs/guides/MODULE_DEVELOPMENT_LONG_REFERENCE.md`  
+**Full templates, examples, troubleshooting:** `docs/guides/MODULE_DEVELOPMENT_GUIDE.md`  
 **Certification / lifecycle:** `memory-bank/moduleSpecs.md` + `.cursor/rules/module-interoperability.mdc`  
 **AI system detail:** `memory-bank/aiContextSystem.md`  
 **Notification metadata:** `docs/guides/NOTIFICATION_METADATA_GUIDE.md`
@@ -53,4 +53,4 @@ Ship complete manifest including **`aiContext`** and **`notifications`** when ap
 - **A)** `moduleSpecs.md` certification (permissions, scoping, activity events, realtime, notifications, AI when exposed).  
 - **B)** Product bar: hub works, providers fast, authZ, trash, tests, docs — long reference checklist.
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-05-16

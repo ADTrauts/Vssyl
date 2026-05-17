@@ -1,0 +1,1474 @@
+# Module development guide
+
+> **Short Cursor rule (checklist):** `.cursor/rules/module-development.mdc`  
+> **Enforcement contract:** `memory-bank/moduleSpecs.md` and `.cursor/rules/module-interoperability.mdc`  
+> Templates, examples, and troubleshooting for first-party and internal module work.
+
+---
+
+# Module Development Standards
+
+## Overview
+
+This document defines the mandatory requirements and best practices for developing modules on the Vssyl platform. **All modules (built-in and third-party) must follow these standards.**
+
+---
+
+## Module interoperability contract (read first)
+
+**Canonical spec:** `memory-bank/moduleSpecs.md` — permission lifecycle (`authorize → execute → emit → notify`), normalized activity event envelope, tenant scoping, activity vs analytics, and the **module certification checklist (must-pass)**.
+
+**Parity:** First-party (monorepo / `registerBuiltInModules.ts`) and third-party (marketplace artifacts, iframe runtime) must satisfy the **same** contract; delivery mechanism differs, requirements do not.
+
+**Enforcement for agents:** `.cursor/rules/module-interoperability.mdc`  
+**Partners:** `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md` + `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md` (interoperability review gate).
+
+Do not ship modules that skip permission checks, emit activity before successful authorization, or conflate analytics with activity records.
+
+---
+
+## 🚨 MANDATORY: Business Module Hub Pattern
+
+### **Rule: Every Business Module MUST Have a Workspace Landing Page**
+
+**Critical Bug**: Building deep pages (admin/manager/employee) without a landing page causes the module to fall back to dashboard when clicked, even though it's installed and appears in the sidebar.
+
+#### **The Three Required Components**
+
+1. **Workspace Landing Component**
+   - File: `web/src/components/[module]/[Module]WorkspaceLanding.tsx`
+   - Purpose: Acts as the "front door" when module is clicked
+   - Contains: Role-based navigation cards, stats, quick actions
+
+2. **Switch Statement Registration**
+   - File: `web/src/components/business/BusinessWorkspaceContent.tsx`
+   - Add: `case '[module]': return <[Module]WorkspaceLanding businessId={business.id} />;`
+   - Why: Business workspace uses component routing, not Next.js file routing
+
+3. **Icon and Name Mappings**
+   - File: `web/src/components/BrandedWorkDashboard.tsx`
+   - Add icon: `case '[module]': return IconComponent;` in `getModuleIcon()`
+   - Add name: `case '[module]': return 'Module Name';` in `getModuleName()`
+
+#### **Why This Matters**
+
+URL pattern `/business/[id]/workspace?module=scheduling` requires explicit switch statement entry:
+- ✅ With landing page: Module opens correctly
+- ❌ Without landing page: Falls back to dashboard (confusing bug)
+- ℹ️ Direct URLs to deep pages still work regardless
+
+#### **Common Mistake: Wrong Build Order**
+
+❌ **WRONG** (causes dashboard fallback):
+```
+1. Build /admin/[module]/page.tsx           ← Deep pages work via direct URL
+2. Build /workspace/[module]/me/page.tsx    ← But clicking module fails!
+3. Build /workspace/[module]/team/page.tsx
+4. Click module → Dashboard fallback ❌
+```
+
+✅ **CORRECT** (prevents issues):
+```
+1. Build [Module]WorkspaceLanding.tsx       ← Hub page first!
+2. Register in BusinessWorkspaceContent.tsx
+3. Add icon/name to BrandedWorkDashboard.tsx
+4. Test module click works ✅
+5. Build deep pages (they all link from hub)
+```
+
+#### **Landing Page Template**
+
+```typescript
+// web/src/components/[module]/[Module]WorkspaceLanding.tsx
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { businessAPI } from '@/api/business';
+
+export default function [Module]WorkspaceLanding({ businessId }: { businessId: string }) {
+  const [userRole, setUserRole] = useState<'ADMIN' | 'MANAGER' | 'EMPLOYEE' | null>(null);
+  
+  // Determine role, show role-based cards
+  // Admin cards → /business/{id}/admin/{module}
+  // Manager cards → /business/{id}/workspace/{module}/team
+  // Employee cards → /business/{id}/workspace/{module}/me
+}
+```
+
+#### **Registration Example**
+
+```typescript
+// BusinessWorkspaceContent.tsx
+import SchedulingWorkspaceLanding from '../scheduling/SchedulingWorkspaceLanding';
+
+switch (currentModule) {
+  case 'scheduling':
+    return <SchedulingWorkspaceLanding businessId={business.id} />;
+}
+```
+
+```typescript
+// BrandedWorkDashboard.tsx
+import { CalendarClock } from 'lucide-react';
+
+const getModuleIcon = (module: string) => {
+  switch (module) {
+    case 'scheduling': return CalendarClock;
+  }
+};
+
+const getModuleName = (module: string) => {
+  switch (module) {
+    case 'scheduling': return 'Scheduling';
+  }
+};
+```
+
+---
+
+## 🚨 MANDATORY: AI Context Integration
+
+### **Rule: Every Module MUST Have AI Context Integration**
+
+**Why**: Vssyl's AI system needs to understand what each module does and how to interact with it. Without AI context, modules are invisible to the AI and users cannot interact with them naturally through the AI assistant.
+
+**Enforcement**: Modules without proper AI context integration will be:
+- Rejected during marketplace review
+- Flagged in admin portal
+- Unable to integrate with the AI system
+
+---
+
+## 📋 AI Context Requirements
+
+### 1. Required Components
+
+Every module **MUST** define a complete `ModuleAIContext` object with ALL of the following:
+
+```typescript
+import { ModuleAIContext } from '@vssyl/shared/types/module-ai-context';
+
+const YOUR_MODULE_AI_CONTEXT: ModuleAIContext = {
+  // REQUIRED: Clear one-sentence description
+  purpose: "What your module does",
+  
+  // REQUIRED: Module category
+  category: "productivity | communication | business | household | health | entertainment | utilities",
+  
+  // REQUIRED: 10-20 keywords users might say
+  keywords: ["keyword1", "keyword2", "synonym1", "synonym2"],
+  
+  // REQUIRED: 5-10 natural language patterns
+  patterns: ["show my *", "find * in module", "what's my *"],
+  
+  // REQUIRED: Core concepts your module deals with
+  concepts: ["concept1", "concept2", "concept3"],
+  
+  // REQUIRED: Entities your module manages
+  entities: [
+    {
+      name: "item",
+      pluralName: "items",
+      description: "What this entity represents"
+    }
+  ],
+  
+  // REQUIRED: Actions users can perform
+  actions: [
+    {
+      name: "action-name",
+      description: "What this action does",
+      permissions: ["module:read", "module:write"]
+    }
+  ],
+  
+  // REQUIRED: At least one context provider
+  contextProviders: [
+    {
+      name: "providerName",
+      endpoint: "/api/your-module/ai/context/provider-name",
+      cacheDuration: 900000, // 15 minutes
+      description: "What this provider returns"
+    }
+  ],
+  
+  // OPTIONAL: Queryable data endpoints
+  queryableData?: [...],
+  
+  // OPTIONAL: Relationships to other modules
+  relationships?: [...]
+};
+```
+
+### 2. Context Provider Endpoints
+
+Every module **MUST** implement at least one context provider endpoint:
+
+#### Requirements:
+- **Authentication**: Use `authenticateJWT` middleware
+- **Response Time**: < 500ms recommended
+- **Data Limit**: Return 10-20 recent/relevant items only
+- **Cache Duration**: 5-15 minutes for dynamic data
+- **Error Handling**: Graceful error responses with proper status codes
+
+#### Template:
+
+```typescript
+// controllers/yourModuleAIContextController.ts
+
+import { Request, Response } from 'express';
+import { prisma } from '../lib/prisma';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    sub: string;
+  };
+}
+
+/**
+ * GET /api/your-module/ai/context/provider-name
+ * 
+ * Returns context data for AI queries
+ */
+export async function getYourContextProvider(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const userId = req.user?.id || req.user?.sub;
+    
+    if (!userId) {
+      res.status(401).json({ 
+        success: false, 
+        message: 'Authentication required' 
+      });
+      return;
+    }
+    
+    // Fetch your module's data (limit to recent items)
+    const yourData = await prisma.yourModel.findMany({
+      where: { userId },
+      take: 10,
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        // Include only fields AI needs
+        relevantField: true
+      }
+    });
+    
+    // Format for AI consumption
+    const context = {
+      items: yourData,
+      summary: {
+        total: yourData.length,
+        // Aggregate info the AI can use
+      }
+    };
+    
+    res.json({
+      success: true,
+      context,
+      metadata: {
+        provider: 'your-module',
+        endpoint: 'provider-name',
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error in getYourContextProvider:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch context',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+```
+
+#### Register Route:
+
+```typescript
+// routes/yourModule.ts
+
+import { Router } from 'express';
+import { getYourContextProvider } from '../controllers/yourModuleAIContextController';
+import { authenticateJWT } from '../middleware/auth';
+
+const router: Router = Router();
+
+// Your existing routes...
+
+// AI Context Provider Endpoints
+router.get('/ai/context/provider-name', authenticateJWT, getYourContextProvider);
+
+export default router;
+```
+
+### 3. Registration
+
+Modules **MUST** register their AI context when installed:
+
+```typescript
+// During module installation/activation
+
+import axios from 'axios';
+
+async function registerModuleAIContext(
+  moduleId: string,
+  moduleName: string,
+  aiContext: ModuleAIContext
+): Promise<void> {
+  try {
+    await axios.post(
+      `/api/modules/${moduleId}/ai/context`,
+      aiContext,
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('✅ Module AI context registered');
+  } catch (error) {
+    console.error('❌ Failed to register AI context:', error);
+    throw error; // Fail installation if AI context can't be registered
+  }
+}
+```
+
+---
+
+## 🚨 MANDATORY: AI Action Executor Integration (NEW)
+
+### **Rule: Modules That Want AI to Execute Actions MUST Register Action Executors**
+
+**Why**: When users ask the AI to "create a task" or "schedule a meeting," the AI needs a way to actually execute these actions, not just describe them. Action executors allow the AI to perform real operations in your module.
+
+**Enforcement**: Modules without action executors:
+- AI can only **describe** what to do (not execute)
+- Users must manually perform actions after AI suggestions
+- Reduced user experience and AI value
+
+**When Required**: 
+- ✅ **Required** if your module has actions users might ask AI to perform
+- ✅ **Required** if your module supports CRUD operations (create, update, delete)
+- ⚠️ **Optional** if your module is read-only (viewing data only)
+
+---
+
+## 📋 AI Action Executor Requirements
+
+### 1. Define Supported Operations
+
+List all operations your module supports for AI execution:
+
+```typescript
+// In your module's action executor file
+export const SUPPORTED_OPERATIONS = [
+  'create_item',
+  'update_item',
+  'delete_item',
+  'update_priority',
+  'assign_to_user',
+  // ... list all operations AI can execute
+];
+```
+
+### 2. Implement Action Executor Function
+
+Create an executor function that handles AI actions:
+
+```typescript
+// server/src/modules/your-module/actionExecutor.ts
+// OR in your module's controller directory
+
+import { AIAction, UserContext } from '@/ai/core/DigitalLifeTwinService';
+import { ActionExecutionResult } from '@/ai/core/ActionExecutor';
+
+export async function executeAction(
+  action: AIAction,
+  userContext: UserContext
+): Promise<ActionExecutionResult> {
+  const { operation, parameters } = action;
+  const startTime = Date.now();
+
+  try {
+    switch (operation) {
+      case 'create_item': {
+        // Import your controller
+        const { createItem } = await import('../controllers/itemController');
+        
+        // Create mock request/response
+        const mockReq = {
+          user: { id: userContext.userId },
+          body: {
+            title: parameters.title,
+            description: parameters.description,
+            dashboardId: parameters.dashboardId,
+            businessId: parameters.businessId || null,
+          }
+        } as any;
+        
+        let result: any = {};
+        const mockRes = {
+          json: (data: any) => { result = data; },
+          status: (code: number) => ({ 
+            json: (data: any) => { result = { ...data, statusCode: code }; } 
+          })
+        } as any;
+        
+        // Execute controller
+        await createItem(mockReq, mockRes);
+        
+        return {
+          actionId: action.id,
+          success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
+          result: result,
+          metadata: {
+            executionTime: Date.now() - startTime,
+            module: 'your-module',
+            operation: 'create_item',
+            affectedUsers: action.affectedUsers || [],
+            rollbackAvailable: true
+          }
+        };
+      }
+      
+      case 'update_item': {
+        // Similar pattern for update operations
+        const { updateItem } = await import('../controllers/itemController');
+        // ... implement update logic
+      }
+      
+      default:
+        return {
+          actionId: action.id,
+          success: false,
+          error: `Unknown operation: ${operation}`,
+          metadata: {
+            executionTime: Date.now() - startTime,
+            module: 'your-module',
+            operation,
+            affectedUsers: [],
+            rollbackAvailable: false
+          }
+        };
+    }
+  } catch (error) {
+    return {
+      actionId: action.id,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      metadata: {
+        executionTime: Date.now() - startTime,
+        module: 'your-module',
+        operation: action.operation,
+        affectedUsers: [],
+        rollbackAvailable: false
+      }
+    };
+  }
+}
+```
+
+### 3. Register During Module Installation
+
+Register your executor when the module is installed:
+
+```typescript
+// During module installation/activation
+import { actionExecutorRegistry } from '@/ai/core/ActionExecutorRegistry';
+import { executeAction, SUPPORTED_OPERATIONS } from './actionExecutor';
+
+// Register the executor
+actionExecutorRegistry.register({
+  moduleId: 'your-module',
+  execute: executeAction,
+  supportedOperations: SUPPORTED_OPERATIONS
+});
+```
+
+### 4. Document Operations in AI Context
+
+Make sure your AI context includes the actions:
+
+```typescript
+const YOUR_MODULE_AI_CONTEXT: ModuleAIContext = {
+  // ... existing context ...
+  actions: [
+    {
+      name: 'create_item',
+      description: 'Creates a new item in the module',
+      permissions: ['module:write'],
+      // AI will use this to generate actions
+    },
+    {
+      name: 'update_item',
+      description: 'Updates an existing item',
+      permissions: ['module:write'],
+    }
+  ]
+};
+```
+
+### 5. Webhook Pattern (For External Modules)
+
+If your module is hosted externally, use webhook pattern:
+
+```typescript
+// Register webhook URL instead of function
+await prisma.module.update({
+  where: { id: 'your-module' },
+  data: {
+    manifest: {
+      ...module.manifest,
+      aiActionExecutor: {
+        executorUrl: 'https://your-module.com/api/ai/execute',
+        supportedOperations: ['create_item', 'update_item'],
+        registeredAt: new Date()
+      }
+    }
+  }
+});
+
+// Your webhook endpoint must accept:
+// POST /api/ai/execute
+// Body: { action: string, parameters: object, userId: string, context: object }
+// Return: ActionExecutionResult
+```
+
+### Implementation Checklist
+
+- [ ] **Define supported operations** - List all operations AI can execute
+- [ ] **Implement executor function** - Handle each operation type
+- [ ] **Import controllers directly** - Use same pattern as Tasks module
+- [ ] **Handle errors gracefully** - Return proper error responses
+- [ ] **Register during installation** - Call `actionExecutorRegistry.register()`
+- [ ] **Document in AI context** - Add actions to `ModuleAIContext`
+- [ ] **Test with AI queries** - Verify actions execute correctly
+- [ ] **Test error cases** - Missing parameters, invalid IDs, etc.
+
+### Code Quality Standards
+
+- ✅ **Direct controller imports** - Don't use API calls, import controllers directly
+- ✅ **Mock request/response** - Create proper Express request/response objects
+- ✅ **Error handling** - Always wrap in try/catch
+- ✅ **Consistent return format** - Use `ActionExecutionResult` interface
+- ✅ **Parameter validation** - Check required parameters before execution
+- ✅ **Type safety** - Avoid `any` types where possible
+
+---
+
+## 🎯 Complete Implementation Checklist
+
+Use this checklist for every new module:
+
+### Phase 1: Planning & Design
+- [ ] **Define module purpose** - Clear one-sentence description
+- [ ] **Identify target users** - Personal, business, or dual-context
+- [ ] **List core features** - What the module does
+- [ ] **Define entities** - What data the module manages
+- [ ] **Define actions** - What users can do
+
+### Phase 2: AI Context Definition
+- [ ] **Write purpose statement** - Clear, concise description
+- [ ] **Choose category** - productivity | communication | business | etc.
+- [ ] **List keywords** (10-20) - What users might say
+- [ ] **Create patterns** (5-10) - Natural language templates
+- [ ] **Define concepts** - Core ideas the module handles
+- [ ] **Document entities** - name, pluralName, description
+- [ ] **List actions** - name, description, permissions
+- [ ] **Plan context providers** - What data AI needs
+
+### Phase 3: Backend Development
+- [ ] **Create database models** - Prisma schema
+- [ ] **Implement core API endpoints** - CRUD operations
+- [ ] **Add authentication** - Use `authenticateJWT` middleware
+- [ ] **Implement context providers** - AI data endpoints
+- [ ] **Implement action executor** - AI action execution (if module has actions)
+- [ ] **Register action executor** - During module installation
+- [ ] **Add permission checks** - Role-based access
+- [ ] **Write error handling** - Graceful failures
+
+### Phase 4: Frontend Hub (CRITICAL - Do BEFORE Deep Pages)
+- [ ] **Create workspace landing component** - `[Module]WorkspaceLanding.tsx`
+- [ ] **Register in switch statement** - `BusinessWorkspaceContent.tsx`
+- [ ] **Add module icon** - `BrandedWorkDashboard.tsx` getModuleIcon()
+- [ ] **Add module name** - `BrandedWorkDashboard.tsx` getModuleName()
+- [ ] **Test module click** - Verify it doesn't fall back to dashboard
+
+### Phase 5: Frontend Deep Pages
+- [ ] **Create admin page** - `/business/[id]/admin/[module]/page.tsx`
+- [ ] **Create employee page** - `/business/[id]/workspace/[module]/me/page.tsx`
+- [ ] **Create manager page** - `/business/[id]/workspace/[module]/team/page.tsx`
+- [ ] **Add logging** - Use `logger.info/error` from `logger.ts`
+
+### Phase 4: Frontend Development
+- [ ] **Create UI components** - Module interface
+- [ ] **Implement context switching** - Personal vs. business
+- [ ] **Add real-time updates** - WebSocket integration if needed
+- [ ] **Implement responsive design** - Mobile & desktop
+- [ ] **Add accessibility** - ARIA labels, keyboard navigation
+
+### Phase 5: Integration
+- [ ] **Register AI context** - POST to `/api/modules/:id/ai/context`
+- [ ] **Register action executor** - Call `actionExecutorRegistry.register()`
+- [ ] **Test AI detection** - Verify keywords trigger module
+- [ ] **Test context providers** - Verify data fetching works
+- [ ] **Test action execution** - Verify AI can execute actions (if applicable)
+- [ ] **Test end-to-end** - AI queries return correct data and execute actions
+- [ ] **Add to module manifest** - Include AI context and executor config in manifest
+
+### Phase 6: Testing & Quality
+- [ ] **Unit tests** - Test core functionality
+- [ ] **Integration tests** - Test API endpoints
+- [ ] **AI context tests** - Test keyword matching
+- [ ] **Performance tests** - Context provider speed < 500ms
+- [ ] **Security tests** - Permission checks working
+
+### Phase 7: Notification Integration (MANDATORY)
+- [ ] **Identify notification events** - What actions trigger notifications
+- [ ] **Define notification metadata** - Add `notifications` array to module manifest (see Notification Metadata section below)
+- [ ] **Use NotificationService** - Import and use `NotificationService.createNotification()`
+- [ ] **Follow naming convention** - Use `[module]_[event]` format (e.g., `hr_onboarding_task_approved`)
+- [ ] **Include metadata** - Add relevant data (IDs, links) in notification `data` field
+- [ ] **Test notifications** - Verify notifications appear in notification center
+- [ ] **Handle errors gracefully** - Don't fail operations if notification fails
+
+**CRITICAL**: Notification metadata in module manifest is REQUIRED. Without it, notification types won't appear in the notification center or settings page automatically.
+
+### Phase 8: Documentation
+- [ ] **Write README** - Installation and usage
+- [ ] **API documentation** - All endpoints documented
+- [ ] **AI context documentation** - Keywords and patterns explained
+- [ ] **User guide** - How to use the module
+- [ ] **Developer guide** - How to extend/customize
+
+### Phase 8: Deployment
+- [ ] **Version bump** - Semantic versioning
+- [ ] **Migration scripts** - Database migrations if needed
+- [ ] **Environment variables** - Document required config
+- [ ] **Deploy to staging** - Test in staging environment
+- [ ] **Deploy to production** - Deploy when ready
+
+---
+
+## 📝 Module Manifest Requirements
+
+Every module **MUST** have a complete manifest:
+
+```typescript
+{
+  "id": "your-module-id",
+  "name": "Your Module Name",
+  "version": "1.0.0",
+  "description": "What your module does",
+  "category": "productivity",
+  "tags": ["tag1", "tag2"],
+  "icon": "path/to/icon.svg",
+  "screenshots": ["path/to/screenshot1.png"],
+  "developer": {
+    "id": "developer-id",
+    "name": "Developer Name",
+    "email": "dev@example.com"
+  },
+  "permissions": [
+    "module:read",
+    "module:write"
+  ],
+  "dependencies": [
+    "required-module-id"
+  ],
+  "pricing": {
+    "tier": "free | premium | enterprise",
+    "basePrice": 0,
+    "enterprisePrice": 0
+  },
+  "aiContext": {
+    // Your complete ModuleAIContext object here
+    "purpose": "...",
+    "category": "...",
+    "keywords": [...],
+    "patterns": [...],
+    "concepts": [...],
+    "entities": [...],
+    "actions": [...],
+    "contextProviders": [...]
+  },
+  "notifications": [
+    // REQUIRED: Notification metadata for dynamic notification center
+    {
+      "type": "your_module_event_name",
+      "name": "Event Name",
+      "description": "When this notification is sent",
+      "category": "your-module-category",
+      "defaultChannels": {
+        "inApp": true,
+        "email": false,
+        "push": true
+      },
+      "priority": "normal",
+      "requiresAction": false
+    }
+  ],
+  "runtime": {
+    "entryUrl": "https://your-module.com/index.html",
+    "apiVersion": "1.0"
+  }
+}
+```
+
+### Notification Metadata (REQUIRED)
+
+**CRITICAL**: Every module that sends notifications **MUST** include a `notifications` array in its manifest. This enables:
+- Automatic discovery in notification center
+- Dynamic settings page configuration
+- Proper categorization and filtering
+
+**Notification Metadata Schema**:
+```typescript
+{
+  type: string;              // Notification type (must follow [module]_[event] pattern)
+  name: string;              // Human-readable name
+  description: string;       // When this notification is sent
+  category: string;          // Category for grouping (e.g., 'hr', 'chat', 'drive')
+  defaultChannels: {
+    inApp: boolean;          // Show in notification center
+    email: boolean;          // Send email notification
+    push: boolean;           // Send push notification
+  };
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  requiresAction?: boolean;  // Whether user action is required
+}
+```
+
+**Example**:
+```typescript
+"notifications": [
+  {
+    "type": "hr_onboarding_task_approved",
+    "name": "Onboarding Task Approved",
+    "description": "Sent when a manager approves an employee's onboarding task",
+    "category": "hr",
+    "defaultChannels": {
+      "inApp": true,
+      "email": true,
+      "push": false
+    },
+    "priority": "normal",
+    "requiresAction": false
+  },
+  {
+    "type": "hr_time_off_request_submitted",
+    "name": "Time-Off Request Submitted",
+    "description": "Sent to manager when employee submits time-off request",
+    "category": "hr",
+    "defaultChannels": {
+      "inApp": true,
+      "email": true,
+      "push": true
+    },
+    "priority": "high",
+    "requiresAction": true
+  }
+]
+```
+
+---
+
+## 🎨 Best Practices
+
+### Keywords
+✅ **Do:**
+- Include synonyms and variations (e.g., "task", "todo", "to-do")
+- Use lowercase
+- Think about how users naturally speak
+- Include plural forms (e.g., "task", "tasks")
+
+❌ **Don't:**
+- Use too generic keywords (e.g., "get", "show")
+- Duplicate keywords from other modules
+- Use technical jargon users won't say
+- Use more than 20 keywords (causes confusion)
+
+### Patterns
+✅ **Do:**
+- Use `*` as wildcard for flexible matching (e.g., "show my *")
+- Cover common question formats
+- Think about user intent, not exact phrasing
+- Include variations (e.g., "my tasks", "tasks for me", "what tasks")
+
+❌ **Don't:**
+- Make patterns too specific (limits matching)
+- Forget about different ways to ask the same thing
+- Use patterns that overlap with other modules
+
+### Context Providers
+✅ **Do:**
+- Return recent/relevant data only (10-20 items max)
+- Use appropriate cache durations (5-15 minutes)
+- Include summary/aggregate data
+- Handle errors gracefully
+- Return structured, predictable JSON
+
+❌ **Don't:**
+- Return all user data (performance issue)
+- Cache for too long if data changes frequently
+- Expose sensitive data without permission checks
+- Return inconsistent response formats
+
+---
+
+## 🔐 Security Requirements
+
+### 1. Authentication
+**MANDATORY**: All context provider endpoints **MUST** use authentication:
+
+```typescript
+router.get('/ai/context/data', authenticateJWT, yourHandler);
+```
+
+### 2. Authorization
+**MANDATORY**: Verify the user has permission to access the data:
+
+```typescript
+// Check if user owns the resource
+const resource = await prisma.yourModel.findFirst({
+  where: { 
+    id: resourceId, 
+    userId: userId 
+  }
+});
+
+if (!resource) {
+  return res.status(403).json({ message: 'Access denied' });
+}
+```
+
+### 3. Data Privacy
+**MANDATORY**:
+- Only return data the user owns or has permission to see
+- Don't include sensitive fields (passwords, tokens, API keys)
+- Respect user privacy settings
+- Filter business data by businessId/dashboardId
+- Never expose other users' data
+
+### 4. Rate Limiting
+**RECOMMENDED**: Implement rate limiting for context providers:
+
+```typescript
+import rateLimit from 'express-rate-limit';
+
+const contextProviderLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  message: 'Too many requests, please try again later'
+});
+
+router.get('/ai/context/data', 
+  authenticateJWT, 
+  contextProviderLimiter, 
+  yourHandler
+);
+```
+
+---
+
+## 🧪 Testing Requirements
+
+### 1. AI Context Testing
+
+Test that your module is detected correctly:
+
+```typescript
+// Test module detection
+describe('Module AI Context', () => {
+  it('should detect module for relevant keywords', async () => {
+    const response = await request(app)
+      .post('/api/ai/analyze-query')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ query: 'show my tasks' });
+    
+    expect(response.body.analysis.matchedModules)
+      .toContainEqual(
+        expect.objectContaining({
+          moduleId: 'your-module-id',
+          relevance: 'high'
+        })
+      );
+  });
+  
+  it('should fetch context from provider', async () => {
+    const response = await request(app)
+      .get('/api/your-module/ai/context/provider-name')
+      .set('Authorization', `Bearer ${token}`);
+    
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveProperty('success', true);
+    expect(response.body).toHaveProperty('context');
+  });
+});
+```
+
+### 2. Performance Testing
+
+Ensure context providers are fast:
+
+```typescript
+it('should respond within 500ms', async () => {
+  const startTime = Date.now();
+  
+  const response = await request(app)
+    .get('/api/your-module/ai/context/provider-name')
+    .set('Authorization', `Bearer ${token}`);
+  
+  const duration = Date.now() - startTime;
+  
+  expect(response.status).toBe(200);
+  expect(duration).toBeLessThan(500);
+});
+```
+
+---
+
+## 📊 Monitoring & Analytics
+
+### Monitor Your Module's AI Performance
+
+Check the Admin Portal → AI Learning → Module Analytics for:
+
+1. **Query Success Rate**: % of queries successfully resolved
+2. **Average Response Time**: How fast context providers respond
+3. **Cache Hit Rate**: % of context served from cache
+4. **User Satisfaction**: Feedback on AI responses
+5. **Token Usage**: AI token costs for your module
+6. **Error Rate**: Failed context fetches
+
+### Optimization Tips
+
+If metrics are poor:
+
+- **High latency**: Optimize database queries, add indexes
+- **Low cache hit rate**: Increase cacheDuration if data doesn't change often
+- **Low relevance**: Refine keywords and patterns
+- **High error rate**: Improve error handling and logging
+
+---
+
+## 🚨 Common Mistakes to Avoid
+
+### Mistake 1: Missing AI Context
+
+```typescript
+// ❌ BAD: No AI context defined
+const module = {
+  name: "My Module",
+  // Missing aiContext!
+};
+
+// ✅ GOOD: Complete AI context
+const module = {
+  name: "My Module",
+  aiContext: {
+    purpose: "...",
+    category: "...",
+    keywords: [...],
+    // ... complete context
+  }
+};
+```
+
+### Mistake 2: Slow Context Providers
+
+```typescript
+// ❌ BAD: Fetches too much data
+const allData = await prisma.yourModel.findMany({ 
+  where: { userId } 
+});
+
+// ✅ GOOD: Limited and fast
+const recentData = await prisma.yourModel.findMany({
+  where: { userId },
+  take: 10,
+  orderBy: { updatedAt: 'desc' },
+  select: {
+    id: true,
+    name: true,
+    relevantField: true
+  }
+});
+```
+
+### Mistake 3: Generic Keywords
+
+```typescript
+// ❌ BAD: Too generic, conflicts with Drive module
+keywords: ["file", "document", "storage"]
+
+// ✅ GOOD: Specific to your module
+keywords: ["invoice", "receipt", "expense", "bill", "payment"]
+```
+
+### Mistake 4: No Error Handling
+
+```typescript
+// ❌ BAD: Crashes on error
+export async function getContext(req: Request, res: Response) {
+  const data = await fetchData(); // Can throw!
+  res.json({ context: data });
+}
+
+// ✅ GOOD: Graceful error handling
+export async function getContext(req: Request, res: Response) {
+  try {
+    const data = await fetchData();
+    res.json({ 
+      success: true, 
+      context: data 
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch context' 
+    });
+  }
+}
+```
+
+### Mistake 5: Missing Authentication
+
+```typescript
+// ❌ BAD: No authentication check
+router.get('/ai/context/data', getContext);
+
+// ✅ GOOD: Authentication required
+router.get('/ai/context/data', authenticateJWT, getContext);
+```
+
+---
+
+## 📚 Reference Documentation
+
+### Required Reading
+1. **Module AI Context Guide (archived)**: `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md` — canonical patterns live in `memory-bank/aiContextSystem.md`
+2. **System Patterns**: `memory-bank/systemPatterns.md` - Architecture overview
+3. **API Documentation**: `memory-bank/apiDocumentation.md` - API reference
+4. **Database Context**: `memory-bank/databaseContext.md` - Database schema
+
+### Code Examples
+1. **Built-in Module Registration**: `server/src/startup/registerBuiltInModules.ts`
+2. **Module AI Context Types**: `shared/src/types/module-ai-context.ts`
+3. **Context Engine**: `server/src/ai/context/CrossModuleContextEngine.ts`
+4. **Module AI Context Service**: `server/src/ai/services/ModuleAIContextService.ts`
+
+### Testing
+1. **Admin Portal**: Navigate to `/admin-portal/ai-learning` to monitor your module
+2. **Test Queries**: Use `/api/ai/analyze-query` to test keyword detection
+3. **Direct Test**: Call your context provider endpoints directly with curl/Postman
+
+---
+
+## 🎓 Examples
+
+### Example 1: Simple Note-Taking Module
+
+```typescript
+const NOTE_TAKING_AI_CONTEXT: ModuleAIContext = {
+  purpose: "Create, organize, and search personal notes and memos",
+  category: "productivity",
+  keywords: [
+    "note", "notes", "memo", "memos", "reminder", "reminders",
+    "jot", "write", "scribble", "notepad", "notebook"
+  ],
+  patterns: [
+    "my notes",
+    "notes about *",
+    "find note *",
+    "create note *",
+    "recent notes",
+    "search notes for *"
+  ],
+  concepts: [
+    "note-taking",
+    "personal organization",
+    "quick capture",
+    "memory aid"
+  ],
+  entities: [
+    {
+      name: "note",
+      pluralName: "notes",
+      description: "A text note or memo"
+    }
+  ],
+  actions: [
+    {
+      name: "create",
+      description: "Create a new note",
+      permissions: ["notes:write"]
+    },
+    {
+      name: "search",
+      description: "Search notes",
+      permissions: ["notes:read"]
+    }
+  ],
+  contextProviders: [
+    {
+      name: "recentNotes",
+      endpoint: "/api/notes/ai/context/recent",
+      cacheDuration: 600000, // 10 minutes
+      description: "Get user's 10 most recent notes"
+    }
+  ]
+};
+```
+
+### Example 2: Project Management Module
+
+```typescript
+const PROJECT_MANAGEMENT_AI_CONTEXT: ModuleAIContext = {
+  purpose: "Manage projects, tasks, and team collaboration",
+  category: "business",
+  keywords: [
+    "project", "projects", "task", "tasks", "milestone", "milestones",
+    "deadline", "deadlines", "sprint", "kanban", "board",
+    "team", "assignment", "progress", "status"
+  ],
+  patterns: [
+    "my projects",
+    "project status *",
+    "tasks for *",
+    "what's due *",
+    "team progress on *",
+    "upcoming deadlines",
+    "assign * to *"
+  ],
+  concepts: [
+    "project management",
+    "task tracking",
+    "team collaboration",
+    "deadlines",
+    "milestones"
+  ],
+  entities: [
+    {
+      name: "project",
+      pluralName: "projects",
+      description: "A project with goals and tasks"
+    },
+    {
+      name: "task",
+      pluralName: "tasks",
+      description: "An actionable item"
+    }
+  ],
+  actions: [
+    {
+      name: "create-project",
+      description: "Create a new project",
+      permissions: ["projects:create"]
+    },
+    {
+      name: "assign-task",
+      description: "Assign a task",
+      permissions: ["projects:assign"]
+    }
+  ],
+  contextProviders: [
+    {
+      name: "activeProjects",
+      endpoint: "/api/projects/ai/context/active",
+      cacheDuration: 600000,
+      description: "Get user's active projects"
+    },
+    {
+      name: "upcomingDeadlines",
+      endpoint: "/api/projects/ai/context/deadlines",
+      cacheDuration: 300000,
+      description: "Get upcoming deadlines"
+    }
+  ],
+  relationships: [
+    {
+      module: "calendar",
+      type: "integrates",
+      description: "Deadlines sync with calendar"
+    }
+  ]
+};
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Problem: Module not detected in AI queries
+
+**Solutions**:
+1. Verify AI context is registered: `GET /api/modules/:id/ai/context`
+2. Check keywords match what users actually say
+3. Add more pattern variations
+4. Test with `/api/ai/analyze-query`
+
+### Problem: Context provider errors
+
+**Solutions**:
+1. Verify endpoint URL is correct
+2. Check `authenticateJWT` middleware is applied
+3. Test endpoint directly with curl
+4. Check server logs for errors
+
+### Problem: Slow AI responses
+
+**Solutions**:
+1. Reduce data returned by context providers (max 10-20 items)
+2. Add database indexes
+3. Increase cache duration
+4. Optimize queries with `select` to limit fields
+
+---
+
+## 🗑️ MANDATORY: Global Trash System
+
+### **Rule: All Deletable Items MUST Use Global Trash**
+
+**Critical Requirement**: Every module that allows users to delete items MUST use the global trash system. Hard deletes are NOT allowed for user-facing data.
+
+### **Why This Matters**
+
+1. **User Safety**: Users can recover accidentally deleted items
+2. **Data Recovery**: Items are retained for 30 days before permanent deletion
+3. **Consistency**: All modules follow the same deletion pattern
+4. **User Experience**: Unified trash bin accessible from right sidebar
+
+### **Implementation Requirements**
+
+#### **1. Database Schema**
+
+All deletable models MUST include a `trashedAt` field:
+
+```prisma
+model YourModel {
+  id        String    @id @default(uuid())
+  // ... other fields ...
+  trashedAt DateTime? // Global trash system support
+  
+  @@index([trashedAt])
+  @@map("your_table")
+}
+```
+
+#### **2. Backend Controller**
+
+**MANDATORY**: Set `trashedAt` instead of hard delete:
+
+```typescript
+// ❌ WRONG: Hard delete
+await prisma.yourModel.delete({ where: { id } });
+
+// ✅ CORRECT: Move to trash
+await prisma.yourModel.update({
+  where: { id },
+  data: { trashedAt: new Date() },
+});
+```
+
+**List Queries**: Always exclude trashed items:
+
+```typescript
+// ✅ CORRECT: Filter out trashed items
+const items = await prisma.yourModel.findMany({
+  where: {
+    userId,
+    trashedAt: null, // Exclude trashed items
+  },
+});
+```
+
+#### **3. Backend Trash Controller**
+
+Add support for your item type in `server/src/controllers/trashController.ts`:
+
+```typescript
+// In trashItem() function
+case 'your_item_type':
+  result = await prisma.yourModel.updateMany({
+    where: { id, userId, trashedAt: null },
+    data: { trashedAt: new Date() },
+  });
+  break;
+
+// In restoreItem() function
+if (result.count === 0) {
+  result = await prisma.yourModel.updateMany({
+    where: { id, userId, trashedAt: { not: null } },
+    data: { trashedAt: null },
+  });
+}
+
+// In deleteItem() function (permanent delete from trash)
+if (result.count === 0) {
+  result = await prisma.yourModel.deleteMany({
+    where: { id, userId, trashedAt: { not: null } },
+  });
+}
+
+// In emptyTrash() function
+prisma.yourModel.deleteMany({
+  where: { userId, trashedAt: { not: null } },
+}),
+```
+
+#### **4. Frontend Component**
+
+**MANDATORY**: Use `useGlobalTrash` hook:
+
+```typescript
+import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
+import { toast } from 'react-hot-toast';
+
+export default function YourComponent() {
+  const { trashItem } = useGlobalTrash();
+  
+  const handleDelete = async (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+    
+    if (!confirm(`Move "${item.name}" to trash?`)) return;
+    
+    try {
+      await trashItem({
+        id: item.id,
+        name: item.name,
+        type: 'your_item_type', // Must match backend type
+        moduleId: 'your-module',
+        moduleName: 'Your Module',
+        metadata: {
+          // Optional: Add relevant metadata
+        },
+      });
+      
+      toast.success(`${item.name} moved to trash`);
+      // Refresh your data
+      await loadItems();
+    } catch (error) {
+      console.error('Failed to move item to trash:', error);
+      toast.error('Failed to move item to trash');
+    }
+  };
+}
+```
+
+#### **5. TypeScript Types**
+
+Update `web/src/contexts/GlobalTrashContext.tsx`:
+
+```typescript
+export interface TrashedItem {
+  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'your_item_type';
+  // ... rest of interface
+}
+```
+
+Update `web/src/components/GlobalTrashBin.tsx`:
+
+```typescript
+const getItemIcon = (type: TrashedItem['type']) => {
+  switch (type) {
+    // ... existing cases ...
+    case 'your_item_type':
+      return '📦'; // Choose appropriate icon
+    default:
+      return '📄';
+  }
+};
+```
+
+### **Supported Item Types**
+
+Currently supported:
+- `file` - Drive files
+- `folder` - Drive folders
+- `conversation` - Chat conversations
+- `message` - Chat messages
+- `dashboard_tab` - Dashboard tabs
+- `ai_conversation` - AI chat conversations
+- `event` - Calendar events
+
+### **Exceptions**
+
+**Hard deletes are ONLY allowed for**:
+- System-generated temporary data
+- Cache entries
+- Log entries
+- Data explicitly marked as "temporary"
+
+**User-facing data MUST use trash system.**
+
+### **Testing Checklist**
+
+- [ ] Delete operation moves item to trash (not hard delete)
+- [ ] Trashed items don't appear in list queries
+- [ ] Items appear in global trash bin
+- [ ] Restore functionality works
+- [ ] Permanent delete from trash works
+- [ ] Empty trash removes all items
+
+---
+
+## ✅ Module Approval Requirements
+
+For marketplace submission and **first-party merge review**, modules must satisfy **both**:
+
+### A) Interoperability certification (`memory-bank/moduleSpecs.md`)
+
+1. Permission checks block unauthorized actions.
+2. Tenant scoping on every persisted query path.
+3. Key actions emit normalized activity events (compatible envelope).
+4. Realtime updates scoped and authorized.
+5. Notification metadata valid if the module emits notifications.
+6. AI context implemented if the module is AI-exposed.
+7. Activity and analytics concerns separated.
+
+**Third-party modules cannot be approved without A)** except documented waiver from platform owner (rare).
+
+### B) Product and quality bar (this document)
+
+1. ✅ **Complete AI context** defined and registered
+2. ✅ **Working context providers** responding < 500ms
+3. ✅ **Authentication** on all endpoints
+4. ✅ **Error handling** for all API endpoints
+5. ✅ **Global trash system** implemented for all deletable items
+6. ✅ **Documentation** complete (README, API docs)
+7. ✅ **Tests** passing (unit, integration, AI context)
+8. ✅ **Security** review passed
+9. ✅ **Performance** benchmarks met
+
+**Modules without AI context integration OR global trash system will be rejected.**
+
+---
+
+## 📞 Support & Resources
+
+- **Documentation**: `memory-bank/aiContextSystem.md` + archived `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`
+- **API Reference**: `memory-bank/apiDocumentation.md`
+- **Examples**: `scripts/register-built-in-modules.ts`
+- **Admin Portal**: Monitor module performance at `/admin-portal/ai-learning`
+
+---
+
+**Last Updated**: 2026-04-21  
+**Applies To**: All modules (built-in and third-party)  
+**Enforcement**: Mandatory for marketplace approval and first-party interoperability review; see `.cursor/rules/module-interoperability.mdc`
+

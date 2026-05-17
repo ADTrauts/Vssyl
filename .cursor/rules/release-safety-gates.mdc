@@ -16,7 +16,8 @@ alwaysApply: false
 ```yaml
 # ✅ minimum meaningful verification today (repo-wide eslint/prettier are backlog)
 - pnpm type-check
-- pnpm test
+- pnpm --filter vssyl-web test   # vitest: web/src/runtime/** only (see web/vitest.config.ts)
+- pnpm test                      # server integration/unit (root script)
 # Optional when green: pnpm lint, package format:check
 ```
 

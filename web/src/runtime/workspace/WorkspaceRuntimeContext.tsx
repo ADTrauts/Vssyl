@@ -5,10 +5,12 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { useSession } from 'next-auth/react';
+import { getRealtimeSocket } from '@/lib/realtimeClient';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { fromLegacyDashboardType } from '../modules/contextMapping';
 import type { ModuleDefinition, WidgetDefinition, WorkspaceContextType } from '../modules/types';
@@ -25,6 +27,16 @@ import {
   deriveAvailableWidgets,
   setActiveModuleState,
 } from './workspaceRuntimeHelpers';
+import { buildWorkspaceRuntimeScopeKey } from './workspaceRuntimeScopeKey';
+import {
+  emitJoinRuntimeRoom,
+  emitLeaveRuntimeRoom,
+  leaveAllRuntimeRooms,
+  logRuntimeRealtimeDebug,
+} from './runtimeRealtime';
+import { WorkspaceRealtimeLifecycle } from './WorkspaceRealtimeLifecycle';
+
+const EMPTY_REALTIME: string[] = [];
 
 const WorkspaceRuntimeContext = createContext<WorkspaceRuntimeContextValue | undefined>(
   undefined
@@ -32,7 +44,6 @@ const WorkspaceRuntimeContext = createContext<WorkspaceRuntimeContextValue | und
 
 export interface WorkspaceRuntimeProviderProps {
   children: ReactNode;
-  /** Override auto-detected context (e.g. business workspace route). */
   contextType?: WorkspaceContextType;
   businessId?: string;
   householdId?: string;
@@ -72,6 +83,20 @@ export function WorkspaceRuntimeProvider({
     return 'personal';
   }, [contextTypeOverride, businessId, currentDashboard, getDashboardType]);
 
+  const scopeKey = useMemo(
+    () =>
+      buildWorkspaceRuntimeScopeKey({
+        activeContextType: detectedContext,
+        activeDashboardId: dashboardId ?? currentDashboard?.id,
+        activeBusinessId: businessId,
+        activeHouseholdId: householdId,
+      }),
+    [detectedContext, dashboardId, currentDashboard?.id, businessId, householdId]
+  );
+
+  const prevScopeKeyRef = useRef(scopeKey);
+  const activeRoomsRef = useRef<string[]>([]);
+
   const baseInput: BuildWorkspaceRuntimeInput = useMemo(
     () => ({
       userId: session?.user?.id,
@@ -81,10 +106,11 @@ export function WorkspaceRuntimeProvider({
       activeHouseholdId: householdId,
       activeModuleId: initialModuleId,
       installedModuleIds,
+      permissionSnapshot,
       permissionsLoading,
       error,
-      realtimeSubscriptions,
-      activeSocketRooms,
+      realtimeSubscriptions: realtimeSubscriptions ?? EMPTY_REALTIME,
+      activeSocketRooms: activeSocketRooms ?? EMPTY_REALTIME,
     }),
     [
       session?.user?.id,
@@ -95,6 +121,7 @@ export function WorkspaceRuntimeProvider({
       householdId,
       initialModuleId,
       installedModuleIds,
+      permissionSnapshot,
       permissionsLoading,
       error,
       realtimeSubscriptions,
@@ -106,9 +133,86 @@ export function WorkspaceRuntimeProvider({
     buildWorkspaceRuntimeState(baseInput)
   );
 
+  const clearRuntimeSubscriptions = useCallback(() => {
+    const rooms = [...activeRoomsRef.current];
+    leaveAllRuntimeRooms(getRealtimeSocket(), rooms);
+    activeRoomsRef.current = [];
+    setRuntimeState((prev) => ({
+      ...prev,
+      realtimeSubscriptions: EMPTY_REALTIME,
+      activeSocketRooms: EMPTY_REALTIME,
+    }));
+    logRuntimeRealtimeDebug('clear_runtime_subscriptions', {
+      roomsCleared: rooms.length,
+    });
+  }, []);
+
+  const subscribeRuntimeRoom = useCallback((roomKey: string) => {
+    if (!roomKey) return;
+    if (activeRoomsRef.current.includes(roomKey)) {
+      return;
+    }
+    const socket = getRealtimeSocket();
+    if (socket) {
+      emitJoinRuntimeRoom(socket, roomKey);
+    }
+    activeRoomsRef.current = [...activeRoomsRef.current, roomKey];
+    setRuntimeState((prev) => ({
+      ...prev,
+      realtimeSubscriptions: [...(prev.realtimeSubscriptions ?? []), roomKey],
+      activeSocketRooms: [...activeRoomsRef.current],
+    }));
+    logRuntimeRealtimeDebug('subscribe_runtime_room', {
+      roomKey,
+      totalRooms: activeRoomsRef.current.length,
+    });
+  }, []);
+
+  const unsubscribeRuntimeRoom = useCallback((roomKey: string) => {
+    if (!roomKey || !activeRoomsRef.current.includes(roomKey)) {
+      return;
+    }
+    const socket = getRealtimeSocket();
+    if (socket) {
+      emitLeaveRuntimeRoom(socket, roomKey);
+    }
+    activeRoomsRef.current = activeRoomsRef.current.filter((k) => k !== roomKey);
+    setRuntimeState((prev) => ({
+      ...prev,
+      realtimeSubscriptions: (prev.realtimeSubscriptions ?? []).filter((k) => k !== roomKey),
+      activeSocketRooms: [...activeRoomsRef.current],
+    }));
+    logRuntimeRealtimeDebug('unsubscribe_runtime_room', {
+      roomKey,
+      totalRooms: activeRoomsRef.current.length,
+    });
+  }, []);
+
   React.useEffect(() => {
-    setRuntimeState(buildWorkspaceRuntimeState(baseInput));
-  }, [baseInput]);
+    const scopeChanged = prevScopeKeyRef.current !== scopeKey;
+    prevScopeKeyRef.current = scopeKey;
+
+    if (scopeChanged) {
+      clearRuntimeSubscriptions();
+    }
+
+    setRuntimeState((prev) => {
+      if (!scopeChanged) {
+        return buildWorkspaceRuntimeState({
+          ...baseInput,
+          activeModuleId: prev.activeModuleId,
+          realtimeSubscriptions: prev.realtimeSubscriptions ?? EMPTY_REALTIME,
+          activeSocketRooms: prev.activeSocketRooms ?? EMPTY_REALTIME,
+        });
+      }
+      return buildWorkspaceRuntimeState({
+        ...baseInput,
+        activeModuleId: undefined,
+        realtimeSubscriptions: EMPTY_REALTIME,
+        activeSocketRooms: EMPTY_REALTIME,
+      });
+    });
+  }, [baseInput, scopeKey, clearRuntimeSubscriptions]);
 
   const setActiveModule = useCallback((moduleId: string | null) => {
     setRuntimeState((prev) => setActiveModuleState(prev, moduleId));
@@ -117,17 +221,41 @@ export function WorkspaceRuntimeProvider({
   const getModulesForContextFn = useCallback(
     (context?: WorkspaceContextType): ModuleDefinition[] => {
       const ctx = context ?? runtimeState.activeContextType;
-      return deriveAvailableModules(ctx, installedModuleIds);
+      if (ctx === runtimeState.activeContextType) {
+        return runtimeState.availableModules;
+      }
+      const raw = deriveAvailableModules(ctx, installedModuleIds);
+      if (!permissionSnapshot) return raw;
+      return raw.filter((mod) =>
+        canRenderModuleWithPermissions(mod.id, ctx, permissionSnapshot, installedModuleIds)
+      );
     },
-    [runtimeState.activeContextType, installedModuleIds]
+    [
+      runtimeState.activeContextType,
+      runtimeState.availableModules,
+      installedModuleIds,
+      permissionSnapshot,
+    ]
   );
 
   const getWidgetsForContextFn = useCallback(
     (context?: WorkspaceContextType): WidgetDefinition[] => {
       const ctx = context ?? runtimeState.activeContextType;
-      return deriveAvailableWidgets(ctx, installedModuleIds);
+      if (ctx === runtimeState.activeContextType) {
+        return runtimeState.availableWidgets;
+      }
+      const raw = deriveAvailableWidgets(ctx, installedModuleIds);
+      if (!permissionSnapshot) return raw;
+      return raw.filter((widget) =>
+        canRenderWidgetWithPermissions(widget.id, ctx, permissionSnapshot, installedModuleIds)
+      );
     },
-    [runtimeState.activeContextType, installedModuleIds]
+    [
+      runtimeState.activeContextType,
+      runtimeState.availableWidgets,
+      installedModuleIds,
+      permissionSnapshot,
+    ]
   );
 
   const canRenderModule = useCallback(
@@ -160,6 +288,9 @@ export function WorkspaceRuntimeProvider({
       getWidgetsForContext: getWidgetsForContextFn,
       canRenderModule,
       canRenderWidget,
+      subscribeRuntimeRoom,
+      unsubscribeRuntimeRoom,
+      clearRuntimeSubscriptions,
     }),
     [
       runtimeState,
@@ -168,11 +299,15 @@ export function WorkspaceRuntimeProvider({
       getWidgetsForContextFn,
       canRenderModule,
       canRenderWidget,
+      subscribeRuntimeRoom,
+      unsubscribeRuntimeRoom,
+      clearRuntimeSubscriptions,
     ]
   );
 
   return (
     <WorkspaceRuntimeContext.Provider value={value}>
+      <WorkspaceRealtimeLifecycle />
       {children}
     </WorkspaceRuntimeContext.Provider>
   );
@@ -186,7 +321,6 @@ export function useWorkspaceRuntime(): WorkspaceRuntimeContextValue {
   return ctx;
 }
 
-/** Optional hook when provider is not mounted (read-only helpers only). */
 export function useWorkspaceRuntimeOptional(): WorkspaceRuntimeContextValue | undefined {
   return useContext(WorkspaceRuntimeContext);
 }

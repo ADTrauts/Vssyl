@@ -1,8 +1,11 @@
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { ChatEvent, TypingEvent, PresenceEvent } from 'shared/types/chat';
-import { getWebSocketConfig } from './websocketUtils';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  releaseRealtimeConnection,
+} from './realtimeClient';
 
-// Chat data interfaces
 export interface ChatMessage {
   id: string;
   conversationId: string;
@@ -36,25 +39,24 @@ export interface ChatSocketEvents {
   message_reaction: (data: { messageId: string; reaction: MessageReaction }) => void;
   message_read: (data: { messageId: string; readReceipt: ReadReceipt }) => void;
   user_presence: (data: PresenceEvent) => void;
-  /** Emitted when server broadcasts `activity:feed:refresh` to the user room (module activity log). */
   activity_feed_refresh: (data: Record<string, unknown>) => void;
   error: (error: { message: string }) => void;
 }
 
+const HOLDER_ID = 'chat-socket';
+
 export class ChatSocketClient {
   private socket: Socket | null = null;
   private token: string | null = null;
-  private eventListeners: Map<keyof ChatSocketEvents, Set<ChatSocketEvents[keyof ChatSocketEvents]>> = new Map();
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private eventListeners: Map<keyof ChatSocketEvents, Set<ChatSocketEvents[keyof ChatSocketEvents]>> =
+    new Map();
+  private socketForwardingAttached = false;
 
   constructor() {
     this.setupEventListeners();
   }
 
   private setupEventListeners() {
-    // Initialize event listener sets
     const events: (keyof ChatSocketEvents)[] = [
       'message_received',
       'user_typing',
@@ -62,79 +64,41 @@ export class ChatSocketClient {
       'message_read',
       'user_presence',
       'activity_feed_refresh',
-      'error'
+      'error',
     ];
 
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventListeners.set(event, new Set());
     });
   }
 
   public connect(token: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.socket?.connected) {
+    return new Promise((resolve) => {
+      if (!token) {
         resolve();
         return;
       }
 
-      if (!token) {
-        // No token provided for WebSocket connection - non-critical, silent fail
-        resolve(); // Resolve without connecting
-        return;
-      }
-
       this.token = token;
-      
-      // Use centralized WebSocket configuration
-      const config = getWebSocketConfig();
 
-      try {
-        this.socket = io(config.url, {
-          ...config.options,
-          auth: { token }
-        });
-
-        this.socket.on('connect', () => {
-          this.reconnectAttempts = 0;
-          resolve();
-        });
-
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ Chat WebSocket connection error:', error);
-          // Don't reject - just log the error and resolve
-          resolve();
-        });
-
-        this.socket.on('disconnect', (reason) => {
-          console.log('🔌 Chat WebSocket disconnected:', reason);
-          if (reason === 'io server disconnect') {
-            // Server disconnected us, try to reconnect
-            this.socket?.connect();
+      void acquireRealtimeConnection(token, HOLDER_ID)
+        .then((sharedSocket) => {
+          this.socket = sharedSocket;
+          if (!this.socketForwardingAttached) {
+            this.setupSocketEventListeners();
+            this.socketForwardingAttached = true;
           }
+          resolve();
+        })
+        .catch(() => {
+          resolve();
         });
-
-        this.socket.on('reconnect_attempt', (attemptNumber) => {
-          console.log(`🔄 Chat WebSocket reconnection attempt ${attemptNumber}`);
-          this.reconnectAttempts = attemptNumber;
-        });
-
-        this.socket.on('reconnect_failed', () => {
-          console.error('❌ Chat WebSocket reconnection failed');
-        });
-
-        // Set up event listeners
-        this.setupSocketEventListeners();
-      } catch (error) {
-        console.error('Failed to initialize WebSocket connection:', error);
-        resolve(); // Resolve without connecting
-      }
     });
   }
 
   private setupSocketEventListeners() {
     if (!this.socket) return;
 
-    // Listen for all chat events
     this.socket.on('message_received', (data) => {
       this.emit('message_received', data);
     });
@@ -165,11 +129,12 @@ export class ChatSocketClient {
   }
 
   public disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
     this.token = null;
+    this.socket = null;
+    releaseRealtimeConnection(HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      this.socketForwardingAttached = false;
+    }
   }
 
   public joinConversation(conversationId: string): void {
@@ -220,7 +185,6 @@ export class ChatSocketClient {
     }
   }
 
-  // Event listener management
   public on<K extends keyof ChatSocketEvents>(event: K, listener: ChatSocketEvents[K]): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
@@ -235,10 +199,24 @@ export class ChatSocketClient {
     }
   }
 
-  private emit<K extends keyof ChatSocketEvents>(event: K, data: Parameters<ChatSocketEvents[K]>[0]): void {
+  /** Forward calendar and other direct socket events (legacy path). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public onRaw(event: string, listener: (...args: any[]) => void): void {
+    this.socket?.on(event, listener);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public offRaw(event: string, listener: (...args: any[]) => void): void {
+    this.socket?.off(event, listener);
+  }
+
+  private emit<K extends keyof ChatSocketEvents>(
+    event: K,
+    data: Parameters<ChatSocketEvents[K]>[0]
+  ): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.forEach(listener => {
+      listeners.forEach((listener) => {
         try {
           (listener as (data: unknown) => void)(data);
         } catch (error) {
@@ -257,5 +235,4 @@ export class ChatSocketClient {
   }
 }
 
-// Create a singleton instance
-export const chatSocket = new ChatSocketClient(); 
+export const chatSocket = new ChatSocketClient();

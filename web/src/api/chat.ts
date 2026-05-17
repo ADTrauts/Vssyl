@@ -1,6 +1,10 @@
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { getSession } from 'next-auth/react';
-import { getWebSocketConfig } from '../lib/websocketUtils';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  releaseRealtimeConnection,
+} from '../lib/realtimeClient';
 import {
   Conversation,
   Message,
@@ -194,7 +198,9 @@ class ChatAPI {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private eventListeners: Map<string, Set<(...args: unknown[]) => void>> = new Map();
-  private isConnecting = false; // Prevent multiple simultaneous connection attempts
+  private isConnecting = false;
+  private socketListenersAttached = false;
+  private static readonly HOLDER_ID = 'chat-api';
 
   // WebSocket Management
   async connect(): Promise<void> {
@@ -217,28 +223,18 @@ class ChatAPI {
     this.isConnecting = true;
 
     try {
-      // Use centralized WebSocket configuration
-      const config = getWebSocketConfig();
-      
-      // If socket exists but disconnected, disconnect it first to avoid conflicts
-      if (this.socket && !this.socket.connected) {
-        this.socket.removeAllListeners();
-        this.socket.disconnect();
-        this.socket = null;
+      await acquireRealtimeConnection(session.accessToken, ChatAPI.HOLDER_ID);
+      this.socket = getRealtimeSocket();
+      if (!this.socket) {
+        this.isConnecting = false;
+        return;
       }
-      
-      this.socket = io(config.url, {
-        ...config.options,
-        auth: {
-          token: session.accessToken
-        },
-        forceNew: true
-      });
-
-      this.setupSocketListeners();
+      if (!this.socketListenersAttached) {
+        this.setupSocketListeners();
+        this.socketListenersAttached = true;
+      }
+      this.isConnecting = false;
     } catch (_error) {
-      // Failed to initialize WebSocket connection - non-critical, silent fail
-      // Don't throw - let the application continue without WebSocket
       this.isConnecting = false;
     }
   }
@@ -340,12 +336,11 @@ class ChatAPI {
 
   disconnect(): void {
     this.isConnecting = false;
-    if (this.socket) {
-      // Disable automatic reconnection when manually disconnecting
-      this.socket.disconnect();
-      this.socket.removeAllListeners();
-      this.socket = null;
-      this.reconnectAttempts = 0;
+    this.socket = null;
+    this.reconnectAttempts = 0;
+    releaseRealtimeConnection(ChatAPI.HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      this.socketListenersAttached = false;
     }
   }
 

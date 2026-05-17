@@ -2,15 +2,27 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Socket } from 'socket.io-client';
-import { getWebSocketConfig, createWebSocketConnection } from '@/lib/websocketUtils';
+import type { Socket } from 'socket.io-client';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  releaseRealtimeConnection,
+} from '@/lib/realtimeClient';
+import { useWorkspaceRuntimeOptional } from '@/runtime/workspace/WorkspaceRuntimeContext';
+import { formatRuntimeRoom } from '@/runtime/workspace/runtimeRealtime';
 import { ScheduleShift } from '@/api/scheduling';
+
+const HOLDER_ID = 'scheduling-ws';
 
 interface SchedulingWebSocketEvents {
   onShiftCreated?: (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => void;
   onShiftUpdated?: (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => void;
   onShiftDeleted?: (data: { businessId: string; scheduleId: string; shiftId: string }) => void;
-  onSchedulePublished?: (data: { businessId: string; scheduleId: string; schedule: Record<string, unknown> }) => void;
+  onSchedulePublished?: (data: {
+    businessId: string;
+    scheduleId: string;
+    schedule: Record<string, unknown>;
+  }) => void;
 }
 
 interface UseSchedulingWebSocketOptions {
@@ -24,18 +36,24 @@ export function useSchedulingWebSocket({
   businessId,
   scheduleId,
   enabled = true,
-  events = {}
+  events = {},
 }: UseSchedulingWebSocketOptions) {
   const { data: session } = useSession();
+  const workspaceRuntime = useWorkspaceRuntimeOptional();
   const socketRef = useRef<Socket | null>(null);
   const isConnectedRef = useRef(false);
   const joinTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryAttemptsRef = useRef<Map<string, number>>(new Map());
+  const eventsRef = useRef(events);
+  const trackedRoomsRef = useRef<string[]>([]);
+  const listenersAttachedRef = useRef(false);
 
-  // Helper function to safely emit with retry logic
+  useEffect(() => {
+    eventsRef.current = events;
+  }, [events]);
+
   const safeEmit = useCallback((socket: Socket, event: string, data: string, maxRetries = 3) => {
-    if (!socket || !socket.connected) {
-      console.debug(`Cannot emit ${event}: socket not connected`);
+    if (!socket?.connected) {
       return false;
     }
 
@@ -43,7 +61,6 @@ export function useSchedulingWebSocket({
     const attempts = retryAttemptsRef.current.get(retryKey) || 0;
 
     if (attempts >= maxRetries) {
-      console.warn(`Max retries reached for ${event} with ${data}`);
       retryAttemptsRef.current.delete(retryKey);
       return false;
     }
@@ -53,52 +70,76 @@ export function useSchedulingWebSocket({
       retryAttemptsRef.current.delete(retryKey);
       return true;
     } catch (error) {
-      console.warn(`Failed to emit ${event} (attempt ${attempts + 1}/${maxRetries}):`, error);
       retryAttemptsRef.current.set(retryKey, attempts + 1);
-      
-      // Retry after a delay
       if (attempts < maxRetries - 1) {
         setTimeout(() => {
           if (socket.connected) {
             safeEmit(socket, event, data, maxRetries);
           }
-        }, Math.min(100 * Math.pow(2, attempts), 1000)); // Exponential backoff, max 1s
+        }, Math.min(100 * Math.pow(2, attempts), 1000));
       }
       return false;
     }
   }, []);
 
-  // Helper function to join rooms with delay to ensure socket is ready
-  const joinRooms = useCallback((socket: Socket, businessId?: string, scheduleId?: string, delay = 100) => {
-    // Clear any pending join attempts
-    if (joinTimeoutRef.current) {
-      clearTimeout(joinTimeoutRef.current);
-    }
+  const leaveTrackedRooms = useCallback(
+    (socket: Socket) => {
+      if (!socket.connected) return;
+      for (const roomKey of trackedRoomsRef.current) {
+        if (workspaceRuntime) {
+          workspaceRuntime.unsubscribeRuntimeRoom(roomKey);
+        } else {
+          const parsed = roomKey.split(':');
+          if (parsed[0] === 'business' && parsed[1]) {
+            socket.emit('leave_business', parsed[1]);
+          }
+          if (parsed[0] === 'schedule' && parsed[1]) {
+            socket.emit('leave_schedule', parsed[1]);
+          }
+        }
+      }
+      trackedRoomsRef.current = [];
+    },
+    [workspaceRuntime]
+  );
 
-    joinTimeoutRef.current = setTimeout(() => {
-      if (!socket || !socket.connected) {
-        console.debug('Cannot join rooms: socket not connected');
-        return;
+  const joinRooms = useCallback(
+    (socket: Socket, bizId?: string, schedId?: string, delay = 100) => {
+      if (joinTimeoutRef.current) {
+        clearTimeout(joinTimeoutRef.current);
       }
 
-      try {
-        if (businessId) {
-          safeEmit(socket, 'join_business', businessId);
-        }
-        if (scheduleId) {
-          safeEmit(socket, 'join_schedule', scheduleId);
-        }
-      } catch (error) {
-        console.error('Failed to join rooms:', error);
-      }
-    }, delay);
-  }, [safeEmit]);
+      joinTimeoutRef.current = setTimeout(() => {
+        if (!socket?.connected) return;
 
-  // Store events in a ref so they don't cause re-renders
-  const eventsRef = useRef(events);
-  useEffect(() => {
-    eventsRef.current = events;
-  }, [events]);
+        leaveTrackedRooms(socket);
+
+        try {
+          if (bizId) {
+            const roomKey = formatRuntimeRoom('business', bizId);
+            if (workspaceRuntime) {
+              workspaceRuntime.subscribeRuntimeRoom(roomKey);
+            } else {
+              safeEmit(socket, 'join_business', bizId);
+            }
+            trackedRoomsRef.current.push(roomKey);
+          }
+          if (schedId) {
+            const roomKey = formatRuntimeRoom('schedule', schedId);
+            if (workspaceRuntime) {
+              workspaceRuntime.subscribeRuntimeRoom(roomKey);
+            } else {
+              safeEmit(socket, 'join_schedule', schedId);
+            }
+            trackedRoomsRef.current.push(roomKey);
+          }
+        } catch (error) {
+          console.error('Failed to join rooms:', error);
+        }
+      }, delay);
+    },
+    [safeEmit, workspaceRuntime, leaveTrackedRooms]
+  );
 
   const connect = useCallback(async () => {
     if (!enabled || !session?.accessToken) {
@@ -106,7 +147,6 @@ export function useSchedulingWebSocket({
     }
 
     if (socketRef.current?.connected) {
-      // Already connected, just update rooms if needed
       if (businessId || scheduleId) {
         joinRooms(socketRef.current, businessId, scheduleId, 0);
       }
@@ -114,64 +154,43 @@ export function useSchedulingWebSocket({
     }
 
     try {
-      const socket = await createWebSocketConnection(
-        session.accessToken,
-        () => {
-          isConnectedRef.current = true;
-          console.log('✅ Scheduling WebSocket connected');
-        },
-        () => {
-          isConnectedRef.current = false;
-          console.log('🔌 Scheduling WebSocket disconnected');
-          
-          // Clear any pending join attempts
-          if (joinTimeoutRef.current) {
-            clearTimeout(joinTimeoutRef.current);
-            joinTimeoutRef.current = null;
-          }
-          
-          // Reset retry attempts on disconnect
-          retryAttemptsRef.current.clear();
-        },
-        (error) => {
-          console.error('❌ Scheduling WebSocket error:', error);
-          isConnectedRef.current = false;
-          
-          // Clear any pending join attempts
-          if (joinTimeoutRef.current) {
-            clearTimeout(joinTimeoutRef.current);
-            joinTimeoutRef.current = null;
-          }
-        }
-      );
-
+      const socket = await acquireRealtimeConnection(session.accessToken, HOLDER_ID);
       socketRef.current = socket;
+      isConnectedRef.current = true;
 
-      // Wait a bit for socket to be fully ready before joining rooms
-      // Socket.IO may need a moment to fully initialize the connection
+      if (!listenersAttachedRef.current) {
+        socket.on(
+          'schedule:shift:created',
+          (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => {
+            eventsRef.current.onShiftCreated?.(data);
+          }
+        );
+        socket.on(
+          'schedule:shift:updated',
+          (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => {
+            eventsRef.current.onShiftUpdated?.(data);
+          }
+        );
+        socket.on(
+          'schedule:shift:deleted',
+          (data: { businessId: string; scheduleId: string; shiftId: string }) => {
+            eventsRef.current.onShiftDeleted?.(data);
+          }
+        );
+        socket.on(
+          'schedule:published',
+          (data: {
+            businessId: string;
+            scheduleId: string;
+            schedule: Record<string, unknown>;
+          }) => {
+            eventsRef.current.onSchedulePublished?.(data);
+          }
+        );
+        listenersAttachedRef.current = true;
+      }
+
       joinRooms(socket, businessId, scheduleId, 150);
-
-      // Set up event listeners (use ref to get latest events)
-      socket.on('schedule:shift:created', (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => {
-        console.log('📅 Shift created event:', data);
-        eventsRef.current.onShiftCreated?.(data);
-      });
-
-      socket.on('schedule:shift:updated', (data: { businessId: string; scheduleId: string; shift: ScheduleShift }) => {
-        console.log('📅 Shift updated event:', data);
-        eventsRef.current.onShiftUpdated?.(data);
-      });
-
-      socket.on('schedule:shift:deleted', (data: { businessId: string; scheduleId: string; shiftId: string }) => {
-        console.log('📅 Shift deleted event:', data);
-        eventsRef.current.onShiftDeleted?.(data);
-      });
-
-      socket.on('schedule:published', (data: { businessId: string; scheduleId: string; schedule: Record<string, unknown> }) => {
-        console.log('📅 Schedule published event:', data);
-        eventsRef.current.onSchedulePublished?.(data);
-      });
-
     } catch (error) {
       console.error('Failed to connect to scheduling WebSocket:', error);
       isConnectedRef.current = false;
@@ -179,40 +198,24 @@ export function useSchedulingWebSocket({
   }, [enabled, session?.accessToken, businessId, scheduleId, joinRooms]);
 
   const disconnect = useCallback(() => {
-    // Clear any pending join attempts
     if (joinTimeoutRef.current) {
       clearTimeout(joinTimeoutRef.current);
       joinTimeoutRef.current = null;
     }
 
     if (socketRef.current) {
-      const socket = socketRef.current;
-      
-      // Only leave rooms if socket is still connected
-      if (socket.connected) {
-        try {
-          if (scheduleId) {
-            socket.emit('leave_schedule', scheduleId);
-          }
-          if (businessId) {
-            socket.emit('leave_business', businessId);
-          }
-        } catch (error) {
-          // Ignore errors when leaving rooms (socket might already be disconnecting)
-          // These are non-critical and expected during disconnect
-          console.debug('Error leaving rooms (non-critical):', error);
-        }
-      }
-
-      socket.disconnect();
+      leaveTrackedRooms(socketRef.current);
       socketRef.current = null;
       isConnectedRef.current = false;
       retryAttemptsRef.current.clear();
-      console.log('🔌 Scheduling WebSocket disconnected');
     }
-  }, [scheduleId, businessId]);
 
-  // Connect on mount and when dependencies change
+    releaseRealtimeConnection(HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      listenersAttachedRef.current = false;
+    }
+  }, [leaveTrackedRooms]);
+
   useEffect(() => {
     if (enabled && session?.accessToken) {
       connect();
@@ -224,13 +227,11 @@ export function useSchedulingWebSocket({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, session?.accessToken, businessId, scheduleId]);
 
-  // Update rooms when businessId or scheduleId changes (debounced)
   useEffect(() => {
-    if (!socketRef.current || !socketRef.current.connected) {
+    if (!socketRef.current?.connected) {
       return;
     }
 
-    // Debounce room updates to avoid rapid emit attempts
     const timeoutId = setTimeout(() => {
       if (socketRef.current?.connected) {
         joinRooms(socketRef.current, businessId, scheduleId, 0);
@@ -245,7 +246,6 @@ export function useSchedulingWebSocket({
   return {
     isConnected: isConnectedRef.current,
     connect,
-    disconnect
+    disconnect,
   };
 }
-

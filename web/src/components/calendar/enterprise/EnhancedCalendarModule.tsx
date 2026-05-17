@@ -232,8 +232,8 @@ export default function EnhancedCalendarModule({ businessId, dashboardId, classN
           });
         };
         
-        (chatSocket as any).on?.('calendar_event', handler as any);
-        unsubscribe = () => { (chatSocket as any).off?.('calendar_event', handler as any); };
+        chatSocket.onRaw('calendar_event', handler);
+        unsubscribe = () => { chatSocket.offRaw('calendar_event', handler); };
       } catch (error) {
         console.error('🏢 Enterprise Calendar - Failed to connect to socket:', error);
       }

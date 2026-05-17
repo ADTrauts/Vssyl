@@ -43,4 +43,6 @@ jobs:
       - run: pnpm prisma:generate
       - run: pnpm exec prisma migrate deploy --schema prisma/schema.prisma
       - run: pnpm type-check
+      - name: Run web runtime tests
+        run: pnpm --filter vssyl-web test
       - run: pnpm test

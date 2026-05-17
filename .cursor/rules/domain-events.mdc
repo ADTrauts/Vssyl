@@ -1,0 +1,28 @@
+---
+description: Domain events vs module activity — emit only after success; correct emitter per contract
+globs: server/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Domain events
+
+**Long reference:** `docs/architecture/DOMAIN_EVENTS.md`  
+**Module contract:** `module-interoperability.mdc`, `memory-bank/moduleSpecs.md`
+
+## Must
+
+- Emit **only after** authorized mutation succeeds (`authorize → execute → emit`).
+- Use **`emitModuleActivityEvent`** for module-certified, feed-visible normalized activity (`moduleId`, envelope in `moduleSpecs.md`).
+- Use **`emitDomainEvent`** (or typed helpers in `domainEventEmitters.ts`) for cross-cutting platform facts that fan out via subscribers / `platform:domain_event`.
+- Use **`DOMAIN_EVENT_TYPES`** from `domainEventRegistry.ts` at emit sites — no raw string literals for registered types.
+- Keep **`registerDomainEventSubscribers()`** idempotent (startup only; already in `server/src/index.ts`).
+- Include tenant scope fields (`dashboardId`, `businessId`, `householdId`) when known; keep `metadata` small and non-secret (sanitization strips disallowed keys). Drive: no file content, signed URLs, or storage paths in metadata.
+
+## Must not
+
+- Emit on failed or unauthorized actions.
+- Use domain events to replace module feed activity when the product expects feed visibility.
+- Duplicate the same semantic event through both emitters without product reason.
+- Register duplicate subscriber handlers outside `registerDomainEventSubscribers`.
+
+**Last updated:** 2026-05-17 (Drive + business.member.removed adopted)

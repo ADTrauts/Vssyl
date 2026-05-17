@@ -13,6 +13,10 @@ import {
   reviewModuleSubmission,
 } from '../moduleController';
 
+vi.mock('../../services/ModuleRegistrySyncService.js', () => ({
+  moduleRegistrySyncService: { syncModule: vi.fn().mockResolvedValue(undefined) },
+}));
+
 function mockResponse() {
   const res: Partial<Response> = {};
   res.status = vi.fn().mockReturnValue(res);
@@ -180,6 +184,52 @@ describe('moduleController Phase 7 critical paths', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, data: [] }));
   });
 
+  it('does not mark submission reviewed when certification validation fails', async () => {
+    vi.spyOn(prisma.moduleVersion, 'update').mockResolvedValue({ id: 'mv-1' } as any);
+    vi.spyOn(prisma.moduleSubmission, 'findUnique').mockResolvedValue({
+      id: 'sub-1',
+      moduleId: 'm1',
+      status: 'PENDING',
+      module: {
+        id: 'invalid',
+        version: '1.0.0',
+        name: 'Invalid Cert Module',
+        manifest: { permissions: [] },
+        permissions: [],
+      },
+    } as any);
+    vi.spyOn(prisma.moduleVersion, 'findFirst').mockResolvedValue({
+      id: 'mv-1',
+      moduleId: 'invalid',
+      version: '1.0.0',
+      manifestSnapshot: { permissions: [] },
+    } as any);
+    vi.spyOn(prisma.moduleArtifact, 'findUnique').mockResolvedValue({
+      scanStatus: 'PASSED',
+    } as any);
+    const updateSpy = vi.spyOn(prisma.moduleSubmission, 'update');
+
+    const req = {
+      user: { id: 'admin-1', role: 'ADMIN' },
+      params: { submissionId: 'sub-1' },
+      body: { action: 'approve', reviewNotes: 'looks good' },
+    } as unknown as Request;
+    const res = mockResponse();
+
+    await reviewModuleSubmission(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: false,
+        details: expect.objectContaining({
+          certification: expect.objectContaining({ status: 'failed' }),
+        }),
+      })
+    );
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
   it('does not mark submission reviewed when approval guard fails artifact scan', async () => {
     vi.spyOn(prisma.moduleSubmission, 'findUnique').mockResolvedValue({
       id: 'sub-1',
@@ -242,6 +292,7 @@ describe('moduleController Phase 7 critical paths', () => {
     vi.spyOn(prisma.moduleVersion, 'upsert').mockResolvedValue({
       id: 'mv-1',
     } as any);
+    vi.spyOn(prisma.moduleVersion, 'update').mockResolvedValue({ id: 'mv-1' } as any);
     vi.spyOn(prisma.moduleArtifact, 'upsert').mockResolvedValue({
       id: 'artifact-1',
       scanStatus: 'PASSED',

@@ -1,5 +1,24 @@
 # Block-on-Block Platform - Progress
 
+## Platform Hardening Phase Complete (May 2026) ✅
+
+**Status:** **COMPLETE** — horizontal hardening stopped; resume product/features unless a specific surface needs policy, events, or certification work.
+
+| Area | Outcome |
+|------|---------|
+| **Policy Engine** | v1 in `server/src/auth/` — `dashboard:read`, Drive `file:*` / `folder:*`, `module:install` / `uninstall`, `business:member.*`, `business:update`. Legacy-first **dual enforcement** on wired controllers; security denies block (`INSUFFICIENT_ROLE`, `TENANT_MISMATCH`, `NOT_OWNER`). |
+| **Domain events** | Taxonomy registry + sanitization + subscribers. Adopted: `user.preference.updated`, `module.installed` / `uninstalled`, `business.member.added` / `removed`, `business.updated`, Drive `file.uploaded` / `deleted` / `shared`, `folder.shared`. **`emitModuleActivityEvent` unchanged** on Drive feed paths. |
+| **Workspace runtime** | WR-Q1: `WorkspaceRuntimeProvider` + `permissionSnapshot` on dashboard/business layouts. RT-Q1: ref-counted `realtimeClient.ts`; `platform:domain_event` via `WorkspaceRealtimeLifecycle`. |
+| **Marketplace** | Structural certification validator + persistence on `ModuleVersion`; **`ensureModuleVersionCertificationForActivation`** on approval publish, promote, rollback (migration `20260517000000_module_version_certification`). |
+| **Drive** | PE-D1/D2: collaborator write parity on update/delete/move/upload/create/share; owner-only share grant. Deferred: restore/hard-delete/reorder/revoke policy, task-dashboard upload edge case, socket broadcast targeting. |
+| **CI / tests** | CI: `prisma migrate deploy`, `type-check`, `pnpm --filter vssyl-web test` (~22), server vitest (~286). Lint not in CI (deferred). |
+
+**Architecture refs:** `docs/architecture/POLICY_ENGINE.md`, `DOMAIN_EVENTS.md`, `WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`.
+
+**Feature-driven follow-ups (not blockers):** deferred domain types (`file.moved`, chat/calendar); remove dual enforcement per route when legacy aligned; Drive restore/trash policy; broader `useWorkspaceRuntime` adoption.
+
+---
+
 ## Workspace Runtime Foundation v1 (May 2026) ✅
 
 **Status:** **COMPLETE** — Additive module/widget contracts and workspace runtime helpers; legacy rendering paths preserved.
@@ -10,13 +29,35 @@
 - `web/src/runtime/` — types, `coreModuleRegistry`, `moduleRegistry`, adapters, workspace helpers, optional `WorkspaceRuntimeProvider`
 - `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`
 - Read-only integrations: `WidgetPicker`, `BusinessWorkspaceContent` (metadata), `BrandedWorkDashboard` (display names)
-- Web vitest: `pnpm --filter vssyl-web test` (13 tests); lockfile includes `vitest` on `vssyl-web`
+- Web vitest: `pnpm --filter vssyl-web test` (~22 tests under `web/src/runtime/**/__tests__/`); included in CI `verify` job
 
-**Not in scope (v1):** Provider mounted at app roots; `permissionSnapshot` from business config; CI web test job; switch/registry migration.
+**WR-Q1 (May 2026):** `WorkspaceRuntimeScopeBridge` on dashboard layout; `BusinessLayoutRuntimeShell` on `business/[id]/layout`; `permissionSnapshot` from business config / position-aware modules; scope-key resets for `activeModuleId` + realtime placeholders.
 
-**Next (scheduled follow-up):** Mount provider + permission snapshot; consolidate `getModuleIcon` / `getModuleName` duplicates; add web tests to `.github/workflows/ci.yml`.
+**RT-Q1 (May 2026):** Shared `realtimeClient.ts` (ref-counted Socket.IO); runtime `subscribeRuntimeRoom` / `clearRuntimeSubscriptions`; `platform:domain_event` via `WorkspaceRealtimeLifecycle`; migrated chatAPI, chatSocket, notifications, drive/place/scheduling hooks.
 
-**Reference:** `memory-bank/activeContext.md` (Workspace Runtime Foundation v1).
+**Still transitional (not blockers):** `WIDGET_REGISTRY` + `BusinessWorkspaceContent` switch; duplicate module icon/name helpers; incremental `useWorkspaceRuntime` adoption in feature surfaces.
+
+**PE-Q1 (May 2026):** Policy Engine `module:install` + dual enforcement on `installModule` (`moduleProvisionController.ts`).
+
+**PE-M1 (May 2026):** Policy Engine `module:uninstall` + dual enforcement on `uninstallModule` (`moduleUninstallPolicyDual.ts`); mirrors install authority; domain event emits only after successful delete. Follow-up: missing installation delegates to handler for **404** parity (`delegate_installation_not_found`).
+
+**PE-B1 (May 2026):** Policy Engine business member management — `business:member.invite` / `remove` / `update` / `acceptInvitation` / `resendInvite` / `cancelInvite` with dual enforcement on `businessController` + `memberController` member routes; `business.member.removed` adopted on successful remove paths.
+
+**PE-B2 (May 2026):** Policy Engine `business:update` + dual enforcement on `updateBusiness`, `uploadLogo`, `removeLogo`; `business.updated` domain event (metadata: `changedFields`, `updateKind` only).
+
+**PE-D1 (May 2026):** Policy Engine Drive write/delete — `file:update`, `file:delete`, `folder:update`, `folder:delete` + `drivePermissionHelpers` + dual enforcement on `updateFile`/`deleteFile`/`updateFolder`/`deleteFolder`; `business:member.cancelInvite` on `memberController.cancelInvitation`. Follow-up: `updateFile`/`deleteFile` mutations align with `canWrite` (by `id`, not owner-only `userId`).
+
+**PE-D2 + DE-D1 (May 2026):** Drive move/upload/share policy — `file:move`, `file:upload` (folder write / `uploadRoot`), `file:share`, `folder:share`, `folder:create` + dual on `moveFile`, `uploadFile`, `createFolder`, `grantFilePermission`, `grantFolderPermission`. Domain events: `file.uploaded`, `file.deleted`, `file.shared`, `folder.shared` (safe metadata; module activity unchanged). Deferred: `file.moved`, `folder.created`, restore/hard-delete/reorder/revoke policy.
+
+**MP-Q1 (May 2026):** Structural marketplace certification validator (`moduleCertificationValidator.ts`) — blocks admin approval on hard errors; advisory on artifact finalize.
+
+**MP-Q2 (May 2026):** Certification results persisted on `ModuleVersion` (`certificationStatus`, errors/warnings/checklist JSON, `certificationValidatedAt`, validator version). Admin portal modules review UI surfaces pass/warning/fail; list/detail APIs include `module.certification`.
+
+**MP-Q3 (May 2026):** `moduleVersionCertificationGate` — all activation paths (approval publish, promotion, rollback) use `ensureModuleVersionCertificationForActivation`; re-validates stale or `NOT_RUN` certification; blocks on `FAILED`; allows `WARNING`; `AdminService.reviewModuleSubmission` + `promoteModuleVersion` + admin portal routes return `details.certification` on block.
+
+**DE-Q1 + DE-D1 (May 2026):** Domain event taxonomy registry + sanitization; adopted types listed in **Platform Hardening Phase Complete** above. Tests in `server/src/events/__tests__/`.
+
+**Reference:** `memory-bank/activeContext.md` (platform hardening + workspace runtime).
 
 ---
 

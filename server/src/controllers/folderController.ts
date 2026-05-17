@@ -7,6 +7,8 @@ import { getChatSocketService } from '../services/chatSocketService';
 import { Prisma } from '@prisma/client';
 import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
@@ -142,14 +144,45 @@ export async function createFolder(req: Request, res: Response) {
       }
     }
     
-    // If creating in a parent folder, check write permissions
     if (parentId) {
       const canWrite = await canWriteFolder(userId, parentId);
       if (!canWrite) {
         return res.status(403).json({ message: 'You do not have permission to create folders here' });
       }
+      const parentRow = await prisma.folder.findUnique({
+        where: { id: parentId },
+        select: { dashboardId: true, trashedAt: true },
+      });
+      if (!parentRow || parentRow.trashedAt) {
+        return res.status(404).json({ message: 'Parent folder not found' });
+      }
+      const createPolicyDual = await evaluateDrivePolicyDual({
+        userId,
+        action: POLICY_ACTIONS.FOLDER_CREATE,
+        resourceType: 'folder',
+        resourceId: parentId,
+        scope: parentRow.dashboardId ? { dashboardId: parentRow.dashboardId } : undefined,
+      });
+      if (createPolicyDual.blocked) {
+        return res.status(403).json({
+          message: 'You do not have permission to create folders here',
+          reason: createPolicyDual.reason,
+        });
+      }
+    } else {
+      const createRootPolicyDual = await evaluateDrivePolicyDual({
+        userId,
+        action: POLICY_ACTIONS.FOLDER_CREATE,
+        resourceType: 'folder',
+        resourceId: userId,
+        metadata: { createRoot: true },
+        scope: dashboardId ? { dashboardId } : undefined,
+      });
+      if (createRootPolicyDual.blocked) {
+        return res.status(403).json({ message: 'Access denied', reason: createRootPolicyDual.reason });
+      }
     }
-    
+
     const folder = await prisma.folder.create({
       data: { userId, name, parentId: parentId || null, dashboardId: dashboardId || null },
     });
@@ -209,7 +242,25 @@ export async function updateFolder(req: Request, res: Response) {
     if (!canWrite) {
       return res.status(403).json({ message: 'You do not have permission to modify this folder' });
     }
-    
+
+    const folderScopeRow = await prisma.folder.findUnique({
+      where: { id },
+      select: { dashboardId: true },
+    });
+    const updatePolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FOLDER_UPDATE,
+      resourceType: 'folder',
+      resourceId: id,
+      scope: folderScopeRow?.dashboardId ? { dashboardId: folderScopeRow.dashboardId } : undefined,
+    });
+    if (updatePolicyDual.blocked) {
+      return res.status(403).json({
+        message: 'You do not have permission to modify this folder',
+        reason: updatePolicyDual.reason,
+      });
+    }
+
     // If moving to a parent folder, check write permissions on target
     if (parentId) {
       const canWriteParent = await canWriteFolder(userId, parentId);
@@ -298,7 +349,25 @@ export async function deleteFolder(req: Request, res: Response) {
     if (!canWrite) {
       return res.status(403).json({ message: 'You do not have permission to delete this folder' });
     }
-    
+
+    const folderScopeRow = await prisma.folder.findUnique({
+      where: { id },
+      select: { dashboardId: true },
+    });
+    const deletePolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FOLDER_DELETE,
+      resourceType: 'folder',
+      resourceId: id,
+      scope: folderScopeRow?.dashboardId ? { dashboardId: folderScopeRow.dashboardId } : undefined,
+    });
+    if (deletePolicyDual.blocked) {
+      return res.status(403).json({
+        message: 'You do not have permission to delete this folder',
+        reason: deletePolicyDual.reason,
+      });
+    }
+
     // Get folder before deleting to broadcast event
     const folderToDelete = await prisma.folder.findUnique({ where: { id } });
     if (!folderToDelete) return res.status(404).json({ message: 'Folder not found' });

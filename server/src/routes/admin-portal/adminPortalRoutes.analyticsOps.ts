@@ -999,6 +999,19 @@ router.post('/modules/submissions/:submissionId/review', authenticateJWT, requir
       data: result
     });
   } catch (error) {
+    const { ModuleVersionCertificationBlockedError } = await import(
+      '../../services/moduleVersionCertificationGate.js'
+    );
+    if (error instanceof ModuleVersionCertificationBlockedError) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        details: { certification: error.certification },
+      });
+    }
+    if (error instanceof Error && error.message === 'Module artifact scan must pass before approval') {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     await logger.error('Failed to review module submission', {
       operation: 'admin_review_module_submission',
       submissionId: req.params.submissionId,
@@ -1111,12 +1124,22 @@ router.post(
         data: result,
       });
     } catch (error) {
+      const { ModuleVersionCertificationBlockedError } = await import(
+        '../../services/moduleVersionCertificationGate.js'
+      );
+      if (error instanceof ModuleVersionCertificationBlockedError) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          details: { certification: error.certification },
+        });
+      }
       const message =
         error instanceof Error ? error.message : 'Failed to promote previous module version';
       const status =
         message === 'Module not found'
           ? 404
-          : /No previous|must pass|No current/.test(message)
+          : /No previous|must pass|No current|certification/.test(message)
             ? 400
             : 500;
       await logger.error('Failed to promote previous module version', {
@@ -1127,7 +1150,7 @@ router.post(
           stack: error instanceof Error ? error.stack : undefined,
         },
       });
-      res.status(status).json({ error: message });
+      res.status(status).json({ success: false, error: message });
     }
   }
 );
@@ -1159,11 +1182,21 @@ router.post(
         data: result,
       });
     } catch (error) {
+      const { ModuleVersionCertificationBlockedError } = await import(
+        '../../services/moduleVersionCertificationGate.js'
+      );
+      if (error instanceof ModuleVersionCertificationBlockedError) {
+        return res.status(400).json({
+          success: false,
+          error: error.message,
+          details: { certification: error.certification },
+        });
+      }
       const message = error instanceof Error ? error.message : 'Failed to promote module version';
       const status =
         message === 'Module not found' || message === 'Target version not found for this module'
           ? 404
-          : /must pass/.test(message)
+          : /must pass|certification/.test(message)
             ? 400
             : 500;
       await logger.error('Failed to promote module version', {
@@ -1174,7 +1207,7 @@ router.post(
           stack: error instanceof Error ? error.stack : undefined,
         },
       });
-      res.status(status).json({ error: message });
+      res.status(status).json({ success: false, error: message });
     }
   }
 );

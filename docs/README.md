@@ -57,8 +57,10 @@ Technical implementation references and troubleshooting — **index:** [`guides/
 
 ### Architecture (`architecture/`)
 
-Cross-cutting design notes (complement `memory-bank/systemPatterns.md`):
+Cross-cutting design notes (complement `memory-bank/systemPatterns.md`). **Index:** [`architecture/README.md`](./architecture/README.md).
 
+- **POLICY_ENGINE.md** — Policy Engine v1 (`authorize`, `enforcePolicy`, `requirePolicy`)
+- **DOMAIN_EVENTS.md** — Domain event bus vs module activity events
 - **WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md** — Workspace Runtime Foundation v1: module = capability, widget = projection; `web/src/runtime/` contracts and legacy adapter rollout
 
 ### Archive (`archive/`)

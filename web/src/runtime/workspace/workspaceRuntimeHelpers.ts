@@ -34,6 +34,26 @@ export function deriveAvailableWidgets(
   return filterWidgetDefinitions(definitions, context, installedModuleIds);
 }
 
+export function filterModulesByPermissionSnapshot(
+  modules: ModuleDefinition[],
+  snapshot: PermissionSnapshot | undefined
+): ModuleDefinition[] {
+  if (!snapshot) return modules;
+  return modules.filter((mod) =>
+    hasRequiredPermissions(mod.requiredPermissions, mod.id, snapshot)
+  );
+}
+
+export function filterWidgetsByPermissionSnapshot(
+  widgets: WidgetDefinition[],
+  snapshot: PermissionSnapshot | undefined
+): WidgetDefinition[] {
+  if (!snapshot) return widgets;
+  return widgets.filter((widget) =>
+    hasRequiredPermissions(widget.requiredPermissions, widget.moduleId, snapshot)
+  );
+}
+
 export function canRenderModuleWithPermissions(
   moduleId: string,
   context: WorkspaceContextType,
@@ -67,6 +87,9 @@ export function buildWorkspaceRuntimeState(
   input: BuildWorkspaceRuntimeInput
 ): WorkspaceRuntimeState {
   const installed = input.installedModuleIds ?? [];
+  const snapshot = input.permissionSnapshot;
+  const rawModules = deriveAvailableModules(input.activeContextType, installed);
+  const rawWidgets = deriveAvailableWidgets(input.activeContextType, installed);
   return {
     userId: input.userId,
     activeContextType: input.activeContextType,
@@ -75,8 +98,8 @@ export function buildWorkspaceRuntimeState(
     activeHouseholdId: input.activeHouseholdId,
     activeModuleId: input.activeModuleId,
     activeWidgetIds: input.activeWidgetIds,
-    availableModules: deriveAvailableModules(input.activeContextType, installed),
-    availableWidgets: deriveAvailableWidgets(input.activeContextType, installed),
+    availableModules: filterModulesByPermissionSnapshot(rawModules, snapshot),
+    availableWidgets: filterWidgetsByPermissionSnapshot(rawWidgets, snapshot),
     permissionsLoading: input.permissionsLoading ?? false,
     error: input.error ?? null,
     realtimeSubscriptions: input.realtimeSubscriptions,

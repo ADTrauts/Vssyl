@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useSession } from 'next-auth/react';
 import { Conversation, Message, MessageReaction, Thread } from 'shared/types/chat';
 import { chatAPI } from '../api/chat';
+import { useWorkspaceRuntimeOptional } from '../runtime/workspace/WorkspaceRuntimeContext';
+import { formatRuntimeRoom } from '../runtime/workspace/runtimeRealtime';
 import { uploadFile } from '../api/drive';
 import { useDashboard } from './DashboardContext';
 
@@ -48,6 +50,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const { currentDashboardId } = useDashboard();
+  const workspaceRuntime = useWorkspaceRuntimeOptional();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -382,12 +385,28 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeConversation?.id, loadMessages]);
 
-  // Join conversation when it changes
+  // Join conversation when it changes (runtime-tracked when provider mounted)
   useEffect(() => {
-    if (activeConversation?.id && isConnected) {
-      chatAPI.joinConversation(activeConversation.id);
+    if (!activeConversation?.id || !isConnected) {
+      return;
     }
-  }, [activeConversation?.id, isConnected]);
+    const conversationId = activeConversation.id;
+    const roomKey = formatRuntimeRoom('conversation', conversationId);
+
+    if (workspaceRuntime) {
+      workspaceRuntime.subscribeRuntimeRoom(roomKey);
+    } else {
+      chatAPI.joinConversation(conversationId);
+    }
+
+    return () => {
+      if (workspaceRuntime) {
+        workspaceRuntime.unsubscribeRuntimeRoom(roomKey);
+      } else {
+        chatAPI.leaveConversation(conversationId);
+      }
+    };
+  }, [activeConversation?.id, isConnected, workspaceRuntime]);
 
   const value: ChatContextType = {
     // State

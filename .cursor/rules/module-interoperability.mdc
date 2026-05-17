@@ -13,7 +13,7 @@ First-party and third-party modules **share the same contract**. Differences are
 
 ## Non-negotiables for any module change
 
-1. **Order of operations:** `authorize → execute → emit normalized activity → notify/realtime` (as applicable). **Never** emit or persist an activity event for a failed or unauthorized action.
+1. **Order of operations:** `authorize → execute → emit normalized activity → notify/realtime` (as applicable). **Never** emit or persist an activity event for a failed or unauthorized action. Server authorization may use **Policy Engine** (`policy-engine.mdc`); cross-cutting fan-out may use **domain events** (`domain-events.mdc`) without replacing module feed activity.
 2. **Tenant scoping:** Every persisted read/write path must scope by authorized context (`dashboardId`, and `businessId` / `householdId` when in that context). Align with `backend-trust-boundaries.mdc` and `api-and-auth.mdc` (multi-tenant isolation).
 3. **Normalized events:** Important actions must emit events compatible with the envelope in `moduleSpecs.md` (see `emitModuleActivityEvent` / platform patterns).
 4. **Activity vs analytics:** Immutable activity records describe what happened; analytics are derived separately — do not conflate.
@@ -37,6 +37,6 @@ First-party and third-party modules **share the same contract**. Differences are
 
 - `module-development.mdc` — AI context, notifications, workspace landing, trash, manifests.
 - `backend-trust-boundaries.mdc` — trust and tenancy.
-- `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md` — partner-facing must-pass list.
+- `third-party-modules.mdc`, `docs/guides/THIRD_PARTY_MODULE_RULEBOOK.md` — partner must-pass and review gates.
 
-**Last updated:** 2026-04-21
+**Last updated:** 2026-05-16

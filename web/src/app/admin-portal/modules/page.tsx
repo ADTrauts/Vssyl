@@ -4,6 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input, Tabs } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import SecurityDashboard from '../../../components/admin/SecurityDashboard';
+import {
+  ModuleCertificationReviewPanel,
+  type ModuleCertificationShape,
+} from '../../../components/admin/ModuleCertificationReviewPanel';
 import { 
   Eye, 
   CheckCircle, 
@@ -35,6 +39,7 @@ interface ModuleVersionRow {
   status: string;
   isCurrent: boolean;
   createdAt: string;
+  certification?: ModuleCertificationShape;
   artifact: {
     scanStatus: string;
     scanSummary?: Record<string, unknown> | null;
@@ -95,11 +100,13 @@ interface ModuleSubmission {
       developerBusinessLinkedAt?: string | Date | null;
       developerBusinessLinkedBy?: string | null;
     } | null;
+    certification?: ModuleCertificationShape;
     versions?: Array<{
       id: string;
       version: string;
       status: string;
       isCurrent: boolean;
+      certification?: ModuleCertificationShape;
       artifact?: {
         scanStatus: string;
         scanSummary?: Record<string, unknown> | null;
@@ -776,21 +783,39 @@ export default function AdminModulesPage() {
     return getScanFailureReason(latest?.artifact?.scanSummary);
   };
 
+  const getCertification = (submission: ModuleSubmission): ModuleCertificationShape => {
+    return (
+      submission.module.certification ??
+      submission.module.versions?.[0]?.certification ?? {
+        status: 'not_run',
+        errors: [],
+        warnings: [],
+        checklist: [],
+        validatedAt: null,
+        validatorVersion: null,
+      }
+    );
+  };
+
   const getReadinessChecklist = (submission: ModuleSubmission) => {
     const latest = submission.module.versions?.[0];
     const scanStatus = latest?.artifact?.scanStatus || null;
     const scanReason = getScanFailureReason(latest?.artifact?.scanSummary);
     const artifactScanPassed = scanStatus === 'PASSED';
+    const certification = getCertification(submission);
+    const certificationPassed = certification.status !== 'failed';
     const frontend = submission.module.manifest?.frontend as Record<string, unknown> | undefined;
     const entryUrl =
       frontend && typeof frontend.entryUrl === 'string' ? frontend.entryUrl.trim() : '';
     const runtimeReady = Boolean(entryUrl) || artifactScanPassed;
-    const publishReady = artifactScanPassed;
+    const publishReady = artifactScanPassed && certificationPassed;
 
     return {
       artifactScanPassed,
       runtimeReady,
       publishReady,
+      certificationPassed,
+      certificationStatus: certification.status,
       scanStatus: scanStatus || 'NOT_AVAILABLE',
       scanReason,
       latestVersion: latest?.version || submission.module.version,
@@ -831,6 +856,10 @@ export default function AdminModulesPage() {
     try {
       const res = await adminApiService.promotePreviousModuleVersion(mid);
       if (res.error) throw new Error(res.error);
+      const cert = res.data?.certification;
+      if (cert?.status === 'warning' && cert.warnings?.length) {
+        setError(`Promoted with certification warnings: ${cert.warnings.join('; ')}`);
+      }
       setPromotePreviousModal(null);
       await loadData();
       await loadModuleVersions(mid);
@@ -849,7 +878,17 @@ export default function AdminModulesPage() {
     const ver = promoteRowModal.version;
     try {
       const res = await adminApiService.promoteModuleVersion(mid, ver);
-      if (res.error) throw new Error(res.error);
+      if (res.error) {
+        const cert = (res as { details?: { certification?: { errors?: string[] } } }).details?.certification;
+        if (cert?.errors?.length) {
+          throw new Error(`Promotion blocked: ${cert.errors.join('; ')}`);
+        }
+        throw new Error(res.error);
+      }
+      const cert = res.data?.certification;
+      if (cert?.status === 'warning' && cert.warnings?.length) {
+        setError(`Promoted v${ver} with certification warnings: ${cert.warnings.join('; ')}`);
+      }
       setPromoteRowModal(null);
       await loadData();
       await loadModuleVersions(mid);
@@ -1192,6 +1231,12 @@ export default function AdminModulesPage() {
                             Failure reason: <span className="font-mono">{readiness.scanReason}</span>
                           </p>
                         )}
+                        <div className="mt-3">
+                          <ModuleCertificationReviewPanel
+                            certification={getCertification(submission)}
+                            compact
+                          />
+                        </div>
                       </div>
                     );
                   })()}
@@ -1268,7 +1313,11 @@ export default function AdminModulesPage() {
                         onClick={() => {
                           const readiness = getReadinessChecklist(submission);
                           if (!readiness.publishReady) {
-                            setError('Cannot approve yet: latest artifact scan must be PASSED.');
+                            if (!readiness.certificationPassed) {
+                              setError('Cannot approve: certification has hard errors. Fix manifest and re-upload.');
+                            } else {
+                              setError('Cannot approve yet: latest artifact scan must be PASSED.');
+                            }
                             return;
                           }
                           handleReview(submission, 'approve');
@@ -1579,6 +1628,8 @@ export default function AdminModulesPage() {
                     </div>
                   )}
               </div>
+
+              <ModuleCertificationReviewPanel certification={getCertification(selectedSubmissionDetails)} />
 
               <div>
                 <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-2">Declared permissions</p>

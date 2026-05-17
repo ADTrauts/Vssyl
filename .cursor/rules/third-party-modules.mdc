@@ -1,0 +1,27 @@
+---
+description: Third-party marketplace modules — same contract as first-party; iframe/bundle runtime; no in-process partner code
+alwaysApply: false
+---
+
+# Third-party modules
+
+**Rulebook:** `docs/guides/THIRD_PARTY_MODULE_RULEBOOK.md`  
+**Onboarding:** `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`  
+**Pipeline (authoritative):** `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`  
+**Contract:** `memory-bank/moduleSpecs.md`, `module-interoperability.mdc`
+
+## Must
+
+- Enforce the same lifecycle: **`authorize → execute → emit → notify/realtime`**; no activity on failed/unauthorized actions.
+- Require **security scan + admin approval** before publish/install per pipeline doc.
+- Load partner UI via **sandboxed iframe** or approved **bundle** artifact—never execute arbitrary partner code in the API process.
+- Include manifest **AI context** and **notification** metadata when the module is AI- or notification-exposed.
+- Gate review against **`moduleCertificationValidator`** + **`moduleVersionCertificationGate`** (hard errors block approval and version promotion/rollback; stale certification re-validated on promote), **`moduleSpecs.md` certification checklist**, and `THIRD_PARTY_MODULE_RULEBOOK.md`.
+
+## Must not
+
+- Bypass marketplace artifact, versioning, or scan gates for production installs.
+- Store partner-only analytics in the platform activity log instead of real activity events.
+- Bypass Next.js API proxy for user-facing calls from embedded UIs where platform auth applies (`api-and-auth.mdc`).
+
+**Last updated:** 2026-05-17

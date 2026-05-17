@@ -4,6 +4,14 @@ import { logger } from '../lib/logger';
 import { NotificationService } from '../services/notificationService';
 import { sendBusinessInvitationEmail } from '../services/emailService';
 import { addUsersToScheduleCalendar } from '../services/hrScheduleService';
+import {
+  emitBusinessMemberAddedEvent,
+  emitBusinessMemberRemovedEvent,
+  emitBusinessUpdatedEvent,
+} from '../events/domainEventEmitters';
+import { evaluateBusinessMemberPolicyDual } from '../auth/businessMemberPolicyDual';
+import { evaluateBusinessUpdatePolicyDual } from '../auth/businessUpdatePolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 // Request type definitions
 interface CreateBusinessRequest {
@@ -454,6 +462,19 @@ export const inviteMember = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const invitePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: user.id,
+      businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_INVITE,
+    });
+    if (invitePolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: invitePolicyDual.reason,
+      });
+    }
+
     // Check if user is already a member
     const existingMember = await prisma.businessMember.findFirst({
       where: {
@@ -603,6 +624,20 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       });
     }
 
+    const acceptPolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: user.id,
+      businessId: invitation.businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_ACCEPT_INVITATION,
+      metadata: { invitationToken: token },
+    });
+    if (acceptPolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        reason: acceptPolicyDual.reason,
+      });
+    }
+
     // Check if user is already a member
     const existingMember = await prisma.businessMember.findFirst({
       where: {
@@ -695,6 +730,14 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       });
     }
 
+    emitBusinessMemberAddedEvent({
+      actorUserId: user.id,
+      memberId: member.id,
+      businessId: invitation.businessId,
+      memberUserId: user.id,
+      role: invitation.role,
+    });
+
     res.json({ success: true, data: { member, dashboard } });
   } catch (error) {
     handleError(res, error, 'Failed to accept invitation');
@@ -726,6 +769,18 @@ export const updateBusiness = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const updatePolicyDual = await evaluateBusinessUpdatePolicyDual({
+      userId: user.id,
+      businessId: id,
+    });
+    if (updatePolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: updatePolicyDual.reason,
+      });
+    }
+
     // Update business
     const business = await prisma.business.update({
       where: { id },
@@ -746,6 +801,13 @@ export const updateBusiness = async (req: Request, res: Response) => {
           }
         }
       }
+    });
+
+    emitBusinessUpdatedEvent({
+      actorUserId: user.id,
+      businessId: id,
+      changedFields: Object.keys(updateData),
+      updateKind: 'profile',
     });
 
     res.json({ success: true, data: business });
@@ -779,6 +841,18 @@ export const uploadLogo = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const logoPolicyDual = await evaluateBusinessUpdatePolicyDual({
+      userId: user.id,
+      businessId: id,
+    });
+    if (logoPolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: logoPolicyDual.reason,
+      });
+    }
+
     // Update business logo
     const business = await prisma.business.update({
       where: { id },
@@ -799,6 +873,13 @@ export const uploadLogo = async (req: Request, res: Response) => {
           }
         }
       }
+    });
+
+    emitBusinessUpdatedEvent({
+      actorUserId: user.id,
+      businessId: id,
+      changedFields: ['logo'],
+      updateKind: 'branding',
     });
 
     res.json({ success: true, data: business });
@@ -831,6 +912,18 @@ export const removeLogo = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const removeLogoPolicyDual = await evaluateBusinessUpdatePolicyDual({
+      userId: user.id,
+      businessId: id,
+    });
+    if (removeLogoPolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: removeLogoPolicyDual.reason,
+      });
+    }
+
     // Remove business logo
     const business = await prisma.business.update({
       where: { id },
@@ -851,6 +944,13 @@ export const removeLogo = async (req: Request, res: Response) => {
           }
         }
       }
+    });
+
+    emitBusinessUpdatedEvent({
+      actorUserId: user.id,
+      businessId: id,
+      changedFields: ['logo'],
+      updateKind: 'branding',
     });
 
     res.json({ success: true, data: business });
@@ -933,6 +1033,19 @@ export const updateBusinessMember = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const updatePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: user.id,
+      businessId: id,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_UPDATE,
+    });
+    if (updatePolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: updatePolicyDual.reason,
+      });
+    }
+
     // Update member
     const member = await prisma.businessMember.update({
       where: {
@@ -983,6 +1096,29 @@ export const removeBusinessMember = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Insufficient permissions' });
     }
 
+    const removePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: user.id,
+      businessId: id,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_REMOVE,
+    });
+    if (removePolicyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions',
+        reason: removePolicyDual.reason,
+      });
+    }
+
+    const targetMember = await prisma.businessMember.findUnique({
+      where: {
+        businessId_userId: {
+          businessId: id,
+          userId,
+        },
+      },
+      select: { id: true, role: true, userId: true },
+    });
+
     // Prevent removing the last admin
     if (userId === user.id) {
       const adminCount = await prisma.businessMember.count({
@@ -1011,6 +1147,16 @@ export const removeBusinessMember = async (req: Request, res: Response) => {
         leftAt: new Date()
       }
     });
+
+    if (targetMember) {
+      emitBusinessMemberRemovedEvent({
+        actorUserId: user.id,
+        memberId: targetMember.id,
+        businessId: id,
+        memberUserId: targetMember.userId,
+        role: targetMember.role,
+      });
+    }
 
     res.json({ success: true, message: 'Member removed successfully' });
   } catch (error) {

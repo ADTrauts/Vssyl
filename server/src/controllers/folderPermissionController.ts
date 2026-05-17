@@ -5,6 +5,8 @@ import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
 import { authorize } from '../auth/policyEngine';
 import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
+import { emitFolderSharedEvent } from '../events/domainEventEmitters';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
@@ -85,7 +87,18 @@ export async function grantFolderPermission(req: Request, res: Response) {
     if (!folder || folder.userId !== ownerId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
-    
+
+    const sharePolicyDual = await evaluateDrivePolicyDual({
+      userId: ownerId,
+      action: POLICY_ACTIONS.FOLDER_SHARE,
+      resourceType: 'folder',
+      resourceId: id,
+      scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
+    });
+    if (sharePolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: sharePolicyDual.reason });
+    }
+
     const permission = await prisma.folderPermission.upsert({
       where: { folderId_userId: { folderId: id, userId } },
       update: { canRead, canWrite },
@@ -120,6 +133,14 @@ export async function grantFolderPermission(req: Request, res: Response) {
       });
       // Don't fail the permission grant if notification fails
     }
+
+    emitFolderSharedEvent({
+      actorUserId: ownerId,
+      folderId: id,
+      recipientUserId: userId,
+      canRead: Boolean(canRead),
+      canWrite: Boolean(canWrite),
+    });
 
     res.status(201).json({ permission });
   } catch (err: unknown) {
@@ -248,25 +269,5 @@ export async function revokeFolderPermission(req: Request, res: Response) {
   }
 }
 
-// Helper: check if user can read a folder
-export async function canReadFolder(userId: string, folderId: string): Promise<boolean> {
-  const folder = await prisma.folder.findUnique({ where: { id: folderId } });
-  if (!folder) return false;
-  if (folder.userId === userId) return true;
-  const perm = await prisma.folderPermission.findFirst({ 
-    where: { folderId, userId, canRead: true } 
-  });
-  return !!perm;
-}
-
-// Helper: check if user can write a folder
-export async function canWriteFolder(userId: string, folderId: string): Promise<boolean> {
-  const folder = await prisma.folder.findUnique({ where: { id: folderId } });
-  if (!folder) return false;
-  if (folder.userId === userId) return true;
-  const perm = await prisma.folderPermission.findFirst({ 
-    where: { folderId, userId, canWrite: true } 
-  });
-  return !!perm;
-}
+export { canReadFolder, canWriteFolder } from '../services/drivePermissionHelpers';
 

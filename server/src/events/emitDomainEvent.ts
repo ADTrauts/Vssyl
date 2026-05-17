@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { publishDomainEvent } from './domainEventBus';
+import { sanitizeDomainEventMetadata } from './domainEventRegistry';
 import type { DomainEvent, DomainEventEmitInput } from './types';
 
 function newEventId(): string {
@@ -16,7 +17,7 @@ function cloneMetadata(meta: Record<string, unknown> | undefined): Record<string
  * Subscribers run synchronously from this call; keep subscriber work non-blocking or fast.
  */
 export function emitDomainEvent(input: DomainEventEmitInput): DomainEvent {
-  const metadata = cloneMetadata(input.metadata);
+  const metadata = sanitizeDomainEventMetadata(input.type, cloneMetadata(input.metadata));
   const event: DomainEvent = {
     id: newEventId(),
     type: input.type,

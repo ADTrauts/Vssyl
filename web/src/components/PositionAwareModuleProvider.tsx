@@ -227,3 +227,10 @@ export function usePositionAwareModules() {
   }
   return context;
 }
+
+/** When runtime bridge mounts outside PositionAwareModuleProvider (e.g. bare business layout). */
+export function usePositionAwareModulesOptional():
+  | PositionAwareModuleContextType
+  | undefined {
+  return useContext(PositionAwareModuleContext);
+}

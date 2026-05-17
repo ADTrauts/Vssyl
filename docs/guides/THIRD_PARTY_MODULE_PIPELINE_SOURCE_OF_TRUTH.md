@@ -184,6 +184,8 @@ Lists pending and historical submissions including version + scan metadata.
 Approve/reject submission/version.
 
 On approve:
+- artifact scan must be `PASSED`
+- certification gate (`ensureModuleVersionCertificationForActivation`) must pass (warnings allowed; hard errors return `400` + `details.certification`)
 - module version -> `APPROVED` then `PUBLISHED`
 - previous current version -> `ARCHIVED`
 - this version -> `isCurrent=true`
@@ -201,6 +203,8 @@ Admin-only. One-click rollback: promotes the version immediately **after** the c
 
 #### `POST /api/admin-portal/modules/:moduleId/versions/:version/promote`
 Admin-only. Promotes an explicit semver (URL-encoded) to current published, same archive/publish rules as above.
+
+**Certification gate (MP-Q3):** Before **approval publish**, **promotion**, or **rollback** (`promote-previous`), `ensureModuleVersionCertificationForActivation` in `moduleVersionCertificationGate` re-validates when certification is `NOT_RUN` or `certificationValidatorVersion` is stale. Hard errors block with `400` and `details.certification`. `WARNING` allows activation; success responses include certification payload when applicable.
 
 ### Runtime and Install
 
@@ -246,11 +250,12 @@ No public GCS URLs for artifacts.
 ## Security and Validation
 
 Minimum required checks before publish:
-1. HTTPS-only runtime asset URL.
-2. Artifact scan status must be `PASSED`.
-3. Permission audit completed.
-4. Admin review decision recorded.
-5. **Interoperability contract:** reviewer confirms the module meets the **module certification checklist** in [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) (permissions, tenant scoping, normalized activity events, safe realtime assumptions, notification metadata if applicable, AI context if AI-exposed, activity vs analytics). Reject or defer publish until gaps are addressed. Agent guardrails: `.cursor/rules/module-interoperability.mdc`. Partner summary: [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md).
+1. **Structural certification** (`moduleCertificationValidator.ts` + `moduleCertificationPersistence.ts`) — persisted on `ModuleVersion` at artifact finalize (advisory) and admin review (blocking on hard errors). Admin portal shows status, errors, warnings, and checklist.
+2. HTTPS-only runtime asset URL (hosted) or bundle artifact with scan `PASSED`.
+3. Artifact scan status must be `PASSED`.
+4. Permission audit completed.
+5. Admin review decision recorded.
+6. **Interoperability contract:** reviewer confirms the module meets the **module certification checklist** in [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) (permissions, tenant scoping, normalized activity events, safe realtime assumptions, notification metadata if applicable, AI context if AI-exposed, activity vs analytics). Reject or defer publish until gaps are addressed. Agent guardrails: `.cursor/rules/module-interoperability.mdc`. Partner summary: [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md).
 
 Scan architecture requirements:
 - **Baseline scanner (implemented)**: runs on finalize (`runBaselineZipScan`): unzip with `fflate`, reject empty archives / unsafe paths / excessive size or file counts, require at least one `.html` file. Persists `scanStatus` + `scanSummary` on `ModuleArtifact` (no longer hardcoded `PASSED`).

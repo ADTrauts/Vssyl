@@ -1,7 +1,9 @@
 # AI Coding Standards & Best Practices
 
+> **DEPRECATED (2026-05-16):** Do not use this file for new work. Canonical agent rules live under **`.cursor/rules/`** — start with **`RULES_SUMMARY.md`**, **`typescript-quality.mdc`**, **`api-and-auth.mdc`**, and **`coding-standards.mdc`**. This file is retained for historical reference only; it may be archived later.
+
 ## Overview
-This document establishes coding standards and best practices for the Block-on-Block application. These standards ensure consistency, maintainability, and code quality across all AI-generated and human-written code.
+This document established coding standards for the legacy Block-on-Block naming era. Content below is **not maintained** and may contradict current rules.
 
 ## Table of Contents
 1. [Type Safety Standards](#type-safety-standards)

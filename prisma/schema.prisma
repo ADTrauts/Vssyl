@@ -128,6 +128,13 @@ enum ModuleScanStatus {
   FAILED
 }
 
+enum ModuleCertificationStatus {
+  NOT_RUN
+  PASSED
+  WARNING
+  FAILED
+}
+
 enum ModuleUploadSessionStatus {
   INITIATED
   UPLOADING
@@ -1518,11 +1525,19 @@ model ModuleVersion {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  certificationStatus           ModuleCertificationStatus @default(NOT_RUN)
+  certificationErrors             Json?
+  certificationWarnings           Json?
+  certificationChecklist          Json?
+  certificationValidatedAt        DateTime?
+  certificationValidatorVersion   String?
+
   artifact      ModuleArtifact?
 
   @@unique([moduleId, version])
   @@index([moduleId, status])
   @@index([moduleId, isCurrent])
+  @@index([certificationStatus])
   @@map("module_versions")
 }
 

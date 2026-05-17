@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Socket } from 'socket.io-client';
-import { createWebSocketConnection } from '@/lib/websocketUtils';
+import type { Socket } from 'socket.io-client';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  releaseRealtimeConnection,
+} from '@/lib/realtimeClient';
+
+const HOLDER_ID = 'place-ws';
 
 interface PlaceWebSocketEvents {
   onNodeAdded?: (data: Record<string, unknown>) => void;
@@ -24,6 +30,7 @@ export function usePlaceWebSocket({
   const { data: session } = useSession();
   const socketRef = useRef<Socket | null>(null);
   const eventsRef = useRef(events);
+  const listenersAttachedRef = useRef(false);
 
   useEffect(() => {
     eventsRef.current = events;
@@ -34,42 +41,42 @@ export function usePlaceWebSocket({
     if (socketRef.current?.connected) return;
 
     try {
-      const socket = await createWebSocketConnection(
-        session.accessToken,
-        () => {},
-        () => {},
-        () => {}
-      );
-
+      const socket = await acquireRealtimeConnection(session.accessToken, HOLDER_ID);
       socketRef.current = socket;
 
-      socket.on('place:node:added', (data: Record<string, unknown>) => {
-        eventsRef.current.onNodeAdded?.(data);
-      });
-      socket.on('place:node:removed', (data: Record<string, unknown>) => {
-        eventsRef.current.onNodeRemoved?.(data);
-      });
-      socket.on('place:connection:accepted', (data: Record<string, unknown>) => {
-        eventsRef.current.onConnectionAccepted?.(data);
-      });
-      socket.on('place:connection:request', (data: Record<string, unknown>) => {
-        eventsRef.current.onConnectionRequest?.(data);
-      });
+      if (!listenersAttachedRef.current) {
+        socket.on('place:node:added', (data: Record<string, unknown>) => {
+          eventsRef.current.onNodeAdded?.(data);
+        });
+        socket.on('place:node:removed', (data: Record<string, unknown>) => {
+          eventsRef.current.onNodeRemoved?.(data);
+        });
+        socket.on('place:connection:accepted', (data: Record<string, unknown>) => {
+          eventsRef.current.onConnectionAccepted?.(data);
+        });
+        socket.on('place:connection:request', (data: Record<string, unknown>) => {
+          eventsRef.current.onConnectionRequest?.(data);
+        });
+        listenersAttachedRef.current = true;
+      }
     } catch {
-      // Connection failure is handled by the websocket utils
+      // Connection failure is non-critical
     }
   }, [enabled, session?.accessToken]);
 
   const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
+    socketRef.current = null;
+    releaseRealtimeConnection(HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      listenersAttachedRef.current = false;
     }
   }, []);
 
   useEffect(() => {
     connect();
-    return () => { disconnect(); };
+    return () => {
+      disconnect();
+    };
   }, [connect, disconnect]);
 
   return { connected: !!socketRef.current?.connected, disconnect };

@@ -258,6 +258,22 @@ WidgetPicker / optional WorkspaceRuntimeProvider (future: dashboard + business r
 - **Paths:** `web/src/runtime/modules/`, `web/src/runtime/workspace/`
 - **Context alias:** canonical `education` ↔ legacy `educational` (`contextMapping.ts`)
 - **Follow-up:** mount provider, feed `BusinessConfigurationContext` permissions, consolidate duplicate `getModuleIcon` / `getModuleName` helpers
+- **Runtime state:** avoid cross-tenant leakage — `.cursor/rules/runtime-state-boundaries.mdc`
+
+#### **Policy Engine (v1)**
+
+Centralized authorization in `server/src/auth/` (re-export `server/src/services/policyEngine.ts`). v1: `dashboard:read`, `file:read` on folders; other actions fail closed. Use after JWT; dual-enforce with legacy checks during migration.
+
+- **Docs:** `docs/architecture/POLICY_ENGINE.md`
+- **Agent rule:** `policy-engine.mdc`
+
+#### **Domain event bus**
+
+`emitDomainEvent` fans out to activity log, socket (`platform:domain_event`), and placeholder notification/analytics subscribers after successful mutations. Distinct from **`emitModuleActivityEvent`** (module feed contract).
+
+- **Docs:** `docs/architecture/DOMAIN_EVENTS.md`
+- **Agent rule:** `domain-events.mdc`
+- **Startup:** `registerDomainEventSubscribers()` in `server/src/index.ts`
 
 ### **Module Architecture Patterns**
 

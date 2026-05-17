@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { io, Socket } from 'socket.io-client';
-import { getWebSocketConfig } from './websocketUtils';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  onRealtimeConnectionChange,
+  releaseRealtimeConnection,
+} from './realtimeClient';
 
 export interface NotificationEvent {
   id: string;
@@ -26,15 +30,15 @@ interface NotificationSocketHook {
 
 type DeletePayload = { id: string };
 
-let socket: Socket | null = null;
-let activeToken: string | null = null;
-let connectionHolders = 0;
+const HOLDER_ID = 'notifications';
 
 const newNotificationListeners = new Set<(n: NotificationEvent) => void>();
 const notificationUpdatedListeners = new Set<(data: NotificationUpdatePayload) => void>();
 const notificationDeletedListeners = new Set<(data: DeletePayload) => void>();
-
 const connectionListeners = new Set<(connected: boolean) => void>();
+
+let notificationForwardingAttached = false;
+let notificationHolders = 0;
 
 function notifyConnection(connected: boolean): void {
   connectionListeners.forEach((fn) => {
@@ -46,10 +50,11 @@ function notifyConnection(connected: boolean): void {
   });
 }
 
-function attachSocketForwarding(s: Socket): void {
-  s.off('new_notification');
-  s.off('notification_updated');
-  s.off('notification_deleted');
+function attachNotificationForwarding(): void {
+  const s = getRealtimeSocket();
+  if (!s || notificationForwardingAttached) return;
+  notificationForwardingAttached = true;
+
   s.on('new_notification', (payload: NotificationEvent) => {
     newNotificationListeners.forEach((cb) => {
       try {
@@ -79,44 +84,21 @@ function attachSocketForwarding(s: Socket): void {
   });
 }
 
-function teardownSocket(): void {
-  if (socket) {
-    socket.removeAllListeners();
-    if (socket.connected) {
-      socket.disconnect();
-    }
-    socket = null;
-  }
-  activeToken = null;
-  notifyConnection(false);
-}
-
-function ensureSocket(token: string): void {
-  if (activeToken === token && socket) {
-    return;
-  }
-  teardownSocket();
-  activeToken = token;
-  const config = getWebSocketConfig();
-  socket = io(config.url, {
-    ...config.options,
-    auth: { token },
-  });
-  attachSocketForwarding(socket);
-  socket.on('connect', () => notifyConnection(true));
-  socket.on('disconnect', () => notifyConnection(false));
-  socket.on('connect_error', () => notifyConnection(false));
-}
-
 function acquireNotificationSocket(token: string): void {
-  connectionHolders += 1;
-  ensureSocket(token);
+  notificationHolders += 1;
+  void acquireRealtimeConnection(token, HOLDER_ID).then(() => {
+    attachNotificationForwarding();
+  });
 }
 
 function releaseNotificationSocket(): void {
-  connectionHolders = Math.max(0, connectionHolders - 1);
-  if (connectionHolders === 0) {
-    teardownSocket();
+  notificationHolders = Math.max(0, notificationHolders - 1);
+  if (notificationHolders === 0) {
+    releaseRealtimeConnection(HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      notificationForwardingAttached = false;
+    }
+    notifyConnection(false);
   }
 }
 
@@ -151,16 +133,7 @@ export const useNotificationSocket = (): NotificationSocketHook => {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
 
-  useEffect(() => {
-    const onConnection = (connected: boolean) => {
-      setIsConnected(connected);
-    };
-    connectionListeners.add(onConnection);
-    setIsConnected(Boolean(socket?.connected));
-    return () => {
-      connectionListeners.delete(onConnection);
-    };
-  }, []);
+  useEffect(() => onRealtimeConnectionChange(setIsConnected), []);
 
   useEffect(() => {
     const token = session?.accessToken;
@@ -173,13 +146,9 @@ export const useNotificationSocket = (): NotificationSocketHook => {
     };
   }, [session?.accessToken]);
 
-  const connect = useCallback(() => {
-    /* Socket lifecycle is managed by this hook via session token + ref counting. */
-  }, []);
+  const connect = useCallback(() => {}, []);
 
-  const disconnect = useCallback(() => {
-    /* Use session sign-out or unmount instead; manual disconnect would desync ref counts. */
-  }, []);
+  const disconnect = useCallback(() => {}, []);
 
   const onNotification = useCallback(
     (callback: (notification: NotificationEvent) => void) => subscribeNewNotification(callback),

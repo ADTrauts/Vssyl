@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Socket } from 'socket.io-client';
-import { createWebSocketConnection } from '@/lib/websocketUtils';
+import type { Socket } from 'socket.io-client';
+import {
+  acquireRealtimeConnection,
+  getRealtimeSocket,
+  releaseRealtimeConnection,
+} from '@/lib/realtimeClient';
+
+const HOLDER_ID = 'drive-ws';
 
 interface DriveWebSocketEvents {
   onItemCreated?: (data: Record<string, unknown>) => void;
@@ -25,6 +31,7 @@ export function useDriveWebSocket({
   const { data: session } = useSession();
   const socketRef = useRef<Socket | null>(null);
   const eventsRef = useRef(events);
+  const listenersAttachedRef = useRef(false);
 
   useEffect(() => {
     eventsRef.current = events;
@@ -40,45 +47,37 @@ export function useDriveWebSocket({
     }
 
     try {
-      const socket = await createWebSocketConnection(
-        session.accessToken,
-        () => {
-          console.log('✅ Drive WebSocket connected');
-        },
-        () => {
-          console.log('🔌 Drive WebSocket disconnected');
-        },
-        (error) => {
-          console.error('❌ Drive WebSocket error:', error);
-        }
-      );
-
+      const socket = await acquireRealtimeConnection(session.accessToken, HOLDER_ID);
       socketRef.current = socket;
 
-      socket.on('drive:item:created', (data: Record<string, unknown>) => {
-        eventsRef.current.onItemCreated?.(data);
-      });
-      socket.on('drive:item:updated', (data: Record<string, unknown>) => {
-        eventsRef.current.onItemUpdated?.(data);
-      });
-      socket.on('drive:item:deleted', (data: Record<string, unknown>) => {
-        eventsRef.current.onItemDeleted?.(data);
-      });
-      socket.on('drive:item:moved', (data: Record<string, unknown>) => {
-        eventsRef.current.onItemMoved?.(data);
-      });
-      socket.on('drive:item:pinned', (data: Record<string, unknown>) => {
-        eventsRef.current.onItemPinned?.(data);
-      });
+      if (!listenersAttachedRef.current) {
+        socket.on('drive:item:created', (data: Record<string, unknown>) => {
+          eventsRef.current.onItemCreated?.(data);
+        });
+        socket.on('drive:item:updated', (data: Record<string, unknown>) => {
+          eventsRef.current.onItemUpdated?.(data);
+        });
+        socket.on('drive:item:deleted', (data: Record<string, unknown>) => {
+          eventsRef.current.onItemDeleted?.(data);
+        });
+        socket.on('drive:item:moved', (data: Record<string, unknown>) => {
+          eventsRef.current.onItemMoved?.(data);
+        });
+        socket.on('drive:item:pinned', (data: Record<string, unknown>) => {
+          eventsRef.current.onItemPinned?.(data);
+        });
+        listenersAttachedRef.current = true;
+      }
     } catch (error) {
       console.error('Failed to connect to Drive WebSocket:', error);
     }
   }, [enabled, session?.accessToken]);
 
   const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
+    socketRef.current = null;
+    releaseRealtimeConnection(HOLDER_ID);
+    if (!getRealtimeSocket()) {
+      listenersAttachedRef.current = false;
     }
   }, []);
 
@@ -98,4 +97,3 @@ export function useDriveWebSocket({
     disconnect,
   };
 }
-

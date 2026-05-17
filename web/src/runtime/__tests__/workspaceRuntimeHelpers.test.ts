@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildWorkspaceRuntimeState,
   canRenderModuleWithPermissions,
   canRenderWidgetWithPermissions,
   deriveAvailableWidgets,
@@ -49,5 +50,16 @@ describe('workspaceRuntimeHelpers', () => {
     expect(
       canRenderWidgetWithPermissions('nonexistent-widget', 'personal', undefined, [])
     ).toBe(false);
+  });
+
+  it('filters available modules in buildWorkspaceRuntimeState when snapshot denies view', () => {
+    const state = buildWorkspaceRuntimeState({
+      activeContextType: 'personal',
+      installedModuleIds: ['drive', 'chat'],
+      permissionSnapshot: { drive: [], chat: ['view'] },
+    });
+    const ids = state.availableModules.map((m) => m.id);
+    expect(ids).not.toContain('drive');
+    expect(ids).toContain('chat');
   });
 });

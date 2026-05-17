@@ -88,7 +88,9 @@ export const getWebSocketConfig = (): WebSocketConfig => {
 };
 
 /**
- * Create WebSocket connection with proper error handling and fallback
+ * Create WebSocket connection with proper error handling and fallback.
+ * @deprecated Prefer `realtimeClient.ts` (`acquireRealtimeConnection` / `releaseRealtimeConnection`).
+ * No active call sites as of RT-Q1 (May 2026); retained for `getWebSocketConfig` and legacy `WebSocketManager` class below.
  */
 export const createWebSocketConnection = (
   token: string,
@@ -149,7 +151,8 @@ export const createWebSocketConnection = (
 };
 
 /**
- * WebSocket Manager with intelligent fallback mechanisms
+ * WebSocket Manager with intelligent fallback mechanisms.
+ * @deprecated Unused — migrate any future socket work to `realtimeClient.ts`. TODO: remove class after confirming no external imports.
  */
 export class WebSocketManager {
   public socket: Socket | null = null;

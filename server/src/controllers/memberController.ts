@@ -5,6 +5,9 @@ import { sendBusinessInvitationEmail } from '../services/emailService';
 import { NotificationService } from '../services/notificationService';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { evaluateBusinessMemberPolicyDual } from '../auth/businessMemberPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { emitBusinessMemberRemovedEvent } from '../events/domainEventEmitters';
 
 // Helper function to get organization info from memberships
 interface UserWithBusiness {
@@ -720,6 +723,18 @@ export const inviteEmployee = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorized to invite employees' });
     }
 
+    const invitePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: currentUserId,
+      businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_INVITE,
+    });
+    if (invitePolicyDual.blocked) {
+      return res.status(403).json({
+        error: 'Not authorized to invite employees',
+        reason: invitePolicyDual.reason,
+      });
+    }
+
     // Check if user is already a member
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -996,6 +1011,18 @@ export const updateEmployeeRole = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorized to manage members' });
     }
 
+    const updatePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: currentUserId,
+      businessId: member.businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_UPDATE,
+    });
+    if (updatePolicyDual.blocked) {
+      return res.status(403).json({
+        error: 'Not authorized to manage members',
+        reason: updatePolicyDual.reason,
+      });
+    }
+
     // Build update data object
     const updateData: Record<string, unknown> = { role, title, department };
     if (typeof canInvite === 'boolean') updateData.canInvite = canInvite;
@@ -1057,6 +1084,18 @@ export const removeEmployee = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorized to remove members' });
     }
 
+    const removePolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: currentUserId,
+      businessId: member.businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_REMOVE,
+    });
+    if (removePolicyDual.blocked) {
+      return res.status(403).json({
+        error: 'Not authorized to remove members',
+        reason: removePolicyDual.reason,
+      });
+    }
+
     // Prevent removing yourself
     if (member.userId === currentUserId) {
       return res.status(400).json({ error: 'Cannot remove yourself from the business' });
@@ -1067,6 +1106,14 @@ export const removeEmployee = async (req: Request, res: Response) => {
       where: { id: memberId },
       data: { leftAt: new Date(), isActive: false },
       include: { user: { select: { name: true } } },
+    });
+
+    emitBusinessMemberRemovedEvent({
+      actorUserId: currentUserId,
+      memberId: member.id,
+      businessId: member.businessId,
+      memberUserId: member.userId,
+      role: member.role,
     });
 
     res.json({ message: 'Employee removed successfully', member: updatedMember });
@@ -1155,6 +1202,18 @@ export const resendInvitation = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Not authorized to resend invitations' });
     }
 
+    const resendPolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: currentUserId,
+      businessId: invitation.businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_RESEND_INVITE,
+    });
+    if (resendPolicyDual.blocked) {
+      return res.status(403).json({
+        error: 'Not authorized to resend invitations',
+        reason: resendPolicyDual.reason,
+      });
+    }
+
     // Check if invitation is still valid
     if (invitation.expiresAt < new Date()) {
       return res.status(400).json({ error: 'Invitation has expired' });
@@ -1224,6 +1283,18 @@ export const cancelInvitation = async (req: Request, res: Response) => {
 
     if (!currentUserMember || !currentUserMember.canInvite) {
       return res.status(403).json({ error: 'Not authorized to cancel invitations' });
+    }
+
+    const cancelPolicyDual = await evaluateBusinessMemberPolicyDual({
+      userId: currentUserId,
+      businessId: invitation.businessId,
+      action: POLICY_ACTIONS.BUSINESS_MEMBER_CANCEL_INVITE,
+    });
+    if (cancelPolicyDual.blocked) {
+      return res.status(403).json({
+        error: 'Not authorized to cancel invitations',
+        reason: cancelPolicyDual.reason,
+      });
     }
 
     await prisma.businessInvitation.delete({

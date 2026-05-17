@@ -27,6 +27,12 @@ export interface WorkspaceRuntimeActions {
   getWidgetsForContext: (context?: WorkspaceContextType) => WidgetDefinition[];
   canRenderModule: (moduleId: string) => boolean;
   canRenderWidget: (widgetId: string) => boolean;
+  /** Join a Socket.IO room tracked by runtime (deduped). */
+  subscribeRuntimeRoom: (roomKey: string) => void;
+  /** Leave a tracked room and remove from runtime ownership. */
+  unsubscribeRuntimeRoom: (roomKey: string) => void;
+  /** Leave all tracked rooms (e.g. on context boundary change). */
+  clearRuntimeSubscriptions: () => void;
 }
 
 export type WorkspaceRuntimeContextValue = WorkspaceRuntimeState & WorkspaceRuntimeActions;

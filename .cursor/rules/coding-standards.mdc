@@ -14,9 +14,13 @@ Large standards were split so Cursor can apply **shorter, scoped** rules. Use th
 | `storageService`, GCS, AI vision/attachments | `storage-and-ai-attachments.mdc` |
 | `shared/components`, contrast | `ui-standards.mdc` |
 | TypeScript / `any` policy, routers, Prisma JSON | `typescript-quality.mdc` |
+| Policy Engine v1 | `policy-engine.mdc` → `docs/architecture/POLICY_ENGINE.md` |
+| Domain vs module activity events | `domain-events.mdc` → `docs/architecture/DOMAIN_EVENTS.md` |
+| Workspace runtime contracts | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
+| Third-party marketplace modules | `third-party-modules.mdc` |
 
-**Modules (landing, AI context, trash, manifests, notifications):** `module-development.mdc` + **`docs/guides/MODULE_DEVELOPMENT_LONG_REFERENCE.md`**.
+**Modules (landing, AI context, trash, manifests, notifications):** `module-development.mdc` + **`docs/guides/MODULE_DEVELOPMENT_GUIDE.md`**.
 
 **Also use:** `backend-trust-boundaries.mdc`, `frontend-proxy-auth-consistency.mdc`, `module-interoperability.mdc`, `release-safety-gates.mdc`.
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-05-16

@@ -1,0 +1,28 @@
+---
+description: Workspace runtime contracts — module capability, widget projection; legacy registries still authoritative
+globs: web/src/runtime/**/*
+alwaysApply: false
+---
+
+# Workspace runtime
+
+**Long reference:** `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`  
+**State boundaries:** `runtime-state-boundaries.mdc`  
+**Code:** `web/src/runtime/modules/`, `web/src/runtime/workspace/`
+
+## Must
+
+- Treat **module = capability, widget = projection**; register definitions in `coreModuleRegistry.ts` (or documented marketplace path).
+- Use **`contextMapping.ts`** for context aliases (`education` ↔ `educational`).
+- Keep **`WIDGET_REGISTRY`** and **`BusinessWorkspaceContent`** switch authoritative for rendering until an explicit migration removes them.
+- Derive availability via **`buildWorkspaceRuntimeState`** / helpers, not one-off module lists in features.
+- Add tests under `web/src/runtime/**/__tests__` for new contract behavior (CI: `pnpm --filter vssyl-web test`).
+- Use **`realtimeClient.ts`** for Socket.IO (RT-Q1); avoid new direct `io()` call sites.
+
+## Must not
+
+- Replace legacy widget registry or business workspace switch in drive-by refactors.
+- Add parallel module metadata sources (icons/names) without aligning to contracts or documenting transitional duplication.
+- Bypass `normalizeModuleId` when resolving module ids.
+
+**Last updated:** 2026-05-17 (RT-Q1 realtimeClient; web tests in CI)

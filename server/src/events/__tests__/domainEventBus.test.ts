@@ -2,6 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { emitDomainEvent } from '../emitDomainEvent';
 import { subscribeDomainEvents } from '../domainEventBus';
 import { recordDomainEventToActivityLog } from '../subscribers/activityDomainEventSubscriber';
+import { DOMAIN_EVENT_TYPES } from '../domainEventRegistry';
+import { emitUserPreferenceUpdatedEvent } from '../domainEventEmitters';
 import { prisma } from '../../lib/prisma';
 
 describe('emitDomainEvent', () => {
@@ -18,7 +20,7 @@ describe('emitDomainEvent', () => {
       entityType: 'Thing',
       entityId: 't_1',
       action: 'create',
-      metadata: { a: 1 },
+      metadata: { a: 1, token: 'strip-me' },
     });
 
     expect(event.id).toMatch(/^evt_/);
@@ -28,6 +30,17 @@ describe('emitDomainEvent', () => {
     expect(received).toHaveLength(1);
     expect(received[0]).toEqual(event);
     unsub();
+  });
+
+  it('emitUserPreferenceUpdatedEvent uses registered taxonomy type', () => {
+    const event = emitUserPreferenceUpdatedEvent({
+      actorUserId: 'user_1',
+      preferenceKey: 'theme',
+    });
+    expect(event.type).toBe(DOMAIN_EVENT_TYPES.USER_PREFERENCE_UPDATED);
+    expect(event.entityType).toBe('UserPreference');
+    expect(event.metadata).toEqual({ key: 'theme' });
+    expect(event.metadata).not.toHaveProperty('value');
   });
 });
 

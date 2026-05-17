@@ -1,5 +1,17 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## Platform hardening phase (May 2026) ✅
+
+**Status:** Complete — policy engine, domain events, workspace realtime, marketplace certification gates, and Drive authorization are in production shape for wired paths. **No further horizontal hardening** unless a feature requires it.
+
+**Quick refs:** `memory-bank/progress.md` (Platform Hardening Phase Complete table); `docs/architecture/POLICY_ENGINE.md`, `DOMAIN_EVENTS.md`, `WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`.
+
+**Known Drive deferrals:** restore/hard-delete/reorder/revoke policy; task-dashboard upload (`assertUserOwnsDashboard` vs folder write); socket events target actor not file owner.
+
+**Next product focus:** resume feature roadmap (not PE-D3 / calendar policy unless scheduled).
+
+---
+
 ## Workspace Runtime Foundation v1 (May 2026) ✅
 
 **Principle:** **Module = capability; widget = projection.**
@@ -16,17 +28,19 @@
 | **Core registry** | `web/src/runtime/modules/coreModuleRegistry.ts` — 17 first-party modules (dashboard, drive, chat, calendar, todo, notes, ai, utility widgets, hr, scheduling, analytics, members, admin) |
 | **Lookup** | `web/src/runtime/modules/moduleRegistry.ts` — `normalizeModuleId`, `getModuleDefinition`, context filter; `connections` → `members` |
 | **Adapters** | `fromWidgetRegistry.ts`, `widgetPickerAdapter.ts` — read-only bridge to `WIDGET_REGISTRY` (legacy registry unchanged) |
-| **Runtime** | `web/src/runtime/workspace/` — pure helpers (`canRenderModule`, `deriveAvailableWidgets`, …), optional `WorkspaceRuntimeProvider`; placeholders `realtimeSubscriptions`, `activeSocketRooms` (not wired) |
+| **Runtime** | `web/src/runtime/workspace/` — pure helpers, **`WorkspaceRuntimeProvider` mounted** via `WorkspaceRuntimeScopeBridge` / `BusinessLayoutRuntimeShell`; `permissionSnapshot` bridged from `BusinessConfigurationContext` + `PositionAwareModuleProvider`; scope-key resets on tenant/context change; RT-Q1 shared socket via `realtimeClient.ts` + `WorkspaceRealtimeLifecycle` |
 | **Integrations** | `WidgetPicker` uses contract adapter + legacy fallback; `BusinessWorkspaceContent` read-only contract lookup (switch unchanged); `BrandedWorkDashboard` display names via `getModuleDisplayName` |
-| **Tests** | `pnpm --filter vssyl-web test` — 13 unit tests under `web/src/runtime/__tests__/`; **not yet in root CI** |
+| **Tests** | `pnpm --filter vssyl-web test` — ~22 unit tests under `web/src/runtime/__tests__/`; **in CI** (`verify` job) |
 
 **Explicitly not replaced:** `WIDGET_REGISTRY`, `BusinessWorkspaceContent` `switch`, routing, widget components, business front-page `WidgetRegistry.tsx`.
 
-**Follow-up (later PR):**
-1. Mount `WorkspaceRuntimeProvider` at dashboard + business workspace roots.
-2. Feed `permissionSnapshot` from `BusinessConfigurationContext`.
+**Follow-up (feature-driven, not hardening):**
+1. ~~Mount `WorkspaceRuntimeProvider` at dashboard + business workspace roots.~~ ✅ WR-Q1
+2. ~~Feed `permissionSnapshot` from `BusinessConfigurationContext`.~~ ✅ WR-Q1
 3. Replace duplicate module name/icon helpers with `getModuleDefinition` + `MODULE_ICONS`.
-4. Add `pnpm --filter vssyl-web test` to CI after scoped command is stable in practice.
+4. ~~Add `pnpm --filter vssyl-web test` to CI.~~ ✅ in `.github/workflows/ci.yml`
+5. Wire feature surfaces (e.g. `WidgetPicker`) to `useWorkspaceRuntime()` where beneficial (additive).
+6. ~~RT-Q1: consolidate socket clients + runtime subscription ownership.~~ ✅ RT-Q1
 
 **Cross-ref:** `memory-bank/progress.md` (Workspace Runtime v1); `memory-bank/dashboardProductContext.md` (§ Workspace runtime); `memory-bank/systemPatterns.md` (Business workspace + runtime layer).
 

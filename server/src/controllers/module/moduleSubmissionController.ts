@@ -16,6 +16,7 @@ import {
   VALID_MODULE_CATEGORIES,
   classifyArtifactUploadInitError,
 } from './moduleShared';
+import { serializeCertificationFromVersion } from '../../services/moduleCertificationPersistence';
 
 
 export const submitModule = async (req: Request, res: Response) => {
@@ -206,6 +207,30 @@ export const getModuleSubmissions = async (req: Request, res: Response) => {
       include: {
         module: {
           include: {
+            versions: {
+              take: 1,
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                version: true,
+                status: true,
+                isCurrent: true,
+                certificationStatus: true,
+                certificationErrors: true,
+                certificationWarnings: true,
+                certificationChecklist: true,
+                certificationValidatedAt: true,
+                certificationValidatorVersion: true,
+                artifact: {
+                  select: {
+                    scanStatus: true,
+                    scanSummary: true,
+                    sha256: true,
+                    sizeBytes: true,
+                  },
+                },
+              },
+            },
             developer: {
               select: {
                 id: true,
@@ -235,7 +260,28 @@ export const getModuleSubmissions = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ success: true, data: submissions });
+    const data = submissions.map((submission) => {
+      const latestVersion = submission.module.versions?.[0];
+      return {
+        ...submission,
+        module: {
+          ...submission.module,
+          certification: latestVersion
+            ? serializeCertificationFromVersion(latestVersion)
+            : {
+                status: 'not_run' as const,
+                errors: [],
+                warnings: [],
+                checklist: [],
+                validatedAt: null,
+                validatorVersion: null,
+              },
+          versions: submission.module.versions,
+        },
+      };
+    });
+
+    res.json({ success: true, data });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.error('Error getting module submissions', {
@@ -254,7 +300,6 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    // Check if user is admin
     if (user.role !== 'ADMIN') {
       return res.status(403).json({ success: false, error: 'Admin access required' });
     }
@@ -263,157 +308,57 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
     const { action, reviewNotes } = req.body;
 
     if (!action || !['approve', 'reject'].includes(action)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Invalid action. Must be "approve" or "reject"' 
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid action. Must be "approve" or "reject"',
       });
     }
 
-    const submission = await prisma.moduleSubmission.findUnique({
-      where: { id: submissionId },
-      include: {
-        module: true
-      }
-    });
+    const { AdminService } = await import('../../services/adminService.js');
+    const result = await AdminService.reviewModuleSubmission(
+      submissionId,
+      action,
+      reviewNotes,
+      user.id
+    );
 
-    if (!submission) {
-      return res.status(404).json({ success: false, error: 'Submission not found' });
-    }
+    const certification =
+      result && typeof result === 'object' && 'certification' in result
+        ? (result as { certification?: Record<string, unknown> }).certification
+        : undefined;
 
-    if (submission.status !== 'PENDING') {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Submission has already been reviewed' 
-      });
-    }
-
-    const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
-
-    // If approved/rejected, update module version status when available
-    const latestVersion = await prisma.moduleVersion.findFirst({
-      where: {
-        moduleId: submission.moduleId,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (action === 'approve') {
-      if (latestVersion) {
-        const artifact = await prisma.moduleArtifact.findUnique({
-          where: { moduleVersionId: latestVersion.id },
-          select: { scanStatus: true },
-        });
-        if (!artifact || artifact.scanStatus !== 'PASSED') {
-          return res.status(400).json({
-            success: false,
-            error: 'Module artifact scan must pass before approval',
-          });
-        }
-      }
-    }
-
-    // Update submission only after pre-approval guards pass.
-    const updatedSubmission = await prisma.moduleSubmission.update({
-      where: { id: submissionId },
+    res.json({
+      success: true,
       data: {
-        status: newStatus,
-        reviewNotes,
-        reviewerId: user.id,
-        reviewedAt: new Date()
-      },
-      include: {
-        module: {
-          include: {
-            developer: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            }
-          }
-        },
-        submitter: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        reviewer: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-
-    if (action === 'approve') {
-      if (latestVersion) {
-
-        await prisma.moduleVersion.updateMany({
-          where: { moduleId: submission.moduleId, isCurrent: true },
-          data: { isCurrent: false, status: 'ARCHIVED' },
-        });
-
-        await prisma.moduleVersion.update({
-          where: { id: latestVersion.id },
-          data: {
-            status: 'PUBLISHED',
-            isCurrent: true,
-            approvedBy: user.id,
-            approvedAt: new Date(),
-            reviewNotes: reviewNotes || undefined,
-          },
-        });
-      }
-
-      await prisma.module.update({
-        where: { id: submission.moduleId },
-        data: {
-          status: 'APPROVED',
-          version: latestVersion?.version || submission.module.version,
-        },
-      });
-
-      // Sync module AI context to registry (non-blocking)
-      try {
-        const { moduleRegistrySyncService } = await import('../../services/ModuleRegistrySyncService');
-        await moduleRegistrySyncService.syncModule(submission.moduleId);
-        void logger.info('Module AI context synced after approval', {
-          operation: 'module_approve_sync_ai',
-          context: { moduleId: submission.moduleId, moduleName: submission.module.name },
-        });
-      } catch (syncError: unknown) {
-        const se = syncError instanceof Error ? syncError : new Error(String(syncError));
-        void logger.error('Failed to sync AI context for approved module', {
-          operation: 'module_approve_sync_ai',
-          context: { moduleId: submission.moduleId, moduleName: submission.module.name },
-          error: { message: se.message, stack: se.stack },
-        });
-      }
-    } else if (latestVersion) {
-      await prisma.moduleVersion.update({
-        where: { id: latestVersion.id },
-        data: {
-          status: 'REJECTED',
-          rejectedBy: user.id,
-          rejectedAt: new Date(),
-          reviewNotes: reviewNotes || undefined,
-        },
-      });
-    }
-
-    res.json({ 
-      success: true, 
-      data: { 
         message: `Module ${action}d successfully`,
-        submission: updatedSubmission 
-      } 
+        submission: result,
+        ...(certification && { certification }),
+      },
     });
   } catch (error: unknown) {
+    const { ModuleVersionCertificationBlockedError } = await import(
+      '../../services/moduleVersionCertificationGate.js'
+    );
+    if (error instanceof ModuleVersionCertificationBlockedError) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        details: { certification: error.certification },
+      });
+    }
+
+    if (error instanceof Error) {
+      if (error.message === 'Submission not found') {
+        return res.status(404).json({ success: false, error: error.message });
+      }
+      if (
+        error.message === 'Submission has already been reviewed' ||
+        error.message === 'Module artifact scan must pass before approval'
+      ) {
+        return res.status(400).json({ success: false, error: error.message });
+      }
+    }
+
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.error('Error reviewing module submission', {
       operation: 'module_submission_review',
@@ -423,7 +368,7 @@ export const reviewModuleSubmission = async (req: Request, res: Response) => {
   }
 };
 
-// Promote a previous module version to current (admin only)
+// Promote a module version to current (admin only)
 export const promoteModuleVersion = async (req: Request, res: Response) => {
   try {
     const user = getUserFromRequest(req);
@@ -440,31 +385,16 @@ export const promoteModuleVersion = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'moduleId and version are required' });
     }
 
-    const moduleRecord = await prisma.module.findUnique({
-      where: { id: moduleId },
-      select: { id: true, name: true, version: true },
-    });
-    if (!moduleRecord) {
-      return res.status(404).json({ success: false, error: 'Module not found' });
-    }
+    const { AdminService } = await import('../../services/adminService.js');
+    const { ModuleVersionCertificationBlockedError } = await import(
+      '../../services/moduleVersionCertificationGate.js'
+    );
 
     const targetVersion = await prisma.moduleVersion.findUnique({
       where: { moduleId_version: { moduleId, version } },
-      select: { id: true, version: true, isCurrent: true },
+      select: { isCurrent: true },
     });
-    if (!targetVersion) {
-      return res.status(404).json({ success: false, error: 'Target version not found for this module' });
-    }
-
-    const targetArtifact = await prisma.moduleArtifact.findUnique({
-      where: { moduleVersionId: targetVersion.id },
-      select: { scanStatus: true },
-    });
-    if (!targetArtifact || targetArtifact.scanStatus !== 'PASSED') {
-      return res.status(400).json({ success: false, error: 'Target version artifact scan must pass before promotion' });
-    }
-
-    if (targetVersion.isCurrent) {
+    if (targetVersion?.isCurrent) {
       return res.status(200).json({
         success: true,
         data: {
@@ -475,60 +405,41 @@ export const promoteModuleVersion = async (req: Request, res: Response) => {
       });
     }
 
-    await prisma.$transaction(async tx => {
-      await tx.moduleVersion.updateMany({
-        where: { moduleId, isCurrent: true },
-        data: { isCurrent: false, status: 'ARCHIVED' },
-      });
-
-      await tx.moduleVersion.update({
-        where: { id: targetVersion.id },
-        data: {
-          isCurrent: true,
-          status: 'PUBLISHED',
-          approvedBy: user.id,
-          approvedAt: new Date(),
-        },
-      });
-
-      await tx.module.update({
-        where: { id: moduleId },
-        data: {
-          status: 'APPROVED',
-          version: targetVersion.version,
-        },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          userId: user.id,
-          action: 'MODULE_PROMOTE_PREVIOUS_VERSION',
-          details: JSON.stringify({
-            moduleId,
-            moduleName: moduleRecord.name,
-            promotedVersion: targetVersion.version,
-            previousCurrentVersion: moduleRecord.version,
-          }),
-          timestamp: new Date(),
-        },
-      });
-    });
+    const result = await AdminService.promoteModuleVersion(moduleId, version, user.id);
 
     return res.json({
       success: true,
       data: {
         message: `Promoted version ${version} successfully`,
-        moduleId,
-        version,
+        ...result,
       },
     });
   } catch (error) {
+    const { ModuleVersionCertificationBlockedError } = await import(
+      '../../services/moduleVersionCertificationGate.js'
+    );
+    if (error instanceof ModuleVersionCertificationBlockedError) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+        details: { certification: error.certification },
+      });
+    }
+
     const err = error instanceof Error ? error : new Error(String(error));
-    await logger.error('Failed to promote module version', {
-      operation: 'module_promote_previous_version',
+    const message = err.message;
+    const status =
+      message === 'Module not found' || message === 'Target version not found for this module'
+        ? 404
+        : /must pass|certification|No previous|No current/.test(message)
+          ? 400
+          : 500;
+
+    void logger.error('Failed to promote module version', {
+      operation: 'module_promote_version',
       error: { message: err.message, stack: err.stack },
     });
-    return res.status(500).json({ success: false, error: 'Failed to promote module version' });
+    return res.status(status).json({ success: false, error: message });
   }
 };
 

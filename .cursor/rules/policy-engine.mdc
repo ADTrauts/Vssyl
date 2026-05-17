@@ -1,0 +1,26 @@
+---
+description: Policy Engine v1 — authorize before resource access; fail closed outside v1 scope
+globs: server/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Policy Engine
+
+**Long reference:** `docs/architecture/POLICY_ENGINE.md`  
+**Code:** `server/src/auth/`, `server/src/middleware/policyMiddleware.ts`, re-export `server/src/services/policyEngine.ts`
+
+## Must
+
+- Run **`authenticateJWT`** (or equivalent verified actor) **before** `authorize`, `enforcePolicy`, or `requirePolicy`.
+- Use **`authorize`** when you need the full decision, 404 vs 403, or **dual enforcement** beside legacy membership checks during migration.
+- Use **`requirePolicy`** on routes only with `resolveResourceId` / `resolveScope`; prove resource access, not client-supplied authority IDs alone (`backend-trust-boundaries.mdc`).
+- **Fail closed** for actions outside v1 (`dashboard:read`, `file:read` + `folder`, `file:update` / `file:delete` / `file:move` / `file:upload` / `file:share` + `file` or folder target, `folder:update` / `folder:delete` / `folder:create` / `folder:share` + `folder`, `module:install` / `module:uninstall` + `module`, `business:member.*` + `business:update` + `business` only).
+- Log denies via existing `policy_deny` operation; do not swallow `PolicyDeniedError` silently.
+
+## Must not
+
+- Treat policy as a substitute for tenant scoping on queries (`api-and-auth.mdc`).
+- Remove legacy access checks on a route until policy + tests cover the same cases.
+- Add new protected actions without updating `policyActions.ts` and `policyEngine.test.ts`.
+
+**Last updated:** 2026-05-17 (PE-D2 Drive; dual on wired controllers only)

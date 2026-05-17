@@ -9,6 +9,12 @@ import { initializeHrScheduleForBusiness } from '../../services/hrScheduleServic
 import { storageService } from '../../services/storageService';
 import { runBaselineZipScan } from '../../services/moduleArtifactBaselineScan';
 import { runSmartModuleScan } from '../../services/moduleArtifactSmartScan';
+import { evaluateModuleInstallPolicyDual } from '../../auth/moduleInstallPolicyDual';
+import { evaluateModuleUninstallPolicyDual } from '../../auth/moduleUninstallPolicyDual';
+import {
+  emitModuleInstalledEvent,
+  emitModuleUninstalledEvent,
+} from '../../events/domainEventEmitters';
 
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
@@ -451,6 +457,20 @@ export const installModule = async (req: Request, res: Response) => {
         });
       }
 
+      const policyDual = await evaluateModuleInstallPolicyDual({
+        userId: user.id,
+        moduleId,
+        installScope: 'business',
+        businessId,
+      });
+      if (policyDual.blocked) {
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          reason: policyDual.reason,
+        });
+      }
+
       // Check if module is already installed for this business
       const existingInstallation = await (prisma as any).businessModuleInstallation.findUnique({
         where: { moduleId_businessId: { moduleId, businessId } },
@@ -614,6 +634,14 @@ export const installModule = async (req: Request, res: Response) => {
         }
       }
 
+      emitModuleInstalledEvent({
+        actorUserId: user.id,
+        moduleId,
+        installationId: installation.id,
+        installScope: 'business',
+        businessId,
+      });
+
       return res.json({
         success: true,
         message: 'Module installed for business successfully',
@@ -638,6 +666,19 @@ export const installModule = async (req: Request, res: Response) => {
         },
       });
     } else {
+      const policyDual = await evaluateModuleInstallPolicyDual({
+        userId: user.id,
+        moduleId,
+        installScope: 'personal',
+      });
+      if (policyDual.blocked) {
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          reason: policyDual.reason,
+        });
+      }
+
       // Personal installation logic
       const existingInstallation = await prisma.moduleInstallation.findUnique({
         where: { moduleId_userId: { moduleId, userId: user.id } },
@@ -669,6 +710,13 @@ export const installModule = async (req: Request, res: Response) => {
       });
 
       await prisma.module.update({ where: { id: moduleId }, data: { downloads: { increment: 1 } } });
+
+      emitModuleInstalledEvent({
+        actorUserId: user.id,
+        moduleId,
+        installationId: installation.id,
+        installScope: 'personal',
+      });
 
       return res.json({
         success: true,
@@ -746,6 +794,20 @@ export const uninstallModule = async (req: Request, res: Response) => {
         return res.status(403).json({ success: false, error: 'Insufficient permissions to uninstall for this business' });
       }
 
+      const policyDual = await evaluateModuleUninstallPolicyDual({
+        userId: user.id,
+        moduleId,
+        uninstallScope: 'business',
+        businessId,
+      });
+      if (policyDual.blocked) {
+        return res.status(403).json({
+          success: false,
+          error: 'Forbidden',
+          reason: policyDual.reason,
+        });
+      }
+
       const installation = await (prisma as any).businessModuleInstallation.findUnique({
         where: { moduleId_businessId: { moduleId, businessId } }
       });
@@ -754,6 +816,15 @@ export const uninstallModule = async (req: Request, res: Response) => {
       }
 
       await (prisma as any).businessModuleInstallation.delete({ where: { moduleId_businessId: { moduleId, businessId } } });
+
+      emitModuleUninstalledEvent({
+        actorUserId: user.id,
+        moduleId,
+        installationId: installation.id,
+        installScope: 'business',
+        businessId,
+      });
+
       return res.json({ success: true, data: { message: 'Module uninstalled for business successfully' } });
     }
 
@@ -764,7 +835,27 @@ export const uninstallModule = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Module is not installed' });
     }
 
+    const policyDual = await evaluateModuleUninstallPolicyDual({
+      userId: user.id,
+      moduleId,
+      uninstallScope: 'personal',
+    });
+    if (policyDual.blocked) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        reason: policyDual.reason,
+      });
+    }
+
     await prisma.moduleInstallation.delete({ where: { moduleId_userId: { moduleId, userId: user.id } } });
+
+    emitModuleUninstalledEvent({
+      actorUserId: user.id,
+      moduleId,
+      installationId: installation.id,
+      installScope: 'personal',
+    });
 
     res.json({ success: true, data: { message: 'Module uninstalled successfully' } });
   } catch (error: unknown) {

@@ -1,326 +1,41 @@
 ---
-description: 
-globs: 
+description: Memory Bank baseline reads and doc placement pointer
 alwaysApply: true
 ---
-# Cursor's Memory Bank
 
-I am Cursor, an expert software engineer with a unique characteristic: my memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely on the **source-of-truth baseline** plus the Memory Bank to understand the project.
+# Memory Bank
 
-### Required baseline for every task (not optional)
+After each session reset, use the **source-of-truth baseline** plus targeted Memory Bank files—not the entire bank by default.
 
-1. **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — canonical split: repo vs Memory Bank.
-2. **`memory-bank/activeContext.md`** — current focus and decisions.
-3. **`memory-bank/progress.md`** — what works, what is left, known issues.
+## Required baseline (every task)
 
-### Then expand by task (do not read the entire Memory Bank by default)
+1. **`docs/VSSYL_SOURCE_OF_TRUTH.md`**
+2. **`memory-bank/activeContext.md`**
+3. **`memory-bank/progress.md`**
 
-- **Module / feature work:** the relevant **`memory-bank/*ProductContext.md`** (e.g. `driveProductContext.md`) and any module spec (`memory-bank/moduleSpecs.md` for modules).
-- **Architecture / cross-cutting:** `memory-bank/systemPatterns.md`, `memory-bank/designPatterns.md`, or `memory-bank/techContext.md` as needed.
-- **Database:** `memory-bank/databaseContext.md` when schema or data modeling is involved.
-- **Deploy / ops:** `memory-bank/deployment.md` or `docs/deployment/` when touching infra.
+## Expand by task (targeted reads only)
 
-The Memory Bank has many files (50+). **Use the baseline + targeted reads** unless the user asks for a full Memory Bank refresh (e.g. “update memory bank”).
+| Task | Also read |
+|------|-----------|
+| Module / feature | `memory-bank/*ProductContext.md`, `memory-bank/moduleSpecs.md` |
+| Architecture / cross-cutting | `memory-bank/systemPatterns.md`, `memory-bank/designPatterns.md`, `memory-bank/techContext.md` |
+| Database | `memory-bank/databaseContext.md` |
+| Deploy / ops | `memory-bank/deployment.md`, `docs/deployment/` |
+| Platform architecture detail | `docs/architecture/README.md` |
 
-## Memory Bank Structure
+Do **not** read all 50+ Memory Bank files unless the user requests a full **update memory bank** refresh (then review all files; prioritize `activeContext.md` and `progress.md`).
 
-The Memory Bank has evolved into a sophisticated documentation system with 57+ files organized into categories. Files build upon each other in a clear hierarchy:
+## After major changes
 
-\```mermaid
-flowchart TD
-    PB[projectbrief.md] --> PC[productContext.md]
-    PB --> SP[systemPatterns.md]
-    PB --> TC[techContext.md]
-    
-    PC --> MPC[Module Product Contexts]
-    SP --> ARCH[Architecture Docs]
-    TC --> DB[databaseContext.md]
-    
-    MPC --> AC[activeContext.md]
-    ARCH --> AC
-    DB --> AC
-    
-    AC --> P[progress.md]
-    
-    PS[Project Summaries] -.historical context.-> AC
-    STRAT[Strategic Planning] -.future direction.-> AC
-\```
+Update Memory Bank status/progress as appropriate. Archive superseded docs per `docs/VSSYL_SOURCE_OF_TRUTH.md`.
 
-### Core Foundation Files (Required - Read First)
-These are the primary files that provide essential project context:
+## Where to write new documentation
 
-1. **`projectbrief.md`** - Foundation document that shapes all other files
-   - Defines core requirements and goals
-   - Source of truth for project scope
+**Placement policy:** `docs/guides/DOCUMENTATION_PLACEMENT.md` and `.cursor/rules/RULES_SUMMARY.md`.
 
-2. **`productContext.md`** - Main product vision
-   - Why this project exists and problems it solves
-   - How it should work and user experience goals
+- **Product intent / status** → `memory-bank/`
+- **Agent rules** → `.cursor/rules/` (short)
+- **Architecture** → `docs/architecture/`
+- **How-to / onboarding** → `docs/guides/`
 
-3. **`activeContext.md`** ⚡ - Current work focus
-   - Recent changes and next steps
-   - Active decisions and considerations
-   - **READ THIS FIRST** in every session
-
-4. **`progress.md`** ⚡ - Status and completion tracking
-   - What works and what's left to build
-   - Current status and known issues
-   - **ALWAYS CHECK** for latest status
-
-5. **`systemPatterns.md`** - Architecture overview
-   - System architecture and key technical decisions
-   - Design patterns in use and component relationships
-
-6. **`techContext.md`** - Technology stack
-   - Technologies used and development setup
-   - Technical constraints and dependencies
-
-### Module Product Contexts (Feature-Specific)
-Each major module/feature has its own product context file following the `*ProductContext.md` naming pattern:
-
-- `calendarProductContext.md` - Calendar module features and architecture
-- `chatProductContext.md` - Chat system design and functionality
-- `driveProductContext.md` - File storage and management
-- `adminProductContext.md` - Admin portal capabilities
-- `analyticsProductContext.md` - Analytics and reporting
-- `dashboardProductContext.md` - Dashboard system
-- `marketplaceProductContext.md` - Module marketplace
-- `settingsProductContext.md` - User and system settings
-- And more...
-
-**Read when:** Working on a specific module or feature
-
-### Project Summaries (Historical Context)
-Documentation of major milestones and completed work:
-
-- `phase*-completion-summary.md` - Major phase completions
-- `AI_IMPLEMENTATION_SUMMARY.md` - AI system implementation details
-- `TYPE_SAFETY_PROJECT_SUMMARY.md` - TypeScript migration summary
-- `ORG_CHART_PHASE1_SUMMARY.md` - Org chart implementation
-- `CHAT_SESSION_SUMMARY_*.md` - Important session summaries
-
-**Read when:** Need context on past decisions or completed features
-
-### Architecture & Technical Documentation
-Deep technical documentation for system design:
-
-- `designPatterns.md` - Code patterns and conventions
-- `databaseContext.md` - Database schema and relationships
-- `apiDocumentation.md` - API structure and endpoints
-- `troubleshooting.md` - Common issues and solutions
-- `lintingAndCodeQuality.md` - Code quality standards
-- `testingStrategy.md` - Testing approaches
-
-**Read when:** Making architectural decisions or debugging
-
-### Specialized Contexts (Domain-Specific)
-Domain-specific documentation for particular concerns:
-
-- `deployment.md` - Deployment processes and cloud infrastructure
-- `securityComplianceSystem.md` - Security and compliance requirements
-- `compliance.md` - Regulatory compliance details
-- `permissionsModel.md` - Permission and access control
-- `org-chart-permission-system.md` - Org chart permissions
-- `googleCloudMigration.md` - GCP migration details
-- `contributorGuide.md` - Contribution guidelines
-
-**Read when:** Working in these specific domains
-
-### Strategic Planning (Future Direction)
-Long-term planning and vision documents:
-
-- `roadmap.md` - Product roadmap and future features
-- `futureIdeas.md` - Ideas and potential enhancements
-- `enterpriseModuleStrategy.md` - Enterprise feature planning
-- `pricing-system-simplification.md` - Pricing strategy
-
-**Read when:** Planning features or making strategic decisions
-
-## How to Read the Memory Bank
-
-### Starting a New Session
-1. **Always read** `docs/VSSYL_SOURCE_OF_TRUTH.md`, then `activeContext.md` and `progress.md`
-2. **Scan** `projectbrief.md` and `productContext.md` when you need broader product scope (new feature, unfamiliar area)
-3. **Read specific contexts** based on the task at hand (see baseline section above)
-
-### Working on a Specific Module
-1. Read the module's `*ProductContext.md` file
-2. Check `progress.md` for module status
-3. Review relevant architecture docs (`designPatterns.md`, `apiDocumentation.md`)
-4. Check `databaseContext.md` if database changes are involved
-
-### Making Architectural Decisions
-1. Review `systemPatterns.md` and `designPatterns.md`
-2. Check `roadmap.md` for strategic direction
-3. Review relevant summary files for past decisions
-4. Consult `techContext.md` for technical constraints
-
-### Debugging or Troubleshooting
-1. Check `troubleshooting.md` for known issues
-2. Review module-specific product context
-3. Check `deployment.md` if production-related
-4. Review `databaseContext.md` for data issues
-
-### File Creation Patterns
-
-**CRITICAL RULE: Never Create Root-Level .md Files!** 🚫
-- ❌ **NEVER** create `.md` files at project root (except README.md which already exists)
-- ❌ **NEVER** create documentation files outside of `memory-bank/` or `docs/` directories
-- ❌ **NEVER** create session summaries at root - they belong in `docs/archive/session-summaries/`
-- ✅ **ALWAYS** check if existing memory bank files cover the topic first
-- ✅ **ALWAYS** update existing files rather than creating new ones
-
-**Memory Bank vs Docs - When to Use Which:**
-
-**Use `memory-bank/`** for AI context and persistent knowledge:
-- ✅ Product contexts (how features work conceptually)
-- ✅ System architecture and design patterns
-- ✅ Project summaries and major milestones
-- ✅ Strategic planning and roadmaps
-- ✅ Information AI needs to understand the codebase
-- ✅ Files that should persist across all sessions
-
-**Use `docs/`** for human-facing operational guides:
-- ✅ Setup instructions (how to configure services)
-- ✅ Deployment procedures (step-by-step guides)
-- ✅ Troubleshooting guides (fixing specific issues)
-- ✅ Session summaries (completed work documentation)
-- ✅ Migration guides (one-time procedures)
-- ✅ Technical implementation details (how-to guides)
-- ✅ Files that are reference material for operations
-
-**Quick Decision Tree:**
-- Does AI need this to understand the system? → `memory-bank/`
-- Is this operational/setup instructions for humans? → `docs/`
-- Is this a completed work summary? → `docs/archive/session-summaries/`
-- Is this about architecture/design? → `memory-bank/`
-- Is this about deployment/setup? → `docs/deployment/` or `docs/setup/`
-
-**Documentation File Placement Rules:**
-
-**Memory Bank Files** (`memory-bank/`):
-- **Module Product Context**: `memory-bank/[moduleName]ProductContext.md`
-  - When: Adding a new major feature/module
-  - Example: `chatProductContext.md`, `driveProductContext.md`
-  
-- **Phase/Project Summary**: `memory-bank/[PHASE_NAME]_SUMMARY.md`
-  - When: Completing a major phase or project
-  - Example: `ORG_CHART_PHASE1_SUMMARY.md`, `TYPE_SAFETY_PROJECT_SUMMARY.md`
-  
-- **Specialized Context**: `memory-bank/[domain]Context.md`
-  - When: Domain requires significant documentation
-  - Example: `deployment.md`, `databaseContext.md`, `securityComplianceSystem.md`
-
-**Operational Docs** (`docs/`):
-- **Setup Guides**: `docs/setup/[TOPIC]_SETUP.md`
-  - When: Creating user-facing setup instructions
-  - Example: `docs/setup/GOOGLE_CLOUD_SETUP.md`
-  
-- **Deployment Guides**: `docs/deployment/[TOPIC]_GUIDE.md`
-  - When: Creating deployment procedures
-  - Example: `docs/deployment/GOOGLE_CLOUD_DEPLOYMENT.md`
-  
-- **Implementation Guides**: `docs/guides/[TOPIC]_GUIDE.md` — index at `docs/guides/README.md`
-  - When: Creating technical implementation references
-  - Example: `docs/guides/TECHNICAL_IMPLEMENTATION_GUIDE.md`
-- **Plans / roadmaps**: `docs/plans/[NAME].md` — index at `docs/plans/README.md` (do not add loose `.md` under `docs/` root except `docs/README.md`)
-  
-- **Session Summaries**: `docs/archive/session-summaries/[SUMMARY_NAME].md`
-  - When: Documenting completed work sessions
-  - Example: `docs/archive/session-summaries/BUSINESS_WORKSPACE_IMPLEMENTATION_SUMMARY.md`
-
-**DON'T create:**
-- ❌ Root-level `.md` files (except README.md which exists)
-- ❌ Temporary or one-off documentation files
-- ❌ Duplicate information already covered elsewhere
-- ❌ Files that should be code comments instead
-- ❌ Architecture diagrams at root (use `docs/guides/`)
-- ❌ Feature comparison files at root (use `docs/archive/session-summaries/`)
-
-## Core Workflows
-
-### Plan Mode
-\```mermaid
-flowchart TD
-    Start[Start] --> ReadFiles[Read Memory Bank]
-    ReadFiles --> CheckFiles{Files Complete?}
-    
-    CheckFiles -->|No| Plan[Create Plan]
-    Plan --> Document[Document in Chat]
-    
-    CheckFiles -->|Yes| Verify[Verify Context]
-    Verify --> Strategy[Develop Strategy]
-    Strategy --> Present[Present Approach]
-\```
-
-### Act Mode
-\```mermaid
-flowchart TD
-    Start[Start] --> Context[Check Memory Bank]
-    Context --> Update[Update Documentation]
-    Update --> Rules[Update .cursor/rules if needed]
-    Rules --> Execute[Execute Task]
-    Execute --> Document[Document Changes]
-\```
-
-## Documentation Updates
-
-Memory Bank updates occur when:
-1. Discovering new project patterns
-2. After implementing significant changes
-3. When user requests with **update memory bank** (MUST review ALL files)
-4. When context needs clarification
-
-\```mermaid
-flowchart TD
-    Start[Update Process]
-    
-    subgraph Process
-        P1[Review ALL Files]
-        P2[Document Current State]
-        P3[Clarify Next Steps]
-        P4[Update .cursor/rules]
-        
-        P1 --> P2 --> P3 --> P4
-    end
-    
-    Start --> Process
-\```
-
-Note: When triggered by **update memory bank**, I MUST review every memory bank file, even if some don't require updates. Focus particularly on activeContext.md and progress.md as they track current state.
-
-## Project Intelligence (.cursor/rules)
-
-The .cursor/rules file is my learning journal for each project. It captures important patterns, preferences, and project intelligence that help me work more effectively. As I work with you and the project, I'll discover and document key insights that aren't obvious from the code alone.
-
-\```mermaid
-flowchart TD
-    Start{Discover New Pattern}
-    
-    subgraph Learn [Learning Process]
-        D1[Identify Pattern]
-        D2[Validate with User]
-        D3[Document in .cursor/rules]
-    end
-    
-    subgraph Apply [Usage]
-        A1[Read .cursor/rules]
-        A2[Apply Learned Patterns]
-        A3[Improve Future Work]
-    end
-    
-    Start --> Learn
-    Learn --> Apply
-\```
-
-### What to Capture
-- Critical implementation paths
-- User preferences and workflow
-- Project-specific patterns
-- Known challenges
-- Evolution of project decisions
-- Tool usage patterns
-
-The format is flexible - focus on capturing valuable insights that help me work more effectively with you and the project. Think of .cursor/rules as a living document that grows smarter as we work together.
-
-REMEMBER: After every memory reset, I begin completely fresh. The Memory Bank is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy.
+**Last updated:** 2026-05-16

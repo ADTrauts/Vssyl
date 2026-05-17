@@ -139,6 +139,13 @@ enum ModuleScanStatus {
   FAILED
 }
 
+enum ModuleCertificationStatus {
+  NOT_RUN
+  PASSED
+  WARNING
+  FAILED
+}
+
 enum ModuleUploadSessionStatus {
   INITIATED
   UPLOADING

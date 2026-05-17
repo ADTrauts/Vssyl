@@ -12,6 +12,14 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { canReadFile, canWriteFile, canWriteFolder } from '../services/drivePermissionHelpers';
+import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import {
+  emitFileDeletedEvent,
+  emitFileSharedEvent,
+  emitFileUploadedEvent,
+} from '../events/domainEventEmitters';
 
 interface JWTPayload {
   sub?: string;
@@ -237,12 +245,25 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
 
     let folderRow: { dashboardId: string | null } | null = null;
     if (folderIdStr) {
-      const folder = await prisma.folder.findFirst({
-        where: { id: folderIdStr, userId, trashedAt: null },
-        select: { dashboardId: true },
+      const folder = await prisma.folder.findUnique({
+        where: { id: folderIdStr },
+        select: { dashboardId: true, trashedAt: true },
       });
-      if (!folder) {
+      if (!folder || folder.trashedAt) {
+        return res.status(404).json({ message: 'Folder not found' });
+      }
+      if (!(await canWriteFolder(userId, folderIdStr))) {
         return res.status(403).json({ message: 'Access denied' });
+      }
+      const uploadPolicyDual = await evaluateDrivePolicyDual({
+        userId,
+        action: POLICY_ACTIONS.FILE_UPLOAD,
+        resourceType: 'folder',
+        resourceId: folderIdStr,
+        scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
+      });
+      if (uploadPolicyDual.blocked) {
+        return res.status(403).json({ message: 'Access denied', reason: uploadPolicyDual.reason });
       }
       folderRow = folder;
       if (dashboardIdStr !== null && (folder.dashboardId ?? null) !== dashboardIdStr) {
@@ -251,6 +272,20 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     }
 
     const effectiveDashboardId = dashboardIdStr ?? folderRow?.dashboardId ?? null;
+
+    if (!folderIdStr) {
+      const rootUploadPolicyDual = await evaluateDrivePolicyDual({
+        userId,
+        action: POLICY_ACTIONS.FILE_UPLOAD,
+        resourceType: 'folder',
+        resourceId: userId,
+        metadata: { uploadRoot: true },
+        scope: effectiveDashboardId ? { dashboardId: effectiveDashboardId } : undefined,
+      });
+      if (rootUploadPolicyDual.blocked) {
+        return res.status(403).json({ message: 'Access denied', reason: rootUploadPolicyDual.reason });
+      }
+    }
     if (effectiveDashboardId) {
       try {
         await assertUserOwnsDashboard(prisma, userId, effectiveDashboardId);
@@ -340,6 +375,15 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
         fileType: mimetype,
         fileSize: size,
       },
+    });
+
+    emitFileUploadedEvent({
+      actorUserId: userId,
+      fileId: fileRecord.id,
+      folderId: fileRecord.folderId,
+      fileType: mimetype,
+      sizeBytes: size,
+      dashboardId: fileRecord.dashboardId,
     });
 
     // Phase 7: Proactive suggestion for document uploads (fire-and-forget)
@@ -724,14 +768,41 @@ export async function updateFile(req: Request, res: Response) {
     const { id } = req.params;
     const { name, folderId } = req.body;
     if (!(await canWriteFile(userId, id))) return res.status(403).json({ message: 'Forbidden' });
-    
-    // Get the original file to compare changes
+
+    const fileScopeRow = await prisma.file.findUnique({
+      where: { id },
+      select: { dashboardId: true },
+    });
+    const updatePolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FILE_UPDATE,
+      resourceType: 'file',
+      resourceId: id,
+      scope: fileScopeRow?.dashboardId ? { dashboardId: fileScopeRow.dashboardId } : undefined,
+    });
+    if (updatePolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: updatePolicyDual.reason });
+    }
+
     const originalFile = await prisma.file.findUnique({ where: { id } });
-    if (!originalFile) return res.status(404).json({ message: 'File not found' });
-    
+    if (!originalFile || originalFile.trashedAt) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    if (folderId !== undefined && folderId !== originalFile.folderId && folderId) {
+      const canWriteTargetFolder = await canWriteFolder(userId, folderId);
+      if (!canWriteTargetFolder) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
+    const updateData: { name?: string; folderId?: string | null } = {};
+    if (name !== undefined) updateData.name = name;
+    if (folderId !== undefined) updateData.folderId = folderId;
+
     const file = await prisma.file.updateMany({
-      where: { id, userId },
-      data: { name, folderId },
+      where: { id, trashedAt: null },
+      data: updateData,
     });
     if (file.count === 0) return res.status(404).json({ message: 'File not found' });
     const updated = await prisma.file.findUnique({ where: { id } });
@@ -802,13 +873,29 @@ export async function deleteFile(req: Request, res: Response) {
     const userId = req.user.id;
     const { id } = req.params;
     if (!(await canWriteFile(userId, id))) return res.status(403).json({ message: 'Forbidden' });
-    
-    // Get the file details before deletion for activity tracking
+
+    const deleteScopeRow = await prisma.file.findUnique({
+      where: { id },
+      select: { dashboardId: true },
+    });
+    const deletePolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FILE_DELETE,
+      resourceType: 'file',
+      resourceId: id,
+      scope: deleteScopeRow?.dashboardId ? { dashboardId: deleteScopeRow.dashboardId } : undefined,
+    });
+    if (deletePolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: deletePolicyDual.reason });
+    }
+
     const fileToDelete = await prisma.file.findUnique({ where: { id } });
-    if (!fileToDelete) return res.status(404).json({ message: 'File not found' });
-    
+    if (!fileToDelete || fileToDelete.trashedAt) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
     const file = await prisma.file.updateMany({
-      where: { id, userId, trashedAt: null },
+      where: { id, trashedAt: null },
       data: { trashedAt: new Date() },
     });
     if (file.count === 0) return res.status(404).json({ message: 'File not found' });
@@ -841,6 +928,14 @@ export async function deleteFile(req: Request, res: Response) {
         fileName: fileToDelete.name,
         softDelete: true,
       },
+    });
+
+    emitFileDeletedEvent({
+      actorUserId: userId,
+      fileId: id,
+      folderId: fileToDelete.folderId,
+      softDelete: true,
+      dashboardId: fileToDelete.dashboardId,
     });
 
     // Broadcast real-time drive event to owner
@@ -916,7 +1011,18 @@ export async function grantFilePermission(req: Request, res: Response) {
     });
     
     if (!file || file.userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
-    
+
+    const sharePolicyDual = await evaluateDrivePolicyDual({
+      userId: ownerId,
+      action: POLICY_ACTIONS.FILE_SHARE,
+      resourceType: 'file',
+      resourceId: id,
+      scope: file.dashboardId ? { dashboardId: file.dashboardId } : undefined,
+    });
+    if (sharePolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: sharePolicyDual.reason });
+    }
+
     const permission = await prisma.filePermission.upsert({
       where: { fileId_userId: { fileId: id, userId } },
       update: { canRead, canWrite },
@@ -951,6 +1057,14 @@ export async function grantFilePermission(req: Request, res: Response) {
       });
       // Don't fail the permission grant if notification fails
     }
+
+    emitFileSharedEvent({
+      actorUserId: ownerId,
+      fileId: id,
+      recipientUserId: userId,
+      canRead: Boolean(canRead),
+      canWrite: Boolean(canWrite),
+    });
 
     res.status(201).json({ permission });
   } catch (err) {
@@ -1047,24 +1161,6 @@ export async function revokeFilePermission(req: Request, res: Response) {
   } catch (err) {
     res.status(500).json({ message: 'Failed to revoke permission' });
   }
-}
-
-// Helper: check if user can read a file
-async function canReadFile(userId: string, fileId: string): Promise<boolean> {
-  const file = await prisma.file.findUnique({ where: { id: fileId } });
-  if (!file) return false;
-  if (file.userId === userId) return true;
-  const perm = await prisma.filePermission.findFirst({ where: { fileId, userId, canRead: true } });
-  return !!perm;
-}
-
-// Helper: check if user can write a file
-async function canWriteFile(userId: string, fileId: string): Promise<boolean> {
-  const file = await prisma.file.findUnique({ where: { id: fileId } });
-  if (!file) return false;
-  if (file.userId === userId) return true;
-  const perm = await prisma.filePermission.findFirst({ where: { fileId, userId, canWrite: true } });
-  return !!perm;
 }
 
 // List trashed files for the user
@@ -1400,28 +1496,46 @@ export async function moveFile(req: Request, res: Response) {
     return;
   }
   try {
-    const userId = (req as AuthenticatedRequest).user?.id;
+    const userId = (req as AuthenticatedRequest).user!.id;
     const { id } = req.params;
     const { targetFolderId } = req.body;
 
-    // Verify the file belongs to the user
     const file = await prisma.file.findUnique({ where: { id } });
-    if (!file || file.userId !== userId) {
+    if (!file || file.trashedAt) {
       return res.status(404).json({ message: 'File not found or access denied' });
     }
 
-    // Verify the target folder exists and belongs to the user (if specified)
+    if (!(await canWriteFile(userId, id))) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const movePolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FILE_MOVE,
+      resourceType: 'file',
+      resourceId: id,
+      scope: file.dashboardId ? { dashboardId: file.dashboardId } : undefined,
+      metadata: { targetFolderId: targetFolderId ?? null },
+    });
+    if (movePolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: movePolicyDual.reason });
+    }
+
     if (targetFolderId) {
-      const targetFolder = await prisma.folder.findUnique({ where: { id: targetFolderId } });
-      if (!targetFolder || targetFolder.userId !== userId) {
+      const targetFolder = await prisma.folder.findUnique({
+        where: { id: targetFolderId },
+        select: { trashedAt: true, dashboardId: true },
+      });
+      if (!targetFolder || targetFolder.trashedAt) {
         return res.status(400).json({ message: 'Target folder not found or access denied' });
+      }
+      if (!(await canWriteFolder(userId, targetFolderId))) {
+        return res.status(403).json({ message: 'Forbidden' });
       }
     }
 
-    // Get the original file details for activity tracking
     const originalFolderId = file.folderId;
 
-    // Move the file
     const updatedFile = await prisma.file.update({
       where: { id },
       data: { folderId: targetFolderId || null },

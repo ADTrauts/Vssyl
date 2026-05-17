@@ -24,11 +24,12 @@ Use these entry points to create submissions, manage modules, and track status a
 ## Read this material in order
 
 1. **This guide** — scope, obligations, and links.
-2. **[`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)** — canonical module interoperability contract (permissions, events, realtime, notifications, AI context, compliance).
-3. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
-4. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
-5. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
-6. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
+2. **[`THIRD_PARTY_MODULE_RULEBOOK.md`](./THIRD_PARTY_MODULE_RULEBOOK.md)** — reviewer must-pass checklist (start here if preparing for approval).
+3. **[`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)** — canonical module interoperability contract (permissions, events, realtime, notifications, AI context, compliance).
+4. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
+5. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
+6. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
+7. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
 
 ---
 

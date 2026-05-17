@@ -256,8 +256,8 @@ function MonthInner() {
           return [incoming, ...prev];
         });
       };
-      (chatSocket as any).on?.('calendar_event', handler as any);
-      unsubscribe = () => { (chatSocket as any).off?.('calendar_event', handler as any); };
+      chatSocket.onRaw('calendar_event', handler);
+      unsubscribe = () => { chatSocket.offRaw('calendar_event', handler); };
     })();
     return () => { if (unsubscribe) unsubscribe(); };
   }, [session]);

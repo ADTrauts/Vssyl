@@ -1,0 +1,27 @@
+---
+description: Workspace runtime state — single source of context IDs; no permission duplication or cross-tenant leakage
+globs: web/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Runtime state boundaries
+
+**Architecture:** `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`  
+**Related:** `workspace-runtime.mdc`, `backend-trust-boundaries.mdc`, `api-and-auth.mdc`
+
+## Must
+
+- Treat **`WorkspaceRuntimeState`** + **`buildWorkspaceRuntimeState`** as the canonical derived view for available modules/widgets and active selection.
+- Pass **`permissionSnapshot`** into runtime builders; do not maintain a second permission map for the same surface.
+- **Rebuild or reset** runtime-related state when `activeDashboardId`, `activeBusinessId`, or `activeHouseholdId` changes (route/navigation), so lists and `activeModuleId` do not leak across contexts.
+- Keep **`BusinessConfigurationProvider` `businessId`** aligned with workspace/business routes when both provider and runtime are mounted.
+- Use **`contextMapping.ts`** for workspace context type aliases.
+
+## Must not
+
+- Store authoritative tenant ids only in component local state when a parent provider or runtime input already owns them.
+- Filter modules/widgets with a different **`installedModuleIds`** list than the runtime builder uses.
+- Add ad-hoc global `io()` sockets or duplicate connection managers — use **`realtimeClient.ts`** acquire/release and runtime room helpers (RT-Q1).
+- Read `businessId` / `dashboardId` from URL or props without matching the active provider scope.
+
+**Last updated:** 2026-05-17

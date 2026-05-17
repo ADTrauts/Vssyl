@@ -8,6 +8,7 @@ import { SidebarCustomizationProvider } from '../../contexts/SidebarCustomizatio
 import { useWorkAuth } from '../../contexts/WorkAuthContext';
 import { MODULE_ICONS } from '../../config/moduleIcons';
 import { DashboardLayoutInner } from './DashboardLayoutInner';
+import { WorkspaceRuntimeScopeBridge } from '../../runtime/workspace/WorkspaceRuntimeScopeBridge';
 
 export { MODULE_ICONS };
 
@@ -30,7 +31,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <BusinessConfigurationProvider businessId={currentBusinessId || undefined}>
       <PositionAwareModuleProvider>
-        <DashboardLayoutWithModules>{children}</DashboardLayoutWithModules>
+        <WorkspaceRuntimeScopeBridge>
+          <DashboardLayoutWithModules>{children}</DashboardLayoutWithModules>
+        </WorkspaceRuntimeScopeBridge>
       </PositionAwareModuleProvider>
     </BusinessConfigurationProvider>
   );

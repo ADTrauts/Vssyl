@@ -16,6 +16,14 @@ import {
   VALID_MODULE_CATEGORIES,
   classifyArtifactUploadInitError,
 } from './moduleShared';
+import {
+  buildCertificationInputFromModule,
+  validateModuleCertification,
+} from '../../services/moduleCertificationValidator';
+import {
+  certificationAdvisoryFromResult,
+  persistModuleVersionCertification,
+} from '../../services/moduleCertificationPersistence';
 
 
 export const initModuleArtifactUpload = async (req: Request, res: Response) => {
@@ -277,6 +285,26 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
       data: { status: 'FINALIZED' },
     });
 
+    const certificationResult = validateModuleCertification(
+      buildCertificationInputFromModule(
+        { id: moduleId, manifest, permissions: Array.isArray(permissions) ? permissions : [] },
+        manifest
+      )
+    );
+    await persistModuleVersionCertification(moduleVersion.id, certificationResult);
+    const certificationAdvisory = certificationAdvisoryFromResult(certificationResult);
+
+    if (certificationAdvisory.warnings.length > 0 || certificationAdvisory.status === 'failed') {
+      void logger.warn('Module certification advisory on artifact finalize', {
+        operation: 'module_certification_finalize_advisory',
+        moduleId,
+        moduleVersionId: moduleVersion.id,
+        status: certificationAdvisory.status,
+        errors: certificationAdvisory.errors,
+        warnings: certificationAdvisory.warnings,
+      });
+    }
+
     return res.json({
       success: true,
       data: {
@@ -286,6 +314,7 @@ export const finalizeModuleArtifactUpload = async (req: Request, res: Response) 
         artifactId: artifact.id,
         scanStatus: artifact.scanStatus,
         scanSummary: combinedScanSummary,
+        certificationAdvisory,
       },
     });
   } catch (error: unknown) {
