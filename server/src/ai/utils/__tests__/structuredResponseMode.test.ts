@@ -2,9 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { inferStructuredResponseMode } from '../structuredResponseMode';
 import { inferQueryIntent } from '../queryIntent';
 import { applyConversationModeShape, normalizeAIResponse } from '../normalizeAIResponse';
+import { polishConversationalResponse } from '../conversationalPolish';
 
 const VACATION_PROMPT =
   "I still want to go on a last minute vacation but I can't figure out where to go";
+
+const VACATION_AFFORDABLE_PROMPT =
+  'I want to go on a last minute vacation. Where are the best, and most affordable places?';
 
 describe('inferQueryIntent', () => {
   it('routes vacation uncertainty to conversation', () => {
@@ -40,6 +44,14 @@ describe('inferStructuredResponseMode', () => {
     });
     expect(mode).toBe('conversation');
     expect(responseDensity).toBe('light');
+  });
+
+  it('infers conversation for affordable vacation places prompt', () => {
+    const { mode } = inferStructuredResponseMode({
+      query: VACATION_AFFORDABLE_PROMPT,
+      toneMode: 'conversational',
+    });
+    expect(mode).toBe('conversation');
   });
 
   it('infers conversation for "what do you think"', () => {
@@ -93,6 +105,15 @@ describe('normalizeAIResponse conversation shaping', () => {
     expect(out.structured?.evidence).toBeUndefined();
     expect(out.response).not.toContain('Key Insights');
     expect(out.response).not.toContain('Recommended Actions');
+  });
+
+  it('polish removes productivity and work-life phrasing in conversation mode', () => {
+    const raw =
+      'Considering your current work-life balance and productivity scores, a trip could help. Key insights: rest matters.';
+    const out = polishConversationalResponse(raw, { conversationMode: true });
+    expect(out.toLowerCase()).not.toContain('productivity score');
+    expect(out.toLowerCase()).not.toContain('work-life balance');
+    expect(out.toLowerCase()).not.toContain('key insights');
   });
 
   it('applyConversationModeShape merges sections into summary', () => {

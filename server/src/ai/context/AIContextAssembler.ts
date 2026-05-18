@@ -8,6 +8,16 @@ import { logger } from '../../lib/logger';
 import type { AIResponseDensity, AIResponseMode } from '../types/structuredResponse';
 import { inferQueryIntent, type QueryIntent } from '../utils/queryIntent';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
+import {
+  applyContextProfile,
+  CONVERSATION_CONTEXT_BUDGET_TOKENS,
+  ENTERPRISE_CONTEXT_BUDGET_TOKENS,
+  isSyntheticInsight,
+  maxBlocksForProfile,
+  resolveContextProfile,
+  conversationRankFilter,
+  type ContextProfile,
+} from './contextProfile';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -302,26 +312,35 @@ export function scoreContextBlock(input: {
 function rankContextBlocksForProvider(
   blocks: AIAssembledContext['contextBlocks'],
   queryText: string,
-  currentModule?: string
+  currentModule?: string,
+  profile: ContextProfile = 'enterprise'
 ): AIAssembledContext['contextBlocks'] {
   const totalBlocksBefore = blocks.length;
+  const maxBlocks = maxBlocksForProfile(profile);
   const scored = blocks.map((b) => ({
     ...b,
     relevanceScore: scoreContextBlock({ queryText, block: b, currentModule }),
   }));
-  const filtered = scored.filter((b) => {
-    if (b.tier === 'tier4_cross_module') {
-      return (b.relevanceScore ?? 0) >= 35 || b.priority === 'high';
-    }
-    return true;
-  });
+  let filtered =
+    profile === 'conversation'
+      ? conversationRankFilter(scored)
+      : scored.filter((b) => {
+          if (b.tier === 'tier4_cross_module') {
+            return (b.relevanceScore ?? 0) >= 35 || b.priority === 'high';
+          }
+          return true;
+        });
   filtered.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
 
-  const highs = filtered.filter((b) => b.priority === 'high');
-  const others = filtered.filter((b) => b.priority !== 'high');
-  const out: typeof scored = [...highs];
+  const highs =
+    profile === 'conversation'
+      ? filtered.filter((b) => b.priority === 'high' && (b.relevanceScore ?? 0) >= 40)
+      : filtered.filter((b) => b.priority === 'high');
+  const highSet = new Set(highs);
+  const others = filtered.filter((b) => !highSet.has(b));
+  const out: AIAssembledContext['contextBlocks'] = [...highs];
   for (const b of others) {
-    if (out.length >= MAX_CONTEXT_BLOCKS_AFTER_RANK) break;
+    if (out.length >= maxBlocks) break;
     out.push(b);
   }
 
@@ -373,8 +392,10 @@ function estimateBlockTokens(b: AIAssembledContext['contextBlocks'][number]): nu
 export function applyContextBudget(input: {
   blocks: AIAssembledContext['contextBlocks'];
   maxEstimatedTokens: number;
+  /** When false, high-priority blocks still respect the token budget (conversation profile). */
+  alwaysKeepHighPriority?: boolean;
 }): AIAssembledContext['contextBlocks'] {
-  const { blocks, maxEstimatedTokens } = input;
+  const { blocks, maxEstimatedTokens, alwaysKeepHighPriority = true } = input;
   const blocksBefore = blocks.length;
   const keptIndices = new Set<number>();
 
@@ -384,8 +405,11 @@ export function applyContextBudget(input: {
   const restEntries = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.priority !== 'high');
 
   for (const { b, i } of highEntries) {
-    keptIndices.add(i);
-    totalTokens += estimateBlockTokens(b);
+    const cost = estimateBlockTokens(b);
+    if (alwaysKeepHighPriority || totalTokens + cost <= maxEstimatedTokens) {
+      keptIndices.add(i);
+      totalTokens += cost;
+    }
   }
 
   for (const { b, i } of restEntries) {
@@ -525,6 +549,18 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
 
   assumptions.push('User intent was inferred from query wording using simple keyword heuristics.');
 
+  const hasHistoryEarly =
+    Array.isArray(query.conversationHistory) && query.conversationHistory.length > 0;
+  const intentEarly = inferIntent(query.query);
+  const structuredEarly = inferStructuredResponseMode({
+    query: query.query,
+    explicitMode: input.explicitStructuredMode,
+    toneMode: input.toneMode,
+    assembledIntent: intentEarly,
+    isFollowUp: hasHistoryEarly,
+  });
+  const contextProfile = resolveContextProfile(structuredEarly.mode);
+
   if (attachedFiles && attachedFiles.length > 0) {
     const filePayload = attachedFiles.slice(0, MAX_ITEMS).map((f) => ({
       id: f.id,
@@ -556,9 +592,12 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       currentFocus: userContext.currentFocus,
       currentModule: currentModule ?? null,
     },
-    priority: 'high',
+    priority: contextProfile === 'conversation' ? 'medium' : 'high',
     tier: 'tier4_cross_module',
-    inclusionReason: 'module focus baseline',
+    inclusionReason:
+      contextProfile === 'conversation'
+        ? 'module focus — included only when query-relevant'
+        : 'module focus baseline',
   });
   evidence.push({
     label: 'User module context (active modules & focus)',
@@ -650,11 +689,18 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     }
   }
 
-  if (userContext.crossModuleInsights?.length) {
+  const insightsForAssembly = (userContext.crossModuleInsights || []).filter((i) => {
+    if (contextProfile === 'conversation' && isSyntheticInsight(i)) {
+      return false;
+    }
+    return true;
+  });
+
+  if (insightsForAssembly.length) {
     contextBlocks.push({
       title: 'Cross-module insights',
       sourceType: 'module',
-      content: userContext.crossModuleInsights.slice(0, 15).map((i) => ({
+      content: insightsForAssembly.slice(0, 15).map((i) => ({
         title: i.title,
         description: truncateString(i.description, 500),
         modules: i.modules,
@@ -666,7 +712,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     evidence.push({
       label: 'Cross-module insights from context engine',
       sourceType: 'module',
-      detail: `${userContext.crossModuleInsights.length} insight(s)`,
+      detail: `${insightsForAssembly.length} insight(s)`,
       confidence: 'medium',
     });
   }
@@ -838,16 +884,9 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     scope = 'personal';
   }
 
-  const intent = inferIntent(query.query);
-  const hasHistory =
-    Array.isArray(query.conversationHistory) && query.conversationHistory.length > 0;
-  const { mode: structuredResponseMode, responseDensity } = inferStructuredResponseMode({
-    query: query.query,
-    explicitMode: input.explicitStructuredMode,
-    toneMode: input.toneMode,
-    assembledIntent: intent,
-    isFollowUp: hasHistory,
-  });
+  const intent = intentEarly;
+  const structuredResponseMode = structuredEarly.mode;
+  const responseDensity = structuredEarly.responseDensity;
 
   const compressedBlocks = contextBlocks.map((block) => ({
     ...block,
@@ -860,15 +899,45 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     totalBlocks: compressedBlocks.length,
   });
 
+  const scoredForProfile = compressedBlocks.map((b) => ({
+    ...b,
+    relevanceScore: scoreContextBlock({
+      queryText: query.query,
+      block: b,
+      currentModule: currentModule || undefined,
+    }),
+  }));
+
+  const profileApplied = applyContextProfile({
+    profile: contextProfile,
+    queryText: query.query,
+    blocks: scoredForProfile,
+  });
+
+  void logger.debug('[AI_CONTEXT_PROFILE]', {
+    contextProfile,
+    structuredResponseMode,
+    contextBlockCount: profileApplied.blocks.length,
+    includedContextTitles: profileApplied.includedTitles,
+    excludedContextTitles: profileApplied.excludedTitles,
+  });
+
   const rankedContextBlocks = rankContextBlocksForProvider(
-    compressedBlocks,
+    profileApplied.blocks,
     query.query,
-    currentModule || undefined
+    currentModule || undefined,
+    contextProfile
   );
+
+  const contextBudget =
+    contextProfile === 'conversation'
+      ? CONVERSATION_CONTEXT_BUDGET_TOKENS
+      : ENTERPRISE_CONTEXT_BUDGET_TOKENS;
 
   const budgetedContextBlocks = applyContextBudget({
     blocks: rankedContextBlocks,
-    maxEstimatedTokens: DEFAULT_CONTEXT_BUDGET_ESTIMATED_TOKENS,
+    maxEstimatedTokens: contextBudget,
+    alwaysKeepHighPriority: contextProfile !== 'conversation',
   });
 
   return {

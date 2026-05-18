@@ -25,6 +25,7 @@ import {
 } from '../utils/conversationContinuity';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
+import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
@@ -872,6 +873,7 @@ export class DigitalLifeTwinCore {
       isFollowUp: Boolean(query.conversationHistory && query.conversationHistory.length > 0),
     });
     const structuredResponseMode = structuredInference.mode;
+    const responseDensity = structuredInference.responseDensity;
 
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
     const prompt = this.buildDigitalTwinPrompt(
@@ -1018,6 +1020,13 @@ export class DigitalLifeTwinCore {
     });
     options.assembledContext = assembledContext;
     options.structuredResponseMode = assembledContext.structuredResponseMode ?? structuredResponseMode;
+    options.responseDensity = assembledContext.responseDensity ?? responseDensity;
+    options.responseMode = responseMode;
+    options.userQuery = query.query;
+    options.promptProfile =
+      (assembledContext.structuredResponseMode ?? structuredResponseMode) === 'conversation'
+        ? 'conversation'
+        : 'enterprise';
 
     void logger.debug('[AI_CONTEXT_ASSEMBLY] assembled context', {
       scope: assembledContext.scope,
@@ -1027,6 +1036,19 @@ export class DigitalLifeTwinCore {
       evidenceCount: assembledContext.evidence.length,
       contextBlockCount: assembledContext.contextBlocks.length,
       missingContextCount: assembledContext.missingContext.length,
+    });
+
+    const providerDataPreview = buildProviderData({ options });
+    await logger.debug('[AI_PROVIDER_MODE]', {
+      operation: 'ai_provider_mode_wiring',
+      requestId: traceContext?.requestId,
+      conversationId: traceContext?.conversationId,
+      provider,
+      structuredResponseMode: providerDataPreview.structuredResponseMode,
+      responseMode: providerDataPreview.responseMode,
+      responseDensity: providerDataPreview.responseDensity,
+      promptProfile: providerDataPreview.promptProfile,
+      hasAssembledContext: Boolean(providerDataPreview.assembledContext),
     });
 
     // Phase 0.15: providerData trace before callAIProvider
@@ -1250,18 +1272,11 @@ If a file shows "No text could be extracted", say only that you could not read i
       }
     }
 
-    return `You are Vssyl's AI assistant for this user. You help interpret their personal, business, and module context, and you may represent their context accurately, but you must not claim to be the user.
-
-PERSONALITY PROFILE:
-- Openness: ${personality?.traits?.openness || 50}/100
-- Conscientiousness: ${personality?.traits?.conscientiousness || 50}/100  
-- Extraversion: ${personality?.traits?.extraversion || 50}/100
-- Agreeableness: ${personality?.traits?.agreeableness || 50}/100
-- Risk Tolerance: ${personality?.traits?.riskTolerance || 50}/100
+    const personalitySection = `PERSONALITY PROFILE (tone only — do not cite scores to the user):
 - Communication Style: ${personality?.preferences?.communication?.formality || 'professional but friendly'}
-- Planning Horizon: ${personality?.preferences?.decision?.timeframePreference || 'planned'}
+- Planning Horizon: ${personality?.preferences?.decision?.timeframePreference || 'planned'}`;
 
-CURRENT DIGITAL LIFE STATE:
+    const enterpriseLifeStateSection = `CURRENT DIGITAL LIFE STATE:
 - Active Modules: ${userContext.activeModules.join(', ')}
 - Current Focus: ${userContext.currentFocus.activity} (${userContext.currentFocus.priority} priority)
 - Work-Life Balance Score: ${userContext.lifeState.workLifeBalance.score}/100
@@ -1285,9 +1300,29 @@ ${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ?
   `Similar past queries:\n${(semanticEnhancement as Record<string, any>).relatedQueries.slice(0, 2).map((rq: Record<string, unknown>) => `- "${rq.query}" (${Math.round((rq.similarity as number) * 100)}% similar)`).join('\n')}` : 
   '- Learning query patterns...'}
 - Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
-- Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
+- Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%`;
 
-RESPONSE MODE (tone / pacing):
+    const collectiveLearningSection = `COLLECTIVE LEARNING (System-wide patterns from all users):
+${globalPatterns && globalPatterns.length > 0 ? 
+  globalPatterns.map((gp: Record<string, unknown>, idx: number) => 
+    `${idx + 1}. ${gp.description} (${Math.round((gp.confidence as number) * 100)}% confidence, ${gp.frequency} users)
+   Recommendations: ${Array.isArray(gp.recommendations) ? (gp.recommendations as string[]).slice(0, 2).join(', ') : 'N/A'}`
+  ).join('\n') : 
+  '- System is learning from collective user patterns...'}`;
+
+    const lifeOptimizationBlock = isConversation
+      ? ''
+      : `${enterpriseLifeStateSection}
+
+${collectiveLearningSection}
+
+`;
+
+    return `You are Vssyl's AI assistant for this user. You help interpret their personal, business, and module context, and you may represent their context accurately, but you must not claim to be the user.
+
+${personalitySection}
+
+${lifeOptimizationBlock}RESPONSE MODE (tone / pacing):
 - ${responseMode || 'conversational'}
 
 STRUCTURED RESPONSE MODE (JSON output shape):
@@ -1304,14 +1339,6 @@ ${activeTopic ? `- Active topic label: ${activeTopic.label}
 - Active topic confidence: ${Math.round(activeTopic.confidence * 100)}%` : '- No active topic available'}
 
 ${attachedFilesSection}
-
-COLLECTIVE LEARNING (System-wide patterns from all users):
-${globalPatterns && globalPatterns.length > 0 ? 
-  globalPatterns.map((gp: Record<string, unknown>, idx: number) => 
-    `${idx + 1}. ${gp.description} (${Math.round((gp.confidence as number) * 100)}% confidence, ${gp.frequency} users)
-   Recommendations: ${Array.isArray(gp.recommendations) ? (gp.recommendations as string[]).slice(0, 2).join(', ') : 'N/A'}`
-  ).join('\n') : 
-  '- System is learning from collective user patterns...'}
 
 CURRENT CONTEXT:
 - Time: ${currentTime}
@@ -1330,7 +1357,10 @@ The following is the user's latest message in this conversation. Respond in cont
 USER QUERY: "${query.query}"
 
 INSTRUCTIONS:
-Respond as Vssyl's assistant, demonstrating deep understanding of their:
+${isConversation ? `Respond as a smart, natural human assistant in dialogue.
+- Use any private context silently — never cite productivity scores, work-life balance, dashboards, or "key insights" unless the user explicitly asked about them.
+- Be warm, practical, and curious; ask at most 1–2 follow-up questions.
+- CRITICALLY: Follow any user-defined context instructions above${userContextSection}` : `Respond as Vssyl's assistant, demonstrating deep understanding of their:
 1. Personality and communication style
 2. Current life situation and priorities  
 3. Patterns and behaviors across all modules
@@ -1343,8 +1373,7 @@ Your response should:
 - Show awareness of their current context and priorities
 - Be helpful while respecting their autonomy preferences
 - CRITICALLY: Follow any user-defined context instructions above - these are explicit preferences and workflows the user has defined${userContextSection}
-- In conversational or conversation structured mode, do not expose internal scaffolding terms like "assumptions", "risks", "based on", or confidence labels in the user-facing prose.
-- Only expose internal scaffolding directly when response mode is debug.
+- Only expose internal scaffolding directly when response mode is debug.`}
 
 FORMATTING FOR READABILITY:
 - Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.
@@ -1774,31 +1803,15 @@ ${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage wit
       let response;
       const aiRequestTyped = aiRequest as any; // AI request structures are runtime-determined
       const userContextTyped = userContext as any; // User context structures are runtime-determined
-      const providerData: Record<string, unknown> = {};
-      if (options?.visionImageParts && Array.isArray(options.visionImageParts) && (options.visionImageParts as unknown[]).length > 0) {
-        providerData.visionImageParts = options.visionImageParts;
-      }
-      if (options?.traceContext && typeof options.traceContext === 'object') {
-        providerData.traceContext = options.traceContext;
-      }
-      if (options?.visionModelOverride && typeof options.visionModelOverride === 'string') {
-        providerData.visionModelOverride = options.visionModelOverride;
-      }
-      if (options?.modelOverride && typeof options.modelOverride === 'string') {
-        providerData.modelOverride = options.modelOverride;
-      }
-      if (options?.stream === true && typeof options.onChunk === 'function') {
-        providerData.stream = true;
-        providerData.onChunk = options.onChunk;
-      }
-      if (options?.assembledContext && typeof options.assembledContext === 'object') {
-        providerData.assembledContext = options.assembledContext;
-      }
+      const providerData = buildProviderData({ options: options || {} });
+
       if (providerData.assembledContext && typeof providerData.assembledContext === 'object') {
         const ac = providerData.assembledContext as Record<string, unknown>;
         await logger.debug('[AI_CONTEXT_PROVIDER]', {
           scope: ac.scope,
           intent: ac.intent,
+          structuredResponseMode: providerData.structuredResponseMode,
+          responseDensity: providerData.responseDensity,
           evidenceCount: Array.isArray(ac.evidence) ? ac.evidence.length : 0,
           contextBlockCount: Array.isArray(ac.contextBlocks) ? ac.contextBlocks.length : 0,
         });

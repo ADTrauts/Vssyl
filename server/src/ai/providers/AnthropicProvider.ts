@@ -3,6 +3,7 @@ import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinServi
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
+import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
@@ -339,30 +340,17 @@ FORMATTING: Keep "summary" and section "content" readable (short paragraphs); us
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     const safeData = this.sanitizeDataForPrompt(data);
-    const assembled = safeData.assembledContext;
-    const assembledSection =
-      assembled && typeof assembled === 'object'
-        ? `ASSEMBLED CONTEXT:\n${JSON.stringify(assembled, null, 2)}\n\n`
-        : '';
-    return `ANALYTICAL REQUEST: ${request.query}
+    const conversationMode = (data.structuredResponseMode as string | undefined) === 'conversation';
+    const base = buildProviderUserPrompt({
+      requestQuery: request.query,
+      data: { ...safeData, priority: request.priority },
+    });
+    if (conversationMode) {
+      return base;
+    }
+    return `${base}
 
-${assembledSection}AVAILABLE DATA FOR ANALYSIS:
-${JSON.stringify(safeData, null, 2)}
-
-REQUEST CONTEXT:
-- Priority: ${request.priority}
-- Timestamp: ${request.timestamp.toISOString()}
-- Module Context: ${(safeData as any).currentModule || 'Cross-module'}
-
-Please provide a thorough analysis as Vssyl's AI assistant, considering:
-1. Patterns in the data and their implications
-2. Relationships and interpersonal dynamics
-3. Long-term consequences of potential actions
-4. Ethical considerations for any recommendations
-5. Optimization opportunities for the user's digital life
-6. Work-life balance and well-being implications
-
-Follow the v2 JSON response format from your instructions. Focus on deep understanding and nuanced reasoning rather than quick responses.`;
+Please provide a thorough analysis as Vssyl's AI assistant, considering patterns, relationships, long-term consequences, ethical considerations, and optimization opportunities. Focus on deep understanding rather than quick responses.`;
   }
 
   /**

@@ -8,6 +8,15 @@ describe('polishConversationalResponse', () => {
     expect(out).toBe('Cancun seems more relaxing for a reset.');
   });
 
+  it('removes work-life and productivity openers in conversation mode', () => {
+    const input =
+      'Considering your current work-life balance and productivity scores, I would keep the trip simple.';
+    const out = polishConversationalResponse(input, { conversationMode: true });
+    expect(out.toLowerCase()).not.toContain('work-life balance');
+    expect(out.toLowerCase()).not.toContain('productivity score');
+    expect(out).toContain('keep the trip simple');
+  });
+
   it('strips internal headings while preserving useful bullets', () => {
     const input = [
       'Key insights:',

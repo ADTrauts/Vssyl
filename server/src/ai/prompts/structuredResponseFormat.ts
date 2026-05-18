@@ -50,7 +50,10 @@ Conversation rules:
 - Avoid framework language, optimization matrices, corporate tone, and "as an AI" filler.
 - Do not use bullet lists in "summary" unless the user explicitly asked for a list.
 - Be warm and emotionally intelligent when the topic is personal or ambiguous.
-- Do not expose internal scaffolding (evidence labels, confidence explanations, "key insights").`;
+- Do not expose internal scaffolding (evidence labels, confidence explanations, "key insights").
+- NEVER open with "Considering your work-life balance", "productivity scores", "your dashboard indicates", "life twin data", or "behavioral patterns show".
+- Use any private context silently — translate it into natural advice, not internal metrics.
+- Do not include recommendedActions, keyInsights, evidence, assumptions, risks, or sections.`;
 
 const ENTERPRISE_V2_FORMAT_BLOCK = `RESPONSE FORMAT — structured output only:
 Respond with a single valid JSON object and nothing else: no markdown, no code fences, no prose before or after the JSON.

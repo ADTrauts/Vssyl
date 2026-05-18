@@ -11,6 +11,11 @@ const STRIP_PREFIX_PATTERNS: RegExp[] = [
   /^\s*based on (conversation history|the conversation history|user module context|module context)\s*[:,-]?\s*/i,
   /^\s*user module context\s*[:,-]?\s*/i,
   /^\s*conversation history\s*[:,-]?\s*/i,
+  /^\s*considering your (current )?work[- ]life balance(?:\s+and\s+productivity scores?)?\s*,?\s*/i,
+  /^\s*based on your (current )?productivity scores?\s*,?\s*/i,
+  /^\s*your dashboard indicates\s*,?\s*/i,
+  /^\s*your life twin data suggests\s*,?\s*/i,
+  /^\s*your behavioral patterns show\s*,?\s*/i,
 ];
 
 const HEADING_LINE_PATTERNS: RegExp[] = [
@@ -21,12 +26,20 @@ const HEADING_LINE_PATTERNS: RegExp[] = [
   /^\s*based on\s*:?\s*$/i,
   /^\s*confidence\s*:?\s*$/i,
   /^\s*context\s*\/\s*watchouts\s*:?\s*$/i,
+  /^\s*evidence\s*:?\s*$/i,
 ];
 
 const INTERNAL_PHRASE_PATTERNS: RegExp[] = [
   /\buser module context\b/gi,
   /\bbased on conversation history\b/gi,
   /\bbased on the conversation history\b/gi,
+  /\bbased on your (current )?productivity score\b/gi,
+  /\bbased on your (current )?work[- ]life balance\b/gi,
+  /\byour dashboard indicates\b/gi,
+  /\byour life twin data suggests\b/gi,
+  /\byour behavioral patterns show\b/gi,
+  /\bkey insights\b/gi,
+  /\brecommended actions\b/gi,
 ];
 
 const CONVERSATION_FRAMEWORK_PATTERNS: RegExp[] = [
@@ -34,6 +47,9 @@ const CONVERSATION_FRAMEWORK_PATTERNS: RegExp[] = [
   /\b(here are my key insights|recommended next steps|from an analytical perspective)\b/gi,
   /\b(I recommend the following framework|let me break this down into)\b/gi,
   /\b(as your (AI )?assistant, I suggest you optimize)\b/gi,
+  /\boptimize your productivity\b/gi,
+  /\b(work[- ]life balance (score|metrics))\b/gi,
+  /\b(productivity score)\b/gi,
 ];
 
 function collapseWhitespace(value: string): string {
@@ -82,6 +98,7 @@ export function polishConversationalResponse(
       out = out.replace(pattern, '');
     }
     out = out.replace(/\b(in conclusion|to summarize|overall,)\s*,?\s*/gi, '');
+    out = out.replace(/\s{2,}/g, ' ');
   }
 
   out = out.replace(/\b(manual|automated|suggested)\s*→\s*([a-z0-9_-]+)/gi, '$2');

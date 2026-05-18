@@ -53,13 +53,6 @@ export function applyConversationModeShape(structured: StructuredAIResponse): St
     }
   }
 
-  if (Array.isArray(structured.keyInsights) && structured.keyInsights.length) {
-    const lines = structured.keyInsights.map((x) => x.trim()).filter(Boolean);
-    if (lines.length) {
-      parts.push(lines.join('\n'));
-    }
-  }
-
   const summary = parts.join('\n\n').trim() || structured.summary?.trim() || 'No content';
 
   return {

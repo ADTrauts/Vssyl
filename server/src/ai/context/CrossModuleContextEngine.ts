@@ -31,6 +31,8 @@ export interface CrossModuleInsight {
   suggestedActions: string[];
   dataPoints: Record<string, unknown>[];
   timestamp: Date;
+  /** Heuristic/demo insights not backed by live data — omit from conversation context. */
+  synthetic?: boolean;
 }
 
 export interface UserPattern {
@@ -579,6 +581,7 @@ export class CrossModuleContextEngine {
     return [
       {
         id: 'work_life_balance_trend',
+        synthetic: true,
         type: 'trend',
         title: 'Work-Life Balance Improving',
         description: 'You\'re spending more balanced time between work and personal activities',
@@ -600,6 +603,7 @@ export class CrossModuleContextEngine {
     return [
       {
         id: 'productivity_opportunity',
+        synthetic: true,
         type: 'opportunity',
         title: 'Optimize File Organization',
         description: 'Your Drive organization could improve task completion speed',
@@ -622,6 +626,7 @@ export class CrossModuleContextEngine {
     return [
       {
         id: 'communication_pattern',
+        synthetic: true,
         type: 'pattern',
         title: 'Strong Professional Network',
         description: 'You maintain regular communication with 15+ professional contacts',
@@ -643,6 +648,7 @@ export class CrossModuleContextEngine {
     return [
       {
         id: 'automation_opportunity',
+        synthetic: true,
         type: 'opportunity',
         title: 'Automate Recurring Tasks',
         description: 'Several household and business tasks could be automated',

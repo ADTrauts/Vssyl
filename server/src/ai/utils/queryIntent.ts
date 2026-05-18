@@ -33,7 +33,7 @@ export const CONVERSATION_EXPLORATION =
 export const CONVERSATION_EMOTIONAL =
   /\b(i feel like|i'm feeling|i am feeling|overwhelmed|burnt out|burned out|excited but|last minute)\b/i;
 export const CONVERSATION_LIFESTYLE =
-  /\b(vacation|weekend trip|getaway|gift idea|date night|hobby|life decision)\b/i;
+  /\b(vacation|weekend trip|getaway|gift idea|date night|hobby|life decision|affordable places|last minute trip|best places to go)\b/i;
 export const CONVERSATION_FOLLOWUP = /\b(which one|that sounds|what if we|should we try)\b/i;
 
 /**

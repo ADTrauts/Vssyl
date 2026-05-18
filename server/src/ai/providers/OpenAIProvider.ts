@@ -3,6 +3,7 @@ import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinServi
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
+import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
@@ -657,8 +658,10 @@ export class OpenAIProvider {
     const autonomySettings = context.autonomySettings || {};
     const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
     const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
+    const conversationMode = structuredResponseMode === 'conversation';
 
-    return `You are Vssyl's AI assistant. You help the user understand their personal, business, and module context. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
+    return `You are Vssyl's AI assistant${conversationMode ? '' : '. You help the user understand their personal, business, and module context'}. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
+${conversationMode ? '\nCONVERSATION MODE: Sound like a smart human assistant — warm, natural, concise. Never produce report-style output or cite internal scores/dashboards unless explicitly asked.\n' : ''}
 
 PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
 ${JSON.stringify(personality, null, 2)}
@@ -695,22 +698,10 @@ GUIDELINES:
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     const safeData = this.sanitizeDataForPrompt(data);
-    const assembled = safeData.assembledContext;
-    const assembledSection =
-      assembled && typeof assembled === 'object'
-        ? `ASSEMBLED CONTEXT:\n${JSON.stringify(assembled, null, 2)}\n\n`
-        : '';
-    return `USER REQUEST: ${request.query}
-
-${assembledSection}AVAILABLE DATA:
-${JSON.stringify(safeData, null, 2)}
-
-REQUEST CONTEXT:
-- Priority: ${request.priority}
-- Timestamp: ${request.timestamp.toISOString()}
-- Module Context: ${(safeData as any).currentModule || 'Cross-module'}
-
-Please respond as Vssyl's AI assistant using the full context above. Follow the v2 JSON response format from your instructions.`;
+    return buildProviderUserPrompt({
+      requestQuery: request.query,
+      data: { ...safeData, priority: request.priority },
+    });
   }
 
   /**
