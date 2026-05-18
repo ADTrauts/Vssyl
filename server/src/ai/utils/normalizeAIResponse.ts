@@ -15,6 +15,69 @@ import {
 } from '../types/structuredResponse';
 import { polishConversationalResponse } from './conversationalPolish';
 
+const ALLOWED_STRUCTURED_MODES = new Set<AIResponseMode>([
+  'conversation',
+  'answer',
+  'summary',
+  'analysis',
+  'recommendation',
+  'action_plan',
+  'comparison',
+  'status_update',
+  'error',
+]);
+
+export interface NormalizeAIResponseOptions {
+  /** When set, enforces thin conversation shape even if the model over-produced report fields. */
+  structuredResponseMode?: AIResponseMode;
+}
+
+/**
+ * Strip enterprise orchestration fields and flatten report sections into summary prose.
+ */
+export function applyConversationModeShape(structured: StructuredAIResponse): StructuredAIResponse {
+  const parts: string[] = [];
+  if (structured.summary?.trim()) {
+    parts.push(structured.summary.trim());
+  }
+
+  for (const section of structured.sections || []) {
+    const heading = (section.heading || '').trim();
+    const content = (section.content || '').trim();
+    if (heading && content) {
+      parts.push(`${heading}\n${content}`);
+    } else if (content) {
+      parts.push(content);
+    } else if (heading) {
+      parts.push(heading);
+    }
+  }
+
+  if (Array.isArray(structured.keyInsights) && structured.keyInsights.length) {
+    const lines = structured.keyInsights.map((x) => x.trim()).filter(Boolean);
+    if (lines.length) {
+      parts.push(lines.join('\n'));
+    }
+  }
+
+  const summary = parts.join('\n\n').trim() || structured.summary?.trim() || 'No content';
+
+  return {
+    mode: 'conversation',
+    summary,
+    type: 'answer',
+    confidence: structured.confidence?.level
+      ? { level: structured.confidence.level }
+      : { level: 'medium' },
+    style: { tone: 'warm', format: 'standard' },
+    metadata: {
+      ...(structured.metadata || {}),
+      responseVersion: AI_RESPONSE_VERSION,
+      responseDensity: structured.metadata?.responseDensity ?? 'light',
+    },
+  };
+}
+
 /**
  * Extract JSON from markdown code blocks (```json ... ```) or return the string as-is.
  * Handles cases where AI returns JSON wrapped in code blocks, even with surrounding text.
@@ -61,6 +124,12 @@ export interface NormalizedAIResponse {
  * Build a single plain-text string from structured sections or table (for DB and fallback).
  */
 function plainTextFromStructured(structured: StructuredAIResponse): string {
+  if (structured.mode === 'conversation') {
+    return polishConversationalResponse(structured.summary?.trim() || 'No content', {
+      conversationMode: true,
+    });
+  }
+
   const parts: string[] = [];
   if (structured.summary?.trim()) {
     parts.push(structured.summary.trim());
@@ -168,7 +237,10 @@ function isStringArray(value: unknown): value is string[] {
 /**
  * Normalize parsed JSON from the model (or legacy provider shape) into NormalizedAIResponse.
  */
-export function normalizeAIResponse(parsed: Record<string, unknown>): NormalizedAIResponse {
+export function normalizeAIResponse(
+  parsed: Record<string, unknown>,
+  options?: NormalizeAIResponseOptions
+): NormalizedAIResponse {
   const parsedRecord =
     parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
   const confidence =
@@ -186,13 +258,16 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
     const allowedTones = new Set(['clear', 'professional', 'concise', 'operator', 'supportive']);
     const allowedFormats = new Set(['standard', 'executive_summary', 'step_by_step', 'diagnostic']);
     const type = (parsed.type as StructuredResponseType) || 'answer';
-    const mode: AIResponseMode =
-      typeof parsed.mode === 'string' &&
-      ['answer', 'summary', 'analysis', 'recommendation', 'action_plan', 'comparison', 'status_update', 'error'].includes(parsed.mode)
+    let mode: AIResponseMode =
+      typeof parsed.mode === 'string' && ALLOWED_STRUCTURED_MODES.has(parsed.mode as AIResponseMode)
         ? (parsed.mode as AIResponseMode)
         : type === 'summary' || type === 'answer'
           ? type
           : 'analysis';
+
+    if (options?.structuredResponseMode === 'conversation') {
+      mode = 'conversation';
+    }
     const sections = Array.isArray(parsed.sections)
       ? (parsed.sections as Array<{ heading?: string; title?: string; content: string; icon?: string }>).map((s) => ({
           heading: String(s.heading ?? s.title ?? '').trim(),
@@ -288,7 +363,7 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
         ? styleValue.format as 'standard' | 'executive_summary' | 'step_by_step' | 'diagnostic'
         : undefined;
     const style = tone || format ? { tone, format } : undefined;
-    const structured: StructuredAIResponse = {
+    let structured: StructuredAIResponse = {
       mode,
       summary:
         typeof parsed.summary === 'string' && parsed.summary.trim()
@@ -318,14 +393,23 @@ export function normalizeAIResponse(parsed: Record<string, unknown>): Normalized
             })
           )
         : undefined,
-      metadata: { responseVersion: AI_RESPONSE_VERSION },
+      metadata: {
+        responseVersion: AI_RESPONSE_VERSION,
+        ...(options?.structuredResponseMode === 'conversation' ? { responseDensity: 'light' as const } : {}),
+      },
     };
+
+    if (mode === 'conversation' || options?.structuredResponseMode === 'conversation') {
+      structured = applyConversationModeShape(structured);
+    }
+
     const response = plainTextFromStructured(structured);
     if (!structured.summary) {
       structured.summary = response.slice(0, 240) || 'No content';
     }
+    const conversationMode = structured.mode === 'conversation';
     return {
-      response: polishConversationalResponse(response),
+      response: polishConversationalResponse(response, { conversationMode }),
       confidence,
       reasoning,
       actions: actions as Array<Record<string, unknown>> | undefined,

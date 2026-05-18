@@ -5,6 +5,9 @@
 
 import type { UserContext } from './CrossModuleContextEngine';
 import { logger } from '../../lib/logger';
+import type { AIResponseDensity, AIResponseMode } from '../types/structuredResponse';
+import { inferQueryIntent, type QueryIntent } from '../utils/queryIntent';
+import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -38,7 +41,11 @@ export type AIAssembledEvidenceSourceType =
 
 export interface AIAssembledContext {
   scope: 'personal' | 'business' | 'household' | 'cross_module';
-  intent?: 'answer' | 'summary' | 'analysis' | 'recommendation' | 'action_plan' | 'comparison' | 'status_update';
+  intent?: QueryIntent;
+  /** Authoritative structured JSON mode for provider prompts and normalization. */
+  structuredResponseMode?: AIResponseMode;
+  /** Internal pacing hint (not exposed to clients yet). */
+  responseDensity?: AIResponseDensity;
   currentModule?: string;
   usedModules: string[];
   evidence: Array<{
@@ -78,6 +85,8 @@ export interface AIContextAssemblyInput {
   semanticEnhancement?: any;
   userDefinedContext?: Array<Record<string, unknown>>;
   globalPatterns?: Array<Record<string, unknown>>;
+  toneMode?: string;
+  explicitStructuredMode?: string;
 }
 
 const MAX_STRING = 4000;
@@ -459,15 +468,8 @@ function uniqueStrings(items: string[]): string[] {
   return out;
 }
 
-function inferIntent(queryText: string): AIAssembledContext['intent'] {
-  const q = queryText.toLowerCase();
-  if (/\b(summarize|summary|tldr|tl;dr)\b/.test(q)) return 'summary';
-  if (/\b(analyze|analysis|why\b|issue|pattern)\b/.test(q)) return 'analysis';
-  if (/\b(recommend|should i|next step|suggest)\b/.test(q)) return 'recommendation';
-  if (/\b(plan|steps|roadmap|how do i)\b/.test(q)) return 'action_plan';
-  if (/\b(compare|versus|vs\.?|difference)\b/.test(q)) return 'comparison';
-  if (/\b(status|update|progress)\b/.test(q)) return 'status_update';
-  return 'answer';
+function inferIntent(queryText: string): QueryIntent {
+  return inferQueryIntent(queryText);
 }
 
 function inferTierForBlock(block: AIAssembledContext['contextBlocks'][number]): AIContextTier {
@@ -837,6 +839,15 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   }
 
   const intent = inferIntent(query.query);
+  const hasHistory =
+    Array.isArray(query.conversationHistory) && query.conversationHistory.length > 0;
+  const { mode: structuredResponseMode, responseDensity } = inferStructuredResponseMode({
+    query: query.query,
+    explicitMode: input.explicitStructuredMode,
+    toneMode: input.toneMode,
+    assembledIntent: intent,
+    isFollowUp: hasHistory,
+  });
 
   const compressedBlocks = contextBlocks.map((block) => ({
     ...block,
@@ -863,6 +874,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   return {
     scope,
     intent,
+    structuredResponseMode,
+    responseDensity,
     currentModule: currentModule || undefined,
     usedModules,
     evidence,

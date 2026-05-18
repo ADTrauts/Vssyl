@@ -22,6 +22,10 @@ function hasStructuredConfidence(s: StructuredAIResponse): boolean {
   return !!(c && typeof c === 'object' && typeof c.level === 'string' && c.level.length > 0);
 }
 
+function isConversationMode(structured?: StructuredAIResponse): boolean {
+  return structured?.mode === 'conversation';
+}
+
 /**
  * Inspect structured output vs assembled context for trust/debug signals.
  * Does not mutate payloads; may suggest a slightly lower numeric confidence when warnings fire.
@@ -33,6 +37,7 @@ export function validateAIResponseQuality(input: {
     evidence?: unknown[];
     missingContext?: string[];
     risks?: string[];
+    structuredResponseMode?: string;
   };
   currentConfidence: number;
 }): AIResponseQualityResult {
@@ -40,8 +45,16 @@ export function validateAIResponseQuality(input: {
   const { structured, assembledContext, currentConfidence } = input;
   void input.response;
 
+  const conversation =
+    isConversationMode(structured) ||
+    assembledContext?.structuredResponseMode === 'conversation';
+
   if (!structured || typeof structured !== 'object') {
     warnings.push('NO_STRUCTURED_RESPONSE');
+  } else if (conversation) {
+    if (!structured.summary?.trim()) {
+      warnings.push('CONVERSATION_MISSING_SUMMARY');
+    }
   } else {
     const structEvidenceLen = Array.isArray(structured.evidence) ? structured.evidence.length : 0;
     const acEvidenceLen = Array.isArray(assembledContext?.evidence) ? assembledContext.evidence.length : 0;
@@ -64,25 +77,27 @@ export function validateAIResponseQuality(input: {
     }
   }
 
-  const structuredEvidenceEmpty =
-    !structured ||
-    typeof structured !== 'object' ||
-    !Array.isArray(structured.evidence) ||
-    structured.evidence.length === 0;
-  const assembledEvidenceEmpty =
-    !assembledContext?.evidence ||
-    !Array.isArray(assembledContext.evidence) ||
-    assembledContext.evidence.length === 0;
-  if (
-    currentConfidence >= 0.85 &&
-    structuredEvidenceEmpty &&
-    assembledEvidenceEmpty
-  ) {
-    warnings.push('HIGH_CONFIDENCE_WITHOUT_EVIDENCE');
+  if (!conversation) {
+    const structuredEvidenceEmpty =
+      !structured ||
+      typeof structured !== 'object' ||
+      !Array.isArray(structured.evidence) ||
+      structured.evidence.length === 0;
+    const assembledEvidenceEmpty =
+      !assembledContext?.evidence ||
+      !Array.isArray(assembledContext.evidence) ||
+      assembledContext.evidence.length === 0;
+    if (
+      currentConfidence >= 0.85 &&
+      structuredEvidenceEmpty &&
+      assembledEvidenceEmpty
+    ) {
+      warnings.push('HIGH_CONFIDENCE_WITHOUT_EVIDENCE');
+    }
   }
 
   let adjustedConfidence: number | undefined;
-  if (warnings.length > 0) {
+  if (warnings.length > 0 && !conversation) {
     const penalized = currentConfidence - 0.03 * warnings.length;
     adjustedConfidence = Math.max(0.4, penalized);
   }

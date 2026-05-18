@@ -24,6 +24,8 @@ import {
   type ActiveTopicState,
 } from '../utils/conversationContinuity';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
+import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
+import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -144,6 +146,8 @@ export interface LifeTwinQuery {
     businessId?: string;
     /** Optional response mode override from caller. */
     responseMode?: AIResponseMode;
+    /** Optional structured JSON mode override (e.g. conversation, analysis). */
+    structuredResponseMode?: StructuredAIResponseMode | string;
   };
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
@@ -858,6 +862,17 @@ export class DigitalLifeTwinCore {
     traceContext?: { requestId?: string; conversationId?: string; userId?: string },
     streamOptions?: { stream: boolean; onChunk: (text: string) => void }
   ) {
+    const structuredInference = inferStructuredResponseMode({
+      query: query.query,
+      explicitMode:
+        typeof query.context.structuredResponseMode === 'string'
+          ? query.context.structuredResponseMode
+          : undefined,
+      toneMode: responseMode,
+      isFollowUp: Boolean(query.conversationHistory && query.conversationHistory.length > 0),
+    });
+    const structuredResponseMode = structuredInference.mode;
+
     // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
     const prompt = this.buildDigitalTwinPrompt(
       query,
@@ -869,6 +884,7 @@ export class DigitalLifeTwinCore {
       userDefinedContext,
       globalPatterns,
       responseMode,
+      structuredResponseMode,
       continuityState,
       activeTopic,
       attachedFiles
@@ -994,12 +1010,19 @@ export class DigitalLifeTwinCore {
       semanticEnhancement,
       userDefinedContext,
       globalPatterns,
+      toneMode: responseMode,
+      explicitStructuredMode:
+        typeof query.context.structuredResponseMode === 'string'
+          ? query.context.structuredResponseMode
+          : structuredResponseMode,
     });
     options.assembledContext = assembledContext;
+    options.structuredResponseMode = assembledContext.structuredResponseMode ?? structuredResponseMode;
 
     void logger.debug('[AI_CONTEXT_ASSEMBLY] assembled context', {
       scope: assembledContext.scope,
       intent: assembledContext.intent,
+      structuredResponseMode: assembledContext.structuredResponseMode,
       usedModules: assembledContext.usedModules,
       evidenceCount: assembledContext.evidence.length,
       contextBlockCount: assembledContext.contextBlocks.length,
@@ -1083,6 +1106,7 @@ export class DigitalLifeTwinCore {
             evidence?: unknown[];
             missingContext?: string[];
             risks?: string[];
+            structuredResponseMode?: string;
           })
         : undefined;
     const quality = validateAIResponseQuality({
@@ -1128,10 +1152,12 @@ export class DigitalLifeTwinCore {
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
     responseMode?: AIResponseMode,
+    structuredResponseMode?: StructuredAIResponseMode,
     continuityState?: ConversationContinuityState,
     activeTopic?: ActiveTopicState,
     attachedFiles?: AttachedFileContext[]
   ): string {
+    const isConversation = structuredResponseMode === 'conversation';
     const currentTime = new Date().toLocaleString();
     
     // Build user-defined context section
@@ -1261,8 +1287,11 @@ ${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ?
 - Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
 - Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%
 
-RESPONSE MODE:
+RESPONSE MODE (tone / pacing):
 - ${responseMode || 'conversational'}
+
+STRUCTURED RESPONSE MODE (JSON output shape):
+- ${structuredResponseMode || 'answer'}
 
 CONVERSATION CONTINUITY (PRIVATE):
 ${continuityState ? `- Current topic: ${continuityState.currentTopic || 'n/a'}
@@ -1314,15 +1343,16 @@ Your response should:
 - Show awareness of their current context and priorities
 - Be helpful while respecting their autonomy preferences
 - CRITICALLY: Follow any user-defined context instructions above - these are explicit preferences and workflows the user has defined${userContextSection}
-- In conversational mode, do not expose internal scaffolding terms like "assumptions", "risks", "based on", or confidence labels in the user-facing prose.
+- In conversational or conversation structured mode, do not expose internal scaffolding terms like "assumptions", "risks", "based on", or confidence labels in the user-facing prose.
 - Only expose internal scaffolding directly when response mode is debug.
 
 FORMATTING FOR READABILITY:
 - Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.
 - Prefer short paragraphs; avoid long run-on blocks of text.
-- Use bullet points or numbered lists when listing items, steps, or options.
+${isConversation ? `- Conversation mode: write like a highly intelligent human assistant — warm, natural, emotionally aware. Ask at most 1–2 follow-up questions. Offer a mild opinion when helpful. Do not try to solve everything in one message; pacing beats completeness.
+- Do not use report headings, frameworks, optimization language, or consultant tone unless the user explicitly asked for analysis or a plan.` : `- Use bullet points or numbered lists when listing items, steps, or options.`}
 
-Respond as Vssyl's assistant, using the user's context to provide grounded insights, recommendations, and next steps. Do not speak as if you are the user, and do not make unsupported decisions on their behalf.`;
+${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage with the user's situation conversationally — do not produce a report, recommendation matrix, or action plan unless they asked for one.` : `Respond as Vssyl's assistant, using the user's context to provide grounded insights, recommendations, and next steps.`} Do not speak as if you are the user, and do not make unsupported decisions on their behalf.`;
   }
 
   /**

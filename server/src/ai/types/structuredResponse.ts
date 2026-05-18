@@ -6,6 +6,7 @@
 export const AI_RESPONSE_VERSION = 'v2';
 
 export type AIResponseMode =
+  | 'conversation'
   | 'answer'
   | 'summary'
   | 'analysis'
@@ -16,6 +17,9 @@ export type AIResponseMode =
   | 'error';
 
 export type AIConfidenceLevel = 'low' | 'medium' | 'high';
+
+/** Internal-only pacing hint for prompt assembly (not exposed to clients yet). */
+export type AIResponseDensity = 'light' | 'balanced' | 'deep';
 
 export interface AIEvidenceItem {
   label: string;
@@ -52,7 +56,7 @@ export interface AIStructuredResponse {
     explanation?: string;
   };
   style?: {
-    tone?: 'clear' | 'professional' | 'concise' | 'operator' | 'supportive';
+    tone?: 'clear' | 'professional' | 'concise' | 'operator' | 'supportive' | 'warm';
     format?: 'standard' | 'executive_summary' | 'step_by_step' | 'diagnostic';
   };
   metadata?: {
@@ -60,6 +64,7 @@ export interface AIStructuredResponse {
     usedFiles?: string[];
     generatedAt?: string;
     responseVersion?: string;
+    responseDensity?: AIResponseDensity;
   };
 }
 
@@ -111,7 +116,7 @@ export interface StructuredAIResponse {
     explanation?: string;
   };
   style?: {
-    tone?: 'clear' | 'professional' | 'concise' | 'operator' | 'supportive';
+    tone?: 'clear' | 'professional' | 'concise' | 'operator' | 'supportive' | 'warm';
     format?: 'standard' | 'executive_summary' | 'step_by_step' | 'diagnostic';
   };
   metadata?: {
@@ -119,5 +124,6 @@ export interface StructuredAIResponse {
     usedFiles?: string[];
     generatedAt?: string;
     responseVersion?: string;
+    responseDensity?: AIResponseDensity;
   };
 }

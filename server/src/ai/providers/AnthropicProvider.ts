@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
+import type { AIResponseMode } from '../types/structuredResponse';
+import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
 import { logger } from '../../lib/logger';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
@@ -80,7 +82,7 @@ export class AnthropicProvider {
 
     try {
       // Build system prompt for Claude
-      const systemPrompt = this.buildSystemPrompt(context);
+      const systemPrompt = this.buildSystemPrompt(context, data);
       
       // Build user prompt
       const userPrompt = this.buildUserPrompt(request, data);
@@ -191,7 +193,9 @@ export class AnthropicProvider {
           actions: []
         };
       }
-      const normalized = normalizeAIResponse(parsed);
+      const normalized = normalizeAIResponse(parsed, {
+        structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+      });
 
       const inputTokens = response.usage.input_tokens;
       const outputTokens = response.usage.output_tokens;
@@ -286,11 +290,14 @@ export class AnthropicProvider {
   /**
    * Build system prompt optimized for Claude's analytical capabilities
    */
-  private buildSystemPrompt(context: UserContext): string {
+  private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
     const personality = context.personality || {};
     const autonomySettings = context.autonomySettings || {};
-    
-    return `You are Vssyl's AI assistant, with strong analytical depth. You help the user understand their personal, business, and module context through reasoning and pattern awareness. You may represent the user's context accurately, but you must not claim to be the user.
+    const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
+    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
+    const conversationMode = structuredResponseMode === 'conversation';
+
+    return `You are Vssyl's AI assistant${conversationMode ? '' : ', with strong analytical depth'}. You help the user understand their personal, business, and module context${conversationMode ? '' : ' through reasoning and pattern awareness'}. You may represent the user's context accurately, but you must not claim to be the user.
 
 PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
 ${JSON.stringify(personality, null, 2)}
@@ -303,84 +310,18 @@ CURRENT CONTEXT:
 - Recent Activity: ${context.recentActivity?.length || 0} recent actions
 - Module Context: ${context.currentModule || 'Cross-module'}
 
-ANALYTICAL CAPABILITIES:
+${conversationMode ? 'CONVERSATIONAL APPROACH:\n- Prioritize natural dialogue and emotional intelligence.\n- Do not sound like a consultant or produce report-style output.\n- Pacing and curiosity matter more than completeness in one turn.\n' : `ANALYTICAL CAPABILITIES:
 - Deep understanding of user behavior patterns across all modules
 - Analysis of relationships and interpersonal dynamics
 - Ethical reasoning for actions affecting others
 - Complex life planning and decision-making
 - Pattern recognition in communication, work, and personal habits
 - Understanding of context and nuance in all interactions
+`}
 
-RESPONSE FORMAT — structured output only:
-Respond with a single valid JSON object and nothing else: no markdown fences, no commentary outside JSON.
+${formatBlock}
 
-Use this v2 shape (omit optional keys when not needed):
-
-{
-  "mode": "answer | summary | analysis | recommendation | action_plan | comparison | status_update | error",
-  "summary": "A clear 1-3 sentence answer or summary.",
-  "keyInsights": ["Most important insight 1", "Most important insight 2"],
-  "sections": [
-    {
-      "title": "Section title",
-      "content": "Clear explanation",
-      "bullets": ["Optional bullet"]
-    }
-  ],
-  "evidence": [
-    {
-      "label": "What this is based on",
-      "sourceType": "module | file | chat | calendar | drive | business | personal | system | unknown",
-      "sourceId": "optional-id",
-      "detail": "optional supporting detail"
-    }
-  ],
-  "assumptions": ["Only include when making an inference not directly proven."],
-  "risks": ["Missing data, uncertainty, operational risk, or possible issue."],
-  "recommendedActions": [
-    {
-      "title": "Action title",
-      "description": "Practical next step",
-      "priority": "low | medium | high",
-      "actionType": "manual | suggested | automated",
-      "targetModule": "optional-module-name"
-    }
-  ],
-  "confidence": {
-    "level": "low | medium | high",
-    "explanation": "Why this confidence level was chosen."
-  },
-  "style": {
-    "tone": "clear | professional | concise | operator | supportive",
-    "format": "standard | executive_summary | step_by_step | diagnostic"
-  },
-  "metadata": {
-    "responseVersion": "v2"
-  }
-}
-
-Required fields: always include "mode", "summary", "confidence" (object with "level" and "explanation"), and "metadata" with "responseVersion": "v2".
-
-Minimum structure requirements:
-
-* Always include 'keyInsights' when mode is 'analysis', 'recommendation', 'action_plan', or 'comparison'
-* Always include 'evidence' when any context data (files, modules, chat, etc.) is present
-* Always include at least one of: 'assumptions' or 'risks' when confidence is not 'high'
-* Always include 'recommendedActions' when mode is 'recommendation' or 'action_plan'
-
-Field guidance:
-- Include "keyInsights" when the answer involves analysis, recommendations, summaries, or business/module/file/chat/calendar context.
-- Include "evidence" when drawing on provided context (files, modules, chat, Drive, calendar, business, personal).
-- Include "assumptions" for inferences not directly proven.
-- Include "risks" for missing data, low confidence, or operational/compliance concerns.
-- Include "recommendedActions" only when supportable from context; do not invent unsupported actions.
-- Never present inference as fact; use "assumptions" or "risks".
-- If context is insufficient, state that in "summary", "risks", and/or "assumptions".
-- Avoid generic filler. Section "content" and "summary": plain language; avoid markdown inside JSON strings when possible.
-
-Legacy fallback (rare): { "response": "plain text", "confidence": 0.85, "reasoning": "..." } — prefer v2.
-
-ANALYTICAL APPROACH:
+${conversationMode ? '' : `ANALYTICAL APPROACH:
 - Consider long-term implications of decisions and actions
 - Analyze patterns across time and modules
 - Understand emotional and social context
@@ -388,8 +329,9 @@ ANALYTICAL APPROACH:
 - Focus on ethical considerations when actions affect others
 - Identify optimization opportunities across the user's digital life
 - Consider work-life balance and personal well-being in recommendations
+`}
 
-FORMATTING: Keep "summary" and section "content" readable (short paragraphs); use "bullets" inside sections for lists.`;
+FORMATTING: Keep "summary" and section "content" readable (short paragraphs); use "bullets" inside sections for lists only when appropriate.`;
   }
 
   /**

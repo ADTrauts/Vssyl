@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinService';
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
+import type { AIResponseMode } from '../types/structuredResponse';
+import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
 import { logger } from '../../lib/logger';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
@@ -99,7 +101,7 @@ export class OpenAIProvider {
       const toolsInput = data.tools as OpenAI.Chat.ChatCompletionTool[] | undefined;
       const messagesInput = data.messages as OpenAI.Chat.ChatCompletionMessageParam[] | undefined;
       if (toolsInput && Array.isArray(toolsInput) && toolsInput.length > 0) {
-        const systemPrompt = this.buildSystemPrompt(context);
+        const systemPrompt = this.buildSystemPrompt(context, data);
         const userPrompt = this.buildUserPrompt(request, data);
         const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }> | undefined;
         const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
@@ -181,7 +183,9 @@ export class OpenAIProvider {
         } catch {
           parsed = { response: content || '', confidence: 0.7, reasoning: 'Response not JSON' };
         }
-        const normalized = normalizeAIResponse(parsed);
+        const normalized = normalizeAIResponse(parsed, {
+          structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+        });
         return {
           id: this.generateResponseId(),
           requestId: request.id,
@@ -197,7 +201,7 @@ export class OpenAIProvider {
       // Streaming path: when data.stream and data.onChunk are set (no tools)
       const streamOnChunk = data.onChunk as ((text: string) => void) | undefined;
       if (data.stream === true && typeof streamOnChunk === 'function') {
-        const systemPrompt = this.buildSystemPrompt(context);
+        const systemPrompt = this.buildSystemPrompt(context, data);
         const userPrompt = this.buildUserPrompt(request, data);
         const visionParts = data.visionImageParts as Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }> | undefined;
         const hasVision = Array.isArray(visionParts) && visionParts.length > 0;
@@ -242,7 +246,9 @@ export class OpenAIProvider {
         } catch {
           parsed = { response: fullContent || '', confidence: 0.7, reasoning: 'Response not JSON' };
         }
-        const normalized = normalizeAIResponse(parsed);
+        const normalized = normalizeAIResponse(parsed, {
+          structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+        });
         const inputTokens = 0; // streaming doesn't give us token counts easily
         const outputTokens = 0;
         const cost = 0;
@@ -267,7 +273,7 @@ export class OpenAIProvider {
       }
 
       // Build system prompt with user context
-      const systemPrompt = this.buildSystemPrompt(context);
+      const systemPrompt = this.buildSystemPrompt(context, data);
       
       // Build user prompt with request and data
       const userPrompt = this.buildUserPrompt(request, data);
@@ -422,7 +428,9 @@ export class OpenAIProvider {
           reasoning: 'Response received but not in expected JSON format'
         };
       }
-      const normalized = normalizeAIResponse(parsed);
+      const normalized = normalizeAIResponse(parsed, {
+        structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+      });
 
       const inputTokens = completion.usage?.prompt_tokens || 0;
       const outputTokens = completion.usage?.completion_tokens || 0;
@@ -644,10 +652,12 @@ export class OpenAIProvider {
   /**
    * Build system prompt that defines the AI's role and context
    */
-  private buildSystemPrompt(context: UserContext): string {
+  private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
     const personality = context.personality || {};
     const autonomySettings = context.autonomySettings || {};
-    
+    const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
+    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
+
     return `You are Vssyl's AI assistant. You help the user understand their personal, business, and module context. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
 
 PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
@@ -668,75 +678,7 @@ CAPABILITIES:
 - You understand relationships and context across the user's digital life
 - You can coordinate actions that affect multiple people (with appropriate approvals)
 
-RESPONSE FORMAT — structured output only:
-Respond with a single valid JSON object and nothing else: no markdown, no code fences, no prose before or after the JSON.
-
-Use this v2 shape (omit optional keys when not needed; use null or empty arrays only when truly appropriate):
-
-{
-  "mode": "answer | summary | analysis | recommendation | action_plan | comparison | status_update | error",
-  "summary": "A clear 1-3 sentence answer or summary.",
-  "keyInsights": ["Most important insight 1", "Most important insight 2"],
-  "sections": [
-    {
-      "title": "Section title",
-      "content": "Clear explanation",
-      "bullets": ["Optional bullet"]
-    }
-  ],
-  "evidence": [
-    {
-      "label": "What this is based on",
-      "sourceType": "module | file | chat | calendar | drive | business | personal | system | unknown",
-      "sourceId": "optional-id",
-      "detail": "optional supporting detail"
-    }
-  ],
-  "assumptions": ["Only include when making an inference not directly proven."],
-  "risks": ["Missing data, uncertainty, operational risk, or possible issue."],
-  "recommendedActions": [
-    {
-      "title": "Action title",
-      "description": "Practical next step",
-      "priority": "low | medium | high",
-      "actionType": "manual | suggested | automated",
-      "targetModule": "optional-module-name"
-    }
-  ],
-  "confidence": {
-    "level": "low | medium | high",
-    "explanation": "Why this confidence level was chosen."
-  },
-  "style": {
-    "tone": "clear | professional | concise | operator | supportive",
-    "format": "standard | executive_summary | step_by_step | diagnostic"
-  },
-  "metadata": {
-    "responseVersion": "v2"
-  }
-}
-
-Required fields: always include "mode", "summary", "confidence" (object with "level" and "explanation"), and "metadata" with "responseVersion": "v2".
-
-Minimum structure requirements:
-
-* Always include 'keyInsights' when mode is 'analysis', 'recommendation', 'action_plan', or 'comparison'
-* Always include 'evidence' when any context data (files, modules, chat, etc.) is present
-* Always include at least one of: 'assumptions' or 'risks' when confidence is not 'high'
-* Always include 'recommendedActions' when mode is 'recommendation' or 'action_plan'
-
-Field guidance:
-- Include "keyInsights" when the answer involves analysis, recommendations, summaries, or business/module/file/chat/calendar context.
-- Include "evidence" when the answer draws on provided context: files, modules, chat, Drive, calendar, business, or personal data (label what you relied on).
-- Include "assumptions" whenever you infer something not directly stated in the context.
-- Include "risks" when data is missing, confidence is low, or there are operational or compliance concerns.
-- Include "recommendedActions" only when useful and supportable from context; do not invent actions with no basis.
-- Never state an inference as a fact; flag uncertainty in "assumptions" or "risks".
-- If context is insufficient, say so clearly in "summary", "risks", and/or "assumptions".
-- Be clear, grounded, and action-oriented. Avoid generic filler (e.g. "I hope this helps").
-- Section "content" and "summary" should be plain language; avoid markdown in JSON string values when possible.
-
-Legacy fallback (only if you cannot produce the v2 object): { "response": "plain text", "confidence": 0.85, "reasoning": "..." } — prefer v2 in all normal cases.
+${formatBlock}
 
 GUIDELINES:
 - Be conversational and professional as Vssyl's assistant, not as the user

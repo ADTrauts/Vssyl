@@ -77,6 +77,8 @@ export function shouldEnhanceStructured(
 
   const hasActions = Array.isArray(structured.actions) && structured.actions.length > 0;
 
+  if (structured.mode === 'conversation') return false;
+
   if (hasLegacyTable || hasActions) return true;
 
   if (showOrchestrationDetails) {
