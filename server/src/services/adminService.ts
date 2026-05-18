@@ -2632,11 +2632,7 @@ export class AdminService {
   static async promotePreviousModuleVersion(
     moduleId: string,
     adminId: string
-  ): Promise<{
-    moduleId: string;
-    version: string;
-    previousCurrentVersion: string;
-  }> {
+  ): Promise<Awaited<ReturnType<typeof AdminService.promoteModuleVersion>>> {
     try {
       const versions = await prisma.moduleVersion.findMany({
         where: { moduleId },

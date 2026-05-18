@@ -210,6 +210,23 @@ export interface ModuleManifest {
   }>;
 }
 
+export interface ModuleVersionCertificationSummary {
+  status: string;
+  errors: string[];
+  warnings: string[];
+  checklist: unknown[];
+  validatedAt: string | null;
+  validatorVersion: string | null;
+  revalidated: boolean;
+}
+
+export interface ModuleVersionPromotionResult {
+  moduleId: string;
+  version: string;
+  previousCurrentVersion: string;
+  certification: ModuleVersionCertificationSummary;
+}
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -817,13 +834,9 @@ class AdminApiService {
     });
   }
 
-  async promotePreviousModuleVersion(moduleId: string): Promise<
-    ApiResponse<{
-      moduleId: string;
-      version: string;
-      previousCurrentVersion: string;
-    }>
-  > {
+  async promotePreviousModuleVersion(
+    moduleId: string
+  ): Promise<ApiResponse<ModuleVersionPromotionResult>> {
     return this.makeRequest(
       `/modules/${encodeURIComponent(moduleId)}/versions/promote-previous`,
       { method: 'POST' }
@@ -833,13 +846,7 @@ class AdminApiService {
   async promoteModuleVersion(
     moduleId: string,
     version: string
-  ): Promise<
-    ApiResponse<{
-      moduleId: string;
-      version: string;
-      previousCurrentVersion: string;
-    }>
-  > {
+  ): Promise<ApiResponse<ModuleVersionPromotionResult>> {
     return this.makeRequest(
       `/modules/${encodeURIComponent(moduleId)}/versions/${encodeURIComponent(version)}/promote`,
       { method: 'POST' }
