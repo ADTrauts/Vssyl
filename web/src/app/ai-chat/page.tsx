@@ -2095,7 +2095,7 @@ export default function AIChat() {
                                 <AIResponseRenderer
                                   structured={item.structured}
                                   confidence={item.confidence}
-                                  textColor="text-gray-700"
+                                  textColor="text-gray-800 dark:text-gray-100"
                                   collapsibleSections
                                   showOrchestrationDetails={showAIDetails}
                                   onAction={(action) => {
@@ -2123,7 +2123,11 @@ export default function AIChat() {
                               </>
                             ) : (
                               <>
-                                <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
+                                <AIMessageContent
+                                  content={item.content}
+                                  textColor="text-gray-800 dark:text-gray-100"
+                                  allowMarkdown
+                                />
                                 {item.fileIssues && item.fileIssues.length > 0 && (
                                   <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import ReactMarkdown from 'react-markdown';
 import {
   FileText,
   List,
@@ -17,6 +16,10 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Button } from 'shared/components';
+import AIMarkdown, {
+  structuredResponseToMarkdown,
+  shouldEnhanceStructured,
+} from './AIMarkdown';
 
 export type StructuredResponseType = 'summary' | 'answer' | 'list' | 'steps' | 'actionable' | 'table' | string;
 
@@ -112,10 +115,6 @@ function isV2Structured(s: StructuredAIResponse): boolean {
   return false;
 }
 
-/**
- * Renders structured AI responses with clear typography: title, sections, and action buttons.
- * Supports v2 fields (summary, keyInsights, evidence, …) and legacy (type, sections, table, actions).
- */
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string; size?: number }>> = {
   summary: FileText as React.ComponentType<{ className?: string; size?: number }>,
   answer: MessageCircle as React.ComponentType<{ className?: string; size?: number }>,
@@ -125,19 +124,63 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string; size?
   table: Table2 as React.ComponentType<{ className?: string; size?: number }>,
 };
 
+function renderStructuredTable(table: StructuredAITableData) {
+  const { columns, rows } = table;
+  const colCount = columns.length;
+  const normalizedRows = rows.map((row) =>
+    Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
+  );
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+      <table className="min-w-full text-sm text-left">
+        <thead className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 font-medium">
+          <tr>
+            {columns.map((col, i) => (
+              <th key={i} className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="text-gray-700 dark:text-gray-300">
+          {normalizedRows.map((row, ri) => (
+            <tr key={ri} className={ri % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-gray-50/50 dark:bg-slate-800/50'}>
+              {row.map((cell, ci) => (
+                <td key={ci} className="px-3 py-2 border-b border-gray-100 dark:border-slate-700">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Renders structured AI responses: prose-first by default, enhanced UI when needed.
+ */
 export default function AIResponseRenderer({
   structured,
   confidence,
   className = '',
-  textColor = 'text-gray-700',
+  textColor = 'text-gray-800 dark:text-gray-100',
   onAction,
   allowMarkdown = true,
   collapsibleSections = false,
   showOrchestrationDetails = false,
 }: AIResponseRendererProps) {
   const isV2 = useMemo(() => isV2Structured(structured), [structured]);
-
   const legacyType = (structured.type ?? 'answer') as StructuredResponseType;
+
+  const enhance = useMemo(
+    () => shouldEnhanceStructured(structured, { showOrchestrationDetails, collapsibleSections }),
+    [structured, showOrchestrationDetails, collapsibleSections]
+  );
+
+  const proseMarkdown = useMemo(() => structuredResponseToMarkdown(structured), [structured]);
+
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     () => new Set(structured.sections?.map((_, i) => i) ?? [])
   );
@@ -152,56 +195,34 @@ export default function AIResponseRenderer({
 
   const sections = structured.sections ?? [];
   const hasSections = sections.length > 0;
-  const hasTable = structured.type === 'table' && structured.table?.columns?.length && structured.table?.rows?.length;
+  const hasTable =
+    structured.type === 'table' &&
+    Boolean(structured.table?.columns?.length) &&
+    Boolean(structured.table?.rows?.length);
   const hasActions = Array.isArray(structured.actions) && structured.actions.length > 0;
   const useOrderedList = structured.type === 'steps';
   const useUnorderedList = structured.type === 'list';
   const TypeIcon = TYPE_ICONS[legacyType] ?? FileText;
 
-  const markdownComponents = {
-    p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-      <p className={`text-sm whitespace-pre-wrap ${textColor}`.trim()} {...props}>
-        {children}
-      </p>
-    ),
-    strong: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-      <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props}>{children}</strong>
-    ),
-    a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-      <a href={href} className="text-purple-600 underline hover:text-purple-700" target={href?.startsWith('http') ? '_blank' : undefined} rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined} {...props}>
-        {children}
-      </a>
-    ),
-    ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ul>
-    ),
-    ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ol>
-    ),
-    li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
-      <li className="pl-1" {...props}>{children}</li>
-    ),
-    code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-      <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
-    ),
-  };
+  const sectionHeading = (section: StructuredAIResponseSection) =>
+    (section.title ?? section.heading ?? '').trim();
 
   const renderSectionContent = (content: string) => {
     const trimmed = content?.trim() || '';
     if (!trimmed) return null;
     const lines = trimmed.split(/\n/).map((l) => l.trim()).filter(Boolean);
-    if (useOrderedList && lines.length > 1) {
+    if (useOrderedList && lines.length > 1 && !allowMarkdown) {
       return (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+        <ol className="list-decimal ml-5 space-y-1.5 text-[15px] leading-7 text-gray-800 dark:text-gray-100">
           {lines.map((line, i) => (
             <li key={i} className="pl-1">{line}</li>
           ))}
         </ol>
       );
     }
-    if (useUnorderedList && lines.length > 1) {
+    if (useUnorderedList && lines.length > 1 && !allowMarkdown) {
       return (
-        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+        <ul className="list-disc ml-5 space-y-1.5 text-[15px] leading-7 text-gray-800 dark:text-gray-100">
           {lines.map((line, i) => (
             <li key={i} className="pl-1">{line}</li>
           ))}
@@ -209,21 +230,50 @@ export default function AIResponseRenderer({
       );
     }
     if (allowMarkdown) {
-      return (
-        <div className={`text-sm ${textColor}`.trim()}>
-          <ReactMarkdown components={markdownComponents}>{trimmed}</ReactMarkdown>
-        </div>
-      );
+      return <AIMarkdown content={trimmed} textColor={textColor} />;
     }
     return (
-      <p className={`text-sm whitespace-pre-wrap ${textColor}`.trim()}>
+      <p className={`text-[15px] leading-7 whitespace-pre-wrap ${textColor}`.trim()}>
         {trimmed}
       </p>
     );
   };
 
-  const sectionHeading = (section: StructuredAIResponseSection) =>
-    (section.title ?? section.heading ?? '').trim();
+  const renderActionButtons = () =>
+    hasActions ? (
+      <div className="flex flex-wrap gap-2 pt-3 mt-3 border-t border-gray-100 dark:border-slate-700">
+        {structured.actions!.map((action, index) => (
+          <Button
+            key={index}
+            variant="secondary"
+            size="sm"
+            onClick={() => onAction?.(action)}
+            className="text-sm"
+          >
+            {action.label?.trim() || 'Action'}
+          </Button>
+        ))}
+      </div>
+    ) : null;
+
+  const showNumericConfidence =
+    showOrchestrationDetails &&
+    confidence !== undefined &&
+    confidence < 1 &&
+    !(isV2 && structured.confidence?.level);
+
+  if (!enhance) {
+    return (
+      <div className={`max-w-2xl ${className}`.trim()} data-render-mode="prose">
+        <AIMarkdown content={proseMarkdown} textColor={textColor} />
+        {showNumericConfidence ? (
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+            Confidence: {Math.round(confidence * 100)}%
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   const renderV2 = () => {
     const keyInsights = structured.keyInsights?.filter((x) => typeof x === 'string' && x.trim()) ?? [];
@@ -235,20 +285,20 @@ export default function AIResponseRenderer({
 
     return (
       <div className="space-y-4" data-structured-version="v2">
-        {structured.mode ? (
+        {showOrchestrationDetails && structured.mode ? (
           <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {structured.mode.replace(/_/g, ' ')}
           </p>
         ) : null}
 
         {structured.summary?.trim() ? (
-          <div className={`text-sm ${textColor}`.trim()}>
-            {allowMarkdown ? (
-              <ReactMarkdown components={markdownComponents}>{structured.summary.trim()}</ReactMarkdown>
-            ) : (
-              <p className="whitespace-pre-wrap">{structured.summary.trim()}</p>
-            )}
-          </div>
+          allowMarkdown ? (
+            <AIMarkdown content={structured.summary.trim()} textColor={textColor} />
+          ) : (
+            <p className={`text-[15px] leading-7 whitespace-pre-wrap ${textColor}`.trim()}>
+              {structured.summary.trim()}
+            </p>
+          )
         ) : null}
 
         {showOrchestrationDetails && keyInsights.length > 0 ? (
@@ -257,9 +307,9 @@ export default function AIResponseRenderer({
               <Lightbulb className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
               Key insights
             </div>
-            <ul className="list-disc list-inside space-y-1 text-sm text-gray-800 dark:text-gray-200">
+            <ul className="list-disc ml-5 space-y-1 text-sm text-gray-800 dark:text-gray-200">
               {keyInsights.map((line, i) => (
-                <li key={i} className="pl-0.5">{line.trim()}</li>
+                <li key={i}>{line.trim()}</li>
               ))}
             </ul>
           </div>
@@ -298,7 +348,7 @@ export default function AIResponseRenderer({
             {assumptions.length > 0 ? (
               <div className="mb-2 last:mb-0">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Assumptions</p>
-                <ul className="list-disc list-inside space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                <ul className="list-disc ml-5 space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
                   {assumptions.map((a, i) => (
                     <li key={i}>{a}</li>
                   ))}
@@ -308,7 +358,7 @@ export default function AIResponseRenderer({
             {risks.length > 0 ? (
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Risks</p>
-                <ul className="list-disc list-inside space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                <ul className="list-disc ml-5 space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
                   {risks.map((r, i) => (
                     <li key={i}>{r}</li>
                   ))}
@@ -324,7 +374,7 @@ export default function AIResponseRenderer({
               const isExpanded = !collapsibleSections || expandedSections.has(index);
               const heading = sectionHeading(section);
               return (
-                <div key={index} className="border-b border-gray-100 dark:border-slate-700 last:border-b-0 pb-3 last:pb-0">
+                <div key={index}>
                   {collapsibleSections && heading ? (
                     <button
                       type="button"
@@ -336,7 +386,7 @@ export default function AIResponseRenderer({
                       {heading}
                     </button>
                   ) : heading ? (
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                       {section.icon ? <span className="text-base" aria-hidden>{section.icon}</span> : null}
                       {heading}
                     </h3>
@@ -347,7 +397,7 @@ export default function AIResponseRenderer({
                     <>
                       {renderSectionContent(section.content)}
                       {section.bullets && section.bullets.length > 0 ? (
-                        <ul className="mt-2 list-disc list-inside space-y-0.5 text-sm text-gray-700 dark:text-gray-300">
+                        <ul className="mt-2 list-disc ml-5 space-y-0.5 text-[15px] leading-7 text-gray-800 dark:text-gray-100">
                           {section.bullets.map((b, bi) => (
                             <li key={bi}>{b}</li>
                           ))}
@@ -402,127 +452,38 @@ export default function AIResponseRenderer({
     );
   };
 
-  const renderLegacyTableAndActions = () => (
-    <>
-      {hasTable && structured.table ? (
-        (() => {
-          const { columns, rows } = structured.table!;
-          const colCount = columns.length;
-          const normalizedRows = rows.map((row) =>
-            Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
-          );
-          return (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-              <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 font-medium">
-                  <tr>
-                    {columns.map((col, i) => (
-                      <th key={i} className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-gray-700 dark:text-gray-300">
-                  {normalizedRows.map((row, ri) => (
-                    <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      {row.map((cell, ci) => (
-                        <td key={ci} className="px-3 py-2 border-b border-gray-100">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })()
-      ) : null}
-      {hasActions ? (
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
-          {structured.actions!.map((action, index) => (
-            <Button
-              key={index}
-              variant="secondary"
-              size="sm"
-              onClick={() => onAction?.(action)}
-              className="text-sm"
-            >
-              {action.label?.trim() || 'Action'}
-            </Button>
-          ))}
-        </div>
-      ) : null}
-    </>
-  );
-
   const renderLegacyFull = () => (
     <>
       {structured.title?.trim() && (
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
           <TypeIcon className="text-purple-600 flex-shrink-0" size={20} />
           {structured.title.trim()}
         </h2>
       )}
 
-      {hasTable && structured.table ? (
-        (() => {
-          const { columns, rows } = structured.table;
-          const colCount = columns.length;
-          const normalizedRows = rows.map((row) =>
-            Array.from({ length: colCount }, (_, i) => String(row[i] ?? '').trim())
-          );
-          return (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-              <table className="min-w-full text-sm text-left">
-                <thead className="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-gray-100 font-medium">
-                  <tr>
-                    {columns.map((col, i) => (
-                      <th key={i} className="px-3 py-2 border-b border-gray-200 dark:border-slate-700">
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-gray-700 dark:text-gray-300">
-                  {normalizedRows.map((row, ri) => (
-                    <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                      {row.map((cell, ci) => (
-                        <td key={ci} className="px-3 py-2 border-b border-gray-100">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })()
-      ) : null}
+      {hasTable && structured.table ? renderStructuredTable(structured.table) : null}
 
       {hasSections ? (
         <div className="space-y-4">
           {sections.map((section, index) => {
             const isExpanded = !collapsibleSections || expandedSections.has(index);
-            const hasHeading = sectionHeading(section);
+            const heading = sectionHeading(section);
             return (
-              <div key={index} className="border-b border-gray-100 last:border-b-0 pb-3 last:pb-0">
-                {collapsibleSections && hasHeading ? (
+              <div key={index}>
+                {collapsibleSections && heading ? (
                   <button
                     type="button"
                     onClick={() => toggleSection(index)}
-                    className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 rounded px-1 py-0.5 -mx-1"
+                    className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-800 rounded px-1 py-0.5 -mx-1"
                   >
                     {isExpanded ? <ChevronDown className="w-4 h-4 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 flex-shrink-0" />}
                     {section.icon ? <span className="text-base" aria-hidden>{section.icon}</span> : null}
-                    {hasHeading}
+                    {heading}
                   </button>
-                ) : hasHeading ? (
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
+                ) : heading ? (
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
                     {section.icon ? <span className="text-base" aria-hidden>{section.icon}</span> : null}
-                    {hasHeading}
+                    {heading}
                   </h3>
                 ) : section.icon ? (
                   <span className="text-base mr-1" aria-hidden>{section.icon}</span>
@@ -534,40 +495,22 @@ export default function AIResponseRenderer({
         </div>
       ) : null}
 
-      {hasActions ? (
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-          {structured.actions!.map((action, index) => (
-            <Button
-              key={index}
-              variant="secondary"
-              size="sm"
-              onClick={() => onAction?.(action)}
-              className="text-sm"
-            >
-              {action.label?.trim() || 'Action'}
-            </Button>
-          ))}
-        </div>
-      ) : null}
+      {renderActionButtons()}
     </>
   );
 
-  const showNumericConfidence =
-    showOrchestrationDetails &&
-    confidence !== undefined &&
-    confidence < 1 &&
-    !(isV2 && structured.confidence?.level);
-
   return (
     <div
-      className={`max-w-2xl space-y-4 leading-relaxed ${className}`.trim()}
+      className={`max-w-2xl space-y-4 ${className}`.trim()}
       data-response-type={legacyType}
       data-structured-v2={isV2 ? 'true' : undefined}
+      data-render-mode="enhanced"
     >
       {isV2 ? (
         <>
           {renderV2()}
-          {renderLegacyTableAndActions()}
+          {hasTable && structured.table ? renderStructuredTable(structured.table) : null}
+          {renderActionButtons()}
         </>
       ) : (
         renderLegacyFull()

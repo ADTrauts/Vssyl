@@ -1241,7 +1241,7 @@ export default function AIChatDropdown({
                     
                     {item.type === 'ai' && (
                       <div className="flex justify-start">
-                        <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2 max-w-sm">
+                        <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl px-4 py-3 max-w-sm">
                           <div className="flex items-start space-x-2">
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
@@ -1250,7 +1250,7 @@ export default function AIChatDropdown({
                                   <AIResponseRenderer
                                     structured={item.structured}
                                     confidence={item.confidence}
-                                    textColor="text-gray-700"
+                                    textColor="text-gray-800 dark:text-gray-100"
                                     showOrchestrationDetails={showAIDetails}
                                     onAction={(action) => {
                                       if (action.href) {
@@ -1277,7 +1277,11 @@ export default function AIChatDropdown({
                                 </>
                               ) : (
                                 <>
-                                  <AIMessageContent content={item.content} textColor="text-gray-800" allowMarkdown />
+                                  <AIMessageContent
+                                    content={item.content}
+                                    textColor="text-gray-800 dark:text-gray-100"
+                                    allowMarkdown
+                                  />
                                   {item.fileIssues && item.fileIssues.length > 0 && (
                                     <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
                                       <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
@@ -1306,7 +1310,7 @@ export default function AIChatDropdown({
             
             {isAILoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-slate-700 rounded-lg px-3 py-2">
+                <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl px-4 py-3">
                   <AIThinkingIndicator message="Thinking..." iconSize={16} />
                 </div>
               </div>

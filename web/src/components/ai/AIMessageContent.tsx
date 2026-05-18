@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
+import AIMarkdown from './AIMarkdown';
 
 export interface AIMessageContentProps {
   /** Raw AI response text (may contain newlines; double newlines become paragraph breaks) */
@@ -14,18 +14,18 @@ export interface AIMessageContentProps {
   allowMarkdown?: boolean;
 }
 
-const defaultTextColor = 'text-gray-800';
+const defaultTextColor = 'text-gray-800 dark:text-gray-100';
 
 /**
  * Renders AI response text with proper paragraph breaks and line breaks.
- * - When allowMarkdown is true: full markdown rendering (OpenAI/Anthropic plain-text that includes markdown).
+ * - When allowMarkdown is true: full markdown rendering via AIMarkdown.
  * - Otherwise: double newlines (\n\n) become separate paragraphs; single newlines preserved (whitespace-pre-wrap).
  */
 export default function AIMessageContent({
   content,
   className = '',
   textColor = defaultTextColor,
-  allowMarkdown = false,
+  allowMarkdown = true,
 }: AIMessageContentProps) {
   if (!content || typeof content !== 'string') {
     return null;
@@ -35,46 +35,14 @@ export default function AIMessageContent({
   if (!trimmed) return null;
 
   if (allowMarkdown) {
-    const markdownComponents = {
-      p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-        <p className={`text-sm whitespace-pre-wrap ${textColor}`.trim()} {...props}>
-          {children}
-        </p>
-      ),
-      strong: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-        <strong className="font-semibold text-gray-900 dark:text-gray-100" {...props}>{children}</strong>
-      ),
-      a: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-        <a href={href} className="text-purple-600 underline hover:text-purple-700" target={href?.startsWith('http') ? '_blank' : undefined} rel={href?.startsWith('http') ? 'noopener noreferrer' : undefined} {...props}>
-          {children}
-        </a>
-      ),
-      ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ul>
-      ),
-      ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-        <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300 my-2" {...props}>{children}</ol>
-      ),
-      li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
-        <li className="pl-1" {...props}>{children}</li>
-      ),
-      code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-        <code className="bg-gray-100 dark:bg-slate-700 text-gray-800 px-1 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>
-      ),
-    };
-    return (
-      <div className={`text-sm ${textColor} ${className}`.trim()}>
-        <ReactMarkdown components={markdownComponents}>{trimmed}</ReactMarkdown>
-      </div>
-    );
+    return <AIMarkdown content={trimmed} className={className} textColor={textColor} />;
   }
 
-  // Plain text: paragraph breaks only
   const paragraphs = trimmed.split(/\n\n+/).filter((p) => p.trim().length > 0);
   if (paragraphs.length === 0) return null;
   if (paragraphs.length === 1) {
     return (
-      <p className={`text-sm whitespace-pre-wrap ${textColor} ${className}`.trim()}>
+      <p className={`text-[15px] leading-7 whitespace-pre-wrap ${textColor} ${className}`.trim()}>
         {paragraphs[0].trim()}
       </p>
     );
@@ -84,7 +52,7 @@ export default function AIMessageContent({
       {paragraphs.map((para, i) => (
         <p
           key={i}
-          className={`text-sm whitespace-pre-wrap ${textColor} last:mb-0`.trim()}
+          className={`text-[15px] leading-7 whitespace-pre-wrap ${textColor} last:mb-0`.trim()}
         >
           {para.trim()}
         </p>
