@@ -5,7 +5,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['src/runtime/**/__tests__/**/*.test.ts'],
+    include: [
+      'src/runtime/**/__tests__/**/*.test.ts',
+      'src/lib/**/__tests__/**/*.test.ts',
+    ],
     exclude: ['node_modules', '.next'],
   },
   resolve: {

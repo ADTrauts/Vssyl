@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Paperclip } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from './AIMessageContent';
-import AIResponseRenderer, { type StructuredAIResponse } from './AIResponseRenderer';
+import AIAssistantMessageBody from './AIAssistantMessageBody';
+import { type StructuredAIResponse } from './AIResponseRenderer';
 import AIThinkingIndicator from './AIThinkingIndicator';
 import AIFileUpload, { type AIAttachedFile } from './AIFileUpload';
 import { toast } from 'react-hot-toast';
@@ -24,7 +25,7 @@ import {
   type AIMessage 
 } from '../../api/aiConversations';
 import { authenticatedApiCall } from '../../lib/apiUtils';
-import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, normalizeStoredAIMessage } from '../../lib/aiResponseHandler';
 import type { FileIssue } from '../../lib/aiResponseHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
@@ -169,18 +170,27 @@ export default function AIChatModule({
       
       if (response.success) {
         // Convert API messages to conversation items
-        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessage) => ({
+        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessage) => {
+          const normalizedAssistant =
+            msg.role === 'assistant'
+              ? normalizeStoredAIMessage({
+                  content: msg.content,
+                  structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+                })
+              : null;
+          return {
           id: msg.id,
           type: msg.role === 'assistant' ? 'ai' : 'user',
-          content: msg.content,
+          content: normalizedAssistant?.content ?? msg.content,
           timestamp: new Date(msg.createdAt),
           confidence: msg.confidence,
           metadata: msg.metadata,
-          structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+          structured: normalizedAssistant?.structured ?? (msg.metadata?.structured as StructuredAIResponse | undefined),
           fileIssues: msg.metadata?.fileIssues as FileIssue[] | undefined,
           usedVisionParts: msg.metadata?.usedVisionParts as boolean | undefined,
           attachments: msg.attachments
-        }));
+        };
+        });
 
         // Fetch file details for messages with attachments
         if (session?.accessToken) {
@@ -884,9 +894,9 @@ export default function AIChatModule({
                         <div className="flex items-start space-x-3">
                           <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            {item.structured ? (
-                              <>
-                                <AIResponseRenderer
+                            <>
+                                <AIAssistantMessageBody
+                                  content={item.content}
                                   structured={item.structured}
                                   confidence={item.confidence}
                                   textColor="text-gray-800 dark:text-gray-100"
@@ -914,28 +924,6 @@ export default function AIChatModule({
                                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
                                 )}
                               </>
-                            ) : (
-                              <>
-                                <AIMessageContent
-                                  content={item.content}
-                                  textColor="text-gray-800 dark:text-gray-100"
-                                  allowMarkdown
-                                />
-                                {item.fileIssues && item.fileIssues.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
-                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                      {item.fileIssues.map((issue, i) => (
-                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {item.usedVisionParts && (
-                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
-                                )}
-                              </>
-                            )}
                           </div>
                         </div>
                       </div>

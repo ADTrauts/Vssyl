@@ -6,7 +6,7 @@ import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History, E
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
-import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem } from '../../lib/aiResponseHandler';
+import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, normalizeStoredAIMessage } from '../../lib/aiResponseHandler';
 import type { FileIssue } from '../../lib/aiResponseHandler';
 import { Button, Spinner } from 'shared/components';
 import { generateAISchedule } from '../../api/scheduling';
@@ -24,7 +24,8 @@ import {
 import AIProviderModelPicker, { type AIProvider } from '../ai/AIProviderModelPicker';
 import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIMessageContent from '../ai/AIMessageContent';
-import AIResponseRenderer, { type StructuredAIResponse } from '../ai/AIResponseRenderer';
+import AIAssistantMessageBody from '../ai/AIAssistantMessageBody';
+import { type StructuredAIResponse } from '../ai/AIResponseRenderer';
 import AIThinkingIndicator from '../ai/AIThinkingIndicator';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -970,18 +971,26 @@ export default function AIChatDropdown({
       
       if (response.success) {
         // Convert API messages to conversation items
-        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessageType) => ({
+        const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessageType) => {
+          const normalizedAssistant =
+            msg.role === 'assistant'
+              ? normalizeStoredAIMessage({
+                  content: msg.content,
+                  structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+                })
+              : null;
+          return {
           id: msg.id,
           type: msg.role === 'assistant' ? 'ai' : 'user',
-          content: msg.content,
+          content: normalizedAssistant?.content ?? msg.content,
           timestamp: new Date(msg.createdAt),
           confidence: msg.confidence,
-          structured: msg.metadata?.structured as StructuredAIResponse | undefined,
+          structured: normalizedAssistant?.structured ?? (msg.metadata?.structured as StructuredAIResponse | undefined),
           fileIssues: msg.metadata?.fileIssues as FileIssue[] | undefined,
           usedVisionParts: msg.metadata?.usedVisionParts as boolean | undefined,
           aiResponse: msg.role === 'assistant' ? {
             id: msg.id,
-            response: msg.content,
+            response: normalizedAssistant?.content ?? msg.content,
             confidence: msg.confidence || 0.5,
             reasoning: typeof msg.metadata?.reasoning === 'string' ? msg.metadata.reasoning : undefined,
             actions: Array.isArray(msg.metadata?.actions) ? msg.metadata.actions as Array<{
@@ -992,7 +1001,8 @@ export default function AIChatDropdown({
               reasoning: string;
             }> : []
           } : undefined
-        }));
+        };
+        });
 
         setConversation(conversationItems);
         setCurrentConversationId(conversationId);
@@ -1245,58 +1255,36 @@ export default function AIChatDropdown({
                           <div className="flex items-start space-x-2">
                             <Bot className="h-4 w-4 text-purple-600 mt-1 flex-shrink-0" />
                             <div className="min-w-0 flex-1">
-                              {item.structured ? (
-                                <>
-                                  <AIResponseRenderer
-                                    structured={item.structured}
-                                    confidence={item.confidence}
-                                    textColor="text-gray-800 dark:text-gray-100"
-                                    showOrchestrationDetails={showAIDetails}
-                                    onAction={(action) => {
-                                      if (action.href) {
-                                        if (action.href.startsWith('http')) window.open(action.href, '_blank');
-                                        else router.push(action.href);
-                                      } else if (action.fileId) {
-                                        router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
-                                      }
-                                    }}
-                                  />
-                                  {item.fileIssues && item.fileIssues.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
-                                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                        {item.fileIssues.map((issue: FileIssue, i: number) => (
-                                          <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  {item.usedVisionParts && (
-                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  <AIMessageContent
-                                    content={item.content}
-                                    textColor="text-gray-800 dark:text-gray-100"
-                                    allowMarkdown
-                                  />
-                                  {item.fileIssues && item.fileIssues.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
-                                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                        {item.fileIssues.map((issue: FileIssue, i: number) => (
-                                          <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  )}
-                                  {item.usedVisionParts && (
-                                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
-                                  )}
-                                </>
-                              )}
+                              <>
+                                <AIAssistantMessageBody
+                                  content={item.content}
+                                  structured={item.structured}
+                                  confidence={item.confidence}
+                                  textColor="text-gray-800 dark:text-gray-100"
+                                  showOrchestrationDetails={showAIDetails}
+                                  onAction={(action) => {
+                                    if (action.href) {
+                                      if (action.href.startsWith('http')) window.open(action.href, '_blank');
+                                      else router.push(action.href);
+                                    } else if (action.fileId) {
+                                      router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
+                                    }
+                                  }}
+                                />
+                                {item.fileIssues && item.fileIssues.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
+                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                                      {item.fileIssues.map((issue: FileIssue, i: number) => (
+                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {item.usedVisionParts && (
+                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
+                                )}
+                              </>
                             </div>
                           </div>
                         </div>

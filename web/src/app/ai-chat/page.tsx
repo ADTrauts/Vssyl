@@ -6,7 +6,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2 } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
-import AIResponseRenderer, { type StructuredAIResponse } from '../../components/ai/AIResponseRenderer';
+import AIAssistantMessageBody from '../../components/ai/AIAssistantMessageBody';
+import { type StructuredAIResponse } from '../../components/ai/AIResponseRenderer';
 import AIThinkingIndicator from '../../components/ai/AIThinkingIndicator';
 import { 
   getConversations, 
@@ -21,6 +22,7 @@ import {
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import {
   buildAIConversationItemFromTwinData,
+  normalizeStoredAIMessage,
   buildAddMessagePayloadFromTwinData,
   buildErrorConversationItem,
   isLikelyStructuredJSONStream,
@@ -393,15 +395,22 @@ export default function AIChat() {
       if (response.success) {
         const conversationItems: ConversationItem[] = response.data.messages.map((msg: AIMessage) => {
           const meta = (msg.metadata || {}) as Record<string, unknown>;
+          const normalizedAssistant =
+            msg.role === 'assistant'
+              ? normalizeStoredAIMessage({
+                  content: msg.content,
+                  structured: meta.structured as ConversationItem['structured'],
+                })
+              : null;
           return {
             id: msg.id,
             type: msg.role === 'assistant' ? 'ai' : 'user',
-            content: msg.content,
+            content: normalizedAssistant?.content ?? msg.content,
             timestamp: new Date(msg.createdAt),
             confidence: msg.confidence,
             metadata: msg.metadata,
             attachments: msg.attachments,
-            structured: meta.structured as ConversationItem['structured'],
+            structured: normalizedAssistant?.structured ?? (meta.structured as ConversationItem['structured']),
             generatedImage: meta.generatedImage as ConversationItem['generatedImage'],
             extractedDocument: meta.extractedDocument as ConversationItem['extractedDocument'],
             usedVisionParts: meta.usedVisionParts as boolean | undefined,
@@ -1819,32 +1828,36 @@ export default function AIChat() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Chat Header */}
-        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-2 flex items-center gap-3 min-h-0">
           {selectedConversation ? (
             <>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedConversation.title}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedConversation.messageCount} messages
-                </p>
+              <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {selectedConversation.title}
+                </h2>
+                <span className="text-xs text-gray-600 dark:text-gray-400 shrink-0">
+                  · {selectedConversation.messageCount}{' '}
+                  {selectedConversation.messageCount === 1 ? 'message' : 'messages'}
+                </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
                 <AIProviderModelPicker
                   provider={selectedProvider}
                   model={selectedModel}
                   onProviderChange={setSelectedProvider}
                   onModelChange={setSelectedModel}
                   models={aiModels}
-                  compact={false}
-                  showLabel={true}
+                  compact={true}
+                  showLabel={false}
                   hasImages={attachedFiles.length > 0}
                 />
                 <div className="relative">
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Conversation options"
               >
-                <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </button>
               
               {showMoreMenu && (
@@ -1877,19 +1890,19 @@ export default function AIChat() {
             </>
           ) : (
             <>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Assistant</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Start a new conversation</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">AI Assistant</h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Start a new conversation</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
                 <AIProviderModelPicker
                   provider={selectedProvider}
                   model={selectedModel}
                   onProviderChange={setSelectedProvider}
                   onModelChange={setSelectedModel}
                   models={aiModels}
-                  compact={false}
-                  showLabel={true}
+                  compact={true}
+                  showLabel={false}
                   hasImages={attachedFiles.length > 0}
                 />
               </div>
@@ -1899,7 +1912,7 @@ export default function AIChat() {
 
         {/* Messages */}
         <div 
-          className={`flex-1 overflow-y-auto p-6 space-y-4 relative ${isDragging ? 'border-2 border-dashed border-purple-400 bg-purple-50' : ''}`}
+          className={`flex-1 overflow-y-auto px-4 py-3 space-y-4 relative ${isDragging ? 'border-2 border-dashed border-purple-400 bg-purple-50' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -2090,9 +2103,10 @@ export default function AIChat() {
                                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Expense saved</p>
                                 )}
                               </>
-                            ) : item.structured ? (
+                            ) : (
                               <>
-                                <AIResponseRenderer
+                                <AIAssistantMessageBody
+                                  content={item.content}
                                   structured={item.structured}
                                   confidence={item.confidence}
                                   textColor="text-gray-800 dark:text-gray-100"
@@ -2112,27 +2126,6 @@ export default function AIChat() {
                                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
                                     <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                                       {item.fileIssues.map((issue, i) => (
-                                        <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-                                {item.usedVisionParts && (
-                                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                <AIMessageContent
-                                  content={item.content}
-                                  textColor="text-gray-800 dark:text-gray-100"
-                                  allowMarkdown
-                                />
-                                {item.fileIssues && item.fileIssues.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
-                                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                      {item.fileIssues.map((issue: FileIssue, i: number) => (
                                         <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
                                       ))}
                                     </ul>
@@ -2266,8 +2259,8 @@ export default function AIChat() {
         )}
 
         {/* Input Area */}
-      <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-3">
+      <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 px-4 py-3 pb-3">
+        <div className="max-w-4xl mx-auto space-y-2">
           {/* Upload progress bar */}
           {isUploadingFiles && (
             <div className="mb-2">
@@ -2315,26 +2308,29 @@ export default function AIChat() {
           )}
 
           {/* Compact Input Bar */}
-          <div className="flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
+          <div
+            className="flex items-center gap-1.5 border border-gray-300 dark:border-slate-600 rounded-xl px-3 py-2 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all"
+            title={`Press Enter to send · Up to ${MAX_ATTACHMENTS} files · Large files (500KB+) summarized only`}
+          >
             {/* Paperclip Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
             >
-              <Paperclip className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <Paperclip className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </button>
             {/* Generate image button */}
             <button
               type="button"
               onClick={() => setShowGenerateImageModal(true)}
               disabled={isAILoading || isGeneratingImage}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Generate image"
             >
-              <ImageIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <ImageIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </button>
             {/* Edit image button (Phase 8) - when exactly one file attached */}
             {attachedFiles.length === 1 && (
@@ -2342,10 +2338,10 @@ export default function AIChat() {
                 type="button"
                 onClick={() => setShowEditImageModal(true)}
                 disabled={isAILoading || isEditingImage}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Edit image (e.g. remove background)"
               >
-                <Edit className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </button>
             )}
             {/* Voice input (record → transcribe → add to message) */}
@@ -2353,15 +2349,15 @@ export default function AIChat() {
               type="button"
               onClick={handleVoiceInput}
               disabled={isAILoading || isTranscribing}
-              className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isRecording ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'hover:bg-gray-100 text-gray-500'}`}
+              className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isRecording ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'hover:bg-gray-100 text-gray-600'}`}
               title={isRecording ? 'Stop recording' : 'Voice input'}
             >
               {isRecording ? (
-                <Square className="h-5 w-5 fill-current" />
+                <Square className="h-4 w-4 fill-current" />
               ) : isTranscribing ? (
-                <Spinner size={20} />
+                <Spinner size={16} />
               ) : (
-                <Mic className="h-5 w-5" />
+                <Mic className="h-4 w-4" />
               )}
             </button>
             
@@ -2393,15 +2389,15 @@ export default function AIChat() {
               disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading || isUploadingFiles}
               size="sm"
               variant="primary"
-              className="px-4 py-2 rounded-lg flex-shrink-0"
+              className="px-3 py-1.5 rounded-lg flex-shrink-0"
             >
               {isAILoading ? <Spinner size={16} /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
           
           {/* Helper Text */}
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Press Enter to send • Up to {MAX_ATTACHMENTS} files • Large files (500KB+) summarized only
+          <p className="text-[11px] text-gray-600 dark:text-gray-400 text-center mt-1 leading-tight">
+            Enter to send · up to {MAX_ATTACHMENTS} files
           </p>
         </div>
       </div>
