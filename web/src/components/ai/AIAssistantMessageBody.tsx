@@ -7,6 +7,8 @@ import AIResponseRenderer, {
   type StructuredAIActionButton,
 } from './AIResponseRenderer';
 import { resolveAIDisplayFields } from '../../lib/aiResponseHandler';
+import { shouldHideStreamingContent } from '../../lib/aiStreamHandler';
+import AIThinkingIndicator from './AIThinkingIndicator';
 
 export interface AIAssistantMessageBodyProps {
   content: string;
@@ -32,6 +34,10 @@ export default function AIAssistantMessageBody({
   showOrchestrationDetails = false,
   onAction,
 }: AIAssistantMessageBodyProps) {
+  if (!structured && shouldHideStreamingContent(content)) {
+    return <AIThinkingIndicator variant="bubble" message="Thinking..." iconSize={16} />;
+  }
+
   const display = resolveAIDisplayFields({ content, structured });
 
   if (display.structured) {

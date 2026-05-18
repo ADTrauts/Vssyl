@@ -25,10 +25,13 @@ import {
   normalizeStoredAIMessage,
   buildAddMessagePayloadFromTwinData,
   buildErrorConversationItem,
-  isLikelyStructuredJSONStream,
-  buildSafeStreamFallbackContent,
   type FileIssue,
 } from '../../lib/aiResponseHandler';
+import {
+  consumeTwinSseLine,
+  createTwinStreamState,
+  finalizeTwinStream,
+} from '../../lib/aiStreamHandler';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
@@ -649,21 +652,11 @@ export default function AIChat() {
 
       const contentType = res.headers.get('content-type') || '';
       if (contentType.includes('text/event-stream') && res.body) {
-        const streamId = `ai_stream_${Date.now()}`;
-        setConversation((prev) => [...prev, {
-          id: streamId,
-          type: 'ai',
-          content: '',
-          timestamp: new Date(),
-          confidence: 0.5,
-          metadata: {},
-        }]);
+        let streamState = createTwinStreamState();
         let buffer = '';
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
-        let streamedRawText = '';
-        let suppressRawJsonRendering = false;
-        let fullData: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } | undefined;
+        let fullData: Parameters<typeof finalizeTwinStream>[0]['fullData'];
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -672,58 +665,24 @@ export default function AIChat() {
             const lines = buffer.split('\n\n');
             buffer = lines.pop() || '';
             for (const line of lines) {
-              if (!line.startsWith('data: ')) continue;
-              try {
-                const payload = JSON.parse(line.slice(6)) as { text?: string; done?: boolean; data?: unknown; error?: boolean; message?: string };
-                if (payload.error && payload.message) {
-                  throw new Error(payload.message);
-                }
-                if (typeof payload.text === 'string') {
-                  streamedRawText += payload.text;
-                  if (!suppressRawJsonRendering && isLikelyStructuredJSONStream(streamedRawText)) {
-                    suppressRawJsonRendering = true;
-                    setConversation((prev) => prev.map((item) =>
-                      item.id === streamId ? { ...item, content: '' } : item
-                    ));
-                  } else if (!suppressRawJsonRendering) {
-                    setConversation((prev) => prev.map((item) =>
-                      item.id === streamId ? { ...item, content: item.content + payload.text } : item
-                    ));
-                  }
-                }
-                if (payload.done === true && payload.data) {
-                  fullData = payload.data as { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> };
-                }
-              } catch (e) {
-                if (e instanceof SyntaxError) continue;
-                throw e;
+              const result = consumeTwinSseLine(streamState, line);
+              streamState = result.state;
+              if (result.errorMessage) {
+                throw new Error(result.errorMessage);
+              }
+              if (result.fullData) {
+                fullData = result.fullData;
               }
             }
           }
         } finally {
           reader.releaseLock();
         }
-        if (fullData) {
-          const aiItem = buildAIConversationItemFromTwinData(fullData) as ConversationItem;
-          setConversation((prev) => prev.map((item) => (item.id === streamId ? { ...aiItem, id: streamId } : item)));
-          if (conversationId) {
-            await addMessage(conversationId, buildAddMessagePayloadFromTwinData(fullData), session.accessToken);
-          }
-        } else if (streamedRawText.trim()) {
-          const safeFallback = buildSafeStreamFallbackContent(streamedRawText);
-          const aiItem = buildAIConversationItemFromTwinData({
-            response: safeFallback,
-            confidence: 0.5,
-          }) as ConversationItem;
-          setConversation((prev) => prev.map((item) => (item.id === streamId ? { ...aiItem, id: streamId } : item)));
-          if (conversationId) {
-            await addMessage(conversationId, {
-              role: 'assistant',
-              content: safeFallback,
-              confidence: 0.5,
-              metadata: { streamFallback: true },
-            }, session.accessToken);
-          }
+        const normalized = finalizeTwinStream({ state: streamState, fullData });
+        const aiItem = buildAIConversationItemFromTwinData(normalized) as ConversationItem;
+        setConversation((prev) => [...prev, aiItem]);
+        if (conversationId) {
+          await addMessage(conversationId, buildAddMessagePayloadFromTwinData(normalized), session.accessToken);
         }
       } else {
         const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } };
