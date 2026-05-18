@@ -51,6 +51,20 @@ describe('buildProviderData', () => {
     expect(providerData.responseDensity).toBe('deep');
   });
 
+  it('forwards conversation history and thread hints', () => {
+    const history = [{ role: 'user', content: 'vacation?' }];
+    const thread = { threadSummary: 'ongoing trip thread', isFollowUp: true };
+    const providerData = buildProviderData({
+      options: {
+        structuredResponseMode: 'conversation',
+        conversationHistory: history,
+        conversationThread: thread,
+      },
+    });
+    expect(providerData.conversationHistory).toEqual(history);
+    expect(providerData.conversationThread).toEqual(thread);
+  });
+
   it('falls back structuredResponseMode from assembledContext when options omit it', () => {
     const providerData = buildProviderData({
       options: {

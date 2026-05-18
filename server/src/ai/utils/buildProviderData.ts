@@ -64,5 +64,13 @@ export function buildProviderData(input: BuildProviderDataInput): Record<string,
     providerData.promptProfile = options.promptProfile;
   }
 
+  if (Array.isArray(options.conversationHistory) && options.conversationHistory.length > 0) {
+    providerData.conversationHistory = options.conversationHistory;
+  }
+
+  if (options.conversationThread && typeof options.conversationThread === 'object') {
+    providerData.conversationThread = options.conversationThread;
+  }
+
   return providerData;
 }

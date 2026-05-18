@@ -3,6 +3,7 @@ import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinServi
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
+import { CONVERSATION_SYSTEM_PRESENCE } from '../prompts/conversationMomentum';
 import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 
@@ -311,7 +312,7 @@ CURRENT CONTEXT:
 - Recent Activity: ${context.recentActivity?.length || 0} recent actions
 - Module Context: ${context.currentModule || 'Cross-module'}
 
-${conversationMode ? 'CONVERSATIONAL APPROACH:\n- Prioritize natural dialogue and emotional intelligence.\n- Do not sound like a consultant or produce report-style output.\n- Pacing and curiosity matter more than completeness in one turn.\n' : `ANALYTICAL CAPABILITIES:
+${conversationMode ? `${CONVERSATION_SYSTEM_PRESENCE}\nCONVERSATIONAL APPROACH:\n- Continue the thread; build on prior turns instead of restarting.\n- Prioritize natural dialogue, specificity, and light opinions when helpful.\n- Do not sound like a consultant, travel brochure, or report.\n- Use substantive follow-through when history is present.\n` : `ANALYTICAL CAPABILITIES:
 - Deep understanding of user behavior patterns across all modules
 - Analysis of relationships and interpersonal dynamics
 - Ethical reasoning for actions affecting others

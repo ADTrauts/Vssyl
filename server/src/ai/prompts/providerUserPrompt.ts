@@ -3,12 +3,16 @@
  */
 
 import type { AIAssembledContext } from '../context/AIContextAssembler';
+import type { ConversationHistoryItem } from '../core/DigitalLifeTwinCore';
+import type { ConversationThreadHints } from '../utils/conversationContinuity';
+import { formatConversationTranscript } from '../utils/conversationContinuity';
+import { CONVERSATION_MOMENTUM_BLOCK } from './conversationMomentum';
 import { isConversationStructuredMode } from './structuredResponseFormat';
 
 export function isConversationProviderData(data?: Record<string, unknown>): boolean {
   if (!data) return false;
   if (isConversationStructuredMode(data.structuredResponseMode as string | undefined)) return true;
-  return (data.promptProfile as string | undefined) === 'conversation';
+  return (data.promptProfile as string) === 'conversation';
 }
 
 function slimAssembledContextForConversation(assembled: AIAssembledContext): Record<string, unknown> {
@@ -23,6 +27,38 @@ function slimAssembledContextForConversation(assembled: AIAssembledContext): Rec
       relevanceScore: b.relevanceScore,
     })),
   };
+}
+
+function buildThreadSection(data: Record<string, unknown>): string {
+  const hints = data.conversationThread as ConversationThreadHints | undefined;
+  const history = data.conversationHistory as ConversationHistoryItem[] | undefined;
+
+  const transcript =
+    Array.isArray(history) && history.length > 0
+      ? formatConversationTranscript(history, { maxMessages: 10, maxCharsPerMessage: 1200 })
+      : '';
+
+  if (!transcript && !hints?.isFollowUp) return '';
+
+  const parts: string[] = ['CONVERSATION THREAD (read carefully — continue this dialogue):'];
+
+  if (hints?.threadSummary) {
+    parts.push(`Thread summary: ${hints.threadSummary}`);
+  }
+  if (hints?.narrowingConstraints?.length) {
+    parts.push(`Evolving preferences: ${hints.narrowingConstraints.join('; ')}`);
+  }
+  if (hints?.priorPlaceSuggestions?.length) {
+    parts.push(
+      `Places/options you may have already suggested (do not blindly repeat — refine or compare): ${hints.priorPlaceSuggestions.join(', ')}`
+    );
+  }
+  if (transcript) {
+    parts.push(`Recent messages:\n${transcript}`);
+  }
+
+  parts.push(CONVERSATION_MOMENTUM_BLOCK);
+  return `${parts.join('\n\n')}\n\n`;
 }
 
 export function buildProviderUserPrompt(input: {
@@ -43,9 +79,10 @@ export function buildProviderUserPrompt(input: {
   }
 
   if (conversation) {
-    return `${assembledSection}USER MESSAGE:\n${userQuery}
+    const threadSection = buildThreadSection(data);
+    return `${threadSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
 
-Respond in natural dialogue. Use private context only when it genuinely improves the answer — never mention productivity scores, work-life balance, dashboards, key insights, or life-twin analytics unless the user asked about them.`;
+Respond as a continuing conversation. Build on the thread above — do not answer as if this is the first message. Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
   }
 
   return `USER REQUEST: ${userQuery}

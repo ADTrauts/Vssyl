@@ -18,6 +18,7 @@ import {
   conversationRankFilter,
   type ContextProfile,
 } from './contextProfile';
+import { buildConversationThreadHints } from '../utils/conversationContinuity';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -628,12 +629,50 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
 
   const history = query.conversationHistory;
   if (Array.isArray(history) && history.length > 0) {
+    const historyLimit = contextProfile === 'conversation' ? 12 : 10;
+    const perMessageChars = contextProfile === 'conversation' ? 1200 : 800;
+
+    if (contextProfile === 'conversation') {
+      const threadHints = buildConversationThreadHints({
+        latestUserMessage: query.query,
+        recentMessages: history.map((m) => ({
+          role: m.role as 'user' | 'assistant' | 'system',
+          content: typeof m.content === 'string' ? m.content : String(m.content ?? ''),
+          timestamp: m.timestamp,
+        })),
+        continuity:
+          query.continuityState && typeof query.continuityState === 'object'
+            ? (query.continuityState as import('../utils/conversationContinuity').ConversationContinuityState)
+            : undefined,
+        activeTopic:
+          query.activeTopic && typeof query.activeTopic === 'object'
+            ? (query.activeTopic as import('../utils/conversationContinuity').ActiveTopicState)
+            : undefined,
+      });
+      contextBlocks.push({
+        title: 'Active conversation thread',
+        sourceType: 'chat',
+        content: {
+          threadSummary: threadHints.threadSummary,
+          momentum: threadHints.momentum,
+          narrowingConstraints: threadHints.narrowingConstraints,
+          lastAssistantMessage: threadHints.lastAssistantMessage
+            ? truncateString(threadHints.lastAssistantMessage, 600)
+            : undefined,
+          priorPlaceSuggestions: threadHints.priorPlaceSuggestions,
+        },
+        priority: 'high',
+        tier: 'tier1_recent_conversation',
+        inclusionReason: 'conversation momentum and thread summary for follow-up turns',
+      });
+    }
+
     contextBlocks.push({
       title: 'Conversation history (excerpt)',
       sourceType: 'chat',
-      content: history.slice(-10).map((m) => ({
+      content: history.slice(-historyLimit).map((m) => ({
         role: m.role,
-        content: typeof m.content === 'string' ? truncateString(m.content, 800) : m.content,
+        content: typeof m.content === 'string' ? truncateString(m.content, perMessageChars) : m.content,
       })),
       priority: 'high',
       tier: 'tier1_recent_conversation',
@@ -899,14 +938,23 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     totalBlocks: compressedBlocks.length,
   });
 
-  const scoredForProfile = compressedBlocks.map((b) => ({
-    ...b,
-    relevanceScore: scoreContextBlock({
+  const scoredForProfile = compressedBlocks.map((b) => {
+    let relevanceScore = scoreContextBlock({
       queryText: query.query,
       block: b,
       currentModule: currentModule || undefined,
-    }),
-  }));
+    });
+    if (contextProfile === 'conversation') {
+      const title = (b.title || '').toLowerCase();
+      if (title.includes('conversation history') || title.includes('active conversation thread')) {
+        relevanceScore += 45;
+      }
+      if (title.includes('continuity')) {
+        relevanceScore += 30;
+      }
+    }
+    return { ...b, relevanceScore };
+  });
 
   const profileApplied = applyContextProfile({
     profile: contextProfile,

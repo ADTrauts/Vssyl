@@ -19,10 +19,12 @@ import { getModel } from '../providers/modelCatalog';
 import { assembleAIContext } from '../context/AIContextAssembler';
 import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
 import {
+  buildConversationThreadHints,
   updateConversationContinuityState,
   type ConversationContinuityState,
   type ActiveTopicState,
 } from '../utils/conversationContinuity';
+import { CONVERSATION_MOMENTUM_BLOCK } from '../prompts/conversationMomentum';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
@@ -1023,10 +1025,18 @@ export class DigitalLifeTwinCore {
     options.responseDensity = assembledContext.responseDensity ?? responseDensity;
     options.responseMode = responseMode;
     options.userQuery = query.query;
-    options.promptProfile =
-      (assembledContext.structuredResponseMode ?? structuredResponseMode) === 'conversation'
-        ? 'conversation'
-        : 'enterprise';
+    const effectiveStructuredMode = assembledContext.structuredResponseMode ?? structuredResponseMode;
+    options.promptProfile = effectiveStructuredMode === 'conversation' ? 'conversation' : 'enterprise';
+
+    if (effectiveStructuredMode === 'conversation') {
+      options.conversationHistory = query.conversationHistory ?? [];
+      options.conversationThread = buildConversationThreadHints({
+        latestUserMessage: query.query,
+        recentMessages: query.conversationHistory ?? [],
+        continuity: continuityState,
+        activeTopic: activeTopic,
+      });
+    }
 
     void logger.debug('[AI_CONTEXT_ASSEMBLY] assembled context', {
       scope: assembledContext.scope,
@@ -1333,10 +1343,15 @@ ${continuityState ? `- Current topic: ${continuityState.currentTopic || 'n/a'}
 - Active entities: ${(continuityState.activeEntities || []).join(', ') || 'n/a'}
 - User goal: ${continuityState.userGoal || 'n/a'}
 - Emotional tone: ${continuityState.emotionalTone || 'n/a'}
-- Momentum: ${continuityState.conversationMomentum || 'n/a'}` : '- No continuity state available'}
+- Momentum: ${continuityState.conversationMomentum || 'n/a'}
+- Narrowing constraints: ${(continuityState.narrowingConstraints || []).join('; ') || 'none yet'}
+- Last assistant turn (summary): ${continuityState.lastAssistantTurnSummary || 'n/a'}` : '- No continuity state available'}
 ${activeTopic ? `- Active topic label: ${activeTopic.label}
+- Active topic domain: ${activeTopic.domain || 'general'}
 - Active topic entities: ${activeTopic.entities.join(', ') || 'n/a'}
 - Active topic confidence: ${Math.round(activeTopic.confidence * 100)}%` : '- No active topic available'}
+${isConversation && query.conversationHistory && query.conversationHistory.length > 0 ? `
+${CONVERSATION_MOMENTUM_BLOCK}` : ''}
 
 ${attachedFilesSection}
 
@@ -1349,17 +1364,20 @@ ${query.conversationHistory && query.conversationHistory.length > 0 ? `
 RECENT MESSAGES IN THIS CONVERSATION (oldest to newest):
 ${query.conversationHistory.map((msg) => {
   const label = msg.role === 'user' ? 'User' : msg.role === 'assistant' ? 'Assistant' : 'System';
-  return `${label}: ${(msg.content || '').trim().replace(/\n/g, ' ').substring(0, 800)}`;
+  const maxLen = isConversation ? 1200 : 800;
+  return `${label}: ${(msg.content || '').trim().replace(/\n/g, ' ').substring(0, maxLen)}`;
 }).join('\n\n')}
 
-The following is the user's latest message in this conversation. Respond in context of the messages above.` : ''}
+The following is the user's latest message. ${isConversation ? 'Continue the dialogue naturally — reference prior turns, narrow options, and do not restart with generic broad answers.' : 'Respond in context of the messages above.'}` : ''}
 
 USER QUERY: "${query.query}"
 
 INSTRUCTIONS:
-${isConversation ? `Respond as a smart, natural human assistant in dialogue.
-- Use any private context silently — never cite productivity scores, work-life balance, dashboards, or "key insights" unless the user explicitly asked about them.
-- Be warm, practical, and curious; ask at most 1–2 follow-up questions.
+${isConversation ? `Respond as a smart, natural human assistant in an ONGOING dialogue.
+- Continue the thread: build on what was already said; do not answer as an isolated FAQ entry.
+- If the user narrows (domestic, warm weather, budget, etc.), evolve your suggestions — do not repeat the same generic destination blurbs.
+- Be warm, specific, slightly opinionated when helpful; ask at most 1–2 narrowing follow-up questions.
+- Use any private context silently — never cite productivity scores, work-life balance, dashboards, or "key insights" unless explicitly asked.
 - CRITICALLY: Follow any user-defined context instructions above${userContextSection}` : `Respond as Vssyl's assistant, demonstrating deep understanding of their:
 1. Personality and communication style
 2. Current life situation and priorities  
@@ -1378,8 +1396,9 @@ Your response should:
 FORMATTING FOR READABILITY:
 - Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.
 - Prefer short paragraphs; avoid long run-on blocks of text.
-${isConversation ? `- Conversation mode: write like a highly intelligent human assistant — warm, natural, emotionally aware. Ask at most 1–2 follow-up questions. Offer a mild opinion when helpful. Do not try to solve everything in one message; pacing beats completeness.
-- Do not use report headings, frameworks, optimization language, or consultant tone unless the user explicitly asked for analysis or a plan.` : `- Use bullet points or numbered lists when listing items, steps, or options.`}
+${isConversation ? `- Conversation mode: write like a highly intelligent human assistant continuing a chat — warm, specific, emotionally aware, with light opinions when useful.
+- When history exists: 2–4 substantive paragraphs; reference prior turns; narrow don't reset.
+- Do not use report headings, frameworks, optimization language, brochure/SEO travel copy, or consultant tone.` : `- Use bullet points or numbered lists when listing items, steps, or options.`}
 
 ${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage with the user's situation conversationally — do not produce a report, recommendation matrix, or action plan unless they asked for one.` : `Respond as Vssyl's assistant, using the user's context to provide grounded insights, recommendations, and next steps.`} Do not speak as if you are the user, and do not make unsupported decisions on their behalf.`;
   }
