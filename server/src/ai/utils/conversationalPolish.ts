@@ -52,6 +52,16 @@ const CONVERSATION_FRAMEWORK_PATTERNS: RegExp[] = [
   /\b(productivity score)\b/gi,
 ];
 
+/** Generic travel-blog / safe-AI phrasing to soften in conversation mode. */
+const GENERIC_BROCHURE_PATTERNS: Array<{ pattern: RegExp; replacement: string }> = [
+  { pattern: /\bconsider destinations like\b/gi, replacement: 'I\'d look at' },
+  { pattern: /\bpopular options include\b/gi, replacement: 'Strong fits include' },
+  { pattern: /\byou may want to\b/gi, replacement: 'I\'d' },
+  { pattern: /\bfor a more secluded getaway\b/gi, replacement: 'if you want something quieter' },
+  { pattern: /\boffers historic charm\b/gi, replacement: 'has a relaxed, historic feel' },
+  { pattern: /\bhas culture and food\b/gi, replacement: 'is incredible for food and energy' },
+];
+
 function collapseWhitespace(value: string): string {
   return value
     .replace(/[ \t]+\n/g, '\n')
@@ -96,6 +106,9 @@ export function polishConversationalResponse(
   if (options?.conversationMode) {
     for (const pattern of CONVERSATION_FRAMEWORK_PATTERNS) {
       out = out.replace(pattern, '');
+    }
+    for (const { pattern, replacement } of GENERIC_BROCHURE_PATTERNS) {
+      out = out.replace(pattern, replacement);
     }
     out = out.replace(/\b(in conclusion|to summarize|overall,)\s*,?\s*/gi, '');
     out = out.replace(/\s{2,}/g, ' ');

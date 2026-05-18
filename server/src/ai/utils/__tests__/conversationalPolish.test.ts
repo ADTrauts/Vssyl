@@ -17,6 +17,13 @@ describe('polishConversationalResponse', () => {
     expect(out).toContain('keep the trip simple');
   });
 
+  it('softens brochure phrasing in conversation mode', () => {
+    const input = 'Popular options include Charleston and Savannah for a relaxing trip.';
+    const out = polishConversationalResponse(input, { conversationMode: true });
+    expect(out).not.toMatch(/popular options include/i);
+    expect(out).toContain('Charleston');
+  });
+
   it('strips internal headings while preserving useful bullets', () => {
     const input = [
       'Key insights:',

@@ -4,6 +4,10 @@ import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
 import { CONVERSATION_SYSTEM_PRESENCE } from '../prompts/conversationMomentum';
+import {
+  CONVERSATION_ASSISTANT_IDENTITY,
+  CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
+} from '../prompts/conversationRecommendationRichness';
 import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 
@@ -662,7 +666,7 @@ export class OpenAIProvider {
     const conversationMode = structuredResponseMode === 'conversation';
 
     return `You are Vssyl's AI assistant${conversationMode ? '' : '. You help the user understand their personal, business, and module context'}. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
-${conversationMode ? `\n${CONVERSATION_SYSTEM_PRESENCE}\nCONVERSATION MODE: Continue ongoing threads naturally. Be warm, specific, and lightly opinionated when helpful. Never produce report-style output, brochure lists, or cite internal scores/dashboards unless explicitly asked.\n` : ''}
+${conversationMode ? `\n${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n` : ''}
 
 PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
 ${JSON.stringify(personality, null, 2)}

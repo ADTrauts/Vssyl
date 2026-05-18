@@ -7,6 +7,10 @@ import type { ConversationHistoryItem } from '../core/DigitalLifeTwinCore';
 import type { ConversationThreadHints } from '../utils/conversationContinuity';
 import { formatConversationTranscript } from '../utils/conversationContinuity';
 import { CONVERSATION_MOMENTUM_BLOCK } from './conversationMomentum';
+import {
+  buildRecommendationFramingHints,
+  CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
+} from './conversationRecommendationRichness';
 import { isConversationStructuredMode } from './structuredResponseFormat';
 
 export function isConversationProviderData(data?: Record<string, unknown>): boolean {
@@ -80,9 +84,20 @@ export function buildProviderUserPrompt(input: {
 
   if (conversation) {
     const threadSection = buildThreadSection(data);
-    return `${threadSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
+    const framingHints = buildRecommendationFramingHints({
+      userQuery,
+      threadHints: data.conversationThread as ConversationThreadHints | undefined,
+    });
+    const richnessSection = threadSection.includes('RECOMMENDATION INTELLIGENCE')
+      ? ''
+      : `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n\n`;
+    const framingSection = framingHints ? `${framingHints}\n\n` : '';
+    const continuityNote = threadSection
+      ? 'Respond as a continuing conversation. Build on the thread above.'
+      : 'Respond as a smart conversational guide helping the user make a real decision.';
+    return `${threadSection}${richnessSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
 
-Respond as a continuing conversation. Build on the thread above — do not answer as if this is the first message. Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
+${continuityNote} Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
   }
 
   return `USER REQUEST: ${userQuery}
