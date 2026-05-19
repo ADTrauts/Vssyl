@@ -4,6 +4,10 @@
  */
 
 import type { StructuredAIResponse } from '../components/ai/AIResponseRenderer';
+import {
+  extractResponseInfluenceFromTwinMetadata,
+  type ResponseInfluenceSummary,
+} from '../api/aiResponseInfluence';
 
 /** Phase 5: file/attachment issues for UI to render (message is user-facing). */
 export interface FileIssue {
@@ -36,6 +40,8 @@ export interface AIConversationItemBase {
   fileIssues?: FileIssue[];
   /** When true, UI shows "Image used in this reply" badge. */
   usedVisionParts?: boolean;
+  /** Per-turn explainability from twin metadata.responseInfluence. */
+  responseInfluence?: ResponseInfluenceSummary;
   metadata: {
     reasoning?: string;
     actions: unknown[];
@@ -266,6 +272,8 @@ export function buildAIConversationItemFromTwinData(
   const confidence = typeof normalized.confidence === 'number' ? normalized.confidence : 0.5;
   const timestamp = new Date();
 
+  const responseInfluence = extractResponseInfluenceFromTwinMetadata(normalized.metadata);
+
   const item: AIConversationItemWithLegacy = {
     id,
     type: 'ai',
@@ -275,6 +283,7 @@ export function buildAIConversationItemFromTwinData(
     structured: normalized.structured,
     fileIssues: Array.isArray(normalized.fileIssues) ? normalized.fileIssues : undefined,
     usedVisionParts: normalized.usedVisionParts === true,
+    responseInfluence: responseInfluence ?? undefined,
     metadata: {
       reasoning: normalized.reasoning,
       actions: Array.isArray(normalized.actions) ? normalized.actions : [],
@@ -313,6 +322,9 @@ export function buildAddMessagePayloadFromTwinData(data: TwinResponseData): {
   if (normalized.metadata != null) metadata.twinMetadata = normalized.metadata;
   if (normalized.metadata?.continuityState != null) metadata.continuityState = normalized.metadata.continuityState;
   if (normalized.metadata?.activeTopic != null) metadata.activeTopic = normalized.metadata.activeTopic;
+  if (normalized.metadata?.responseInfluence != null) {
+    metadata.responseInfluence = normalized.metadata.responseInfluence;
+  }
   if (normalized.structured != null) metadata.structured = normalized.structured;
   if (Array.isArray(normalized.fileIssues) && normalized.fileIssues.length > 0) metadata.fileIssues = normalized.fileIssues;
   if (normalized.usedVisionParts === true) metadata.usedVisionParts = true;

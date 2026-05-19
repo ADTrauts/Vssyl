@@ -4,6 +4,8 @@ export interface ModuleConfig {
   description: string;
   icon: string;
   path: string;
+  /** Optional AI Identity / settings surface (e.g. twin configuration). */
+  settingsPath?: string;
   permissions: string[];
   ownerOnly?: boolean;
   category: 'core' | 'business' | 'admin' | 'developer';
@@ -40,9 +42,10 @@ export const MODULES: ModuleConfig[] = [
   {
     id: 'ai',
     name: 'AI Assistant',
-    description: 'AI-powered assistant and conversation management',
+    description: 'Chat with your Digital Life Twin',
     icon: 'brain',
-    path: '/ai',
+    path: '/ai-chat',
+    settingsPath: '/ai',
     permissions: ['view', 'chat'],
     category: 'core',
   },

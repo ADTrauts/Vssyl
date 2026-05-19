@@ -41,6 +41,10 @@ import {
   applyResolvedPreferencesToProviderOptions,
   buildProviderUserContextFromPreferences,
 } from '../preferences/preferenceProviderWiring';
+import {
+  buildResponseInfluence,
+  type ResponseInfluenceSummary,
+} from '../preferences/buildResponseInfluence';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -97,6 +101,8 @@ export interface DigitalLifeTwinResponse {
       businessId: string;
       businessName?: string;
     };
+    /** Human-readable factors that shaped this assistant turn (no prompts or provenance keys). */
+    responseInfluence?: ResponseInfluenceSummary;
   };
 }
 
@@ -824,6 +830,36 @@ export class DigitalLifeTwinCore {
 
       const processingTime = Date.now() - startTime;
 
+      const ctxForInfluence = query.context as Record<string, unknown>;
+      const memoryFactsForInfluence = Array.isArray(ctxForInfluence.userMemoryFacts)
+        ? (ctxForInfluence.userMemoryFacts as Array<{ subject: string; predicate: string }>)
+        : undefined;
+      const recalledCount = Array.isArray(ctxForInfluence.recalledMessages)
+        ? ctxForInfluence.recalledMessages.length
+        : 0;
+
+      let responseInfluence: ResponseInfluenceSummary | undefined;
+      try {
+        responseInfluence = buildResponseInfluence({
+          effectivePreferences,
+          sessionAdjustments: sessionPreferenceAdjustments,
+          businessBoundaries: businessWorkspaceBoundaries,
+          userMemoryFacts: memoryFactsForInfluence,
+          recalledMessageCount: recalledCount,
+          modulesFocused: response.modulesFocused,
+          hasPersonalityProfile: Boolean(
+            personality && typeof personality === 'object'
+          ),
+          hasAutonomySettings: true,
+        });
+      } catch (influenceErr: unknown) {
+        const err = influenceErr instanceof Error ? influenceErr : new Error(String(influenceErr));
+        void logger.warn('Failed to build response influence summary', {
+          operation: 'digital_life_twin_response_influence_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+
       let pendingLearning: DigitalLifeTwinResponse['metadata']['pendingLearning'];
       try {
         const { userAIContextLearningService } = await import(
@@ -897,6 +933,7 @@ export class DigitalLifeTwinCore {
               }),
             },
           }),
+          ...(responseInfluence && { responseInfluence }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {

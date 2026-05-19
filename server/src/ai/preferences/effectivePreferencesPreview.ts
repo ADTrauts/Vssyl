@@ -63,9 +63,9 @@ export function toEffectivePreferencesPreview(
 
   const scopeNote =
     setup.businessId && setup.hasBusinessWorkspacePolicies
-      ? 'These are your personal AI Control Center settings. In this business workspace, additional policies from the Business AI Control Center also apply.'
+      ? 'Your personal AI Identity still shapes how your twin communicates. This workspace adds organization policies on top.'
       : setup.businessId
-        ? 'These are your personal AI Control Center settings. Business workspace policies may apply when configured.'
+        ? 'Your personal AI Identity applies here. Workspace policies may apply when configured by your organization.'
         : undefined;
 
   return {

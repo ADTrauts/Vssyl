@@ -277,6 +277,11 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
     // Get allowed capabilities based on role
     const allowedCapabilities = await getEmployeeAICapabilities(member, businessAI);
 
+    const { buildWorkspaceAIPolicyDigest } = await import(
+      '../ai/enterprise/workspaceAIPolicyDigest.js'
+    );
+    const policyDigest = await buildWorkspaceAIPolicyDigest(userId, businessId);
+
     res.json({
       success: true,
       data: {
@@ -288,6 +293,7 @@ router.get('/:businessId/employee-access', async (req: express.Request, res: exp
           allowEmployeeInteraction: businessAI.allowEmployeeInteraction
         },
         allowedCapabilities,
+        policyDigest,
         userContext: {
           role: member.role,
           title: member.title,

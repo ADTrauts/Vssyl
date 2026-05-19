@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2 } from 'lucide-react';
+import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2, HelpCircle, Building2 } from 'lucide-react';
 import { Button, Spinner } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
 import AIAssistantMessageBody from '../../components/ai/AIAssistantMessageBody';
@@ -40,10 +40,16 @@ import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
-import LearnedFromChatBanner from '../../components/ai/LearnedFromChatBanner';
-import SessionStylePromoteBanner from '../../components/ai/SessionStylePromoteBanner';
+import AILearningNotice from '../../components/ai/AILearningNotice';
+import AIResponseExplainDrawer from '../../components/ai/AIResponseExplainDrawer';
+import WorkspaceAIDrawer from '../../components/ai/WorkspaceAIDrawer';
+import { resolveBusinessIdFromDashboard } from '../../lib/resolveBusinessIdFromDashboard';
 import type { PendingLearningFromTwin } from '../../api/aiContextLearning';
 import type { SessionPreferenceAdjustments } from '../../api/aiSessionPreferences';
+import {
+  extractResponseInfluenceFromTwinMetadata,
+  type ResponseInfluenceSummary,
+} from '../../api/aiResponseInfluence';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -115,6 +121,8 @@ interface ConversationItem {
   attachments?: { fileIds: string[] };
   /** Phase 1: generated image from /api/ai/generate-image */
   generatedImage?: { url: string; revisedPrompt?: string; fileId?: string };
+  /** Per-turn explainability (from twin metadata.responseInfluence). */
+  responseInfluence?: ResponseInfluenceSummary;
   /** Phase 2: structured document extraction (invoice/receipt) */
   extractedDocument?: {
     vendor: string;
@@ -194,12 +202,31 @@ export default function AIChat() {
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const submittingRef = useRef(false);
   const learningBannerShownRef = useRef(false);
-  const [pendingLearningBanner, setPendingLearningBanner] = useState<PendingLearningFromTwin | null>(
-    null
+  const [learningNotice, setLearningNotice] = useState<{
+    session?: SessionPreferenceAdjustments;
+    pending?: PendingLearningFromTwin;
+  } | null>(null);
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [explainInfluence, setExplainInfluence] = useState<ResponseInfluenceSummary | null>(null);
+  const [workspaceAIDrawerOpen, setWorkspaceAIDrawerOpen] = useState(false);
+
+  const activeBusinessId = resolveBusinessIdFromDashboard(
+    currentDashboard,
+    currentDashboard ? getDashboardType(currentDashboard) : 'personal'
   );
-  const [sessionStyleBanner, setSessionStyleBanner] = useState<SessionPreferenceAdjustments | null>(
-    null
-  );
+
+  const applyTwinLearningNotice = useCallback((metadata: Record<string, unknown> | undefined) => {
+    const pending = extractPendingLearningFromTwinMetadata(metadata);
+    const session = extractSessionAdjustmentsFromTwinMetadata(metadata);
+    if (!pending && !session) return;
+    if (!learningBannerShownRef.current) {
+      learningBannerShownRef.current = true;
+      setLearningNotice({
+        ...(session ? { session } : {}),
+        ...(pending ? { pending } : {}),
+      });
+    }
+  }, []);
 
   // Phase 7: Proactive AI suggestions (e.g. after document upload)
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestionItem[]>([]);
@@ -471,6 +498,10 @@ export default function AIChat() {
             extractedDocument: meta.extractedDocument as ConversationItem['extractedDocument'],
             usedVisionParts: meta.usedVisionParts as boolean | undefined,
             fileIssues: meta.fileIssues as ConversationItem['fileIssues'],
+            responseInfluence:
+              extractResponseInfluenceFromTwinMetadata(
+                (meta.twinMetadata as Record<string, unknown> | undefined) ?? meta
+              ) ?? undefined,
           };
         });
 
@@ -737,15 +768,7 @@ export default function AIChat() {
         if (conversationId) {
           await addMessage(conversationId, buildAddMessagePayloadFromTwinData(normalized), session.accessToken);
         }
-        const pending = extractPendingLearningFromTwinMetadata(normalized.metadata);
-        if (pending && !learningBannerShownRef.current) {
-          learningBannerShownRef.current = true;
-          setPendingLearningBanner(pending);
-        }
-        const sessionAdj = extractSessionAdjustmentsFromTwinMetadata(normalized.metadata);
-        if (sessionAdj) {
-          setSessionStyleBanner(sessionAdj);
-        }
+        applyTwinLearningNotice(normalized.metadata);
       } else {
         const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } };
         if (!json.success || !json.data) {
@@ -756,15 +779,7 @@ export default function AIChat() {
         if (conversationId) {
           await addMessage(conversationId, buildAddMessagePayloadFromTwinData(json.data), session.accessToken);
         }
-        const pending = extractPendingLearningFromTwinMetadata(json.data.metadata);
-        if (pending && !learningBannerShownRef.current) {
-          learningBannerShownRef.current = true;
-          setPendingLearningBanner(pending);
-        }
-        const sessionAdjJson = extractSessionAdjustmentsFromTwinMetadata(json.data.metadata);
-        if (sessionAdjJson) {
-          setSessionStyleBanner(sessionAdjJson);
-        }
+        applyTwinLearningNotice(json.data.metadata);
       }
 
     } catch (error) {
@@ -1871,6 +1886,17 @@ export default function AIChat() {
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {activeBusinessId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setWorkspaceAIDrawerOpen(true)}
+                    className="hidden sm:inline-flex"
+                  >
+                    <Building2 className="h-4 w-4 mr-1" />
+                    Workspace AI
+                  </Button>
+                )}
                 <AIProviderModelPicker
                   provider={selectedProvider}
                   model={selectedModel}
@@ -1925,6 +1951,16 @@ export default function AIChat() {
                 <p className="text-xs text-gray-600 dark:text-gray-400">Start a new conversation</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {activeBusinessId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setWorkspaceAIDrawerOpen(true)}
+                  >
+                    <Building2 className="h-4 w-4 mr-1" />
+                    Workspace AI
+                  </Button>
+                )}
                 <AIProviderModelPicker
                   provider={selectedProvider}
                   model={selectedModel}
@@ -1939,6 +1975,12 @@ export default function AIChat() {
             </>
           )}
         </div>
+
+        <WorkspaceAIDrawer
+          open={workspaceAIDrawerOpen}
+          businessId={activeBusinessId}
+          onClose={() => setWorkspaceAIDrawerOpen(false)}
+        />
 
         {/* Messages */}
         <div 
@@ -2167,7 +2209,20 @@ export default function AIChat() {
                               </>
                             )}
                             {item.type === 'ai' && (item.content || '').trim().length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-gray-100">
+                              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex flex-wrap gap-3">
+                                {item.responseInfluence && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setExplainInfluence(item.responseInfluence ?? null);
+                                      setExplainOpen(true);
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
+                                  >
+                                    <HelpCircle className="h-4 w-4" />
+                                    <span>Why this answer</span>
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => handlePlayTTS(item)}
@@ -2194,25 +2249,22 @@ export default function AIChat() {
             </>
           )}
 
-          {pendingLearningBanner && session?.accessToken && (
+          {learningNotice && session?.accessToken && (
             <div className="max-w-2xl mx-auto px-4 pb-2">
-              <LearnedFromChatBanner
+              <AILearningNotice
                 token={session.accessToken}
-                pending={pendingLearningBanner}
-                onDismissed={() => setPendingLearningBanner(null)}
+                sessionAdjustments={learningNotice.session}
+                pending={learningNotice.pending}
+                onDismissed={() => setLearningNotice(null)}
               />
             </div>
           )}
 
-          {sessionStyleBanner && session?.accessToken && (
-            <div className="max-w-2xl mx-auto px-4 pb-2">
-              <SessionStylePromoteBanner
-                token={session.accessToken}
-                adjustments={sessionStyleBanner}
-                onDismissed={() => setSessionStyleBanner(null)}
-              />
-            </div>
-          )}
+          <AIResponseExplainDrawer
+            open={explainOpen}
+            influence={explainInfluence}
+            onClose={() => setExplainOpen(false)}
+          />
           
           {(isAILoading || isGeneratingImage) && (
             <div className="flex justify-start">

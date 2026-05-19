@@ -303,7 +303,7 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
     },
     {
       icon: <Brain className="w-4 h-4" />,
-      label: 'AI Control Center',
+      label: 'AI Identity',
       onClick: () => {
         router.push('/ai');
         handleClose();

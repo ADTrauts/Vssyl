@@ -75,13 +75,45 @@ The AI Context System is a **mandatory component** of every module in the Vssyl 
 9. **CSV files**: Parsed via `parseCsvToMarkdownTable` and sent as structured markdown tables
 10. **"Image used in this reply"**: When vision parts are sent, `usedVisionParts` is set and the UI shows a badge
 
-### Streaming chat UX guard (May 2026)
+### Streaming chat UX (May 2026)
 
-When `/api/ai/twin` streams with `text/event-stream`, the provider may still emit **structured JSON** token-by-token. The **full-page AI chat** client detects likely structured JSON streams and **does not append those chunks to visible message text**; the user sees the normalized result from the final `done` event (or a safe plain-text fallback — never raw JSON). Helpers live in `web/src/lib/aiResponseHandler.ts` (`isLikelyStructuredJSONStream`, `buildSafeStreamFallbackContent`). Plan and phases: `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`.
+When `/api/ai/twin` is called with `stream: true`, the backend may return **SSE** (`text/event-stream`) while the model still emits **structured v2 JSON** token-by-token. Only the **full-page** client (`web/src/app/ai-chat/page.tsx`) uses streaming today; dropdown and embed module use a single JSON response.
+
+**Client contract (`web/src/lib/aiStreamHandler.ts`):**
+- **`TwinStreamState`** — accumulates raw chunks in memory only (not in React conversation state).
+- **`processTwinStreamChunk`** — on `{`, `[`, or markdown fence, sets `bufferingStructured` and returns `displayText: null` so the UI never shows `{ "mode": "conversation", ... }`.
+- **`consumeTwinSseLine`** — parses `data: {"text":...}` / `{"done":true,"data":...}` lines.
+- **`finalizeTwinStream`** — on end, prefers `done.data` from server; else parses accumulated JSON via `aiResponseHandler` (`tryParseStructuredAIJSON`, `normalizeTwinResponseData`).
+- **UX:** While loading, `isAILoading` shows **`AIThinkingIndicator`** (animated dots) — no `ai_stream_*` placeholder message (avoids flicker/replace). One assistant message is appended after finalize.
+- **Safety net:** `AIAssistantMessageBody` uses `shouldHideStreamingContent` if partial JSON ever reaches render.
+
+**Non-stream paths:** `AIChatDropdown`, `AIChatModule`, and non-stream twin responses use `buildAIConversationItemFromTwinData` / `normalizeStoredAIMessage` in `web/src/lib/aiResponseHandler.ts`.
+
+**Commits:** `1deb6d48` (buffer + thinking UX), `976a2658` (structured prose render), `19c2cc56` (first streaming guard).
+
+Plan: `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`.
 
 ### Assembled context tiering and continuity (May 2026)
 
 `AIContextAssembler` attaches **tier** metadata to blocks (recent conversation and continuity state favored; broad cross-module context trimmed more aggressively). `DigitalLifeTwinCore` passes **conversation continuity** and **active topic** derived each turn into assembly and prompts. Details: `memory-bank/activeContext.md` and the plan doc above.
+
+### Digital Life Twin — personal preferences & Control Center (May 2026)
+
+**Rule:** Settings users configure in the **personal AI Control Center** (`/ai`) must reach the live twin via one canonical path — not a duplicate monolithic prompt.
+
+**Pipeline (`POST /api/ai/twin`):**
+1. `DigitalLifeTwinService` — same-thread history; **`getRecentConversationMemory`** (other threads); **`recallRelevantMessages`** when `hasExplicitRecallIntent`; **`getRelevantUserMemoryFacts`** (recall-biased on intent). See `memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md`.
+2. `DigitalLifeTwinCore` — **`PreferenceResolver.resolve`** (personality, autonomy, active `UserAIContext`, provider keys).
+3. `assembleAIContext` — module blocks + recalled messages + thread summaries/topics + memory facts + **“User communication and AI preference settings”** + optional **business policy** when `context.businessId` is set.
+4. Providers — `personalityForProvider`, `autonomyBoundariesForProvider`, `buildProviderUserPrompt` (`assembledContext` JSON is private; `userQuery` = user message).
+
+**Inferred context consent:** Chat extraction creates `UserAIContext` with `learningStatus: pending` until the user promotes via Memories or review APIs. Only `learningStatus: active` rows are prompt-eligible (`userAIContextLearningService.promptEligibleContextWhere`).
+
+**Preview:** `GET /api/ai/effective-preferences` — personal scope; optional `?businessId=` adds a note that business policies apply separately.
+
+**Learning events (personal):** `AILearningEvent` review on `/ai` → **Learning** tab (`AILearningHub` + `PersonalLearningEventsReview`; `personalAILearningEventsService`). Optional analytics: **More → Insights**. Business workspace events use Workspace AI admin APIs — not mixed with personal rows.
+
+**Canonical docs:** `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`, `AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`, `AI_INTELLIGENCE_HUB.md`. **Status:** `memory-bank/activeContext.md`, `memory-bank/progress.md` (AI Control Center audit, commit `789c5f05`).
 
 ---
 

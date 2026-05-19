@@ -1,44 +1,57 @@
-# AI Intelligence Hub (personal Control Center)
+# AI Insights (personal Control Center)
+
+**Last updated:** 2026-05-18 (AI Identity Phase 4)
 
 ## Purpose
 
-The **Intelligence** tab on `/ai` consolidates personal AI learning and insight surfaces that were previously orphaned components. It mirrors the business learning-events review pattern while exposing analytics, patterns, predictions, and recommendations in one place.
+**Insights** is the optional, advanced analytics surface for personal AI — consolidated under **More → Insights** on `/ai`. It replaces the former top-level **Intelligence** tab and five separate sub-tabs with a calmer three-tab layout.
+
+Everyday learning review (chat suggestions, learned behaviors) lives on the **Learning** tab (`AILearningHub`), not here.
 
 ## Location
 
 | Surface | Route / component |
 |--------|-------------------|
-| Control Center tab | `/ai?tab=intelligence` |
-| Hub component | `web/src/components/ai/AIIntelligenceHub.tsx` |
-| Sub-tabs (optional deep link) | `?tab=intelligence&intel=review` \| `analytics` \| `patterns` \| `predictions` \| `recommendations` |
+| Control Center entry | `/ai` → **More** → **Insights** (`?tab=more&section=insights`) |
+| Hub component | `web/src/components/ai/AIIntelligenceHub.tsx` (Insights-only) |
+| Activity summary strip | `web/src/components/ai/InsightsActivityStrip.tsx` |
+| Sub-tabs | `?intel=analytics` \| `patterns` \| `suggestions` |
 
-## Sub-tabs
+### Legacy URLs (redirected)
 
-1. **Review** — `PersonalLearningEventsReview` → `GET /api/ai/learning/events`, `PUT /api/ai/learning/events/:eventId/review`
-2. **Analytics** — `LearningDashboard` → `/api/ai/intelligence/learning/*`
-3. **Patterns** — `SmartPatternInsights` → `/api/ai/patterns/*`
-4. **Predictions** — `PredictiveIntelligenceDashboard` → `/api/ai/intelligence/predictive/*`
-5. **Recommendations** — `IntelligentRecommendationsDashboard` → `/api/ai/intelligence/recommendations/*`
+| Old | New |
+|-----|-----|
+| `?tab=intelligence` | `?tab=more&section=insights` |
+| `?intel=review` | `analytics` |
+| `?intel=predictions` \| `recommendations` | `suggestions` |
 
-Dashboard children accept `embedded` to hide duplicate page headers when nested under the hub.
+Routing helpers: `web/src/lib/aiControlCenterTabs.ts`, `resolveInsightsSubTab()` in `AIIntelligenceHub.tsx`.
 
-## Personal learning events (review model)
+## Sub-tabs (collapsed)
 
-Uses existing `AILearningEvent` rows scoped by `userId` (no schema change).
+1. **Analytics** — `LearningDashboard` → `/api/ai/intelligence/learning/*`
+2. **Patterns** — `SmartPatternInsights` → `/api/ai/patterns/*`
+3. **Suggestions** — `PredictiveIntelligenceDashboard` + `IntelligentRecommendationsDashboard` (stacked) → predictive + recommendations APIs
 
-| State | `validated` | `applied` |
-|-------|-------------|-----------|
-| Pending review | `false` | any |
-| Approved | `true` | `true` |
-| Dismissed | `true` | `false` (optional `userFeedback` prefixed `[dismissed]`) |
+Embedded children hide duplicate page headers when nested under the hub.
 
-Service: `server/src/services/personalAILearningEventsService.ts`
+## Learning vs Insights
 
-Business workspace learning events remain on `GET/PUT /api/business-ai/:businessId/learning-events` and are separate from personal events.
+| Concern | Tab | APIs / UI |
+|--------|-----|-----------|
+| Pending context from chat, promote/dismiss | **Learning** | `GET /api/ai/context/pending`, `AILearningHub` |
+| Personal `AILearningEvent` review | **Learning** | `PersonalLearningEventsReview`, `GET/PUT /api/ai/learning/events` |
+| Analytics, patterns, predictions, recommendations | **Insights** | Intelligence routes under `/api/ai/intelligence/*` |
+
+Business workspace learning events remain on Business **Workspace AI** admin — not mixed with personal rows.
+
+## Removed / consolidated (Phase 4)
+
+- Orphan UI: `LearnedFromChatBanner`, `SessionStylePromoteBanner` (replaced by `AILearningNotice` in `/ai-chat`)
+- Debug orphans: `AutonomyControlsTest`, `AutonomyControlsHybrid`
+- Top-level Intelligence tab and separate Predictions / Recommendations tabs (merged into **Suggestions**)
 
 ## Related docs
 
 - `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md` — twin prompt assembly
-- `docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md` — business vs personal policy injection
-
-**Last updated:** 2026-05-18
+- `docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md` — workspace vs personal AI Identity

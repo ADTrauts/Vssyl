@@ -3071,6 +3071,10 @@ GET /api/admin/block-ids/:blockId/audit-logs
 
 ## AI Control Center Architecture
 
+**May 2026 update:** Personal settings wire into the live Digital Life Twin via `PreferenceResolver` and `AIContextAssembler` (`docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`). **`/ai`** is **AI Identity** (identity, learning, memory, behavior, more). Learning review on the **Learning** tab; optional **More → Insights** (`AIIntelligenceHub`). Business policies inject when `context.businessId` is set — `docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`. **Memory Bank:** `memory-bank/activeContext.md` (AI Identity UX + Control Center wiring).
+
+**May 2026 streaming UX (ai-chat SSE):** Buffer structured JSON in `web/src/lib/aiStreamHandler.ts`; show thinking indicator only during load; render normalized prose once on `done` (`1deb6d48`). Details: `memory-bank/aiContextSystem.md` (§ Streaming chat UX).
+
 ### **Tabbed Interface Pattern**
 
 The AI Control Center uses a **custom tabbed interface pattern** that provides smooth navigation between different AI management functions while maintaining state consistency.

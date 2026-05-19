@@ -143,6 +143,10 @@ Assistant will ask: **"Phase 3 is complete. Ready to start Phase 4?"**
 - [x] Conversation history still records the full reply after stream ends.
 - [x] No regressions to structured response or file/vision behavior.
 
+### May 2026 streaming UX refinement (full-page ai-chat)
+
+Structured conversation mode often streams **v2 JSON** from the provider. **`web/src/lib/aiStreamHandler.ts`** (`1deb6d48`) buffers chunks client-side, shows **`AIThinkingIndicator`** while `isAILoading`, and appends **one** normalized message on `done` — users never see raw `{ "mode": "conversation", ... }`. Dropdown/embed still use non-stream JSON + `aiResponseHandler` prose normalization. See `memory-bank/aiContextSystem.md` (§ Streaming chat UX).
+
 ### When Phase 4 is done
 
 Assistant will ask: **"Phase 4 is complete. Ready to start Phase 5?"**

@@ -54,7 +54,7 @@ When `context.businessId` is present on `/api/ai/twin`, the personal pipeline st
 
 ## Personal Intelligence hub (Control Center)
 
-Learning-event review and intelligence dashboards live under **`/ai?tab=intelligence`**. See **[AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md)**.
+Learning review lives under **`/ai` → Learning**; optional analytics live under **More → Insights** (`?tab=more&section=insights`). See **[AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md)** (Insights).
 
 ## Related code
 

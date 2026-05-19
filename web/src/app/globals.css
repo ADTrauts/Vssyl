@@ -130,6 +130,34 @@ body {
   }
 }
 
+/* AI Identity — influence stack refresh */
+@keyframes ai-identity-influence-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-identity-influence-stack li {
+  animation: ai-identity-influence-in 0.35s ease-out both;
+}
+
+.ai-identity-influence-stack--refresh li {
+  animation: ai-identity-influence-in 0.4s ease-out both;
+}
+
+.ai-identity-influence-stack li:nth-child(1) { animation-delay: 0ms; }
+.ai-identity-influence-stack li:nth-child(2) { animation-delay: 40ms; }
+.ai-identity-influence-stack li:nth-child(3) { animation-delay: 80ms; }
+.ai-identity-influence-stack li:nth-child(4) { animation-delay: 120ms; }
+.ai-identity-influence-stack li:nth-child(5) { animation-delay: 160ms; }
+.ai-identity-influence-stack li:nth-child(6) { animation-delay: 200ms; }
+.ai-identity-influence-stack li:nth-child(n + 7) { animation-delay: 240ms; }
+
 @keyframes glow-pulse {
   0%, 100% {
     box-shadow: 0 0 5px rgba(139, 92, 246, 0.5),

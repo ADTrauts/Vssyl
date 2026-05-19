@@ -17,8 +17,10 @@ import {
   BarChart,
   Settings,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Building2,
 } from 'lucide-react';
+import WorkspaceAIDrawer from '../ai/WorkspaceAIDrawer';
 
 interface AIChat {
   id: string;
@@ -69,6 +71,7 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workspaceDrawerOpen, setWorkspaceDrawerOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -269,6 +272,11 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
 
   return (
     <div className="w-full max-w-4xl space-y-4">
+      <WorkspaceAIDrawer
+        open={workspaceDrawerOpen}
+        businessId={businessId}
+        onClose={() => setWorkspaceDrawerOpen(false)}
+      />
       {/* AI Assistant Header */}
       <Card>
         <div className="pb-3 p-4">
@@ -280,7 +288,15 @@ export const EmployeeAIAssistant: React.FC<EmployeeAIAssistantProps> = ({ busine
                 <p className="text-gray-600 dark:text-gray-400">{businessAI.description}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setWorkspaceDrawerOpen(true)}
+              >
+                <Building2 className="h-4 w-4 mr-1" />
+                Workspace policies
+              </Button>
               <Badge className={businessAI.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                 {businessAI.status}
               </Badge>

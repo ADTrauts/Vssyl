@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, Button, Badge, Spinner } from 'shared/components';
-import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   fetchPersonalLearningEvents,
   reviewPersonalLearningEvent,
@@ -12,13 +12,17 @@ import {
 
 interface PersonalLearningEventsReviewProps {
   embedded?: boolean;
+  onReviewed?: () => void;
 }
 
 function formatEventType(type: string): string {
   return type.replace(/_/g, ' ');
 }
 
-export default function PersonalLearningEventsReview({ embedded }: PersonalLearningEventsReviewProps) {
+export default function PersonalLearningEventsReview({
+  embedded,
+  onReviewed,
+}: PersonalLearningEventsReviewProps) {
   const { data: session } = useSession();
   const [events, setEvents] = useState<PersonalLearningEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +53,7 @@ export default function PersonalLearningEventsReview({ embedded }: PersonalLearn
     try {
       await reviewPersonalLearningEvent(session.accessToken, eventId, approved);
       setEvents((prev) => prev.filter((e) => e.id !== eventId));
+      onReviewed?.();
     } catch (err) {
       console.error('Failed to review learning event:', err);
     } finally {
@@ -73,14 +78,14 @@ export default function PersonalLearningEventsReview({ embedded }: PersonalLearn
           size="sm"
           onClick={() => setFilter('pending')}
         >
-          Pending
+          Waiting
         </Button>
         <Button
           variant={filter === 'validated' ? 'primary' : 'secondary'}
           size="sm"
           onClick={() => setFilter('validated')}
         >
-          Reviewed
+          Saved earlier
         </Button>
         <Button variant="ghost" size="sm" onClick={() => void loadEvents()} disabled={loading}>
           <RefreshCw className="w-4 h-4 mr-1" />
@@ -95,8 +100,8 @@ export default function PersonalLearningEventsReview({ embedded }: PersonalLearn
       ) : events.length === 0 ? (
         <Card className="p-6 text-center text-sm text-gray-600 dark:text-gray-400">
           {filter === 'pending'
-            ? 'No learning events waiting for review.'
-            : 'No reviewed learning events yet.'}
+            ? 'Nothing waiting. I’ll surface suggestions when they’re worth your time.'
+            : 'No saved behaviors yet.'}
         </Card>
       ) : (
         <ul className="space-y-3">
@@ -136,8 +141,7 @@ export default function PersonalLearningEventsReview({ embedded }: PersonalLearn
                         disabled={busyId === event.id}
                         onClick={() => void handleReview(event.id, true)}
                       >
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Apply
+                        Save to AI Identity
                       </Button>
                       <Button
                         size="sm"
@@ -145,8 +149,7 @@ export default function PersonalLearningEventsReview({ embedded }: PersonalLearn
                         disabled={busyId === event.id}
                         onClick={() => void handleReview(event.id, false)}
                       >
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Dismiss
+                        Not now
                       </Button>
                     </div>
                   )}

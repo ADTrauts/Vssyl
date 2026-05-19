@@ -1,5 +1,29 @@
 # Block-on-Block Platform - Progress
 
+## AI cross-session memory recall — hardened (May 2026) ✅
+
+**Status:** **COMPLETE** — Reliable “we last talked about…” recall across sessions without new architecture.
+
+| Area | Outcome |
+|------|---------|
+| **Initial wire** | `8432ed83` — `moduleContexts` → assembler; `threadSummary`/`topics`; `AIMessageRecallIndex`; `UserMemoryFact` APIs; twin loads summaries + recall + facts |
+| **Hardening** | `297f4ffc` — broader `recallIntent`; `combinedRecallScore` + travel fallback; topics-only assembler block; recall-biased facts; backfill script; integration + route tests |
+| **Indexing** | On every `POST /api/ai-conversations/:id/messages`; historical via `pnpm --filter vssyl-server backfill:ai-recall-index` |
+| **APIs** | `GET /api/ai-conversations/memory/recent`, `/memory/topics`; `GET/POST/DELETE /api/ai/memory/facts` |
+| **Twin** | `DigitalLifeTwinService` → `recallRelevantMessages` + `getRecentConversationMemory` + `getRelevantUserMemoryFacts` → `assembleAIContext` → providers (`assembledContext`) |
+
+**Key server paths:** `server/src/services/aiMessageRecallService.ts`, `aiConversationMemoryService.ts`, `userMemoryFactService.ts`, `server/src/ai/utils/recallIntent.ts`, `recallScoring.ts`, `server/src/ai/context/AIContextAssembler.ts`, `server/scripts/backfill-ai-message-recall-index.ts`
+
+**Migrations:** `20260518120000_ai_conversation_thread_memory`, `20260518120100_user_memory_facts`, `20260518120200_ai_message_recall_index`
+
+**Canonical doc:** `memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md`
+
+**Reference:** `memory-bank/activeContext.md` (AI cross-session memory recall).
+
+**Deploy checklist:** `pnpm prisma:migrate:deploy` then backfill on production DB.
+
+---
+
 ## Platform Hardening Phase Complete (May 2026) ✅
 
 **Status:** **COMPLETE** — horizontal hardening stopped; resume product/features unless a specific surface needs policy, events, or certification work.
@@ -20,6 +44,36 @@
 **Shipped to `main`:** commit `9bf0e596` (May 2026).
 
 **Memory Bank:** `systemPatterns.md`, `techContext.md`, `driveProductContext.md`, `marketplaceProductContext.md`, `deployment.md`, `moduleSpecs.md` — aligned May 2026 closeout.
+
+---
+
+## AI Control Center audit — twin preference pipeline (May 2026) ✅
+
+**Status:** **COMPLETE** — Phases **0A–5**. Personal AI Control Center configuration now drives the live Digital Life Twin on `POST /api/ai/twin` (and streaming), with consent for inferred context and clear separation from business admin policies.
+
+| Phase | Outcome |
+|-------|---------|
+| **0A** | `PreferenceResolver` + `preferencePromptBlocks` / `preferenceProviderWiring`; wired through `DigitalLifeTwinCore` → `assembleAIContext` |
+| **0B** | Removed duplicate `buildDigitalTwinPrompt`; canonical API table in `AI_TWIN_PROMPT_PIPELINE.md` |
+| **1** | Memories tab UX: `UserMemoryFact` CRUD, `GET /api/ai/effective-preferences` preview, `AIMemoriesView` |
+| **2** | `learningStatus` on `UserAIContext`; pending promote/dismiss; `userAIContextLearningService`; chat banners |
+| **3** | Soft preference templates, session overrides, `persistSoftPreferences`, promote-session API + ai-chat banner |
+| **4** | `businessWorkspaceBoundaries.ts`; business policy block in assembler; boundaries doc + business CC banner |
+| **5** | `AIIntelligenceHub` (now **More → Insights**); `personalAILearningEventsService` + review UI; dashboards embedded |
+
+**Canonical docs:** `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`, `AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`, `AI_INTELLIGENCE_HUB.md`.
+
+**Key server paths:** `server/src/ai/preferences/`, `server/src/ai/enterprise/businessWorkspaceBoundaries.ts`, `server/src/services/userAIContextLearningService.ts`, `server/src/services/personalAILearningEventsService.ts`, `server/src/routes/ai-effective-preferences.ts`, `ai-session-preferences.ts`.
+
+**Key web paths:** `web/src/app/ai/page.tsx`, `web/src/components/ai/AIMemoriesView.tsx`, `AIIntelligenceHub.tsx` (Insights), `AILearningHub.tsx`, `AILearningNotice.tsx`, `PersonalLearningEventsReview.tsx`, `web/src/api/aiEffectivePreferences.ts`, `aiContextLearning.ts`, `aiLearningEvents.ts`, `aiSessionPreferences.ts`.
+
+**Migration:** `prisma/migrations/20260518130000_user_ai_context_learning_status/`.
+
+**Shipped to `main`:** commit `789c5f05` (May 2026).
+
+**Supersedes (partially):** February 2025 “AI Memories View” work — Memories tab now includes facts, effective preview, pending learning, and links to Intelligence hub; twin path no longer bypasses Control Center settings.
+
+**Reference:** `memory-bank/activeContext.md` (AI Control Center → Digital Life Twin wiring).
 
 ---
 
@@ -65,15 +119,24 @@
 
 ---
 
-## AI conversational continuity + rendering + streaming guard (May 2026) ✅ / 🟡
+## AI conversational continuity + rendering + streaming UX (May 2026) ✅ / 🟡
 
-**Status:** Core **Phases A–D** implemented (natural rendering defaults, continuity/topic utilities, tiered context behavior, conversational polish + response-mode inference, SSE streaming guard so raw structured JSON does not flash). **Phase E** (validation/hardening only) is documented in `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` — execution deferred until explicitly scheduled.
+**Status:** Core **Phases A–D** implemented (natural rendering defaults, continuity/topic utilities, tiered context behavior, conversational polish + response-mode inference). **Streaming UX** on full-page ai-chat is **production-shaped** — no raw v2 JSON flash, thinking indicator during load, single normalized message on complete. **Phase E** (validation/hardening only) remains in `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` — execution deferred until scheduled.
 
-**Notable commit:** `19c2cc56` — `feat(ai): prevent raw JSON streaming flashes in chat`.
+| Area | Outcome |
+|------|---------|
+| **Structured render (all chat UIs)** | `976a2658` — `aiResponseHandler` normalizes twin payloads; `AIAssistantMessageBody` renders summary prose |
+| **Stream buffer (ai-chat SSE)** | `1deb6d48` — `aiStreamHandler.ts` (`createTwinStreamState`, `processTwinStreamChunk`, `consumeTwinSseLine`, `finalizeTwinStream`); no in-list placeholder; `AIThinkingIndicator` while `isAILoading` |
+| **Earlier guard** | `19c2cc56` — first-pass detect-and-clear (superseded by full buffer in `1deb6d48`) |
+| **Conversation mode (server)** | `dbbc34d8`, `430cf3fc`, `8f919a34` — conversation profile, continuity, richer recommendations |
 
-**Key files:** `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`; `web/src/components/ai/AIResponseRenderer.tsx`; `web/src/lib/aiResponseHandler.ts`; `web/src/app/ai-chat/page.tsx` (SSE path); `server/src/ai/core/DigitalLifeTwinCore.ts`; `server/src/ai/core/DigitalLifeTwinService.ts`; `server/src/ai/context/AIContextAssembler.ts`; `server/src/ai/utils/normalizeAIResponse.ts`; `server/src/ai/utils/conversationalPolish.ts`; `server/src/ai/utils/conversationContinuity.ts`; `server/src/ai/utils/responseMode.ts`.
+**Key web files:** `web/src/lib/aiStreamHandler.ts`, `web/src/lib/aiResponseHandler.ts`, `web/src/app/ai-chat/page.tsx`, `web/src/components/ai/AIThinkingIndicator.tsx`, `AIAssistantMessageBody.tsx`, `AIResponseRenderer.tsx`.
 
-**Reference:** `memory-bank/activeContext.md` (AI conversational continuity section).
+**Key server files:** `DigitalLifeTwinCore.ts`, `DigitalLifeTwinService.ts`, `AIContextAssembler.ts`, `normalizeAIResponse.ts`, `conversationalPolish.ts`, `conversationContinuity.ts`, `responseMode.ts`, `structuredResponseMode.ts`.
+
+**Tests:** `web/src/lib/__tests__/aiStreamHandler.test.ts`, `aiResponseHandler.test.ts`.
+
+**Reference:** `memory-bank/activeContext.md` (AI conversational continuity section); `memory-bank/aiContextSystem.md` (§ Streaming chat UX).
 
 ---
 
@@ -489,11 +552,13 @@ Aggressive cleanup: root-level stray `.md` moved into `docs/`; `memory-bank/acti
 ---
 
 ## Previous Project Focus
-**Goal**: AI Memories View & Digital Life Twin Improvements — COMPLETE ✅
+**Goal**: AI Memories View & Digital Life Twin Improvements — COMPLETE ✅ (superseded May 2026 by full Control Center audit)
 
 ### **AI Memories View (Phases 1–3) & Chat/Twin Improvements — COMPLETE ✅ (February 2025)**
 
-**Status**: ✅ **COMPLETE** - Memories tab in AI Control Center, source labels on context, learned patterns API/section, chat history fix, conversation history in twin, response readability.
+**Status**: ✅ **COMPLETE** (baseline) — Memories tab, source labels, learned patterns API, chat history/twin history fixes. **May 2026 audit** extended this with `PreferenceResolver`, pending learning consent, effective-preferences preview, Intelligence hub, and business boundary blocks — see **AI Control Center audit** section above.
+
+**Legacy status line (Feb 2025):** Memories tab in AI Control Center, source labels on context, learned patterns API/section, chat history fix, conversation history in twin, response readability.
 
 **What Was Accomplished**:
 

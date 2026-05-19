@@ -11,17 +11,7 @@ import {
   type UserMemoryFact,
 } from '../../api/aiMemoryFacts';
 import {
-  fetchEffectivePreferencesPreview,
-  type EffectivePreferencesPreview,
-} from '../../api/aiEffectivePreferences';
-import {
-  fetchPendingLearnings,
-  reviewPendingLearning,
-  type PendingLearningItem,
-} from '../../api/aiContextLearning';
-import {
   BookOpen,
-  User,
   MessageSquare,
   FileText,
   Heart,
@@ -29,9 +19,8 @@ import {
   Sparkles,
   Trash2,
   Plus,
-  Settings2,
-  Brain,
 } from 'lucide-react';
+import type { AIMoreSection } from '../../lib/aiControlCenterTabs';
 
 interface UserAIContextItem {
   id: string;
@@ -45,18 +34,6 @@ interface UserAIContextItem {
   learningStatus?: string;
 }
 
-interface PersonalityProfile {
-  id: string;
-  data?: Record<string, unknown> & {
-    traits?: Record<string, number>;
-    preferences?: Record<string, unknown>;
-    communicationStyle?: string;
-    questionnaireCompleted?: boolean;
-  };
-  lastUpdated: string | null;
-  createdAt: string;
-}
-
 interface LearnedPatternSummary {
   id: string;
   description: string;
@@ -64,7 +41,10 @@ interface LearnedPatternSummary {
 }
 
 interface AIMemoriesViewProps {
-  onNavigateToTab: (tab: string) => void;
+  onNavigateToTab: (
+    tab: string,
+    options?: { section?: AIMoreSection; intel?: string; onboarding?: boolean }
+  ) => void;
 }
 
 const CONTEXT_TYPE_LABELS: Record<string, { label: string; icon: typeof FileText }> = {
@@ -74,18 +54,11 @@ const CONTEXT_TYPE_LABELS: Record<string, { label: string; icon: typeof FileText
   workflow: { label: 'Workflows', icon: Workflow },
 };
 
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps) {
   const { data: session } = useSession();
   const [contexts, setContexts] = useState<UserAIContextItem[]>([]);
-  const [personality, setPersonality] = useState<PersonalityProfile | null>(null);
   const [patterns, setPatterns] = useState<LearnedPatternSummary[]>([]);
   const [memoryFacts, setMemoryFacts] = useState<UserMemoryFact[]>([]);
-  const [effectivePreview, setEffectivePreview] = useState<EffectivePreferencesPreview | null>(null);
-  const [pendingLearnings, setPendingLearnings] = useState<PendingLearningItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -106,14 +79,9 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
     setError(null);
     try {
       const token = session.accessToken;
-      const [contextRes, personalityRes, patternsRes, facts, preview, pending] = await Promise.all([
+      const [contextRes, patternsRes, facts] = await Promise.all([
         authenticatedApiCall<{ success: boolean; data: UserAIContextItem[] }>(
           '/api/ai/context',
-          { method: 'GET' },
-          token
-        ),
-        authenticatedApiCall<{ success: boolean; profile: PersonalityProfile | null }>(
-          '/api/ai/personality/profile',
           { method: 'GET' },
           token
         ),
@@ -123,8 +91,6 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
           token
         ).catch(() => ({ success: false, patterns: [] as LearnedPatternSummary[] })),
         listMemoryFacts(token).catch(() => [] as UserMemoryFact[]),
-        fetchEffectivePreferencesPreview(token),
-        fetchPendingLearnings(token).catch(() => [] as PendingLearningItem[]),
       ]);
 
       if (contextRes.success && Array.isArray(contextRes.data)) {
@@ -136,46 +102,20 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       } else {
         setContexts([]);
       }
-      if (personalityRes.success && personalityRes.profile) {
-        setPersonality(personalityRes.profile);
-      } else {
-        setPersonality(null);
-      }
       if (patternsRes.success && Array.isArray(patternsRes.patterns)) {
         setPatterns(patternsRes.patterns);
       } else {
         setPatterns([]);
       }
       setMemoryFacts(facts);
-      setEffectivePreview(preview);
-      setPendingLearnings(pending);
     } catch (err) {
       console.error('Error loading memories:', err);
-      setError('Failed to load memories. Please try again.');
+      setError('Failed to load memory. Please try again.');
       setContexts([]);
-      setPersonality(null);
       setPatterns([]);
       setMemoryFacts([]);
-      setEffectivePreview(null);
-      setPendingLearnings([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleReviewPending = async (id: string, action: 'promote' | 'dismiss') => {
-    if (!session?.accessToken) return;
-    setDeletingId(id);
-    try {
-      await reviewPendingLearning(session.accessToken, id, action);
-      setPendingLearnings((prev) => prev.filter((p) => p.id !== id));
-      if (action === 'promote') {
-        await loadData();
-      }
-    } catch (err) {
-      console.error('Failed to review pending learning:', err);
-    } finally {
-      setDeletingId(null);
     }
   };
 
@@ -217,8 +157,6 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       setNewSubject('');
       setNewPredicate('');
       setShowAddFact(false);
-      const preview = await fetchEffectivePreferencesPreview(session.accessToken);
-      setEffectivePreview(preview);
     } catch (err) {
       console.error('Failed to add memory fact:', err);
     } finally {
@@ -237,11 +175,8 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
   }, {});
 
   const hasAnyContext = userContexts.length > 0 || learnedContexts.length > 0;
-  const hasPersonality = personality?.data != null;
   const hasMemoryFacts = memoryFacts.length > 0;
-  const hasPending = pendingLearnings.length > 0;
-  const isEmpty =
-    !hasAnyContext && !hasPersonality && !hasMemoryFacts && !effectivePreview && !hasPending;
+  const isEmpty = !hasAnyContext && !hasMemoryFacts;
 
   if (loading) {
     return (
@@ -264,109 +199,41 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
 
   return (
     <div className="space-y-6">
-      <p className="text-gray-700 dark:text-gray-300 text-sm">
-        What your Digital Life Twin remembers and how it will behave on your next personal chat.
-        In a business workspace, your business admin&apos;s AI policies apply separately from these
-        personal settings.
-      </p>
-
-      {effectivePreview?.scopeNote && (
-        <p className="text-sm text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
-          {effectivePreview.scopeNote}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-purple-600" />
+          Memory
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-2xl">
+          Durable knowledge your twin keeps across chats — facts you asked it to remember, context
+          you added, and learnings you saved from conversations. Pending suggestions live in{' '}
+          <button
+            type="button"
+            className="text-purple-600 dark:text-purple-400 underline-offset-2 hover:underline"
+            onClick={() => onNavigateToTab('learning')}
+          >
+            Learning
+          </button>
+          .
         </p>
-      )}
-
-      {effectivePreview && (
-        <Card className="p-6 border-purple-200 dark:border-purple-800">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Brain className="w-5 h-5 text-purple-600" />
-              Next chat behavior
-            </h3>
-            <Button
-              onClick={() => onNavigateToTab('personality')}
-              variant="ghost"
-              size="sm"
-              className="text-gray-700 dark:text-gray-300"
-            >
-              <Settings2 className="w-4 h-4 mr-1" />
-              Adjust
-            </Button>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 text-sm text-gray-700 dark:text-gray-300">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">Communication</p>
-              <p>
-                {capitalize(effectivePreview.communication.tone)} ·{' '}
-                {capitalize(effectivePreview.communication.verbosity)}
-              </p>
-              {effectivePreview.communication.styleSummary && (
-                <p className="text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                  {effectivePreview.communication.styleSummary}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100 mb-1">Responses</p>
-              <p>
-                {capitalize(effectivePreview.response.structure)} ·{' '}
-                {capitalize(effectivePreview.response.recommendationStyle)} recommendations
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Provider: {effectivePreview.provider.provider}
-                {effectivePreview.provider.modelLabel
-                  ? ` · ${effectivePreview.provider.modelLabel}`
-                  : ''}
-              </p>
-            </div>
-          </div>
-          {effectivePreview.actionBoundaries.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
-                Action limits (not chat tone)
-              </p>
-              <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                {effectivePreview.actionBoundaries.slice(0, 4).map((line) => (
-                  <li key={line} className="line-clamp-1">
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {!effectivePreview.setup.hasPersonalityProfile && (
-            <p className="text-sm text-amber-700 dark:text-amber-300 mt-4">
-              Complete your personality profile for more accurate style matching.
-            </p>
-          )}
-        </Card>
-      )}
+      </div>
 
       {isEmpty ? (
         <Card className="p-8 text-center">
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Nothing saved yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            Nothing saved yet
+          </h3>
           <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-md mx-auto">
-            Chat with your AI or add memories below to build what it knows about you.
+            Chat with your twin, say &quot;remember that…&quot;, or add a memory below.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Button onClick={() => setShowAddFact(true)} variant="primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Add a memory
-            </Button>
-            <Button onClick={() => onNavigateToTab('context')} variant="secondary">
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Custom Context
-            </Button>
-            <Button onClick={() => onNavigateToTab('personality')} variant="secondary">
-              <User className="w-4 h-4 mr-2" />
-              Personality
-            </Button>
-          </div>
+          <Button onClick={() => setShowAddFact(true)} variant="primary">
+            <Plus className="w-4 h-4 mr-2" />
+            Add a memory
+          </Button>
         </Card>
       ) : null}
 
-      {/* Structured memory facts */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Long-term memories</h3>
@@ -383,12 +250,12 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
         {showAddFact && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-3">
             <Input
-              placeholder="Subject (e.g. Diet)"
+              placeholder="Topic (e.g. Travel preferences)"
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
             />
             <Textarea
-              placeholder="What should the AI remember?"
+              placeholder="What should your twin remember?"
               value={newPredicate}
               onChange={(e) => setNewPredicate(e.target.value)}
               rows={3}
@@ -420,7 +287,9 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                 className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 flex justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{fact.subject}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                    {fact.subject}
+                  </span>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{fact.predicate}</p>
                 </div>
                 <Button
@@ -438,57 +307,10 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
         )}
       </Card>
 
-      {pendingLearnings.length > 0 && (
-        <Card className="p-6 border-amber-200 dark:border-amber-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Waiting for your approval
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            The AI noticed these from recent chats. They are not used until you save them.
-          </p>
-          <ul className="space-y-2">
-            {pendingLearnings.map((item) => (
-              <li
-                key={item.id}
-                className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-100 flex flex-col sm:flex-row sm:justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                    {item.title}
-                  </span>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                    {item.content}
-                  </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={deletingId === item.id}
-                    onClick={() => void handleReviewPending(item.id, 'promote')}
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={deletingId === item.id}
-                    onClick={() => void handleReviewPending(item.id, 'dismiss')}
-                  >
-                    Dismiss
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {/* Learned from conversations */}
       {learnedContexts.length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Learned from conversations
+            Saved from conversations
           </h3>
           <ul className="space-y-2">
             {learnedContexts.map((item) => (
@@ -498,44 +320,37 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{item.title}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                      {item.title}
+                    </span>
                     <Badge size="sm" color="green">
-                      From chat
+                      Permanent
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{item.content}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                    {item.content}
+                  </p>
                 </div>
                 <Button
                   onClick={() => void handleDeleteContext(item.id)}
                   variant="ghost"
                   size="sm"
                   disabled={deletingId === item.id}
-                  aria-label="Remove learned item"
+                  aria-label="Remove saved learning"
                 >
                   <Trash2 className="w-4 h-4 text-gray-500" />
                 </Button>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
-            Removing an item stops the AI from using it in future chats.
-          </p>
         </Card>
       )}
 
       {hasAnyContext && (
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Your context entries</h3>
-            <Button
-              onClick={() => onNavigateToTab('context')}
-              variant="ghost"
-              size="sm"
-              className="text-gray-700 dark:text-gray-300"
-            >
-              Edit in Custom Context
-            </Button>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Your context & instructions
+          </h3>
           <div className="space-y-6">
             {(['fact', 'preference', 'instruction', 'workflow'] as const).map((type) => {
               const items = byType[type] || [];
@@ -554,14 +369,9 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                         className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-100 flex justify-between gap-3"
                       >
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                              {item.title}
-                            </span>
-                            <Badge size="sm" color="blue">
-                              You added
-                            </Badge>
-                          </div>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                            {item.title}
+                          </span>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                             {item.content}
                           </p>
@@ -586,51 +396,9 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       )}
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personality</h3>
-          <Button
-            onClick={() => onNavigateToTab('personality')}
-            variant="ghost"
-            size="sm"
-            className="text-gray-700 dark:text-gray-300"
-          >
-            Edit
-          </Button>
-        </div>
-        {hasPersonality ? (
-          <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            {personality.data?.traits && Object.keys(personality.data.traits).length > 0 && (
-              <p>
-                <span className="font-medium text-gray-900 dark:text-gray-100">Traits:</span>{' '}
-                {Object.entries(personality.data.traits)
-                  .slice(0, 4)
-                  .map(([k, v]) => `${k.replace(/([A-Z])/g, ' $1').trim()}: ${v}`)
-                  .join(', ')}
-              </p>
-            )}
-            {personality.lastUpdated && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                Last updated: {new Date(personality.lastUpdated).toLocaleDateString()}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-              No personality profile yet.
-            </p>
-            <Button onClick={() => onNavigateToTab('personality')} variant="secondary" size="sm">
-              <User className="w-4 h-4 mr-2" />
-              Set up Personality
-            </Button>
-          </div>
-        )}
-      </Card>
-
-      <Card className="p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-4">
           <Sparkles className="w-5 h-5 text-purple-600" />
-          Learned patterns
+          Patterns over time
         </h3>
         {patterns.length > 0 ? (
           <ul className="space-y-2">
@@ -645,7 +413,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
           </ul>
         ) : (
           <p className="text-gray-600 dark:text-gray-400 text-sm">
-            No patterns yet. Keep using the AI and it will learn your habits over time.
+            Patterns emerge as you use your twin — a quiet signal of how you work.
           </p>
         )}
       </Card>

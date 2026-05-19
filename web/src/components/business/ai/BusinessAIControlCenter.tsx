@@ -22,11 +22,16 @@ interface BusinessAIConfig {
     custom: string[];
   };
   restrictions: {
-    forbiddenTopics: string[];
-    accessLevel: string;
-    approvalRequired: string[];
-    employeeDataAccess: string;
-    clientDataAccess: string;
+    forbiddenTopics?: string[];
+    accessLevel?: string;
+    approvalRequired?: string[];
+    employeeDataAccess?: string;
+    clientDataAccess?: string;
+    financialDataAccess?: boolean;
+    sensitiveDataAccess?: boolean;
+    crossDepartmentAccess?: boolean;
+    externalAPIAccess?: boolean;
+    maxResponseLength?: number;
   };
   securityLevel: 'standard' | 'high' | 'maximum';
   complianceMode: boolean;
@@ -292,9 +297,10 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
         <Card>
           <div className="text-center p-6">
             <Brain className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Initialize Business AI Digital Twin</h2>
+            <h2 className="text-xl font-semibold mb-2">Set up Workspace AI</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Create an AI digital twin for your business to provide intelligent assistance to your employees
+              Configure organization policies for this business workspace. Employees keep their personal
+              AI Identity; workspace policies add boundaries on top.
             </p>
             <Button 
               onClick={initializeBusinessAI} 
@@ -318,9 +324,11 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
             <Brain className="h-8 w-8 text-blue-500 dark:text-blue-400" />
-            Business AI Digital Twin
+            Workspace AI
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your business AI assistant and employee access</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Organization policies for this workspace — separate from each employee&apos;s personal AI Identity
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge className={businessAI.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'}>
@@ -345,10 +353,10 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
         <TabsContent value="overview" className="mt-6">
           <Card className="mb-6 p-4 border-blue-200 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/30">
             <p className="text-sm text-gray-800 dark:text-gray-200">
-              Settings here apply to <strong>this business workspace</strong> (data access, compliance,
-              and business voice). They are separate from each employee&apos;s personal AI Control
-              Center at <code className="text-xs">/ai</code>. When employees chat in this business
-              dashboard, both personal preferences and these policies are used.
+              <strong>Workspace AI</strong> policies apply to this business workspace (data access,
+              compliance, and business voice). They are separate from each employee&apos;s{' '}
+              <strong>AI Identity</strong> at <code className="text-xs">/ai</code>. When employees chat
+              here, personal AI Identity and these workspace policies are both used.
             </p>
           </Card>
           <div className="mt-6">
@@ -663,6 +671,89 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
                         <option value="limited">Limited</option>
                         <option value="full">Full</option>
                       </select>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-sm font-medium">Financial data</label>
+                      <Switch
+                        checked={businessAI.restrictions?.financialDataAccess === true}
+                        onChange={(checked: boolean) =>
+                          setBusinessAI((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  restrictions: {
+                                    ...prev.restrictions,
+                                    financialDataAccess: checked,
+                                  },
+                                }
+                              : null
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-sm font-medium">Sensitive data</label>
+                      <Switch
+                        checked={businessAI.restrictions?.sensitiveDataAccess === true}
+                        onChange={(checked: boolean) =>
+                          setBusinessAI((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  restrictions: {
+                                    ...prev.restrictions,
+                                    sensitiveDataAccess: checked,
+                                  },
+                                }
+                              : null
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-sm font-medium">Cross-department access</label>
+                      <Switch
+                        checked={businessAI.restrictions?.crossDepartmentAccess === true}
+                        onChange={(checked: boolean) =>
+                          setBusinessAI((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  restrictions: {
+                                    ...prev.restrictions,
+                                    crossDepartmentAccess: checked,
+                                  },
+                                }
+                              : null
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Forbidden topics (comma-separated)</label>
+                      <Textarea
+                        value={(businessAI.restrictions?.forbiddenTopics ?? []).join(', ')}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                          const topics = e.target.value
+                            .split(',')
+                            .map((t) => t.trim())
+                            .filter(Boolean);
+                          setBusinessAI((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  restrictions: { ...prev.restrictions, forbiddenTopics: topics },
+                                }
+                              : null
+                          );
+                        }}
+                        rows={2}
+                        placeholder="e.g. legal advice, HR disputes"
+                      />
                     </div>
 
                     <Button 
