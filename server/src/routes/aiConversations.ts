@@ -12,6 +12,10 @@ router.use(authenticateJWT);
 // GET /api/ai-conversations - Get user's AI conversations
 router.get('/', aiConversationController.getConversations);
 
+// Cross-session thread memory (must be registered before /:id)
+router.get('/memory/recent', aiConversationController.getRecentConversationMemory);
+router.get('/memory/topics', aiConversationController.getRecentConversationTopics);
+
 // GET /api/ai-conversations/:id - Get specific conversation with messages
 router.get('/:id', aiConversationController.getConversation);
 

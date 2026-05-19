@@ -1,0 +1,19 @@
+// Lightweight semantic index for AIMessage recall (bag-of-words embedding stored as JSON)
+
+model AIMessageRecallIndex {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId  String
+  messageId       String   @unique
+  role            String
+  contentSnippet  String   @db.Text
+  embedding       Json     // number[] — simple lexical embedding
+  businessId      String?
+  dashboardId     String?
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("ai_message_recall_index")
+}

@@ -6,7 +6,22 @@
 
 **Quick refs:** `memory-bank/progress.md` (Platform Hardening Phase Complete table); `docs/architecture/POLICY_ENGINE.md`, `DOMAIN_EVENTS.md`, `WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`.
 
+**Implementation map (agents):**
+
+| Concern | Where |
+|---------|--------|
+| Policy actions / engine | `server/src/auth/policyActions.ts`, `policyEngine.ts` |
+| Dual enforcement | `drivePolicyDual.ts`, `businessMemberPolicyDual.ts`, `businessUpdatePolicyDual.ts`, `moduleInstallPolicyDual.ts`, `moduleUninstallPolicyDual.ts` |
+| Domain events | `server/src/events/domainEventRegistry.ts`, `domainEventEmitters.ts` |
+| Drive permissions | `server/src/services/drivePermissionHelpers.ts` |
+| Certification gate | `server/src/services/moduleVersionCertificationGate.ts` |
+| Workspace + socket | `web/src/runtime/`, `web/src/lib/realtimeClient.ts` |
+
 **Known Drive deferrals:** restore/hard-delete/reorder/revoke policy; task-dashboard upload (`assertUserOwnsDashboard` vs folder write); socket events target actor not file owner.
+
+**Tests:** server vitest ~286; web runtime ~22 (CI `verify` job).
+
+**Git:** Pushed `9bf0e596` on `main` (May 2026 hardening bundle).
 
 **Next product focus:** resume feature roadmap (not PE-D3 / calendar policy unless scheduled).
 

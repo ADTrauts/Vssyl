@@ -137,7 +137,10 @@ flowchart TD
   ERR --> RES
 ```
 
-**Implementation note:** Domain events (`server/src/events/emitDomainEvent.ts`, subscribers under `server/src/events/subscribers/`) can fan out activity, analytics, and socket updates; controllers should still respect **no emit on failed/unauthorized** actions.
+**Implementation notes (May 2026):**
+- **Policy Engine:** Wired mutations use legacy checks then `evaluate*PolicyDual` in `server/src/auth/` (Drive, business, module install/uninstall). See `docs/architecture/POLICY_ENGINE.md`.
+- **Domain events:** `emitDomainEvent` / `domainEventEmitters.ts` fan out after success; distinct from `emitModuleActivityEvent` (module feed). See `docs/architecture/DOMAIN_EVENTS.md`.
+- No emit on failed/unauthorized actions.
 
 ---
 

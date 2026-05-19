@@ -554,7 +554,7 @@ export default function AIChatDropdown({
               dashboardId: dashboardId ?? currentDashboard?.id,
               dashboardType,
               dashboardName,
-              conversationId: currentConversationId || undefined,
+              conversationId: conversationId || currentConversationId || undefined,
               moduleContext: effectiveModuleContext ? {
                 module: effectiveModuleContext.module,
                 businessId: effectiveModuleContext.businessId,

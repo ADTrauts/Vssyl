@@ -11,6 +11,7 @@ Update Rules for techContext.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2026-05-17: Platform Hardening Phase Complete** — Policy Engine (`server/src/auth/`), domain events (`server/src/events/`), Drive dual policy + `drivePermissionHelpers`, marketplace certification on `ModuleVersion`, workspace runtime + `web/src/lib/realtimeClient.ts`, GitHub Actions CI (~286 server + ~22 web tests). See section below.
 - 2025-09-19: **MAJOR BREAKTHROUGH** - Complete Google Cloud Production Issues Resolution (Build system fixes, localhost:5000 URL replacement, environment variable standardization, database connection fixes, load balancer cleanup, architecture simplification).
 - 2025-09-18: **MAJOR BREAKTHROUGH** - Complete Google Cloud Production Issues Resolution (Build system fixes, localhost:5000 URL replacement, environment variable standardization, admin portal syntax fixes).
 - 2025-01: Added Google Cloud Migration tech context (Cloud Run deployment, Cloud SQL database, Docker containerization, Cloud Build CI/CD, production environment configuration).
@@ -47,6 +48,27 @@ Update Rules for techContext.md
 ---
 
 # Technical Context
+
+## [2026-05-17] Platform Hardening — COMPLETE
+
+**Purpose:** Cross-cutting authorization, events, realtime, and marketplace safety without rewriting modules.
+
+| Layer | Key paths | Notes |
+|-------|-----------|--------|
+| Policy Engine | `server/src/auth/policyEngine.ts`, `policyActions.ts`, `*PolicyDual.ts` | JWT before `authorize`; dual after legacy |
+| Domain events | `server/src/events/domainEventRegistry.ts`, `domainEventEmitters.ts`, `emitDomainEvent.ts` | Sanitized metadata; no emit on 401/403/404 |
+| Drive permissions | `server/src/services/drivePermissionHelpers.ts` | Shared by controllers + policy |
+| Marketplace cert | `moduleCertificationValidator.ts`, `moduleCertificationPersistence.ts`, `moduleVersionCertificationGate.ts` | Gate on approve/promote/rollback |
+| Workspace runtime | `web/src/runtime/`, `realtimeClient.ts` | WR-Q1 provider; RT-Q1 single socket |
+| Tests | `server/src/auth/__tests__/`, `server/src/events/__tests__/`, `web/src/runtime/__tests__/` | Vitest |
+
+**CI (GitHub Actions `.github/workflows/ci.yml`):** `pnpm install` → build `shared` → `prisma migrate deploy` → `type-check` → `pnpm --filter vssyl-web test` → `pnpm test` (server). Lint not in CI.
+
+**Prisma migration (prod):** `20260517000000_module_version_certification` — required before certification gate reads/writes version columns.
+
+**Status:** Hardening chain stopped; extend policy/events only when a feature requires it (`memory-bank/progress.md`).
+
+---
 
 ## [2025-09-19] Google Cloud Production Issues Resolution - COMPLETE
 

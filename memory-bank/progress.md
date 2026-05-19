@@ -17,6 +17,10 @@
 
 **Feature-driven follow-ups (not blockers):** deferred domain types (`file.moved`, chat/calendar); remove dual enforcement per route when legacy aligned; Drive restore/trash policy; broader `useWorkspaceRuntime` adoption.
 
+**Shipped to `main`:** commit `9bf0e596` (May 2026).
+
+**Memory Bank:** `systemPatterns.md`, `techContext.md`, `driveProductContext.md`, `marketplaceProductContext.md`, `deployment.md`, `moduleSpecs.md` — aligned May 2026 closeout.
+
 ---
 
 ## Workspace Runtime Foundation v1 (May 2026) ✅

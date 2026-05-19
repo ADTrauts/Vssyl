@@ -3,6 +3,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { z } from 'zod';
+import {
+  getRecentConversationMemory as fetchRecentConversationMemory,
+  listRecentTopicsForUser,
+  refreshConversationThreadMemory,
+} from '../services/aiConversationMemoryService';
+import { indexAIMessageForRecall } from '../services/aiMessageRecallService';
 
 function logAiConversationError(
   message: string,
@@ -475,6 +481,48 @@ export const addMessage = async (req: Request, res: Response) => {
       data: updateData,
     });
 
+    try {
+      await indexAIMessageForRecall({
+        userId,
+        conversationId: id,
+        messageId: message.id,
+        role: validatedData.role,
+        content: validatedData.content,
+        businessId: conversation.businessId,
+        dashboardId: conversation.dashboardId,
+      });
+    } catch (indexErr: unknown) {
+      const e = indexErr instanceof Error ? indexErr : new Error(String(indexErr));
+      void logger.warn('Failed to index AI message for recall', {
+        operation: 'ai_message_recall_index',
+        error: { message: e.message },
+        messageId: message.id,
+      });
+    }
+
+    if (validatedData.role === 'assistant') {
+      try {
+        const lastUser = await prisma.aIMessage.findFirst({
+          where: { conversationId: id, role: 'user' },
+          orderBy: { createdAt: 'desc' },
+          select: { content: true },
+        });
+        await refreshConversationThreadMemory({
+          conversationId: id,
+          userId,
+          assistantMetadata: validatedData.metadata as Record<string, unknown> | undefined,
+          lastUserContent: lastUser?.content,
+        });
+      } catch (memoryErr: unknown) {
+        const e = memoryErr instanceof Error ? memoryErr : new Error(String(memoryErr));
+        void logger.warn('Failed to refresh conversation thread memory', {
+          operation: 'ai_conversation_thread_memory',
+          error: { message: e.message },
+          conversationId: id,
+        });
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: message,
@@ -559,5 +607,54 @@ export const getMessages = async (req: Request, res: Response) => {
       success: false, 
       error: 'Failed to fetch messages' 
     });
+  }
+};
+
+// GET /api/ai-conversations/memory/recent — recent threads with summaries (cross-session recall)
+export const getRecentConversationMemory = async (req: Request, res: Response) => {
+  try {
+    if (!hasUserId(req.user)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    const userId = (req.user as { id?: string; sub?: string }).id || (req.user as { id?: string; sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'User ID not found' });
+    }
+
+    const { limit, excludeConversationId, businessId, dashboardId } = req.query;
+    const memories = await fetchRecentConversationMemory({
+      userId,
+      limit: limit != null ? Number(limit) : 5,
+      excludeConversationId:
+        typeof excludeConversationId === 'string' ? excludeConversationId : undefined,
+      businessId: typeof businessId === 'string' ? businessId : undefined,
+      dashboardId: typeof dashboardId === 'string' ? dashboardId : undefined,
+    });
+
+    res.json({ success: true, data: { conversations: memories } });
+  } catch (error: unknown) {
+    logAiConversationError('Error fetching recent conversation memory', 'ai_conversation_memory_recent', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch recent conversation memory' });
+  }
+};
+
+// GET /api/ai-conversations/memory/topics — distilled topic labels from recent threads
+export const getRecentConversationTopics = async (req: Request, res: Response) => {
+  try {
+    if (!hasUserId(req.user)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    const userId = (req.user as { id?: string; sub?: string }).id || (req.user as { id?: string; sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ error: 'User ID not found' });
+    }
+
+    const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 10;
+    const topics = await listRecentTopicsForUser(userId, Number.isFinite(limit) ? limit : 10);
+
+    res.json({ success: true, data: { topics } });
+  } catch (error: unknown) {
+    logAiConversationError('Error fetching recent conversation topics', 'ai_conversation_memory_topics', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch recent topics' });
   }
 };

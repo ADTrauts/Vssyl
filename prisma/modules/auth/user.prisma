@@ -93,6 +93,8 @@ model User {
   aiContextCache UserAIContextCache?
   aiConversations AIConversation[]
   userAIContexts UserAIContext[]
+  userMemoryFacts UserMemoryFact[]
+  aiMessageRecallIndexes AIMessageRecallIndex[]
   aiExtractedExpenses AIExtractedExpense[]
   aiSuggestions       AISuggestion[]
 

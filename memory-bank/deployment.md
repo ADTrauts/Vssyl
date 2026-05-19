@@ -9,11 +9,30 @@ Update Rules for deployment.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2026-05-17**: GitHub Actions `verify` job — `prisma migrate deploy`, `type-check`, `pnpm --filter vssyl-web test`, `pnpm test`; marketplace certification migration `20260517000000_module_version_certification`.
 - **2025-10-28**: Documented critical migration failure patterns and emergency fix procedures
 - **2025-10-25**: Updated deployment documentation to reflect production Google Cloud infrastructure
 - **2025-09-19**: Complete Google Cloud Production deployment with automated CI/CD
 
 # Deployment & Operations
+
+## CI/CD - GitHub Actions (`verify` job) ✅
+
+Triggered on push/PR to `main` (`.github/workflows/ci.yml`):
+
+1. Postgres 16 service + `DATABASE_URL` for CI
+2. `pnpm install --frozen-lockfile`
+3. Build `shared` package
+4. `pnpm prisma:generate` + `prisma migrate deploy`
+5. `pnpm type-check` (monorepo)
+6. `pnpm --filter vssyl-web test` (~22 runtime tests)
+7. `pnpm test` (server vitest ~286)
+
+**Not in CI:** `pnpm lint` (deferred).
+
+**Recent migration (marketplace):** `20260517000000_module_version_certification` — adds `ModuleCertificationStatus` and certification JSON columns on `module_versions`. Required for certification gate in production.
+
+---
 
 ## CI/CD - Google Cloud Build ✅ PRODUCTION
 

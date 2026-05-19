@@ -151,6 +151,15 @@ export interface LifeTwinQuery {
     responseMode?: AIResponseMode;
     /** Optional structured JSON mode override (e.g. conversation, analysis). */
     structuredResponseMode?: StructuredAIResponseMode | string;
+    conversationId?: string;
+    dashboardId?: string;
+    /** Cross-session thread summaries (populated by DigitalLifeTwinService). */
+    recentConversationMemory?: unknown[];
+    /** Semantic recall chunks (populated by DigitalLifeTwinService). */
+    recalledMessages?: unknown[];
+    /** Structured user memory facts (populated by DigitalLifeTwinService). */
+    userMemoryFacts?: unknown[];
+    [key: string]: unknown;
   };
   userId: string;
   conversationHistory?: ConversationHistoryItem[];
@@ -217,6 +226,7 @@ export class DigitalLifeTwinCore {
       // 1. 🚀 NEW: Get SMART context - only fetches relevant modules based on query
       let userContext: UserContext;
       let smartContext: Record<string, unknown> | null = null;
+      let moduleContextsForAssembly: Record<string, unknown> | undefined;
       try {
         const ctx = query.context as Record<string, unknown> | undefined;
         const businessId =
@@ -232,10 +242,22 @@ export class DigitalLifeTwinCore {
         
         // Convert smart context to UserContext format for backward compatibility
         userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
+
+        const sc = smartContext as Record<string, unknown> | null;
+        if (sc?.moduleContexts && typeof sc.moduleContexts === 'object' && !Array.isArray(sc.moduleContexts)) {
+          moduleContextsForAssembly = sc.moduleContexts as Record<string, unknown>;
+        }
+        if (Array.isArray(sc?.installedModuleIds) && sc.installedModuleIds.length > 0) {
+          userContext = {
+            ...userContext,
+            activeModules: sc.installedModuleIds as string[],
+          };
+        }
         
         void logger.info('Smart context fetched', {
           operation: 'digital_life_twin_smart_context',
           relevantModuleCount: (smartContext as Record<string, unknown>)?.relevantModuleCount ?? 0,
+          moduleContextKeys: moduleContextsForAssembly ? Object.keys(moduleContextsForAssembly) : [],
         });
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -630,7 +652,8 @@ export class DigitalLifeTwinCore {
         attachedFiles,
         visionImageParts,
         { requestId, conversationId, userId: query.userId },
-        streamOptions
+        streamOptions,
+        moduleContextsForAssembly
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -863,7 +886,8 @@ export class DigitalLifeTwinCore {
     attachedFiles?: AttachedFileContext[],
     visionImageParts?: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>,
     traceContext?: { requestId?: string; conversationId?: string; userId?: string },
-    streamOptions?: { stream: boolean; onChunk: (text: string) => void }
+    streamOptions?: { stream: boolean; onChunk: (text: string) => void },
+    moduleContexts?: Record<string, unknown>
   ) {
     const structuredInference = inferStructuredResponseMode({
       query: query.query,
@@ -1005,6 +1029,28 @@ export class DigitalLifeTwinCore {
       options.modelOverride = modelOverride;
     }
 
+    const ctxRecord = query.context as Record<string, unknown>;
+    const recentConversationMemory = Array.isArray(ctxRecord.recentConversationMemory)
+      ? (ctxRecord.recentConversationMemory as Array<{
+          id: string;
+          title: string;
+          threadSummary: string | null;
+          lastMessageAt: Date | string;
+        }>)
+      : undefined;
+    const recalledMessages = Array.isArray(ctxRecord.recalledMessages)
+      ? (ctxRecord.recalledMessages as Array<{
+          messageId: string;
+          conversationId: string;
+          role: string;
+          contentSnippet: string;
+          similarity: number;
+        }>)
+      : undefined;
+    const userMemoryFacts = Array.isArray(ctxRecord.userMemoryFacts)
+      ? (ctxRecord.userMemoryFacts as Array<{ subject: string; predicate: string; confidence: number }>)
+      : undefined;
+
     const assembledContext = assembleAIContext({
       query,
       userContext: userContext as UserContext & { dashboardContext?: Record<string, unknown> },
@@ -1014,6 +1060,10 @@ export class DigitalLifeTwinCore {
       semanticEnhancement,
       userDefinedContext,
       globalPatterns,
+      moduleContexts,
+      recentConversationMemory,
+      recalledMessages,
+      userMemoryFacts,
       toneMode: responseMode,
       explicitStructuredMode:
         typeof query.context.structuredResponseMode === 'string'

@@ -331,6 +331,8 @@ model User {
   aiContextCache UserAIContextCache?
   aiConversations AIConversation[]
   userAIContexts UserAIContext[]
+  userMemoryFacts UserMemoryFact[]
+  aiMessageRecallIndexes AIMessageRecallIndex[]
   aiExtractedExpenses AIExtractedExpense[]
   aiSuggestions       AISuggestion[]
 
@@ -808,6 +810,7 @@ model Business {
   aiQueryBalances  AIQueryBalance[]
   aiQueryPurchases AIQueryPurchase[]
   aiConversations AIConversation[]
+  userMemoryFacts UserMemoryFact[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   businessFollows BusinessFollow[]
@@ -2781,6 +2784,10 @@ model AIConversation {
   isPinned        Boolean        @default(false)
   messageCount    Int            @default(0)
   trashedAt       DateTime?      // Global trash system support
+  /// Rolling thread summary for cross-turn / cross-session recall (updated on assistant turns).
+  threadSummary   String?        @db.Text
+  /// Active topics, entities, constraints from conversationContinuity (JSON).
+  topics          Json?
   messages        AIMessage[]
   
   // Indexes for performance
@@ -3009,6 +3016,31 @@ model BusinessAIUsageMetric {
 // AI MODULE
 // ============================================================================
 
+// Lightweight semantic index for AIMessage recall (bag-of-words embedding stored as JSON)
+
+model AIMessageRecallIndex {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId  String
+  messageId       String   @unique
+  role            String
+  contentSnippet  String   @db.Text
+  embedding       Json     // number[] — simple lexical embedding
+  businessId      String?
+  dashboardId     String?
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+  @@map("ai_message_recall_index")
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
 // ============================================================================
 // MODULE AI CONTEXT REGISTRY
 // ============================================================================
@@ -3135,6 +3167,41 @@ model ModuleAIPerformanceMetric {
   @@map("module_ai_performance_metrics")
 }
 
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// Structured long-term user memory facts (distinct from freeform UserAIContext)
+
+model UserMemoryFact {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject         String    // e.g. "trip planning", "work project"
+  predicate       String    @db.Text // natural language fact
+  scope           String    @default("personal") // personal | business | household
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  dashboardId     String?
+
+  sourceConversationId String?
+  sourceMessageId      String?
+  confidence      Float     @default(0.8)
+  expiresAt       DateTime?
+  trashedAt       DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, trashedAt])
+  @@index([userId, scope])
+  @@index([businessId])
+  @@index([expiresAt])
+  @@map("user_memory_facts")
+}
 
 
 // ============================================================================

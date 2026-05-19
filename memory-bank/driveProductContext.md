@@ -102,6 +102,24 @@ The Drive module uses a panel-based layout for file and folder navigation, previ
 
 ## 5. Technical Implementation
 
+### Authorization (Policy Engine — May 2026)
+
+Drive mutations on wired paths use **legacy `canWrite*` helpers first**, then **Policy Engine dual enforcement** (`server/src/auth/drivePolicyDual.ts`). Collaborator parity: mutations scope by resource `id` + `trashedAt: null`, not owner-only `userId`.
+
+| Operation | Policy action | Controller |
+|-----------|---------------|------------|
+| Update / delete file | `file:update`, `file:delete` | `updateFile`, `deleteFile` |
+| Move file | `file:move` (source write + target folder write) | `moveFile` |
+| Upload | `file:upload` (folder write; root uses `uploadRoot`) | `uploadFile` |
+| Share file / folder | `file:share`, `folder:share` (owner only) | `grantFilePermission`, `grantFolderPermission` |
+| Create folder | `folder:create` | `createFolder` |
+
+**Domain events (platform, not feed):** `file.uploaded`, `file.deleted`, `file.shared`, `folder.shared` after DB success — safe metadata only; **`emitModuleActivityEvent` retained** for activity feed.
+
+**Deferred policy:** `restoreFile`, `hardDeleteFile`, `reorderFiles`, permission revoke/update, global trash restore.
+
+**Docs:** `docs/architecture/POLICY_ENGINE.md`, `docs/architecture/DOMAIN_EVENTS.md`.
+
 ### Layout Components
 - `DriveLayout.tsx`: Integration with global dashboard layout
 - `DrivePage.tsx`: Main drive content with separate folder and file sections
@@ -143,6 +161,7 @@ The Drive module uses a panel-based layout for file and folder navigation, previ
 - **NEW**: Bulk operations with multi-select functionality
 
 ## 7. Update History
+- **2026-05:** **Platform hardening (PE-D1/D2 + DE-D1)** — Policy Engine on Drive write/move/upload/share; collaborator write parity; domain events on upload/delete/share; `drivePermissionHelpers.ts`. See § Authorization.
 - **2024-06:** Integrated with global dashboard layout
 - **2024-06:** Implemented responsive design and touch-friendly UI
 - **2024-06:** Added basic file operations and preview

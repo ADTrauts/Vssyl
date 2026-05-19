@@ -11,6 +11,12 @@ import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type ConversationHistoryItem } from './DigitalLifeTwinCore';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { ConversationContinuityState, ActiveTopicState } from '../utils/conversationContinuity';
+import { getRecentConversationMemory } from '../../services/aiConversationMemoryService';
+import { recallRelevantMessages } from '../../services/aiMessageRecallService';
+import {
+  getRelevantUserMemoryFacts,
+  maybePersistRememberThatFact,
+} from '../../services/userMemoryFactService';
 
 export interface AIRequest {
   id: string;
@@ -183,10 +189,57 @@ export class DigitalLifeTwinService {
       }
     }
 
+    let recentConversationMemory: Awaited<ReturnType<typeof getRecentConversationMemory>> = [];
+    try {
+      recentConversationMemory = await getRecentConversationMemory({
+        userId,
+        limit: 5,
+        excludeConversationId: context.conversationId,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to load recent conversation memory for twin:', err);
+    }
+
+    let recalledMessages: Awaited<ReturnType<typeof recallRelevantMessages>> = [];
+    try {
+      recalledMessages = await recallRelevantMessages({
+        userId,
+        query,
+        excludeConversationId: context.conversationId,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to recall messages for twin:', err);
+    }
+
+    let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
+    try {
+      userMemoryFacts = await getRelevantUserMemoryFacts({
+        userId,
+        query,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to load user memory facts for twin:', err);
+    }
+
+    void maybePersistRememberThatFact({
+      userId,
+      query,
+      conversationId: context.conversationId,
+      businessId: context.businessId,
+    }).catch((err) => console.warn('remember-that persistence failed:', err));
+
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
-      context: context as Record<string, unknown>,
+      context: {
+        ...(context as Record<string, unknown>),
+        recentConversationMemory,
+        recalledMessages,
+        userMemoryFacts,
+      },
       conversationHistory,
       ...continuityContext,
       preferredProvider: context.preferredProvider,
@@ -266,10 +319,58 @@ export class DigitalLifeTwinService {
         console.warn('Failed to load conversation history for twin (streaming):', err);
       }
     }
+
+    let recentConversationMemory: Awaited<ReturnType<typeof getRecentConversationMemory>> = [];
+    try {
+      recentConversationMemory = await getRecentConversationMemory({
+        userId,
+        limit: 5,
+        excludeConversationId: context.conversationId,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to load recent conversation memory for twin (streaming):', err);
+    }
+
+    let recalledMessages: Awaited<ReturnType<typeof recallRelevantMessages>> = [];
+    try {
+      recalledMessages = await recallRelevantMessages({
+        userId,
+        query,
+        excludeConversationId: context.conversationId,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to recall messages for twin (streaming):', err);
+    }
+
+    let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
+    try {
+      userMemoryFacts = await getRelevantUserMemoryFacts({
+        userId,
+        query,
+        businessId: context.businessId,
+      });
+    } catch (err) {
+      console.warn('Failed to load user memory facts for twin (streaming):', err);
+    }
+
+    void maybePersistRememberThatFact({
+      userId,
+      query,
+      conversationId: context.conversationId,
+      businessId: context.businessId,
+    }).catch((err) => console.warn('remember-that persistence failed:', err));
+
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
-      context: context as Record<string, unknown>,
+      context: {
+        ...(context as Record<string, unknown>),
+        recentConversationMemory,
+        recalledMessages,
+        userMemoryFacts,
+      },
       conversationHistory,
       ...continuityContext,
       preferredProvider: context.preferredProvider,

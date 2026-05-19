@@ -114,8 +114,8 @@ A module is not considered interoperable unless all are true:
 | Channel | Responsibility |
 |--------|----------------|
 | **First-party (monorepo)** | PR review uses the same checklist; agents follow `.cursor/rules/module-interoperability.mdc` + `module-development.mdc`. |
-| **Third-party (marketplace)** | Admin approval must not pass if certification items are unmet; see interoperability gate in `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`. |
-| **Automation** | CI (`pnpm type-check`, lint, tests per `release-safety-gates.mdc`) catches regressions but does not fully verify semantic compliance — human or structured review still required. |
+| **Third-party (marketplace)** | Admin approval must not pass if certification items are unmet; structural validator + **`ensureModuleVersionCertificationForActivation`** block `FAILED` on publish/promote/rollback (`moduleVersionCertificationGate.ts`). See `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`. |
+| **Automation** | CI (`prisma migrate deploy`, `type-check`, server vitest ~286, web runtime tests ~22) catches regressions; structural certification is automated — semantic checklist still needs human review. |
 
 **Dry-run references:** `server/src/startup/registerBuiltInModules.ts` (first-party): `docs/test-modules/` sample manifest (third-party-shaped artifact).
 

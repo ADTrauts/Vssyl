@@ -18,6 +18,7 @@ Update Rules for systemPatterns.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2026-05-17: Platform Hardening Phase Complete** — Policy Engine v1 + legacy dual enforcement (business, module install/uninstall, Drive); domain event taxonomy/adoption; workspace runtime mount + ref-counted `realtimeClient`; marketplace `ModuleVersion` certification validator/persistence/activation gate; CI web runtime tests. See dedicated sections below and `memory-bank/progress.md`.
 - **2025-01-22: Added Backend Performance Optimization Patterns (database connection pool scaling, composite indexes, request timeout middleware, query timeout protection, preventing 504 errors and WebSocket connection issues).**
 - **2025-01: Added To-Do Module Calendar Integration Pattern (automatic event creation, event synchronization, calendar context filtering, calendar view integration).**
 - **2025-01: Added To-Do Module Pattern (marketplace module, multi-context support, AI integration, List/Board views, task management architecture).**
@@ -251,29 +252,63 @@ coreModuleRegistry + WIDGET_REGISTRY adapters
     ↓
 workspaceRuntimeHelpers (context + install filter + permission snapshot)
     ↓
-WidgetPicker / optional WorkspaceRuntimeProvider (future: dashboard + business roots)
+WidgetPicker / WorkspaceRuntimeProvider (WR-Q1: dashboard + business roots)
 ```
 
 - **Module = capability; widget = projection** — see `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`
 - **Paths:** `web/src/runtime/modules/`, `web/src/runtime/workspace/`
+- **Mounts:** `WorkspaceRuntimeScopeBridge` (dashboard layout), `BusinessLayoutRuntimeShell` (`business/[id]/layout`)
+- **Permissions:** `permissionSnapshotBridge.ts` from `BusinessConfigurationContext` + position-aware modules
+- **Realtime (RT-Q1):** `web/src/lib/realtimeClient.ts` (ref-counted Socket.IO); `WorkspaceRealtimeLifecycle` forwards `platform:domain_event`; module hooks (chat, drive, scheduling, place, notifications) use acquire/release holders
 - **Context alias:** canonical `education` ↔ legacy `educational` (`contextMapping.ts`)
-- **Follow-up:** mount provider, feed `BusinessConfigurationContext` permissions, consolidate duplicate `getModuleIcon` / `getModuleName` helpers
+- **Follow-up (feature-driven):** consolidate `getModuleIcon` / `getModuleName`; broader `useWorkspaceRuntime()` in features
 - **Runtime state:** avoid cross-tenant leakage — `.cursor/rules/runtime-state-boundaries.mdc`
+- **Tests:** `pnpm --filter vssyl-web test` (~22) in GitHub Actions `verify` job
 
-#### **Policy Engine (v1)**
+#### **Policy Engine (v1)** — May 2026 hardening
 
-Centralized authorization in `server/src/auth/` (re-export `server/src/services/policyEngine.ts`). v1: `dashboard:read`, `file:read` on folders; other actions fail closed. Use after JWT; dual-enforce with legacy checks during migration.
+Centralized authorization in `server/src/auth/` (re-export `server/src/services/policyEngine.ts`). **Fail closed** outside v1 action list. **Always after JWT.**
+
+| Area | Actions | Dual helper | Wired controllers |
+|------|---------|-------------|-------------------|
+| Drive | `file:update/delete/move/upload/share`, `folder:update/delete/create/share` | `drivePolicyDual.ts` | `fileController`, `folderController`, `folderPermissionController` |
+| Module | `module:install`, `module:uninstall` | `moduleInstallPolicyDual`, `moduleUninstallPolicyDual` | `moduleProvisionController` |
+| Business members | `business:member.*` | `businessMemberPolicyDual` | `businessController`, `memberController` |
+| Business profile | `business:update` | `businessUpdatePolicyDual` | `businessController` (update, logo) |
+| Read (partial) | `dashboard:read`, `file:read` (folder) | — | tests; `listFolderPermissions` uses `authorize` |
+
+**Dual enforcement pattern:** legacy permission check **first** → `evaluate*PolicyDual` → block only on `INSUFFICIENT_ROLE`, `TENANT_MISMATCH`, `NOT_OWNER` (share). `delegate_not_found` does not block (handler owns 404). Log mismatches: `operation: policy_legacy_dual_enforce`.
+
+**Drive helpers:** `server/src/services/drivePermissionHelpers.ts` (`canReadFile`, `canWriteFile`, `canReadFolder`, `canWriteFolder`).
+
+**Deferred:** restore/hard-delete/reorder/revoke Drive routes; HR/scheduling/calendar/chat policy; remove dual when legacy aligned per route.
 
 - **Docs:** `docs/architecture/POLICY_ENGINE.md`
 - **Agent rule:** `policy-engine.mdc`
 
-#### **Domain event bus**
+#### **Domain event bus** — May 2026 hardening
 
-`emitDomainEvent` fans out to activity log, socket (`platform:domain_event`), and placeholder notification/analytics subscribers after successful mutations. Distinct from **`emitModuleActivityEvent`** (module feed contract).
+`emitDomainEvent` + typed helpers in `domainEventEmitters.ts`; contracts in `domainEventRegistry.ts` with metadata sanitization. Fans out to activity subscriber, socket (`platform:domain_event` to **actor only**), notification/analytics placeholders. **Emit only after authorized DB success.** Distinct from **`emitModuleActivityEvent`** (module feed — keep both on Drive when feed visibility matters).
+
+**Adopted types:** `user.preference.updated`, `module.installed` / `uninstalled`, `business.member.added` / `removed`, `business.updated`, `file.uploaded` / `deleted` / `shared`, `folder.shared`.
+
+**Deferred registry types:** `module.enabled/disabled`, `chat.message.sent`, `calendar.event.created`, `file.moved`, `folder.created`.
 
 - **Docs:** `docs/architecture/DOMAIN_EVENTS.md`
 - **Agent rule:** `domain-events.mdc`
 - **Startup:** `registerDomainEventSubscribers()` in `server/src/index.ts`
+
+#### **Marketplace structural certification** — May 2026 (MP-Q1–Q3)
+
+Automated manifest/interoperability validation before version activation:
+
+1. **`moduleCertificationValidator.ts`** — structural checklist (errors vs warnings)
+2. **`moduleCertificationPersistence.ts`** — persists on `ModuleVersion` at artifact finalize (advisory) and on gate re-validation
+3. **`moduleVersionCertificationGate.ts`** — `ensureModuleVersionCertificationForActivation` blocks **FAILED** on approval publish, promote, rollback; re-runs when `NOT_RUN` or validator version stale
+
+**Migration:** `20260517000000_module_version_certification` (`ModuleCertificationStatus` enum + JSON columns on `module_versions`).
+
+Human review still required per `moduleSpecs.md` certification checklist — automation does not replace semantic approval.
 
 ### **Module Architecture Patterns**
 

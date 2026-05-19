@@ -17,6 +17,10 @@ model AIConversation {
   isPinned        Boolean        @default(false)
   messageCount    Int            @default(0)
   trashedAt       DateTime?      // Global trash system support
+  /// Rolling thread summary for cross-turn / cross-session recall (updated on assistant turns).
+  threadSummary   String?        @db.Text
+  /// Active topics, entities, constraints from conversationContinuity (JSON).
+  topics          Json?
   messages        AIMessage[]
   
   // Indexes for performance

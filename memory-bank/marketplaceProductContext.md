@@ -68,7 +68,8 @@ The Marketplace module enables users and developers to discover, submit, review,
 | Developer/Reviewer Roles       | ✅          | Implemented (via roles/permissions)           |
 | Module Search/Discovery        | ✅          | Implemented (`/modules/marketplace`)          |
 | Install/Update/Delete          | ✅          | Implemented (`install/uninstall/configure`)   |
-| Security Policy & Monitoring   | ❌          | Planned                                       |
+| Structural certification (MP-Q1–Q3) | ✅       | Validator + persistence + activation gate     |
+| Security Policy & Monitoring   | 🟡 Partial | Certification + artifact scan; broader monitoring planned |
 | Integrations (Dashboard, Chat, Drive) | ✅   | Partially via Modules page; runtime pending   |
 | UI for Browsing/Managing Modules | ✅        | Basic modules page implemented                |
 | Notifications                  | ❌          | Planned                                       |
@@ -79,7 +80,26 @@ The Marketplace module enables users and developers to discover, submit, review,
 - Add iframe‑based runtime host and `GET /api/modules/:id/runtime` endpoint.
 - Submission supports hosted bundle URL; approval sets `manifest.frontend.entryUrl`.
 - Installed modules get “Open” action linking to `/modules/run/:id`.
+- Bundle runtime path when artifact passes baseline scan (see pipeline source of truth).
 
+## 4c. Structural certification (May 2026) ✅
+
+**Purpose:** Automated interoperability validation on `ModuleVersion` before activation; complements human review in `moduleSpecs.md`.
+
+| Stage | Behavior |
+|-------|----------|
+| Artifact finalize | `validateModuleCertification` + `persistModuleVersionCertification` (advisory; surfaces errors/warnings in admin UI) |
+| Approval publish | `AdminService.reviewModuleSubmission` → `ensureModuleVersionCertificationForActivation` — **blocks on FAILED** |
+| Promote / rollback | Same gate; re-validates when `NOT_RUN` or `certificationValidatorVersion` stale |
+| Warnings | `WARNING` status allows activation; `FAILED` returns `400` + `details.certification` |
+
+**Key services:** `moduleCertificationValidator.ts`, `moduleCertificationPersistence.ts`, `moduleVersionCertificationGate.ts`.
+
+**UI:** `ModuleCertificationReviewPanel` on admin modules review; certification fields on list/detail APIs.
+
+**Migration:** `20260517000000_module_version_certification` — deploy before relying on gate in production.
+
+**Docs:** `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`, `THIRD_PARTY_MODULE_RULEBOOK.md`.
 
 *Update status as features are rebuilt.*
 

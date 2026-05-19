@@ -96,8 +96,34 @@ export interface AIContextAssemblyInput {
   semanticEnhancement?: any;
   userDefinedContext?: Array<Record<string, unknown>>;
   globalPatterns?: Array<Record<string, unknown>>;
+  /** Live module provider payloads from ModuleAIContextService (keyed by moduleId). */
+  moduleContexts?: Record<string, unknown>;
+  /** Summaries from other recent AI chat threads (cross-session). */
+  recentConversationMemory?: Array<{
+    id: string;
+    title: string;
+    threadSummary: string | null;
+    lastMessageAt: Date | string;
+  }>;
+  recalledMessages?: Array<{
+    messageId: string;
+    conversationId: string;
+    role: string;
+    contentSnippet: string;
+    similarity: number;
+  }>;
+  userMemoryFacts?: Array<{ subject: string; predicate: string; confidence: number }>;
   toneMode?: string;
   explicitStructuredMode?: string;
+}
+
+export interface ModuleContextAssemblyEntry {
+  moduleId: string;
+  moduleName?: string;
+  providerName?: string;
+  relevance?: string;
+  data: unknown;
+  cached?: boolean;
 }
 
 const MAX_STRING = 4000;
@@ -519,9 +545,42 @@ function countDistinctContextSources(blocks: AIAssembledContext['contextBlocks']
 /**
  * Build assembled context for provider `data.assembledContext`.
  */
+function normalizeModuleContexts(
+  raw: Record<string, unknown> | undefined
+): ModuleContextAssemblyEntry[] {
+  if (!raw || typeof raw !== 'object') return [];
+  const entries: ModuleContextAssemblyEntry[] = [];
+  for (const [moduleId, value] of Object.entries(raw)) {
+    if (!value || typeof value !== 'object') continue;
+    const o = value as Record<string, unknown>;
+    const payload = o.data !== undefined ? o.data : value;
+    entries.push({
+      moduleId,
+      moduleName: typeof o.moduleName === 'string' ? o.moduleName : undefined,
+      providerName: typeof o.providerName === 'string' ? o.providerName : undefined,
+      relevance: typeof o.relevance === 'string' ? o.relevance : undefined,
+      data: payload,
+      cached: o.cached === true,
+    });
+  }
+  return entries;
+}
+
 export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledContext {
-  const { query, userContext, analysis, attachedFiles, smartAnalysis, semanticEnhancement, userDefinedContext, globalPatterns } =
-    input;
+  const {
+    query,
+    userContext,
+    analysis,
+    attachedFiles,
+    smartAnalysis,
+    semanticEnhancement,
+    userDefinedContext,
+    globalPatterns,
+    moduleContexts: rawModuleContexts,
+    recentConversationMemory,
+    recalledMessages,
+    userMemoryFacts,
+  } = input;
 
   const dashboardCtx =
     userContext.dashboardContext && typeof userContext.dashboardContext === 'object'
@@ -809,6 +868,96 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       label: 'Semantic query enhancement',
       sourceType: 'system',
       confidence: 'low',
+    });
+  }
+
+  if (Array.isArray(recalledMessages) && recalledMessages.length > 0) {
+    contextBlocks.push({
+      title: 'Recalled prior messages (semantic)',
+      sourceType: 'chat',
+      content: recalledMessages.map((m) => ({
+        role: m.role,
+        snippet: truncateString(m.contentSnippet, 500),
+        conversationId: m.conversationId,
+        similarity: Math.round(m.similarity * 100) / 100,
+      })),
+      priority: 'high',
+      tier: 'tier2_continuity',
+      inclusionReason: 'explicit recall intent matched indexed messages',
+    });
+    evidence.push({
+      label: 'Semantic message recall',
+      sourceType: 'chat',
+      detail: `${recalledMessages.length} chunk(s)`,
+      confidence: 'high',
+    });
+  }
+
+  if (Array.isArray(userMemoryFacts) && userMemoryFacts.length > 0) {
+    contextBlocks.push({
+      title: 'User memory facts',
+      sourceType: 'personal',
+      content: userMemoryFacts.map((f) => ({
+        subject: f.subject,
+        fact: truncateString(f.predicate, 600),
+        confidence: f.confidence,
+      })),
+      priority: 'high',
+      tier: 'tier3_profile',
+      inclusionReason: 'structured long-term user memory',
+    });
+    evidence.push({
+      label: 'Stored user memory facts',
+      sourceType: 'personal',
+      detail: `${userMemoryFacts.length} fact(s)`,
+      confidence: 'high',
+    });
+  }
+
+  if (Array.isArray(recentConversationMemory) && recentConversationMemory.length > 0) {
+    const withSummary = recentConversationMemory.filter((c) => c.threadSummary && c.threadSummary.trim());
+    if (withSummary.length > 0) {
+      contextBlocks.push({
+        title: 'Recent conversations (other threads)',
+        sourceType: 'chat',
+        content: withSummary.slice(0, 5).map((c) => ({
+          conversationId: c.id,
+          title: c.title,
+          summary: truncateString(String(c.threadSummary), 600),
+          lastMessageAt: c.lastMessageAt,
+        })),
+        priority: contextProfile === 'conversation' ? 'high' : 'medium',
+        tier: 'tier2_continuity',
+        inclusionReason: 'cross-session thread summaries for recall',
+      });
+      evidence.push({
+        label: 'Prior thread summaries',
+        sourceType: 'chat',
+        detail: `${withSummary.length} conversation(s)`,
+        confidence: 'medium',
+      });
+    }
+  }
+
+  const moduleContextEntries = normalizeModuleContexts(rawModuleContexts);
+  for (const entry of moduleContextEntries.slice(0, MAX_ITEMS)) {
+    const label = entry.moduleName || entry.moduleId;
+    const priority: 'low' | 'medium' | 'high' =
+      entry.relevance === 'high' ? 'high' : entry.relevance === 'medium' ? 'medium' : 'medium';
+    contextBlocks.push({
+      title: `Module live context: ${label}`,
+      sourceType: 'module',
+      content: compressContextContent(entry.data),
+      priority,
+      tier: contextProfile === 'conversation' ? 'tier4_cross_module' : 'tier3_profile',
+      inclusionReason: `live context from ${entry.moduleId}${entry.providerName ? `.${entry.providerName}` : ''}`,
+    });
+    evidence.push({
+      label: `Live module data: ${label}`,
+      sourceType: 'module',
+      sourceId: entry.moduleId,
+      detail: entry.providerName ? `provider ${entry.providerName}` : undefined,
+      confidence: entry.relevance === 'high' ? 'high' : 'medium',
     });
   }
 

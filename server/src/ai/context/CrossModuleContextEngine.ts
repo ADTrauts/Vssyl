@@ -275,7 +275,7 @@ export class CrossModuleContextEngine {
     });
 
     const currentFocus = this.determineFocus(activityData, patterns);
-    const activeModules = this.getActiveModules(userId);
+    const activeModules = await this.getActiveModules(userId);
 
     return {
       userId,
@@ -860,9 +860,22 @@ export class CrossModuleContextEngine {
     };
   }
 
-  private getActiveModules(userId: string): string[] {
-    // Would check recent activity across modules
-    return ['drive', 'chat', 'household', 'business'];
+  /**
+   * Installed, enabled modules for this user (registry moduleIds).
+   */
+  async getActiveModules(userId: string): Promise<string[]> {
+    try {
+      const installations = await prisma.moduleInstallation.findMany({
+        where: { userId, enabled: true },
+        select: { moduleId: true },
+        orderBy: { moduleId: 'asc' },
+      });
+      const ids = installations.map((i) => i.moduleId);
+      return ids.length > 0 ? ids : ['dashboard'];
+    } catch (error) {
+      console.warn('getActiveModules failed, using dashboard fallback:', error);
+      return ['dashboard'];
+    }
   }
 
   /**
@@ -947,8 +960,10 @@ export class CrossModuleContextEngine {
       // Step 1: Analyze query to find relevant modules (FAST - database lookup)
       const analysis = await moduleAIContextService.analyzeQuery(query, userId);
 
-      // Step 2: Get full user context (cached)
+      // Step 2: Get full user context (cached) with installation-accurate active modules
       const fullContext = await this.getUserContext(userId);
+      const installedModuleIds = await this.getActiveModules(userId);
+      fullContext.activeModules = installedModuleIds;
 
       // Step 3: Fetch context from only high-relevance modules (SLOW - API calls)
       const highRelevanceModules = analysis.matchedModules.filter(
@@ -996,6 +1011,7 @@ export class CrossModuleContextEngine {
         analysis,
         fullContext,
         moduleContexts,
+        installedModuleIds,
         relevantModuleCount: highRelevanceModules.length,
         timestamp: new Date(),
       };

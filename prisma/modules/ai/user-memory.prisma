@@ -1,0 +1,29 @@
+// Structured long-term user memory facts (distinct from freeform UserAIContext)
+
+model UserMemoryFact {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject         String    // e.g. "trip planning", "work project"
+  predicate       String    @db.Text // natural language fact
+  scope           String    @default("personal") // personal | business | household
+  businessId      String?
+  business        Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  dashboardId     String?
+
+  sourceConversationId String?
+  sourceMessageId      String?
+  confidence      Float     @default(0.8)
+  expiresAt       DateTime?
+  trashedAt       DateTime?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, trashedAt])
+  @@index([userId, scope])
+  @@index([businessId])
+  @@index([expiresAt])
+  @@map("user_memory_facts")
+}

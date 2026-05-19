@@ -226,12 +226,12 @@ Additive contracts under `web/src/runtime/` unify how the platform *describes* m
 |-------|----------|------|
 | Module contracts | `web/src/runtime/modules/` | `ModuleDefinition`, `coreModuleRegistry`, `moduleRegistry` |
 | Widget contracts | Adapters from `web/src/components/dashboard/widgetRegistry.ts` | `WidgetDefinition` via `componentKey`; **`WIDGET_REGISTRY` unchanged** |
-| Workspace runtime | `web/src/runtime/workspace/` | Filter available modules/widgets; optional `WorkspaceRuntimeProvider` |
+| Workspace runtime | `web/src/runtime/workspace/` | `WorkspaceRuntimeProvider` mounted (WR-Q1); `permissionSnapshot` bridge; RT-Q1 `realtimeClient.ts` |
 | Docs | `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md` | Canonical architecture note |
 
-**v1 integrations:** `WidgetPicker` (`getWidgetPickerAvailableEntries`), business workspace metadata lookup, `BrandedWorkDashboard` names from contracts.
+**v1 integrations:** `WidgetPicker` (`getWidgetPickerAvailableEntries`), business workspace metadata lookup, `BrandedWorkDashboard` names from contracts; `BusinessLayoutRuntimeShell` on business layout.
 
-**Deferred:** Mount provider at dashboard/business roots; `permissionSnapshot` from `BusinessConfigurationContext`; replace duplicate icon/name switches; CI web tests.
+**Deferred (feature-driven):** Replace duplicate icon/name switches; broader `useWorkspaceRuntime()` in feature surfaces.
 
 See `memory-bank/activeContext.md` and `memory-bank/progress.md`.
 

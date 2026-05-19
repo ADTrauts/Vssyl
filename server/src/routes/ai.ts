@@ -38,6 +38,14 @@ function logSrvDebug(operation: string, message: string, context?: Record<string
   void logger.debug(message, { operation, ...(context ? { context } : {}) });
 }
 
+/** Align analytics history with persistent AI chat threads when conversationId is present. */
+function resolveAIHistorySessionId(context: Record<string, unknown>): string {
+  const cid = context.conversationId;
+  if (typeof cid === 'string' && cid.trim() !== '') {
+    return cid.trim();
+  }
+  return `session_${Date.now()}`;
+}
 
 const router: express.Router = express.Router();
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
@@ -211,7 +219,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
             await prisma.aIConversationHistory.create({
               data: {
                 userId,
-                sessionId: `session_${Date.now()}`,
+                sessionId: resolveAIHistorySessionId(context as Record<string, unknown>),
                 interactionType: 'QUERY',
                 context: JSON.parse(JSON.stringify(context)),
                 userQuery: query,
@@ -296,7 +304,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
     await prisma.aIConversationHistory.create({
       data: {
         userId,
-        sessionId: `session_${Date.now()}`, // Generate session ID
+        sessionId: resolveAIHistorySessionId(context as Record<string, unknown>),
         interactionType: 'QUERY',
         context: JSON.parse(JSON.stringify(context)),
         userQuery: query,
