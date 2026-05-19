@@ -103,6 +103,7 @@ export interface AIContextAssemblyInput {
     id: string;
     title: string;
     threadSummary: string | null;
+    topics?: import('../../services/aiConversationMemoryService').ConversationTopicsPayload | null;
     lastMessageAt: Date | string;
   }>;
   recalledMessages?: Array<{
@@ -935,6 +936,33 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         sourceType: 'chat',
         detail: `${withSummary.length} conversation(s)`,
         confidence: 'medium',
+      });
+    }
+
+    const topicsOnly = recentConversationMemory.filter(
+      (c) => (!c.threadSummary || !c.threadSummary.trim()) && c.topics
+    );
+    if (topicsOnly.length > 0) {
+      contextBlocks.push({
+        title: 'Recent conversation topics (other threads)',
+        sourceType: 'chat',
+        content: topicsOnly.slice(0, 5).map((c) => {
+          const t = c.topics;
+          return {
+            conversationId: c.id,
+            title: c.title,
+            activeTopic: t?.activeTopic?.label ?? null,
+            domain: t?.activeTopic?.domain ?? null,
+            entities: t?.activeTopic?.entities?.slice(0, 8) ?? [],
+            narrowingConstraints: t?.continuityState?.narrowingConstraints ?? [],
+            lastAssistantSummary: t?.continuityState?.lastAssistantTurnSummary
+              ? truncateString(t.continuityState.lastAssistantTurnSummary, 400)
+              : undefined,
+          };
+        }),
+        priority: contextProfile === 'conversation' ? 'high' : 'medium',
+        tier: 'tier2_continuity',
+        inclusionReason: 'cross-session topic state when thread summary not yet rolled up',
       });
     }
   }

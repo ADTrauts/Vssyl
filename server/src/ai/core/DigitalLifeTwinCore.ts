@@ -915,7 +915,8 @@ export class DigitalLifeTwinCore {
       structuredResponseMode,
       continuityState,
       activeTopic,
-      attachedFiles
+      attachedFiles,
+      moduleContexts
     );
     
     // Get user preference if not provided in query
@@ -1237,7 +1238,8 @@ export class DigitalLifeTwinCore {
     structuredResponseMode?: StructuredAIResponseMode,
     continuityState?: ConversationContinuityState,
     activeTopic?: ActiveTopicState,
-    attachedFiles?: AttachedFileContext[]
+    attachedFiles?: AttachedFileContext[],
+    moduleContexts?: Record<string, unknown>
   ): string {
     const isConversation = structuredResponseMode === 'conversation';
     const currentTime = new Date().toLocaleString();
@@ -1332,6 +1334,18 @@ If a file shows "No text could be extracted", say only that you could not read i
       }
     }
 
+    let moduleLiveSection = '';
+    if (!isConversation && moduleContexts && Object.keys(moduleContexts).length > 0) {
+      const lines: string[] = [];
+      for (const [moduleId, raw] of Object.entries(moduleContexts).slice(0, 4)) {
+        const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+        const data = o.data !== undefined ? o.data : raw;
+        const name = typeof o.moduleName === 'string' ? o.moduleName : moduleId;
+        lines.push(`- ${name}: ${JSON.stringify(data).slice(0, 1200)}`);
+      }
+      moduleLiveSection = `\n\nMODULE LIVE CONTEXT:\n${lines.join('\n')}\n`;
+    }
+
     const personalitySection = `PERSONALITY PROFILE (tone only — do not cite scores to the user):
 - Communication Style: ${personality?.preferences?.communication?.formality || 'professional but friendly'}
 - Planning Horizon: ${personality?.preferences?.decision?.timeframePreference || 'planned'}`;
@@ -1403,7 +1417,7 @@ ${activeTopic ? `- Active topic label: ${activeTopic.label}
 ${isConversation && query.conversationHistory && query.conversationHistory.length > 0 ? `
 ${CONVERSATION_MOMENTUM_BLOCK}` : ''}
 
-${attachedFilesSection}
+${attachedFilesSection}${moduleLiveSection}
 
 CURRENT CONTEXT:
 - Time: ${currentTime}

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { hasExplicitRecallIntent } from '../ai/utils/recallIntent';
 
 export interface CreateUserMemoryFactInput {
   userId: string;
@@ -60,11 +61,29 @@ export async function getRelevantUserMemoryFacts(input: {
   query: string;
   limit?: number;
   businessId?: string;
+  /** When true, include recent high-confidence facts even with weak keyword overlap. */
+  isRecallQuery?: boolean;
 }): Promise<Array<{ subject: string; predicate: string; confidence: number }>> {
+  const limit = input.limit ?? 8;
   const facts = await listUserMemoryFacts(
     input.userId,
     input.businessId ? 'business' : undefined
   );
+
+  const recallQuery = input.isRecallQuery ?? hasExplicitRecallIntent(input.query);
+  if (recallQuery && facts.length > 0) {
+    const top = [...facts]
+      .sort((a, b) => b.confidence - a.confidence || b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, Math.min(limit, 5));
+    if (top.length > 0) {
+      return top.map((f) => ({
+        subject: f.subject,
+        predicate: f.predicate,
+        confidence: f.confidence,
+      }));
+    }
+  }
+
   const tokens = input.query
     .toLowerCase()
     .split(/\s+/)
@@ -82,7 +101,6 @@ export async function getRelevantUserMemoryFacts(input: {
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  const limit = input.limit ?? 8;
   return scored.slice(0, limit).map((s) => ({
     subject: s.fact.subject,
     predicate: s.fact.predicate,

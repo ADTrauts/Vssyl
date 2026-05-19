@@ -1,11 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { hasExplicitRecallIntent } from '../aiMessageRecallService';
+import { hasExplicitRecallIntent } from '../../ai/utils/recallIntent';
+import { combinedRecallScore } from '../../ai/utils/recallScoring';
 import { generateSimpleTextEmbedding, cosineSimilarityVectors } from '../../ai/utils/simpleTextEmbedding';
 
 describe('hasExplicitRecallIntent', () => {
   it('detects recall phrasing', () => {
     expect(hasExplicitRecallIntent('We last talked about a trip to Charleston')).toBe(true);
+    expect(hasExplicitRecallIntent('What were we talking about?')).toBe(true);
     expect(hasExplicitRecallIntent('What files do I have?')).toBe(false);
+  });
+});
+
+describe('combinedRecallScore', () => {
+  it('boosts travel-related query/snippet pairs', () => {
+    const query = 'We last talked about a last-minute vacation trip';
+    const snippet = 'Charleston and Savannah are great domestic destinations for your trip.';
+    expect(combinedRecallScore(query, snippet)).toBeGreaterThan(0.08);
   });
 });
 

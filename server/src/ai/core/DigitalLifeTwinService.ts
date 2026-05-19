@@ -12,7 +12,7 @@ import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type Conve
 import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { ConversationContinuityState, ActiveTopicState } from '../utils/conversationContinuity';
 import { getRecentConversationMemory } from '../../services/aiConversationMemoryService';
-import { recallRelevantMessages } from '../../services/aiMessageRecallService';
+import { hasExplicitRecallIntent, recallRelevantMessages } from '../../services/aiMessageRecallService';
 import {
   getRelevantUserMemoryFacts,
   maybePersistRememberThatFact,
@@ -213,12 +213,16 @@ export class DigitalLifeTwinService {
       console.warn('Failed to recall messages for twin:', err);
     }
 
+    const recallQuery = hasExplicitRecallIntent(query);
+
     let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
     try {
       userMemoryFacts = await getRelevantUserMemoryFacts({
         userId,
         query,
         businessId: context.businessId,
+        isRecallQuery: recallQuery,
+        limit: recallQuery ? 5 : 8,
       });
     } catch (err) {
       console.warn('Failed to load user memory facts for twin:', err);
@@ -344,12 +348,16 @@ export class DigitalLifeTwinService {
       console.warn('Failed to recall messages for twin (streaming):', err);
     }
 
+    const recallQuery = hasExplicitRecallIntent(query);
+
     let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
     try {
       userMemoryFacts = await getRelevantUserMemoryFacts({
         userId,
         query,
         businessId: context.businessId,
+        isRecallQuery: recallQuery,
+        limit: recallQuery ? 5 : 8,
       });
     } catch (err) {
       console.warn('Failed to load user memory facts for twin (streaming):', err);

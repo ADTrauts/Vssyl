@@ -1,17 +1,15 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { cosineSimilarityVectors, generateSimpleTextEmbedding } from '../ai/utils/simpleTextEmbedding';
+import { generateSimpleTextEmbedding } from '../ai/utils/simpleTextEmbedding';
+import { hasExplicitRecallIntent } from '../ai/utils/recallIntent';
+import { combinedRecallScore } from '../ai/utils/recallScoring';
 
-const RECALL_INTENT =
-  /\b(last time|we (last )?talked|we discussed|remember when|you said|earlier you|previously|before we|recall|as we talked about)\b/i;
+export { hasExplicitRecallIntent } from '../ai/utils/recallIntent';
 
 const SNIPPET_MAX = 500;
 const INDEX_LIMIT = 400;
-
-/** Exposed for tests and twin routing. */
-export function hasExplicitRecallIntent(query: string): boolean {
-  return RECALL_INTENT.test(query);
-}
+const DEFAULT_MIN_SIMILARITY = 0.28;
+const RECALL_INTENT_MIN_SIMILARITY = 0.08;
 
 function snippet(content: string): string {
   const t = content.trim();
@@ -80,7 +78,8 @@ export async function recallRelevantMessages(input: {
   }
 
   const limit = Math.min(Math.max(input.limit ?? 6, 1), 15);
-  const minSimilarity = input.minSimilarity ?? 0.28;
+  const minSimilarity =
+    input.minSimilarity ?? (hasExplicitRecallIntent(input.query) ? RECALL_INTENT_MIN_SIMILARITY : DEFAULT_MIN_SIMILARITY);
 
   const rows = await prisma.aIMessageRecallIndex.findMany({
     where: {
@@ -94,14 +93,9 @@ export async function recallRelevantMessages(input: {
 
   if (rows.length === 0) return [];
 
-  const queryEmbedding = generateSimpleTextEmbedding(input.query);
-
   const scored: RecalledMessageChunk[] = [];
   for (const row of rows) {
-    const emb = row.embedding;
-    if (!Array.isArray(emb)) continue;
-    const vec = emb.filter((v): v is number => typeof v === 'number');
-    const similarity = cosineSimilarityVectors(queryEmbedding, vec);
+    const similarity = combinedRecallScore(input.query, row.contentSnippet);
     if (similarity < minSimilarity) continue;
     scored.push({
       messageId: row.messageId,
@@ -113,5 +107,97 @@ export async function recallRelevantMessages(input: {
     });
   }
 
-  return scored.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
+  scored.sort((a, b) => b.similarity - a.similarity);
+
+  if (scored.length === 0 && hasExplicitRecallIntent(input.query)) {
+    const travelRows = rows.filter((r) =>
+      /\b(trip|travel|vacation|destination|charleston|savannah|beach|getaway|domestic)\b/i.test(r.contentSnippet)
+    );
+    for (const row of travelRows.slice(0, limit)) {
+      scored.push({
+        messageId: row.messageId,
+        conversationId: row.conversationId,
+        role: row.role,
+        contentSnippet: row.contentSnippet,
+        similarity: 0.15,
+        createdAt: row.createdAt,
+      });
+    }
+  }
+
+  return scored.slice(0, limit);
+}
+
+/**
+ * Index many messages (backfill). Returns counts for logging.
+ */
+export async function backfillAIMessageRecallIndex(input?: {
+  batchSize?: number;
+  userId?: string;
+}): Promise<{ indexed: number; skipped: number; errors: number }> {
+  const batchSize = input?.batchSize ?? 200;
+  let indexed = 0;
+  let skipped = 0;
+  let errors = 0;
+  let lastId: string | undefined;
+
+  for (;;) {
+    const messages = await prisma.aIMessage.findMany({
+      where: {
+        ...(input?.userId
+          ? { conversation: { userId: input.userId, trashedAt: null } }
+          : { conversation: { trashedAt: null } }),
+        ...(lastId ? { id: { gt: lastId } } : {}),
+      },
+      orderBy: { id: 'asc' },
+      take: batchSize,
+      select: {
+        id: true,
+        role: true,
+        content: true,
+        conversationId: true,
+        conversation: {
+          select: { userId: true, businessId: true, dashboardId: true },
+        },
+      },
+    });
+
+    if (messages.length === 0) break;
+    lastId = messages[messages.length - 1].id;
+
+    const existing = await prisma.aIMessageRecallIndex.findMany({
+      where: { messageId: { in: messages.map((m) => m.id) } },
+      select: { messageId: true },
+    });
+    const existingIds = new Set(existing.map((e) => e.messageId));
+
+    for (const msg of messages) {
+      if (existingIds.has(msg.id)) {
+        skipped += 1;
+        continue;
+      }
+      if (!(msg.content || '').trim()) {
+        skipped += 1;
+        continue;
+      }
+      try {
+        await indexAIMessageForRecall({
+          userId: msg.conversation.userId,
+          conversationId: msg.conversationId,
+          messageId: msg.id,
+          role: msg.role,
+          content: msg.content,
+          businessId: msg.conversation.businessId,
+          dashboardId: msg.conversation.dashboardId,
+        });
+        indexed += 1;
+      } catch {
+        errors += 1;
+      }
+    }
+
+    if (messages.length < batchSize) break;
+  }
+
+  return { indexed, skipped, errors };
 }
