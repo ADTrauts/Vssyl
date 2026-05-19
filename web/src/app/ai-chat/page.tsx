@@ -40,8 +40,54 @@ import { getAIModels, type ChatModelDefinition } from '../../api/aiModels';
 import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpload';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
+import LearnedFromChatBanner from '../../components/ai/LearnedFromChatBanner';
+import SessionStylePromoteBanner from '../../components/ai/SessionStylePromoteBanner';
+import type { PendingLearningFromTwin } from '../../api/aiContextLearning';
+import type { SessionPreferenceAdjustments } from '../../api/aiSessionPreferences';
 
 const MAX_ATTACHMENTS = 10;
+
+function extractPendingLearningFromTwinMetadata(
+  metadata: Record<string, unknown> | undefined
+): PendingLearningFromTwin | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const raw = metadata.pendingLearning;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const pl = raw as Record<string, unknown>;
+  const count = typeof pl.count === 'number' ? pl.count : 0;
+  if (count < 1) return null;
+  const latestRaw = pl.latest;
+  let latest: PendingLearningFromTwin['latest'];
+  if (latestRaw && typeof latestRaw === 'object' && !Array.isArray(latestRaw)) {
+    const l = latestRaw as Record<string, unknown>;
+    if (typeof l.id === 'string' && typeof l.title === 'string' && typeof l.content === 'string') {
+      latest = { id: l.id, title: l.title, content: l.content };
+    }
+  }
+  return { count, ...(latest && { latest }) };
+}
+
+function extractSessionAdjustmentsFromTwinMetadata(
+  metadata: Record<string, unknown> | undefined
+): SessionPreferenceAdjustments | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const raw = metadata.sessionPreferenceAdjustments;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const adj = raw as Record<string, unknown>;
+  const out: SessionPreferenceAdjustments = {};
+  for (const key of [
+    'tone',
+    'verbosity',
+    'recommendationRichness',
+    'structurePreference',
+    'summary',
+  ] as const) {
+    if (typeof adj[key] === 'string' && adj[key]) {
+      out[key] = adj[key] as string;
+    }
+  }
+  return Object.keys(out).filter((k) => k !== 'summary').length > 0 ? out : null;
+}
 
 /** Detect if user wants document extraction (invoice/receipt) when files are attached */
 function getExtractDocumentIntent(query: string, hasFiles: boolean): 'invoice' | 'receipt' | null {
@@ -147,6 +193,13 @@ export default function AIChat() {
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const submittingRef = useRef(false);
+  const learningBannerShownRef = useRef(false);
+  const [pendingLearningBanner, setPendingLearningBanner] = useState<PendingLearningFromTwin | null>(
+    null
+  );
+  const [sessionStyleBanner, setSessionStyleBanner] = useState<SessionPreferenceAdjustments | null>(
+    null
+  );
 
   // Phase 7: Proactive AI suggestions (e.g. after document upload)
   const [aiSuggestions, setAiSuggestions] = useState<AISuggestionItem[]>([]);
@@ -684,6 +737,15 @@ export default function AIChat() {
         if (conversationId) {
           await addMessage(conversationId, buildAddMessagePayloadFromTwinData(normalized), session.accessToken);
         }
+        const pending = extractPendingLearningFromTwinMetadata(normalized.metadata);
+        if (pending && !learningBannerShownRef.current) {
+          learningBannerShownRef.current = true;
+          setPendingLearningBanner(pending);
+        }
+        const sessionAdj = extractSessionAdjustmentsFromTwinMetadata(normalized.metadata);
+        if (sessionAdj) {
+          setSessionStyleBanner(sessionAdj);
+        }
       } else {
         const json = await res.json() as { success?: boolean; data?: { response: string; confidence: number; reasoning?: string; actions?: Array<Record<string, unknown>>; structured?: StructuredAIResponse; metadata?: Record<string, unknown> } };
         if (!json.success || !json.data) {
@@ -693,6 +755,15 @@ export default function AIChat() {
         setConversation((prev) => [...prev, aiItem]);
         if (conversationId) {
           await addMessage(conversationId, buildAddMessagePayloadFromTwinData(json.data), session.accessToken);
+        }
+        const pending = extractPendingLearningFromTwinMetadata(json.data.metadata);
+        if (pending && !learningBannerShownRef.current) {
+          learningBannerShownRef.current = true;
+          setPendingLearningBanner(pending);
+        }
+        const sessionAdjJson = extractSessionAdjustmentsFromTwinMetadata(json.data.metadata);
+        if (sessionAdjJson) {
+          setSessionStyleBanner(sessionAdjJson);
         }
       }
 
@@ -2121,6 +2192,26 @@ export default function AIChat() {
               ))}
               <div ref={conversationEndRef} />
             </>
+          )}
+
+          {pendingLearningBanner && session?.accessToken && (
+            <div className="max-w-2xl mx-auto px-4 pb-2">
+              <LearnedFromChatBanner
+                token={session.accessToken}
+                pending={pendingLearningBanner}
+                onDismissed={() => setPendingLearningBanner(null)}
+              />
+            </div>
+          )}
+
+          {sessionStyleBanner && session?.accessToken && (
+            <div className="max-w-2xl mx-auto px-4 pb-2">
+              <SessionStylePromoteBanner
+                token={session.accessToken}
+                adjustments={sessionStyleBanner}
+                onDismissed={() => setSessionStyleBanner(null)}
+              />
+            </div>
           )}
           
           {(isAILoading || isGeneratingImage) && (

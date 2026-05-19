@@ -606,7 +606,10 @@ export class LearningEngine {
   }
 
   private async updateUserPreference(preference: PreferenceUpdate, userId: string): Promise<void> {
-    // TODO: Implement user preference update
+    const { applyLearningPreferenceUpdate } = await import(
+      '../preferences/persistSoftPreferences.js'
+    );
+    await applyLearningPreferenceUpdate(userId, preference);
   }
 
   private async storePattern(pattern: Pattern, userId: string): Promise<void> {

@@ -13,6 +13,11 @@ import { FeatureGatingService } from '../services/featureGatingService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
 import { logger } from '../lib/logger';
+import {
+  getOrCreateAutonomySettings,
+  updateAutonomySettingsForUser,
+} from '../services/aiAutonomySettingsService';
+import { personalAILearningEventsService } from '../services/personalAILearningEventsService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -1049,6 +1054,72 @@ router.get('/context/:module', authenticateJWT, async (req, res) => {
 });
 
 /**
+ * GET /api/ai/learning/events
+ * List personal AILearningEvent rows for review (pending = not yet validated)
+ */
+router.get('/learning/events', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+
+    const statusRaw = req.query.status;
+    const status =
+      statusRaw === 'validated' || statusRaw === 'all' || statusRaw === 'pending'
+        ? statusRaw
+        : 'pending';
+    const limitRaw = req.query.limit;
+    const limit =
+      typeof limitRaw === 'string' && /^\d+$/.test(limitRaw) ? parseInt(limitRaw, 10) : 50;
+
+    const events = await personalAILearningEventsService.listForUser(userId, status, limit);
+    res.json({ success: true, data: events });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('ai_learning_events_list_error', 'List learning events error:', err);
+    res.status(500).json({ success: false, error: 'Failed to load learning events' });
+  }
+});
+
+/**
+ * PUT /api/ai/learning/events/:eventId/review
+ * Approve (apply) or dismiss a personal learning event
+ */
+router.put('/learning/events/:eventId/review', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { eventId } = req.params;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+
+    const { approved, rejectionReason } = req.body as {
+      approved?: boolean;
+      rejectionReason?: string;
+    };
+
+    if (typeof approved !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'approved boolean is required' });
+    }
+
+    const updated = await personalAILearningEventsService.reviewEvent(
+      userId,
+      eventId,
+      approved,
+      typeof rejectionReason === 'string' ? rejectionReason : undefined
+    );
+
+    res.json({ success: true, data: updated });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    const notFound = err.message.includes('not found') || err.message.includes('reviewed');
+    logSrvErr('ai_learning_event_review_error', 'Review learning event error:', err);
+    res.status(notFound ? 404 : 500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/ai/learning/my-patterns
  * User-friendly learned patterns for the Memories view (read-only)
  */
@@ -1114,7 +1185,7 @@ router.post('/chat', authenticateJWT, async (req, res) => {
 
 /**
  * GET /api/ai/personality
- * Get user's personality profile
+ * @deprecated Prefer GET /api/ai/personality/profile for Control Center; this returns PersonalityEngine shape for older clients.
  */
 router.get('/personality', authenticateJWT, async (req, res) => {
   try {
@@ -1125,9 +1196,11 @@ router.get('/personality', authenticateJWT, async (req, res) => {
     }
     const personality = await personalityEngine.getPersonalityProfile(userId);
 
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/ai/personality/profile>; rel="successor-version"');
     res.json({
       success: true,
-      data: personality
+      data: personality,
     });
   } catch (error) {
     logSrvErr('ai_get_personality_error', 'Get personality error:', error);
@@ -1140,7 +1213,7 @@ router.get('/personality', authenticateJWT, async (req, res) => {
 
 /**
  * PUT /api/ai/personality
- * Update user's personality profile
+ * Interaction feedback only — not the questionnaire. Use POST /api/ai/personality/profile for profile saves.
  */
 router.put('/personality', authenticateJWT, async (req, res) => {
   try {
@@ -1172,84 +1245,46 @@ router.put('/personality', authenticateJWT, async (req, res) => {
 
 /**
  * GET /api/ai/autonomy
- * Get user's autonomy settings
+ * @deprecated Use GET /api/ai/autonomy/settings — delegates to shared service.
  */
 router.get('/autonomy', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user?.id;
-    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    
-    const settings = await prisma.aIAutonomySettings.findUnique({
-      where: { userId }
-    });
-
-    if (!settings) {
-      // Create default autonomy settings
-      const defaultSettings = await prisma.aIAutonomySettings.create({
-        data: {
-          userId,
-          scheduling: 30,
-          communication: 20,
-          fileManagement: 40,
-          taskCreation: 30,
-          dataAnalysis: 60,
-          crossModuleActions: 20
-        }
-      });
-
-      return res.json({
-        success: true,
-        data: defaultSettings
-      });
-    }
-
-    res.json({
-      success: true,
-      data: settings
-    });
+    const settings = await getOrCreateAutonomySettings(userId);
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/ai/autonomy/settings>; rel="successor-version"');
+    res.json({ success: true, data: settings });
   } catch (error) {
     logSrvErr('ai_get_autonomy_settings_error', 'Get autonomy settings error:', error);
     res.status(500).json({
       error: 'Failed to get autonomy settings',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
     });
   }
 });
 
 /**
  * PUT /api/ai/autonomy
- * Update user's autonomy settings
+ * @deprecated Use PUT /api/ai/autonomy/settings — delegates to shared service.
  */
 router.put('/autonomy', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user?.id;
-    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    const autonomyUpdates = req.body;
-
-    const updatedSettings = await prisma.aIAutonomySettings.upsert({
-      where: { userId },
-      update: autonomyUpdates,
-      create: {
-        userId,
-        ...autonomyUpdates
-      }
-    });
-
-    res.json({
-      success: true,
-      data: updatedSettings
-    });
+    const updatedSettings = await updateAutonomySettingsForUser(userId, req.body);
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/ai/autonomy/settings>; rel="successor-version"');
+    res.json({ success: true, data: updatedSettings });
   } catch (error) {
     logSrvErr('ai_update_autonomy_settings_error', 'Update autonomy settings error:', error);
     res.status(500).json({
       error: 'Failed to update autonomy settings',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
     });
   }
 });
@@ -1576,7 +1611,6 @@ router.post('/teach', authenticateJWT, async (req, res) => {
       });
     }
 
-    // Create learning event
     const learningEvent = await prisma.aILearningEvent.create({
       data: {
         userId,
@@ -1584,17 +1618,43 @@ router.post('/teach', authenticateJWT, async (req, res) => {
         context: scenario,
         newBehavior: preference,
         userFeedback: reasoning,
-        confidence: 0.9 // High confidence for explicit teaching
-      }
+        confidence: 0.9,
+      },
     });
 
-    // Update personality profile with new preference
-    // TODO: Implement preference integration
+    const title =
+      typeof scenario === 'string' && scenario.trim()
+        ? scenario.trim().slice(0, 120)
+        : 'Taught preference';
+    const contentParts = [
+      typeof preference === 'string' ? preference.trim() : String(preference),
+    ];
+    if (typeof reasoning === 'string' && reasoning.trim()) {
+      contentParts.push(`Reason: ${reasoning.trim()}`);
+    }
+
+    const contextEntry = await prisma.userAIContext.create({
+      data: {
+        userId,
+        scope: 'personal',
+        contextType: 'preference',
+        title,
+        content: contentParts.join('\n'),
+        tags: ['teach', 'explicit'],
+        priority: 85,
+        active: true,
+        source: 'user',
+        learningStatus: 'active',
+      },
+    });
 
     res.json({
       success: true,
-      data: learningEvent,
-      message: 'Preference learned successfully'
+      data: {
+        learningEvent,
+        context: contextEntry,
+      },
+      message: 'Preference learned successfully',
     });
   } catch (error) {
     logSrvErr('ai_ai_teach_error', 'AI teach error:', error);

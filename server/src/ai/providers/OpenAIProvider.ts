@@ -10,6 +10,11 @@ import {
 } from '../prompts/conversationRecommendationRichness';
 import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
+import type { ResolvedEffectivePreferences } from '../preferences/preferenceTypes';
+import {
+  buildConversationRichnessOverride,
+  buildPreferenceSystemPromptSection,
+} from '../preferences/preferencePromptBlocks';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 
@@ -659,20 +664,33 @@ export class OpenAIProvider {
    * Build system prompt that defines the AI's role and context
    */
   private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
-    const personality = context.personality || {};
-    const autonomySettings = context.autonomySettings || {};
     const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
     const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
     const conversationMode = structuredResponseMode === 'conversation';
+    const resolved = data?.resolvedEffectivePreferences as ResolvedEffectivePreferences | undefined;
+
+    const preferenceBlock = resolved
+      ? buildPreferenceSystemPromptSection({ effective: resolved, structuredResponseMode })
+      : `COMMUNICATION PREFERENCES:\n${JSON.stringify(context.personality || {}, null, 2)}\n\nACTION BOUNDARIES:\n${JSON.stringify(context.autonomySettings || {}, null, 2)}`;
+
+    const richnessOverride = resolved
+      ? buildConversationRichnessOverride(
+          structuredResponseMode,
+          String(resolved.soft.recommendationRichness)
+        )
+      : null;
+
+    const conversationRichness =
+      conversationMode && richnessOverride
+        ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
+        : conversationMode
+          ? CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
+          : '';
 
     return `You are Vssyl's AI assistant${conversationMode ? '' : '. You help the user understand their personal, business, and module context'}. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
-${conversationMode ? `\n${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n` : ''}
+${conversationMode ? `\n${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${conversationRichness}\n` : ''}
 
-PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
-${JSON.stringify(personality, null, 2)}
-
-AUTONOMY SETTINGS:
-${JSON.stringify(autonomySettings, null, 2)}
+${preferenceBlock}
 
 CURRENT CONTEXT:
 - Dashboard Type: ${context.dashboardContext?.business ? 'Business' : context.dashboardContext?.household ? 'Household' : 'Personal'}

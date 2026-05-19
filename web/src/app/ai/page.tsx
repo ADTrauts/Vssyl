@@ -15,14 +15,17 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  BookOpen
+  BookOpen,
+  Sparkles
 } from 'lucide-react';
+import AIIntelligenceHub, { type IntelligenceSubTab } from '../../components/ai/AIIntelligenceHub';
 import AutonomyControls from '../../components/ai/AutonomyControls';
 import PersonalityQuestionnaire from '../../components/ai/PersonalityQuestionnaire';
 import AutonomousActions from '../../components/ai/AutonomousActions';
 import CustomContext from '../../components/ai/CustomContext';
 import ProviderSettings from '../../components/ai/ProviderSettings';
 import AIMemoriesView from '../../components/ai/AIMemoriesView';
+import AIOnboardingFlow from '../../components/ai/AIOnboardingFlow';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 
 interface AIStats {
@@ -47,12 +50,47 @@ export default function AIPage() {
   const [aiStats, setAiStats] = useState<AIStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPersonalityOnboarding, setShowPersonalityOnboarding] = useState(false);
+  const [profileCheckDone, setProfileCheckDone] = useState(false);
 
   // Sync tab with URL query parameter
   useEffect(() => {
     const tab = searchParams?.get('tab') || 'overview';
     setActiveTab(tab);
   }, [searchParams]);
+
+  useEffect(() => {
+    const checkPersonalityProfile = async () => {
+      if (!session?.accessToken) {
+        setProfileCheckDone(true);
+        return;
+      }
+      try {
+        const res = await authenticatedApiCall<{
+          success: boolean;
+          profile: { data?: { questionnaireCompleted?: boolean } } | null;
+        }>('/api/ai/personality/profile', { method: 'GET' }, session.accessToken);
+
+        const completed = res.success && res.profile?.data?.questionnaireCompleted === true;
+        const forceOnboarding = searchParams?.get('onboarding') === '1';
+
+        if (forceOnboarding || !completed) {
+          setShowPersonalityOnboarding(true);
+          if (searchParams?.get('tab') !== 'personality') {
+            const params = new URLSearchParams(searchParams?.toString() || '');
+            params.set('tab', 'personality');
+            if (forceOnboarding) params.set('onboarding', '1');
+            router.replace(`/ai?${params.toString()}`, { scroll: false });
+          }
+        }
+      } catch {
+        // allow manual setup
+      } finally {
+        setProfileCheckDone(true);
+      }
+    };
+    void checkPersonalityProfile();
+  }, [session?.accessToken, searchParams, router]);
 
   // Load AI stats when overview tab is active
   useEffect(() => {
@@ -128,7 +166,7 @@ export default function AIPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-7 gap-1">
+        <TabsList className="flex flex-wrap w-full gap-1 h-auto">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
@@ -156,6 +194,10 @@ export default function AIPage() {
           <TabsTrigger value="actions" className="flex items-center gap-2">
             <Zap className="w-4 h-4" />
             Actions
+          </TabsTrigger>
+          <TabsTrigger value="intelligence" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Intelligence
           </TabsTrigger>
         </TabsList>
 
@@ -282,7 +324,20 @@ export default function AIPage() {
               {/* Quick Actions */}
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Button
+                    onClick={() => handleTabChange('intelligence')}
+                    variant="secondary"
+                    className="justify-start h-auto p-4"
+                  >
+                    <Sparkles className="w-5 h-5 mr-3" />
+                    <div className="text-left">
+                      <div className="font-medium">Intelligence hub</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        Review learning events and insights
+                      </div>
+                    </div>
+                  </Button>
                   <Button
                     onClick={() => handleTabChange('autonomy')}
                     variant="secondary"
@@ -345,13 +400,22 @@ export default function AIPage() {
 
         {/* Personality Tab */}
         <TabsContent value="personality" className="mt-6">
-          <PersonalityQuestionnaire 
-            onComplete={(data) => {
-              console.log('Personality profile completed:', data);
-              // Optionally switch to overview tab after completion
-              handleTabChange('overview');
-            }}
-          />
+          {profileCheckDone && showPersonalityOnboarding ? (
+            <AIOnboardingFlow
+              embedded
+              onComplete={() => {
+                setShowPersonalityOnboarding(false);
+                handleTabChange('memories');
+              }}
+            />
+          ) : (
+            <PersonalityQuestionnaire
+              onComplete={() => {
+                setShowPersonalityOnboarding(false);
+                handleTabChange('memories');
+              }}
+            />
+          )}
         </TabsContent>
 
         {/* Custom Context Tab */}
@@ -362,6 +426,20 @@ export default function AIPage() {
         {/* Actions Tab */}
         <TabsContent value="actions" className="mt-6">
           <AutonomousActions />
+        </TabsContent>
+
+        {/* Intelligence Tab */}
+        <TabsContent value="intelligence" className="mt-6">
+          <AIIntelligenceHub
+            key={searchParams?.get('intel') ?? 'review'}
+            initialSubTab={
+              (['review', 'analytics', 'patterns', 'predictions', 'recommendations'] as const).includes(
+                (searchParams?.get('intel') ?? '') as IntelligenceSubTab
+              )
+                ? (searchParams?.get('intel') as IntelligenceSubTab)
+                : 'review'
+            }
+          />
         </TabsContent>
       </Tabs>
     </div>

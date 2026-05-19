@@ -71,7 +71,7 @@ export class FactExtractionService {
       const existingContexts = await this.prisma.userAIContext.findMany({
         where: {
           userId,
-          active: true
+          learningStatus: { not: 'dismissed' },
         },
         select: {
           title: true,
@@ -111,9 +111,10 @@ export class FactExtractionService {
                 content: fact.content,
                 tags: fact.tags || [],
                 priority: fact.priority || 50,
-                active: true,
-                source: 'conversation'
-              }
+                active: false,
+                source: 'conversation',
+                learningStatus: 'pending',
+              },
             });
 
             await logger.info('Auto-extracted fact saved', {

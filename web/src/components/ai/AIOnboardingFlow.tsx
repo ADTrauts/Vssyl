@@ -20,15 +20,11 @@ import PersonalityQuestionnaire from './PersonalityQuestionnaire';
 
 interface AIOnboardingFlowProps {
   onComplete: () => void;
+  /** When true, renders inside Control Center instead of full-screen page. */
+  embedded?: boolean;
 }
 
 type OnboardingStep = 'welcome' | 'personality' | 'complete';
-
-interface AIPersonalityData {
-  confidence: number;
-  traits?: string[];
-  preferences?: Record<string, unknown>;
-}
 
 interface PersonalityData {
   traits: Record<string, number>;
@@ -39,9 +35,9 @@ interface PersonalityData {
   autonomySettings?: Record<string, unknown>;
 }
 
-export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) {
+export default function AIOnboardingFlow({ onComplete, embedded = false }: AIOnboardingFlowProps) {
   const { data: session } = useSession();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>(embedded ? 'personality' : 'welcome');
   const [isLoading, setIsLoading] = useState(true);
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
@@ -53,21 +49,21 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
     if (!session?.accessToken) return;
 
     try {
-      const response = await authenticatedApiCall<{ data: AIPersonalityData }>(
-        '/api/ai/personality',
-        {},
-        session.accessToken
-      );
-      
-      // If user has a personality profile with reasonable confidence, skip onboarding
-      if (response.data && response.data.confidence > 0.5) {
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        profile: { data?: { questionnaireCompleted?: boolean } } | null;
+      }>('/api/ai/personality/profile', { method: 'GET' }, session.accessToken);
+
+      if (
+        response.success &&
+        response.profile?.data?.questionnaireCompleted === true
+      ) {
         setHasExistingProfile(true);
-        onComplete(); // Skip onboarding entirely
+        onComplete();
         return;
       }
-    } catch (error) {
+    } catch {
       // Profile doesn't exist, proceed with onboarding
-      console.log('No existing profile found, proceeding with onboarding');
     } finally {
       setIsLoading(false);
     }
@@ -85,9 +81,15 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
     onComplete();
   };
 
+  const shellClass = embedded
+    ? 'rounded-xl border border-gray-200 dark:border-slate-700 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800'
+    : 'min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100';
+
+  const stepPad = embedded ? 'py-6 px-2' : 'min-h-screen p-4 flex items-center justify-center';
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className={`${shellClass} flex items-center justify-center py-12`}>
         <Card className="p-8 max-w-md w-full text-center">
           <Brain className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
           <p className="text-gray-600 dark:text-gray-400">Checking your AI profile...</p>
@@ -101,9 +103,9 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className={shellClass}>
       {currentStep === 'welcome' && (
-        <div className="flex items-center justify-center min-h-screen p-4">
+        <div className={stepPad}>
           <div className="max-w-4xl w-full">
             {/* Welcome Header */}
             <div className="text-center mb-12">
@@ -225,7 +227,7 @@ export default function AIOnboardingFlow({ onComplete }: AIOnboardingFlowProps) 
       )}
 
       {currentStep === 'complete' && (
-        <div className="flex items-center justify-center min-h-screen p-4">
+        <div className={stepPad}>
           <Card className="p-12 max-w-2xl w-full text-center">
             <div className="mb-8">
               <div className="relative inline-block">

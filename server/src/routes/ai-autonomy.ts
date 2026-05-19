@@ -1,10 +1,13 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import AutonomyManager from '../ai/autonomy/AutonomyManager';
 import ApprovalManager from '../ai/approval/ApprovalManager';
 import ActionTemplates from '../ai/actions/ActionTemplates';
 import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import {
+  getOrCreateAutonomySettings,
+  updateAutonomySettingsForUser,
+} from '../services/aiAutonomySettingsService';
 
 const router: express.Router = express.Router();
 const autonomyManager = new AutonomyManager(prisma);
@@ -22,24 +25,10 @@ router.get('/settings', authenticateJWT, async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const settings = await prisma.aIAutonomySettings.findUnique({
-      where: { userId }
-    });
-
-    if (!settings) {
-      // Create default settings
-      const defaultSettings = await prisma.aIAutonomySettings.create({
-        data: { userId }
-      });
-      return res.json({
-        success: true,
-        data: defaultSettings
-      });
-    }
-
+    const settings = await getOrCreateAutonomySettings(userId);
     res.json({
       success: true,
-      data: settings
+      data: settings,
     });
   } catch (error) {
     res.status(500).json({ 
@@ -59,7 +48,7 @@ router.put('/settings', authenticateJWT, async (req, res) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const updatedSettings = await autonomyManager.updateAutonomySettings(userId, req.body);
+    const updatedSettings = await updateAutonomySettingsForUser(userId, req.body);
     res.json({
       success: true,
       data: updatedSettings

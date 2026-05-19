@@ -63,7 +63,11 @@ interface PatternInsights {
   };
 }
 
-export default function SmartPatternInsights() {
+interface SmartPatternInsightsProps {
+  embedded?: boolean;
+}
+
+export default function SmartPatternInsights({ embedded }: SmartPatternInsightsProps) {
   const { data: session } = useSession();
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [insights, setInsights] = useState<PatternInsights | null>(null);
@@ -192,18 +196,19 @@ export default function SmartPatternInsights() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Smart Pattern Intelligence</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            AI-discovered insights about your behavior and preferences
-          </p>
-        </div>
-        <Button 
-          onClick={forceRediscovery} 
-          variant="ghost" 
-          size="sm" 
+      <div className={`flex items-center ${embedded ? 'justify-end' : 'justify-between'}`}>
+        {!embedded && (
+          <div>
+            <h3 className="text-lg font-semibold">Smart Pattern Intelligence</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              AI-discovered insights about your behavior and preferences
+            </p>
+          </div>
+        )}
+        <Button
+          onClick={forceRediscovery}
+          variant="ghost"
+          size="sm"
           disabled={refreshing}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />

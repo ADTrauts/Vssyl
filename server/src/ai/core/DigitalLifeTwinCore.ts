@@ -24,11 +24,23 @@ import {
   type ConversationContinuityState,
   type ActiveTopicState,
 } from '../utils/conversationContinuity';
-import { CONVERSATION_MOMENTUM_BLOCK } from '../prompts/conversationMomentum';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
+import { PreferenceResolver } from '../preferences/PreferenceResolver';
+import { detectSessionSoftPreferenceOverrides } from '../preferences/sessionPreferenceDetection';
+import { applySessionPreferenceOverrides } from '../preferences/applySessionPreferenceOverrides';
+import type { SessionSoftPreferenceOverrides } from '../preferences/preferenceTypes';
+import type { ResolvedEffectivePreferences } from '../preferences/preferenceTypes';
+import {
+  loadBusinessWorkspaceBoundaryBlock,
+  type BusinessWorkspaceBoundaryBlock,
+} from '../enterprise/businessWorkspaceBoundaries';
+import {
+  applyResolvedPreferencesToProviderOptions,
+  buildProviderUserContextFromPreferences,
+} from '../preferences/preferenceProviderWiring';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -36,9 +48,6 @@ const MODEL_PREF_KEYS: Record<string, string> = {
   anthropic: 'ai_preferred_model_anthropic',
 };
 const MAX_TOOL_CALL_ROUNDS = 3;
-
-/** Max chars for attached-files context in the prompt (~15k tokens). Keeps total context within model limits. */
-const MAX_ATTACHED_FILES_CONTEXT_CHARS = 60000;
 
 export interface DigitalLifeTwinResponse {
   response: string;
@@ -75,6 +84,19 @@ export interface DigitalLifeTwinResponse {
     responseMode?: AIResponseMode;
     continuityState?: ConversationContinuityState;
     activeTopic?: ActiveTopicState;
+    /** Inferred context awaiting user consent (not used in prompts until promoted). */
+    pendingLearning?: {
+      count: number;
+      latest?: { id: string; title: string; content: string };
+    };
+    /** Ephemeral style adjustments from this thread (not persisted until user promotes). */
+    sessionPreferenceAdjustments?: SessionSoftPreferenceOverrides;
+    /** Active business workspace (policies from Business AI Control Center, not personal prefs). */
+    businessWorkspace?: {
+      active: boolean;
+      businessId: string;
+      businessName?: string;
+    };
   };
 }
 
@@ -179,6 +201,7 @@ export class DigitalLifeTwinCore {
   private actionExecutor: ActionExecutor;
   private smartPatternEngine: SmartPatternEngine;
   private centralizedLearning: CentralizedLearningEngine;
+  private preferenceResolver: PreferenceResolver;
 
   constructor(contextEngine?: CrossModuleContextEngine, prismaClient?: PrismaClient) {
     this.prisma = prismaClient || sharedPrisma;
@@ -192,6 +215,7 @@ export class DigitalLifeTwinCore {
       this.actionExecutor = new ActionExecutor(this.prisma);
       this.smartPatternEngine = new SmartPatternEngine(this.prisma);
       this.centralizedLearning = new CentralizedLearningEngine(this.prisma);
+      this.preferenceResolver = new PreferenceResolver(this.prisma);
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       void logger.error('Error initializing DigitalLifeTwinCore engines', {
@@ -522,7 +546,8 @@ export class DigitalLifeTwinCore {
         const contexts = await this.prisma.userAIContext.findMany({
           where: {
             userId: query.userId,
-            active: true
+            active: true,
+            learningStatus: 'active',
           },
           orderBy: [
             { priority: 'desc' },
@@ -634,7 +659,54 @@ export class DigitalLifeTwinCore {
         previousState: query.continuityState,
         previousTopic: query.activeTopic,
       });
-      
+
+      let effectivePreferences: ResolvedEffectivePreferences | undefined;
+      let sessionPreferenceAdjustments: SessionSoftPreferenceOverrides | undefined;
+      let businessWorkspaceBoundaries: BusinessWorkspaceBoundaryBlock | undefined;
+      try {
+        const ctxRecord = query.context as Record<string, unknown>;
+        const businessId =
+          typeof ctxRecord.businessId === 'string' && ctxRecord.businessId.trim()
+            ? ctxRecord.businessId.trim()
+            : undefined;
+        const dashboardId =
+          typeof ctxRecord.dashboardId === 'string' && ctxRecord.dashboardId.trim()
+            ? ctxRecord.dashboardId.trim()
+            : undefined;
+        effectivePreferences = await this.preferenceResolver.resolve({
+          userId: query.userId,
+          businessId,
+          dashboardId,
+        });
+
+        const sessionOverrides = detectSessionSoftPreferenceOverrides(
+          query.query,
+          query.conversationHistory
+        );
+        if (sessionOverrides) {
+          sessionPreferenceAdjustments = sessionOverrides;
+          if (effectivePreferences) {
+            effectivePreferences = applySessionPreferenceOverrides(
+              effectivePreferences,
+              sessionOverrides
+            );
+          }
+        }
+
+        if (businessId) {
+          const boundaries = await loadBusinessWorkspaceBoundaryBlock(query.userId, businessId);
+          if (boundaries) {
+            businessWorkspaceBoundaries = boundaries;
+          }
+        }
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error resolving effective AI preferences', {
+          operation: 'digital_life_twin_preference_resolve_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+
       // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, attached file context, and vision images)
       const t0_provider = Date.now();
       const response = await this.generateLifeTwinResponse(
@@ -653,7 +725,9 @@ export class DigitalLifeTwinCore {
         visionImageParts,
         { requestId, conversationId, userId: query.userId },
         streamOptions,
-        moduleContextsForAssembly
+        moduleContextsForAssembly,
+        effectivePreferences,
+        businessWorkspaceBoundaries
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -750,6 +824,33 @@ export class DigitalLifeTwinCore {
 
       const processingTime = Date.now() - startTime;
 
+      let pendingLearning: DigitalLifeTwinResponse['metadata']['pendingLearning'];
+      try {
+        const { userAIContextLearningService } = await import(
+          '../../services/userAIContextLearningService.js'
+        );
+        const count = await userAIContextLearningService.countPending(query.userId);
+        if (count > 0) {
+          const latest = await userAIContextLearningService.getLatestPendingSummary(query.userId);
+          pendingLearning = {
+            count,
+            ...(latest && {
+              latest: {
+                id: latest.id,
+                title: latest.title,
+                content: latest.content.slice(0, 200),
+              },
+            }),
+          };
+        }
+      } catch (pendingErr: unknown) {
+        const err = pendingErr instanceof Error ? pendingErr : new Error(String(pendingErr));
+        void logger.warn('Failed to load pending learning summary', {
+          operation: 'digital_life_twin_pending_learning_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+
       const includeDeveloperDetails = process.env.INCLUDE_FILE_ISSUE_DEVELOPER_DETAILS === 'true';
       const fileIssues: FileIssue[] = fileAnalysisResults
         .filter((r) => r.fileIssueCode)
@@ -785,6 +886,17 @@ export class DigitalLifeTwinCore {
             response.aiResponseQualityWarnings.length > 0 && {
               aiResponseQualityWarnings: response.aiResponseQualityWarnings,
             }),
+          ...(pendingLearning && { pendingLearning }),
+          ...(sessionPreferenceAdjustments && { sessionPreferenceAdjustments }),
+          ...(businessWorkspaceBoundaries && {
+            businessWorkspace: {
+              active: true,
+              businessId: businessWorkspaceBoundaries.businessId,
+              ...(businessWorkspaceBoundaries.businessName && {
+                businessName: businessWorkspaceBoundaries.businessName,
+              }),
+            },
+          }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
@@ -887,7 +999,9 @@ export class DigitalLifeTwinCore {
     visionImageParts?: Array<{ mimeType: string; dataBase64?: string; url?: string; fileName: string }>,
     traceContext?: { requestId?: string; conversationId?: string; userId?: string },
     streamOptions?: { stream: boolean; onChunk: (text: string) => void },
-    moduleContexts?: Record<string, unknown>
+    moduleContexts?: Record<string, unknown>,
+    effectivePreferences?: ResolvedEffectivePreferences,
+    businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock
   ) {
     const structuredInference = inferStructuredResponseMode({
       query: query.query,
@@ -901,24 +1015,9 @@ export class DigitalLifeTwinCore {
     const structuredResponseMode = structuredInference.mode;
     const responseDensity = structuredInference.responseDensity;
 
-    // Build context-aware prompt (enhanced with smart patterns, semantics, collective learning, and attached files)
-    const prompt = this.buildDigitalTwinPrompt(
-      query,
-      userContext,
-      personality,
-      analysis,
-      smartAnalysis,
-      semanticEnhancement,
-      userDefinedContext,
-      globalPatterns,
-      responseMode,
-      structuredResponseMode,
-      continuityState,
-      activeTopic,
-      attachedFiles,
-      moduleContexts
-    );
-    
+    // Live prompt path: assembleAIContext + options.userQuery + provider system prompts.
+    // See docs/architecture/AI_TWIN_PROMPT_PIPELINE.md (legacy buildDigitalTwinPrompt removed Phase 0B).
+
     // Get user preference if not provided in query
     let preferredProvider = query.preferredProvider;
     if (!preferredProvider || preferredProvider === 'auto') {
@@ -1070,8 +1169,15 @@ export class DigitalLifeTwinCore {
         typeof query.context.structuredResponseMode === 'string'
           ? query.context.structuredResponseMode
           : structuredResponseMode,
+      effectivePreferencesContextBlock: effectivePreferences?.contextBlock,
+      businessWorkspaceBoundaries,
     });
     options.assembledContext = assembledContext;
+
+    if (effectivePreferences) {
+      applyResolvedPreferencesToProviderOptions(options, effectivePreferences);
+      options.resolvedEffectivePreferences = effectivePreferences;
+    }
     options.structuredResponseMode = assembledContext.structuredResponseMode ?? structuredResponseMode;
     options.responseDensity = assembledContext.responseDensity ?? responseDensity;
     options.responseMode = responseMode;
@@ -1125,7 +1231,7 @@ export class DigitalLifeTwinCore {
     });
 
     // Generate response — try selected provider, then auto-fallback to other provider on 429/unavailable
-    let aiResponse = await this.callAIProvider(provider, prompt, options);
+    let aiResponse = await this.callAIProvider(provider, query.query, options);
     let round = 0;
     const toolContext = { userId: query.userId, dashboardId: options.dashboardId as string | null | undefined };
     while (round < MAX_TOOL_CALL_ROUNDS) {
@@ -1153,7 +1259,7 @@ export class DigitalLifeTwinCore {
         tool_calls: toolCalls.map((tc) => ({ id: tc.id, type: 'function' as const, function: { name: tc.function.name, arguments: tc.function.arguments } })),
       };
       options.messages = [...messagesSent, assistantMsg, ...results];
-      aiResponse = await this.callAIProvider(provider, prompt, options);
+      aiResponse = await this.callAIProvider(provider, query.query, options);
     }
     const metadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
     const providerErrored = Boolean(metadata.error);
@@ -1172,7 +1278,7 @@ export class DigitalLifeTwinCore {
         toProvider: fallbackProvider,
         reason: metadata.code,
       });
-      aiResponse = await this.callAIProvider(fallbackProvider, prompt, options);
+      aiResponse = await this.callAIProvider(fallbackProvider, query.query, options);
     }
 
     const response = typeof aiResponse.response === 'string' ? aiResponse.response : String(aiResponse.response || '');
@@ -1221,255 +1327,6 @@ export class DigitalLifeTwinCore {
     };
   }
 
-  /**
-   * Build comprehensive prompt for Digital Life Twin (enhanced with smart patterns and semantics)
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private buildDigitalTwinPrompt(
-    query: LifeTwinQuery,
-    userContext: UserContext,
-    personality: any,
-    analysis: any,
-    smartAnalysis?: any,
-    semanticEnhancement?: any,
-    userDefinedContext?: Array<Record<string, unknown>>,
-    globalPatterns?: Array<Record<string, unknown>>,
-    responseMode?: AIResponseMode,
-    structuredResponseMode?: StructuredAIResponseMode,
-    continuityState?: ConversationContinuityState,
-    activeTopic?: ActiveTopicState,
-    attachedFiles?: AttachedFileContext[],
-    moduleContexts?: Record<string, unknown>
-  ): string {
-    const isConversation = structuredResponseMode === 'conversation';
-    const currentTime = new Date().toLocaleString();
-    
-    // Build user-defined context section
-    let userContextSection = '';
-    if (userDefinedContext && userDefinedContext.length > 0) {
-      // Filter contexts relevant to current query/module
-      const relevantContexts = userDefinedContext.filter(ctx => {
-        const queryLower = query.query.toLowerCase();
-        const moduleMatch = !ctx.moduleId || ctx.moduleId === query.context.currentModule;
-        const contentMatch = ctx.content && typeof ctx.content === 'string' && 
-          (queryLower.includes(ctx.content.toLowerCase().substring(0, 20)) || 
-           ctx.content.toLowerCase().includes(queryLower.substring(0, 20)));
-        return moduleMatch || contentMatch;
-      }).slice(0, 5); // Top 5 most relevant
-
-      if (relevantContexts.length > 0) {
-        userContextSection = `\n\nUSER-DEFINED CONTEXT (IMPORTANT - Follow these instructions):
-${relevantContexts.map((ctx, idx) => {
-          const scope = ctx.scope ? `[${ctx.scope}]` : '';
-          const module = ctx.moduleId ? `[Module: ${ctx.moduleId}]` : '';
-          return `${idx + 1}. ${scope} ${module} ${ctx.title || 'Context'}:
-   ${ctx.content || ''}
-   Type: ${ctx.contextType || 'instruction'}`;
-        }).join('\n\n')}`;
-      }
-    }
-    
-    // Build attached files section (metadata + content summaries when available). Cap total length for context limit.
-    let attachedFilesSection = '';
-    if (attachedFiles && attachedFiles.length > 0) {
-      try {
-        logger.info('Building attached files section for prompt', {
-          operation: 'digital_life_twin_prompt_files',
-          fileCount: attachedFiles.length,
-          filesWithSummaries: attachedFiles.filter(f => f.summary && f.summary.trim()).length,
-          fileNames: attachedFiles.map(f => f.name)
-        });
-
-        const header = `\n\nATTACHED FILES CONTEXT:
-The user has attached the following Drive files to this question. **CRITICAL: You MUST read and analyze the content of these files to answer the user's question.** Use their content and titles to ground your reasoning and, when relevant, reference them explicitly in your answer. If the user asks about the file content, you MUST reference specific details from the file content below.
-If a file shows "No text could be extracted", say only that you could not read its contents and suggest a text-based PDF or that they describe the document. Never mention file size, "too large", "exceeds", or "processing capabilities".
-`;
-        const body = attachedFiles
-          .map((file, index) => {
-            try {
-              const sizeDescription =
-                typeof file.size === 'number'
-                  ? `${Math.max(1, Math.round(file.size / 1024))} KB`
-                  : 'unknown size';
-              const meta = `${index + 1}. ${file.name || 'unnamed'} (${sizeDescription})`;
-              if (file.summary && typeof file.summary === 'string' && file.summary.trim()) {
-                const summaryText = file.summary.split('\n').join('\n   ');
-                return `${meta}\n   Content/summary:\n   ${summaryText}`;
-              }
-              return meta;
-            } catch (fileErr) {
-              logger.warn('Error formatting file in attached section', {
-                operation: 'digital_life_twin_prompt_files',
-                fileIndex: index,
-                fileName: file.name,
-                error: { message: fileErr instanceof Error ? fileErr.message : 'Unknown error' }
-              });
-              return `${index + 1}. ${file.name || 'unnamed'} (error formatting file)`;
-            }
-          })
-          .join('\n\n');
-        const truncationNotice = '\n\n[... file context truncated to stay within model context limit ...]';
-        const headerLength = header.length;
-        const noticeLength = truncationNotice.length;
-        const maxBodyChars = Math.max(0, MAX_ATTACHED_FILES_CONTEXT_CHARS - headerLength - noticeLength);
-        const cappedBody = body.length > maxBodyChars
-          ? body.slice(0, maxBodyChars) + truncationNotice
-          : body;
-        attachedFilesSection = header + cappedBody;
-
-        logger.info('Attached files section built', {
-          operation: 'digital_life_twin_prompt_files',
-          sectionLength: attachedFilesSection.length,
-          truncated: body.length > maxBodyChars,
-          maxBodyChars,
-          originalBodyLength: body.length
-        });
-      } catch (filesSectionErr) {
-        logger.error('Error building attached files section', {
-          operation: 'digital_life_twin_prompt_files_error',
-          error: { message: filesSectionErr instanceof Error ? filesSectionErr.message : 'Unknown error', stack: filesSectionErr instanceof Error ? filesSectionErr.stack : undefined }
-        });
-        // Continue without attached files section rather than failing the entire request
-        attachedFilesSection = '';
-      }
-    }
-
-    let moduleLiveSection = '';
-    if (!isConversation && moduleContexts && Object.keys(moduleContexts).length > 0) {
-      const lines: string[] = [];
-      for (const [moduleId, raw] of Object.entries(moduleContexts).slice(0, 4)) {
-        const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
-        const data = o.data !== undefined ? o.data : raw;
-        const name = typeof o.moduleName === 'string' ? o.moduleName : moduleId;
-        lines.push(`- ${name}: ${JSON.stringify(data).slice(0, 1200)}`);
-      }
-      moduleLiveSection = `\n\nMODULE LIVE CONTEXT:\n${lines.join('\n')}\n`;
-    }
-
-    const personalitySection = `PERSONALITY PROFILE (tone only — do not cite scores to the user):
-- Communication Style: ${personality?.preferences?.communication?.formality || 'professional but friendly'}
-- Planning Horizon: ${personality?.preferences?.decision?.timeframePreference || 'planned'}`;
-
-    const enterpriseLifeStateSection = `CURRENT DIGITAL LIFE STATE:
-- Active Modules: ${userContext.activeModules.join(', ')}
-- Current Focus: ${userContext.currentFocus.activity} (${userContext.currentFocus.priority} priority)
-- Work-Life Balance Score: ${userContext.lifeState.workLifeBalance.score}/100
-- Productivity Score: ${userContext.lifeState.productivity.score}/100
-- Relationship Health: ${userContext.lifeState.relationships.score}/100
-
-RECENT PATTERNS:
-${userContext.patterns.slice(0, 3).map(p => `- ${p.pattern} (${Math.round(p.confidence * 100)}% confidence)`).join('\n')}
-
-KEY INSIGHTS:
-${userContext.crossModuleInsights.slice(0, 3).map(i => `- ${i.title}: ${i.description}`).join('\n')}
-
-SMART PATTERN ANALYSIS:
-${(smartAnalysis as Record<string, any>)?.patterns?.slice(0, 3).map((p: Record<string, unknown>) => `- ${p.pattern} (${Math.round((p.confidence as number) * 100)}% confidence)`).join('\n') || '- Learning your patterns...'}
-
-INTELLIGENT PREDICTIONS:
-${(smartAnalysis as Record<string, any>)?.predictions?.slice(0, 2).map((pred: Record<string, unknown>) => `- ${pred.description} (${Math.round((pred.confidence as number) * 100)}% confidence)`).join('\n') || '- Building predictive insights...'}
-
-SEMANTIC CONTEXT:
-${(semanticEnhancement as Record<string, any>)?.relatedQueries?.length > 0 ? 
-  `Similar past queries:\n${(semanticEnhancement as Record<string, any>).relatedQueries.slice(0, 2).map((rq: Record<string, unknown>) => `- "${rq.query}" (${Math.round((rq.similarity as number) * 100)}% similar)`).join('\n')}` : 
-  '- Learning query patterns...'}
-- Suggested categories: ${semanticEnhancement?.suggestedCategories?.join(', ') || 'general'}
-- Context understanding boost: +${Math.round((semanticEnhancement?.confidenceBoost || 0) * 100)}%`;
-
-    const collectiveLearningSection = `COLLECTIVE LEARNING (System-wide patterns from all users):
-${globalPatterns && globalPatterns.length > 0 ? 
-  globalPatterns.map((gp: Record<string, unknown>, idx: number) => 
-    `${idx + 1}. ${gp.description} (${Math.round((gp.confidence as number) * 100)}% confidence, ${gp.frequency} users)
-   Recommendations: ${Array.isArray(gp.recommendations) ? (gp.recommendations as string[]).slice(0, 2).join(', ') : 'N/A'}`
-  ).join('\n') : 
-  '- System is learning from collective user patterns...'}`;
-
-    const lifeOptimizationBlock = isConversation
-      ? ''
-      : `${enterpriseLifeStateSection}
-
-${collectiveLearningSection}
-
-`;
-
-    return `You are Vssyl's AI assistant for this user. You help interpret their personal, business, and module context, and you may represent their context accurately, but you must not claim to be the user.
-
-${personalitySection}
-
-${lifeOptimizationBlock}RESPONSE MODE (tone / pacing):
-- ${responseMode || 'conversational'}
-
-STRUCTURED RESPONSE MODE (JSON output shape):
-- ${structuredResponseMode || 'answer'}
-
-CONVERSATION CONTINUITY (PRIVATE):
-${continuityState ? `- Current topic: ${continuityState.currentTopic || 'n/a'}
-- Active entities: ${(continuityState.activeEntities || []).join(', ') || 'n/a'}
-- User goal: ${continuityState.userGoal || 'n/a'}
-- Emotional tone: ${continuityState.emotionalTone || 'n/a'}
-- Momentum: ${continuityState.conversationMomentum || 'n/a'}
-- Narrowing constraints: ${(continuityState.narrowingConstraints || []).join('; ') || 'none yet'}
-- Last assistant turn (summary): ${continuityState.lastAssistantTurnSummary || 'n/a'}` : '- No continuity state available'}
-${activeTopic ? `- Active topic label: ${activeTopic.label}
-- Active topic domain: ${activeTopic.domain || 'general'}
-- Active topic entities: ${activeTopic.entities.join(', ') || 'n/a'}
-- Active topic confidence: ${Math.round(activeTopic.confidence * 100)}%` : '- No active topic available'}
-${isConversation && query.conversationHistory && query.conversationHistory.length > 0 ? `
-${CONVERSATION_MOMENTUM_BLOCK}` : ''}
-
-${attachedFilesSection}${moduleLiveSection}
-
-CURRENT CONTEXT:
-- Time: ${currentTime}
-- Current Module: ${query.context.currentModule || 'Dashboard'}
-- Dashboard Type: ${query.context.dashboardType || 'Personal'}
-- Query Urgency: ${analysis.urgency}
-${query.conversationHistory && query.conversationHistory.length > 0 ? `
-RECENT MESSAGES IN THIS CONVERSATION (oldest to newest):
-${query.conversationHistory.map((msg) => {
-  const label = msg.role === 'user' ? 'User' : msg.role === 'assistant' ? 'Assistant' : 'System';
-  const maxLen = isConversation ? 1200 : 800;
-  return `${label}: ${(msg.content || '').trim().replace(/\n/g, ' ').substring(0, maxLen)}`;
-}).join('\n\n')}
-
-The following is the user's latest message. ${isConversation ? 'Continue the dialogue naturally — reference prior turns, narrow options, and do not restart with generic broad answers.' : 'Respond in context of the messages above.'}` : ''}
-
-USER QUERY: "${query.query}"
-
-INSTRUCTIONS:
-${isConversation ? `Respond as a highly intelligent conversational guide in an ONGOING dialogue — help the user DECIDE, not browse a brochure.
-- Compare options with experiential tradeoffs (atmosphere, pacing, stress, vibe, practical friction) — not one-line encyclopedia facts.
-- Lead with your best fit and WHY; rank suggestions; rule options in/out with reasons.
-- Use professional taste ("Honestly…", "If it were me…", "The sweet spot is…") without sounding arrogant.
-- Include practical realism when relevant (flights, budget, last-minute hassle).
-- Continue the thread: build on prior turns; if the user narrows, evolve — do not restart generic lists.
-- Ask at most 1–2 narrowing follow-up questions.
-- Use any private context silently — never cite productivity scores, dashboards, or "key insights" unless explicitly asked.
-- CRITICALLY: Follow any user-defined context instructions above${userContextSection}` : `Respond as Vssyl's assistant, demonstrating deep understanding of their:
-1. Personality and communication style
-2. Current life situation and priorities  
-3. Patterns and behaviors across all modules
-4. Relationships and responsibilities
-
-Your response should:
-- Reflect their personality in tone and approach
-- Consider cross-module connections and implications
-- Suggest actions that align with their patterns and goals
-- Show awareness of their current context and priorities
-- Be helpful while respecting their autonomy preferences
-- CRITICALLY: Follow any user-defined context instructions above - these are explicit preferences and workflows the user has defined${userContextSection}
-- Only expose internal scaffolding directly when response mode is debug.`}
-
-FORMATTING FOR READABILITY:
-- Use clear paragraph breaks (blank lines) between distinct ideas or sections so the reply is easy to read.
-- Prefer short paragraphs; avoid long run-on blocks of text.
-${isConversation ? `- Conversation mode: rich, comparative, experiential prose — decisively helpful, not generic or overly safe.
-- When history exists: 2–4 substantive paragraphs; reference prior turns; narrow don't reset.
-- Avoid "consider destinations like", "popular options include", and other brochure/SEO phrasing.
-- Do not use report headings, frameworks, optimization language, or consultant tone.` : `- Use bullet points or numbered lists when listing items, steps, or options.`}
-
-${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage with the user's situation conversationally — do not produce a report, recommendation matrix, or action plan unless they asked for one.` : `Respond as Vssyl's assistant, using the user's context to provide grounded insights, recommendations, and next steps.`} Do not speak as if you are the user, and do not make unsupported decisions on their behalf.`;
-  }
 
   /**
    * Identify cross-module connections and opportunities
@@ -1858,7 +1715,14 @@ ${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage wit
     return sensitiveKeywords.some(keyword => query.toLowerCase().includes(keyword));
   }
 
-  private async callAIProvider(provider: string, prompt: string, options: Record<string, unknown>): Promise<Record<string, unknown>> {
+  /**
+   * @param requestQuery Fallback for AIRequest.query; providers use data.userQuery when set (twin path always sets userQuery).
+   */
+  private async callAIProvider(
+    provider: string,
+    requestQuery: string,
+    options: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     try {
       // Import AI providers
       const { OpenAIProvider } = await import('../providers/OpenAIProvider');
@@ -1869,21 +1733,35 @@ ${isConversation ? `Respond as Vssyl's assistant in natural dialogue. Engage wit
       const aiRequest = {
         id: `ai_req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId: options.userId || 'system',
-        query: prompt,
+        query: requestQuery,
         context: options,
         timestamp: new Date(),
         priority: 'medium' as const
       };
 
-      // Create user context (minimal for now)
+      const resolved = options.resolvedEffectivePreferences as ResolvedEffectivePreferences | undefined;
+      const prefFields = resolved
+        ? buildProviderUserContextFromPreferences(resolved)
+        : {
+            personality:
+              options.personalityForProvider && typeof options.personalityForProvider === 'object'
+                ? (options.personalityForProvider as Record<string, unknown>)
+                : {},
+            autonomySettings:
+              options.autonomyBoundariesForProvider &&
+              typeof options.autonomyBoundariesForProvider === 'object'
+                ? (options.autonomyBoundariesForProvider as Record<string, unknown>)
+                : {},
+          };
+
       const userContext = {
         userId: options.userId || 'system',
         personalityProfile: {},
         preferences: {},
         recentActivity: [],
         dashboardContext: {},
-        personality: {},
-        autonomySettings: {}
+        personality: prefFields.personality,
+        autonomySettings: prefFields.autonomySettings,
       };
 
       // Call the appropriate provider (pass options as data so providers can use visionImageParts and traceContext)

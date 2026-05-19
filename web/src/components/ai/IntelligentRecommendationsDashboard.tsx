@@ -30,7 +30,13 @@ interface IntelligentRecommendation {
   createdAt: string;
 }
 
-const IntelligentRecommendationsDashboard: React.FC = () => {
+interface IntelligentRecommendationsDashboardProps {
+  embedded?: boolean;
+}
+
+const IntelligentRecommendationsDashboard: React.FC<IntelligentRecommendationsDashboardProps> = ({
+  embedded,
+}) => {
   const [analytics, setAnalytics] = useState<RecommendationAnalytics | null>(null);
   const [recommendations, setRecommendations] = useState<IntelligentRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +89,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error loading recommendations data:', err);
-      setError('Intelligent recommendations features are not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Recommendations could not be loaded. Try again later.');
       
       // Set default data to prevent crashes
       setAnalytics({
@@ -116,7 +122,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       await loadRecommendationsData();
     } catch (err) {
       console.error('Error generating new recommendations:', err);
-      setError('Recommendations generation is not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Could not generate recommendations. Try again later.');
     } finally {
       setGenerating(false);
     }
@@ -148,7 +154,7 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
       await loadRecommendationsData();
     } catch (err) {
       console.error('Error updating recommendation status:', err);
-      setError('Recommendation status updates are not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Could not update recommendation status. Try again later.');
     }
   };
 
@@ -231,28 +237,38 @@ const IntelligentRecommendationsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Intelligent Recommendations</h2>
-          <p className="text-gray-600 dark:text-gray-400">AI-powered suggestions to optimize your experience</p>
+      {!embedded ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Intelligent Recommendations</h2>
+            <p className="text-gray-600 dark:text-gray-400">AI-powered suggestions to optimize your experience</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={loadRecommendationsData} variant="secondary">
+              Refresh
+            </Button>
+            <Button onClick={generateNewRecommendations} disabled={generating}>
+              {generating ? (
+                <>
+                  <Spinner size={16} />
+                  <span className="ml-2">Generating...</span>
+                </>
+              ) : (
+                'Generate Recommendations'
+              )}
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={loadRecommendationsData} variant="secondary">
+      ) : (
+        <div className="flex justify-end gap-2">
+          <Button onClick={loadRecommendationsData} variant="ghost" size="sm">
             Refresh
           </Button>
-          <Button onClick={generateNewRecommendations} disabled={generating}>
-            {generating ? (
-              <>
-                <Spinner size={16} />
-                <span className="ml-2">Generating...</span>
-              </>
-            ) : (
-              'Generate Recommendations'
-            )}
+          <Button onClick={generateNewRecommendations} disabled={generating} size="sm">
+            {generating ? 'Generating…' : 'Generate'}
           </Button>
         </div>
-      </div>
+      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

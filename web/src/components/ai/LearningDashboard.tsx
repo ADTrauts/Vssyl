@@ -32,7 +32,11 @@ interface LearningPattern {
   data: Record<string, unknown>;
 }
 
-const LearningDashboard: React.FC = () => {
+interface LearningDashboardProps {
+  embedded?: boolean;
+}
+
+const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
   const [analytics, setAnalytics] = useState<LearningAnalytics | null>(null);
   const [patterns, setPatterns] = useState<LearningPattern[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +94,7 @@ const LearningDashboard: React.FC = () => {
       console.log('LearningDashboard: Data loading completed');
     } catch (err) {
       console.error('LearningDashboard: Error loading learning data:', err);
-      setError('Learning features are not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Learning analytics could not be loaded. Try again later.');
       
       // Set default data to prevent crashes
       setAnalytics({
@@ -147,8 +151,8 @@ const LearningDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {!embedded ? (
+        <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Learning Dashboard</h2>
           <p className="text-gray-600 dark:text-gray-400">Track your AI's learning progress and insights</p>
@@ -156,7 +160,14 @@ const LearningDashboard: React.FC = () => {
         <Button onClick={loadLearningData} variant="secondary">
           Refresh Data
         </Button>
-      </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={loadLearningData} variant="ghost" size="sm">
+            Refresh
+          </Button>
+        </div>
+      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

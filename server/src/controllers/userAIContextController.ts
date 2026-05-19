@@ -9,6 +9,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import { userAIContextLearningService } from '../services/userAIContextLearningService';
 
 export interface UserAIContextInput {
   scope: 'personal' | 'business' | 'module' | 'folder' | 'project';
@@ -39,7 +40,7 @@ export async function getUserAIContext(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const { scope, moduleId, active } = req.query;
+    const { scope, moduleId, active, learningStatus } = req.query;
 
     const where: Record<string, unknown> = { userId };
     
@@ -53,6 +54,10 @@ export async function getUserAIContext(req: Request, res: Response): Promise<voi
     
     if (active !== undefined) {
       where.active = active === 'true';
+    }
+
+    if (learningStatus && typeof learningStatus === 'string') {
+      where.learningStatus = learningStatus;
     }
 
     const contexts = await prisma.userAIContext.findMany({
@@ -191,8 +196,9 @@ export async function createUserAIContext(req: Request, res: Response): Promise<
         tags: data.tags || [],
         priority: data.priority ?? 50,
         active: data.active ?? true,
-        source: 'user'
-      }
+        source: 'user',
+        learningStatus: 'active',
+      },
     });
 
     logger.info('User AI context created', {
@@ -349,6 +355,72 @@ export async function deleteUserAIContext(req: Request, res: Response): Promise<
       success: false, 
       message: 'Failed to delete context',
       error: err.message 
+    });
+  }
+}
+
+/**
+ * GET /api/ai/context/pending
+ * List inferred context entries awaiting user consent
+ */
+export async function getPendingLearnings(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as AuthenticatedRequest).user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    const pending = await userAIContextLearningService.listPending(userId);
+    res.json({ success: true, data: pending });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching pending learnings', {
+      operation: 'getPendingLearnings',
+      error: { message: err.message, stack: err.stack },
+    });
+    res.status(500).json({ success: false, message: 'Failed to fetch pending learnings' });
+  }
+}
+
+/**
+ * POST /api/ai/context/:id/review
+ * Promote or dismiss a pending inferred context entry
+ */
+export async function reviewPendingLearning(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as AuthenticatedRequest).user?.id;
+    const { id } = req.params;
+    const { action } = req.body as { action?: string };
+
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+      return;
+    }
+
+    if (action !== 'promote' && action !== 'dismiss') {
+      res.status(400).json({ success: false, message: 'action must be promote or dismiss' });
+      return;
+    }
+
+    if (action === 'promote') {
+      const promoted = await userAIContextLearningService.promote(userId, id);
+      res.json({ success: true, data: promoted });
+      return;
+    }
+
+    await userAIContextLearningService.dismiss(userId, id);
+    res.json({ success: true, message: 'Learning dismissed' });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    const notFound = err.message === 'Context not found' || err.message.includes('pending');
+    logger.error('Error reviewing pending learning', {
+      operation: 'reviewPendingLearning',
+      error: { message: err.message, stack: err.stack },
+    });
+    res.status(notFound ? 404 : 500).json({
+      success: false,
+      message: err.message,
     });
   }
 }

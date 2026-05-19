@@ -74,4 +74,25 @@ describe('buildProviderData', () => {
     expect(providerData.structuredResponseMode).toBe('conversation');
     expect(providerData.responseDensity).toBe('light');
   });
+
+  it('forwards resolved preference fields into providerData', () => {
+    const personality = { tone: 'warm', verbosity: 'balanced' };
+    const autonomy = { actionRules: ['Scheduling: suggest only'] };
+    const contextBlock = { communication: { tone: 'warm' } };
+    const resolved = { hard: {}, soft: {}, inferred: [], provenance: {}, contextBlock, providerPayload: {} };
+
+    const providerData = buildProviderData({
+      options: {
+        personalityForProvider: personality,
+        autonomyBoundariesForProvider: autonomy,
+        effectivePreferencesContextBlock: contextBlock,
+        resolvedEffectivePreferences: resolved,
+      },
+    });
+
+    expect(providerData.personalityForProvider).toEqual(personality);
+    expect(providerData.autonomyBoundariesForProvider).toEqual(autonomy);
+    expect(providerData.effectivePreferencesContextBlock).toEqual(contextBlock);
+    expect(providerData.resolvedEffectivePreferences).toBe(resolved);
+  });
 });

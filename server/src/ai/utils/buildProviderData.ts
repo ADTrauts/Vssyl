@@ -72,5 +72,21 @@ export function buildProviderData(input: BuildProviderDataInput): Record<string,
     providerData.conversationThread = options.conversationThread;
   }
 
+  if (options.personalityForProvider && typeof options.personalityForProvider === 'object') {
+    providerData.personalityForProvider = options.personalityForProvider;
+  }
+
+  if (options.autonomyBoundariesForProvider && typeof options.autonomyBoundariesForProvider === 'object') {
+    providerData.autonomyBoundariesForProvider = options.autonomyBoundariesForProvider;
+  }
+
+  if (options.effectivePreferencesContextBlock && typeof options.effectivePreferencesContextBlock === 'object') {
+    providerData.effectivePreferencesContextBlock = options.effectivePreferencesContextBlock;
+  }
+
+  if (options.resolvedEffectivePreferences && typeof options.resolvedEffectivePreferences === 'object') {
+    providerData.resolvedEffectivePreferences = options.resolvedEffectivePreferences;
+  }
+
   return providerData;
 }

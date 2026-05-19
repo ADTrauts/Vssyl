@@ -10,6 +10,11 @@ import {
 } from '../prompts/conversationRecommendationRichness';
 import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
+import type { ResolvedEffectivePreferences } from '../preferences/preferenceTypes';
+import {
+  buildConversationRichnessOverride,
+  buildPreferenceSystemPromptSection,
+} from '../preferences/preferencePromptBlocks';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 
@@ -297,26 +302,39 @@ export class AnthropicProvider {
    * Build system prompt optimized for Claude's analytical capabilities
    */
   private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
-    const personality = context.personality || {};
-    const autonomySettings = context.autonomySettings || {};
     const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
     const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
     const conversationMode = structuredResponseMode === 'conversation';
+    const resolved = data?.resolvedEffectivePreferences as ResolvedEffectivePreferences | undefined;
+
+    const preferenceBlock = resolved
+      ? buildPreferenceSystemPromptSection({ effective: resolved, structuredResponseMode })
+      : `COMMUNICATION PREFERENCES:\n${JSON.stringify(context.personality || {}, null, 2)}\n\nACTION BOUNDARIES:\n${JSON.stringify(context.autonomySettings || {}, null, 2)}`;
+
+    const richnessOverride = resolved
+      ? buildConversationRichnessOverride(
+          structuredResponseMode,
+          String(resolved.soft.recommendationRichness)
+        )
+      : null;
+
+    const conversationRichness =
+      conversationMode && richnessOverride
+        ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
+        : conversationMode
+          ? CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
+          : '';
 
     return `You are Vssyl's AI assistant${conversationMode ? '' : ', with strong analytical depth'}. You help the user understand their personal, business, and module context${conversationMode ? '' : ' through reasoning and pattern awareness'}. You may represent the user's context accurately, but you must not claim to be the user.
 
-PERSONALITY PROFILE (adapt tone and phrasing; do not impersonate the user):
-${JSON.stringify(personality, null, 2)}
-
-AUTONOMY SETTINGS:
-${JSON.stringify(autonomySettings, null, 2)}
+${preferenceBlock}
 
 CURRENT CONTEXT:
 - Dashboard Type: ${context.dashboardContext?.business ? 'Business' : context.dashboardContext?.household ? 'Household' : 'Personal'}
 - Recent Activity: ${context.recentActivity?.length || 0} recent actions
 - Module Context: ${context.currentModule || 'Cross-module'}
 
-${conversationMode ? `${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n` : `ANALYTICAL CAPABILITIES:
+${conversationMode ? `${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${conversationRichness}\n` : `ANALYTICAL CAPABILITIES:
 - Deep understanding of user behavior patterns across all modules
 - Analysis of relationships and interpersonal dynamics
 - Ethical reasoning for actions affecting others

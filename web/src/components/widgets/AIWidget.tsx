@@ -220,32 +220,32 @@ export default function AIWidget({
 
   const loadPersonalityData = async () => {
     try {
-      const response = await authenticatedApiCall<{ data: { traits: Record<string, number>; confidence: number } }>(
-        '/api/ai/personality',
-        {},
-        session?.accessToken
-      );
-      
-      const traits = response.data.traits || {};
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        profile: { data?: { traits?: Record<string, number>; confidence?: number } } | null;
+      }>('/api/ai/personality/profile', { method: 'GET' }, session?.accessToken);
+
+      const profileData = response.profile?.data;
+      const traits = profileData?.traits || {};
       const personalityInsights: PersonalityInsight[] = [
         {
           trait: 'Autonomy Preference',
           value: traits.autonomyPreference || 50,
           description: 'How much you prefer AI to act independently',
-          confidence: response.data.confidence || 0.7
+          confidence: profileData?.confidence ?? 0.7,
         },
         {
           trait: 'Risk Tolerance',
           value: traits.riskTolerance || 50,
           description: 'Your comfort level with AI taking risks',
-          confidence: response.data.confidence || 0.7
+          confidence: profileData?.confidence ?? 0.7,
         },
         {
           trait: 'Collaboration Style',
           value: traits.collaborationStyle || 50,
           description: 'Preference for collaborative vs individual work',
-          confidence: response.data.confidence || 0.7
-        }
+          confidence: profileData?.confidence ?? 0.7,
+        },
       ];
 
       setPersonality(personalityInsights);
@@ -270,13 +270,12 @@ export default function AIWidget({
 
   const loadAutonomySettings = async () => {
     try {
-      const response = await authenticatedApiCall<{ data: { crossModuleActions: number; contextAwareness: number; riskLevel: number } }>(
-        '/api/ai/autonomy',
-        {},
-        session?.accessToken
-      );
-      
-      setAutonomySettings(response.data);
+      const response = await authenticatedApiCall<{
+        success: boolean;
+        data: Record<string, unknown>;
+      }>('/api/ai/autonomy/settings', { method: 'GET' }, session?.accessToken);
+
+      setAutonomySettings(response.data ?? null);
     } catch (error) {
       console.error('Failed to load autonomy settings:', error);
     }

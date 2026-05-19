@@ -19,6 +19,12 @@ import {
   type ContextProfile,
 } from './contextProfile';
 import { buildConversationThreadHints } from '../utils/conversationContinuity';
+import type { EffectivePreferencesContextBlock } from '../preferences/preferenceTypes';
+import { PREFERENCE_CONTEXT_BLOCK_TITLE } from '../preferences/PreferenceResolver';
+import {
+  BUSINESS_WORKSPACE_POLICY_BLOCK_TITLE,
+  type BusinessWorkspaceBoundaryBlock,
+} from '../enterprise/businessWorkspaceBoundaries';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -116,6 +122,10 @@ export interface AIContextAssemblyInput {
   userMemoryFacts?: Array<{ subject: string; predicate: string; confidence: number }>;
   toneMode?: string;
   explicitStructuredMode?: string;
+  /** Resolved user communication / autonomy preferences (compact, no raw questionnaire). */
+  effectivePreferencesContextBlock?: EffectivePreferencesContextBlock;
+  /** Business workspace policies when chatting with businessId (separate from personal prefs). */
+  businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock;
 }
 
 export interface ModuleContextAssemblyEntry {
@@ -581,6 +591,8 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     recentConversationMemory,
     recalledMessages,
     userMemoryFacts,
+    effectivePreferencesContextBlock,
+    businessWorkspaceBoundaries,
   } = input;
 
   const dashboardCtx =
@@ -986,6 +998,49 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       sourceId: entry.moduleId,
       detail: entry.providerName ? `provider ${entry.providerName}` : undefined,
       confidence: entry.relevance === 'high' ? 'high' : 'medium',
+    });
+  }
+
+  if (businessWorkspaceBoundaries) {
+    contextBlocks.push({
+      title: BUSINESS_WORKSPACE_POLICY_BLOCK_TITLE,
+      sourceType: 'business',
+      content: {
+        businessId: businessWorkspaceBoundaries.businessId,
+        businessName: businessWorkspaceBoundaries.businessName,
+        securityLevel: businessWorkspaceBoundaries.securityLevel,
+        complianceMode: businessWorkspaceBoundaries.complianceMode,
+        policies: businessWorkspaceBoundaries.policyLines,
+        voiceHints: businessWorkspaceBoundaries.businessVoiceHints,
+      },
+      priority: 'high',
+      tier: 'tier2_continuity',
+      inclusionReason: 'business workspace AI configuration (admin-controlled; not personal Control Center)',
+    });
+    evidence.push({
+      label: BUSINESS_WORKSPACE_POLICY_BLOCK_TITLE,
+      sourceType: 'business',
+      sourceId: businessWorkspaceBoundaries.businessId,
+      detail: businessWorkspaceBoundaries.businessName,
+      confidence: 'high',
+    });
+  }
+
+  if (effectivePreferencesContextBlock) {
+    contextBlocks.push({
+      title: PREFERENCE_CONTEXT_BLOCK_TITLE,
+      sourceType: 'personal',
+      content: effectivePreferencesContextBlock,
+      priority: 'high',
+      tier: 'tier3_profile',
+      inclusionReason: businessWorkspaceBoundaries
+        ? 'personal communication preferences (business policies apply separately above)'
+        : 'resolved communication and action-boundary preferences',
+    });
+    evidence.push({
+      label: 'User communication and AI preference settings',
+      sourceType: 'personal',
+      confidence: 'high',
     });
   }
 

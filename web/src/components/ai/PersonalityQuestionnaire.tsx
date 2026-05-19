@@ -439,10 +439,10 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
 
       // Save autonomy settings
       await authenticatedApiCall(
-        '/api/ai/autonomy',
+        '/api/ai/autonomy/settings',
         {
           method: 'PUT',
-          body: JSON.stringify(autonomyData)
+          body: JSON.stringify(autonomyData),
         },
         session.accessToken
       );

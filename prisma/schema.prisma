@@ -2365,6 +2365,7 @@ model UserAIContext {
   priority        Int      @default(50) // 0-100, affects when AI uses this
   active          Boolean  @default(true)
   source          String?  // "user" | "conversation" - who added this (user in Custom Context, or saved from chat)
+  learningStatus  String   @default("active") // "active" | "pending" | "dismissed" — inferred chat facts start pending until user promotes
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
@@ -2372,6 +2373,7 @@ model UserAIContext {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
+  @@index([userId, learningStatus])
   @@index([scope, scopeId])
   @@index([moduleId])
   @@index([contextType])

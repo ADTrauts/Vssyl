@@ -11,6 +11,18 @@ const router: express.Router = express.Router();
 router.get('/', authenticateJWT, userAIContextController.getUserAIContext);
 
 /**
+ * GET /api/ai/context/pending
+ * Inferred entries awaiting user consent (must be before /:id)
+ */
+router.get('/pending', authenticateJWT, userAIContextController.getPendingLearnings);
+
+/**
+ * POST /api/ai/context/:id/review
+ * Promote or dismiss a pending inferred entry
+ */
+router.post('/:id/review', authenticateJWT, userAIContextController.reviewPendingLearning);
+
+/**
  * GET /api/ai/context/:id
  * Get a specific context entry
  */

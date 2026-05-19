@@ -343,6 +343,14 @@ export const BusinessAIControlCenter: React.FC<BusinessAIControlCenterProps> = (
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-6">
+          <Card className="mb-6 p-4 border-blue-200 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/30">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              Settings here apply to <strong>this business workspace</strong> (data access, compliance,
+              and business voice). They are separate from each employee&apos;s personal AI Control
+              Center at <code className="text-xs">/ai</code>. When employees chat in this business
+              dashboard, both personal preferences and these policies are used.
+            </p>
+          </Card>
           <div className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* AI Status Card */}

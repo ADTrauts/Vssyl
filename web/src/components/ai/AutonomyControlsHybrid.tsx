@@ -182,7 +182,7 @@ export default function AutonomyControlsHybrid() {
 
     try {
       console.log('Saving autonomy settings...', settings);
-      const response = await authenticatedApiCall('/api/ai/autonomy', {
+      const response = await authenticatedApiCall('/api/ai/autonomy/settings', {
         method: 'PUT',
         body: JSON.stringify(settings),
       }, session.accessToken);

@@ -39,7 +39,11 @@ interface PredictiveAnalysis {
   data: Record<string, unknown>;
 }
 
-const PredictiveIntelligenceDashboard: React.FC = () => {
+interface PredictiveIntelligenceDashboardProps {
+  embedded?: boolean;
+}
+
+const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardProps> = ({ embedded }) => {
   const [analytics, setAnalytics] = useState<PredictiveAnalytics | null>(null);
   const [analyses, setAnalyses] = useState<PredictiveAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +94,7 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error loading predictive data:', err);
-      setError('Predictive intelligence features are not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Predictive analytics could not be loaded. Try again later.');
       
       // Set default data to prevent crashes
       setAnalytics({
@@ -122,7 +126,7 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
       await loadPredictiveData();
     } catch (err) {
       console.error('Error generating new analysis:', err);
-      setError('Predictive analysis generation is not available yet. This is a Phase 3 feature that will be available soon.');
+      setError('Could not generate a new analysis. Try again later.');
     } finally {
       setGenerating(false);
     }
@@ -181,28 +185,38 @@ const PredictiveIntelligenceDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Predictive Intelligence Dashboard</h2>
-          <p className="text-gray-600 dark:text-gray-400">AI predictions and anticipatory insights</p>
+      {!embedded ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Predictive Intelligence Dashboard</h2>
+            <p className="text-gray-600 dark:text-gray-400">AI predictions and anticipatory insights</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={loadPredictiveData} variant="secondary">
+              Refresh
+            </Button>
+            <Button onClick={generateNewAnalysis} disabled={generating}>
+              {generating ? (
+                <>
+                  <Spinner size={16} />
+                  <span className="ml-2">Generating...</span>
+                </>
+              ) : (
+                'Generate Analysis'
+              )}
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={loadPredictiveData} variant="secondary">
+      ) : (
+        <div className="flex justify-end gap-2">
+          <Button onClick={loadPredictiveData} variant="ghost" size="sm">
             Refresh
           </Button>
-          <Button onClick={generateNewAnalysis} disabled={generating}>
-            {generating ? (
-              <>
-                <Spinner size={16} />
-                <span className="ml-2">Generating...</span>
-              </>
-            ) : (
-              'Generate Analysis'
-            )}
+          <Button onClick={generateNewAnalysis} disabled={generating} size="sm">
+            {generating ? 'Generating…' : 'Generate'}
           </Button>
         </div>
-      </div>
+      )}
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
