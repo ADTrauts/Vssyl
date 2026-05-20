@@ -42,7 +42,7 @@ describe('pipelineTraceInsights', () => {
           { source: 'module_context', provider: 'calendar', itemCount: 1 },
         ],
         memoryRetrieved: { facts: 1, recalledMessages: 0, threadMemory: false },
-        retrievalPerformed: true,
+        sourcesUsed: ['place', 'calendar'],
         confidenceLevel: 'high',
       },
       { catalog }
