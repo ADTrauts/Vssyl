@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { Badge } from 'shared/components';
-import type { PipelineEvidenceBundle } from '../../../types/adminAiPipeline';
+import type { AIPipelineTrace, PipelineEvidenceBundle } from '../../../types/adminAiPipeline';
+import PipelineContextUsedPanel from './PipelineContextUsedPanel';
 
 type EvidenceTab = 'assembled' | 'structured' | 'tools' | 'retrieval';
 
 interface PipelineEvidenceViewerProps {
   bundle: PipelineEvidenceBundle;
+  trace?: AIPipelineTrace;
 }
 
 function EvidenceList({
@@ -41,7 +43,7 @@ function EvidenceList({
   );
 }
 
-export default function PipelineEvidenceViewer({ bundle }: PipelineEvidenceViewerProps) {
+export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEvidenceViewerProps) {
   const [tab, setTab] = useState<EvidenceTab>('assembled');
 
   const tabs: { id: EvidenceTab; label: string; count: number }[] = [
@@ -53,6 +55,7 @@ export default function PipelineEvidenceViewer({ bundle }: PipelineEvidenceViewe
 
   return (
     <section className="space-y-3">
+      {trace && <PipelineContextUsedPanel trace={trace} />}
       <h3 className="font-semibold text-gray-900 dark:text-gray-100">Evidence & confidence</h3>
       <div className="flex flex-wrap gap-2">
         {tabs.map((t) => (

@@ -5,7 +5,7 @@
 import { Prisma, type AIPipelineDiagnosticSource } from '@prisma/client';
 import { prisma as defaultPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
-import type { AIPipelineTrace } from '../types/pipelineDiagnostics';
+import type { AIPipelineTrace, PipelineConfidenceLevel } from '../types/pipelineDiagnostics';
 
 export type PipelineDiagnosticPersistSource = 'twin' | 'test_lab';
 
@@ -137,9 +137,37 @@ export interface PipelineQualityStats {
   atRiskPercent: number;
   groundingRequiredCount: number;
   retrievalMissCount: number;
+  retrievalTriggerCount: number;
+  retrievalTriggerPercent: number;
+  toolUsageCount: number;
+  toolUsagePercent: number;
+  groundedResponsePercent: number;
+  confidenceDistribution: { low: number; medium: number; high: number };
+  averageConfidenceLabel: PipelineConfidenceLevel;
+  topFailedIntent: string | null;
+  diagnosticsRetainedTotal: number;
+  diagnosticsExportableInWindow: number;
   byDay: Array<{ date: string; total: number; atRisk: number }>;
   topIssues: Array<{ issue: string; count: number }>;
   intentsAtRisk: Array<{ intent: string; count: number }>;
+}
+
+function confidenceToScore(level: PipelineConfidenceLevel): number {
+  if (level === 'high') return 3;
+  if (level === 'medium') return 2;
+  return 1;
+}
+
+function scoreToConfidenceLabel(score: number): PipelineConfidenceLevel {
+  if (score >= 2.5) return 'high';
+  if (score >= 1.5) return 'medium';
+  return 'low';
+}
+
+function traceJsonHasToolUsage(traceJson: unknown): boolean {
+  if (!traceJson || typeof traceJson !== 'object' || Array.isArray(traceJson)) return false;
+  const toolsUsed = (traceJson as { toolsUsed?: unknown }).toolsUsed;
+  return Array.isArray(toolsUsed) && toolsUsed.length > 0;
 }
 
 export async function getPipelineQualityStats(
@@ -156,34 +184,63 @@ export async function getPipelineQualityStats(
     ...(options?.userId ? { userId: options.userId } : {}),
   };
 
-  const [totalTraces, atRiskCount, groundingRequiredCount, retrievalMissCount, rows] =
-    await Promise.all([
-      prismaClient.aIPipelineDiagnostic.count({ where }),
-      prismaClient.aIPipelineDiagnostic.count({
-        where: { ...where, genericResponseRisk: true },
-      }),
-      prismaClient.aIPipelineDiagnostic.count({
-        where: { ...where, groundingRequired: true },
-      }),
-      prismaClient.aIPipelineDiagnostic.count({
-        where: { ...where, groundingRequired: true, retrievalPerformed: false },
-      }),
-      prismaClient.aIPipelineDiagnostic.findMany({
-        where,
-        select: {
-          createdAt: true,
-          genericResponseRisk: true,
-          intentDetected: true,
-          issues: true,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 5000,
-      }),
-    ]);
+  const settingsRow = await prismaClient.aIPipelineSettings.findUnique({
+    where: { id: 'default' },
+    select: { diagnosticRetentionDays: true },
+  });
+  const retentionDays = settingsRow?.diagnosticRetentionDays ?? 90;
+  const exportSince = new Date();
+  exportSince.setUTCDate(exportSince.getUTCDate() - retentionDays);
+  exportSince.setUTCHours(0, 0, 0, 0);
+
+  const [
+    totalTraces,
+    atRiskCount,
+    groundingRequiredCount,
+    retrievalMissCount,
+    retrievalTriggerCount,
+    diagnosticsRetainedTotal,
+    diagnosticsExportableInWindow,
+    rows,
+  ] = await Promise.all([
+    prismaClient.aIPipelineDiagnostic.count({ where }),
+    prismaClient.aIPipelineDiagnostic.count({
+      where: { ...where, genericResponseRisk: true },
+    }),
+    prismaClient.aIPipelineDiagnostic.count({
+      where: { ...where, groundingRequired: true },
+    }),
+    prismaClient.aIPipelineDiagnostic.count({
+      where: { ...where, groundingRequired: true, retrievalPerformed: false },
+    }),
+    prismaClient.aIPipelineDiagnostic.count({
+      where: { ...where, retrievalPerformed: true },
+    }),
+    prismaClient.aIPipelineDiagnostic.count(),
+    prismaClient.aIPipelineDiagnostic.count({
+      where: { createdAt: { gte: exportSince } },
+    }),
+    prismaClient.aIPipelineDiagnostic.findMany({
+      where,
+      select: {
+        createdAt: true,
+        genericResponseRisk: true,
+        intentDetected: true,
+        issues: true,
+        confidenceLevel: true,
+        traceJson: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5000,
+    }),
+  ]);
 
   const byDayMap = new Map<string, { total: number; atRisk: number }>();
   const issueCounts = new Map<string, number>();
   const intentRiskCounts = new Map<string, number>();
+  const confidenceDistribution = { low: 0, medium: 0, high: 0 };
+  let toolUsageCount = 0;
+  let confidenceScoreSum = 0;
 
   for (const row of rows) {
     const day = row.createdAt.toISOString().slice(0, 10);
@@ -204,6 +261,16 @@ export async function getPipelineQualityStats(
         issueCounts.set(issue, (issueCounts.get(issue) ?? 0) + 1);
       }
     }
+
+    const level = row.confidenceLevel as PipelineConfidenceLevel;
+    if (level === 'low' || level === 'medium' || level === 'high') {
+      confidenceDistribution[level] += 1;
+      confidenceScoreSum += confidenceToScore(level);
+    }
+
+    if (traceJsonHasToolUsage(row.traceJson)) {
+      toolUsageCount += 1;
+    }
   }
 
   const byDay = [...byDayMap.entries()]
@@ -220,6 +287,17 @@ export async function getPipelineQualityStats(
     .slice(0, 10)
     .map(([intent, count]) => ({ intent, count }));
 
+  const groundedOk = groundingRequiredCount - retrievalMissCount;
+  const groundedResponsePercent =
+    groundingRequiredCount > 0
+      ? Math.round((groundedOk / groundingRequiredCount) * 1000) / 10
+      : 100;
+
+  const averageConfidenceLabel =
+    totalTraces > 0
+      ? scoreToConfidenceLabel(confidenceScoreSum / totalTraces)
+      : 'medium';
+
   return {
     timeRangeDays: days,
     totalTraces,
@@ -227,6 +305,18 @@ export async function getPipelineQualityStats(
     atRiskPercent: totalTraces > 0 ? Math.round((atRiskCount / totalTraces) * 1000) / 10 : 0,
     groundingRequiredCount,
     retrievalMissCount,
+    retrievalTriggerCount,
+    retrievalTriggerPercent:
+      totalTraces > 0 ? Math.round((retrievalTriggerCount / totalTraces) * 1000) / 10 : 0,
+    toolUsageCount,
+    toolUsagePercent:
+      totalTraces > 0 ? Math.round((toolUsageCount / totalTraces) * 1000) / 10 : 0,
+    groundedResponsePercent,
+    confidenceDistribution,
+    averageConfidenceLabel,
+    topFailedIntent: intentsAtRisk[0]?.intent ?? null,
+    diagnosticsRetainedTotal,
+    diagnosticsExportableInWindow,
     byDay,
     topIssues,
     intentsAtRisk,
@@ -252,7 +342,9 @@ export async function findPipelineDiagnosticById(
 export async function listPipelineDiagnosticsFromDb(
   options: { limit?: number; userId?: string },
   prismaClient: typeof defaultPrisma = defaultPrisma
-): Promise<(AIPipelineTrace & { conversationHistoryId?: string })[]> {
+): Promise<
+  (AIPipelineTrace & { conversationHistoryId?: string; diagnosticSource?: 'TWIN' | 'TEST_LAB' })[]
+> {
   const limit = Math.min(options.limit ?? 50, 100);
   const rows = await prismaClient.aIPipelineDiagnostic.findMany({
     where: options.userId ? { userId: options.userId } : undefined,
@@ -260,13 +352,17 @@ export async function listPipelineDiagnosticsFromDb(
     take: limit,
   });
 
-  const traces: (AIPipelineTrace & { conversationHistoryId?: string })[] = [];
+  const traces: (AIPipelineTrace & {
+    conversationHistoryId?: string;
+    diagnosticSource?: 'TWIN' | 'TEST_LAB';
+  })[] = [];
   for (const row of rows) {
     const trace = rowToPipelineTrace(row);
     if (trace) {
       traces.push({
         ...trace,
         ...(row.conversationHistoryId ? { conversationHistoryId: row.conversationHistoryId } : {}),
+        diagnosticSource: row.source === 'TEST_LAB' ? 'TEST_LAB' : 'TWIN',
       });
     }
   }

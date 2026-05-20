@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Spinner, Alert, Button } from 'shared/components';
 import PipelineSubpageShell from '../../../../components/admin-portal/ai-pipeline/PipelineSubpageShell';
 import PipelineTraceTable from '../../../../components/admin-portal/ai-pipeline/PipelineTraceTable';
@@ -9,6 +10,9 @@ import { adminApiService } from '../../../../lib/adminApiService';
 import type { AIPipelineTrace } from '../../../../types/adminAiPipeline';
 
 export default function AiPipelineDiagnosticsPage() {
+  const searchParams = useSearchParams();
+  const traceIdParam = searchParams?.get('traceId') ?? null;
+
   const [traces, setTraces] = useState<AIPipelineTrace[]>([]);
   const [selected, setSelected] = useState<AIPipelineTrace | null>(null);
   const [evidenceBundle, setEvidenceBundle] = useState<
@@ -42,15 +46,29 @@ export default function AiPipelineDiagnosticsPage() {
       setEvidenceBundle(null);
     } else {
       setTraces(res.data.traces);
-      if (res.data.traces.length > 0) {
-        await handleSelect(res.data.traces[0]);
+      let pick: AIPipelineTrace | undefined;
+      if (traceIdParam) {
+        pick = res.data.traces.find((t) => t.traceId === traceIdParam);
+        if (!pick) {
+          const detailRes = await adminApiService.getAiPipelineDiagnostic(traceIdParam);
+          if (detailRes.data) {
+            pick = detailRes.data;
+            if (!res.data.traces.some((t) => t.traceId === pick!.traceId)) {
+              setTraces((prev) => [pick!, ...prev]);
+            }
+          }
+        }
+      }
+      const toSelect = pick ?? res.data.traces[0];
+      if (toSelect) {
+        await handleSelect(toSelect);
       } else {
         setSelected(null);
         setEvidenceBundle(null);
       }
     }
     setLoading(false);
-  }, [userIdFilter, handleSelect]);
+  }, [userIdFilter, handleSelect, traceIdParam]);
 
   useEffect(() => {
     void load();

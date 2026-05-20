@@ -34,6 +34,7 @@ import {
   updatePipelineRetentionSettings,
 } from '../../ai/pipeline/pipelineRetentionService';
 import type { AIPipelineTrace } from '../../ai/types/pipelineDiagnostics';
+import { enrichTraceWithInsights } from '../../ai/pipeline/pipelineTraceInsights';
 
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 
@@ -59,6 +60,28 @@ function policyErrorStatus(message: string): number {
   if (message.includes('not found')) return 404;
   if (message.includes('Invalid')) return 400;
   return 500;
+}
+
+function enrichTracesForAdmin<T extends AIPipelineTrace>(
+  traces: T[],
+  catalog: Awaited<ReturnType<typeof getEffectivePipelineCatalog>>
+) {
+  return traces.map((trace) => {
+    const withSource = trace as T & { diagnosticSource?: 'TWIN' | 'TEST_LAB' };
+    return enrichTraceWithInsights(trace, catalog, {
+      diagnosticSource: withSource.diagnosticSource ?? 'TWIN',
+    });
+  });
+}
+
+function enrichSingleTraceForAdmin(
+  trace: AIPipelineTrace,
+  catalog: Awaited<ReturnType<typeof getEffectivePipelineCatalog>>,
+  diagnosticSource?: 'TWIN' | 'TEST_LAB'
+) {
+  return enrichTraceWithInsights(trace, catalog, {
+    diagnosticSource: diagnosticSource ?? 'TWIN',
+  });
 }
 
 export function registerAdminPortalAiPipelineRoutes(router: express.Router): void {
@@ -266,7 +289,10 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
       const seen = new Set(dbTraces.map((t) => t.traceId));
 
       if (dbTraces.length >= limit) {
-        return res.json({ success: true, data: { traces: dbTraces, total: dbTraces.length } });
+        return res.json({
+          success: true,
+          data: { traces: enrichTracesForAdmin(dbTraces, catalog), total: dbTraces.length },
+        });
       }
 
       const legacy: AIPipelineTrace[] = [];
@@ -318,7 +344,10 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, limit);
 
-      res.json({ success: true, data: { traces: combined, total: combined.length } });
+      res.json({
+        success: true,
+        data: { traces: enrichTracesForAdmin(combined, catalog), total: combined.length },
+      });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       void logger.error('Failed to list pipeline diagnostics', {
@@ -336,12 +365,23 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
 
       const fromDb = await findPipelineDiagnosticById(traceId);
       if (fromDb) {
-        return res.json({ success: true, data: fromDb });
+        const row = await prisma.aIPipelineDiagnostic.findUnique({
+          where: { id: traceId },
+          select: { source: true },
+        });
+        const source = row?.source === 'TEST_LAB' ? 'TEST_LAB' : 'TWIN';
+        return res.json({
+          success: true,
+          data: enrichSingleTraceForAdmin(fromDb, catalog, source),
+        });
       }
 
       const fromMemory = getPipelineTraceById(traceId);
       if (fromMemory) {
-        return res.json({ success: true, data: fromMemory });
+        return res.json({
+          success: true,
+          data: enrichSingleTraceForAdmin(fromMemory, catalog, 'TWIN'),
+        });
       }
 
       if (traceId.startsWith('history-')) {
@@ -383,7 +423,11 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
           );
         return res.json({
           success: true,
-          data: { ...trace, conversationHistoryId: row.id },
+          data: enrichSingleTraceForAdmin(
+            { ...trace, conversationHistoryId: row.id },
+            catalog,
+            'TWIN'
+          ),
         });
       }
 
@@ -459,12 +503,17 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
         genericResponseRisk: pipelineTrace?.genericResponseRisk,
       });
 
+      const catalog = await getEffectivePipelineCatalog();
+      const enrichedTrace = pipelineTrace
+        ? enrichSingleTraceForAdmin(pipelineTrace, catalog, 'TEST_LAB')
+        : undefined;
+
       res.json({
         success: true,
         data: {
           response: response.response,
           confidence: response.confidence,
-          pipelineTrace,
+          pipelineTrace: enrichedTrace,
           structured: response.structured,
           metadata: {
             provider: response.metadata.provider,

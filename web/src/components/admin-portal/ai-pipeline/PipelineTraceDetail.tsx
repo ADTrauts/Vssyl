@@ -4,6 +4,10 @@ import React from 'react';
 import { Badge } from 'shared/components';
 import type { AIPipelineTrace, PipelineEvidenceBundle } from '../../../types/adminAiPipeline';
 import PipelineEvidenceViewer from './PipelineEvidenceViewer';
+import PipelineFlagReasonsPanel from './PipelineFlagReasonsPanel';
+import PipelineContextUsedPanel from './PipelineContextUsedPanel';
+import PipelineReasoningDepthBadge from './PipelineReasoningDepthBadge';
+import PipelineFailureCategoryBadges from './PipelineFailureCategoryBadges';
 
 interface PipelineTraceDetailProps {
   trace: AIPipelineTrace;
@@ -19,10 +23,14 @@ function RiskBadge({ risk }: { risk: boolean }) {
 }
 
 export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineTraceDetailProps) {
+  const depth = trace.insights?.reasoningDepth ?? 'MEDIUM';
+  const failureCategories = trace.insights?.failureCategories ?? [];
+
   return (
     <div className="space-y-4 text-sm">
       <div className="flex flex-wrap gap-2 items-center">
         <RiskBadge risk={trace.genericResponseRisk} />
+        <PipelineReasoningDepthBadge depth={depth} />
         <Badge className="bg-gray-100 text-gray-800">Confidence: {trace.confidenceLevel}</Badge>
         {trace.groundingRequired && (
           <Badge className="bg-amber-100 text-amber-900">Grounding required</Badge>
@@ -37,7 +45,21 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
             Enforcement: {trace.enforcementAction}
           </Badge>
         )}
+        {trace.diagnosticSource === 'TEST_LAB' && (
+          <Badge className="bg-blue-100 text-blue-800">Test lab</Badge>
+        )}
       </div>
+
+      {failureCategories.length > 0 && (
+        <section>
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Failure categories</h3>
+          <PipelineFailureCategoryBadges categories={failureCategories} />
+        </section>
+      )}
+
+      <PipelineFlagReasonsPanel trace={trace} />
+
+      <PipelineContextUsedPanel trace={trace} />
 
       <section>
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">User message</h3>
@@ -59,6 +81,17 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
           ))}
         </div>
       </section>
+
+      {trace.qualityWarnings.length > 0 && (
+        <section>
+          <h3 className="font-semibold text-amber-800 mb-1">Quality warnings</h3>
+          <ul className="list-disc pl-5 text-amber-800 dark:text-amber-200 space-y-1">
+            {trace.qualityWarnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {trace.issues.length > 0 && (
         <section>
@@ -82,7 +115,7 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Tools used</h3>
           <p className="text-gray-700 dark:text-gray-300">
             {trace.toolsUsed.length > 0
-              ? trace.toolsUsed.map((t) => `${t.name} (r${t.round})`).join(', ')
+              ? trace.toolsUsed.map((t) => `${t.name} (r${t.round}${t.success ? '' : ', failed'})`).join(', ')
               : '—'}
           </p>
         </div>
@@ -106,7 +139,11 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
         </section>
       )}
 
-      {evidenceBundle && <PipelineEvidenceViewer bundle={evidenceBundle} />}
+      {evidenceBundle ? (
+        <PipelineEvidenceViewer bundle={evidenceBundle} trace={trace} />
+      ) : (
+        <PipelineContextUsedPanel trace={trace} />
+      )}
 
       <section>
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Trace metadata</h3>

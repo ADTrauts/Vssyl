@@ -146,6 +146,54 @@ Twin passes `clientIp` from `POST /api/ai/twin` for location grounding.
 
 ---
 
+## AI Operations Console (hub UX)
+
+**Route:** `/admin-portal/ai-pipeline`  
+**Polling:** Live activity feed refreshes every **60s** via `GET /ai-pipeline/diagnostics?limit=15` (no WebSockets).
+
+### Health metrics (7-day window)
+
+| Metric | Source |
+|--------|--------|
+| Grounded response rate | % of grounding-required traces with `retrievalPerformed` |
+| Generic risk rate | `atRiskPercent` |
+| Retrieval / tool usage rate | Extended `GET /ai-pipeline/quality/stats` |
+| Average confidence | Distribution over `confidenceLevel` column |
+| Top failed intent | First entry in `intentsAtRisk` |
+| Diagnostics retained | All-time count + exportable within retention window |
+
+### Trace insights (read-time)
+
+Computed by `server/src/ai/pipeline/pipelineTraceInsights.ts` and attached as `trace.insights` on admin diagnostic APIs (not persisted in `traceJson`).
+
+| Field | Meaning |
+|-------|---------|
+| `flagReasons` | Human-readable “why flagged” bullets |
+| `contextUsed` | Checklist: used / not_used / planned / disabled per catalog source |
+| `reasoningDepth` | **LOW** / **MEDIUM** / **HIGH** (derived, not model output) |
+| `failureCategories` | Operational tags (e.g. `GROUNDING_FAILURE`, `GENERIC_RESPONSE`) |
+
+**Reasoning depth**
+
+- **LOW:** No retrieval, no tools, no meaningful context; generic risk or low confidence.
+- **HIGH:** Retrieval + tools + multiple sources + grounding satisfied + evidence when available.
+- **MEDIUM:** Everything else.
+
+**Context-used semantics**
+
+- **used:** Heuristics match trace memory, retrieval, tools, or assembled modules.
+- **planned:** Catalog `enabled` but `wiredInTwin: false`.
+- **disabled:** Catalog or tool policy disabled (e.g. `web_search`).
+- **not_used:** Available but not detected in trace.
+
+**Activity feed colors**
+
+- Green: grounded success · Yellow: grounding required, no retrieval · Orange: generic risk · Red: enforcement block/disclose · Blue: Test Lab (`diagnosticSource: TEST_LAB`)
+
+**Deep link:** `/admin-portal/ai-pipeline/diagnostics?traceId={id}`
+
+---
+
 ## Out of scope / future
 
 - Automatic scheduled purge job (cron)
@@ -153,4 +201,4 @@ Twin passes `clientIp` from `POST /api/ai/twin` for location grounding.
 - `web_search` wiring in twin
 - Replacing legacy `QueryIntent` with pipeline intents in production routing
 
-**Last updated:** 2026-05-20
+**Last updated:** 2026-05-20 (operations console hub)

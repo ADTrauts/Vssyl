@@ -14,6 +14,33 @@ export type PipelineIntentId =
 
 export type PipelineConfidenceLevel = 'low' | 'medium' | 'high';
 
+export type PipelineContextUsedStatus = 'used' | 'not_used' | 'planned' | 'disabled';
+export type PipelineReasoningDepth = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export type PipelineFailureCategory =
+  | 'GROUNDING_FAILURE'
+  | 'RETRIEVAL_FAILURE'
+  | 'TOOL_SELECTION_FAILURE'
+  | 'GENERIC_RESPONSE'
+  | 'LOW_CONFIDENCE_RESPONSE'
+  | 'MISSING_CONTEXT'
+  | 'POLICY_MISMATCH';
+
+export interface PipelineContextUsedRow {
+  id: string;
+  label: string;
+  status: PipelineContextUsedStatus;
+  itemCount?: number;
+  statusReason?: string;
+}
+
+export interface PipelineTraceInsights {
+  flagReasons: string[];
+  contextUsed: PipelineContextUsedRow[];
+  reasoningDepth: PipelineReasoningDepth;
+  failureCategories: PipelineFailureCategory[];
+}
+
 export interface PipelineToolUsageRecord {
   name: string;
   round: number;
@@ -60,6 +87,8 @@ export interface AIPipelineTrace {
   enforcementApplied?: boolean;
   enforcementAction?: 'none' | 'retrieval_boost' | 'disclosed' | 'blocked';
   evidenceBundle?: PipelineEvidenceBundle;
+  insights?: PipelineTraceInsights;
+  diagnosticSource?: 'TWIN' | 'TEST_LAB';
 }
 
 export interface PipelineIntentDefinition {
@@ -151,6 +180,16 @@ export interface PipelineQualityStats {
   atRiskPercent: number;
   groundingRequiredCount: number;
   retrievalMissCount: number;
+  retrievalTriggerCount: number;
+  retrievalTriggerPercent: number;
+  toolUsageCount: number;
+  toolUsagePercent: number;
+  groundedResponsePercent: number;
+  confidenceDistribution: { low: number; medium: number; high: number };
+  averageConfidenceLabel: PipelineConfidenceLevel;
+  topFailedIntent: string | null;
+  diagnosticsRetainedTotal: number;
+  diagnosticsExportableInWindow: number;
   byDay: Array<{ date: string; total: number; atRisk: number }>;
   topIssues: Array<{ issue: string; count: number }>;
   intentsAtRisk: Array<{ intent: string; count: number }>;
