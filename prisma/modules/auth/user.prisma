@@ -88,6 +88,8 @@ model User {
   aiAutonomySettings AIAutonomySettings[]
   aiApprovalRequests AIApprovalRequest[]
   aiConversationHistories AIConversationHistory[]
+  aiPipelineDiagnostics   AIPipelineDiagnostic[]
+  aiPipelinePolicyAudits  AIPipelinePolicyAuditLog[] @relation("AIPipelinePolicyAuditAdmin")
   aiUsageTrackings AIUsageTracking[]
   aiLearningEvents AILearningEvent[]
   aiContextCache UserAIContextCache?

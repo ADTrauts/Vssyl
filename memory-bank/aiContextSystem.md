@@ -747,6 +747,10 @@ Server-side **`AIContextAssembler`** (`server/src/ai/context/AIContextAssembler.
 
 No embeddings or AI summarization in this path—purely deterministic heuristics.
 
+### Admin pipeline evidence (May 2026)
+
+**`buildPipelineEvidenceBundle`** compares what was **assembled** for the twin prompt vs **structured** module retrieval vs **tools** vs **grounding prepass** (location, Place). Admins inspect traces in **Admin Portal → AI Pipeline** (`docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`). Enforcement can block or disclose when grounding rules require retrieval that did not run.
+
 ---
 
 ## Conclusion

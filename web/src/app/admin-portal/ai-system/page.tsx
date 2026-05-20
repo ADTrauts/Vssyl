@@ -21,7 +21,8 @@ import {
   Filter,
   Layers,
   Database,
-  Cloud
+  Cloud,
+  GitBranch
 } from 'lucide-react';
 import Link from 'next/link';
 import { adminApiService } from '../../../lib/adminApiService';
@@ -393,6 +394,20 @@ export default function AISystemPage() {
         { label: 'Validated', value: overview?.context.validatedContexts || 0 },
         { label: 'Cross-Module Connections', value: overview?.context.crossModuleConnections || 0 }
       ]
+    },
+    {
+      id: 'ai-pipeline',
+      title: 'AI Pipeline',
+      description: 'Grounding diagnostics, test lab, and pipeline catalog',
+      icon: GitBranch,
+      color: 'indigo',
+      path: '/admin-portal/ai-pipeline',
+      metrics: [
+        { label: 'Intents', value: 10 },
+        { label: 'Diagnostics', value: 'Live' },
+        { label: 'Test Lab', value: 'Dry-run' },
+        { label: 'Enforcement', value: 'Off' }
+      ]
     }
   ];
 
@@ -418,7 +433,8 @@ export default function AISystemPage() {
             blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
             purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
             green: { bg: 'bg-green-100', text: 'text-green-600' },
-            orange: { bg: 'bg-orange-100', text: 'text-orange-600' }
+            orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
+            indigo: { bg: 'bg-indigo-100', text: 'text-indigo-600' },
           };
           const colors = colorClasses[system.color as keyof typeof colorClasses] || colorClasses.blue;
           

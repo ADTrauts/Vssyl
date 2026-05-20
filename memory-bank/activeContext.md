@@ -1,5 +1,34 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## Admin AI Pipeline tools — Phases 1–5 (May 2026) ✅
+
+**Status:** **COMPLETE** — Admin Portal **AI Pipeline** instruments the live Digital Life Twin for grounding/orchestration inspection, editable policies, test lab, enforcement, evidence viewer, and compliance export. Additive; does not replace `QueryIntent` or rewrite provider prompts by default.
+
+**Canonical doc:** `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`
+
+| Phase | Delivered |
+|-------|-----------|
+| **1A–1B** | `buildPipelineTrace`, catalog, twin `metadata.pipelineTrace`, admin APIs, history `_pipelineTrace` |
+| **1 UI** | `/admin-portal/ai-pipeline` hub, diagnostics, test-lab, read-only catalog, AI System card |
+| **2** | `AIPipelineDiagnostic` persistence, quality stats dashboard, sampling env |
+| **3** | DB-backed intent/grounding/source/tool policies + audit log + editable admin UI |
+| **4** | Enforcement modes (off/disclose/block/regenerate), Place + IP location prepass, response gating |
+| **5** | `evidenceBundle` (assembled vs structured vs tools), retention/export/purge |
+
+**Key paths:** `server/src/ai/pipeline/*`, `server/src/routes/admin-portal/adminPortalRoutes.aiPipeline.ts`, `web/src/app/admin-portal/ai-pipeline/`, `prisma/modules/ai/ai-pipeline.prisma`
+
+**Env:** `AI_PIPELINE_DIAGNOSTICS_ENABLED`, `AI_PIPELINE_DIAGNOSTIC_SAMPLE_RATE`, `AI_PIPELINE_ENFORCEMENT_ENABLED`, `AI_PIPELINE_ENFORCEMENT_MODE`
+
+**Deploy:** `pnpm prisma:migrate:deploy` (migrations `20260520010440` … `20260520013518`)
+
+**Tests:** `server/src/ai/pipeline/__tests__/` (23+ vitest cases)
+
+**Cross-ref:** `memory-bank/progress.md` (Admin AI Pipeline); `memory-bank/aiContextSystem.md` (assembled context)
+
+**Next:** Optional scheduled retention purge cron; wire `web_search` when product-ready; production validation with enforcement enabled in staging first.
+
+---
+
 ## AI cross-session memory recall — hardened (May 2026) ✅
 
 **Status:** **COMPLETE** — Cross-session “we last talked about…” recall is production-shaped: broader intent detection, combined lexical scoring, topics fallback when `threadSummary` is missing, recall-biased `UserMemoryFact` loading, backfill for historical messages, and integration tests.

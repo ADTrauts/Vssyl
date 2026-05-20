@@ -4,15 +4,19 @@ import multer from 'multer';
 import OpenAI from 'openai';
 import { toFile } from 'openai';
 import { DigitalLifeTwinService, AIRequest } from '../ai/core/DigitalLifeTwinService';
+import type { DigitalLifeTwinResponse } from '../ai/core/DigitalLifeTwinCore';
+import { persistPipelineDiagnostic } from '../ai/pipeline/pipelineDiagnosticPersistence';
 import { PersonalityEngine } from '../ai/core/PersonalityEngine';
 import AdvancedLearningEngine from '../ai/learning/AdvancedLearningEngine';
 import type { LearningPattern } from '../ai/learning/AdvancedLearningEngine';
 import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
 import { logger } from '../lib/logger';
+import { geolocationService } from '../services/geolocationService';
 import {
   getOrCreateAutonomySettings,
   updateAutonomySettingsForUser,
@@ -50,6 +54,48 @@ function resolveAIHistorySessionId(context: Record<string, unknown>): string {
     return cid.trim();
   }
   return `session_${Date.now()}`;
+}
+
+async function saveTwinQueryHistory(
+  userId: string,
+  context: Record<string, unknown>,
+  query: string,
+  response: DigitalLifeTwinResponse
+): Promise<void> {
+  const history = await prisma.aIConversationHistory.create({
+    data: {
+      userId,
+      sessionId: resolveAIHistorySessionId(context),
+      interactionType: 'QUERY',
+      context: (() => {
+        const ctx = JSON.parse(JSON.stringify(context)) as Record<string, unknown>;
+        if (response.metadata?.pipelineTrace) {
+          ctx._pipelineTrace = response.metadata.pipelineTrace;
+        }
+        return JSON.parse(JSON.stringify(ctx)) as Prisma.InputJsonValue;
+      })(),
+      userQuery: query,
+      aiResponse: response.response,
+      confidence: response.confidence,
+      reasoning: response.reasoning || null,
+      actions: JSON.parse(JSON.stringify(response.actions || [])),
+      provider: response.metadata.provider,
+      model:
+        typeof (response.metadata as Record<string, unknown>)?.model === 'string'
+          ? ((response.metadata as Record<string, unknown>).model as string)
+          : response.metadata.provider,
+      tokensUsed: response.metadata.processingTime,
+      cost: 0,
+      processingTime: response.metadata.processingTime,
+    },
+  });
+
+  if (response.metadata?.pipelineTrace) {
+    void persistPipelineDiagnostic(response.metadata.pipelineTrace, {
+      conversationHistoryId: history.id,
+      source: 'twin',
+    });
+  }
 }
 
 const router: express.Router = express.Router();
@@ -191,25 +237,32 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       }
     }
 
+    const clientIp = geolocationService.getClientIP(req);
+    const twinContextBase = {
+      ...context,
+      ...(clientIp ? { clientIp } : {}),
+    };
+
     const wantStream = req.body.stream === true || (req.get('Accept') || '').includes('text/event-stream');
     if (wantStream) {
       await digitalLifeTwin.processAsDigitalLifeTwinStreaming(
         query,
         userId,
         {
-          currentModule: context.currentModule,
-          dashboardType: context.dashboardType,
-          dashboardName: context.dashboardName,
-          recentActivity: context.recentActivity,
-          urgency: context.urgency || 'medium',
+          currentModule: twinContextBase.currentModule,
+          dashboardType: twinContextBase.dashboardType,
+          dashboardName: twinContextBase.dashboardName,
+          recentActivity: twinContextBase.recentActivity,
+          urgency: twinContextBase.urgency || 'medium',
           preferredProvider: provider,
           preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
-          conversationId: context.conversationId,
-          fileIds: context.fileIds,
+          conversationId: twinContextBase.conversationId,
+          fileIds: twinContextBase.fileIds,
           businessId:
-            typeof context.businessId === 'string' && context.businessId.trim() !== ''
-              ? context.businessId.trim()
+            typeof twinContextBase.businessId === 'string' && twinContextBase.businessId.trim() !== ''
+              ? twinContextBase.businessId.trim()
               : undefined,
+          clientIp,
         },
         res,
         async (response) => {
@@ -221,26 +274,12 @@ router.post('/twin', authenticateJWT, async (req, res) => {
             }
           }
           try {
-            await prisma.aIConversationHistory.create({
-              data: {
-                userId,
-                sessionId: resolveAIHistorySessionId(context as Record<string, unknown>),
-                interactionType: 'QUERY',
-                context: JSON.parse(JSON.stringify(context)),
-                userQuery: query,
-                aiResponse: response.response,
-                confidence: response.confidence,
-                reasoning: response.reasoning || null,
-                actions: JSON.parse(JSON.stringify(response.actions || [])),
-                provider: response.metadata.provider,
-                model: typeof (response.metadata as Record<string, unknown>)?.model === 'string'
-                  ? (response.metadata as Record<string, unknown>).model as string
-                  : response.metadata.provider,
-                tokensUsed: response.metadata.processingTime,
-                cost: 0,
-                processingTime: response.metadata.processingTime,
-              },
-            });
+            await saveTwinQueryHistory(
+              userId,
+              context as Record<string, unknown>,
+              query,
+              response
+            );
           } catch (e) {
             logSrvErr('ai_stream_save_history_failed', 'Stream: save history failed', e);
           }
@@ -273,19 +312,20 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       query,
       userId,
       {
-        currentModule: context.currentModule,
-        dashboardType: context.dashboardType,
-        dashboardName: context.dashboardName,
-        recentActivity: context.recentActivity,
-        urgency: context.urgency || 'medium',
+        currentModule: twinContextBase.currentModule,
+        dashboardType: twinContextBase.dashboardType,
+        dashboardName: twinContextBase.dashboardName,
+        recentActivity: twinContextBase.recentActivity,
+        urgency: twinContextBase.urgency || 'medium',
         preferredProvider: provider,
         preferredModel: model != null && typeof model === 'string' ? model.trim() : undefined,
-        conversationId: context.conversationId,
-        fileIds: context.fileIds,
+        conversationId: twinContextBase.conversationId,
+        fileIds: twinContextBase.fileIds,
         businessId:
-          typeof context.businessId === 'string' && context.businessId.trim() !== ''
-            ? context.businessId.trim()
+          typeof twinContextBase.businessId === 'string' && twinContextBase.businessId.trim() !== ''
+            ? twinContextBase.businessId.trim()
             : undefined,
+        clientIp,
       }
     );
     
@@ -305,27 +345,7 @@ router.post('/twin', authenticateJWT, async (req, res) => {
       }
     }
 
-    // Save conversation to history with enhanced cross-module data
-    await prisma.aIConversationHistory.create({
-      data: {
-        userId,
-        sessionId: resolveAIHistorySessionId(context as Record<string, unknown>),
-        interactionType: 'QUERY',
-        context: JSON.parse(JSON.stringify(context)),
-        userQuery: query,
-        aiResponse: response.response,
-        confidence: response.confidence,
-        reasoning: response.reasoning || null,
-        actions: JSON.parse(JSON.stringify(response.actions || [])),
-        provider: response.metadata.provider,
-        model: typeof (response.metadata as Record<string, unknown>)?.model === 'string'
-          ? (response.metadata as Record<string, unknown>).model as string
-          : response.metadata.provider,
-        tokensUsed: response.metadata.processingTime,
-        cost: 0, // Will be calculated with real providers
-        processingTime: response.metadata.processingTime
-      }
-    });
+    await saveTwinQueryHistory(userId, context as Record<string, unknown>, query, response);
 
     // Note: Fact extraction now happens in the learning engine (AdvancedLearningEngine.processLearningEvent)
     // The learning engine processes the interaction and extracts facts as part of its learning flow

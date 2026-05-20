@@ -45,6 +45,21 @@ import {
   buildResponseInfluence,
   type ResponseInfluenceSummary,
 } from '../preferences/buildResponseInfluence';
+import { buildPipelineTrace } from '../pipeline/buildPipelineTrace';
+import {
+  applyPipelineEnforcement,
+  resolvePipelineEnforcementSettings,
+  shouldRunGroundingRetrievalPrepass,
+} from '../pipeline/pipelineEnforcement';
+import { runPipelineGroundingRetrieval } from '../pipeline/pipelineGroundingRetrieval';
+import { buildPipelineEvidenceBundle } from '../pipeline/buildPipelineEvidenceBundle';
+import { getEffectivePipelineCatalog } from '../pipeline/pipelineCatalogService';
+import { mapOrchestrationToPipelineTraceInput } from '../pipeline/mapPipelineTraceInputs';
+import type {
+  AIPipelineTrace,
+  PipelineContextRetrievedRecord,
+  PipelineToolUsageRecord,
+} from '../types/pipelineDiagnostics';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -103,6 +118,8 @@ export interface DigitalLifeTwinResponse {
     };
     /** Human-readable factors that shaped this assistant turn (no prompts or provenance keys). */
     responseInfluence?: ResponseInfluenceSummary;
+    /** Admin pipeline diagnostics (additive). */
+    pipelineTrace?: AIPipelineTrace;
   };
 }
 
@@ -187,6 +204,15 @@ export interface LifeTwinQuery {
     recalledMessages?: unknown[];
     /** Structured user memory facts (populated by DigitalLifeTwinService). */
     userMemoryFacts?: unknown[];
+    /** Admin pipeline / test-lab flags (optional). */
+    pipelineOptions?: {
+      adminDryRun?: boolean;
+      skipLearning?: boolean;
+      skipRememberThat?: boolean;
+      skipEnforcement?: boolean;
+    };
+    /** Set by twin route for pipeline location grounding (Phase 4). */
+    clientIp?: string;
     [key: string]: unknown;
   };
   userId: string;
@@ -794,7 +820,11 @@ export class DigitalLifeTwinCore {
         });
       }
       
-      // 9. Learn from this interaction (using mock AIRequest/AIResponse for now)
+      // 9. Learn from this interaction (skip for admin test-lab dry runs)
+      const pipelineOptions = (query.context as Record<string, unknown>).pipelineOptions as
+        | { skipLearning?: boolean }
+        | undefined;
+      if (!pipelineOptions?.skipLearning) {
       await this.learningEngine.processInteraction(
         {
           id: `ai_req_${Date.now()}`,
@@ -827,6 +857,7 @@ export class DigitalLifeTwinCore {
           recentActivity: []
         }
       );
+      }
 
       const processingTime = Date.now() - startTime;
 
@@ -934,6 +965,7 @@ export class DigitalLifeTwinCore {
             },
           }),
           ...(responseInfluence && { responseInfluence }),
+          ...(response.pipelineTrace && { pipelineTrace: response.pipelineTrace }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
@@ -1167,6 +1199,59 @@ export class DigitalLifeTwinCore {
     }
 
     const ctxRecord = query.context as Record<string, unknown>;
+    const pipelineOptions = ctxRecord.pipelineOptions as
+      | { skipEnforcement?: boolean; adminDryRun?: boolean }
+      | undefined;
+    const pipelineCatalog = await getEffectivePipelineCatalog();
+    const enforcementSettings = resolvePipelineEnforcementSettings(pipelineCatalog.enforcement);
+
+    let mergedModuleContexts: Record<string, unknown> = {
+      ...(moduleContexts && typeof moduleContexts === 'object' ? moduleContexts : {}),
+    };
+    let groundingBoostTools: PipelineToolUsageRecord[] = [];
+    let groundingBoostRetrieved: PipelineContextRetrievedRecord[] = [];
+    let groundingBoostSources: string[] = [];
+    let retrievalBoostApplied = false;
+
+    if (
+      !pipelineOptions?.skipEnforcement &&
+      shouldRunGroundingRetrievalPrepass(enforcementSettings)
+    ) {
+      const clientIp =
+        typeof ctxRecord.clientIp === 'string'
+          ? ctxRecord.clientIp
+          : typeof ctxRecord._clientIp === 'string'
+            ? ctxRecord._clientIp
+            : undefined;
+      const businessId =
+        typeof ctxRecord.businessId === 'string' && ctxRecord.businessId.trim() !== ''
+          ? ctxRecord.businessId.trim()
+          : undefined;
+      const boost = await runPipelineGroundingRetrieval({
+        userId: query.userId,
+        userMessage: query.query,
+        catalog: pipelineCatalog,
+        clientIp,
+        businessId,
+        existingModuleContexts: mergedModuleContexts,
+      });
+      mergedModuleContexts = { ...mergedModuleContexts, ...boost.moduleContextsPatch };
+      if (boost.locationSummary) {
+        mergedModuleContexts._pipeline_grounding = {
+          ...(typeof mergedModuleContexts._pipeline_grounding === 'object' &&
+          mergedModuleContexts._pipeline_grounding !== null
+            ? (mergedModuleContexts._pipeline_grounding as Record<string, unknown>)
+            : {}),
+          locationSummary: boost.locationSummary,
+        };
+      }
+      groundingBoostTools = boost.toolsUsed;
+      groundingBoostRetrieved = boost.contextRetrieved;
+      groundingBoostSources = boost.sourcesUsed;
+      retrievalBoostApplied =
+        boost.contextRetrieved.some((c) => c.itemCount > 0) || boost.toolsUsed.some((t) => t.success);
+    }
+
     const recentConversationMemory = Array.isArray(ctxRecord.recentConversationMemory)
       ? (ctxRecord.recentConversationMemory as Array<{
           id: string;
@@ -1197,7 +1282,7 @@ export class DigitalLifeTwinCore {
       semanticEnhancement,
       userDefinedContext,
       globalPatterns,
-      moduleContexts,
+      moduleContexts: mergedModuleContexts,
       recentConversationMemory,
       recalledMessages,
       userMemoryFacts,
@@ -1270,6 +1355,7 @@ export class DigitalLifeTwinCore {
     // Generate response — try selected provider, then auto-fallback to other provider on 429/unavailable
     let aiResponse = await this.callAIProvider(provider, query.query, options);
     let round = 0;
+    const toolsUsedRecords: PipelineToolUsageRecord[] = [];
     const toolContext = { userId: query.userId, dashboardId: options.dashboardId as string | null | undefined };
     while (round < MAX_TOOL_CALL_ROUNDS) {
       const meta = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
@@ -1281,12 +1367,24 @@ export class DigitalLifeTwinCore {
       const results = await Promise.all(
         toolCalls.map(async (tc) => {
           let args: Record<string, unknown> = {};
+          let success = true;
           try {
             args = (typeof tc.function?.arguments === 'string' ? JSON.parse(tc.function.arguments) : {}) as Record<string, unknown>;
           } catch {
             // ignore
           }
-          const content = await executeTool(tc.function.name as AIToolName, args, toolContext);
+          let content = '';
+          try {
+            content = await executeTool(tc.function.name as AIToolName, args, toolContext);
+          } catch {
+            success = false;
+            content = 'Tool execution failed';
+          }
+          toolsUsedRecords.push({
+            name: tc.function?.name ?? 'unknown',
+            round,
+            success,
+          });
           return { role: 'tool' as const, tool_call_id: tc.id, content };
         })
       );
@@ -1351,8 +1449,68 @@ export class DigitalLifeTwinCore {
     const confidenceAfterQuality =
       typeof quality.adjustedConfidence === 'number' ? quality.adjustedConfidence : confidence;
 
+    const assembledForTrace =
+      options?.assembledContext && typeof options.assembledContext === 'object'
+        ? options.assembledContext
+        : undefined;
+    const analysisRecord = analysis as Record<string, unknown> | undefined;
+    let finalResponseText = response;
+    let pipelineTrace = buildPipelineTrace(
+      mapOrchestrationToPipelineTraceInput({
+        userId: query.userId,
+        conversationId: traceContext?.conversationId,
+        userMessage: query.query,
+        finalResponse: finalResponseText,
+        confidence: confidenceAfterQuality,
+        assembledContext: assembledForTrace as Record<string, unknown>,
+        legacySignals: {
+          queryIntent: typeof assembledForTrace === 'object' && assembledForTrace && 'intent' in assembledForTrace
+            ? String((assembledForTrace as { intent?: string }).intent ?? '')
+            : undefined,
+          responseMode: typeof analysisRecord?.responseMode === 'string' ? analysisRecord.responseMode : undefined,
+          queryType: typeof analysisRecord?.queryType === 'string' ? analysisRecord.queryType : undefined,
+        },
+        qualityWarnings: quality.warnings,
+        toolsUsed: toolsUsedRecords,
+        supplementalToolsUsed: groundingBoostTools,
+        supplementalContextRetrieved: groundingBoostRetrieved,
+        supplementalSourcesUsed: groundingBoostSources,
+        queryContext: query.context as Record<string, unknown>,
+        traceId: traceContext?.requestId,
+        enforcementApplied: retrievalBoostApplied,
+        enforcementAction: retrievalBoostApplied ? 'retrieval_boost' : 'none',
+      }),
+      { catalog: pipelineCatalog }
+    );
+
+    if (!pipelineOptions?.skipEnforcement) {
+      const enforced = applyPipelineEnforcement(finalResponseText, pipelineTrace, enforcementSettings);
+      finalResponseText = enforced.response;
+      pipelineTrace = {
+        ...pipelineTrace,
+        ...enforced.tracePatch,
+        finalResponsePreview: enforced.tracePatch.finalResponsePreview,
+      };
+    }
+
+    const evidenceBundle = buildPipelineEvidenceBundle({
+      trace: pipelineTrace,
+      assembledContext: assembledForTrace as Record<string, unknown> | undefined,
+      structuredResponse: aiResponse.structured as StructuredAIResponse | undefined,
+    });
+    pipelineTrace = { ...pipelineTrace, evidenceBundle };
+
+    void logger.debug('[AI_PIPELINE_TRACE]', {
+      operation: 'ai_pipeline_trace_built',
+      traceId: pipelineTrace.traceId,
+      intentDetected: pipelineTrace.intentDetected,
+      groundingRequired: pipelineTrace.groundingRequired,
+      genericResponseRisk: pipelineTrace.genericResponseRisk,
+      retrievalPerformed: pipelineTrace.retrievalPerformed,
+    });
+
     return {
-      response,
+      response: finalResponseText,
       confidence: confidenceAfterQuality,
       reasoning,
       modulesFocused: (analysis as any)?.scope?.modules || [],
@@ -1360,6 +1518,7 @@ export class DigitalLifeTwinCore {
       provider: effectiveProvider,
       structured: aiResponse.structured,
       usedVisionParts,
+      pipelineTrace,
       ...(quality.warnings.length > 0 && { aiResponseQualityWarnings: quality.warnings }),
     };
   }

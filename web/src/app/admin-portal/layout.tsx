@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Shield, Users, BarChart3, Code, Lock, Settings, Activity, Eye, Home, DollarSign, Package, Key, Brain, MessageSquare, FileText, Gauge, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, Users, BarChart3, Code, Lock, Settings, Activity, Eye, Home, DollarSign, Package, Key, Brain, MessageSquare, FileText, Gauge, ChevronDown, ChevronRight, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
@@ -116,6 +116,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
       label: 'AI',
       items: [
         { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
+        { id: 'ai-pipeline', label: 'AI Pipeline', icon: Layers, path: '/admin-portal/ai-pipeline' },
         { id: 'business-intelligence', label: 'Business Intelligence', icon: Brain, path: '/admin-portal/business-intelligence' },
       ],
     },

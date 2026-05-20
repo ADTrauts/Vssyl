@@ -1,5 +1,31 @@
 # Block-on-Block Platform - Progress
 
+## Admin AI Pipeline tools — Phases 1–5 (May 2026) ✅
+
+**Status:** **COMPLETE** — Admin Portal tooling for AI grounding/orchestration diagnostics, policy editing, test lab, enforcement, evidence, and compliance.
+
+| Phase | Outcome |
+|-------|---------|
+| **1A** | Types + `buildPipelineTrace` + default catalog + heuristic intents + unit tests |
+| **1B** | Twin instrumentation; `pipelineTrace` on responses; admin `GET/POST` APIs; history embed |
+| **1 UI** | Hub, diagnostics, test-lab, catalog pages (intents/grounding/sources/tools/quality) |
+| **2** | `AIPipelineDiagnostic` table; quality stats API; `PipelineQualityDashboard` |
+| **3** | Policy tables + audit log; CRUD APIs; editable policy editors |
+| **4** | `AIPipelineSettings.enforcement*`; block/disclose/regenerate; `pipelineGroundingRetrieval` |
+| **5** | `evidenceBundle` on traces; retention/export/purge; `PipelineEvidenceViewer` + compliance page |
+
+**Admin UI routes:** `/admin-portal/ai-pipeline`, `/diagnostics`, `/test-lab`, `/intents`, `/grounding`, `/sources`, `/tools`, `/quality`, `/audit`, `/compliance`
+
+**Server:** `server/src/ai/pipeline/`, `adminPortalRoutes.aiPipeline.ts`, hooks in `DigitalLifeTwinCore.ts`, `ai.ts` (`clientIp`)
+
+**Prisma:** `prisma/modules/ai/ai-pipeline.prisma`; migrations `20260520010440`–`20260520013518`
+
+**Canonical doc:** `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`
+
+**Reference:** `memory-bank/activeContext.md` (Admin AI Pipeline tools).
+
+---
+
 ## AI cross-session memory recall — hardened (May 2026) ✅
 
 **Status:** **COMPLETE** — Reliable “we last talked about…” recall across sessions without new architecture.

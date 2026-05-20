@@ -1603,6 +1603,183 @@ class AdminApiService {
     const data = responseData.success && responseData.data ? responseData.data : responseData;
     return { data };
   }
+
+  // ============================================================================
+  // AI PIPELINE (grounding / diagnostics)
+  // ============================================================================
+
+  async getAiPipelineCatalog() {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineCatalog>('/ai-pipeline/catalog');
+  }
+
+  async getAiPipelineDiagnostics(params?: { limit?: number; userId?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit != null) searchParams.set('limit', String(params.limit));
+    if (params?.userId) searchParams.set('userId', params.userId);
+    const qs = searchParams.toString();
+    return this.makeRequest<{ traces: import('../types/adminAiPipeline').AIPipelineTrace[]; total: number }>(
+      `/ai-pipeline/diagnostics${qs ? `?${qs}` : ''}`
+    );
+  }
+
+  async getAiPipelineDiagnostic(traceId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').AIPipelineTrace>(
+      `/ai-pipeline/diagnostics/${encodeURIComponent(traceId)}`
+    );
+  }
+
+  async runAiPipelineTestLab(body: {
+    query: string;
+    userId?: string;
+    context?: Record<string, unknown>;
+    provider?: 'auto' | 'openai' | 'anthropic';
+    model?: string;
+  }) {
+    return this.makeRequest<import('../types/adminAiPipeline').TestLabResult>('/ai-pipeline/test-lab', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getAiPipelineQualityStats(params?: { days?: number; userId?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.days != null) searchParams.set('days', String(params.days));
+    if (params?.userId) searchParams.set('userId', params.userId);
+    const qs = searchParams.toString();
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineQualityStats>(
+      `/ai-pipeline/quality/stats${qs ? `?${qs}` : ''}`
+    );
+  }
+
+  async updateAiPipelineIntentPolicy(
+    intentId: string,
+    body: Partial<import('../types/adminAiPipeline').PipelineIntentDefinition>
+  ) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineIntentDefinition>(
+      `/ai-pipeline/policies/intents/${encodeURIComponent(intentId)}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+  }
+
+  async updateAiPipelineGroundingPolicy(
+    intentId: string,
+    body: Partial<import('../types/adminAiPipeline').PipelineGroundingRule>
+  ) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineGroundingRule>(
+      `/ai-pipeline/policies/grounding/${encodeURIComponent(intentId)}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+  }
+
+  async updateAiPipelineContextSourcePolicy(
+    sourceId: string,
+    body: Partial<import('../types/adminAiPipeline').PipelineContextSourceDefinition>
+  ) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineContextSourceDefinition>(
+      `/ai-pipeline/policies/sources/${encodeURIComponent(sourceId)}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+  }
+
+  async updateAiPipelineToolPolicy(
+    toolId: string,
+    body: Partial<import('../types/adminAiPipeline').PipelineToolPolicy>
+  ) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineToolPolicy>(
+      `/ai-pipeline/policies/tools/${encodeURIComponent(toolId)}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+  }
+
+  async updateAiPipelineSettings(body: {
+    weakGenericPhrases?: string[];
+    enforcementEnabled?: boolean;
+    enforcementMode?: import('../types/adminAiPipeline').PipelineEnforcementSettings['enforcementMode'];
+  }) {
+    return this.makeRequest<{
+      weakGenericPhrases: string[];
+      enforcement: import('../types/adminAiPipeline').PipelineEnforcementSettings;
+    }>('/ai-pipeline/policies/settings', {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getAiPipelinePolicyAudit(params?: {
+    limit?: number;
+    entityType?: string;
+    entityId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.limit != null) searchParams.set('limit', String(params.limit));
+    if (params?.entityType) searchParams.set('entityType', params.entityType);
+    if (params?.entityId) searchParams.set('entityId', params.entityId);
+    const qs = searchParams.toString();
+    return this.makeRequest<{
+      entries: import('../types/adminAiPipeline').PipelinePolicyAuditEntry[];
+      total: number;
+    }>(`/ai-pipeline/audit${qs ? `?${qs}` : ''}`);
+  }
+
+  async getAiPipelineRetention() {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineRetentionSettings>(
+      '/ai-pipeline/retention'
+    );
+  }
+
+  async updateAiPipelineRetention(
+    body: import('../types/adminAiPipeline').PipelineRetentionSettings
+  ) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineRetentionSettings>(
+      '/ai-pipeline/retention',
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+  }
+
+  async getAiPipelineEvidence(traceId: string) {
+    return this.makeRequest<{
+      traceId: string;
+      evidenceBundle: import('../types/adminAiPipeline').PipelineEvidenceBundle;
+    }>(`/ai-pipeline/diagnostics/${encodeURIComponent(traceId)}/evidence`);
+  }
+
+  async exportAiPipelineDiagnostics(params: {
+    format: 'json' | 'csv';
+    days?: number;
+    userId?: string;
+    atRiskOnly?: boolean;
+    limit?: number;
+  }): Promise<ApiResponse<string | { exportedAt: string; count: number; records: unknown[] }>> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await fetch(`${API_BASE}/ai-pipeline/diagnostics/export`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        return { error: (errorData as { error?: string }).error ?? `HTTP ${response.status}` };
+      }
+      if (params.format === 'csv') {
+        return { data: await response.text() };
+      }
+      const responseData = await response.json();
+      const data =
+        responseData.success && responseData.data ? responseData.data : responseData;
+      return { data };
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      return { error: err.message };
+    }
+  }
+
+  async purgeAiPipelineDiagnostics(params?: { dryRun?: boolean }) {
+    return this.makeRequest<{ deleted: number; cutoff: string }>('/ai-pipeline/retention/purge', {
+      method: 'POST',
+      body: JSON.stringify(params ?? {}),
+    });
+  }
 }
 
 // Module stats interface

@@ -326,6 +326,8 @@ model User {
   aiAutonomySettings AIAutonomySettings[]
   aiApprovalRequests AIApprovalRequest[]
   aiConversationHistories AIConversationHistory[]
+  aiPipelineDiagnostics   AIPipelineDiagnostic[]
+  aiPipelinePolicyAudits  AIPipelinePolicyAuditLog[] @relation("AIPipelinePolicyAuditAdmin")
   aiUsageTrackings AIUsageTracking[]
   aiLearningEvents AILearningEvent[]
   aiContextCache UserAIContextCache?
@@ -1945,7 +1947,8 @@ model AIConversationHistory {
   
   // Relationships
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  pipelineDiagnostics AIPipelineDiagnostic[]
+
   @@index([userId])
   @@index([sessionId])
   @@index([interactionType])
@@ -2470,6 +2473,140 @@ enum AISuggestionStatus {
   PENDING
   ACCEPTED
   DISMISSED
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// ============================================================================
+// AI PIPELINE DIAGNOSTICS (admin grounding / orchestration traces)
+// ============================================================================
+
+enum AIPipelineDiagnosticSource {
+  TWIN
+  TEST_LAB
+}
+
+model AIPipelineDiagnostic {
+  id                      String                     @id
+  userId                  String
+  conversationHistoryId   String?
+  conversationId          String?
+  source                  AIPipelineDiagnosticSource @default(TWIN)
+  genericResponseRisk     Boolean                    @default(false)
+  groundingRequired       Boolean                    @default(false)
+  retrievalPerformed      Boolean                    @default(false)
+  confidenceLevel         String
+  intentDetected          String[]
+  issues                  Json                       @default("[]")
+  traceJson               Json
+  createdAt               DateTime                   @default(now())
+
+  user                    User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationHistory     AIConversationHistory?     @relation(fields: [conversationHistoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([genericResponseRisk])
+  @@index([conversationHistoryId])
+  @@index([source])
+  @@map("ai_pipeline_diagnostics")
+}
+
+// ============================================================================
+// AI PIPELINE POLICY CONFIG (Phase 3 — admin-editable, runtime with defaults)
+// ============================================================================
+
+model AIPipelineIntentPolicy {
+  id                 String   @id
+  name               String
+  description        String
+  triggerExamples    String[]
+  groundingRequired  Boolean  @default(false)
+  enabled            Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+  updatedByAdminId   String?
+
+  @@map("ai_pipeline_intent_policies")
+}
+
+model AIPipelineGroundingRulePolicy {
+  intentId           String   @id
+  requiredSources    String[]
+  optionalSources    String[]
+  requirementSummary String
+  updatedAt          DateTime @updatedAt
+  updatedByAdminId   String?
+
+  @@map("ai_pipeline_grounding_rule_policies")
+}
+
+model AIPipelineContextSourcePolicy {
+  id               String   @id
+  label            String
+  description      String
+  enabled          Boolean  @default(true)
+  wiredInTwin      Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+  updatedByAdminId String?
+
+  @@map("ai_pipeline_context_source_policies")
+}
+
+model AIPipelineToolPolicyRow {
+  toolId               String   @id
+  purpose              String
+  requiredIntents      String[]
+  optionalIntents      String[]
+  requiredPermissions  String[]
+  fallbackBehavior     String
+  enabled              Boolean  @default(true)
+  updatedAt            DateTime @updatedAt
+  updatedByAdminId     String?
+
+  @@map("ai_pipeline_tool_policy_rows")
+}
+
+enum AIPipelineEnforcementMode {
+  OFF
+  DISCLOSE
+  BLOCK
+  REGENERATE
+}
+
+model AIPipelineSettings {
+  id                         String                    @id @default("default")
+  weakGenericPhrases         String[]
+  enforcementEnabled         Boolean                   @default(false)
+  enforcementMode            AIPipelineEnforcementMode @default(OFF)
+  diagnosticRetentionDays    Int                       @default(90)
+  exportRedactUserMessages   Boolean                   @default(true)
+  exportRedactResponsePreviews Boolean                 @default(true)
+  updatedAt                  DateTime                  @updatedAt
+  updatedByAdminId           String?
+
+  @@map("ai_pipeline_settings")
+}
+
+model AIPipelinePolicyAuditLog {
+  id          String   @id @default(uuid())
+  adminUserId String
+  entityType  String
+  entityId    String
+  action      String
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
+
+  adminUser   User     @relation("AIPipelinePolicyAuditAdmin", fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("ai_pipeline_policy_audit_logs")
 }
 
 

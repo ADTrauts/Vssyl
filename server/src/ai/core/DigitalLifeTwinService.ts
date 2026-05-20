@@ -132,6 +132,13 @@ export class DigitalLifeTwinService {
       conversationId?: string;
       fileIds?: string[];
       businessId?: string;
+      pipelineOptions?: {
+        adminDryRun?: boolean;
+        skipLearning?: boolean;
+        skipRememberThat?: boolean;
+        skipEnforcement?: boolean;
+      };
+      clientIp?: string;
     } = {}
   ): Promise<DigitalLifeTwinResponse> {
     let conversationHistory: ConversationHistoryItem[] = [];
@@ -228,18 +235,24 @@ export class DigitalLifeTwinService {
       console.warn('Failed to load user memory facts for twin:', err);
     }
 
-    void maybePersistRememberThatFact({
-      userId,
-      query,
-      conversationId: context.conversationId,
-      businessId: context.businessId,
-    }).catch((err) => console.warn('remember-that persistence failed:', err));
+    const ctxRecord = context as Record<string, unknown>;
+    const pipelineOptions = ctxRecord.pipelineOptions as
+      | { adminDryRun?: boolean; skipRememberThat?: boolean }
+      | undefined;
+    if (!pipelineOptions?.skipRememberThat && !pipelineOptions?.adminDryRun) {
+      void maybePersistRememberThatFact({
+        userId,
+        query,
+        conversationId: context.conversationId,
+        businessId: context.businessId,
+      }).catch((err) => console.warn('remember-that persistence failed:', err));
+    }
 
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
       context: {
-        ...(context as Record<string, unknown>),
+        ...ctxRecord,
         recentConversationMemory,
         recalledMessages,
         userMemoryFacts,
@@ -271,6 +284,13 @@ export class DigitalLifeTwinService {
       conversationId?: string;
       fileIds?: string[];
       businessId?: string;
+      pipelineOptions?: {
+        adminDryRun?: boolean;
+        skipLearning?: boolean;
+        skipRememberThat?: boolean;
+        skipEnforcement?: boolean;
+      };
+      clientIp?: string;
     },
     res: { setHeader: (name: string, value: string) => void; write: (chunk: string) => void; end: () => void },
     onDone?: (response: DigitalLifeTwinResponse) => Promise<void>
@@ -363,18 +383,24 @@ export class DigitalLifeTwinService {
       console.warn('Failed to load user memory facts for twin (streaming):', err);
     }
 
-    void maybePersistRememberThatFact({
-      userId,
-      query,
-      conversationId: context.conversationId,
-      businessId: context.businessId,
-    }).catch((err) => console.warn('remember-that persistence failed:', err));
+    const ctxRecordStream = context as Record<string, unknown>;
+    const pipelineOptionsStream = ctxRecordStream.pipelineOptions as
+      | { adminDryRun?: boolean; skipRememberThat?: boolean }
+      | undefined;
+    if (!pipelineOptionsStream?.skipRememberThat && !pipelineOptionsStream?.adminDryRun) {
+      void maybePersistRememberThatFact({
+        userId,
+        query,
+        conversationId: context.conversationId,
+        businessId: context.businessId,
+      }).catch((err) => console.warn('remember-that persistence failed:', err));
+    }
 
     const lifeTwinQuery: LifeTwinQuery = {
       query,
       userId,
       context: {
-        ...(context as Record<string, unknown>),
+        ...ctxRecordStream,
         recentConversationMemory,
         recalledMessages,
         userMemoryFacts,
