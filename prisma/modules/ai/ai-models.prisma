@@ -116,7 +116,8 @@ model AIConversationHistory {
   
   // Relationships
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  pipelineDiagnostics AIPipelineDiagnostic[]
+
   @@index([userId])
   @@index([sessionId])
   @@index([interactionType])
