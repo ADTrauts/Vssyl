@@ -8,11 +8,17 @@ import type {
   PipelineGroundingRule,
   PipelineIntentDefinition,
   PipelineIntentId,
+  PipelineRegistryMeta,
   PipelineToolPolicy,
 } from '../types/pipelineDiagnostics';
 import { buildSourceToToolsMap } from './pipelineRegistryValidator';
 
-export const DEFAULT_PIPELINE_INTENT_DEFINITIONS: PipelineIntentDefinition[] = [
+type DefaultIntentSeed = Omit<PipelineIntentDefinition, keyof PipelineRegistryMeta>;
+type DefaultGroundingSeed = Omit<PipelineGroundingRule, keyof PipelineRegistryMeta | 'enabled'>;
+type DefaultSourceSeed = Omit<PipelineContextSourceDefinition, keyof PipelineRegistryMeta>;
+type DefaultToolSeed = Omit<PipelineToolPolicy, keyof PipelineRegistryMeta>;
+
+export const DEFAULT_PIPELINE_INTENT_DEFINITIONS: DefaultIntentSeed[] = [
   {
     id: 'emotional_support',
     name: 'Emotional support',
@@ -98,7 +104,7 @@ export const DEFAULT_PIPELINE_INTENT_DEFINITIONS: PipelineIntentDefinition[] = [
   },
 ];
 
-export const DEFAULT_PIPELINE_GROUNDING_RULES: PipelineGroundingRule[] = [
+export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'local_discovery',
     requiredSources: ['location'],
@@ -147,7 +153,7 @@ export const SOURCE_TO_TOOLS: Record<string, PipelineToolPolicy['toolId'][]> = {
   repo_context: ['module_context'],
 };
 
-export const DEFAULT_PIPELINE_CONTEXT_SOURCES: PipelineContextSourceDefinition[] = [
+export const DEFAULT_PIPELINE_CONTEXT_SOURCES: DefaultSourceSeed[] = [
   {
     id: 'user_memory',
     label: 'User memory',
@@ -241,7 +247,7 @@ export const DEFAULT_PIPELINE_CONTEXT_SOURCES: PipelineContextSourceDefinition[]
   },
 ];
 
-export const DEFAULT_PIPELINE_TOOL_POLICIES: PipelineToolPolicy[] = [
+export const DEFAULT_PIPELINE_TOOL_POLICIES: DefaultToolSeed[] = [
   {
     toolId: 'memory',
     purpose: 'Load user memory facts and learned context',

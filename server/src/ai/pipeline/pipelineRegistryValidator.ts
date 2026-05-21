@@ -271,7 +271,7 @@ export function validateRegistryChange(input: ValidateRegistryChangeInput): Regi
           pushError('GROUNDING_RULE_EXISTS', 'A grounding rule already exists for this intent.');
         }
       }
-      if (!intent?.isSystem && action !== 'archive') {
+      if (!intent?.isSystem) {
         pushWarning(
           'NO_INFERENCE_MATCH',
           'Custom intents are stored as policy metadata; catalog-driven inference is v2.',
