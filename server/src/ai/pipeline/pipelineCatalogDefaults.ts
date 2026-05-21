@@ -10,6 +10,7 @@ import type {
   PipelineIntentId,
   PipelineToolPolicy,
 } from '../types/pipelineDiagnostics';
+import { buildSourceToToolsMap } from './pipelineRegistryValidator';
 
 export const DEFAULT_PIPELINE_INTENT_DEFINITIONS: PipelineIntentDefinition[] = [
   {
@@ -332,12 +333,21 @@ export const DEFAULT_WEAK_GENERIC_PHRASES: readonly string[] = [
   'it depends',
 ];
 
+function withSystemMeta<T extends { id?: string; toolId?: string; intentId?: string }>(
+  rows: T[]
+): (T & { isSystem: boolean; archived: boolean })[] {
+  return rows.map((row) => ({ ...row, isSystem: true, archived: false }));
+}
+
 export function getDefaultPipelineCatalog(): PipelineCatalog {
   return {
-    intents: DEFAULT_PIPELINE_INTENT_DEFINITIONS,
-    groundingRules: DEFAULT_PIPELINE_GROUNDING_RULES,
-    contextSources: DEFAULT_PIPELINE_CONTEXT_SOURCES,
-    toolPolicies: DEFAULT_PIPELINE_TOOL_POLICIES,
+    intents: withSystemMeta(DEFAULT_PIPELINE_INTENT_DEFINITIONS),
+    groundingRules: withSystemMeta(DEFAULT_PIPELINE_GROUNDING_RULES).map((r) => ({
+      ...r,
+      enabled: true,
+    })),
+    contextSources: withSystemMeta(DEFAULT_PIPELINE_CONTEXT_SOURCES),
+    toolPolicies: withSystemMeta(DEFAULT_PIPELINE_TOOL_POLICIES),
     weakGenericPhrases: [...DEFAULT_WEAK_GENERIC_PHRASES],
   };
 }
@@ -369,9 +379,10 @@ export function getToolsConsideredForIntentsInCatalog(
   catalog: PipelineCatalog,
   intentIds: PipelineIntentId[]
 ): string[] {
+  const sourceToolMap = buildSourceToToolsMap(catalog);
   const tools = new Set<string>();
   for (const policy of catalog.toolPolicies) {
-    if (!policy.enabled) continue;
+    if (!policy.enabled || policy.archived) continue;
     const matchesRequired = policy.requiredIntents.some((i) => intentIds.includes(i));
     const matchesOptional = policy.optionalIntents.some((i) => intentIds.includes(i));
     if (matchesRequired || matchesOptional) {
@@ -380,9 +391,12 @@ export function getToolsConsideredForIntentsInCatalog(
   }
   for (const intentId of intentIds) {
     const rule = getGroundingRuleForIntentInCatalog(catalog, intentId);
-    if (!rule) continue;
+    if (!rule || rule.archived || rule.enabled === false) continue;
+    for (const toolId of rule.requiredTools ?? []) {
+      tools.add(toolId);
+    }
     for (const sourceId of [...rule.requiredSources, ...rule.optionalSources]) {
-      const mapped = SOURCE_TO_TOOLS[sourceId];
+      const mapped = sourceToolMap[sourceId];
       if (mapped) {
         for (const t of mapped) {
           tools.add(t);

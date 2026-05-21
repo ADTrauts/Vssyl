@@ -1,47 +1,41 @@
 /**
  * Admin AI pipeline diagnostics — trace types for grounding/orchestration inspection.
- * Additive; consumed by buildPipelineTrace and future admin APIs.
  */
 
-export type PipelineIntentId =
-  | 'emotional_support'
-  | 'local_discovery'
-  | 'recommendation'
-  | 'planning'
-  | 'research'
-  | 'personal_reflection'
-  | 'business_operations'
-  | 'technical_help'
-  | 'workflow_action'
-  | 'general_chat';
+import type {
+  SystemPipelineContextSourceId,
+  SystemPipelineIntentId,
+  SystemPipelineToolId,
+} from '../pipeline/pipelineRegistryIds';
+
+/** Dynamic registry id (system + admin-created extensions). */
+export type PipelineIntentId = SystemPipelineIntentId | (string & { readonly __brand?: 'PipelineIntentId' });
+export type PipelineContextSourceId =
+  | SystemPipelineContextSourceId
+  | (string & { readonly __brand?: 'PipelineContextSourceId' });
+export type PipelineToolId = SystemPipelineToolId | (string & { readonly __brand?: 'PipelineToolId' });
 
 export type PipelineConfidenceLevel = 'low' | 'medium' | 'high';
 
-export type PipelineContextSourceId =
-  | 'user_memory'
-  | 'profile'
-  | 'recent_conversations'
-  | 'active_goals'
-  | 'location'
-  | 'calendar'
-  | 'drive_files'
-  | 'business_context'
-  | 'vssyl_place'
-  | 'web_search'
-  | 'module_context'
-  | 'notifications_activity'
-  | 'repo_context';
+export type PipelineSourceType = 'platform' | 'module' | 'external' | 'synthetic';
+export type PipelineLifecycleStatus = 'planned' | 'live' | 'disabled';
+export type PipelineSensitivityLevel = 'low' | 'medium' | 'high';
+export type PipelineToolRuntimeKind = 'openai_tool' | 'prepass' | 'policy_only';
+export type PipelineRiskLevel = 'low' | 'medium' | 'high';
 
-export type PipelineToolId =
-  | 'memory'
-  | 'location'
-  | 'place_search'
-  | 'web_search'
-  | 'list_drive_files'
-  | 'share_file'
-  | 'create_todo'
-  | 'module_context'
-  | 'business_context';
+export interface PipelineRegistryCapabilities {
+  executable: boolean;
+  inferable: boolean;
+  retrievalEnabled: boolean;
+  enforceable: boolean;
+}
+
+export interface PipelineRegistryMeta {
+  isSystem: boolean;
+  archived: boolean;
+  createdAt?: string;
+  createdByAdminId?: string | null;
+}
 
 export interface PipelineLegacySignals {
   queryIntent?: string;
@@ -67,38 +61,60 @@ export interface PipelineMemoryRetrieved {
   threadMemory: boolean;
 }
 
-export interface PipelineIntentDefinition {
-  id: PipelineIntentId;
+export interface PipelineIntentDefinition extends PipelineRegistryMeta {
+  id: string;
   name: string;
   description: string;
   triggerExamples: string[];
   groundingRequired: boolean;
   enabled: boolean;
+  category?: string | null;
+  priority?: number | null;
+  defaultRequiredTools?: string[];
+  capabilities?: PipelineRegistryCapabilities;
 }
 
-export interface PipelineGroundingRule {
-  intentId: PipelineIntentId;
-  requiredSources: PipelineContextSourceId[];
-  optionalSources: PipelineContextSourceId[];
+export interface PipelineGroundingRule extends PipelineRegistryMeta {
+  intentId: string;
+  requiredSources: string[];
+  optionalSources: string[];
   requirementSummary: string;
+  enabled: boolean;
+  requiredTools?: string[];
+  minimumConfidence?: string | null;
+  enforcementBehavior?: string | null;
 }
 
-export interface PipelineContextSourceDefinition {
-  id: PipelineContextSourceId;
+export interface PipelineContextSourceDefinition extends PipelineRegistryMeta {
+  id: string;
   label: string;
   description: string;
   enabled: boolean;
   wiredInTwin: boolean;
+  sourceType?: PipelineSourceType | null;
+  lifecycleStatus?: PipelineLifecycleStatus | null;
+  retrievalPriority?: number;
+  supportedIntents?: string[];
+  permissionsRequired?: string[];
+  sensitivityLevel?: PipelineSensitivityLevel | null;
+  mappedTools?: string[];
+  capabilities?: PipelineRegistryCapabilities;
 }
 
-export interface PipelineToolPolicy {
-  toolId: PipelineToolId;
+export interface PipelineToolPolicy extends PipelineRegistryMeta {
+  toolId: string;
+  displayName?: string | null;
   purpose: string;
-  requiredIntents: PipelineIntentId[];
-  optionalIntents: PipelineIntentId[];
+  requiredIntents: string[];
+  optionalIntents: string[];
   requiredPermissions: string[];
   fallbackBehavior: string;
   enabled: boolean;
+  riskLevel?: PipelineRiskLevel | null;
+  requiresGrounding?: boolean;
+  rateLimitPerMinute?: number | null;
+  runtimeKind?: PipelineToolRuntimeKind | null;
+  capabilities?: PipelineRegistryCapabilities;
 }
 
 export type PipelineEnforcementAction = 'none' | 'retrieval_boost' | 'disclosed' | 'blocked';
@@ -135,7 +151,6 @@ export interface PipelineContextBlockSummary {
   priority?: string;
 }
 
-/** Unified evidence view for admin Phase 5 (assembled vs structured vs tools). */
 export interface PipelineEvidenceBundle {
   assembledEvidence: PipelineEvidenceItem[];
   assembledContextBlocks: PipelineContextBlockSummary[];
@@ -158,11 +173,10 @@ export interface PipelineRetentionSettings {
 export interface AIPipelineTrace {
   traceId: string;
   userId: string;
-  /** Set when persisted and linked to AIConversationHistory (Phase 2). */
   conversationHistoryId?: string;
   conversationId?: string;
   userMessage: string;
-  intentDetected: PipelineIntentId[];
+  intentDetected: string[];
   legacySignals?: PipelineLegacySignals;
   groundingRequired: boolean;
   toolsConsidered: string[];
@@ -187,6 +201,13 @@ export interface PipelineEnforcementSettings {
   enforcementMode: 'off' | 'disclose' | 'block' | 'regenerate';
 }
 
+export interface PipelineCatalogValidationSummary {
+  orphanCount: number;
+  archivedCount: number;
+  customIntentCount: number;
+  policyOnlyToolCount: number;
+}
+
 export interface PipelineCatalog {
   intents: PipelineIntentDefinition[];
   groundingRules: PipelineGroundingRule[];
@@ -195,4 +216,5 @@ export interface PipelineCatalog {
   weakGenericPhrases: string[];
   enforcement?: PipelineEnforcementSettings;
   retention?: PipelineRetentionSettings;
+  validationSummary?: PipelineCatalogValidationSummary;
 }

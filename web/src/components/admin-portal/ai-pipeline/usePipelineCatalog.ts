@@ -9,9 +9,9 @@ export function usePipelineCatalog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (options?: { includeArchived?: boolean }) => {
     setLoading(true);
-    const res = await adminApiService.getAiPipelineCatalog();
+    const res = await adminApiService.getAiPipelineCatalog(options);
     if (res.error || !res.data) {
       setError(res.error ?? 'Failed to load catalog');
       setCatalog(null);

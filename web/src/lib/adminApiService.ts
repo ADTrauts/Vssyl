@@ -1608,8 +1608,132 @@ class AdminApiService {
   // AI PIPELINE (grounding / diagnostics)
   // ============================================================================
 
-  async getAiPipelineCatalog() {
-    return this.makeRequest<import('../types/adminAiPipeline').PipelineCatalog>('/ai-pipeline/catalog');
+  async getAiPipelineCatalog(params?: { includeArchived?: boolean }) {
+    const searchParams = new URLSearchParams();
+    if (params?.includeArchived) searchParams.set('includeArchived', 'true');
+    const qs = searchParams.toString();
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineCatalog>(
+      `/ai-pipeline/catalog${qs ? `?${qs}` : ''}`
+    );
+  }
+
+  async getAiPipelineRegistryGraph() {
+    return this.makeRequest<import('../types/adminAiPipeline').RegistryGraph>(
+      '/ai-pipeline/registry/graph'
+    );
+  }
+
+  async validateAiPipelineRegistry(body: {
+    entityType: 'intent' | 'context_source' | 'tool' | 'grounding_rule';
+    action: 'create' | 'update' | 'archive' | 'duplicate';
+    entityId: string;
+    payload?: Record<string, unknown>;
+  }) {
+    return this.makeRequest<import('../types/adminAiPipeline').RegistryValidationResult>(
+      '/ai-pipeline/registry/validate',
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+  }
+
+  async createAiPipelineIntent(
+    body: Record<string, unknown>
+  ) {
+    return this.makeRequest<{
+      intent: import('../types/adminAiPipeline').PipelineIntentDefinition;
+      validation: import('../types/adminAiPipeline').RegistryValidationResult;
+    }>('/ai-pipeline/policies/intents', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  async duplicateAiPipelineIntent(intentId: string, body?: { newId?: string }) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineIntentDefinition>(
+      `/ai-pipeline/policies/intents/${encodeURIComponent(intentId)}/duplicate`,
+      { method: 'POST', body: JSON.stringify(body ?? {}) }
+    );
+  }
+
+  async archiveAiPipelineIntent(intentId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineIntentDefinition>(
+      `/ai-pipeline/policies/intents/${encodeURIComponent(intentId)}/archive`,
+      { method: 'POST' }
+    );
+  }
+
+  async restoreAiPipelineIntent(intentId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineIntentDefinition>(
+      `/ai-pipeline/policies/intents/${encodeURIComponent(intentId)}/restore`,
+      { method: 'POST' }
+    );
+  }
+
+  async setAiPipelineIntentEnabled(intentId: string, enabled: boolean) {
+    const action = enabled ? 'enable' : 'disable';
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineIntentDefinition>(
+      `/ai-pipeline/policies/intents/${encodeURIComponent(intentId)}/${action}`,
+      { method: 'POST' }
+    );
+  }
+
+  async createAiPipelineContextSource(body: Record<string, unknown>) {
+    return this.makeRequest<{
+      source: import('../types/adminAiPipeline').PipelineContextSourceDefinition;
+      validation: import('../types/adminAiPipeline').RegistryValidationResult;
+    }>('/ai-pipeline/policies/sources', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  async duplicateAiPipelineContextSource(sourceId: string, body?: { newId?: string }) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineContextSourceDefinition>(
+      `/ai-pipeline/policies/sources/${encodeURIComponent(sourceId)}/duplicate`,
+      { method: 'POST', body: JSON.stringify(body ?? {}) }
+    );
+  }
+
+  async archiveAiPipelineContextSource(sourceId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineContextSourceDefinition>(
+      `/ai-pipeline/policies/sources/${encodeURIComponent(sourceId)}/archive`,
+      { method: 'POST' }
+    );
+  }
+
+  async restoreAiPipelineContextSource(sourceId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineContextSourceDefinition>(
+      `/ai-pipeline/policies/sources/${encodeURIComponent(sourceId)}/restore`,
+      { method: 'POST' }
+    );
+  }
+
+  async createAiPipelineToolPolicy(body: Record<string, unknown>) {
+    return this.makeRequest<{
+      tool: import('../types/adminAiPipeline').PipelineToolPolicy;
+      validation: import('../types/adminAiPipeline').RegistryValidationResult;
+    }>('/ai-pipeline/policies/tools', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  async duplicateAiPipelineToolPolicy(toolId: string, body?: { newToolId?: string }) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineToolPolicy>(
+      `/ai-pipeline/policies/tools/${encodeURIComponent(toolId)}/duplicate`,
+      { method: 'POST', body: JSON.stringify(body ?? {}) }
+    );
+  }
+
+  async archiveAiPipelineToolPolicy(toolId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineToolPolicy>(
+      `/ai-pipeline/policies/tools/${encodeURIComponent(toolId)}/archive`,
+      { method: 'POST' }
+    );
+  }
+
+  async restoreAiPipelineToolPolicy(toolId: string) {
+    return this.makeRequest<import('../types/adminAiPipeline').PipelineToolPolicy>(
+      `/ai-pipeline/policies/tools/${encodeURIComponent(toolId)}/restore`,
+      { method: 'POST' }
+    );
+  }
+
+  async createAiPipelineGroundingRule(body: Record<string, unknown>) {
+    return this.makeRequest<{
+      rule: import('../types/adminAiPipeline').PipelineGroundingRule;
+      validation: import('../types/adminAiPipeline').RegistryValidationResult;
+    }>('/ai-pipeline/policies/grounding', { method: 'POST', body: JSON.stringify(body) });
   }
 
   async getAiPipelineDiagnostics(params?: { limit?: number; userId?: string }) {

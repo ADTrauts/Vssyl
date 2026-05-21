@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Alert, Badge } from 'shared/components';
+import { Button, Alert, Badge, Modal } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import type {
   PipelineContextSourceDefinition,
@@ -31,6 +31,42 @@ function useSaveFeedback() {
   return { ...state, run };
 }
 
+function PipelinePolicyEditModal({
+  open,
+  title,
+  onClose,
+  children,
+  onSave,
+  saving,
+  saveLabel = 'Save',
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  onSave: () => void;
+  saving: boolean;
+  saveLabel?: string;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title={title} size="large">
+      <div className="space-y-4">{children}</div>
+      <div className="flex flex-wrap gap-2 justify-end pt-4 mt-4 border-t border-gray-200 dark:border-slate-700">
+        <Button variant="secondary" onClick={onClose} disabled={saving}>
+          Cancel
+        </Button>
+        <Button onClick={onSave} disabled={saving}>
+          {saving ? 'Saving…' : saveLabel}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+const inputClass =
+  'mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100';
+const labelClass = 'block text-sm text-gray-700 dark:text-gray-300';
+
 interface IntentEditorProps {
   intents: PipelineIntentDefinition[];
   onSaved: () => void;
@@ -59,8 +95,9 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
 
   return (
     <div className="space-y-4">
-      {error && <Alert>{error}</Alert>}
-      {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
+      {message && !editing && (
+        <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+      )}
       <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg">
         <table className="min-w-full text-sm divide-y divide-gray-200 dark:divide-slate-600">
           <thead className="bg-gray-50 dark:bg-slate-900">
@@ -94,52 +131,55 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
         </table>
       </div>
 
-      {editing && (
-        <div className="border border-indigo-200 dark:border-indigo-700 rounded-lg p-4 space-y-3 bg-indigo-50/50 dark:bg-indigo-950/30">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Edit {editing.id}</h3>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Name</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.name}
-              onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Description</span>
-            <textarea
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              rows={3}
-              value={editing.description}
-              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={editing.groundingRequired}
-              onChange={(e) => setEditing({ ...editing, groundingRequired: e.target.checked })}
-            />
-            Grounding required
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={editing.enabled}
-              onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
-            />
-            Enabled
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <PipelinePolicyEditModal
+        open={editing != null}
+        title={editing ? `Edit intent: ${editing.id}` : 'Edit intent'}
+        onClose={() => setEditing(null)}
+        onSave={() => void save()}
+        saving={saving}
+      >
+        {error && <Alert>{error}</Alert>}
+        {message && editing && (
+          <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+        )}
+        {editing && (
+          <>
+            <label className={labelClass}>
+              Name
+              <input
+                className={inputClass}
+                value={editing.name}
+                onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              />
+            </label>
+            <label className={labelClass}>
+              Description
+              <textarea
+                className={inputClass}
+                rows={3}
+                value={editing.description}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={editing.groundingRequired}
+                onChange={(e) => setEditing({ ...editing, groundingRequired: e.target.checked })}
+              />
+              Grounding required
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={editing.enabled}
+                onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
+              />
+              Enabled
+            </label>
+          </>
+        )}
+      </PipelinePolicyEditModal>
     </div>
   );
 }
@@ -170,8 +210,9 @@ export function PipelineGroundingEditor({ rules, onSaved }: GroundingEditorProps
 
   return (
     <div className="space-y-4">
-      {error && <Alert>{error}</Alert>}
-      {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
+      {message && !editing && (
+        <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+      )}
       <ul className="space-y-3">
         {rules.map((rule) => (
           <li
@@ -193,52 +234,56 @@ export function PipelineGroundingEditor({ rules, onSaved }: GroundingEditorProps
         ))}
       </ul>
 
-      {editing && (
-        <div className="border border-indigo-200 dark:border-indigo-700 rounded-lg p-4 space-y-3">
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Requirement summary</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.requirementSummary}
-              onChange={(e) => setEditing({ ...editing, requirementSummary: e.target.value })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Required sources (comma-separated)</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.requiredSources.join(', ')}
-              onChange={(e) =>
-                setEditing({
-                  ...editing,
-                  requiredSources: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-                })
-              }
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Optional sources (comma-separated)</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.optionalSources.join(', ')}
-              onChange={(e) =>
-                setEditing({
-                  ...editing,
-                  optionalSources: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
-                })
-              }
-            />
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <PipelinePolicyEditModal
+        open={editing != null}
+        title={editing ? `Edit grounding: ${editing.intentId}` : 'Edit grounding rule'}
+        onClose={() => setEditing(null)}
+        onSave={() => void save()}
+        saving={saving}
+      >
+        {error && <Alert>{error}</Alert>}
+        {message && editing && (
+          <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+        )}
+        {editing && (
+          <>
+            <label className={labelClass}>
+              Requirement summary
+              <input
+                className={inputClass}
+                value={editing.requirementSummary}
+                onChange={(e) => setEditing({ ...editing, requirementSummary: e.target.value })}
+              />
+            </label>
+            <label className={labelClass}>
+              Required sources (comma-separated)
+              <input
+                className={inputClass}
+                value={editing.requiredSources.join(', ')}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    requiredSources: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Optional sources (comma-separated)
+              <input
+                className={inputClass}
+                value={editing.optionalSources.join(', ')}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    optionalSources: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+              />
+            </label>
+          </>
+        )}
+      </PipelinePolicyEditModal>
     </div>
   );
 }
@@ -270,8 +315,9 @@ export function PipelineContextSourceEditor({ sources, onSaved }: SourceEditorPr
 
   return (
     <div className="space-y-4">
-      {error && <Alert>{error}</Alert>}
-      {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
+      {message && !editing && (
+        <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {sources.map((src) => (
           <div
@@ -290,51 +336,55 @@ export function PipelineContextSourceEditor({ sources, onSaved }: SourceEditorPr
         ))}
       </div>
 
-      {editing && (
-        <div className="border border-indigo-200 dark:border-indigo-700 rounded-lg p-4 space-y-3">
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Label</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.label}
-              onChange={(e) => setEditing({ ...editing, label: e.target.value })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Description</span>
-            <textarea
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              rows={2}
-              value={editing.description}
-              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={editing.enabled}
-              onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
-            />
-            Enabled
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={editing.wiredInTwin}
-              onChange={(e) => setEditing({ ...editing, wiredInTwin: e.target.checked })}
-            />
-            Wired in twin
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <PipelinePolicyEditModal
+        open={editing != null}
+        title={editing ? `Edit context source: ${editing.id}` : 'Edit context source'}
+        onClose={() => setEditing(null)}
+        onSave={() => void save()}
+        saving={saving}
+      >
+        {error && <Alert>{error}</Alert>}
+        {message && editing && (
+          <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+        )}
+        {editing && (
+          <>
+            <label className={labelClass}>
+              Label
+              <input
+                className={inputClass}
+                value={editing.label}
+                onChange={(e) => setEditing({ ...editing, label: e.target.value })}
+              />
+            </label>
+            <label className={labelClass}>
+              Description
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={editing.description}
+                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={editing.enabled}
+                onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
+              />
+              Enabled
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={editing.wiredInTwin}
+                onChange={(e) => setEditing({ ...editing, wiredInTwin: e.target.checked })}
+              />
+              Wired in twin
+            </label>
+          </>
+        )}
+      </PipelinePolicyEditModal>
     </div>
   );
 }
@@ -368,8 +418,9 @@ export function PipelineToolPolicyEditor({ policies, onSaved }: ToolEditorProps)
 
   return (
     <div className="space-y-4">
-      {error && <Alert>{error}</Alert>}
-      {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
+      {message && !editing && (
+        <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+      )}
       <div className="space-y-3">
         {policies.map((policy) => (
           <div
@@ -387,43 +438,47 @@ export function PipelineToolPolicyEditor({ policies, onSaved }: ToolEditorProps)
         ))}
       </div>
 
-      {editing && (
-        <div className="border border-indigo-200 dark:border-indigo-700 rounded-lg p-4 space-y-3">
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Purpose</span>
-            <textarea
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              rows={2}
-              value={editing.purpose}
-              onChange={(e) => setEditing({ ...editing, purpose: e.target.value })}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Fallback behavior</span>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
-              value={editing.fallbackBehavior}
-              onChange={(e) => setEditing({ ...editing, fallbackBehavior: e.target.value })}
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={editing.enabled}
-              onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
-            />
-            Enabled
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <PipelinePolicyEditModal
+        open={editing != null}
+        title={editing ? `Edit tool policy: ${editing.toolId}` : 'Edit tool policy'}
+        onClose={() => setEditing(null)}
+        onSave={() => void save()}
+        saving={saving}
+      >
+        {error && <Alert>{error}</Alert>}
+        {message && editing && (
+          <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
+        )}
+        {editing && (
+          <>
+            <label className={labelClass}>
+              Purpose
+              <textarea
+                className={inputClass}
+                rows={2}
+                value={editing.purpose}
+                onChange={(e) => setEditing({ ...editing, purpose: e.target.value })}
+              />
+            </label>
+            <label className={labelClass}>
+              Fallback behavior
+              <input
+                className={inputClass}
+                value={editing.fallbackBehavior}
+                onChange={(e) => setEditing({ ...editing, fallbackBehavior: e.target.value })}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={editing.enabled}
+                onChange={(e) => setEditing({ ...editing, enabled: e.target.checked })}
+              />
+              Enabled
+            </label>
+          </>
+        )}
+      </PipelinePolicyEditModal>
     </div>
   );
 }
@@ -452,7 +507,7 @@ export function PipelineWeakPhrasesEditor({ phrases, onSaved }: PhrasesEditorPro
       {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
       <p className="text-sm text-gray-600 dark:text-gray-400">One phrase per line.</p>
       <textarea
-        className="w-full min-h-[200px] rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 font-mono text-sm"
+        className="w-full min-h-[200px] rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 font-mono text-sm text-gray-900 dark:text-gray-100"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />

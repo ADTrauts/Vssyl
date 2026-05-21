@@ -2516,56 +2516,102 @@ model AIPipelineDiagnostic {
 }
 
 // ============================================================================
-// AI PIPELINE POLICY CONFIG (Phase 3 — admin-editable, runtime with defaults)
+// AI PIPELINE POLICY REGISTRY (system defaults + admin extensions)
 // ============================================================================
 
 model AIPipelineIntentPolicy {
-  id                 String   @id
-  name               String
-  description        String
-  triggerExamples    String[]
-  groundingRequired  Boolean  @default(false)
-  enabled            Boolean  @default(true)
-  updatedAt          DateTime @updatedAt
-  updatedByAdminId   String?
+  id                   String   @id
+  name                 String
+  description          String
+  triggerExamples      String[]
+  groundingRequired    Boolean  @default(false)
+  enabled              Boolean  @default(true)
+  isSystem             Boolean  @default(false)
+  archived             Boolean  @default(false)
+  category             String?
+  priority             Int?
+  defaultRequiredTools String[] @default([])
+  capabilities         Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  createdByAdminId     String?
+  updatedByAdminId     String?
 
+  @@index([archived])
+  @@index([enabled])
   @@map("ai_pipeline_intent_policies")
 }
 
 model AIPipelineGroundingRulePolicy {
-  intentId           String   @id
-  requiredSources    String[]
-  optionalSources    String[]
-  requirementSummary String
-  updatedAt          DateTime @updatedAt
-  updatedByAdminId   String?
+  intentId             String   @id
+  requiredSources      String[]
+  optionalSources      String[]
+  requirementSummary   String
+  enabled              Boolean  @default(true)
+  isSystem             Boolean  @default(false)
+  archived             Boolean  @default(false)
+  requiredTools        String[] @default([])
+  minimumConfidence    String?
+  enforcementBehavior  String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  createdByAdminId     String?
+  updatedByAdminId     String?
 
+  @@index([archived])
+  @@index([enabled])
   @@map("ai_pipeline_grounding_rule_policies")
 }
 
 model AIPipelineContextSourcePolicy {
-  id               String   @id
-  label            String
-  description      String
-  enabled          Boolean  @default(true)
-  wiredInTwin      Boolean  @default(false)
-  updatedAt        DateTime @updatedAt
-  updatedByAdminId String?
+  id                  String   @id
+  label               String
+  description         String
+  enabled             Boolean  @default(true)
+  wiredInTwin         Boolean  @default(false)
+  isSystem            Boolean  @default(false)
+  archived            Boolean  @default(false)
+  sourceType          String?
+  lifecycleStatus     String?
+  retrievalPriority   Int      @default(50)
+  supportedIntents    String[] @default([])
+  permissionsRequired String[] @default([])
+  sensitivityLevel    String?
+  mappedTools         String[] @default([])
+  capabilities        Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  createdByAdminId    String?
+  updatedByAdminId    String?
 
+  @@index([archived])
+  @@index([enabled])
   @@map("ai_pipeline_context_source_policies")
 }
 
 model AIPipelineToolPolicyRow {
   toolId               String   @id
+  displayName          String?
   purpose              String
   requiredIntents      String[]
   optionalIntents      String[]
   requiredPermissions  String[]
   fallbackBehavior     String
   enabled              Boolean  @default(true)
+  isSystem             Boolean  @default(false)
+  archived             Boolean  @default(false)
+  riskLevel            String?
+  requiresGrounding    Boolean  @default(false)
+  rateLimitPerMinute   Int?
+  runtimeKind          String?
+  capabilities         Json?
+  createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  createdByAdminId     String?
   updatedByAdminId     String?
 
+  @@index([archived])
+  @@index([enabled])
   @@map("ai_pipeline_tool_policy_rows")
 }
 
@@ -2577,15 +2623,15 @@ enum AIPipelineEnforcementMode {
 }
 
 model AIPipelineSettings {
-  id                         String                    @id @default("default")
-  weakGenericPhrases         String[]
-  enforcementEnabled         Boolean                   @default(false)
-  enforcementMode            AIPipelineEnforcementMode @default(OFF)
-  diagnosticRetentionDays    Int                       @default(90)
-  exportRedactUserMessages   Boolean                   @default(true)
-  exportRedactResponsePreviews Boolean                 @default(true)
-  updatedAt                  DateTime                  @updatedAt
-  updatedByAdminId           String?
+  id                           String                    @id @default("default")
+  weakGenericPhrases           String[]
+  enforcementEnabled           Boolean                   @default(false)
+  enforcementMode              AIPipelineEnforcementMode @default(OFF)
+  diagnosticRetentionDays        Int                       @default(90)
+  exportRedactUserMessages     Boolean                   @default(true)
+  exportRedactResponsePreviews Boolean                   @default(true)
+  updatedAt                    DateTime                  @updatedAt
+  updatedByAdminId             String?
 
   @@map("ai_pipeline_settings")
 }

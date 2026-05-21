@@ -194,6 +194,70 @@ Computed by `server/src/ai/pipeline/pipelineTraceInsights.ts` and attached as `t
 
 ---
 
+## Dynamic AI orchestration registry (R0–R5, May 2026)
+
+Admin-managed **orchestration registry** for intents, context sources, tool policies, and grounding rules. This is infrastructure for a future cognitive/relationship graph — not plain CRUD.
+
+### Lifecycle
+
+- **Archive only** — no hard delete (protects audit, diagnostics, and references).
+- **System rows** (`isSystem: true`) — seeded defaults; archive blocked.
+- **Custom rows** — admin-created extensions; duplicate suggests `{id}_copy`.
+
+### Capability flags (`capabilities` JSON)
+
+| Field | Meaning |
+|-------|---------|
+| `executable` | Runnable in twin or prepass today |
+| `inferable` | Participates in intent inference (system intents only until v2) |
+| `retrievalEnabled` | May trigger retrieval |
+| `enforceable` | Subject to grounding enforcement |
+
+Custom intents default to `inferable: false` — **catalog-driven inference is v2**; they exist as policy/orchestration metadata now.
+
+### Tool `runtimeKind`
+
+| Value | Meaning |
+|-------|---------|
+| `openai_tool` | OpenAI tool loop (`list_drive_files`, `share_file`, `create_todo`) |
+| `prepass` | Pre-LLM prepass (`location`, `place_search`, `memory`) |
+| `policy_only` | Policy metadata only — UI: “Policy only — not executable yet” |
+
+### Context sources
+
+- `mappedTools[]` per source replaces static-only `SOURCE_TO_TOOLS` for custom sources.
+- `lifecycleStatus`: `planned` | `live` | `disabled`.
+
+### Validation API
+
+- `POST /api/admin-portal/ai-pipeline/registry/validate` — dry-run create/update/archive/duplicate.
+- `GET /api/admin-portal/ai-pipeline/registry/graph` — nodes/edges for dependency chips (no visual graph yet).
+
+Blocking errors include: `DUPLICATE_ID`, `ORPHAN_*`, `SYSTEM_PROTECTED`, `GROUNDING_RULE_EXISTS`, `INVALID_SLUG`. Warnings include: `POLICY_ONLY_TOOL`, `NO_INFERENCE_MATCH`, `MISSING_GROUNDING_RULE`.
+
+### Registry CRUD APIs
+
+Create / duplicate / archive / restore / enable / disable for intents, sources, tools, grounding (see `adminPortalRoutes.aiPipeline.ts`). Catalog: `GET /catalog?includeArchived=true`.
+
+### Code map
+
+| Area | Path |
+|------|------|
+| IDs | `server/src/ai/pipeline/pipelineRegistryIds.ts` |
+| Validator + graph | `server/src/ai/pipeline/pipelineRegistryValidator.ts` |
+| CRUD + audit | `server/src/ai/pipeline/pipelineRegistryService.ts` |
+| Catalog load | `server/src/ai/pipeline/pipelineCatalogService.ts` (no silent ID stripping) |
+| Admin UI | `web/src/components/admin-portal/ai-pipeline/registry/` |
+
+### Deferred (intentional)
+
+- Catalog-driven inference for custom intents (v2)
+- Graph visualization UI
+- `web_search` runtime wiring
+- Provider/prompt/enforcement default changes
+
+---
+
 ## Out of scope / future
 
 - Automatic scheduled purge job (cron)
@@ -201,4 +265,4 @@ Computed by `server/src/ai/pipeline/pipelineTraceInsights.ts` and attached as `t
 - `web_search` wiring in twin
 - Replacing legacy `QueryIntent` with pipeline intents in production routing
 
-**Last updated:** 2026-05-20 (operations console hub)
+**Last updated:** 2026-05-20 (dynamic registry R0–R5)

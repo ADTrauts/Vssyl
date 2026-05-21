@@ -1,16 +1,25 @@
 /** Admin AI pipeline diagnostics (mirrors server pipelineDiagnostics types). */
 
-export type PipelineIntentId =
-  | 'emotional_support'
-  | 'local_discovery'
-  | 'recommendation'
-  | 'planning'
-  | 'research'
-  | 'personal_reflection'
-  | 'business_operations'
-  | 'technical_help'
-  | 'workflow_action'
-  | 'general_chat';
+/** System defaults + admin-created registry ids */
+export type PipelineIntentId = string;
+
+export type PipelineToolRuntimeKind = 'openai_tool' | 'prepass' | 'policy_only';
+export type PipelineLifecycleStatus = 'planned' | 'live' | 'disabled';
+export type PipelineSourceType = 'platform' | 'module' | 'external' | 'synthetic';
+
+export interface PipelineRegistryCapabilities {
+  executable: boolean;
+  inferable: boolean;
+  retrievalEnabled: boolean;
+  enforceable: boolean;
+}
+
+export interface PipelineRegistryMeta {
+  isSystem: boolean;
+  archived: boolean;
+  createdAt?: string;
+  createdByAdminId?: string | null;
+}
 
 export type PipelineConfidenceLevel = 'low' | 'medium' | 'high';
 
@@ -91,38 +100,60 @@ export interface AIPipelineTrace {
   diagnosticSource?: 'TWIN' | 'TEST_LAB';
 }
 
-export interface PipelineIntentDefinition {
+export interface PipelineIntentDefinition extends PipelineRegistryMeta {
   id: PipelineIntentId;
   name: string;
   description: string;
   triggerExamples: string[];
   groundingRequired: boolean;
   enabled: boolean;
+  category?: string | null;
+  priority?: number | null;
+  defaultRequiredTools?: string[];
+  capabilities?: PipelineRegistryCapabilities;
 }
 
-export interface PipelineGroundingRule {
+export interface PipelineGroundingRule extends PipelineRegistryMeta {
   intentId: PipelineIntentId;
   requiredSources: string[];
   optionalSources: string[];
   requirementSummary: string;
+  enabled: boolean;
+  requiredTools?: string[];
+  minimumConfidence?: string | null;
+  enforcementBehavior?: string | null;
 }
 
-export interface PipelineContextSourceDefinition {
+export interface PipelineContextSourceDefinition extends PipelineRegistryMeta {
   id: string;
   label: string;
   description: string;
   enabled: boolean;
   wiredInTwin: boolean;
+  sourceType?: PipelineSourceType | null;
+  lifecycleStatus?: PipelineLifecycleStatus | null;
+  retrievalPriority?: number;
+  supportedIntents?: string[];
+  permissionsRequired?: string[];
+  sensitivityLevel?: string | null;
+  mappedTools?: string[];
+  capabilities?: PipelineRegistryCapabilities;
 }
 
-export interface PipelineToolPolicy {
+export interface PipelineToolPolicy extends PipelineRegistryMeta {
   toolId: string;
+  displayName?: string | null;
   purpose: string;
   requiredIntents: PipelineIntentId[];
   optionalIntents: PipelineIntentId[];
   requiredPermissions: string[];
   fallbackBehavior: string;
   enabled: boolean;
+  riskLevel?: string | null;
+  requiresGrounding?: boolean;
+  rateLimitPerMinute?: number | null;
+  runtimeKind?: PipelineToolRuntimeKind | null;
+  capabilities?: PipelineRegistryCapabilities;
 }
 
 export interface PipelineEvidenceItem {
@@ -163,6 +194,13 @@ export interface PipelineEnforcementSettings {
   enforcementMode: 'off' | 'disclose' | 'block' | 'regenerate';
 }
 
+export interface PipelineCatalogValidationSummary {
+  orphanCount: number;
+  archivedCount: number;
+  customIntentCount: number;
+  policyOnlyToolCount: number;
+}
+
 export interface PipelineCatalog {
   intents: PipelineIntentDefinition[];
   groundingRules: PipelineGroundingRule[];
@@ -171,6 +209,43 @@ export interface PipelineCatalog {
   weakGenericPhrases: string[];
   enforcement?: PipelineEnforcementSettings;
   retention?: PipelineRetentionSettings;
+  validationSummary?: PipelineCatalogValidationSummary;
+}
+
+export interface RegistryIssue {
+  code: string;
+  message: string;
+  entityType?: string;
+  entityId?: string;
+  relatedIds?: string[];
+  severity: 'error' | 'warning';
+}
+
+export interface RegistryValidationResult {
+  valid: boolean;
+  errors: RegistryIssue[];
+  warnings: RegistryIssue[];
+  dependencies: Array<{
+    fromType: string;
+    fromId: string;
+    toType: string;
+    toId: string;
+    kind: string;
+  }>;
+}
+
+export interface RegistryGraph {
+  nodes: Array<{
+    id: string;
+    type: string;
+    label: string;
+    status: string;
+    isSystem: boolean;
+    archived: boolean;
+  }>;
+  edges: Array<{ from: string; to: string; kind: string }>;
+  orphans: string[];
+  warnings: string[];
 }
 
 export interface PipelineQualityStats {

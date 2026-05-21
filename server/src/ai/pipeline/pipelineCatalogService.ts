@@ -9,82 +9,37 @@ import { logger } from '../../lib/logger';
 import type {
   PipelineCatalog,
   PipelineContextSourceDefinition,
-  PipelineContextSourceId,
   PipelineEnforcementSettings,
   PipelineGroundingRule,
   PipelineIntentDefinition,
-  PipelineIntentId,
   PipelineRetentionSettings,
   PipelineToolPolicy,
-  PipelineToolId,
 } from '../types/pipelineDiagnostics';
 import { resolvePipelineEnforcementSettings } from './pipelineEnforcement';
-import { getDefaultPipelineCatalog } from './pipelineCatalogDefaults';
-
-const PIPELINE_INTENT_IDS: readonly PipelineIntentId[] = [
-  'emotional_support',
-  'local_discovery',
-  'recommendation',
-  'planning',
-  'research',
-  'personal_reflection',
-  'business_operations',
-  'technical_help',
-  'workflow_action',
-  'general_chat',
-];
-
-const PIPELINE_CONTEXT_SOURCE_IDS: readonly PipelineContextSourceId[] = [
-  'user_memory',
-  'profile',
-  'recent_conversations',
-  'active_goals',
-  'location',
-  'calendar',
-  'drive_files',
-  'business_context',
-  'vssyl_place',
-  'web_search',
-  'module_context',
-  'notifications_activity',
-  'repo_context',
-];
-
-const PIPELINE_TOOL_IDS: readonly PipelineToolId[] = [
-  'memory',
-  'location',
-  'place_search',
-  'web_search',
-  'list_drive_files',
-  'share_file',
-  'create_todo',
-  'module_context',
-  'business_context',
-];
+import { getDefaultPipelineCatalog, SOURCE_TO_TOOLS } from './pipelineCatalogDefaults';
+import {
+  filterCatalogArchived,
+  mapGroundingRow,
+  mapIntentRow,
+  mapSourceRow,
+  mapToolRow,
+  seedIsSystemForIntent,
+  seedIsSystemForSource,
+  seedIsSystemForTool,
+  seedRuntimeKindForTool,
+} from './pipelineCatalogMappers';
+import {
+  capabilitiesToJson,
+  defaultContextSourceCapabilities,
+  defaultIntentCapabilities,
+  defaultToolCapabilities,
+} from './pipelineRegistryCapabilities';
+import { buildCatalogValidationSummary } from './pipelineRegistryValidator';
+import { isSystemIntentId, isValidRegistrySlug } from './pipelineRegistryIds';
 
 let cachedCatalog: PipelineCatalog | null = null;
 let cacheLoadedAt = 0;
 const CACHE_TTL_MS = 30_000;
-
-function isPipelineIntentId(value: string): value is PipelineIntentId {
-  return (PIPELINE_INTENT_IDS as readonly string[]).includes(value);
-}
-
-function isContextSourceId(value: string): value is PipelineContextSourceId {
-  return (PIPELINE_CONTEXT_SOURCE_IDS as readonly string[]).includes(value);
-}
-
-function isToolId(value: string): value is PipelineToolId {
-  return (PIPELINE_TOOL_IDS as readonly string[]).includes(value);
-}
-
-function filterIntentIds(values: string[]): PipelineIntentId[] {
-  return values.filter(isPipelineIntentId);
-}
-
-function filterSourceIds(values: string[]): PipelineContextSourceId[] {
-  return values.filter(isContextSourceId);
-}
 
 function mapEnforcementModeFromDb(
   mode: string | null | undefined
@@ -185,6 +140,7 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
   await prisma.$transaction(async (tx) => {
     if (intentCount === 0) {
       for (const intent of defaults.intents) {
+        const caps = defaultIntentCapabilities(intent.id);
         await tx.aIPipelineIntentPolicy.create({
           data: {
             id: intent.id,
@@ -193,6 +149,9 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
             triggerExamples: intent.triggerExamples,
             groundingRequired: intent.groundingRequired,
             enabled: intent.enabled,
+            isSystem: seedIsSystemForIntent(intent.id),
+            archived: false,
+            capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
           },
         });
       }
@@ -204,11 +163,18 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
             requiredSources: rule.requiredSources,
             optionalSources: rule.optionalSources,
             requirementSummary: rule.requirementSummary,
+            enabled: true,
+            isSystem: seedIsSystemForIntent(rule.intentId),
+            archived: false,
+            requiredTools: SOURCE_TO_TOOLS[rule.requiredSources[0] ?? ''] ?? [],
           },
         });
       }
 
       for (const src of defaults.contextSources) {
+        const lifecycle = src.wiredInTwin ? 'live' : 'planned';
+        const caps = defaultContextSourceCapabilities(src.wiredInTwin, lifecycle);
+        const mapped = SOURCE_TO_TOOLS[src.id] ?? [];
         await tx.aIPipelineContextSourcePolicy.create({
           data: {
             id: src.id,
@@ -216,20 +182,33 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
             description: src.description,
             enabled: src.enabled,
             wiredInTwin: src.wiredInTwin,
+            isSystem: seedIsSystemForSource(src.id),
+            archived: false,
+            sourceType: 'platform',
+            lifecycleStatus: lifecycle,
+            mappedTools: mapped,
+            capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
           },
         });
       }
 
       for (const policy of defaults.toolPolicies) {
+        const runtimeKind = seedRuntimeKindForTool(policy.toolId);
+        const caps = defaultToolCapabilities(runtimeKind);
         await tx.aIPipelineToolPolicyRow.create({
           data: {
             toolId: policy.toolId,
+            displayName: policy.toolId,
             purpose: policy.purpose,
             requiredIntents: policy.requiredIntents,
             optionalIntents: policy.optionalIntents,
             requiredPermissions: policy.requiredPermissions,
             fallbackBehavior: policy.fallbackBehavior,
             enabled: policy.enabled,
+            isSystem: seedIsSystemForTool(policy.toolId),
+            archived: false,
+            runtimeKind,
+            capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
           },
         });
       }
@@ -269,59 +248,35 @@ async function loadCatalogFromDb(): Promise<PipelineCatalog> {
   }
 
   const catalog: PipelineCatalog = {
-    intents: intents.map(
-      (row): PipelineIntentDefinition => ({
-        id: row.id as PipelineIntentId,
-        name: row.name,
-        description: row.description,
-        triggerExamples: row.triggerExamples,
-        groundingRequired: row.groundingRequired,
-        enabled: row.enabled,
-      })
-    ),
-    groundingRules: groundingRules.map(
-      (row): PipelineGroundingRule => ({
-        intentId: row.intentId as PipelineIntentId,
-        requiredSources: filterSourceIds(row.requiredSources),
-        optionalSources: filterSourceIds(row.optionalSources),
-        requirementSummary: row.requirementSummary,
-      })
-    ),
-    contextSources: contextSources.map(
-      (row): PipelineContextSourceDefinition => ({
-        id: row.id as PipelineContextSourceId,
-        label: row.label,
-        description: row.description,
-        enabled: row.enabled,
-        wiredInTwin: row.wiredInTwin,
-      })
-    ),
-    toolPolicies: toolPolicies.map(
-      (row): PipelineToolPolicy => ({
-        toolId: row.toolId as PipelineToolId,
-        purpose: row.purpose,
-        requiredIntents: filterIntentIds(row.requiredIntents),
-        optionalIntents: filterIntentIds(row.optionalIntents),
-        requiredPermissions: row.requiredPermissions,
-        fallbackBehavior: row.fallbackBehavior,
-        enabled: row.enabled,
-      })
-    ),
+    intents: intents.map((row) => mapIntentRow(row)),
+    groundingRules: groundingRules.map((row) => mapGroundingRow(row)),
+    contextSources: contextSources.map((row) => mapSourceRow(row)),
+    toolPolicies: toolPolicies.map((row) => mapToolRow(row)),
     weakGenericPhrases:
       settings?.weakGenericPhrases?.length ? settings.weakGenericPhrases : defaults.weakGenericPhrases,
     enforcement: buildEnforcementFromSettingsRow(settings ?? undefined),
     retention: buildRetentionFromSettingsRow(settings ?? undefined),
+    validationSummary: buildCatalogValidationSummary({
+      intents: intents.map((row) => mapIntentRow(row)),
+      groundingRules: groundingRules.map((row) => mapGroundingRow(row)),
+      contextSources: contextSources.map((row) => mapSourceRow(row)),
+      toolPolicies: toolPolicies.map((row) => mapToolRow(row)),
+      weakGenericPhrases: defaults.weakGenericPhrases,
+    }),
   };
 
   return catalog;
 }
 
-export async function getEffectivePipelineCatalog(): Promise<PipelineCatalog> {
+export async function getEffectivePipelineCatalog(options?: {
+  includeArchived?: boolean;
+}): Promise<PipelineCatalog> {
   try {
     await seedPipelinePoliciesIfEmpty();
     const catalog = await loadCatalogFromDb();
-    setCache(catalog);
-    return catalog;
+    const filtered = filterCatalogArchived(catalog, options?.includeArchived === true);
+    setCache(filtered);
+    return filtered;
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.warn('Failed to load pipeline catalog from DB; using defaults', {
@@ -421,7 +376,7 @@ export async function updatePipelineIntentPolicy(
   }>,
   adminUserId: string
 ): Promise<PipelineIntentDefinition> {
-  if (!isPipelineIntentId(intentId)) {
+  if (!isValidRegistrySlug(intentId) && !isSystemIntentId(intentId)) {
     throw new Error('Invalid intent id');
   }
 
@@ -455,14 +410,7 @@ export async function updatePipelineIntentPolicy(
 
   await refreshPipelineCatalogCache();
 
-  return {
-    id: updated.id as PipelineIntentId,
-    name: updated.name,
-    description: updated.description,
-    triggerExamples: updated.triggerExamples,
-    groundingRequired: updated.groundingRequired,
-    enabled: updated.enabled,
-  };
+  return mapIntentRow(updated);
 }
 
 export async function updatePipelineGroundingRulePolicy(
@@ -471,10 +419,14 @@ export async function updatePipelineGroundingRulePolicy(
     requiredSources: string[];
     optionalSources: string[];
     requirementSummary: string;
+    requiredTools: string[];
+    enabled: boolean;
+    minimumConfidence: string | null;
+    enforcementBehavior: string | null;
   }>,
   adminUserId: string
 ): Promise<PipelineGroundingRule> {
-  if (!isPipelineIntentId(intentId)) {
+  if (!intentId.trim()) {
     throw new Error('Invalid intent id');
   }
 
@@ -495,6 +447,12 @@ export async function updatePipelineGroundingRulePolicy(
       ...(typeof body.requirementSummary === 'string'
         ? { requirementSummary: body.requirementSummary }
         : {}),
+      ...(Array.isArray(body.requiredTools) ? { requiredTools: body.requiredTools } : {}),
+      ...(typeof body.enabled === 'boolean' ? { enabled: body.enabled } : {}),
+      ...(body.minimumConfidence !== undefined ? { minimumConfidence: body.minimumConfidence } : {}),
+      ...(body.enforcementBehavior !== undefined
+        ? { enforcementBehavior: body.enforcementBehavior }
+        : {}),
       updatedByAdminId: adminUserId,
     },
   });
@@ -510,12 +468,7 @@ export async function updatePipelineGroundingRulePolicy(
 
   await refreshPipelineCatalogCache();
 
-  return {
-    intentId: updated.intentId as PipelineIntentId,
-    requiredSources: filterSourceIds(updated.requiredSources),
-    optionalSources: filterSourceIds(updated.optionalSources),
-    requirementSummary: updated.requirementSummary,
-  };
+  return mapGroundingRow(updated);
 }
 
 export async function updatePipelineContextSourcePolicy(
@@ -525,10 +478,17 @@ export async function updatePipelineContextSourcePolicy(
     description: string;
     enabled: boolean;
     wiredInTwin: boolean;
+    sourceType: string | null;
+    lifecycleStatus: string | null;
+    retrievalPriority: number;
+    supportedIntents: string[];
+    permissionsRequired: string[];
+    sensitivityLevel: string | null;
+    mappedTools: string[];
   }>,
   adminUserId: string
 ): Promise<PipelineContextSourceDefinition> {
-  if (!isContextSourceId(sourceId)) {
+  if (!isValidRegistrySlug(sourceId)) {
     throw new Error('Invalid context source id');
   }
 
@@ -544,6 +504,17 @@ export async function updatePipelineContextSourcePolicy(
       ...(typeof body.description === 'string' ? { description: body.description } : {}),
       ...(typeof body.enabled === 'boolean' ? { enabled: body.enabled } : {}),
       ...(typeof body.wiredInTwin === 'boolean' ? { wiredInTwin: body.wiredInTwin } : {}),
+      ...(body.sourceType !== undefined ? { sourceType: body.sourceType } : {}),
+      ...(body.lifecycleStatus !== undefined ? { lifecycleStatus: body.lifecycleStatus } : {}),
+      ...(typeof body.retrievalPriority === 'number'
+        ? { retrievalPriority: body.retrievalPriority }
+        : {}),
+      ...(Array.isArray(body.supportedIntents) ? { supportedIntents: body.supportedIntents } : {}),
+      ...(Array.isArray(body.permissionsRequired)
+        ? { permissionsRequired: body.permissionsRequired }
+        : {}),
+      ...(body.sensitivityLevel !== undefined ? { sensitivityLevel: body.sensitivityLevel } : {}),
+      ...(Array.isArray(body.mappedTools) ? { mappedTools: body.mappedTools } : {}),
       updatedByAdminId: adminUserId,
     },
   });
@@ -559,28 +530,27 @@ export async function updatePipelineContextSourcePolicy(
 
   await refreshPipelineCatalogCache();
 
-  return {
-    id: updated.id as PipelineContextSourceId,
-    label: updated.label,
-    description: updated.description,
-    enabled: updated.enabled,
-    wiredInTwin: updated.wiredInTwin,
-  };
+  return mapSourceRow(updated);
 }
 
 export async function updatePipelineToolPolicyRow(
   toolId: string,
   body: Partial<{
+    displayName: string | null;
     purpose: string;
     requiredIntents: string[];
     optionalIntents: string[];
     requiredPermissions: string[];
     fallbackBehavior: string;
     enabled: boolean;
+    riskLevel: string | null;
+    requiresGrounding: boolean;
+    rateLimitPerMinute: number | null;
+    runtimeKind: string | null;
   }>,
   adminUserId: string
 ): Promise<PipelineToolPolicy> {
-  if (!isToolId(toolId)) {
+  if (!isValidRegistrySlug(toolId)) {
     throw new Error('Invalid tool id');
   }
 
@@ -592,6 +562,7 @@ export async function updatePipelineToolPolicyRow(
   const updated = await prisma.aIPipelineToolPolicyRow.update({
     where: { toolId },
     data: {
+      ...(typeof body.displayName === 'string' ? { displayName: body.displayName } : {}),
       ...(typeof body.purpose === 'string' ? { purpose: body.purpose } : {}),
       ...(Array.isArray(body.requiredIntents) ? { requiredIntents: body.requiredIntents } : {}),
       ...(Array.isArray(body.optionalIntents) ? { optionalIntents: body.optionalIntents } : {}),
@@ -602,6 +573,14 @@ export async function updatePipelineToolPolicyRow(
         ? { fallbackBehavior: body.fallbackBehavior }
         : {}),
       ...(typeof body.enabled === 'boolean' ? { enabled: body.enabled } : {}),
+      ...(body.riskLevel !== undefined ? { riskLevel: body.riskLevel } : {}),
+      ...(typeof body.requiresGrounding === 'boolean'
+        ? { requiresGrounding: body.requiresGrounding }
+        : {}),
+      ...(body.rateLimitPerMinute !== undefined
+        ? { rateLimitPerMinute: body.rateLimitPerMinute }
+        : {}),
+      ...(body.runtimeKind !== undefined ? { runtimeKind: body.runtimeKind } : {}),
       updatedByAdminId: adminUserId,
     },
   });
@@ -617,15 +596,7 @@ export async function updatePipelineToolPolicyRow(
 
   await refreshPipelineCatalogCache();
 
-  return {
-    toolId: updated.toolId as PipelineToolId,
-    purpose: updated.purpose,
-    requiredIntents: filterIntentIds(updated.requiredIntents),
-    optionalIntents: filterIntentIds(updated.optionalIntents),
-    requiredPermissions: updated.requiredPermissions,
-    fallbackBehavior: updated.fallbackBehavior,
-    enabled: updated.enabled,
-  };
+  return mapToolRow(updated);
 }
 
 export async function updatePipelineSettings(

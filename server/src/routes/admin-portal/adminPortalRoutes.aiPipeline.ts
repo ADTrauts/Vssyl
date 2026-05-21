@@ -23,6 +23,28 @@ import {
   updatePipelineSettings,
   updatePipelineToolPolicyRow,
 } from '../../ai/pipeline/pipelineCatalogService';
+import {
+  buildRegistryGraph,
+  validateRegistryChange,
+} from '../../ai/pipeline/pipelineRegistryValidator';
+import {
+  createPipelineContextSource,
+  createPipelineGroundingRule,
+  createPipelineIntent,
+  createPipelineToolPolicy,
+  duplicatePipelineContextSource,
+  duplicatePipelineGroundingRule,
+  duplicatePipelineIntent,
+  duplicatePipelineToolPolicy,
+  setPipelineContextSourceArchived,
+  setPipelineContextSourceEnabled,
+  setPipelineGroundingArchived,
+  setPipelineGroundingEnabled,
+  setPipelineIntentArchived,
+  setPipelineIntentEnabled,
+  setPipelineToolArchived,
+  setPipelineToolEnabled,
+} from '../../ai/pipeline/pipelineRegistryService';
 import { extractPipelineTraceFromContext } from '../../ai/pipeline/extractPipelineTraceFromContext';
 import { getPipelineTraceById, savePipelineTrace } from '../../ai/pipeline/pipelineTraceStore';
 import { evidenceBundleFromTrace } from '../../ai/pipeline/buildPipelineEvidenceBundle';
@@ -59,7 +81,13 @@ function adminUserId(req: Request): string | null {
 function policyErrorStatus(message: string): number {
   if (message.includes('not found')) return 404;
   if (message.includes('Invalid')) return 400;
+  if (message.includes('SYSTEM_PROTECTED') || message.includes('cannot be archived')) return 403;
+  if (message.includes('already exists') || message.includes('DUPLICATE')) return 409;
   return 500;
+}
+
+function parseIncludeArchived(req: Request): boolean {
+  return req.query.includeArchived === 'true';
 }
 
 function enrichTracesForAdmin<T extends AIPipelineTrace>(
@@ -85,9 +113,11 @@ function enrichSingleTraceForAdmin(
 }
 
 export function registerAdminPortalAiPipelineRoutes(router: express.Router): void {
-  router.get('/ai-pipeline/catalog', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+  router.get('/ai-pipeline/catalog', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
     try {
-      const catalog = await getEffectivePipelineCatalog();
+      const catalog = await getEffectivePipelineCatalog({
+        includeArchived: parseIncludeArchived(req),
+      });
       res.json({ success: true, data: catalog });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -98,6 +128,160 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
       res.status(500).json({ error: 'Failed to load pipeline catalog' });
     }
   });
+
+  router.get('/ai-pipeline/registry/graph', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const catalog = await getEffectivePipelineCatalog({ includeArchived: true });
+      const graph = buildRegistryGraph(catalog);
+      res.json({ success: true, data: graph });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post('/ai-pipeline/registry/validate', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const body = req.body as Record<string, unknown>;
+      const entityType = body.entityType as 'intent' | 'context_source' | 'tool' | 'grounding_rule';
+      const action = body.action as 'create' | 'update' | 'archive' | 'duplicate';
+      const entityId = typeof body.entityId === 'string' ? body.entityId : '';
+      const payload = (body.payload && typeof body.payload === 'object' ? body.payload : {}) as Record<
+        string,
+        unknown
+      >;
+      const catalog = await getEffectivePipelineCatalog({ includeArchived: true });
+      const result = validateRegistryChange({
+        catalog,
+        entityType,
+        action,
+        entityId,
+        payload,
+        existingEntity: null,
+      });
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  router.post('/ai-pipeline/policies/intents', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const adminId = adminUserId(req);
+      if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+      const body = req.body as Record<string, unknown>;
+      const result = await createPipelineIntent(
+        {
+          id: String(body.id ?? ''),
+          name: String(body.name ?? ''),
+          description: String(body.description ?? ''),
+          triggerExamples: Array.isArray(body.triggerExamples) ? body.triggerExamples.map(String) : [],
+          groundingRequired: body.groundingRequired === true,
+          enabled: body.enabled !== false,
+          category: typeof body.category === 'string' ? body.category : null,
+          priority: typeof body.priority === 'number' ? body.priority : null,
+          defaultRequiredTools: Array.isArray(body.defaultRequiredTools)
+            ? body.defaultRequiredTools.map(String)
+            : [],
+          createGroundingRule: body.createGroundingRule !== false,
+        },
+        adminId
+      );
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(policyErrorStatus(err.message)).json({ error: err.message });
+    }
+  });
+
+  router.post(
+    '/ai-pipeline/policies/intents/:intentId/duplicate',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const body = req.body as Record<string, unknown>;
+        const created = await duplicatePipelineIntent(req.params.intentId, {
+          newId: typeof body.newId === 'string' ? body.newId : undefined,
+        }, adminId);
+        res.json({ success: true, data: created });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/intents/:intentId/archive',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineIntentArchived(req.params.intentId, true, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/intents/:intentId/restore',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineIntentArchived(req.params.intentId, false, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/intents/:intentId/enable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineIntentEnabled(req.params.intentId, true, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/intents/:intentId/disable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineIntentEnabled(req.params.intentId, false, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
 
   router.put(
     '/ai-pipeline/policies/intents/:intentId',
@@ -144,7 +328,116 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
             : undefined,
           requirementSummary:
             typeof body.requirementSummary === 'string' ? body.requirementSummary : undefined,
+          requiredTools: Array.isArray(body.requiredTools) ? body.requiredTools.map(String) : undefined,
+          enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
+          minimumConfidence:
+            typeof body.minimumConfidence === 'string' ? body.minimumConfidence : undefined,
+          enforcementBehavior:
+            typeof body.enforcementBehavior === 'string' ? body.enforcementBehavior : undefined,
         }, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post('/ai-pipeline/policies/grounding', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const adminId = adminUserId(req);
+      if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+      const body = req.body as Record<string, unknown>;
+      const result = await createPipelineGroundingRule(
+        {
+          intentId: String(body.intentId ?? ''),
+          requiredSources: Array.isArray(body.requiredSources) ? body.requiredSources.map(String) : [],
+          optionalSources: Array.isArray(body.optionalSources) ? body.optionalSources.map(String) : [],
+          requirementSummary: String(body.requirementSummary ?? ''),
+          requiredTools: Array.isArray(body.requiredTools) ? body.requiredTools.map(String) : [],
+          enabled: body.enabled !== false,
+        },
+        adminId
+      );
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(policyErrorStatus(err.message)).json({ error: err.message });
+    }
+  });
+
+  router.post(
+    '/ai-pipeline/policies/grounding/:intentId/duplicate',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const body = req.body as Record<string, unknown>;
+        const created = await duplicatePipelineGroundingRule(req.params.intentId, {
+          targetIntentId: String(body.targetIntentId ?? ''),
+        }, adminId);
+        res.json({ success: true, data: created });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  const groundingLifecycle = (archived: boolean) =>
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineGroundingArchived(req.params.intentId, archived, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    };
+
+  router.post(
+    '/ai-pipeline/policies/grounding/:intentId/archive',
+    authenticateJWT,
+    requireAdmin,
+    groundingLifecycle(true)
+  );
+  router.post(
+    '/ai-pipeline/policies/grounding/:intentId/restore',
+    authenticateJWT,
+    requireAdmin,
+    groundingLifecycle(false)
+  );
+
+  router.post(
+    '/ai-pipeline/policies/grounding/:intentId/enable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineGroundingEnabled(req.params.intentId, true, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/grounding/:intentId/disable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineGroundingEnabled(req.params.intentId, false, adminId);
         res.json({ success: true, data: updated });
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -167,7 +460,126 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
           description: typeof body.description === 'string' ? body.description : undefined,
           enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
           wiredInTwin: typeof body.wiredInTwin === 'boolean' ? body.wiredInTwin : undefined,
+          sourceType: typeof body.sourceType === 'string' ? body.sourceType : undefined,
+          lifecycleStatus:
+            typeof body.lifecycleStatus === 'string' ? body.lifecycleStatus : undefined,
+          retrievalPriority:
+            typeof body.retrievalPriority === 'number' ? body.retrievalPriority : undefined,
+          supportedIntents: Array.isArray(body.supportedIntents)
+            ? body.supportedIntents.map(String)
+            : undefined,
+          permissionsRequired: Array.isArray(body.permissionsRequired)
+            ? body.permissionsRequired.map(String)
+            : undefined,
+          sensitivityLevel:
+            typeof body.sensitivityLevel === 'string' ? body.sensitivityLevel : undefined,
+          mappedTools: Array.isArray(body.mappedTools) ? body.mappedTools.map(String) : undefined,
         }, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post('/ai-pipeline/policies/sources', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const adminId = adminUserId(req);
+      if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+      const body = req.body as Record<string, unknown>;
+      const result = await createPipelineContextSource(
+        {
+          id: String(body.id ?? ''),
+          label: String(body.label ?? ''),
+          description: String(body.description ?? ''),
+          enabled: body.enabled !== false,
+          wiredInTwin: body.wiredInTwin === true,
+          sourceType: typeof body.sourceType === 'string' ? body.sourceType : null,
+          lifecycleStatus: typeof body.lifecycleStatus === 'string' ? body.lifecycleStatus : null,
+          mappedTools: Array.isArray(body.mappedTools) ? body.mappedTools.map(String) : [],
+        },
+        adminId
+      );
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(policyErrorStatus(err.message)).json({ error: err.message });
+    }
+  });
+
+  router.post(
+    '/ai-pipeline/policies/sources/:sourceId/duplicate',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const body = req.body as Record<string, unknown>;
+        const created = await duplicatePipelineContextSource(req.params.sourceId, {
+          newId: typeof body.newId === 'string' ? body.newId : undefined,
+        }, adminId);
+        res.json({ success: true, data: created });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  const sourceLifecycle = (archived: boolean) =>
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineContextSourceArchived(req.params.sourceId, archived, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    };
+
+  router.post(
+    '/ai-pipeline/policies/sources/:sourceId/archive',
+    authenticateJWT,
+    requireAdmin,
+    sourceLifecycle(true)
+  );
+  router.post(
+    '/ai-pipeline/policies/sources/:sourceId/restore',
+    authenticateJWT,
+    requireAdmin,
+    sourceLifecycle(false)
+  );
+
+  router.post(
+    '/ai-pipeline/policies/sources/:sourceId/enable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineContextSourceEnabled(req.params.sourceId, true, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/sources/:sourceId/disable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineContextSourceEnabled(req.params.sourceId, false, adminId);
         res.json({ success: true, data: updated });
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
@@ -186,6 +598,7 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
         if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
         const body = req.body as Record<string, unknown>;
         const updated = await updatePipelineToolPolicyRow(req.params.toolId, {
+          displayName: typeof body.displayName === 'string' ? body.displayName : undefined,
           purpose: typeof body.purpose === 'string' ? body.purpose : undefined,
           requiredIntents: Array.isArray(body.requiredIntents)
             ? body.requiredIntents.map(String)
@@ -199,7 +612,121 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
           fallbackBehavior:
             typeof body.fallbackBehavior === 'string' ? body.fallbackBehavior : undefined,
           enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
+          riskLevel: typeof body.riskLevel === 'string' ? body.riskLevel : undefined,
+          requiresGrounding:
+            typeof body.requiresGrounding === 'boolean' ? body.requiresGrounding : undefined,
+          rateLimitPerMinute:
+            typeof body.rateLimitPerMinute === 'number' ? body.rateLimitPerMinute : undefined,
+          runtimeKind: typeof body.runtimeKind === 'string' ? body.runtimeKind : undefined,
         }, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post('/ai-pipeline/policies/tools', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const adminId = adminUserId(req);
+      if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+      const body = req.body as Record<string, unknown>;
+      const result = await createPipelineToolPolicy(
+        {
+          toolId: String(body.toolId ?? ''),
+          displayName: typeof body.displayName === 'string' ? body.displayName : null,
+          purpose: String(body.purpose ?? ''),
+          requiredIntents: Array.isArray(body.requiredIntents) ? body.requiredIntents.map(String) : [],
+          optionalIntents: Array.isArray(body.optionalIntents) ? body.optionalIntents.map(String) : [],
+          requiredPermissions: Array.isArray(body.requiredPermissions)
+            ? body.requiredPermissions.map(String)
+            : [],
+          fallbackBehavior: String(body.fallbackBehavior ?? 'skip'),
+          enabled: body.enabled !== false,
+          runtimeKind: typeof body.runtimeKind === 'string' ? body.runtimeKind : 'policy_only',
+        },
+        adminId
+      );
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      res.status(policyErrorStatus(err.message)).json({ error: err.message });
+    }
+  });
+
+  router.post(
+    '/ai-pipeline/policies/tools/:toolId/duplicate',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const body = req.body as Record<string, unknown>;
+        const created = await duplicatePipelineToolPolicy(req.params.toolId, {
+          newToolId: typeof body.newToolId === 'string' ? body.newToolId : undefined,
+        }, adminId);
+        res.json({ success: true, data: created });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  const toolLifecycle = (archived: boolean) =>
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineToolArchived(req.params.toolId, archived, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    };
+
+  router.post(
+    '/ai-pipeline/policies/tools/:toolId/archive',
+    authenticateJWT,
+    requireAdmin,
+    toolLifecycle(true)
+  );
+  router.post(
+    '/ai-pipeline/policies/tools/:toolId/restore',
+    authenticateJWT,
+    requireAdmin,
+    toolLifecycle(false)
+  );
+
+  router.post(
+    '/ai-pipeline/policies/tools/:toolId/enable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineToolEnabled(req.params.toolId, true, adminId);
+        res.json({ success: true, data: updated });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        res.status(policyErrorStatus(err.message)).json({ error: err.message });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/policies/tools/:toolId/disable',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminId = adminUserId(req);
+        if (!adminId) return res.status(401).json({ error: 'User not authenticated' });
+        const updated = await setPipelineToolEnabled(req.params.toolId, false, adminId);
         res.json({ success: true, data: updated });
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
