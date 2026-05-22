@@ -1,5 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { PrismaClient } from '@prisma/client';
+
+vi.mock('../learningApplicationService', () => ({
+  learningApplicationService: {
+    recordContextPromotion: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import {
   UserAIContextLearningService,
   LEARNING_STATUS_ACTIVE,
@@ -7,6 +14,7 @@ import {
   LEARNING_STATUS_DISMISSED,
   promptEligibleContextWhere,
 } from '../userAIContextLearningService';
+import { learningApplicationService } from '../learningApplicationService';
 
 function mockDb() {
   return {
@@ -24,6 +32,7 @@ describe('userAIContextLearningService', () => {
   let service: UserAIContextLearningService;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     db = mockDb();
     service = new UserAIContextLearningService(db);
   });
@@ -52,6 +61,12 @@ describe('userAIContextLearningService', () => {
 
     const result = await service.promote('u1', 'c1');
     expect(result.title).toBe('Job');
+    expect(learningApplicationService.recordContextPromotion).toHaveBeenCalledWith({
+      userId: 'u1',
+      contextId: 'c1',
+      title: 'Job',
+      content: 'Engineer',
+    });
     expect(db.userAIContext.update).toHaveBeenCalledWith({
       where: { id: 'c1' },
       data: {

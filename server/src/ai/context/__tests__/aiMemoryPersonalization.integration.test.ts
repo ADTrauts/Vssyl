@@ -81,10 +81,10 @@ describe('AI memory personalization (Phase 1 exit)', () => {
       query: {
         query: 'How should you help me today?',
         userId: 'u1',
-        context: { contextProfile: 'conversation' },
+        context: { contextProfile: 'enterprise' },
       },
       userContext: baseUserContext,
-      explicitStructuredMode: 'conversation',
+      explicitStructuredMode: 'enterprise',
       userMemoryFacts: day1Facts,
     });
 
@@ -92,10 +92,10 @@ describe('AI memory personalization (Phase 1 exit)', () => {
       query: {
         query: 'How should you help me today?',
         userId: 'u1',
-        context: { contextProfile: 'conversation' },
+        context: { contextProfile: 'enterprise' },
       },
       userContext: baseUserContext,
-      explicitStructuredMode: 'conversation',
+      explicitStructuredMode: 'enterprise',
       userMemoryFacts: day30Facts,
     });
 
