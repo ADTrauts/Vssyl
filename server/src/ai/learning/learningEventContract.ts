@@ -47,7 +47,7 @@ export function buildLearningEventArtifactEnvelope(
     ...(options?.dedupeKey ? { dedupeKey: options.dedupeKey } : {}),
     ...(options?.impact ? { impact: options.impact } : {}),
   };
-  return envelope as Prisma.InputJsonValue;
+  return envelope as unknown as Prisma.InputJsonValue;
 }
 
 export function summarizePrimaryLearningBehavior(

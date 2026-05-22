@@ -914,7 +914,14 @@ export const configureModule = async (req: Request, res: Response) => {
       const updatedInstallation = await (prisma as any).businessModuleInstallation.update({
         where: { moduleId_businessId: { moduleId, businessId } },
         data: {
-          ...(configuration !== undefined ? { configured: configuration } : {}),
+          ...(configuration !== undefined
+            ? {
+                configured:
+                  configuration === null
+                    ? Prisma.JsonNull
+                    : (configuration as Prisma.InputJsonValue),
+              }
+            : {}),
           ...(typeof enabled === 'boolean' ? { enabled } : {}),
         },
       });
@@ -969,7 +976,14 @@ export const configureModule = async (req: Request, res: Response) => {
         }
       },
       data: {
-        ...(configuration !== undefined ? { configured: configuration } : {}),
+        ...(configuration !== undefined
+          ? {
+              configured:
+                configuration === null
+                  ? Prisma.JsonNull
+                  : (configuration as Prisma.InputJsonValue),
+            }
+          : {}),
         ...(typeof enabled === 'boolean' ? { enabled } : {}),
       }
     });

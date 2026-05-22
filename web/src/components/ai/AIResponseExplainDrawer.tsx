@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, Button, Badge } from 'shared/components';
 import { X, Sparkles, ChevronRight } from 'lucide-react';
-import type { ResponseInfluenceSummary } from '../../api/aiResponseInfluence';
+import type { ResponseInfluenceSummary, ResponseInfluenceMemoryItem } from '../../api/aiResponseInfluence';
 
 interface AIResponseExplainDrawerProps {
   open: boolean;
@@ -24,7 +24,7 @@ export default function AIResponseExplainDrawer({
 }: AIResponseExplainDrawerProps) {
   if (!open || !influence) return null;
 
-  const memoryItems =
+  const memoryItems: ResponseInfluenceMemoryItem[] =
     influence.memoryItems ??
     influence.memoriesUsed?.map((m) => ({
       kind: 'memory_fact' as const,
@@ -121,7 +121,7 @@ export default function AIResponseExplainDrawer({
                       </Badge>
                     )}
                     {typeof m.confidence === 'number' && (
-                      <Badge size="sm" color="purple">
+                      <Badge size="sm" color="blue">
                         {Math.round(m.confidence * 100)}% confidence
                       </Badge>
                     )}
@@ -156,7 +156,7 @@ export default function AIResponseExplainDrawer({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-gray-900 dark:text-gray-100">{item.label}</span>
                     {typeof item.confidence === 'number' && (
-                      <Badge size="sm" color="purple">
+                      <Badge size="sm" color="blue">
                         {Math.round(item.confidence * 100)}% confidence
                       </Badge>
                     )}

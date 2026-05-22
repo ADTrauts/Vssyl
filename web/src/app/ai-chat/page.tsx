@@ -41,6 +41,7 @@ import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpl
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 import AILearningNotice from '../../components/ai/AILearningNotice';
+import AIResponseExplainDrawer from '../../components/ai/AIResponseExplainDrawer';
 import { isContextDensityDebugEnabled } from '../../lib/aiFeatureFlags';
 import WorkspaceAIDrawer from '../../components/ai/WorkspaceAIDrawer';
 import { resolveBusinessIdFromDashboard } from '../../lib/resolveBusinessIdFromDashboard';

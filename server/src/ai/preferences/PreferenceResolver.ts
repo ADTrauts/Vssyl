@@ -250,7 +250,7 @@ export class PreferenceResolver {
           confidence: { gte: APPLIED_LEARNING_CONFIDENCE_FLOOR },
           eventType: { in: [...HUMAN_REVIEWABLE_EVENT_TYPES] },
         },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
           id: true,

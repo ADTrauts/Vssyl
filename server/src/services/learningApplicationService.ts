@@ -171,7 +171,7 @@ export class LearningApplicationService {
       data: {
         userId: event.userId,
         scope: scope.businessId ? 'business' : 'personal',
-        businessId: scope.businessId,
+        scopeId: scope.businessId,
         contextType: 'preference',
         title,
         content,
@@ -283,7 +283,7 @@ export class LearningApplicationService {
         applied: true,
         eventType: { in: [...HUMAN_REVIEWABLE_EVENT_TYPES] },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
     if (!event) return null;
 
@@ -315,7 +315,7 @@ export class LearningApplicationService {
           userId,
           validated: true,
           applied: true,
-          updatedAt: { gte: weekAgo },
+          createdAt: { gte: weekAgo },
         },
       }),
       this.db.aILearningEvent.count({
@@ -323,7 +323,7 @@ export class LearningApplicationService {
           userId,
           validated: true,
           applied: true,
-          updatedAt: { gte: monthAgo, lt: weekAgo },
+          createdAt: { gte: monthAgo, lt: weekAgo },
         },
       }),
     ]);

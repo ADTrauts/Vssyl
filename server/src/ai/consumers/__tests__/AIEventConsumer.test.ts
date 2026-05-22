@@ -14,7 +14,7 @@ function baseEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
     entityId: 'file-1',
     action: 'upload',
     metadata: { fileType: 'application/pdf', dashboardId: 'dash-1' },
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     ...overrides,
   };
 }

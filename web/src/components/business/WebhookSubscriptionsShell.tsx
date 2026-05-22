@@ -10,7 +10,7 @@ import {
   listWebhookSubscriptions,
   testWebhookSubscription,
   type WebhookSubscriptionRow,
-} from '../../../api/webhookSubscriptions';
+} from '../../api/webhookSubscriptions';
 
 interface Props {
   businessId: string;
@@ -112,7 +112,7 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-        <Spinner size="sm" />
+        <Spinner size={16} />
         Loading webhook subscriptions…
       </div>
     );

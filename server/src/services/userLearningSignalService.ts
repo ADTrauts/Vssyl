@@ -86,7 +86,7 @@ export class UserLearningSignalService {
       });
       const row = await this.db.aILearningEvent.findFirst({
         where: { userId: input.userId, context: `derived:${dedupeKey}` },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         select: { id: true },
       });
       return { id: row?.id ?? dedupeKey };

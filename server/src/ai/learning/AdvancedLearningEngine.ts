@@ -239,13 +239,19 @@ export class AdvancedLearningEngine {
 
         if (userQuery && aiResponse) {
           const { factExtractionService } = await import('../../services/factExtractionService');
+          const rawContext =
+            (eventData.context as Record<string, unknown> | undefined) ??
+            (eventData.request as { context?: unknown } | undefined)?.context;
+          const normalizedContext =
+            rawContext && typeof rawContext === 'object' && !Array.isArray(rawContext)
+              ? (rawContext as Record<string, unknown>)
+              : undefined;
           await factExtractionService
             .extractAndSaveFacts(
               event.userId,
               userQuery,
               aiResponse,
-              (eventData.context as Record<string, unknown> | undefined) ??
-                (eventData.request as { context?: unknown } | undefined)?.context
+              normalizedContext
             )
             .catch((err: unknown) => {
               const message = err instanceof Error ? err.message : String(err);

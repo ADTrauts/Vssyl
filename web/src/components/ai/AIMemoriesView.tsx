@@ -100,7 +100,9 @@ function dateInputToIso(date: string): string | null {
 export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps) {
   const { data: session } = useSession();
   const { currentDashboard, getDashboardType } = useDashboard();
-  const businessId = resolveBusinessIdFromDashboard(currentDashboard, getDashboardType());
+  const businessId = currentDashboard
+    ? resolveBusinessIdFromDashboard(currentDashboard, getDashboardType(currentDashboard))
+    : undefined;
   const [contexts, setContexts] = useState<UserAIContextItem[]>([]);
   const [patterns, setPatterns] = useState<LearnedPatternSummary[]>([]);
   const [memoryFacts, setMemoryFacts] = useState<UserMemoryFact[]>([]);

@@ -459,6 +459,7 @@ export class ModuleRegistrySyncService {
     webhookConfig?: {
       executorUrl: string;
       apiKey?: string;
+      signingSecret?: string;
       timeout?: number;
     };
   } | null {

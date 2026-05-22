@@ -911,7 +911,7 @@ export class CrossModuleContextEngine {
       });
 
       if (registryEntry) {
-        const contextProviders = registryEntry.contextProviders as ContextProviderConfig[];
+        const contextProviders = registryEntry.contextProviders as unknown as ContextProviderConfig[];
         const selectedProvider = selectContextProvider(moduleId, '', contextProviders);
 
         if (selectedProvider) {

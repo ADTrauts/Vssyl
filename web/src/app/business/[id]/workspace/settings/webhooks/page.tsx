@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from 'shared/components';
-import { getBusiness } from '../../../../api/business';
-import WebhookSubscriptionsShell from '../../../../components/business/WebhookSubscriptionsShell';
+import { getBusiness } from '../../../../../../api/business';
+import WebhookSubscriptionsShell from '../../../../../../components/business/WebhookSubscriptionsShell';
 
 export default function BusinessWebhookSettingsPage() {
   const params = useParams();
@@ -22,7 +22,7 @@ export default function BusinessWebhookSettingsPage() {
         const business = res.data;
         const userId = session?.user?.id;
         const member = business.members?.find((m) => m.userId === userId);
-        setCanManage(member?.role === 'ADMIN' && Boolean(member?.canManage ?? true));
+        setCanManage(member?.role === 'ADMIN');
       })
       .finally(() => setLoading(false));
   }, [token, businessId, session?.user?.id]);

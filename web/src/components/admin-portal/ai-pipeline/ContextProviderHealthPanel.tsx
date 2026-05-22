@@ -107,7 +107,7 @@ export default function ContextProviderHealthPanel() {
 
       {loading && (
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Spinner size="sm" />
+          <Spinner size={16} />
           Probing endpoints…
         </div>
       )}
