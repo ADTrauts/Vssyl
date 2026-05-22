@@ -59,8 +59,17 @@ export function buildPipelineEvidenceBundle(
   input: BuildPipelineEvidenceBundleInput
 ): PipelineEvidenceBundle {
   const { trace } = input;
+  const learningEvidence: PipelineEvidenceItem[] =
+    trace.learningRetrieved?.stages.map((stage) => ({
+      label: `Learning ${stage.stage}`,
+      sourceType: 'learning',
+      detail: stage.details ?? stage.status,
+      confidence:
+        typeof stage.confidence === 'number' ? String(stage.confidence) : undefined,
+    })) ?? [];
+
   return {
-    assembledEvidence: mapAssembledEvidence(input.assembledContext),
+    assembledEvidence: [...learningEvidence, ...mapAssembledEvidence(input.assembledContext)],
     assembledContextBlocks: mapContextBlockSummaries(input.assembledContext),
     assembledUsedModules:
       input.assembledContext && typeof input.assembledContext === 'object'

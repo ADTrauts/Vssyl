@@ -67,8 +67,9 @@ model ModuleInstallation {
   enabled   Boolean  @default(true)
   
   // AI context caching
-  cachedContext    Json?     // Cached AI context data
-  contextCachedAt  DateTime? // When context was last cached
+  cachedContext         Json?     // Legacy single-blob cache (deprecated)
+  contextCachedAt       DateTime? // Legacy cache timestamp (deprecated)
+  contextProviderCache  Json?     // Per-provider cache keyed by provider:scope
   
   @@unique([moduleId, userId])
   @@index([moduleId])

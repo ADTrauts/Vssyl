@@ -518,4 +518,106 @@ router.get('/stats', authenticateJWT, requireAdmin, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/ai-context-debug/assemble
+ * Dry-run assembleAIContext + context density report (admin).
+ */
+router.post('/assemble', authenticateJWT, requireAdmin, async (req, res) => {
+  try {
+    const { userId, query, businessId } = req.body as {
+      userId?: string;
+      query?: string;
+      businessId?: string;
+    };
+
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      return res.status(400).json({ success: false, error: 'query is required' });
+    }
+
+    const { default: CrossModuleContextEngine } = await import(
+      '../ai/context/CrossModuleContextEngine.js'
+    );
+    const { assembleAIContext } = await import('../ai/context/AIContextAssembler.js');
+    const { buildContextDensityReport, toContextDensitySummary } = await import(
+      '../ai/context/contextDensityReport.js'
+    );
+    const { synthesizeCrossModuleContext } = await import(
+      '../ai/context/ContextSynthesisService.js'
+    );
+
+    const contextEngine = new CrossModuleContextEngine();
+    const smartContext = await contextEngine.getContextForAIQuery(
+      userId,
+      query.trim(),
+      typeof businessId === 'string' ? businessId : undefined
+    );
+
+    const moduleContexts =
+      smartContext.moduleContexts && typeof smartContext.moduleContexts === 'object'
+        ? (smartContext.moduleContexts as Record<string, unknown>)
+        : undefined;
+
+    const crossModuleSynthesis =
+      moduleContexts && Object.keys(moduleContexts).length > 0
+        ? synthesizeCrossModuleContext({
+            query: query.trim(),
+            moduleContexts,
+          })
+        : undefined;
+
+    const fullContext = smartContext.fullContext as import('../ai/context/CrossModuleContextEngine.js').UserContext;
+    const assembled = assembleAIContext({
+      query: {
+        query: query.trim(),
+        userId,
+        context: {
+          ...(typeof businessId === 'string' ? { businessId } : {}),
+        },
+      },
+      userContext: fullContext,
+      moduleContexts,
+      crossModuleSynthesis,
+    });
+
+    const providerFetchAudit = Array.isArray(smartContext.providerFetchAudit)
+      ? smartContext.providerFetchAudit
+      : [];
+
+    const contextDensityReport = buildContextDensityReport({
+      assembled,
+      providerFetchAudit,
+      assemblyMetrics: assembled.assemblyMetrics,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        scope: assembled.scope,
+        usedModules: assembled.usedModules,
+        contextBlockCount: assembled.contextBlocks.length,
+        missingContext: assembled.missingContext,
+        assemblyMetrics: assembled.assemblyMetrics,
+        contextDensityReport,
+        contextDensitySummary: toContextDensitySummary(contextDensityReport),
+        contextAvailability: assembled.contextAvailability,
+        blocksDropped: assembled.assemblyMetrics?.blocksDropped ?? 0,
+        crossModuleSynthesis,
+        referencesMultipleModules:
+          (crossModuleSynthesis?.modulesIncluded.length ?? 0) >= 2 &&
+          assembled.contextBlocks.some((b) => b.title === 'Cross-module summary'),
+        synthesisBlockPresent: assembled.contextBlocks.some(
+          (b) => b.title === 'Cross-module summary'
+        ),
+      },
+    });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('ai_context_debug_assemble_error', 'Context assemble dry-run failed:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;

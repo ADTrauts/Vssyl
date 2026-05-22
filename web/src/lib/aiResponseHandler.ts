@@ -287,6 +287,10 @@ export function buildAIConversationItemFromTwinData(
     metadata: {
       reasoning: normalized.reasoning,
       actions: Array.isArray(normalized.actions) ? normalized.actions : [],
+      ...(normalized.metadata?.contextDensity &&
+      typeof normalized.metadata.contextDensity === 'object'
+        ? { contextDensity: normalized.metadata.contextDensity }
+        : {}),
       ...(normalized.metadata ? { twinMetadata: normalized.metadata } : {}),
     },
   };

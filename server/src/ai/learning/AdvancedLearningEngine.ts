@@ -1,6 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { CentralizedLearningEngine } from './CentralizedLearningEngine';
+import { logger } from '../../lib/logger';
+import {
+  buildPrimaryLearningEventWrite,
+  parseInsightArtifact,
+  parsePatternArtifact,
+  parsePredictionArtifact,
+} from './learningEventContract';
+import { upsertDerivedLearningEvent } from './learningEventPersistence';
+import {
+  LEARNING_EVENT_TYPES,
+  PATTERN_DERIVED_EVENT_TYPES,
+} from './learningProposalTypes';
 
 export interface LearningEventData {
   action?: string;
@@ -142,99 +154,163 @@ export class AdvancedLearningEngine {
   }
 
   /**
-   * Process a learning event and update AI understanding
+   * Process a learning event — one synchronous primary row; derived rows async.
    */
   async processLearningEvent(event: Omit<LearningEvent, 'id' | 'timestamp' | 'processed'>): Promise<AdaptiveResponse> {
+    const eventData =
+      event.data && typeof event.data === 'object' && !Array.isArray(event.data)
+        ? (event.data as Record<string, unknown>)
+        : {};
+
     const learningEvent = await this.prisma.aILearningEvent.create({
-      data: {
+      data: buildPrimaryLearningEventWrite({
         userId: event.userId,
         eventType: event.eventType,
-        context: event.module, // Use 'context' instead of 'module'
-        newBehavior: JSON.stringify(event.data), // Use 'newBehavior' instead of 'data'
+        context: event.module,
+        sourceModule: event.module !== 'unknown' ? event.module : undefined,
+        data: eventData,
         confidence: event.confidence,
-        patternData: JSON.parse(JSON.stringify({ impact: event.impact, data: event.data })), // Use 'patternData' for additional data
-        frequency: 1,
-        applied: false,
-        validated: false
-      }
+        impact: event.impact,
+      }),
     });
 
-    // Analyze the event for patterns
-    const patterns = await this.analyzeEventForPatterns(learningEvent);
-    
-    // Update personality based on event
-    const personalityAdjustments = await this.updatePersonalityFromEvent(learningEvent);
-    
-    // Extract and save explicit facts from conversation (if this is a conversation event)
-    // This complements pattern learning by capturing WHAT the user told us, not just HOW they behave
-    if (event.eventType === 'interaction') {
-      try {
-        const eventData = event.data as any;
-        // Check multiple possible data structures (request/response or userQuery/aiResponse)
-        const userQuery = eventData?.request?.query || eventData?.userQuery || eventData?.query;
-        const aiResponse = eventData?.response?.response || eventData?.aiResponse || eventData?.response;
-        
-        if (userQuery && aiResponse) {
-          // Import fact extraction service dynamically to avoid circular dependencies
-          const { factExtractionService } = await import('../../services/factExtractionService');
-          await factExtractionService.extractAndSaveFacts(
-            event.userId,
-            userQuery,
-            aiResponse,
-            eventData?.context || eventData?.request?.context
-          ).catch(err => {
-            // Log but don't fail - fact extraction is non-critical
-            console.warn('Fact extraction in learning engine failed:', err);
-          });
-        }
-      } catch (error) {
-        // Silently fail - fact extraction shouldn't break learning
-        console.warn('Error extracting facts in learning engine:', error);
-      }
-    }
-    
-    // Generate new predictions
-    const newPredictions = await this.generatePredictionsFromEvent(learningEvent);
-    
-    // Create insights
-    const insights = await this.createInsightsFromEvent(learningEvent, patterns);
-    
-    // Generate behavior modifications
-    const behaviorModifications = await this.generateBehaviorModifications(learningEvent, patterns);
-    
-    // Create recommendations
-    const recommendations = await this.generateRecommendations(learningEvent, insights);
-
-    // Mark event as applied
-    await this.prisma.aILearningEvent.update({
-      where: { id: learningEvent.id },
-      data: { applied: true }
-    });
-
-    // Send event to centralized learning system for global pattern recognition
-    try {
-      await this.centralizedLearning.processGlobalLearningEvent(
-        event.userId,
-        {
-          eventType: event.eventType,
-          context: event.module,
-          patternData: { data: event.data },
-          confidence: event.confidence,
-          impact: event.impact
-        }
-      );
-    } catch (error) {
-      console.error('Error sending event to centralized learning:', error);
-      // Don't fail the local learning process if centralized learning fails
-    }
+    this.scheduleDerivedLearning(learningEvent.id, event);
 
     return {
-      personalityAdjustments,
-      behaviorModifications,
-      newPredictions,
-      insights,
-      recommendations
+      personalityAdjustments: [],
+      behaviorModifications: [],
+      newPredictions: [],
+      insights: [],
+      recommendations: [],
     };
+  }
+
+  private scheduleDerivedLearning(
+    primaryEventId: string,
+    event: Omit<LearningEvent, 'id' | 'timestamp' | 'processed'>
+  ): void {
+    void this.processDerivedLearningAsync(primaryEventId, event).catch((error: unknown) => {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.warn('Derived learning processing failed', {
+        operation: 'advanced_learning_derived_async',
+        primaryEventId,
+        userId: event.userId,
+        error: { message: err.message, stack: err.stack },
+      });
+    });
+  }
+
+  private async processDerivedLearningAsync(
+    primaryEventId: string,
+    event: Omit<LearningEvent, 'id' | 'timestamp' | 'processed'>
+  ): Promise<void> {
+    const primaryRow = await this.prisma.aILearningEvent.findFirst({
+      where: { id: primaryEventId, userId: event.userId },
+    });
+    if (!primaryRow) return;
+
+    const patterns = await this.analyzeEventForPatterns(primaryRow);
+    for (const pattern of patterns.slice(0, 4)) {
+      const dedupeKey = `pattern:${pattern.patternType}:${pattern.id.split('_')[0] ?? 'general'}`;
+      await upsertDerivedLearningEvent(this.prisma, {
+        userId: pattern.userId,
+        eventType: LEARNING_EVENT_TYPES.PATTERN_DISCOVERY,
+        contextKey: `derived:${dedupeKey}`,
+        dedupeKey,
+        artifact: pattern,
+        summary: `${pattern.patternType} pattern (${(pattern.confidence * 100).toFixed(0)}% confidence)`,
+        confidence: pattern.confidence,
+      });
+    }
+
+    this.patternCache.delete(event.userId);
+
+    if (event.eventType === LEARNING_EVENT_TYPES.INTERACTION) {
+      try {
+        const eventData = event.data as Record<string, unknown>;
+        const userQuery =
+          (eventData?.request as { query?: string } | undefined)?.query ??
+          (typeof eventData.userQuery === 'string' ? eventData.userQuery : undefined) ??
+          (typeof eventData.query === 'string' ? eventData.query : undefined);
+        const aiResponse =
+          (eventData?.response as { response?: string } | undefined)?.response ??
+          (typeof eventData.aiResponse === 'string' ? eventData.aiResponse : undefined) ??
+          (typeof eventData.response === 'string' ? eventData.response : undefined);
+
+        if (userQuery && aiResponse) {
+          const { factExtractionService } = await import('../../services/factExtractionService');
+          await factExtractionService
+            .extractAndSaveFacts(
+              event.userId,
+              userQuery,
+              aiResponse,
+              (eventData.context as Record<string, unknown> | undefined) ??
+                (eventData.request as { context?: unknown } | undefined)?.context
+            )
+            .catch((err: unknown) => {
+              const message = err instanceof Error ? err.message : String(err);
+              void logger.warn('Fact extraction in learning engine failed', {
+                operation: 'advanced_learning_fact_extraction',
+                message,
+              });
+            });
+        }
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error extracting facts in learning engine', {
+          operation: 'advanced_learning_fact_extraction',
+          error: { message: err.message },
+        });
+      }
+    }
+
+    const personalityAdjustments = await this.updatePersonalityFromEvent(primaryRow);
+    void personalityAdjustments;
+
+    const newPredictions = await this.generatePredictionsFromEvent(primaryRow);
+    for (const prediction of newPredictions.slice(0, 2)) {
+      const dedupeKey = `prediction:${prediction.type}:${prediction.description.slice(0, 48)}`;
+      await upsertDerivedLearningEvent(this.prisma, {
+        userId: prediction.userId,
+        eventType: LEARNING_EVENT_TYPES.PREDICTION,
+        contextKey: `derived:${dedupeKey}`,
+        dedupeKey,
+        artifact: prediction,
+        summary: prediction.description,
+        confidence: prediction.confidence,
+      });
+    }
+
+    const insights = await this.createInsightsFromEvent(primaryRow, patterns);
+    for (const insight of insights.slice(0, 2)) {
+      const dedupeKey = `insight:${insight.insightType}:${insight.description.slice(0, 48)}`;
+      await upsertDerivedLearningEvent(this.prisma, {
+        userId: insight.userId,
+        eventType: LEARNING_EVENT_TYPES.INSIGHT,
+        contextKey: `derived:${dedupeKey}`,
+        dedupeKey,
+        artifact: insight,
+        summary: insight.description,
+        confidence: insight.confidence,
+        impact: 'high',
+      });
+    }
+
+    try {
+      await this.centralizedLearning.processGlobalLearningEvent(event.userId, {
+        eventType: event.eventType,
+        context: event.module,
+        patternData: { data: event.data },
+        confidence: event.confidence,
+        impact: event.impact,
+      });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.warn('Centralized learning fan-out failed', {
+        operation: 'advanced_learning_centralized',
+        error: { message: err.message },
+      });
+    }
   }
 
   /**
@@ -269,23 +345,6 @@ export class AdvancedLearningEngine {
     // Analyze communication patterns
     const communicationPatterns = this.analyzeCommunicationPatterns(recentEvents);
     patterns.push(...communicationPatterns);
-
-    // Save patterns to database
-    for (const pattern of patterns) {
-      await this.prisma.aILearningEvent.create({
-        data: {
-          userId: pattern.userId,
-          eventType: 'pattern',
-          context: 'learning', // Use 'context' instead of 'module'
-          newBehavior: JSON.stringify(pattern), // Use 'newBehavior' instead of 'data'
-          confidence: pattern.confidence,
-          patternData: JSON.parse(JSON.stringify({ impact: 'medium', data: pattern.data })),
-          frequency: pattern.frequency,
-          applied: true,
-          validated: true
-        }
-      });
-    }
 
     return patterns;
   }
@@ -650,23 +709,6 @@ export class AdvancedLearningEngine {
     const communicationPredictions = this.predictCommunication(event, patterns);
     predictions.push(...communicationPredictions);
 
-    // Save predictions to database
-    for (const prediction of predictions) {
-      await this.prisma.aILearningEvent.create({
-        data: {
-          userId: prediction.userId,
-          eventType: 'prediction',
-          context: 'learning', // Use 'context' instead of 'module'
-          newBehavior: JSON.stringify(prediction), // Use 'newBehavior' instead of 'data'
-          confidence: prediction.confidence,
-          patternData: JSON.parse(JSON.stringify({ impact: 'medium', data: prediction.data })),
-          frequency: 1,
-          applied: true,
-          validated: true
-        }
-      });
-    }
-
     return predictions;
   }
 
@@ -832,23 +874,6 @@ export class AdvancedLearningEngine {
     // Analyze for anomalies
     const anomalies = this.analyzeAnomalies(event, patterns);
     insights.push(...anomalies);
-
-    // Save insights to database
-    for (const insight of insights) {
-      await this.prisma.aILearningEvent.create({
-        data: {
-          userId: insight.userId,
-          eventType: 'insight',
-          context: 'learning', // Use 'context' instead of 'module'
-          newBehavior: JSON.stringify(insight), // Use 'newBehavior' instead of 'data'
-          confidence: insight.confidence,
-          patternData: JSON.parse(JSON.stringify({ impact: 'high', data: insight.data })),
-          frequency: 1,
-          applied: true,
-          validated: true
-        }
-      });
-    }
 
     return insights;
   }
@@ -1070,27 +1095,29 @@ export class AdvancedLearningEngine {
     const patternEvents = await this.prisma.aILearningEvent.findMany({
       where: { 
         userId,
-        eventType: 'pattern',
+        eventType: { in: [...PATTERN_DERIVED_EVENT_TYPES] },
         applied: true
       },
       orderBy: { createdAt: 'desc' },
       take: 50
     });
 
-    const patterns: LearningPattern[] = patternEvents.map(event => {
-      const data = event.patternData as any;
-      return {
-        id: data.id,
-        userId: data.userId,
-        patternType: data.patternType,
-        confidence: data.confidence,
-        strength: data.strength,
-        frequency: data.frequency,
-        lastObserved: new Date(data.lastObserved),
-        data: data.data,
-        predictions: data.predictions || []
-      };
-    });
+    const patterns: LearningPattern[] = [];
+    for (const event of patternEvents) {
+      const parsed = parsePatternArtifact(event);
+      if (!parsed) continue;
+      patterns.push({
+        id: String(parsed.id),
+        userId: String(parsed.userId),
+        patternType: parsed.patternType as LearningPattern['patternType'],
+        confidence: Number(parsed.confidence),
+        strength: Number(parsed.strength),
+        frequency: Number(parsed.frequency),
+        lastObserved: new Date(String(parsed.lastObserved)),
+        data: (parsed.data as LearningPatternData) ?? {},
+        predictions: (parsed.predictions as Prediction[]) ?? [],
+      });
+    }
 
     this.patternCache.set(userId, patterns);
     return patterns;
@@ -1191,22 +1218,25 @@ export class AdvancedLearningEngine {
       take: 50
     });
 
-    return predictionEvents.map(event => {
-      const data = event.patternData as any;
-      return {
-        id: data.id,
-        userId: data.userId,
-        type: data.type,
-        confidence: data.confidence,
-        probability: data.probability,
-        timeframe: data.timeframe,
-        description: data.description,
-        data: data.data,
-        createdAt: new Date(data.createdAt),
-        expiresAt: new Date(data.expiresAt),
-        validated: data.validated
-      };
-    });
+    return predictionEvents
+      .map((event) => {
+        const parsed = parsePredictionArtifact(event);
+        if (!parsed) return null;
+        return {
+          id: String(parsed.id),
+          userId: String(parsed.userId),
+          type: parsed.type as Prediction['type'],
+          confidence: Number(parsed.confidence),
+          probability: Number(parsed.probability),
+          timeframe: parsed.timeframe as Prediction['timeframe'],
+          description: String(parsed.description),
+          data: (parsed.data as PredictionData) ?? {},
+          createdAt: new Date(String(parsed.createdAt)),
+          expiresAt: new Date(String(parsed.expiresAt)),
+          validated: Boolean(parsed.validated),
+        };
+      })
+      .filter((p): p is Prediction => p !== null);
   }
 
   /**
@@ -1223,20 +1253,23 @@ export class AdvancedLearningEngine {
       take: 10
     });
 
-    return insightEvents.map(event => {
-      const data = event.patternData as any;
-      return {
-        id: data.id,
-        userId: data.userId,
-        insightType: data.insightType,
-        confidence: data.confidence,
-        significance: data.significance,
-        description: data.description,
-        recommendations: data.recommendations,
-        data: data.data,
-        createdAt: new Date(data.createdAt)
-      };
-    });
+    return insightEvents
+      .map((event) => {
+        const parsed = parseInsightArtifact(event);
+        if (!parsed) return null;
+        return {
+          id: String(parsed.id),
+          userId: String(parsed.userId),
+          insightType: parsed.insightType as LearningInsight['insightType'],
+          confidence: Number(parsed.confidence),
+          significance: Number(parsed.significance),
+          description: String(parsed.description),
+          recommendations: parsed.recommendations as string[],
+          data: (parsed.data as LearningInsightData) ?? {},
+          createdAt: new Date(String(parsed.createdAt)),
+        };
+      })
+      .filter((i): i is LearningInsight => i !== null);
   }
 
   /**
@@ -1246,7 +1279,11 @@ export class AdvancedLearningEngine {
   private getEventTypeDistribution(events: any[]): Record<string, number> {
     const distribution: Record<string, number> = {};
     events.forEach(event => {
-      distribution[event.eventType] = (distribution[event.eventType] || 0) + 1;
+      const key =
+        typeof event.eventType === 'string' && event.eventType.length > 0
+          ? event.eventType
+          : 'unknown';
+      distribution[key] = (distribution[key] || 0) + 1;
     });
     return distribution;
   }

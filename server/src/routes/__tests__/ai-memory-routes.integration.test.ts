@@ -97,7 +97,7 @@ describe('AI memory HTTP routes (integration)', () => {
     expect(topics.some((t) => t.conversationId === conversationId)).toBe(true);
   });
 
-  it('GET/POST/DELETE /api/ai/memory/facts', async () => {
+  it('GET/POST/PATCH/DELETE /api/ai/memory/facts', async () => {
     const listEmpty = await request(app)
       .get('/api/ai/memory/facts')
       .set(authHeader)
@@ -117,10 +117,24 @@ describe('AI memory HTTP routes (integration)', () => {
     expect(created.body.success).toBe(true);
     createdFactId = created.body.data?.id as string;
     expect(createdFactId).toBeTruthy();
+    expect(created.body.data?.sourceType).toBe('explicit_user');
+    expect(created.body.data?.isExplicit).toBe(true);
+    expect(created.body.data?.category).toBeTruthy();
+
+    const patched = await request(app)
+      .patch(`/api/ai/memory/facts/${createdFactId}`)
+      .set(authHeader)
+      .send({ predicate: 'User prefers domestic beach towns and historic cities.' })
+      .expect(200);
+
+    expect(patched.body.success).toBe(true);
+    expect(patched.body.data?.predicate).toContain('historic cities');
 
     const list = await request(app).get('/api/ai/memory/facts').set(authHeader).expect(200);
-    const facts = list.body.data?.facts as Array<{ id: string }>;
-    expect(facts.some((f) => f.id === createdFactId)).toBe(true);
+    const facts = list.body.data?.facts as Array<{ id: string; predicate: string }>;
+    expect(facts.some((f) => f.id === createdFactId && f.predicate.includes('historic cities'))).toBe(
+      true
+    );
 
     await request(app)
       .delete(`/api/ai/memory/facts/${createdFactId}`)
@@ -128,5 +142,114 @@ describe('AI memory HTTP routes (integration)', () => {
       .expect(200);
 
     createdFactId = null;
+  });
+
+  it('rejects household scope until supported', async () => {
+    const res = await request(app)
+      .post('/api/ai/memory/facts')
+      .set(authHeader)
+      .send({
+        subject: 'Household test',
+        predicate: 'Should not be created.',
+        scope: 'household',
+      })
+      .expect(400);
+
+    expect(res.body.success).toBe(false);
+  });
+
+  it('does not list expired memory facts', async () => {
+    const expired = await prisma.userMemoryFact.create({
+      data: {
+        userId: user.id,
+        subject: 'Expired preference',
+        predicate: 'This fact should not appear in list.',
+        scope: 'personal',
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+
+    const list = await request(app).get('/api/ai/memory/facts').set(authHeader).expect(200);
+    const facts = list.body.data?.facts as Array<{ id: string }>;
+    expect(facts.some((f) => f.id === expired.id)).toBe(false);
+
+    await prisma.userMemoryFact.deleteMany({ where: { id: expired.id } });
+  });
+
+  it('filters list by category and sourceType', async () => {
+    const pref = await prisma.userMemoryFact.create({
+      data: {
+        userId: user.id,
+        subject: 'Coffee',
+        predicate: 'Prefers oat milk.',
+        scope: 'personal',
+        category: 'preference',
+        sourceType: 'explicit_user',
+      },
+    });
+    const inferred = await prisma.userMemoryFact.create({
+      data: {
+        userId: user.id,
+        subject: 'Guess',
+        predicate: 'Maybe likes jazz.',
+        scope: 'personal',
+        category: 'other',
+        sourceType: 'inferred_chat',
+        isExplicit: false,
+        confidence: 0.6,
+      },
+    });
+
+    const prefOnly = await request(app)
+      .get('/api/ai/memory/facts?category=preference')
+      .set(authHeader)
+      .expect(200);
+    const prefFacts = prefOnly.body.data?.facts as Array<{ id: string }>;
+    expect(prefFacts.some((f) => f.id === pref.id)).toBe(true);
+    expect(prefFacts.some((f) => f.id === inferred.id)).toBe(false);
+
+    const inferredOnly = await request(app)
+      .get('/api/ai/memory/facts?sourceType=inferred_chat')
+      .set(authHeader)
+      .expect(200);
+    const inferredFacts = inferredOnly.body.data?.facts as Array<{ id: string }>;
+    expect(inferredFacts.some((f) => f.id === inferred.id)).toBe(true);
+    expect(inferredFacts.some((f) => f.id === pref.id)).toBe(false);
+
+    await prisma.userMemoryFact.deleteMany({ where: { id: { in: [pref.id, inferred.id] } } });
+  });
+
+  it('does not allow cross-user patch or delete', async () => {
+    const other = await createTestUser({ name: 'Other Memory User' });
+    userIdsToCleanup.push(other.id);
+
+    const victimFact = await prisma.userMemoryFact.create({
+      data: {
+        userId: user.id,
+        subject: 'Private',
+        predicate: 'Only owner should edit.',
+        scope: 'personal',
+      },
+    });
+
+    const otherAuth = createAuthHeader(other);
+
+    await request(app)
+      .patch(`/api/ai/memory/facts/${victimFact.id}`)
+      .set(otherAuth)
+      .send({ predicate: 'Hacked.' })
+      .expect(404);
+
+    await request(app)
+      .delete(`/api/ai/memory/facts/${victimFact.id}`)
+      .set(otherAuth)
+      .expect(404);
+
+    const stillThere = await prisma.userMemoryFact.findFirst({
+      where: { id: victimFact.id, trashedAt: null },
+    });
+    expect(stillThere?.predicate).toBe('Only owner should edit.');
+
+    await prisma.userMemoryFact.deleteMany({ where: { id: victimFact.id } });
   });
 });

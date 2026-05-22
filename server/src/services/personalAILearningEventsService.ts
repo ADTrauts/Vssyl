@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { HUMAN_REVIEWABLE_EVENT_TYPES } from '../ai/learning/learningProposalTypes';
+import {
+  LearningApplicationService,
+  learningApplicationService,
+} from './learningApplicationService';
 
 export interface PersonalLearningEventSummary {
   id: string;
@@ -20,14 +25,24 @@ export interface PersonalLearningEventSummary {
 export type PersonalLearningEventListStatus = 'pending' | 'validated' | 'all';
 
 export class PersonalAILearningEventsService {
-  constructor(private readonly db: PrismaClient = prisma) {}
+  constructor(
+    private readonly db: PrismaClient = prisma,
+    private readonly application: LearningApplicationService = learningApplicationService
+  ) {}
 
   async listForUser(
     userId: string,
     status: PersonalLearningEventListStatus = 'pending',
     limit = 50
   ): Promise<PersonalLearningEventSummary[]> {
-    const where: { userId: string; validated?: boolean } = { userId };
+    const where: {
+      userId: string;
+      validated?: boolean;
+      eventType: { in: string[] };
+    } = {
+      userId,
+      eventType: { in: [...HUMAN_REVIEWABLE_EVENT_TYPES] },
+    };
     if (status === 'pending') {
       where.validated = false;
     } else if (status === 'validated') {
@@ -82,12 +97,21 @@ export class PersonalAILearningEventsService {
           ? '[dismissed by user]'
           : existing.userFeedback;
 
+    const applicationUpdate = approved
+      ? this.application.buildApprovedUpdate(
+          existing,
+          await this.application.applyApprovedEvent(existing)
+        )
+      : this.application.buildDismissedUpdate(existing);
+
     const updated = await this.db.aILearningEvent.update({
       where: { id: eventId },
       data: {
         validated: true,
         applied: approved,
         userFeedback: feedbackNote,
+        confidence: applicationUpdate.confidence,
+        patternData: applicationUpdate.patternData,
       },
       select: {
         id: true,

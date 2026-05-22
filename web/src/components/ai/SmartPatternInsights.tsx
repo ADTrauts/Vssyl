@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Button, Tabs, TabsContent, TabsList, TabsTrigger, ProgressBar } from 'shared/components';
+import { formatSnakeCase } from '../../lib/formatSnakeCase';
 import { 
   Brain, 
   TrendingUp, 
@@ -282,7 +283,7 @@ export default function SmartPatternInsights({ embedded }: SmartPatternInsightsP
                         <div className="flex items-center space-x-2">
                           <h4 className="font-medium">{pattern.pattern}</h4>
                           <Badge color="blue">
-                            {pattern.type.replace('_', ' ')}
+                            {formatSnakeCase(pattern.type, 'pattern')}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">

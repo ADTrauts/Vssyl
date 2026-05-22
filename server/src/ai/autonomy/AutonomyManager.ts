@@ -1,5 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 
+/**
+ * Autonomy decision engine for **legacy** `/api/ai/autonomous/*` routes and settings persistence.
+ *
+ * **A7 (Autonomy de-emphasis):** Do **not** wire this class into `DigitalLifeTwinCore` or any
+ * auto-execution path. Production twin behavior uses `PreferenceResolver` for action-boundary
+ * copy in prompts only — no silent execution.
+ *
+ * @deprecated for new product features (A6). Retained for settings CRUD and deprecated API surface.
+ */
+
 export interface AutonomyDecision {
   actionId: string;
   canExecute: boolean;

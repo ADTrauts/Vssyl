@@ -8,6 +8,7 @@ import PipelineFlagReasonsPanel from './PipelineFlagReasonsPanel';
 import PipelineContextUsedPanel from './PipelineContextUsedPanel';
 import PipelineReasoningDepthBadge from './PipelineReasoningDepthBadge';
 import PipelineFailureCategoryBadges from './PipelineFailureCategoryBadges';
+import ContextDensityPanel from './ContextDensityPanel';
 
 interface PipelineTraceDetailProps {
   trace: AIPipelineTrace;
@@ -120,6 +121,12 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
           </p>
         </div>
       </section>
+
+      {trace.contextDensity && (
+        <section>
+          <ContextDensityPanel report={trace.contextDensity} />
+        </section>
+      )}
 
       <section>
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Memory</h3>

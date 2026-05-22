@@ -55,10 +55,123 @@ export interface PipelineContextRetrievedRecord {
   itemCount: number;
 }
 
+export interface PipelineMemoryInfluenceRecord {
+  factId: string;
+  score: number;
+  reasonCodes: string[];
+}
+
+export type PipelineLearningStage = 'extract' | 'pending' | 'promote' | 'resolver';
+
+export type PipelineLearningStageStatus = 'skipped' | 'active' | 'completed';
+
+export interface PipelineLearningStageRecord {
+  stage: PipelineLearningStage;
+  status: PipelineLearningStageStatus;
+  count?: number;
+  confidence?: number;
+  details?: string;
+}
+
+export interface PipelineLearningRetrieved {
+  stages: PipelineLearningStageRecord[];
+  pendingCount?: number;
+  appliedCount?: number;
+  inferredPreferencesUsed?: number;
+  collectivePatternsUsed?: number;
+  collectiveConsent?: boolean;
+  avgLearningConfidence?: number;
+}
+
+export type ContextDensityProviderFailureReason =
+  | 'timeout'
+  | 'not_found'
+  | 'auth'
+  | 'network'
+  | 'unknown';
+
+export interface PipelineContextDensityProviderAttempt {
+  moduleId: string;
+  providerName: string;
+  status: 'succeeded' | 'failed' | 'skipped';
+  cacheHit?: boolean;
+  latencyMs?: number;
+  failureReason?: ContextDensityProviderFailureReason;
+  failureMessage?: string;
+}
+
+export interface PipelineContextDensityTierUsage {
+  tier: string;
+  blocksInjected: number;
+  tokensUsedEstimate: number;
+  tokenBudgetAllocated: number;
+}
+
+export interface PipelineContextDensityReport {
+  providers: {
+    attempted: number;
+    succeeded: number;
+    failed: number;
+    cacheHits: number;
+    attempts: PipelineContextDensityProviderAttempt[];
+  };
+  memory: {
+    factsLoaded: number;
+    factsInjected: number;
+    recalledMessagesLoaded: number;
+  };
+  modules: {
+    contextsLoaded: number;
+    blocksLoaded: number;
+    blocksInjected: number;
+    matchedHighRelevance: number;
+  };
+  blocks: {
+    loaded: number;
+    afterProfile: number;
+    ranked: number;
+    injected: number;
+    synthetic: number;
+    live: number;
+    profileExcluded: number;
+  };
+  tokenBudget: {
+    totalAllocated: number;
+    totalUsedEstimate: number;
+    byTier: PipelineContextDensityTierUsage[];
+  };
+  missingContextCount: number;
+}
+
+export interface PipelineContextDensitySummary {
+  providersAttempted: number;
+  providersSucceeded: number;
+  providersFailed: number;
+  cacheHits: number;
+  memoryFactsLoaded: number;
+  memoryFactsInjected: number;
+  moduleContextsLoaded: number;
+  moduleBlocksInjected: number;
+  blocksInjected: number;
+  syntheticBlocks: number;
+  liveBlocks: number;
+  tokensUsedEstimate: number;
+  tokenBudget: number;
+  missingContextCount: number;
+}
+
 export interface PipelineMemoryRetrieved {
   facts: number;
   recalledMessages: number;
   threadMemory: boolean;
+  /** Total non-expired facts eligible for retrieval. */
+  factsLoaded?: number;
+  /** Facts selected after scoring and budget. */
+  factsInfluenced?: number;
+  influencedFactIds?: string[];
+  predicateCharsUsed?: number;
+  predicateCharBudget?: number;
+  influenceRecords?: PipelineMemoryInfluenceRecord[];
 }
 
 export interface PipelineIntentDefinition extends PipelineRegistryMeta {
@@ -129,6 +242,8 @@ export interface BuildPipelineTraceInput {
   toolsUsed?: PipelineToolUsageRecord[];
   contextRetrieved?: PipelineContextRetrievedRecord[];
   memoryRetrieved?: Partial<PipelineMemoryRetrieved>;
+  learningRetrieved?: PipelineLearningRetrieved;
+  contextDensity?: PipelineContextDensityReport;
   sourcesUsed?: string[];
   confidenceLevel?: PipelineConfidenceLevel;
   traceId?: string;
@@ -161,6 +276,8 @@ export interface PipelineEvidenceBundle {
   retrievalRecords: PipelineContextRetrievedRecord[];
   sourcesUsed: string[];
   memoryRetrieved: PipelineMemoryRetrieved;
+  learningRetrieved?: PipelineLearningRetrieved;
+  contextDensity?: PipelineContextDensityReport;
   qualityWarnings: string[];
 }
 
@@ -184,6 +301,8 @@ export interface AIPipelineTrace {
   retrievalPerformed: boolean;
   contextRetrieved: PipelineContextRetrievedRecord[];
   memoryRetrieved: PipelineMemoryRetrieved;
+  learningRetrieved?: PipelineLearningRetrieved;
+  contextDensity?: PipelineContextDensityReport;
   sourcesUsed: string[];
   confidenceLevel: PipelineConfidenceLevel;
   genericResponseRisk: boolean;

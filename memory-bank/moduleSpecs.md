@@ -89,7 +89,8 @@ Every module must define and implement:
    - Notification type metadata in manifest
    - Standardized payload identifiers for navigation
 6. **AI context contract**
-   - Context providers and response shape aligned with `aiContextSystem.md`
+   - Context providers and response shape aligned with `aiContextSystem.md` and **`docs/guides/AI_CONTEXT_PROVIDER_API.md`**
+   - AI-exposed modules: at least one valid `contextProviders` entry (name, endpoint, cacheDuration); structural validation in `moduleContextProviderCertification.ts`
 7. **API/auth contract**
    - Proxy-safe API patterns
    - Authenticated identity and context validation
@@ -106,7 +107,7 @@ A module is not considered interoperable unless all are true:
 3. Key actions emit normalized activity events.
 4. Realtime updates are scoped and authorized.
 5. Notification metadata is declared and valid (if module emits notifications).
-6. AI context providers are implemented and discoverable (if module is AI-exposed).
+6. AI context providers are implemented and discoverable (if module is AI-exposed): manifest + registry entry, canonical response shape, admin health check passes. See **`docs/guides/AI_CONTEXT_PROVIDER_API.md`**.
 7. Activity and analytics concerns are separated.
 
 ### Enforcement path (how this checklist is applied)

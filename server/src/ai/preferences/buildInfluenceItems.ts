@@ -1,5 +1,9 @@
 import type { ResolvedEffectivePreferences } from './preferenceTypes';
 import type { EffectivePreferencesPreview } from './effectivePreferencesPreview';
+import {
+  isMemoryFactSourceType,
+  memorySourceTypeUserLabel,
+} from '../memory/memoryFactTypes';
 
 export type InfluencePermanence = 'permanent' | 'learned' | 'workspace' | 'session';
 
@@ -55,7 +59,7 @@ export function buildInfluenceItems(input: BuildInfluenceItemsInput): AIIdentity
   if (preview.actionBoundaries.length > 0) {
     items.push({
       id: 'autonomy-boundaries',
-      label: 'Your autonomy settings guide when your twin suggests vs acts',
+      label: 'Your action boundaries guide when your twin suggests vs acts',
       detail: preview.actionBoundaries[0],
       permanence: 'permanent',
     });
@@ -72,7 +76,11 @@ export function buildInfluenceItems(input: BuildInfluenceItemsInput): AIIdentity
   for (const inf of resolved.inferred.slice(0, 4)) {
     const label =
       inf.kind === 'memory_fact'
-        ? `You asked me to remember: ${inf.label}`
+        ? inf.isExplicit === false
+          ? `Inferred memory: ${inf.label}`
+          : inf.sourceType && isMemoryFactSourceType(inf.sourceType)
+            ? `${memorySourceTypeUserLabel(inf.sourceType)}: ${inf.label}`
+            : `You asked me to remember: ${inf.label}`
         : `Learned from you: ${inf.label}`;
     const detail =
       inf.value.length > 140 ? `${inf.value.slice(0, 137)}…` : inf.value;

@@ -286,7 +286,10 @@ export default function AIIdentityHome({
           className="mt-3 text-gray-700 dark:text-gray-300"
           onClick={() => onNavigateToTab('memory')}
         >
-          Manage memory
+          Manage in Memory
+          {context.memoryFactCount > 0
+            ? ` (${context.memoryFactCount} fact${context.memoryFactCount === 1 ? '' : 's'})`
+            : ''}
           <ChevronRight className="w-4 h-4 ml-0.5" />
         </Button>
       </Card>

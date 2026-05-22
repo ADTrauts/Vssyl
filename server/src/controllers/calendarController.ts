@@ -8,6 +8,7 @@ import { AuditService } from '../services/auditService';
 import { sendCalendarInviteEmail, sendCalendarUpdateEmail, sendCalendarCancelEmail } from '../services/emailService';
 import { createRsvpToken, validateRsvpToken } from '../utils/tokenUtils';
 import { logger } from '../lib/logger';
+import { emitCalendarEventCreatedEvent } from '../events/domainEventEmitters';
 
 function getUserId(req: Request): string | null {
   const user = (req as AuthenticatedRequest).user;
@@ -677,6 +678,18 @@ export async function createEvent(req: Request, res: Response) {
     } as any),
     include: { attendees: true, reminders: true }
   });
+
+  emitCalendarEventCreatedEvent({
+    actorUserId: userId,
+    eventId: event.id,
+    calendarId: event.calendarId,
+    allDay: event.allDay,
+    startAt: event.startAt.toISOString(),
+    endAt: event.endAt.toISOString(),
+    businessId: cal?.contextType === 'BUSINESS' ? cal.contextId : null,
+    householdId: cal?.contextType === 'HOUSEHOLD' ? cal.contextId : null,
+  });
+
   res.status(201).json({ success: true, data: event });
   // Audit: event created
   try {

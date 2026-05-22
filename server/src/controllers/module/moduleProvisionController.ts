@@ -14,6 +14,8 @@ import { evaluateModuleUninstallPolicyDual } from '../../auth/moduleUninstallPol
 import {
   emitModuleInstalledEvent,
   emitModuleUninstalledEvent,
+  emitModuleEnabledEvent,
+  emitModuleDisabledEvent,
 } from '../../events/domainEventEmitters';
 
 // Get all installed modules for the current user
@@ -877,7 +879,10 @@ export const configureModule = async (req: Request, res: Response) => {
     }
 
     const { moduleId } = req.params;
-    const { configuration } = req.body;
+    const { configuration, enabled } = req.body as {
+      configuration?: unknown;
+      enabled?: boolean;
+    };
     const scope = (req.query.scope as 'personal' | 'business') || 'personal';
     const businessId = req.query.businessId as string | undefined;
 
@@ -909,9 +914,30 @@ export const configureModule = async (req: Request, res: Response) => {
       const updatedInstallation = await (prisma as any).businessModuleInstallation.update({
         where: { moduleId_businessId: { moduleId, businessId } },
         data: {
-          configured: configuration
-        }
+          ...(configuration !== undefined ? { configured: configuration } : {}),
+          ...(typeof enabled === 'boolean' ? { enabled } : {}),
+        },
       });
+
+      if (typeof enabled === 'boolean' && enabled !== installation.enabled) {
+        if (enabled) {
+          emitModuleEnabledEvent({
+            actorUserId: user.id,
+            moduleId,
+            installationId: updatedInstallation.id,
+            installScope: 'business',
+            businessId,
+          });
+        } else {
+          emitModuleDisabledEvent({
+            actorUserId: user.id,
+            moduleId,
+            installationId: updatedInstallation.id,
+            installScope: 'business',
+            businessId,
+          });
+        }
+      }
 
       return res.json({
         success: true,
@@ -943,9 +969,28 @@ export const configureModule = async (req: Request, res: Response) => {
         }
       },
       data: {
-        configured: configuration
+        ...(configuration !== undefined ? { configured: configuration } : {}),
+        ...(typeof enabled === 'boolean' ? { enabled } : {}),
       }
     });
+
+    if (typeof enabled === 'boolean' && enabled !== installation.enabled) {
+      if (enabled) {
+        emitModuleEnabledEvent({
+          actorUserId: user.id,
+          moduleId,
+          installationId: updatedInstallation.id,
+          installScope: 'personal',
+        });
+      } else {
+        emitModuleDisabledEvent({
+          actorUserId: user.id,
+          moduleId,
+          installationId: updatedInstallation.id,
+          installScope: 'personal',
+        });
+      }
+    }
 
     res.json({ 
       success: true, 

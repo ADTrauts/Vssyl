@@ -46,6 +46,7 @@ model Business {
   businessFollows BusinessFollow[]
   businessModuleInstallations BusinessModuleInstallation[]
   businessModuleSubscriptions BusinessModuleSubscription[]
+  webhookSubscriptions        WebhookSubscription[]
   // Org Chart & Permission System
   organizationalTiers OrganizationalTier[]
   positions        Position[]

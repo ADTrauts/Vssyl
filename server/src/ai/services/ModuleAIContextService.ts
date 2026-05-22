@@ -24,6 +24,19 @@ import type {
   ModuleContextResponse,
 } from '../../../../shared/src/types/module-ai-context';
 import { prisma } from '../../lib/prisma';
+import {
+  buildModuleContextFetchParams,
+  buildSuggestedContextProviders,
+  detectMultiModuleIntent,
+  MODULE_MENTION_ALIASES,
+  type ContextProviderConfig,
+} from './moduleContextProviderSelection';
+import {
+  buildProviderCacheKey,
+  readProviderCache,
+  resolveScopeKey,
+  writeProviderCache,
+} from './moduleContextProviderCache';
 
 export class ModuleAIContextService {
   private getInternalApiBaseUrl(): string {
@@ -160,14 +173,7 @@ export class ModuleAIContextService {
     const mentions: string[] = [];
     let match;
 
-    // Module ID to alias mapping (supports multiple aliases per module)
-    const moduleAliases: Record<string, string[]> = {
-      drive: ['drive', 'files', 'documents', 'file', 'storage', 'upload', 'download'],
-      chat: ['chat', 'messages', 'conversations', 'message', 'conversation'],
-      calendar: ['calendar', 'events', 'event', 'schedule', 'meeting', 'appointment'],
-      hr: ['hr', 'employees', 'employee', 'team', 'staff', 'workforce', 'people'],
-      scheduling: ['scheduling', 'shifts', 'shift', 'coverage', 'schedule', 'roster'],
-    };
+    const moduleAliases = MODULE_MENTION_ALIASES;
 
     let cleanedQuery = query;
     
@@ -246,15 +252,13 @@ export class ModuleAIContextService {
             contextProviders: entry.contextProviders as any,
           }));
 
-          // Get suggested context providers for mentioned modules
-          const suggestedContextProviders = matchedModules
-            .flatMap((m: Record<string, any>) =>
-              ((m.contextProviders as any[]) || []).map((provider: Record<string, any>) => ({
-                moduleId: m.moduleId,
-                providerName: provider.name,
-                endpoint: provider.endpoint.replace(':id', m.moduleId),
-              }))
-            );
+          const suggestedContextProviders = buildSuggestedContextProviders(
+            matchedModules.map((m: Record<string, unknown>) => ({
+              moduleId: m.moduleId as string,
+              contextProviders: m.contextProviders as ContextProviderConfig[] | undefined,
+            })),
+            cleanedQuery || query
+          );
 
           console.log(
             `⚡ @Mention Optimization: Query "${query}" directly targets ${mentionedAndInstalled.length} module(s): ${mentionedAndInstalled.join(', ')} (cleaned: "${cleanedQuery}")`
@@ -332,16 +336,20 @@ export class ModuleAIContextService {
         .filter((match: Record<string, any>) => match.score > 0) // Only include modules with some match
         .sort((a: Record<string, any>, b: Record<string, any>) => (b.score as number) - (a.score as number)); // Sort by score descending
 
-      // Get suggested context providers for high-relevance matches
-      const suggestedContextProviders = matchedModules
-        .filter((m: Record<string, any>) => m.relevance === 'high' || m.relevance === 'medium')
-        .flatMap((m: Record<string, any>) =>
-          ((m.contextProviders as any[]) || []).map((provider: Record<string, any>) => ({
-            moduleId: m.moduleId,
-            providerName: provider.name,
-            endpoint: provider.endpoint.replace(':id', m.moduleId),
-          }))
-        );
+      const modulesForProviders = detectMultiModuleIntent(query, matchedModules)
+        ? matchedModules.filter(
+            (m: Record<string, unknown>) =>
+              m.relevance === 'high' || m.relevance === 'medium'
+          )
+        : matchedModules.filter((m: Record<string, unknown>) => m.relevance === 'high');
+
+      const suggestedContextProviders = buildSuggestedContextProviders(
+        modulesForProviders.map((m: Record<string, unknown>) => ({
+          moduleId: m.moduleId as string,
+          contextProviders: m.contextProviders as ContextProviderConfig[] | undefined,
+        })),
+        query
+      );
 
       return {
         query,
@@ -402,17 +410,21 @@ export class ModuleAIContextService {
       });
 
       const cacheDuration = provider.cacheDuration || 900000; // Default 15 minutes
-      const isCacheValid =
-        installation?.contextCachedAt &&
-        Date.now() - installation.contextCachedAt.getTime() < cacheDuration;
+      const scopeKey = resolveScopeKey(parameters);
+      const cacheKey = buildProviderCacheKey(providerName, scopeKey);
+      const cachedEntry = readProviderCache(
+        installation?.contextProviderCache,
+        cacheKey,
+        cacheDuration
+      );
 
-      if (isCacheValid && installation?.cachedContext) {
-        console.log(`✅ Cache hit for ${moduleId}.${providerName}`);
+      if (cachedEntry) {
+        console.log(`✅ Cache hit for ${moduleId}.${providerName} (${cacheKey})`);
         return {
           moduleId,
           providerName,
-          data: installation.cachedContext,
-          timestamp: new Date(),
+          data: cachedEntry.data,
+          timestamp: cachedEntry.cachedAt,
           cached: true,
           latency: Date.now() - startTime,
         };
@@ -420,7 +432,7 @@ export class ModuleAIContextService {
 
       // Cache miss - fetch from module endpoint
       console.log(`🔄 Fetching live context from ${moduleId}.${providerName}`);
-      
+
       const endpoint = provider.endpoint.replace(':id', moduleId);
       const baseURL = this.getInternalApiBaseUrl();
       const user = await prisma.user.findUnique({
@@ -433,13 +445,12 @@ export class ModuleAIContextService {
       }
 
       const authToken = this.buildInternalAuthToken(userId, user.email, user.role);
-      const requestParams: Record<string, unknown> = {
-        userId,
-        ...parameters,
-      };
-
-      // Business-scoped providers must receive an explicit businessId from the caller
-      // (query params or internal orchestration). Do not infer a default tenant.
+      const requestParams = buildModuleContextFetchParams(moduleId, userId, {
+        businessId:
+          typeof parameters?.businessId === 'string' ? parameters.businessId : undefined,
+        dashboardId:
+          typeof parameters?.dashboardId === 'string' ? parameters.dashboardId : undefined,
+      });
 
       const response = await axios.get(endpoint, {
         baseURL,
@@ -450,14 +461,18 @@ export class ModuleAIContextService {
         timeout: 5000, // 5 second timeout
       });
 
-      // Cache the result
+      const nextProviderCache = writeProviderCache(
+        installation?.contextProviderCache,
+        cacheKey,
+        response.data
+      );
+
       await prisma.moduleInstallation.update({
         where: {
           moduleId_userId: { moduleId, userId },
         },
         data: {
-          cachedContext: response.data as any,
-          contextCachedAt: new Date(),
+          contextProviderCache: nextProviderCache as Prisma.InputJsonValue,
         },
       });
 
@@ -624,6 +639,7 @@ export class ModuleAIContextService {
       data: {
         cachedContext: Prisma.JsonNull,
         contextCachedAt: null,
+        contextProviderCache: Prisma.JsonNull,
       },
     });
 
@@ -639,6 +655,7 @@ export class ModuleAIContextService {
       data: {
         cachedContext: Prisma.JsonNull,
         contextCachedAt: null,
+        contextProviderCache: Prisma.JsonNull,
       },
     });
 

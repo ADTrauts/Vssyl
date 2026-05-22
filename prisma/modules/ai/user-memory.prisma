@@ -14,6 +14,9 @@ model UserMemoryFact {
 
   sourceConversationId String?
   sourceMessageId      String?
+  sourceType           String    @default("explicit_user") // explicit_user | remember_that | inferred_chat | questionnaire | import
+  category             String    @default("other") // preference | person | project | constraint | location | other
+  isExplicit           Boolean   @default(true)
   confidence      Float     @default(0.8)
   expiresAt       DateTime?
   trashedAt       DateTime?

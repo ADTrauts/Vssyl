@@ -1765,6 +1765,18 @@ class AdminApiService {
     });
   }
 
+  async runModuleContextProviderHealthCheck(body: {
+    userId?: string;
+    moduleId?: string;
+    businessId?: string;
+    dashboardId?: string;
+  }) {
+    return this.makeRequest<import('../types/adminAiPipeline').ModuleContextProviderHealthReport>(
+      '/ai-pipeline/context-providers/health',
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+  }
+
   async getAiPipelineQualityStats(params?: { days?: number; userId?: string }) {
     const searchParams = new URLSearchParams();
     if (params?.days != null) searchParams.set('days', String(params.days));

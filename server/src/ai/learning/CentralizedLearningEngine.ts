@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { PredictiveAnalyticsEngine } from './PredictiveAnalyticsEngine';
+import { userAllowsCollectiveLearning } from './collectiveLearningConsent';
 
 export interface GlobalPattern {
   id: string;
@@ -439,32 +440,7 @@ export class CentralizedLearningEngine {
 
   // Private helper methods
   private async getUserConsentForCollectiveLearning(userId: string): Promise<boolean> {
-    try {
-      // Check user privacy settings for collective learning consent
-      const userPrivacy = await this.prisma.userPrivacySettings.findUnique({
-        where: { userId }
-      });
-
-      if (userPrivacy?.allowCollectiveLearning === true) {
-        return true;
-      }
-
-      // Also check explicit consent records
-      const consent = await this.prisma.userConsent.findFirst({
-        where: {
-          userId,
-          consentType: 'COLLECTIVE_AI_LEARNING',
-          granted: true,
-          revokedAt: null
-        },
-        orderBy: { grantedAt: 'desc' }
-      });
-
-      return !!consent;
-    } catch (error) {
-      console.error('Error checking user consent:', error);
-      return false; // Default to no consent on error
-    }
+    return userAllowsCollectiveLearning(userId, this.prisma);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

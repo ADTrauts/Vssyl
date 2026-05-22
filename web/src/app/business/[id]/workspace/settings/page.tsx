@@ -411,6 +411,14 @@ export default function BusinessSettingsPage() {
             <p className="text-gray-700 dark:text-gray-300 mt-2">
               Configure your business profile, branding, and preferences
             </p>
+            <p className="text-sm mt-2">
+              <a
+                href={`/business/${businessId}/workspace/settings/webhooks`}
+                className="text-blue-600 hover:underline"
+              >
+                Webhook subscriptions (integrations)
+              </a>
+            </p>
             {!canManage && (
               <div className="mt-2 flex items-center text-amber-600">
                 <AlertCircle className="w-4 h-4 mr-2" />

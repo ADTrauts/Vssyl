@@ -43,14 +43,16 @@ Use typed helpers in **`server/src/events/domainEventEmitters.ts`** and constant
 | `MODULE_INSTALLED` | `module.installed` | ModuleInstallation | install | Yes — `moduleProvisionController.installModule` |
 | `MODULE_UNINSTALLED` | `module.uninstalled` | ModuleInstallation | uninstall | Yes — `moduleProvisionController.uninstallModule` |
 | `BUSINESS_MEMBER_ADDED` | `business.member.added` | BusinessMember | add | Yes — `businessController.acceptInvitation` |
-| `MODULE_ENABLED` / `MODULE_DISABLED` | `module.enabled` / `module.disabled` | ModuleInstallation | enable / disable | Deferred |
+| `MODULE_ENABLED` / `MODULE_DISABLED` | `module.enabled` / `module.disabled` | ModuleInstallation | enable / disable | Yes — `moduleProvisionController.configureModule` when `enabled` toggles |
 | `BUSINESS_MEMBER_REMOVED` | `business.member.removed` | BusinessMember | remove | Yes — `businessController.removeBusinessMember`, `memberController.removeEmployee` |
 | `BUSINESS_UPDATED` | `business.updated` | Business | update | Yes — `businessController.updateBusiness`, `uploadLogo`, `removeLogo` |
 | `FILE_UPLOADED` | `file.uploaded` | File | create | Yes — `fileController.uploadFile` (after `prisma.file.create`) |
 | `FILE_DELETED` | `file.deleted` | File | delete | Yes — `fileController.deleteFile` (after soft-delete) |
 | `FILE_SHARED` | `file.shared` | File | share | Yes — `fileController.grantFilePermission` |
 | `FOLDER_SHARED` | `folder.shared` | Folder | share | Yes — `folderPermissionController.grantFolderPermission` |
-| `FILE_MOVED`, `FOLDER_CREATED`, `CHAT_MESSAGE_SENT`, `CALENDAR_EVENT_CREATED` | see registry | per contract | per contract | Deferred |
+| `CHAT_MESSAGE_SENT` | `chat.message.sent` | Message | send | Yes — `chatController.createMessage` (after `prisma.message.create`) |
+| `CALENDAR_EVENT_CREATED` | `calendar.event.created` | CalendarEvent | create | Yes — `calendarController.createEvent` (after `prisma.event.create`) |
+| `FILE_MOVED`, `FOLDER_CREATED` | see registry | per contract | per contract | Deferred |
 
 Full contracts (version, description, `recommendedMetadataFields`, `disallowedMetadataFields`) live in **`DOMAIN_EVENT_CONTRACTS`**.
 
@@ -70,8 +72,52 @@ Full contracts (version, description, `recommendedMetadataFields`, `disallowedMe
 | socket | `subscribers/socketDomainEventSubscriber.ts` | `platform:domain_event` to actor |
 | notification_placeholder | `subscribers/notificationDomainEventSubscriber.ts` | Debug placeholder |
 | analytics_placeholder | `subscribers/analyticsDomainEventSubscriber.ts` | Debug placeholder |
+| **ai_event_consumer** | `ai/consumers/AIEventConsumer.ts` | Learning signal stubs (`domain_event`); no auto-exec |
 
 Subscriber failures are logged; they do not roll back the mutation.
+
+## AI consumption (Phase 4A)
+
+`AIEventConsumer` subscribes via `registerDomainEventSubscribers()` and records **idempotent learning stubs** (`LEARNING_SIGNAL_TYPES.DOMAIN_EVENT`) for:
+
+| Domain event | Source module | Notes |
+|--------------|---------------|--------|
+| `file.uploaded` | drive | Proactive document suggestion remains in `proactiveSuggestionsService.onFileUploaded` at emit site |
+| `chat.message.sent` | chat | No message body in event metadata |
+| `calendar.event.created` | calendar | Schedule metadata only (no title/description) |
+| `module.installed` / `module.enabled` / `module.disabled` | platform | Enable/disable via `PUT /modules/:id/configure` `{ enabled: boolean }` |
+
+The AI consumer **never** calls `emitModuleActivityEvent` and **never** executes autonomous actions.
+
+### Payload schemas (safe metadata)
+
+**`chat.message.sent`**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|--------|
+| `moduleId` | string | yes | Always `chat` |
+| `conversationId` | string | yes | Conversation id |
+| `threadId` | string | no | When message is in a thread |
+| `attachmentCount` | number | no | Count of attached file ids |
+| `hasAttachments` | boolean | no | Derived from count |
+
+**`calendar.event.created`**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|--------|
+| `moduleId` | string | yes | Always `calendar` |
+| `calendarId` | string | yes | Target calendar |
+| `allDay` | boolean | no | All-day flag |
+| `startAt` / `endAt` | ISO string | yes | Event window |
+
+**`module.enabled` / `module.disabled`**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|--------|
+| `moduleId` | string | yes | Module id |
+| `installationId` | string | yes | Installation row id |
+| `installScope` | `personal` \| `business` | yes | Scope |
+| `businessId` | string | no | When business-scoped |
 
 ## Coexistence
 
@@ -131,4 +177,4 @@ Emit **only after** DB success and authorization. Safe metadata only: `fileId`, 
 
 `emitModuleActivityEvent` remains on these paths for module feed visibility.
 
-**Last updated:** 2026-05-17 (platform hardening closeout — Drive + business.member.removed adoption documented)
+**Last updated:** 2026-05-21 (Phase 4A — chat/calendar/module enable-disable adoption + AI consumer)

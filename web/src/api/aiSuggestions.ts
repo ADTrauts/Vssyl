@@ -37,27 +37,37 @@ export async function getSuggestions(token?: string): Promise<AISuggestionItem[]
   return res.data;
 }
 
+export async function dismissSuggestion(
+  suggestionId: string,
+  token?: string,
+  options?: { reason?: string; dashboardId?: string; businessId?: string }
+): Promise<void> {
+  const res = await authenticatedApiCall<DismissSuggestionResponse>(
+    `/api/ai/suggestions/${encodeURIComponent(suggestionId)}/dismiss`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options ?? {}),
+    },
+    token
+  );
+  if (!res.success) throw new Error('Failed to dismiss suggestion');
+}
+
 export async function acceptSuggestion(
   suggestionId: string,
-  token?: string
+  token?: string,
+  options?: { dashboardId?: string; businessId?: string }
 ): Promise<AcceptSuggestionResponse['data']> {
   const res = await authenticatedApiCall<AcceptSuggestionResponse>(
     `/api/ai/suggestions/${encodeURIComponent(suggestionId)}/accept`,
-    { method: 'POST' },
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options ?? {}),
+    },
     token
   );
   if (!res.success || !res.data) throw new Error('Failed to accept suggestion');
   return res.data;
-}
-
-export async function dismissSuggestion(
-  suggestionId: string,
-  token?: string
-): Promise<void> {
-  const res = await authenticatedApiCall<DismissSuggestionResponse>(
-    `/api/ai/suggestions/${encodeURIComponent(suggestionId)}/dismiss`,
-    { method: 'POST' },
-    token
-  );
-  if (!res.success) throw new Error('Failed to dismiss suggestion');
 }

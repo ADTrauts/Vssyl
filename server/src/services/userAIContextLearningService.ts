@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { learningApplicationService } from './learningApplicationService';
 
 export const LEARNING_STATUS_ACTIVE = 'active';
 export const LEARNING_STATUS_PENDING = 'pending';
@@ -93,6 +94,13 @@ export class UserAIContextLearningService {
         contextType: true,
         createdAt: true,
       },
+    });
+
+    await learningApplicationService.recordContextPromotion({
+      userId,
+      contextId: updated.id,
+      title: updated.title,
+      content: updated.content,
     });
 
     void logger.info('User promoted inferred AI context', {

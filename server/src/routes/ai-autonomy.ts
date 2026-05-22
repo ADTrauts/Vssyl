@@ -9,6 +9,12 @@ import {
   updateAutonomySettingsForUser,
 } from '../services/aiAutonomySettingsService';
 
+/**
+ * User-facing **action-boundary settings** (Behavior tab).
+ * Values are consumed by `PreferenceResolver` for prompt boundaries — not auto-execution.
+ * For deprecated execute/suggest routes see `/api/ai/autonomous/*` (A6).
+ */
+
 const router: express.Router = express.Router();
 const autonomyManager = new AutonomyManager(prisma);
 const approvalManager = new ApprovalManager(prisma);

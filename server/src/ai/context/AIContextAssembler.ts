@@ -18,6 +18,12 @@ import {
   conversationRankFilter,
   type ContextProfile,
 } from './contextProfile';
+import type { ContextSynthesisResult } from './ContextSynthesisService';
+import { isSyntheticContextEnabled } from './syntheticContextPolicy';
+import {
+  applyContextBudget,
+  estimateTokenCount,
+} from './ContextBudgetManager';
 import { buildConversationThreadHints } from '../utils/conversationContinuity';
 import type { EffectivePreferencesContextBlock } from '../preferences/preferenceTypes';
 import { PREFERENCE_CONTEXT_BLOCK_TITLE } from '../preferences/PreferenceResolver';
@@ -25,6 +31,7 @@ import {
   BUSINESS_WORKSPACE_POLICY_BLOCK_TITLE,
   type BusinessWorkspaceBoundaryBlock,
 } from '../enterprise/businessWorkspaceBoundaries';
+import { prepareMemoryFactsForAssembly } from '../memory/memoryContextInjection';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -83,10 +90,42 @@ export interface AIAssembledContext {
     relevanceScore?: number;
     /** Estimated tokens for this block after budgeting (debug / tuning). */
     budgetTokensEstimate?: number;
+    /** Block was considered for the prompt (Phase 3D). */
+    available?: boolean;
+    /** Block was included in the provider prompt after budgeting (Phase 3D). */
+    usedInPrompt?: boolean;
   }>;
   assumptions: string[];
   risks: string[];
   missingContext: string[];
+  /** Available vs used context rows after budgeting (Phase 3D). */
+  contextAvailability?: Array<{
+    title: string;
+    sourceType: string;
+    tier?: AIContextTier;
+    relevanceScore?: number;
+    available: true;
+    usedInPrompt: boolean;
+    dropReason?: string;
+    budgetTokensEstimate?: number;
+  }>;
+  /** Assembly pipeline metrics for context density reporting (Phase 3A). */
+  assemblyMetrics?: {
+    blocksLoaded: number;
+    blocksAfterProfile: number;
+    blocksRanked: number;
+    blocksInjected: number;
+    profileExcludedCount: number;
+    contextBudgetTokens: number;
+    tokensUsedEstimate: number;
+    moduleContextsLoaded: number;
+    moduleBlocksLoaded: number;
+    matchedHighRelevance: number;
+    memoryFactsLoaded: number;
+    memoryFactsInjected: number;
+    recalledMessagesLoaded: number;
+    blocksDropped?: number;
+  };
 }
 
 export interface AIContextAssemblyInput {
@@ -104,6 +143,8 @@ export interface AIContextAssemblyInput {
   globalPatterns?: Array<Record<string, unknown>>;
   /** Live module provider payloads from ModuleAIContextService (keyed by moduleId). */
   moduleContexts?: Record<string, unknown>;
+  /** Data-backed cross-module synthesis from live module payloads (Phase 3C). */
+  crossModuleSynthesis?: ContextSynthesisResult;
   /** Summaries from other recent AI chat threads (cross-session). */
   recentConversationMemory?: Array<{
     id: string;
@@ -119,7 +160,14 @@ export interface AIContextAssemblyInput {
     contentSnippet: string;
     similarity: number;
   }>;
-  userMemoryFacts?: Array<{ subject: string; predicate: string; confidence: number }>;
+  userMemoryFacts?: Array<{
+    id?: string;
+    subject: string;
+    predicate: string;
+    confidence: number;
+    sourceType?: string;
+    isExplicit?: boolean;
+  }>;
   toneMode?: string;
   explicitStructuredMode?: string;
   /** Resolved user communication / autonomy preferences (compact, no raw questionnaire). */
@@ -398,120 +446,7 @@ function rankContextBlocksForProvider(
   return out;
 }
 
-function blockPayloadForTokenEstimate(b: AIAssembledContext['contextBlocks'][number]): Record<string, unknown> {
-  return {
-    title: b.title,
-    sourceType: b.sourceType,
-    priority: b.priority,
-    content: b.content,
-    relevanceScore: b.relevanceScore,
-  };
-}
-
-/**
- * Cheap deterministic size proxy (~4 chars per token).
- */
-export function estimateTokenCount(value: unknown): number {
-  try {
-    const s = typeof value === 'string' ? value : JSON.stringify(value);
-    return Math.ceil(s.length / 4);
-  } catch {
-    return 0;
-  }
-}
-
-function estimateBlockTokens(b: AIAssembledContext['contextBlocks'][number]): number {
-  return estimateTokenCount(blockPayloadForTokenEstimate(b));
-}
-
-/**
- * Trim ranked blocks to an estimated token budget; highs kept even if over budget.
- */
-export function applyContextBudget(input: {
-  blocks: AIAssembledContext['contextBlocks'];
-  maxEstimatedTokens: number;
-  /** When false, high-priority blocks still respect the token budget (conversation profile). */
-  alwaysKeepHighPriority?: boolean;
-}): AIAssembledContext['contextBlocks'] {
-  const { blocks, maxEstimatedTokens, alwaysKeepHighPriority = true } = input;
-  const blocksBefore = blocks.length;
-  const keptIndices = new Set<number>();
-
-  let totalTokens = 0;
-
-  const highEntries = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.priority === 'high');
-  const restEntries = blocks.map((b, i) => ({ b, i })).filter(({ b }) => b.priority !== 'high');
-
-  for (const { b, i } of highEntries) {
-    const cost = estimateBlockTokens(b);
-    if (alwaysKeepHighPriority || totalTokens + cost <= maxEstimatedTokens) {
-      keptIndices.add(i);
-      totalTokens += cost;
-    }
-  }
-
-  for (const { b, i } of restEntries) {
-    const cost = estimateBlockTokens(b);
-    if (totalTokens + cost <= maxEstimatedTokens) {
-      keptIndices.add(i);
-      totalTokens += cost;
-    }
-  }
-
-  const typesInRanked = [...new Set(blocks.map((bl) => bl.sourceType))];
-  const typesInKept = new Set([...keptIndices].map((idx) => blocks[idx].sourceType));
-  const missingTypes = typesInRanked.filter((t) => !typesInKept.has(t));
-
-  const smallestPerMissingType: Array<{ b: AIAssembledContext['contextBlocks'][number]; idx: number }> =
-    [];
-  for (const st of missingTypes) {
-    const candidates = blocks
-      .map((b, idx) => ({ b, idx }))
-      .filter(({ b, idx }) => b.sourceType === st && !keptIndices.has(idx))
-      .sort((a, c) => estimateBlockTokens(a.b) - estimateBlockTokens(c.b));
-    const first = candidates[0];
-    if (first) smallestPerMissingType.push(first);
-  }
-  smallestPerMissingType.sort((a, c) => estimateBlockTokens(a.b) - estimateBlockTokens(c.b));
-
-  for (const pick of smallestPerMissingType) {
-    const cost = estimateBlockTokens(pick.b);
-    if (totalTokens + cost <= maxEstimatedTokens) {
-      keptIndices.add(pick.idx);
-      totalTokens += cost;
-    }
-  }
-
-  const result: AIAssembledContext['contextBlocks'] = blocks
-    .map((b, idx) => ({ b, idx }))
-    .filter(({ idx }) => keptIndices.has(idx))
-    .map(({ b }) => {
-      const budgetTokensEstimate = estimateBlockTokens(b);
-      return { ...b, budgetTokensEstimate };
-    });
-
-  const estimatedTokensKept = result.reduce((sum, b) => sum + (b.budgetTokensEstimate ?? 0), 0);
-
-  void logger.debug('[AI_CONTEXT_BUDGET]', {
-    maxEstimatedTokens,
-    blocksBefore,
-    blocksAfter: result.length,
-    estimatedTokensKept,
-    considered: blocksBefore,
-    injected: result.length,
-    topRelevanceScores: blocks
-      .map((b) => ({ title: b.title, score: b.relevanceScore ?? 0, tier: b.tier }))
-      .sort((a, c) => c.score - a.score)
-      .slice(0, 5),
-    inclusionReasons: result.slice(0, 8).map((b) => ({
-      title: b.title,
-      tier: b.tier,
-      reason: b.inclusionReason ?? 'ranked within budget',
-    })),
-  });
-
-  return result;
-}
+export { estimateTokenCount } from './ContextBudgetManager';
 
 function truncateString(s: string, max = MAX_STRING): string {
   if (s.length <= max) return s;
@@ -588,6 +523,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     userDefinedContext,
     globalPatterns,
     moduleContexts: rawModuleContexts,
+    crossModuleSynthesis,
     recentConversationMemory,
     recalledMessages,
     userMemoryFacts,
@@ -801,6 +737,9 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   }
 
   const insightsForAssembly = (userContext.crossModuleInsights || []).filter((i) => {
+    if (isSyntheticInsight(i) && !isSyntheticContextEnabled()) {
+      return false;
+    }
     if (contextProfile === 'conversation' && isSyntheticInsight(i)) {
       return false;
     }
@@ -906,25 +845,63 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     });
   }
 
+  let memoryAssemblyStats: { factsLoaded: number; factsInjected: number } | undefined;
+
   if (Array.isArray(userMemoryFacts) && userMemoryFacts.length > 0) {
-    contextBlocks.push({
-      title: 'User memory facts',
-      sourceType: 'personal',
-      content: userMemoryFacts.map((f) => ({
-        subject: f.subject,
-        fact: truncateString(f.predicate, 600),
-        confidence: f.confidence,
-      })),
-      priority: 'high',
-      tier: 'tier3_profile',
-      inclusionReason: 'structured long-term user memory',
-    });
-    evidence.push({
-      label: 'Stored user memory facts',
-      sourceType: 'personal',
-      detail: `${userMemoryFacts.length} fact(s)`,
-      confidence: 'high',
-    });
+    const prepared = prepareMemoryFactsForAssembly(userMemoryFacts, truncateString);
+    memoryAssemblyStats = {
+      factsLoaded: userMemoryFacts.length,
+      factsInjected: prepared.items.length,
+    };
+    const explicitItems = prepared.items.filter((i) => i.injectionTier === 'explicit');
+    const inferredItems = prepared.items.filter((i) => i.injectionTier === 'inferred');
+
+    if (explicitItems.length > 0) {
+      contextBlocks.push({
+        title: 'User memory facts (saved by you)',
+        sourceType: 'personal',
+        content: explicitItems.map((f) => ({
+          id: f.id,
+          subject: f.subject,
+          fact: f.fact,
+          confidence: f.confidence,
+          sourceType: f.sourceType,
+          isExplicit: true,
+          injectionTier: 'explicit' as const,
+        })),
+        priority: 'high',
+        tier: 'tier3_profile',
+        inclusionReason: 'explicit user memory — always included when retrieved',
+      });
+    }
+
+    if (inferredItems.length > 0) {
+      contextBlocks.push({
+        title: 'User memory facts (inferred)',
+        sourceType: 'personal',
+        content: inferredItems.map((f) => ({
+          id: f.id,
+          subject: f.subject,
+          fact: f.fact,
+          confidence: f.confidence,
+          sourceType: f.sourceType,
+          isExplicit: false,
+          injectionTier: 'inferred' as const,
+        })),
+        priority: 'medium',
+        tier: 'tier3_profile',
+        inclusionReason: 'inferred memory — confidence at or above retrieval threshold',
+      });
+    }
+
+    if (prepared.items.length > 0) {
+      evidence.push({
+        label: 'Stored user memory facts',
+        sourceType: 'personal',
+        detail: `${prepared.explicitCount} explicit, ${prepared.inferredCount} inferred`,
+        confidence: 'high',
+      });
+    }
   }
 
   if (Array.isArray(recentConversationMemory) && recentConversationMemory.length > 0) {
@@ -980,6 +957,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   }
 
   const moduleContextEntries = normalizeModuleContexts(rawModuleContexts);
+  const moduleBlocksLoaded = Math.min(moduleContextEntries.length, MAX_ITEMS);
   for (const entry of moduleContextEntries.slice(0, MAX_ITEMS)) {
     const label = entry.moduleName || entry.moduleId;
     const priority: 'low' | 'medium' | 'high' =
@@ -998,6 +976,40 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       sourceId: entry.moduleId,
       detail: entry.providerName ? `provider ${entry.providerName}` : undefined,
       confidence: entry.relevance === 'high' ? 'high' : 'medium',
+    });
+  }
+
+  if (
+    crossModuleSynthesis?.dataBacked &&
+    crossModuleSynthesis.modulesIncluded.length >= 2 &&
+    crossModuleSynthesis.bulletPoints.length > 0
+  ) {
+    contextBlocks.push({
+      title: 'Cross-module summary',
+      sourceType: 'module',
+      content: {
+        summary: crossModuleSynthesis.summary,
+        bulletPoints: crossModuleSynthesis.bulletPoints.slice(0, 15),
+        modulesIncluded: crossModuleSynthesis.modulesIncluded,
+        linkedPeople: crossModuleSynthesis.linkedEntities.linkedPeople.map((p) => ({
+          name: p.name,
+          modules: p.modules,
+        })),
+        linkedFiles: crossModuleSynthesis.linkedEntities.linkedFiles.map((f) => ({
+          fileId: f.fileId,
+          fileName: f.fileName,
+          modules: f.modules,
+        })),
+      },
+      priority: 'high',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'data-backed synthesis from live module contexts and entity links',
+    });
+    evidence.push({
+      label: 'Cross-module synthesis',
+      sourceType: 'module',
+      detail: `${crossModuleSynthesis.modulesIncluded.length} module(s); ${crossModuleSynthesis.linkedEntities.links.length} entity link(s)`,
+      confidence: 'high',
     });
   }
 
@@ -1214,11 +1226,22 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       ? CONVERSATION_CONTEXT_BUDGET_TOKENS
       : ENTERPRISE_CONTEXT_BUDGET_TOKENS;
 
-  const budgetedContextBlocks = applyContextBudget({
+  const budgetResult = applyContextBudget({
     blocks: rankedContextBlocks,
     maxEstimatedTokens: contextBudget,
     alwaysKeepHighPriority: contextProfile !== 'conversation',
   });
+  const budgetedContextBlocks = budgetResult.injectedBlocks;
+  const tokensUsedEstimate = budgetResult.totalTokensUsed;
+
+  const matchedHighRelevance =
+    typeof analysis?.matchedModules === 'undefined'
+      ? moduleContextEntries.filter((e) => e.relevance === 'high').length
+      : Array.isArray(analysis?.matchedModules)
+        ? (analysis.matchedModules as Array<{ relevance?: string }>).filter(
+            (m) => m.relevance === 'high'
+          ).length
+        : moduleContextEntries.length;
 
   return {
     scope,
@@ -1229,8 +1252,25 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     usedModules,
     evidence,
     contextBlocks: budgetedContextBlocks,
+    contextAvailability: budgetResult.contextAvailability,
     assumptions,
     risks,
     missingContext,
+    assemblyMetrics: {
+      blocksLoaded: compressedBlocks.length,
+      blocksAfterProfile: profileApplied.blocks.length,
+      blocksRanked: rankedContextBlocks.length,
+      blocksInjected: budgetedContextBlocks.length,
+      profileExcludedCount: profileApplied.excludedTitles.length,
+      contextBudgetTokens: contextBudget,
+      tokensUsedEstimate,
+      blocksDropped: budgetResult.droppedBlocks.length,
+      moduleContextsLoaded: moduleContextEntries.length,
+      moduleBlocksLoaded,
+      matchedHighRelevance,
+      memoryFactsLoaded: memoryAssemblyStats?.factsLoaded ?? 0,
+      memoryFactsInjected: memoryAssemblyStats?.factsInjected ?? 0,
+      recalledMessagesLoaded: Array.isArray(recalledMessages) ? recalledMessages.length : 0,
+    },
   };
 }

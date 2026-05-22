@@ -9,6 +9,7 @@ export interface UserPrivacySettings {
   allowMarketingEmails: boolean;
   allowAnalytics: boolean;
   allowAuditLogs: boolean;
+  allowCollectiveLearning?: boolean;
   dataRetentionPeriod: number;
   createdAt: string;
   updatedAt: string;

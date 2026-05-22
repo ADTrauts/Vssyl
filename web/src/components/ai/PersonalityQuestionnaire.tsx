@@ -278,10 +278,30 @@ const questionSections: QuestionSection[] = [
   }
 ];
 
+function getScaleDefaultValue(scale: { min: number; max: number }): number {
+  return Math.round((scale.min + scale.max) / 2);
+}
+
+/** Pre-fill scale sliders so displayed defaults count as answers (user need not drag every slider). */
+function seedScaleDefaults(prev: Record<string, Answer>): Record<string, Answer> {
+  const next = { ...prev };
+  let changed = false;
+  for (const section of questionSections) {
+    for (const q of section.questions) {
+      if (q.type === 'scale' && q.scale && !next[q.id]) {
+        const value = getScaleDefaultValue(q.scale);
+        next[q.id] = { questionId: q.id, value, score: value };
+        changed = true;
+      }
+    }
+  }
+  return changed ? next : prev;
+}
+
 export default function PersonalityQuestionnaire({ onComplete, onSkip }: PersonalityQuestionnaireProps) {
   const { data: session } = useSession();
   const [currentSection, setCurrentSection] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [answers, setAnswers] = useState<Record<string, Answer>>(() => seedScaleDefaults({}));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -311,9 +331,18 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
   };
 
   const canProceed = () => {
-    const requiredQuestions = currentSectionData.questions.filter(q => q.required);
-    return requiredQuestions.every(q => answers[q.id]);
+    const requiredQuestions = currentSectionData.questions.filter((q) => q.required);
+    return requiredQuestions.every((q) => {
+      if (answers[q.id]) return true;
+      // Scale sliders show a midpoint default before interaction
+      if (q.type === 'scale' && q.scale) return true;
+      return false;
+    });
   };
+
+  const missingRequiredChoices = currentSectionData.questions.filter(
+    (q) => q.required && q.type !== 'scale' && !answers[q.id]
+  );
 
   const nextSection = () => {
     if (currentSection < questionSections.length - 1) {
@@ -458,6 +487,10 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
 
   const renderQuestion = (question: Question) => {
     const currentAnswer = answers[question.id];
+    const scaleDefault =
+      question.type === 'scale' && question.scale
+        ? getScaleDefaultValue(question.scale)
+        : undefined;
 
     return (
       <div key={question.id} className="space-y-4">
@@ -479,14 +512,18 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
                 type="range"
                 min={question.scale.min}
                 max={question.scale.max}
-                value={currentAnswer?.value || 5}
-                onChange={(e) => handleAnswer(question.id, parseInt(e.target.value))}
+                value={
+                  typeof currentAnswer?.value === 'number'
+                    ? currentAnswer.value
+                    : scaleDefault ?? 5
+                }
+                onChange={(e) => handleAnswer(question.id, parseInt(e.target.value, 10))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
             <div className="text-center">
               <span className="text-lg font-semibold text-blue-600">
-                {currentAnswer?.value || 5}
+                {typeof currentAnswer?.value === 'number' ? currentAnswer.value : scaleDefault ?? 5}
               </span>
             </div>
           </div>
@@ -594,6 +631,12 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
         </div>
       )}
 
+      {missingRequiredChoices.length > 0 && (
+        <p className="mb-4 text-sm text-amber-700 dark:text-amber-300 text-center">
+          Select an option for each question above to continue.
+        </p>
+      )}
+
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -619,6 +662,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
               variant="primary"
               onClick={submitQuestionnaire}
               disabled={!canProceed() || isSubmitting}
+              className={!canProceed() && !isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
             >
               {isSubmitting ? (
                 <>
@@ -637,6 +681,7 @@ export default function PersonalityQuestionnaire({ onComplete, onSkip }: Persona
               variant="primary"
               onClick={nextSection}
               disabled={!canProceed()}
+              className={!canProceed() ? 'opacity-50 cursor-not-allowed' : ''}
             >
               Next
               <ChevronRight className="h-4 w-4 ml-1" />

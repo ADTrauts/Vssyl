@@ -75,11 +75,85 @@ describe('buildResponseInfluence', () => {
     expect(out.summary).toMatch(/workspace|organization/i);
   });
 
+  it('emits structured memoryItems with ids for explain drawer', () => {
+    const out = buildResponseInfluence({
+      effectivePreferences: minimalResolved,
+      userMemoryFacts: [
+        {
+          id: 'fact-travel-1',
+          subject: 'Travel',
+          predicate: 'Prefers window seats',
+          sourceType: 'remember_that',
+          confidence: 0.9,
+          isExplicit: true,
+        },
+        {
+          id: 'fact-inferred-1',
+          subject: 'Meetings',
+          predicate: 'Often schedules morning meetings',
+          sourceType: 'inferred_chat',
+          confidence: 0.6,
+          isExplicit: false,
+        },
+      ],
+    });
+    expect(out.memoryItems).toHaveLength(2);
+    expect(out.memoryItems?.[0]).toMatchObject({
+      kind: 'memory_fact',
+      id: 'fact-travel-1',
+      subject: 'Travel',
+      sourceType: 'remember_that',
+      isExplicit: true,
+    });
+    expect(JSON.stringify(out)).not.toContain('Prefers window seats');
+  });
+
+  it('includes learning items with confidence for saved learnings', () => {
+    const out = buildResponseInfluence({
+      effectivePreferences: {
+        ...minimalResolved,
+        inferred: [
+          {
+            id: 'evt-1',
+            kind: 'learning_applied',
+            label: 'Response style',
+            value: 'Keep answers brief',
+            confidence: 0.85,
+            eventType: 'preference_update',
+          },
+        ],
+      },
+    });
+    expect(out.learningItems).toHaveLength(1);
+    expect(out.learningItems?.[0]).toMatchObject({
+      kind: 'learning_applied',
+      label: 'Response style',
+      confidence: 0.85,
+    });
+  });
+
   it('lists memory subjects', () => {
     const out = buildResponseInfluence({
       effectivePreferences: minimalResolved,
       userMemoryFacts: [{ subject: 'Travel', predicate: 'Prefers window seats' }],
     });
     expect(out.memoriesUsed?.some((m) => m.title === 'Travel')).toBe(true);
+  });
+
+  it('includes contextUsed module rows for explain drawer', () => {
+    const out = buildResponseInfluence({
+      assembledContext: {
+        usedModules: ['drive'],
+        contextAvailability: [
+          {
+            title: 'Module live context: Drive',
+            sourceType: 'module',
+            available: true,
+            usedInPrompt: true,
+          },
+        ],
+      },
+    });
+    expect(out.contextUsed).toEqual([{ moduleName: 'Drive', usedInPrompt: true }]);
   });
 });

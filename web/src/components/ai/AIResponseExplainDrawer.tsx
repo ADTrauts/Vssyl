@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, Button } from 'shared/components';
+import { Card, Button, Badge } from 'shared/components';
 import { X, Sparkles, ChevronRight } from 'lucide-react';
 import type { ResponseInfluenceSummary } from '../../api/aiResponseInfluence';
 
@@ -12,12 +12,28 @@ interface AIResponseExplainDrawerProps {
   onClose: () => void;
 }
 
+function memoryTabHref(factId?: string): string {
+  if (factId) return `/ai?tab=memory#fact-${encodeURIComponent(factId)}`;
+  return '/ai?tab=memory';
+}
+
 export default function AIResponseExplainDrawer({
   open,
   influence,
   onClose,
 }: AIResponseExplainDrawerProps) {
   if (!open || !influence) return null;
+
+  const memoryItems =
+    influence.memoryItems ??
+    influence.memoriesUsed?.map((m) => ({
+      kind: 'memory_fact' as const,
+      id: m.title,
+      subject: m.title,
+      sourceLabel: m.sourceLabel,
+      isExplicit: m.isExplicit,
+    })) ??
+    [];
 
   return (
     <div
@@ -86,14 +102,94 @@ export default function AIResponseExplainDrawer({
           </section>
         )}
 
-        {influence.memoriesUsed && influence.memoriesUsed.length > 0 && (
+        {memoryItems.length > 0 && (
           <section className="mb-4">
-            <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              What I remembered
+            <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+              Memories that shaped this reply
             </h3>
-            <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc pl-4">
-              {influence.memoriesUsed.map((m) => (
-                <li key={m.title}>{m.title}</li>
+            <ul className="space-y-2">
+              {memoryItems.map((m) => (
+                <li
+                  key={m.id}
+                  className="text-sm text-gray-700 dark:text-gray-300 p-2 rounded-lg bg-gray-50 dark:bg-slate-800"
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{m.subject}</span>
+                    {m.isExplicit === false && (
+                      <Badge size="sm" color="gray">
+                        Inferred
+                      </Badge>
+                    )}
+                    {typeof m.confidence === 'number' && (
+                      <Badge size="sm" color="purple">
+                        {Math.round(m.confidence * 100)}% confidence
+                      </Badge>
+                    )}
+                  </div>
+                  {m.sourceLabel && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{m.sourceLabel}</p>
+                  )}
+                  <Link
+                    href={memoryTabHref(m.id)}
+                    className="inline-flex items-center text-xs text-purple-600 dark:text-purple-400 hover:underline mt-1"
+                  >
+                    View in Memory
+                    <ChevronRight className="w-3 h-3 ml-0.5" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {influence.learningItems && influence.learningItems.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+              Saved learnings that shaped this reply
+            </h3>
+            <ul className="space-y-2">
+              {influence.learningItems.map((item) => (
+                <li
+                  key={item.id}
+                  className="text-sm text-gray-700 dark:text-gray-300 p-2 rounded-lg bg-purple-50 dark:bg-purple-950/30"
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{item.label}</span>
+                    {typeof item.confidence === 'number' && (
+                      <Badge size="sm" color="purple">
+                        {Math.round(item.confidence * 100)}% confidence
+                      </Badge>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/ai?tab=learning"
+              className="inline-flex items-center text-xs text-purple-600 dark:text-purple-400 hover:underline mt-2"
+            >
+              Review Learning
+              <ChevronRight className="w-3 h-3 ml-0.5" />
+            </Link>
+          </section>
+        )}
+
+        {influence.contextUsed && influence.contextUsed.length > 0 && (
+          <section className="mb-4">
+            <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+              Workspace context
+            </h3>
+            <ul className="space-y-2">
+              {influence.contextUsed.map((item) => (
+                <li
+                  key={item.moduleName}
+                  className="text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between gap-2 p-2 rounded-lg bg-gray-50 dark:bg-slate-800"
+                >
+                  <span>{item.moduleName}</span>
+                  <Badge size="sm" color={item.usedInPrompt ? 'green' : 'gray'}>
+                    {item.usedInPrompt ? 'Used' : 'Available'}
+                  </Badge>
+                </li>
               ))}
             </ul>
           </section>
@@ -112,6 +208,13 @@ export default function AIResponseExplainDrawer({
           </section>
         )}
 
+        <Link
+          href="/ai?tab=memory"
+          className="inline-flex items-center text-sm text-purple-600 dark:text-purple-400 hover:underline mt-2 mr-4"
+        >
+          Manage memories
+          <ChevronRight className="w-4 h-4 ml-0.5" />
+        </Link>
         <Link
           href="/ai"
           className="inline-flex items-center text-sm text-purple-600 dark:text-purple-400 hover:underline mt-2"

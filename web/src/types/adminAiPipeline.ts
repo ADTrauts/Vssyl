@@ -66,6 +66,95 @@ export interface PipelineMemoryRetrieved {
   facts: number;
   recalledMessages: number;
   threadMemory: boolean;
+  factsLoaded?: number;
+  factsInfluenced?: number;
+}
+
+export type ContextDensityProviderFailureReason =
+  | 'timeout'
+  | 'not_found'
+  | 'auth'
+  | 'network'
+  | 'unknown';
+
+export interface PipelineContextDensityProviderAttempt {
+  moduleId: string;
+  providerName: string;
+  status: 'succeeded' | 'failed' | 'skipped';
+  cacheHit?: boolean;
+  latencyMs?: number;
+  failureReason?: ContextDensityProviderFailureReason;
+  failureMessage?: string;
+}
+
+export interface PipelineContextDensityTierUsage {
+  tier: string;
+  blocksInjected: number;
+  tokensUsedEstimate: number;
+  tokenBudgetAllocated: number;
+}
+
+export interface PipelineContextDensityReport {
+  providers: {
+    attempted: number;
+    succeeded: number;
+    failed: number;
+    cacheHits: number;
+    attempts: PipelineContextDensityProviderAttempt[];
+  };
+  memory: {
+    factsLoaded: number;
+    factsInjected: number;
+    recalledMessagesLoaded: number;
+  };
+  modules: {
+    contextsLoaded: number;
+    blocksLoaded: number;
+    blocksInjected: number;
+    matchedHighRelevance: number;
+  };
+  blocks: {
+    loaded: number;
+    afterProfile: number;
+    ranked: number;
+    injected: number;
+    synthetic: number;
+    live: number;
+    profileExcluded: number;
+  };
+  tokenBudget: {
+    totalAllocated: number;
+    totalUsedEstimate: number;
+    byTier: PipelineContextDensityTierUsage[];
+  };
+  missingContextCount: number;
+}
+
+export interface PipelineContextDensitySummary {
+  providersAttempted: number;
+  providersSucceeded: number;
+  providersFailed: number;
+  cacheHits: number;
+  memoryFactsLoaded: number;
+  memoryFactsInjected: number;
+  moduleContextsLoaded: number;
+  moduleBlocksInjected: number;
+  blocksInjected: number;
+  syntheticBlocks: number;
+  liveBlocks: number;
+  tokensUsedEstimate: number;
+  tokenBudget: number;
+  missingContextCount: number;
+}
+
+export interface PipelineLearningRetrieved {
+  stages: Array<{
+    stage: string;
+    status: string;
+    count?: number;
+    confidence?: number;
+    details?: string;
+  }>;
 }
 
 export interface AIPipelineTrace {
@@ -86,6 +175,8 @@ export interface AIPipelineTrace {
   retrievalPerformed: boolean;
   contextRetrieved: PipelineContextRetrievedRecord[];
   memoryRetrieved: PipelineMemoryRetrieved;
+  learningRetrieved?: PipelineLearningRetrieved;
+  contextDensity?: PipelineContextDensityReport;
   sourcesUsed: string[];
   confidenceLevel: PipelineConfidenceLevel;
   genericResponseRisk: boolean;
@@ -292,4 +383,40 @@ export interface TestLabResult {
     processingTime?: number;
     aiResponseQualityWarnings?: string[];
   };
+}
+
+export interface ModuleContextProviderHealthResult {
+  moduleId: string;
+  moduleName: string;
+  providerName: string;
+  endpoint: string;
+  status: 'healthy' | 'unhealthy' | 'skipped';
+  certificationIssues: Array<{
+    code: string;
+    message: string;
+    severity: 'error' | 'warning';
+    providerName?: string;
+  }>;
+  latencyMs?: number;
+  payloadBytesEstimate?: number;
+  payloadOverLimit?: boolean;
+  cacheDurationMs?: number;
+  failureReason?: ContextDensityProviderFailureReason;
+  failureMessage?: string;
+  skipReason?: string;
+}
+
+export interface ModuleContextProviderHealthReport {
+  checkedAt: string;
+  userId: string;
+  businessId?: string;
+  dashboardId?: string;
+  summary: {
+    totalProviders: number;
+    healthy: number;
+    unhealthy: number;
+    skipped: number;
+    certificationErrors: number;
+  };
+  results: ModuleContextProviderHealthResult[];
 }

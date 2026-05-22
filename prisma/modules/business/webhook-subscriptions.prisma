@@ -1,0 +1,58 @@
+// ============================================================================
+// OUTBOUND WEBHOOK SUBSCRIPTIONS (Phase 4C)
+// Business-scoped event delivery to partner endpoints (iframe/artifact only).
+// ============================================================================
+
+enum WebhookSubscriptionStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  DEAD_LETTER
+}
+
+model WebhookSubscription {
+  id              String                    @id @default(uuid())
+  businessId      String
+  url             String
+  signingSecret   String
+  eventTypes      String[]
+  status          WebhookSubscriptionStatus @default(ACTIVE)
+  description     String?
+  createdByUserId String
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  business   Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  deliveries WebhookDeliveryAttempt[]
+
+  @@index([businessId, status])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDeliveryAttempt {
+  id             String                @id @default(uuid())
+  subscriptionId String
+  domainEventId  String?
+  deliveryId     String                @unique
+  eventType      String
+  payload        Json
+  attemptNumber  Int                   @default(1)
+  status         WebhookDeliveryStatus @default(PENDING)
+  httpStatus     Int?
+  errorMessage   String?
+  durationMs     Int?
+  nextRetryAt    DateTime?
+  createdAt      DateTime              @default(now())
+  completedAt    DateTime?
+
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, status])
+  @@index([domainEventId])
+  @@map("webhook_delivery_attempts")
+}

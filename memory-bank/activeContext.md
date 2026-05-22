@@ -1,5 +1,92 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## AI platform execution principles (May 2026) ✅
+
+**Status:** **IMPLEMENTED (May 2026)** — Phases **1–4** and **Autonomy A1–A8** shipped per [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../docs/plans/AI_PLATFORM_MATURITY_PLAN.md).
+
+**Docs:**
+- **What to build:** `docs/plans/AI_PLATFORM_MATURITY_PLAN.md` (Memory → Learning → Cross-module → Extensibility)
+- **How to build:** `docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md`
+
+**Anchor principle:** **Visible Intelligence > Hidden Intelligence** — a feature is not real unless the user can feel it, the system can explain it, and diagnostics can prove it.
+
+**Ship summary (this run):**
+| Track | Status |
+|-------|--------|
+| Phase 1 Memory (1A–1E) | ✅ |
+| Phase 2 Learning (2A–2D) | ✅ |
+| Phase 3 Cross-module (3A–3D) | ✅ |
+| Phase 4 Extensibility (4A–4D) | ✅ |
+| Autonomy de-emphasis (A1–A8) | ✅ |
+
+**Ops follow-up (not code):** deploy pending migrations (`20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`) when ready.
+
+**Next product tranche:** not defined in maturity plan — pick from `activeContext.md` § other initiatives (orchestration registry UI parity, module platform, etc.).
+
+### Implementation log (May 2026)
+- **Autonomy de-emphasis A1–A8:** Action-boundaries copy; More → Actions hidden unless `NEXT_PUBLIC_AI_ACTIONS_UI=true`; onboarding/widget proactive toggle removed; pattern insights copy softened (`PredictiveIntelligenceDashboard`); `/api/ai/autonomous/*` + `AutonomyManager` deprecated in code (prompt boundaries via `PreferenceResolver` only); admin AI Context docs updated
+- **Phase 1A (Memory):** Tenant-safe list filters, `PATCH /api/ai/memory/facts/:id`, expiry in resolver, business membership validation, dedupe on create, household scope rejected
+- **Phase 1B (Memory provenance):** `sourceType`, `category`, `isExplicit` on `UserMemoryFact`; remember-that wiring; UI source badges; influence metadata
+- **Phase 1C (Memory retrieval):** `MemoryRetrievalService` + `memoryScoring`; unified twin/resolver path; pipeline trace memory influence fields
+- **Phase 1D (Influence UX):** Assembler explicit/inferred injection tiers; `memoryItems` in `responseInfluence`; explain drawer “Memories that shaped this reply”; Memory tab “Why I remembered this” expandable + source conversation link
+- **Phase 1E (Memory UX + Phase 1 exit):** Edit/forget memories; filters (scope/category/source); pin via confidence; expiry on create/edit; Identity → “Manage in Memory”; Phase 1 exit tests (personalization, tenancy)
+- **Phase 2A (Learning contract):** `LearningProposal` types; `learningEventContract` artifact envelope; one sync primary event per interaction + async derived upserts; human-reviewable filter in personal learning list; fixed pattern/prediction/insight parsing
+- **Phase 2B (Behavioral signals):** `userLearningSignalService`; suggestion accept/dismiss + feedback + module usage signals; `POST /api/ai/learning/signals`; tenant-scoped `dashboardId`/`businessId` in signal payload
+- **Phase 2C (Learning application):** `LearningApplicationService` promotes approved events → `UserMemoryFact` / `UserAIContext` / personality traits; confidence bump on approve, decay on dismiss; `PreferenceResolver` consumes applied events (`learning_applied` inferred kind); `GET /api/ai/learning/what-changed`; Learning tab **What changed** before/after UI; context promote records last promotion
+- **Phase 2D (Learning observability):** Pipeline trace `learningRetrieved` stages (extract → pending → promote → resolver); learning confidence in explain drawer `learningItems`; collective patterns gated on `allowCollectiveLearning` (opt-in toggle in Learning tab); `PatternAnalysisScheduler` env-gated (`ENABLE_PATTERN_ANALYSIS_SCHEDULER`); LearningDashboard fake fallback metrics removed
+- **Phase 3A (Context density):** `contextDensityReport` on pipeline trace + twin metadata summary; provider fetch audit (attempt/success/fail/cache/failure reason); assembly metrics from `assembleAIContext`; admin Test Lab + `POST /api/ai-context-debug/assemble`; dev flag `NEXT_PUBLIC_AI_CONTEXT_DENSITY_DEBUG`
+- **Phase 3B (Fetch policy & provider cache):** Multi-module queries fetch high+medium modules via `resolveModulesToFetch`; sub-intent provider selection (`selectContextProvider`); per-provider cache on `ModuleInstallation.contextProviderCache` (keyed `provider:scope`); @mention aliases for todo, notes, place, dashboard; `businessId` passed consistently via `buildModuleContextFetchParams`; migration `20260521190000_module_context_provider_cache`
+- **Phase 3C (Context synthesis):** Synthetic cross-module insights gated (`AI_SYNTHETIC_CONTEXT_ENABLED`); `ContextSynthesisService` + `entityLinking` v1 (chat↔calendar people, chat↔drive files); data-backed **Cross-module summary** block in assembler; `identifyCrossModuleConnections` uses entity links; admin assemble dry-run exposes `crossModuleSynthesis` + `referencesMultipleModules`
+- **Phase 3D (Context budget & used vs available):** `ContextBudgetManager` tier allocation (35/25/25/15) with drop reasons; blocks marked `available`/`usedInPrompt`; `contextAvailability` on assembled context; `contextUsed` in `responseInfluence` + explain drawer; metadata `contextUsed` lists module names actually injected
+- **Phase 4A (Domain events + AI consumption):** Adopted `chat.message.sent`, `calendar.event.created`, `module.enabled`/`module.disabled`; `AIEventConsumer` → `domain_event` learning stubs (idempotent); proactive upload suggestion unchanged at emit site; documented payload schemas in `DOMAIN_EVENTS.md`
+- **Phase 4B (Module AI Context API hardening):** Canonical **`docs/guides/AI_CONTEXT_PROVIDER_API.md`**; `moduleContextProviderCertification` + marketplace validator 1.1.0 (fail without valid providers); admin **`POST /api/admin/ai-pipeline/context-providers/health`** + Test Lab **Context Provider Health** panel; timeout/payload limits in `moduleContextProvider` constants
+- **Phase 4C (Webhook subscriptions MVP):** `WebhookSubscription` + delivery attempts schema; HMAC signing (`webhookSigning.ts`); retry/dead-letter delivery; domain event fan-out (`module.installed`, `file.shared`); signed **`ActionExecutorRegistry`** webhook path; business admin API + settings webhooks shell; **`docs/architecture/WEBHOOK_SUBSCRIPTIONS.md`**
+- **Phase 4D (SDK boundaries + Phase 4 exit):** **`docs/guides/MODULE_AI_SDK_BOUNDARIES.md`**; AI maturity gates G1–G7 in third-party pipeline docs; reference manifest **`docs/test-modules/full-ai-contract-module.json`** + certification test
+
+**Phase 4 (Extensibility) — COMPLETE. Autonomy de-emphasis — COMPLETE.**
+
+---
+
+## Dynamic AI orchestration registry — R0–R5 (May 2026) ✅
+
+**Status:** **COMPLETE** — Admin-managed **orchestration registry** for intents, context sources, tool policies, and grounding rules. Validated, archive-only lifecycle, audit on every mutation. Foundation for a future cognitive/relationship graph — not plain CRUD.
+
+**Canonical doc:** `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md` (§ Dynamic AI orchestration registry)
+
+**Commits on `main`:** `c648ce2d` (R0–R5), `966a8121` (type-check seed types)
+
+| Slice | Delivered |
+|-------|-----------|
+| **R0** | String-compatible registry IDs; `SYSTEM_*_IDS`; no silent ID stripping in `pipelineCatalogService` |
+| **R1** | Prisma registry metadata (`isSystem`, `archived`, `capabilities`, `runtimeKind`, `mappedTools`, …); migration `20260520120000_ai_pipeline_registry_metadata` |
+| **R2** | `pipelineRegistryValidator.ts` — `validateRegistryChange`, `buildRegistryGraph`, `buildCatalogValidationSummary` |
+| **R3** | `pipelineRegistryService.ts` — create/duplicate/archive/restore/enable/disable + policy audit |
+| **R4** | Admin APIs: `POST /registry/validate`, `GET /registry/graph`, registry CRUD under `/policies/*` |
+| **R5** | Registry UI shell, filters, validation panel, dependency chips; full create/duplicate/archive on **Intents**; filters + modal editors on sources/tools/grounding |
+
+**Product decisions (v1):**
+- One grounding rule per intent (PK = `intentId`)
+- Archive only — no hard delete
+- Auto-create grounding rule on intent create (UI checkbox, default on when `groundingRequired`)
+- Custom `mappedTools[]` on context source rows
+- Capability flags: `executable`, `inferable`, `retrievalEnabled`, `enforceable`
+- Tool `runtimeKind`: `openai_tool` \| `prepass` \| `policy_only`
+- **Custom intents are policy metadata only** until catalog-driven inference (**v2**)
+
+**Key paths:** `server/src/ai/pipeline/pipelineRegistryIds.ts`, `pipelineRegistryValidator.ts`, `pipelineRegistryService.ts`, `pipelineCatalogMappers.ts`, `web/src/components/admin-portal/ai-pipeline/registry/`
+
+**Deploy:** `pnpm prisma:migrate:deploy` (includes `20260520120000`); `pnpm prisma:build` after module schema changes.
+
+**Tests:** `server/src/ai/pipeline/__tests__/pipelineRegistryValidator.test.ts` (9 cases)
+
+**Deferred (intentional):** catalog-driven inference for custom intents; graph visualization UI; `web_search` runtime; provider/prompt changes; hard delete.
+
+**Cross-ref:** `memory-bank/progress.md` (Dynamic AI orchestration registry); Admin AI Pipeline Phases 1–5 + operations console below.
+
+**Next:** Extend create/duplicate/archive modals to sources/tools/grounding pages; v2 catalog-driven inference; optional graph UI.
+
+---
+
 ## Admin AI Pipeline tools — Phases 1–5 (May 2026) ✅
 
 **Status:** **COMPLETE** — Admin Portal **AI Pipeline** instruments the live Digital Life Twin for grounding/orchestration inspection, editable policies, test lab, enforcement, evidence viewer, and compliance export. Additive; does not replace `QueryIntent` or rewrite provider prompts by default.
@@ -19,13 +106,15 @@
 
 **Env:** `AI_PIPELINE_DIAGNOSTICS_ENABLED`, `AI_PIPELINE_DIAGNOSTIC_SAMPLE_RATE`, `AI_PIPELINE_ENFORCEMENT_ENABLED`, `AI_PIPELINE_ENFORCEMENT_MODE`
 
-**Deploy:** `pnpm prisma:migrate:deploy` (migrations `20260520010440` … `20260520013518`)
+**Operations console (May 2026):** Hub health metrics, live activity feed, trace insights (`pipelineTraceInsights.ts`) — commits `c877cf9f`, `4066c4e7`.
 
-**Tests:** `server/src/ai/pipeline/__tests__/` (23+ vitest cases)
+**Deploy:** `pnpm prisma:migrate:deploy` (migrations `20260520010440` … `20260520013518`, **`20260520120000_ai_pipeline_registry_metadata`**)
 
-**Cross-ref:** `memory-bank/progress.md` (Admin AI Pipeline); `memory-bank/aiContextSystem.md` (assembled context)
+**Tests:** `server/src/ai/pipeline/__tests__/` (32+ vitest cases incl. registry validator)
 
-**Next:** Optional scheduled retention purge cron; wire `web_search` when product-ready; production validation with enforcement enabled in staging first.
+**Cross-ref:** `memory-bank/progress.md` (Admin AI Pipeline + Dynamic registry); `memory-bank/aiContextSystem.md` (assembled context)
+
+**Next:** Registry UI parity on sources/tools/grounding; optional scheduled retention purge cron; wire `web_search` when product-ready; v2 catalog-driven inference for custom registry entries.
 
 ---
 

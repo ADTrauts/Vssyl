@@ -9,7 +9,9 @@ Reviewer and implementer checklist for marketplace modules. **Agent rule:** `.cu
 3. [`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) — authoritative pipeline (wins on conflict)
 4. [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) — interoperability contract
 5. [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) — if AI-exposed
-6. [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) — if notifications declared
+6. [`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md) — **partner AI can/cannot** (Phase 4D)
+7. [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) — context provider contract
+8. [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) — if notifications declared
 
 ## Platform constraints (non-negotiable)
 
@@ -31,7 +33,21 @@ Same contract as first-party (`memory-bank/moduleSpecs.md`):
 | 4 | **Activity vs analytics** separated |
 | 5 | **Realtime** visibility-scoped; membership proven before join/emit |
 | 6 | **Notification** manifest metadata + routable payload ids |
-| 7 | **AI context** (keywords, providers) when module is AI-exposed |
+| 7 | **AI context** (keywords, providers) when module is AI-exposed — gates **G1–G7** in [`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md) |
+
+## AI maturity gates (reject if unmet)
+
+| Gate | Check |
+|------|--------|
+| G1 | `aiContext` present with purpose + keywords |
+| G2 | ≥1 valid `contextProvider` (validator v1.1.0+) |
+| G3 | Webhook executor only; operations declared; signing recommended |
+| G4 | No in-process capabilities |
+| G5 | Notification metadata when notifications declared |
+| G6 | Tenant scoping documented for provider/executor |
+| G7 | Provider health check passes in admin Test Lab (spot-check) |
+
+Reference: [`docs/test-modules/full-ai-contract-module.json`](../test-modules/full-ai-contract-module.json)
 
 Authorization may use platform **Policy Engine** where applicable (`docs/architecture/POLICY_ENGINE.md`); partner backends must enforce their own auth for partner-hosted APIs.
 
@@ -57,4 +73,4 @@ Authorization may use platform **Policy Engine** where applicable (`docs/archite
 - Internal monorepo modules: `docs/guides/MODULE_DEVELOPMENT_GUIDE.md`, `.cursor/rules/module-development.mdc`
 - Fixtures: `docs/test-modules/README.md`
 
-**Last updated:** 2026-05-17 (MP-Q1 structural validator)
+**Last updated:** 2026-05-21 (Phase 4D AI maturity gates)

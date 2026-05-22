@@ -29,7 +29,9 @@ Use these entry points to create submissions, manage modules, and track status a
 4. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
 5. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
 6. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
-7. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
+7. **[`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md)** — **canonical partner AI contract**: what you can/cannot do (context providers, webhook executors, events, no autonomy, no in-process code).
+8. **[`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md)** — provider endpoint auth, response shape, cache, payload limits.
+9. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
 
 ---
 
@@ -79,8 +81,27 @@ Third-party modules must implement the same interoperability structure expected 
    - Manifest metadata and event payload IDs must support notification center routing
 7. **AI context compliance**
    - AI context providers are mandatory for AI-exposed modules
+   - See **[`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md)** for maturity gates **G1–G7** and forbidden patterns (no in-process code, no autonomy, no cross-tenant context)
 
 Modules that fail these contract requirements should be rejected during review until corrected.
+
+---
+
+## AI platform maturity gates (Phase 4 — partner summary)
+
+Before publish, confirm against [`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md):
+
+| Gate | Partner action |
+|------|----------------|
+| **G1–G2** | Valid `aiContext` + `contextProviders` per [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) |
+| **G3** | Webhook `aiActionExecutor` only; HMAC `signingSecret` recommended |
+| **G4** | No in-process / server-side capabilities in manifest |
+| **G5** | Notification metadata if module sends notifications |
+| **G6** | Document tenant scoping for provider + executor endpoints |
+| **G7** | Pass admin provider health check (AI Pipeline → Test Lab) |
+
+**Reference manifest:** [`docs/test-modules/full-ai-contract-module.json`](../test-modules/full-ai-contract-module.json)  
+**Automated cert test:** `server/src/services/__tests__/fullAiContractModule.certification.test.ts`
 
 ---
 

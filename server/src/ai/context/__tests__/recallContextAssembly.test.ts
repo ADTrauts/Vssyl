@@ -77,4 +77,58 @@ describe('assembleAIContext recall continuity', () => {
     const titles = assembled.contextBlocks.map((b) => b.title);
     expect(titles.some((t) => t.includes('Recent conversation topics'))).toBe(true);
   });
+
+  it('splits explicit and inferred memory facts into tier3 profile blocks', () => {
+    const assembled = assembleAIContext({
+      query: {
+        query: 'What do you know about my travel preferences?',
+        userId: 'u1',
+        context: { contextProfile: 'conversation' },
+      },
+      userContext: baseUserContext,
+      explicitStructuredMode: 'conversation',
+      userMemoryFacts: [
+        {
+          id: 'explicit-1',
+          subject: 'Travel',
+          predicate: 'Prefers aisle seats on long flights',
+          confidence: 0.85,
+          sourceType: 'remember_that',
+          isExplicit: true,
+        },
+        {
+          id: 'inferred-low',
+          subject: 'Hotels',
+          predicate: 'Might prefer boutique hotels',
+          confidence: 0.4,
+          sourceType: 'inferred_chat',
+          isExplicit: false,
+        },
+        {
+          id: 'inferred-ok',
+          subject: 'Packing',
+          predicate: 'Packs light for weekend trips',
+          confidence: 0.7,
+          sourceType: 'inferred_chat',
+          isExplicit: false,
+        },
+      ],
+    });
+
+    const explicitBlock = assembled.contextBlocks.find((b) =>
+      b.title.includes('saved by you')
+    );
+    const inferredBlock = assembled.contextBlocks.find((b) => b.title.includes('inferred'));
+
+    expect(explicitBlock?.tier).toBe('tier3_profile');
+    expect(explicitBlock?.priority).toBe('high');
+    expect(Array.isArray(explicitBlock?.content) && explicitBlock.content).toHaveLength(1);
+
+    expect(inferredBlock?.tier).toBe('tier3_profile');
+    expect(inferredBlock?.priority).toBe('medium');
+    expect(Array.isArray(inferredBlock?.content) && inferredBlock.content).toHaveLength(1);
+
+    const inferredItem = (inferredBlock?.content as Array<{ injectionTier?: string }>)[0];
+    expect(inferredItem?.injectionTier).toBe('inferred');
+  });
 });

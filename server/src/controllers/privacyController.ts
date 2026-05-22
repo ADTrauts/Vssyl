@@ -71,7 +71,8 @@ export const updateUserPrivacySettings = async (req: Request, res: Response) => 
       allowMarketingEmails,
       allowAnalytics,
       allowAuditLogs,
-      dataRetentionPeriod
+      dataRetentionPeriod,
+      allowCollectiveLearning,
     } = req.body;
 
     const settings = await prisma.userPrivacySettings.upsert({
@@ -83,7 +84,10 @@ export const updateUserPrivacySettings = async (req: Request, res: Response) => 
         allowMarketingEmails,
         allowAnalytics,
         allowAuditLogs,
-        dataRetentionPeriod
+        dataRetentionPeriod,
+        ...(typeof allowCollectiveLearning === 'boolean'
+          ? { allowCollectiveLearning }
+          : {}),
       },
       create: {
         userId: user.id,
@@ -93,7 +97,9 @@ export const updateUserPrivacySettings = async (req: Request, res: Response) => 
         allowMarketingEmails: allowMarketingEmails !== undefined ? allowMarketingEmails : false,
         allowAnalytics: allowAnalytics !== undefined ? allowAnalytics : true,
         allowAuditLogs: allowAuditLogs !== undefined ? allowAuditLogs : true,
-        dataRetentionPeriod: dataRetentionPeriod || 2555
+        dataRetentionPeriod: dataRetentionPeriod || 2555,
+        allowCollectiveLearning:
+          typeof allowCollectiveLearning === 'boolean' ? allowCollectiveLearning : false,
       }
     });
 

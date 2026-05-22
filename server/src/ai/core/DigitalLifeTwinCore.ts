@@ -3,9 +3,17 @@ import { CrossModuleContextEngine, UserContext, CrossModuleInsight } from '../co
 import { PersonalityEngine } from './PersonalityEngine';
 import { DecisionEngine } from './DecisionEngine';
 import { AdvancedLearningEngine } from '../learning/AdvancedLearningEngine';
+import { userLearningSignalService } from '../../services/userLearningSignalService';
+import { collectModulesReferenced } from '../learning/learningSignalTypes';
 import { ActionExecutor } from './ActionExecutor';
 import { SmartPatternEngine } from '../intelligence/SmartPatternEngine';
 import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine';
+import { userAllowsCollectiveLearning } from '../learning/collectiveLearningConsent';
+import {
+  buildContextDensityReport,
+  toContextDensitySummary,
+  type ProviderFetchAttempt,
+} from '../context/contextDensityReport';
 import { randomUUID } from 'crypto';
 import { prisma as sharedPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
@@ -17,6 +25,17 @@ import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
 import { assembleAIContext } from '../context/AIContextAssembler';
+import type { AIAssembledContext } from '../context/AIContextAssembler';
+import {
+  synthesizeCrossModuleContext,
+  type ContextSynthesisResult,
+} from '../context/ContextSynthesisService';
+import {
+  buildConnectionsFromEntityLinks,
+  linkEntitiesAcrossModules,
+  type EntityLinkingResult,
+} from '../context/entityLinking';
+import { isSyntheticContextEnabled } from '../context/syntheticContextPolicy';
 import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
 import {
   buildConversationThreadHints,
@@ -29,6 +48,7 @@ import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
 import { PreferenceResolver } from '../preferences/PreferenceResolver';
+import type { RetrievedMemoryFact } from '../../services/userMemoryFactService';
 import { detectSessionSoftPreferenceOverrides } from '../preferences/sessionPreferenceDetection';
 import { applySessionPreferenceOverrides } from '../preferences/applySessionPreferenceOverrides';
 import type { SessionSoftPreferenceOverrides } from '../preferences/preferenceTypes';
@@ -84,6 +104,8 @@ export interface DigitalLifeTwinResponse {
   usedVisionParts?: boolean;
   metadata: {
     contextUsed: string[];
+    /** Available vs used context rows (Phase 3D diagnostics). */
+    contextAvailability?: AIAssembledContext['contextAvailability'];
     modulesFocused: string[];
     patternMatches: string[];
     processingTime: number;
@@ -302,6 +324,29 @@ export class DigitalLifeTwinCore {
         const sc = smartContext as Record<string, unknown> | null;
         if (sc?.moduleContexts && typeof sc.moduleContexts === 'object' && !Array.isArray(sc.moduleContexts)) {
           moduleContextsForAssembly = sc.moduleContexts as Record<string, unknown>;
+        }
+        if (moduleContextsForAssembly && Object.keys(moduleContextsForAssembly).length > 0) {
+          const entityLinks = linkEntitiesAcrossModules({
+            moduleContexts: moduleContextsForAssembly,
+            query: query.query,
+          });
+          const memoryFacts = Array.isArray((query.context as Record<string, unknown>).userMemoryFacts)
+            ? ((query.context as Record<string, unknown>).userMemoryFacts as Array<{
+                subject: string;
+                predicate: string;
+              }>)
+            : undefined;
+          const crossModuleSynthesis = synthesizeCrossModuleContext({
+            query: query.query,
+            moduleContexts: moduleContextsForAssembly,
+            entityLinks,
+            memoryFacts,
+          });
+          (query.context as Record<string, unknown>).entityLinks = entityLinks;
+          (query.context as Record<string, unknown>).crossModuleSynthesis = crossModuleSynthesis;
+        }
+        if (Array.isArray(sc?.providerFetchAudit)) {
+          (query.context as Record<string, unknown>).providerFetchAudit = sc.providerFetchAudit;
         }
         if (Array.isArray(sc?.installedModuleIds) && sc.installedModuleIds.length > 0) {
           userContext = {
@@ -603,31 +648,31 @@ export class DigitalLifeTwinCore {
         });
       }
 
-      // 2b. Get relevant global patterns (collective learning) - makes system smarter for everyone
+      // 2b. Collective learning patterns — only when user explicitly opted in
       let globalPatterns: Array<Record<string, unknown>> = [];
+      let collectiveConsent = false;
       try {
-        if (this.centralizedLearning) {
-          // Get user's segment (business, personal, household, enterprise, or all)
-          const userSegment = query.context.dashboardType === 'business' ? 'business' : 
+        collectiveConsent = await userAllowsCollectiveLearning(query.userId, this.prisma);
+        if (collectiveConsent && this.centralizedLearning) {
+          const userSegment = query.context.dashboardType === 'business' ? 'business' :
                              query.context.dashboardType === 'household' ? 'household' : 'personal';
-          
-          // Get relevant global patterns from database
+
           const patterns = await this.prisma.globalPattern.findMany({
             where: {
               OR: [
                 { userSegment: 'all' },
                 { userSegment: userSegment }
               ],
-              confidence: { gte: 0.7 }, // Only high-confidence patterns
-              impact: { in: ['positive', 'neutral'] } // Only positive or neutral patterns
+              confidence: { gte: 0.7 },
+              impact: { in: ['positive', 'neutral'] }
             },
             orderBy: [
               { confidence: 'desc' },
               { frequency: 'desc' }
             ],
-            take: 5 // Top 5 most relevant global patterns
+            take: 5
           });
-          
+
           globalPatterns = patterns.map(p => ({
             type: p.patternType,
             description: p.description,
@@ -709,6 +754,9 @@ export class DigitalLifeTwinCore {
           userId: query.userId,
           businessId,
           dashboardId,
+          retrievedMemoryFacts: Array.isArray(ctxRecord.userMemoryFacts)
+            ? (ctxRecord.userMemoryFacts as RetrievedMemoryFact[])
+            : undefined,
         });
 
         const sessionOverrides = detectSessionSoftPreferenceOverrides(
@@ -731,6 +779,31 @@ export class DigitalLifeTwinCore {
             businessWorkspaceBoundaries = boundaries;
           }
         }
+
+        const inferred = effectivePreferences?.inferred ?? [];
+        const learningApplied = inferred.filter((item) => item.kind === 'learning_applied');
+        const contextPrefs = inferred.filter((item) => item.kind === 'context');
+        const confidenceItems = [...learningApplied, ...contextPrefs];
+        const avgLearningConfidence =
+          confidenceItems.length > 0
+            ? confidenceItems.reduce((sum, item) => sum + item.confidence, 0) /
+              confidenceItems.length
+            : undefined;
+
+        const { userAIContextLearningService } = await import(
+          '../../services/userAIContextLearningService.js'
+        );
+        const pendingCount = await userAIContextLearningService.countPending(query.userId);
+
+        ctxRecord.learningPipelineSnapshot = {
+          pendingCount,
+          appliedInferredCount: learningApplied.length,
+          contextPreferencesActive: contextPrefs.length,
+          resolverInferredCount: confidenceItems.length,
+          avgLearningConfidence,
+          collectivePatternsLoaded: globalPatterns.length,
+          collectiveConsent,
+        };
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
         void logger.warn('Error resolving effective AI preferences', {
@@ -741,6 +814,10 @@ export class DigitalLifeTwinCore {
 
       // 6. Generate Digital Life Twin response (enhanced with smart insights, semantics, collective learning, attached file context, and vision images)
       const t0_provider = Date.now();
+      const crossModuleSynthesis =
+        (query.context as Record<string, unknown>).crossModuleSynthesis as
+          | ContextSynthesisResult
+          | undefined;
       const response = await this.generateLifeTwinResponse(
         query,
         userContext,
@@ -759,7 +836,8 @@ export class DigitalLifeTwinCore {
         streamOptions,
         moduleContextsForAssembly,
         effectivePreferences,
-        businessWorkspaceBoundaries
+        businessWorkspaceBoundaries,
+        crossModuleSynthesis
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -775,7 +853,15 @@ export class DigitalLifeTwinCore {
       // 5. Identify cross-module connections and opportunities (with error handling)
       let connections: CrossModuleConnection[] = [];
       try {
-        connections = await this.identifyCrossModuleConnections(query, userContext, response);
+        const entityLinks = (query.context as Record<string, unknown>).entityLinks as
+          | EntityLinkingResult
+          | undefined;
+        connections = await this.identifyCrossModuleConnections(
+          query,
+          userContext,
+          response,
+          entityLinks
+        );
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
         void logger.warn('Error identifying cross-module connections', {
@@ -857,13 +943,55 @@ export class DigitalLifeTwinCore {
           recentActivity: []
         }
       );
+      const ctxRecord = query.context as Record<string, unknown>;
+      const businessId =
+        typeof ctxRecord.businessId === 'string' && ctxRecord.businessId.trim()
+          ? ctxRecord.businessId.trim()
+          : undefined;
+      const dashboardId =
+        typeof ctxRecord.dashboardId === 'string' && ctxRecord.dashboardId.trim()
+          ? ctxRecord.dashboardId.trim()
+          : undefined;
+      const conversationId =
+        typeof ctxRecord.conversationId === 'string' && ctxRecord.conversationId.trim()
+          ? ctxRecord.conversationId.trim()
+          : undefined;
+      const modulesReferenced = collectModulesReferenced({
+        modulesFocused: response.modulesFocused,
+        contextRetrieved: response.pipelineTrace?.contextRetrieved,
+        currentModule:
+          typeof ctxRecord.currentModule === 'string' ? ctxRecord.currentModule : undefined,
+      });
+      void userLearningSignalService
+        .recordModuleUsageFromTwin({
+          userId: query.userId,
+          modulesReferenced,
+          businessId,
+          dashboardId,
+          conversationId,
+          traceId: response.pipelineTrace?.traceId,
+        })
+        .catch((signalErr: unknown) => {
+          const err = signalErr instanceof Error ? signalErr : new Error(String(signalErr));
+          void logger.warn('Failed to record module usage learning signal', {
+            operation: 'digital_life_twin_module_usage_signal',
+            error: { message: err.message },
+          });
+        });
       }
 
       const processingTime = Date.now() - startTime;
 
       const ctxForInfluence = query.context as Record<string, unknown>;
       const memoryFactsForInfluence = Array.isArray(ctxForInfluence.userMemoryFacts)
-        ? (ctxForInfluence.userMemoryFacts as Array<{ subject: string; predicate: string }>)
+        ? (ctxForInfluence.userMemoryFacts as Array<{
+            id?: string;
+            subject: string;
+            predicate: string;
+            sourceType?: string;
+            confidence?: number;
+            isExplicit?: boolean;
+          }>)
         : undefined;
       const recalledCount = Array.isArray(ctxForInfluence.recalledMessages)
         ? ctxForInfluence.recalledMessages.length
@@ -878,6 +1006,7 @@ export class DigitalLifeTwinCore {
           userMemoryFacts: memoryFactsForInfluence,
           recalledMessageCount: recalledCount,
           modulesFocused: response.modulesFocused,
+          assembledContext: response.assembledContext,
           hasPersonalityProfile: Boolean(
             personality && typeof personality === 'object'
           ),
@@ -929,6 +1058,11 @@ export class DigitalLifeTwinCore {
           ...(includeDeveloperDetails && { developerDetails: r.summary }),
         }));
 
+      const contextUsedModuleNames =
+        responseInfluence?.contextUsed
+          ?.filter((item) => item.usedInPrompt)
+          .map((item) => item.moduleName) ?? [];
+
       return {
         response: response.response,
         confidence: response.confidence,
@@ -941,7 +1075,8 @@ export class DigitalLifeTwinCore {
         ...(fileIssues.length > 0 && { fileIssues }),
         ...(response.usedVisionParts && { usedVisionParts: true }),
         metadata: {
-          contextUsed: Object.keys(userContext),
+          contextUsed: contextUsedModuleNames,
+          contextAvailability: response.assembledContext?.contextAvailability,
           modulesFocused: response.modulesFocused || [],
           patternMatches: response.patternMatches || [],
           processingTime,
@@ -965,6 +1100,13 @@ export class DigitalLifeTwinCore {
             },
           }),
           ...(responseInfluence && { responseInfluence }),
+          ...(response.pipelineTrace?.contextDensity && {
+            contextDensity: toContextDensitySummary(
+              response.pipelineTrace.contextDensity as Parameters<
+                typeof toContextDensitySummary
+              >[0]
+            ),
+          }),
           ...(response.pipelineTrace && { pipelineTrace: response.pipelineTrace }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
@@ -1070,7 +1212,8 @@ export class DigitalLifeTwinCore {
     streamOptions?: { stream: boolean; onChunk: (text: string) => void },
     moduleContexts?: Record<string, unknown>,
     effectivePreferences?: ResolvedEffectivePreferences,
-    businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock
+    businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock,
+    crossModuleSynthesis?: ContextSynthesisResult
   ) {
     const structuredInference = inferStructuredResponseMode({
       query: query.query,
@@ -1270,7 +1413,14 @@ export class DigitalLifeTwinCore {
         }>)
       : undefined;
     const userMemoryFacts = Array.isArray(ctxRecord.userMemoryFacts)
-      ? (ctxRecord.userMemoryFacts as Array<{ subject: string; predicate: string; confidence: number }>)
+      ? (ctxRecord.userMemoryFacts as Array<{
+          id?: string;
+          subject: string;
+          predicate: string;
+          confidence: number;
+          sourceType?: string;
+          isExplicit?: boolean;
+        }>)
       : undefined;
 
     const assembledContext = assembleAIContext({
@@ -1283,6 +1433,7 @@ export class DigitalLifeTwinCore {
       userDefinedContext,
       globalPatterns,
       moduleContexts: mergedModuleContexts,
+      crossModuleSynthesis,
       recentConversationMemory,
       recalledMessages,
       userMemoryFacts,
@@ -1295,6 +1446,16 @@ export class DigitalLifeTwinCore {
       businessWorkspaceBoundaries,
     });
     options.assembledContext = assembledContext;
+
+    const providerFetchAudit = Array.isArray(ctxRecord.providerFetchAudit)
+      ? (ctxRecord.providerFetchAudit as ProviderFetchAttempt[])
+      : [];
+    const densityReport = buildContextDensityReport({
+      assembled: assembledContext,
+      providerFetchAudit,
+      assemblyMetrics: assembledContext.assemblyMetrics,
+    });
+    ctxRecord.contextDensityReport = densityReport;
 
     if (effectivePreferences) {
       applyResolvedPreferencesToProviderOptions(options, effectivePreferences);
@@ -1519,6 +1680,7 @@ export class DigitalLifeTwinCore {
       structured: aiResponse.structured,
       usedVisionParts,
       pipelineTrace,
+      assembledContext: assembledForTrace as AIAssembledContext | undefined,
       ...(quality.warnings.length > 0 && { aiResponseQualityWarnings: quality.warnings }),
     };
   }
@@ -1531,10 +1693,20 @@ export class DigitalLifeTwinCore {
   private async identifyCrossModuleConnections(
     query: LifeTwinQuery, 
     userContext: UserContext, 
-    response: any
+    response: any,
+    entityLinks?: EntityLinkingResult
   ): Promise<CrossModuleConnection[]> {
     const connections: CrossModuleConnection[] = [];
+
+    if (entityLinks && entityLinks.links.length > 0) {
+      connections.push(...buildConnectionsFromEntityLinks(entityLinks));
+    }
+
+    if (connections.length > 0 || !isSyntheticContextEnabled()) {
+      return connections;
+    }
     
+    // Legacy keyword heuristics (dev only when AI_SYNTHETIC_CONTEXT_ENABLED=true)
     // Workflow connections
     if (query.query.toLowerCase().includes('schedule') || query.query.toLowerCase().includes('meeting')) {
       connections.push({
@@ -1856,6 +2028,9 @@ export class DigitalLifeTwinCore {
   private extractRelevantInsights(userContext: UserContext, query: LifeTwinQuery): CrossModuleInsight[] {
     return userContext.crossModuleInsights
       .filter(insight => {
+        if (insight.synthetic && !isSyntheticContextEnabled()) {
+          return false;
+        }
         const queryLower = query.query.toLowerCase();
         return insight.modules.some(module => query.context.currentModule === module) ||
                queryLower.includes(insight.type) ||

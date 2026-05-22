@@ -41,7 +41,7 @@ import AIFileUpload, { type AIAttachedFile } from '../../components/ai/AIFileUpl
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 import AILearningNotice from '../../components/ai/AILearningNotice';
-import AIResponseExplainDrawer from '../../components/ai/AIResponseExplainDrawer';
+import { isContextDensityDebugEnabled } from '../../lib/aiFeatureFlags';
 import WorkspaceAIDrawer from '../../components/ai/WorkspaceAIDrawer';
 import { resolveBusinessIdFromDashboard } from '../../lib/resolveBusinessIdFromDashboard';
 import type { PendingLearningFromTwin } from '../../api/aiContextLearning';
@@ -2208,7 +2208,20 @@ export default function AIChat() {
                                 )}
                               </>
                             )}
-                            {item.type === 'ai' && (item.content || '').trim().length > 0 && (
+                                {isContextDensityDebugEnabled() &&
+                                  item.metadata &&
+                                  typeof item.metadata.contextDensity === 'object' &&
+                                  item.metadata.contextDensity !== null && (
+                                    <details className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                      <summary className="cursor-pointer hover:text-purple-600">
+                                        Context density (dev)
+                                      </summary>
+                                      <pre className="mt-1 p-2 rounded bg-gray-50 dark:bg-slate-800 overflow-auto max-h-40">
+                                        {JSON.stringify(item.metadata.contextDensity, null, 2)}
+                                      </pre>
+                                    </details>
+                                  )}
+                                {item.type === 'ai' && (item.content || '').trim().length > 0 && (
                               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex flex-wrap gap-3">
                                 {item.responseInfluence && (
                                   <button

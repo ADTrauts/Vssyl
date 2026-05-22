@@ -127,9 +127,9 @@ export default function AIOnboardingFlow({ onComplete, embedded = false }: AIOnb
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
               <Card className="p-6 text-center hover:shadow-lg transition-shadow">
                 <Zap className="h-10 w-10 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Autonomous Actions</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Assisted workflows</h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Your AI can schedule meetings, organize files, and manage tasks across all modules
+                  Your twin can suggest scheduling, file organization, and tasks — you approve before anything runs
                 </p>
               </Card>
 
@@ -261,9 +261,9 @@ export default function AIOnboardingFlow({ onComplete, embedded = false }: AIOnb
               </div>
               
               <div className="bg-purple-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-purple-900 mb-2">⚡ Autonomous Actions</h3>
+                <h3 className="font-semibold text-purple-900 mb-2">Assisted workflows</h3>
                 <p className="text-purple-700 text-sm">
-                  Your AI can now take actions on your behalf based on your configured autonomy levels
+                  Your twin respects the action boundaries you set — suggestions and recommendations, with your approval
                 </p>
               </div>
               

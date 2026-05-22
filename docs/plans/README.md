@@ -13,7 +13,9 @@ Long-lived execution plans, audits, and feature roadmaps. **Active “what’s n
 | Module upload backend | `MODULE_UPLOAD_BACKEND_PHASED_PLAN.md` |
 | AI action / executor | `AI_ACTION_EXECUTOR_IMPLEMENTATION_PLAN.md`, `PHASE_3_ACTION_EXECUTOR_PLAN.md` |
 | AI vision / multimodal | `AI_VISION_AND_MULTIMODAL_PLAN.md` |
-| AI memories UI | `AI_MEMORIES_VIEW_PLAN.md` |
+| AI memories UI | `AI_MEMORIES_VIEW_PLAN.md` (superseded by maturity plan § Phase 1) |
+| **AI platform maturity (Memory → Learning → Cross-module → Extensibility)** | `AI_PLATFORM_MATURITY_PLAN.md` |
+| **AI platform execution principles (how to build — north star)** | `AI_PLATFORM_EXECUTION_PRINCIPLES.md` |
 | AI providers / billing / models | `AI_PROVIDER_INTEGRATION_PLAN.md`, `AI_PROVIDER_USAGE_DASHBOARD_PLAN.md`, `AI_QUERY_OVERAGE_BILLING_PLAN.md`, `AI_MODEL_MANAGEMENT.md` |
 | To-do module | `todo-module-ai-prioritization-plan.md`, `todo-module-completion-plan.md`, `todo-module-visual-mockup.md`, `TODO_ANALYSIS.md` |
 | Calendar + todo | `todo-calendar-integration-plan.md` |

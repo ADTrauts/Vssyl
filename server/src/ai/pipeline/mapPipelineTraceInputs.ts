@@ -3,14 +3,23 @@
  */
 
 import type { AIAssembledContext } from '../context/AIContextAssembler';
+import type { MemoryRetrievalReport } from '../memory/MemoryRetrievalService';
 import type {
   BuildPipelineTraceInput,
   PipelineConfidenceLevel,
   PipelineContextRetrievedRecord,
   PipelineEnforcementAction,
   PipelineLegacySignals,
+  PipelineLearningRetrieved,
+  PipelineContextDensityReport,
+  PipelineMemoryRetrieved,
   PipelineToolUsageRecord,
 } from '../types/pipelineDiagnostics';
+import {
+  buildLearningPipelineTrace,
+  readLearningPipelineSnapshot,
+} from '../learning/learningPipelineTrace';
+import { readContextDensityReport } from '../context/contextDensityReport';
 
 export function numericConfidenceToLevel(confidence: number): PipelineConfidenceLevel {
   if (confidence >= 0.85) return 'high';
@@ -82,15 +91,53 @@ export interface MapPipelineTraceParams {
   enforcementAction?: PipelineEnforcementAction;
 }
 
+export function mapMemoryRetrievalToTrace(
+  queryContext?: Record<string, unknown>,
+  influencedFactCount?: number
+): Partial<PipelineMemoryRetrieved> {
+  const ctx = queryContext ?? {};
+  const recalled = Array.isArray(ctx.recalledMessages) ? ctx.recalledMessages.length : 0;
+  const report = ctx.memoryRetrievalReport as MemoryRetrievalReport | undefined;
+  const facts =
+    typeof influencedFactCount === 'number'
+      ? influencedFactCount
+      : Array.isArray(ctx.userMemoryFacts)
+        ? ctx.userMemoryFacts.length
+        : 0;
+  const threadMemory =
+    (Array.isArray(ctx.recentConversationMemory) && ctx.recentConversationMemory.length > 0) ||
+    Boolean(ctx.conversationId);
+
+  if (!report) {
+    return {
+      facts,
+      recalledMessages: recalled,
+      threadMemory,
+    };
+  }
+
+  return {
+    facts,
+    recalledMessages: recalled,
+    threadMemory,
+    factsLoaded: report.factsLoaded,
+    factsInfluenced: report.factsInfluenced,
+    influencedFactIds: report.influencedFactIds,
+    predicateCharsUsed: report.predicateCharsUsed,
+    predicateCharBudget: report.predicateCharBudget,
+    influenceRecords: report.candidates.map((c) => ({
+      factId: c.factId,
+      score: c.score,
+      reasonCodes: c.reasonCodes,
+    })),
+  };
+}
+
 export function mapOrchestrationToPipelineTraceInput(
   params: MapPipelineTraceParams
 ): BuildPipelineTraceInput {
   const ctx = params.queryContext ?? {};
-  const recalled = Array.isArray(ctx.recalledMessages) ? ctx.recalledMessages.length : 0;
-  const facts = Array.isArray(ctx.userMemoryFacts) ? ctx.userMemoryFacts.length : 0;
-  const threadMemory =
-    (Array.isArray(ctx.recentConversationMemory) && ctx.recentConversationMemory.length > 0) ||
-    Boolean(params.conversationId);
+  const memoryRetrieved = mapMemoryRetrievalToTrace(ctx);
 
   const contextRetrieved = [
     ...(params.supplementalContextRetrieved ?? []),
@@ -104,6 +151,14 @@ export function mapOrchestrationToPipelineTraceInput(
     ]),
   ];
 
+  const snapshot = readLearningPipelineSnapshot(ctx);
+  const learningRetrieved: PipelineLearningRetrieved | undefined = snapshot
+    ? buildLearningPipelineTrace(snapshot)
+    : undefined;
+
+  const contextDensity: PipelineContextDensityReport | undefined =
+    readContextDensityReport(ctx);
+
   return {
     userId: params.userId,
     conversationId: params.conversationId,
@@ -113,11 +168,9 @@ export function mapOrchestrationToPipelineTraceInput(
     qualityWarnings: params.qualityWarnings,
     toolsUsed,
     contextRetrieved,
-    memoryRetrieved: {
-      facts,
-      recalledMessages: recalled,
-      threadMemory,
-    },
+    memoryRetrieved,
+    learningRetrieved,
+    contextDensity,
     sourcesUsed,
     confidenceLevel: numericConfidenceToLevel(params.confidence),
     traceId: params.traceId,

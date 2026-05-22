@@ -53,7 +53,7 @@ export function buildInfluenceStack(input: BuildInfluenceStackInput): InfluenceI
   if (preview?.scopeNote) {
     items.push({
       id: 'workspace-policy',
-      label: 'This workspace limits what your twin can do autonomously',
+      label: 'This workspace limits what your twin can suggest',
       detail: preview.scopeNote,
       permanence: 'workspace',
     });
@@ -63,7 +63,7 @@ export function buildInfluenceStack(input: BuildInfluenceStackInput): InfluenceI
     const first = preview.actionBoundaries[0];
     items.push({
       id: 'autonomy-boundaries',
-      label: 'Your autonomy settings guide when your twin suggests vs acts',
+      label: 'Your action boundaries guide when your twin suggests vs asks for approval',
       detail: first.length > 120 ? `${first.slice(0, 117)}…` : first,
       permanence: 'permanent',
     });

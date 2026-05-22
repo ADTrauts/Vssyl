@@ -42,10 +42,14 @@ export interface EffectiveSoftPreferences {
 
 export interface EffectiveInferredPreference {
   id: string;
-  kind: 'context' | 'memory_fact';
+  kind: 'context' | 'memory_fact' | 'learning_applied';
   label: string;
   value: string;
   confidence: number;
+  sourceType?: string;
+  category?: string;
+  isExplicit?: boolean;
+  eventType?: string;
 }
 
 export interface EffectivePreferencesProvenance {

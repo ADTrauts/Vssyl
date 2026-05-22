@@ -5,6 +5,7 @@ import { Button, Spinner, Alert } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import type { AIPipelineTrace, TestLabResult } from '../../../types/adminAiPipeline';
 import PipelineTraceDetail from './PipelineTraceDetail';
+import ContextDensityPanel from './ContextDensityPanel';
 
 export default function AITestLabPanel() {
   const [query, setQuery] = useState('');
@@ -94,6 +95,11 @@ export default function AITestLabPanel() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             Pipeline diagnostics
           </h2>
+          {trace.contextDensity && (
+            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-slate-700">
+              <ContextDensityPanel report={trace.contextDensity} />
+            </div>
+          )}
           <PipelineTraceDetail trace={trace} evidenceBundle={trace.evidenceBundle ?? null} />
         </div>
       )}

@@ -100,6 +100,8 @@ export function buildPipelineTrace(
   const toolsUsed = input.toolsUsed ?? [];
   const contextRetrieved = input.contextRetrieved ?? [];
   const memoryRetrieved = defaultMemoryRetrieved(input.memoryRetrieved);
+  const learningRetrieved = input.learningRetrieved;
+  const contextDensity = input.contextDensity;
   const sourcesUsed = input.sourcesUsed ?? [];
   const qualityWarnings = input.qualityWarnings ?? [];
   const retrievalPerformed = computeRetrievalPerformed(input);
@@ -144,6 +146,8 @@ export function buildPipelineTrace(
     retrievalPerformed,
     contextRetrieved,
     memoryRetrieved,
+    ...(learningRetrieved && { learningRetrieved }),
+    ...(contextDensity && { contextDensity }),
     sourcesUsed,
     confidenceLevel,
     genericResponseRisk,

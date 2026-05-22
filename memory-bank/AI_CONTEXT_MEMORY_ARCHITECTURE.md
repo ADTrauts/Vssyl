@@ -79,6 +79,26 @@ Triggers include: “we last talked”, “what were we talking about”, “wha
 - `server/src/ai/utils/__tests__/recallIntent.test.ts`
 - `server/src/ai/context/__tests__/recallContextAssembly.test.ts`
 
+## User memory facts (Phase 1B)
+
+Structured facts in `UserMemoryFact` carry provenance separate from freeform `UserAIContext`:
+
+| Field | Values / notes |
+|-------|----------------|
+| `sourceType` | `explicit_user` \| `remember_that` \| `inferred_chat` \| `questionnaire` \| `import` |
+| `category` | `preference` \| `person` \| `project` \| `constraint` \| `location` \| `other` (auto-inferred on create when omitted) |
+| `isExplicit` | User-authored or remember-that vs inferred |
+| `sourceConversationId` / `sourceMessageId` | Set on remember-that path |
+
+**When to use which model:** discrete subject+predicate facts → `UserMemoryFact`; long instructions / promoted learning → `UserAIContext` (`contextType: preference`).
+
+**Code:** `server/src/ai/memory/memoryFactTypes.ts`, `MemoryRetrievalService.ts`, `userMemoryFactService.ts`  
+**Migration:** `20260521180000_user_memory_fact_provenance`
+
+### Retrieval (Phase 1C)
+
+Single entry: `memoryRetrievalService.retrieve()` — scoring (`confidence × recency × lexical × scope`), recall bias, inferred confidence floor (0.55), predicate char budget (600). Emits `memoryRetrievalReport` on twin context for pipeline trace (`factsLoaded`, `factsInfluenced`, `influencedFactIds` — no raw predicates in logs). `PreferenceResolver` consumes pre-retrieved facts from Service (no duplicate query on twin path).
+
 ## Analytics alignment
 
 `AIConversationHistory.sessionId` uses `conversationId` when present on twin requests.

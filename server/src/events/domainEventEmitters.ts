@@ -205,3 +205,101 @@ export function emitBusinessUpdatedEvent(params: {
     })
   );
 }
+
+export function emitModuleEnabledEvent(params: {
+  actorUserId: string;
+  moduleId: string;
+  installationId: string;
+  installScope: 'personal' | 'business';
+  businessId?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.MODULE_ENABLED, {
+      actorUserId: params.actorUserId,
+      entityId: params.installationId,
+      businessId: params.installScope === 'business' ? params.businessId ?? null : null,
+      metadata: {
+        moduleId: params.moduleId,
+        installScope: params.installScope,
+        installationId: params.installationId,
+        ...(params.businessId ? { businessId: params.businessId } : {}),
+      },
+    })
+  );
+}
+
+export function emitModuleDisabledEvent(params: {
+  actorUserId: string;
+  moduleId: string;
+  installationId: string;
+  installScope: 'personal' | 'business';
+  businessId?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.MODULE_DISABLED, {
+      actorUserId: params.actorUserId,
+      entityId: params.installationId,
+      businessId: params.installScope === 'business' ? params.businessId ?? null : null,
+      metadata: {
+        moduleId: params.moduleId,
+        installScope: params.installScope,
+        installationId: params.installationId,
+        ...(params.businessId ? { businessId: params.businessId } : {}),
+      },
+    })
+  );
+}
+
+export function emitChatMessageSentEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+  threadId?: string | null;
+  attachmentCount?: number;
+  dashboardId?: string | null;
+  businessId?: string | null;
+}): DomainEvent {
+  const attachmentCount = params.attachmentCount ?? 0;
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_SENT, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      dashboardId: params.dashboardId ?? null,
+      businessId: params.businessId ?? null,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+        ...(params.threadId ? { threadId: params.threadId } : {}),
+        attachmentCount,
+        hasAttachments: attachmentCount > 0,
+      },
+    })
+  );
+}
+
+export function emitCalendarEventCreatedEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  allDay?: boolean;
+  startAt: string;
+  endAt: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CALENDAR_EVENT_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.eventId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'calendar',
+        calendarId: params.calendarId,
+        allDay: Boolean(params.allDay),
+        startAt: params.startAt,
+        endAt: params.endAt,
+      },
+    })
+  );
+}

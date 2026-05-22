@@ -1,7 +1,12 @@
 import { isValidHttpsEntryUrl, getManifestEntryUrl, asRecordJson } from '../controllers/module/moduleShared';
 
+import {
+  hasProviderCertificationErrors,
+  validateModuleAIContextProviders,
+} from '../ai/services/moduleContextProviderCertification';
+
 /** Bump when certification rules change materially (stored on ModuleVersion for audit). */
-export const CERTIFICATION_VALIDATOR_VERSION = '1.0.0';
+export const CERTIFICATION_VALIDATOR_VERSION = '1.1.0';
 
 export type CertificationCheckStatus = 'pass' | 'fail' | 'warn' | 'skip';
 
@@ -308,15 +313,34 @@ export function validateModuleCertification(
       errors.push(msg);
       pushCheck(checklist, { id: 'ai_context', label: 'AI context', status: 'fail', message: msg });
     } else if (!hasProviders) {
-      warnings.push('aiContext.contextProviders is recommended for AI-exposed modules');
+      const msg = 'AI-exposed modules require at least one manifest.aiContext.contextProvider';
+      errors.push(msg);
       pushCheck(checklist, {
         id: 'ai_context',
         label: 'AI context',
-        status: 'warn',
-        message: 'Missing contextProviders',
+        status: 'fail',
+        message: msg,
       });
     } else {
-      pushCheck(checklist, { id: 'ai_context', label: 'AI context', status: 'pass' });
+      const providerIssues = validateModuleAIContextProviders(
+        input.moduleId,
+        aiContext.contextProviders
+      );
+      if (hasProviderCertificationErrors(providerIssues)) {
+        const msg = providerIssues
+          .filter((issue) => issue.severity === 'error')
+          .map((issue) => issue.message)
+          .join('; ');
+        errors.push(msg);
+        pushCheck(checklist, {
+          id: 'ai_context',
+          label: 'AI context',
+          status: 'fail',
+          message: msg,
+        });
+      } else {
+        pushCheck(checklist, { id: 'ai_context', label: 'AI context', status: 'pass' });
+      }
     }
   } else {
     pushCheck(checklist, {

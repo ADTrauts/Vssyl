@@ -94,7 +94,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       }
     } catch (err) {
       console.error('Error loading predictive data:', err);
-      setError('Predictive analytics could not be loaded. Try again later.');
+      setError('Pattern insights could not be loaded. Try again later.');
       
       // Set default data to prevent crashes
       setAnalytics({
@@ -126,7 +126,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       await loadPredictiveData();
     } catch (err) {
       console.error('Error generating new analysis:', err);
-      setError('Could not generate a new analysis. Try again later.');
+      setError('Could not run a new pattern review. Try again later.');
     } finally {
       setGenerating(false);
     }
@@ -162,7 +162,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
     return (
       <div className="flex items-center justify-center p-8">
         <Spinner size={32} />
-        <span className="ml-2">Loading predictive intelligence data...</span>
+        <span className="ml-2">Loading pattern insights…</span>
       </div>
     );
   }
@@ -177,8 +177,8 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
 
   if (!analytics) {
     return (
-      <Alert type="info" title="No Data">
-        No predictive analytics available yet.
+      <Alert type="info" title="No insights yet">
+        No pattern summaries available yet. These are informational only — not autonomous actions.
       </Alert>
     );
   }
@@ -188,8 +188,10 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       {!embedded ? (
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Predictive Intelligence Dashboard</h2>
-            <p className="text-gray-600 dark:text-gray-400">AI predictions and anticipatory insights</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Pattern insights</h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Summaries from your activity and learning signals — suggestions only, not automatic actions.
+            </p>
           </div>
           <div className="flex space-x-2">
             <Button onClick={loadPredictiveData} variant="secondary">
@@ -202,7 +204,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
                   <span className="ml-2">Generating...</span>
                 </>
               ) : (
-                'Generate Analysis'
+                'Run pattern review'
               )}
             </Button>
           </div>
@@ -213,7 +215,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
             Refresh
           </Button>
           <Button onClick={generateNewAnalysis} disabled={generating} size="sm">
-            {generating ? 'Generating…' : 'Generate'}
+            {generating ? 'Running…' : 'Review'}
           </Button>
         </div>
       )}
@@ -275,9 +277,11 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       {/* Recent Analyses */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Predictive Analyses</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent pattern reviews</h3>
           {analyses.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No analyses available. Generate a new analysis to see predictions.</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              No reviews yet. Run a pattern review to see informational summaries (you stay in control of any action).
+            </p>
           ) : (
             <div className="space-y-4">
               {analyses.map((analysis) => (
@@ -322,7 +326,7 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       {/* Timeframe Distribution */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Prediction Timeframes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Time horizons</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {analytics.timeframes.map((timeframe) => (
               <div key={timeframe} className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
@@ -338,26 +342,26 @@ const PredictiveIntelligenceDashboard: React.FC<PredictiveIntelligenceDashboardP
       {/* Predictive Insights */}
       <Card>
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Predictive Insights</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">How to read these insights</h3>
           <div className="space-y-4">
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-              <h4 className="font-medium text-blue-900">AI Learning Progress</h4>
-              <p className="text-sm text-blue-700 mt-1">
-                The AI is continuously learning from your interactions to make better predictions.
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 dark:bg-blue-950/30">
+              <h4 className="font-medium text-blue-900 dark:text-blue-200">Learning from your activity</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                Vssyl may surface patterns it noticed in your workspace. These inform replies and suggestions — they do not run actions on their own.
               </p>
             </div>
-            
-            <div className="bg-green-50 border-l-4 border-green-500 p-4">
-              <h4 className="font-medium text-green-900">Anticipatory Capabilities</h4>
-              <p className="text-sm text-green-700 mt-1">
-                The AI can now anticipate your needs and provide proactive recommendations.
+
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 dark:bg-green-950/30">
+              <h4 className="font-medium text-green-900 dark:text-green-200">Suggestions, not automation</h4>
+              <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                Recommendations here are optional ideas. Approve or dismiss them like any other AI suggestion; nothing executes without your consent.
               </p>
             </div>
-            
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4">
-              <h4 className="font-medium text-yellow-900">Pattern Recognition</h4>
-              <p className="text-sm text-yellow-700 mt-1">
-                Advanced pattern recognition helps identify trends and predict future behaviors.
+
+            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 dark:bg-yellow-950/30">
+              <h4 className="font-medium text-yellow-900 dark:text-yellow-200">Pattern summaries</h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                Trend labels and confidence scores describe observed behavior — not guaranteed future outcomes.
               </p>
             </div>
           </div>

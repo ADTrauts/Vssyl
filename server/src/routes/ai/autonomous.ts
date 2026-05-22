@@ -9,6 +9,15 @@ import { CrossModuleContextEngine } from '../../ai/context/CrossModuleContextEng
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 
+/**
+ * @deprecated Autonomy de-emphasis (A6, May 2026)
+ *
+ * `/api/ai/autonomous/*` is legacy scaffolding — not part of the product twin path.
+ * User-facing autonomy controls affect **prompt boundaries** via `PreferenceResolver` only.
+ * Do not add new features here; the Actions UI is hidden unless `NEXT_PUBLIC_AI_ACTIONS_UI=true`.
+ * See `docs/plans/AI_PLATFORM_MATURITY_PLAN.md` § Autonomy de-emphasis.
+ */
+
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
   void logger.error(message, {

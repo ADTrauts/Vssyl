@@ -13,10 +13,9 @@ import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { ConversationContinuityState, ActiveTopicState } from '../utils/conversationContinuity';
 import { getRecentConversationMemory } from '../../services/aiConversationMemoryService';
 import { hasExplicitRecallIntent, recallRelevantMessages } from '../../services/aiMessageRecallService';
-import {
-  getRelevantUserMemoryFacts,
-  maybePersistRememberThatFact,
-} from '../../services/userMemoryFactService';
+import { memoryRetrievalService } from '../memory/MemoryRetrievalService';
+import type { MemoryRetrievalReport } from '../memory/MemoryRetrievalService';
+import { maybePersistRememberThatFact } from '../../services/userMemoryFactService';
 
 export interface AIRequest {
   id: string;
@@ -222,15 +221,18 @@ export class DigitalLifeTwinService {
 
     const recallQuery = hasExplicitRecallIntent(query);
 
-    let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
+    let userMemoryFacts: Awaited<ReturnType<typeof memoryRetrievalService.retrieve>>['facts'] = [];
+    let memoryRetrievalReport: MemoryRetrievalReport | undefined;
     try {
-      userMemoryFacts = await getRelevantUserMemoryFacts({
+      const memoryResult = await memoryRetrievalService.retrieve({
         userId,
         query,
         businessId: context.businessId,
         isRecallQuery: recallQuery,
         limit: recallQuery ? 5 : 8,
       });
+      userMemoryFacts = memoryResult.facts;
+      memoryRetrievalReport = memoryResult.report;
     } catch (err) {
       console.warn('Failed to load user memory facts for twin:', err);
     }
@@ -256,6 +258,7 @@ export class DigitalLifeTwinService {
         recentConversationMemory,
         recalledMessages,
         userMemoryFacts,
+        memoryRetrievalReport,
       },
       conversationHistory,
       ...continuityContext,
@@ -370,15 +373,18 @@ export class DigitalLifeTwinService {
 
     const recallQuery = hasExplicitRecallIntent(query);
 
-    let userMemoryFacts: Awaited<ReturnType<typeof getRelevantUserMemoryFacts>> = [];
+    let userMemoryFacts: Awaited<ReturnType<typeof memoryRetrievalService.retrieve>>['facts'] = [];
+    let memoryRetrievalReport: MemoryRetrievalReport | undefined;
     try {
-      userMemoryFacts = await getRelevantUserMemoryFacts({
+      const memoryResult = await memoryRetrievalService.retrieve({
         userId,
         query,
         businessId: context.businessId,
         isRecallQuery: recallQuery,
         limit: recallQuery ? 5 : 8,
       });
+      userMemoryFacts = memoryResult.facts;
+      memoryRetrievalReport = memoryResult.report;
     } catch (err) {
       console.warn('Failed to load user memory facts for twin (streaming):', err);
     }
@@ -404,6 +410,7 @@ export class DigitalLifeTwinService {
         recentConversationMemory,
         recalledMessages,
         userMemoryFacts,
+        memoryRetrievalReport,
       },
       conversationHistory,
       ...continuityContext,

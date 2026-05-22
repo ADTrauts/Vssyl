@@ -490,6 +490,10 @@ export class ModuleRegistrySyncService {
           webhookConfig: {
             executorUrl: executorConfig.executorUrl,
             apiKey: executorConfig.apiKey,
+            signingSecret:
+              typeof executorConfig.signingSecret === 'string'
+                ? executorConfig.signingSecret
+                : undefined,
             timeout: executorConfig.timeout || 30000
           }
         };

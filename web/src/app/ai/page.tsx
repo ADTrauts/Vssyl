@@ -43,10 +43,11 @@ import {
   type AITabValue,
   type AIMoreSection,
 } from '../../lib/aiControlCenterTabs';
+import { isAIActionsUIEnabled } from '../../lib/aiFeatureFlags';
 
 const MORE_SECTIONS: { id: AIMoreSection; label: string; icon: typeof Settings }[] = [
   { id: 'provider', label: 'Provider', icon: Brain },
-  { id: 'actions', label: 'Actions', icon: Zap },
+  ...(isAIActionsUIEnabled() ? [{ id: 'actions' as const, label: 'Actions', icon: Zap }] : []),
   { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 
@@ -91,10 +92,15 @@ export default function AIPage() {
 
   useEffect(() => {
     const next = normalizeAITabFromQuery(tabParam, intelParam, sectionParam);
+    if (next.section === 'actions' && !isAIActionsUIEnabled()) {
+      const params = buildAITabSearchParams('more', { section: 'insights' });
+      router.replace(`/ai?${params.toString()}`, { scroll: false });
+      return;
+    }
     setActiveTab(next.tab);
     if (next.section) setMoreSection(next.section);
     if (next.tab === 'more') setMoreMenuOpen(true);
-  }, [tabParam, intelParam, sectionParam]);
+  }, [tabParam, intelParam, sectionParam, router]);
 
   useEffect(() => {
     const checkPersonalityProfile = async () => {

@@ -818,6 +818,7 @@ model Business {
   businessFollows BusinessFollow[]
   businessModuleInstallations BusinessModuleInstallation[]
   businessModuleSubscriptions BusinessModuleSubscription[]
+  webhookSubscriptions        WebhookSubscription[]
   // Org Chart & Permission System
   organizationalTiers OrganizationalTier[]
   positions        Position[]
@@ -1430,8 +1431,9 @@ model ModuleInstallation {
   enabled   Boolean  @default(true)
   
   // AI context caching
-  cachedContext    Json?     // Cached AI context data
-  contextCachedAt  DateTime? // When context was last cached
+  cachedContext         Json?     // Legacy single-blob cache (deprecated)
+  contextCachedAt       DateTime? // Legacy cache timestamp (deprecated)
+  contextProviderCache  Json?     // Per-provider cache keyed by provider:scope
   
   @@unique([moduleId, userId])
   @@index([moduleId])
@@ -1822,6 +1824,70 @@ model PermissionChange {
   @@index([changedAt])
   @@index([changeType])
   @@map("permission_changes")
+}
+
+
+// ============================================================================
+// BUSINESS MODULE
+// ============================================================================
+
+// ============================================================================
+// OUTBOUND WEBHOOK SUBSCRIPTIONS (Phase 4C)
+// Business-scoped event delivery to partner endpoints (iframe/artifact only).
+// ============================================================================
+
+enum WebhookSubscriptionStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  DEAD_LETTER
+}
+
+model WebhookSubscription {
+  id              String                    @id @default(uuid())
+  businessId      String
+  url             String
+  signingSecret   String
+  eventTypes      String[]
+  status          WebhookSubscriptionStatus @default(ACTIVE)
+  description     String?
+  createdByUserId String
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  business   Business                 @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  deliveries WebhookDeliveryAttempt[]
+
+  @@index([businessId, status])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDeliveryAttempt {
+  id             String                @id @default(uuid())
+  subscriptionId String
+  domainEventId  String?
+  deliveryId     String                @unique
+  eventType      String
+  payload        Json
+  attemptNumber  Int                   @default(1)
+  status         WebhookDeliveryStatus @default(PENDING)
+  httpStatus     Int?
+  errorMessage   String?
+  durationMs     Int?
+  nextRetryAt    DateTime?
+  createdAt      DateTime              @default(now())
+  completedAt    DateTime?
+
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId, status])
+  @@index([domainEventId])
+  @@map("webhook_delivery_attempts")
 }
 
 
@@ -3374,6 +3440,9 @@ model UserMemoryFact {
 
   sourceConversationId String?
   sourceMessageId      String?
+  sourceType           String    @default("explicit_user") // explicit_user | remember_that | inferred_chat | questionnaire | import
+  category             String    @default("other") // preference | person | project | constraint | location | other
+  isExplicit           Boolean   @default(true)
   confidence      Float     @default(0.8)
   expiresAt       DateTime?
   trashedAt       DateTime?

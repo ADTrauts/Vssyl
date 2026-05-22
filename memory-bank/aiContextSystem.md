@@ -6,6 +6,10 @@ The AI Context System is a **mandatory component** of every module in the Vssyl 
 
 **Critical Rule**: Every module MUST implement AI context providers. This is not optional - it's a core platform requirement that enables the AI to be truly useful.
 
+**Canonical provider API contract (auth, response shape, cache, certification):** [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md)
+
+**Partner SDK boundaries (marketplace can/cannot):** [`docs/guides/MODULE_AI_SDK_BOUNDARIES.md`](../docs/guides/MODULE_AI_SDK_BOUNDARIES.md)
+
 > 📖 **Architecture deep-dive (archived copy, April 2026):** [`docs/archive/guides-merged-2026/AI_CONTEXT_SYSTEM_ARCHITECTURE.md`](../../docs/archive/guides-merged-2026/AI_CONTEXT_SYSTEM_ARCHITECTURE.md)
 
 ## Quick Reference: Common Questions
@@ -750,6 +754,8 @@ No embeddings or AI summarization in this path—purely deterministic heuristics
 ### Admin pipeline evidence (May 2026)
 
 **`buildPipelineEvidenceBundle`** compares what was **assembled** for the twin prompt vs **structured** module retrieval vs **tools** vs **grounding prepass** (location, Place). Admins inspect traces in **Admin Portal → AI Pipeline** (`docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`). Enforcement can block or disclose when grounding rules require retrieval that did not run.
+
+**Dynamic orchestration registry (May 2026):** Intents, context sources, tool policies, and grounding rules are stored in DB with `isSystem` / `archived` / `capabilities` / `runtimeKind` / per-source `mappedTools[]`. Admin CRUD is validated (`pipelineRegistryValidator`) and archive-only. Custom registry entries are **policy metadata** until catalog-driven intent inference (v2). See `memory-bank/activeContext.md` (Dynamic AI orchestration registry).
 
 ---
 

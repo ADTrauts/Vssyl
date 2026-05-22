@@ -1,0 +1,134 @@
+{
+  "name": "Demo AI Partner Module",
+  "description": "Reference marketplace manifest demonstrating the full Vssyl AI contract (Phase 4D)",
+  "version": "1.0.0",
+  "category": "PRODUCTIVITY",
+  "tags": ["demo", "ai-contract", "reference", "marketplace"],
+  "permissions": ["demo-ai-partner:read", "demo-ai-partner:write"],
+  "dependencies": [],
+  "readme": "# Demo AI Partner Module\n\nCanonical **full AI contract** sample for marketplace developers and certification dry-runs.\n\n## Includes\n\n- Complete `aiContext` (keywords, patterns, entities, actions, relationships, context providers)\n- Webhook `aiActionExecutor` with HMAC `signingSecret`\n- Notification metadata\n- Personal + business supported contexts\n\n## Docs\n\n- `docs/guides/MODULE_AI_SDK_BOUNDARIES.md`\n- `docs/guides/AI_CONTEXT_PROVIDER_API.md`\n- `docs/architecture/WEBHOOK_SUBSCRIPTIONS.md`\n\n## Certification\n\nRun: `pnpm --filter vssyl-server exec vitest run src/services/__tests__/fullAiContractModule.certification.test.ts`",
+  "license": "MIT",
+  "manifest": {
+    "name": "Demo AI Partner Module",
+    "version": "1.0.0",
+    "description": "Reference module for AI SDK boundaries and certification gates",
+    "author": "Vssyl Platform",
+    "license": "MIT",
+    "entryPoint": "/demo-ai-partner",
+    "supportedContexts": ["personal", "business"],
+    "permissions": ["demo-ai-partner:read", "demo-ai-partner:write"],
+    "capabilities": ["productivity", "notifications"],
+    "runtime": {
+      "apiVersion": "1.0"
+    },
+    "frontend": {
+      "entryUrl": "https://cdn.example.com/demo-ai-partner/index.html"
+    },
+    "notifications": [
+      {
+        "type": "demo_ai_partner_item_created",
+        "name": "Partner item created",
+        "description": "Sent when a demo partner item is created",
+        "category": "demo-ai-partner",
+        "defaultChannels": {
+          "inApp": true,
+          "email": false,
+          "push": false
+        },
+        "priority": "normal",
+        "requiresAction": false
+      },
+      {
+        "type": "demo_ai_partner_item_shared",
+        "name": "Partner item shared",
+        "description": "Sent when a demo partner item is shared with another user",
+        "category": "demo-ai-partner",
+        "defaultChannels": {
+          "inApp": true,
+          "email": false,
+          "push": true
+        },
+        "priority": "normal",
+        "requiresAction": false
+      }
+    ],
+    "aiContext": {
+      "purpose": "Demonstrate the complete marketplace AI integration contract for partners",
+      "category": "productivity",
+      "keywords": [
+        "demo",
+        "partner",
+        "sample item",
+        "ai contract",
+        "reference module"
+      ],
+      "patterns": [
+        "show demo items",
+        "list partner items",
+        "create demo item",
+        "what are my sample items"
+      ],
+      "concepts": ["demonstration", "partner integration", "reference data"],
+      "entities": [
+        {
+          "name": "partnerItem",
+          "pluralName": "partnerItems",
+          "description": "A sample item managed by the demo partner module"
+        }
+      ],
+      "actions": [
+        {
+          "name": "create_partner_item",
+          "description": "Create a new partner item",
+          "permissions": ["demo-ai-partner:write"]
+        },
+        {
+          "name": "update_partner_item",
+          "description": "Update an existing partner item",
+          "permissions": ["demo-ai-partner:write"]
+        },
+        {
+          "name": "list_partner_items",
+          "description": "List partner items for the current user",
+          "permissions": ["demo-ai-partner:read"]
+        }
+      ],
+      "contextProviders": [
+        {
+          "name": "partner_overview",
+          "description": "Summary counts and recent activity for partner items",
+          "endpoint": "/api/demo-ai-partner/ai/context/overview",
+          "cacheDuration": 300000
+        },
+        {
+          "name": "recent_partner_items",
+          "description": "Most recently updated partner items",
+          "endpoint": "/api/demo-ai-partner/ai/context/recent_items",
+          "cacheDuration": 600000
+        }
+      ],
+      "relationships": [
+        {
+          "module": "drive",
+          "type": "integrates",
+          "description": "Partner items may reference files shared from File Hub"
+        },
+        {
+          "module": "chat",
+          "type": "integrates",
+          "description": "Partner items may be discussed in chat threads"
+        }
+      ]
+    },
+    "aiActionExecutor": {
+      "executorUrl": "https://partner.example.com/v1/demo-ai-partner/execute",
+      "signingSecret": "demo-partner-signing-secret-for-certification-only",
+      "supportedOperations": [
+        "create_partner_item",
+        "update_partner_item",
+        "list_partner_items"
+      ],
+      "timeout": 30000
+    }
+  }
+}

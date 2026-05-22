@@ -1,6 +1,10 @@
 # Plan: “What the AI Knows” (Memories) in AI Control Center
 
-**Status:** Phases 1-3 implemented (February 2025). See memory-bank activeContext.md and progress.md.
+> **Superseded (May 2026):** Phase 1 Memory work is complete per [`AI_PLATFORM_MATURITY_PLAN.md`](./AI_PLATFORM_MATURITY_PLAN.md) Phases 1A–1E. Use that plan and `memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md` for ongoing memory work. This file is historical context for the Feb 2025 UI phases only.
+
+> **Earlier note:** Forward work through Phase 1D was tracked in the maturity plan; Phase 1E added edit/forget, filters, pin (confidence), expiry UI, and Phase 1 exit tests.
+
+**Status:** Phases 1–3 implemented (February 2025); Phase 1 maturity UX completed May 2026. See `memory-bank/activeContext.md`.
 
 **Goal:** Add a single, read-oriented view inside the AI Control Center where users can see everything the system “remembers” about them, with clear sections and smart links to edit. No duplicate forms—reuse Custom Context and Personality for editing.
 

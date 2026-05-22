@@ -31,6 +31,8 @@ import todoRouter from './routes/todo';
 import notesRouter from './routes/notes';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
+import webhookSubscriptionsRouter from './routes/webhookSubscriptions';
+import { createInternalWebhookTestRouter } from './routes/internalWebhookTest';
 import educationalRouter from './routes/educational';
 import householdRouter from './routes/household';
 import ssoRouter from './routes/sso';
@@ -857,6 +859,8 @@ app.use('/api/notes', notesRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
+app.use('/api/business', authenticateJWT, webhookSubscriptionsRouter);
+app.use('/api/internal', createInternalWebhookTestRouter());
 app.use('/api/business-front', authenticateJWT, businessFrontPageRouter);
 app.use('/api/educational', authenticateJWT, educationalRouter);
 app.use('/api/household', authenticateJWT, householdRouter);
@@ -1002,6 +1006,13 @@ app.use('/api/admin/fix-subscriptions', authenticateJWT, adminFixSubscriptionsRo
 
 // Schedule cleanup jobs
 startCleanupJob();
+
+if (process.env.ENABLE_PATTERN_ANALYSIS_SCHEDULER === 'true') {
+  void import('./ai/learning/PatternAnalysisScheduler.js').then(({ PatternAnalysisScheduler }) => {
+    const scheduler = new PatternAnalysisScheduler(prisma);
+    void scheduler.start();
+  });
+}
 
 const isProd = process.env.NODE_ENV === 'production';
 

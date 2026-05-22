@@ -3,6 +3,11 @@ import { AutonomyManager, AutonomyContext, AutonomyDecision } from '../autonomy/
 import { ActionTemplates, ActionTemplate } from './ActionTemplates';
 import { DigitalLifeTwinCore } from '../core/DigitalLifeTwinCore';
 
+/**
+ * @deprecated Legacy executor for `/api/ai/autonomous/*` only (Autonomy de-emphasis A6–A7).
+ * Not invoked from `DigitalLifeTwinCore`. Do not wire into the twin pipeline.
+ */
+
 export interface AutonomousAction {
   id: string;
   userId: string;

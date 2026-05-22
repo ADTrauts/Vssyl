@@ -499,9 +499,10 @@ export default function AutonomyControls() {
         <div className="space-y-6">
           {/* Module-Specific Controls */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Module Autonomy Levels</h3>
+            <h3 className="text-lg font-semibold">Action boundaries by area</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Control how much autonomy your AI has in different areas. Higher levels mean the AI can take more actions without your approval.
+              Set when your twin should suggest actions vs ask for your approval. These boundaries shape
+              recommendations — they do not enable autonomous execution.
             </p>
             
             {autonomyCategories && Array.isArray(autonomyCategories) ? autonomyCategories.map((category) => {
@@ -537,8 +538,8 @@ export default function AutonomyControls() {
                   />
                   
                   <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                    <span>No Autonomy</span>
-                    <span>Full Autonomy</span>
+                    <span>Suggest only</span>
+                    <span>Ask less often</span>
                   </div>
                 </div>
               );
@@ -567,7 +568,7 @@ export default function AutonomyControls() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Override Settings</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Special overrides that take precedence over autonomy levels.
+              Time and threshold overrides that take precedence over area boundaries.
             </p>
             
             <div className="space-y-3">
@@ -788,7 +789,7 @@ export default function AutonomyControls() {
                         <AlertTriangle className="h-4 w-4" />
                       )}
                       <span>
-                        <strong>{rec.type === 'increase_autonomy' ? 'Increase' : 'Decrease'} Autonomy</strong>
+                        <strong>{rec.type === 'increase_autonomy' ? 'Loosen' : 'Tighten'} boundaries</strong>
                         <br />
                         {rec.reason}
                         <br />

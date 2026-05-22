@@ -79,8 +79,8 @@ export const DOMAIN_EVENT_CONTRACTS: Record<DomainEventType, DomainEventContract
     entityType: 'ModuleInstallation',
     defaultAction: 'enable',
     version: 1,
-    description: 'Module installation enabled (not yet adopted).',
-    recommendedMetadataFields: ['moduleId', 'installScope', 'businessId'],
+    description: 'Module installation enabled.',
+    recommendedMetadataFields: ['moduleId', 'installScope', 'businessId', 'installationId'],
     disallowedMetadataFields: [],
   },
   [DOMAIN_EVENT_TYPES.MODULE_DISABLED]: {
@@ -88,8 +88,8 @@ export const DOMAIN_EVENT_CONTRACTS: Record<DomainEventType, DomainEventContract
     entityType: 'ModuleInstallation',
     defaultAction: 'disable',
     version: 1,
-    description: 'Module installation disabled (not yet adopted).',
-    recommendedMetadataFields: ['moduleId', 'installScope', 'businessId'],
+    description: 'Module installation disabled.',
+    recommendedMetadataFields: ['moduleId', 'installScope', 'businessId', 'installationId'],
     disallowedMetadataFields: [],
   },
   [DOMAIN_EVENT_TYPES.BUSINESS_MEMBER_ADDED]: {
@@ -170,8 +170,14 @@ export const DOMAIN_EVENT_CONTRACTS: Record<DomainEventType, DomainEventContract
     entityType: 'Message',
     defaultAction: 'send',
     version: 1,
-    description: 'Chat message sent (not yet adopted).',
-    recommendedMetadataFields: ['moduleId', 'conversationId'],
+    description: 'Chat message sent.',
+    recommendedMetadataFields: [
+      'moduleId',
+      'conversationId',
+      'threadId',
+      'attachmentCount',
+      'hasAttachments',
+    ],
     disallowedMetadataFields: ['content', 'body'],
   },
   [DOMAIN_EVENT_TYPES.CALENDAR_EVENT_CREATED]: {
@@ -179,9 +185,9 @@ export const DOMAIN_EVENT_CONTRACTS: Record<DomainEventType, DomainEventContract
     entityType: 'CalendarEvent',
     defaultAction: 'create',
     version: 1,
-    description: 'Calendar event created (not yet adopted).',
-    recommendedMetadataFields: ['moduleId', 'calendarId'],
-    disallowedMetadataFields: ['description', 'body'],
+    description: 'Calendar event created.',
+    recommendedMetadataFields: ['moduleId', 'calendarId', 'allDay', 'startAt', 'endAt'],
+    disallowedMetadataFields: ['description', 'body', 'title'],
   },
 };
 

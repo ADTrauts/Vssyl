@@ -8,6 +8,14 @@ function mockPrisma(data: {
   autonomy?: Record<string, unknown> | null;
   contexts?: Array<{ id: string; title: string; content: string; priority: number }>;
   facts?: Array<{ id: string; subject: string; predicate: string; confidence: number }>;
+  appliedLearningEvents?: Array<{
+    id: string;
+    eventType: string;
+    context: string;
+    newBehavior: string;
+    confidence: number;
+    patternData?: unknown;
+  }>;
 }): PrismaClient {
   return {
     userPreference: {
@@ -25,6 +33,9 @@ function mockPrisma(data: {
     },
     userAIContext: {
       findMany: vi.fn().mockResolvedValue(data.contexts ?? []),
+    },
+    aILearningEvent: {
+      findMany: vi.fn().mockResolvedValue(data.appliedLearningEvents ?? []),
     },
     userMemoryFact: {
       findMany: vi.fn().mockResolvedValue(data.facts ?? []),
@@ -131,5 +142,28 @@ describe('PreferenceResolver', () => {
     expect(result.soft.verbosity).toBe('brief');
     expect(result.provenance.soft.verbosity).toBe('inferred');
     expect(result.provenance.hard.preferredProvider).toBe('user');
+  });
+
+  it('includes applied learning events as inferred preferences', async () => {
+    const resolver = new PreferenceResolver(
+      mockPrisma({
+        appliedLearningEvents: [
+          {
+            id: 'evt-1',
+            eventType: 'preference_update',
+            context: 'Response style',
+            newBehavior: 'Keep answers brief and concise',
+            confidence: 0.8,
+            patternData: { artifact: { summary: 'Keep answers brief and concise' } },
+          },
+        ],
+      })
+    );
+
+    const result = await resolver.resolve({ userId: 'u1' });
+    expect(result.inferred.some((i) => i.kind === 'learning_applied' && i.id === 'evt-1')).toBe(
+      true
+    );
+    expect(result.soft.verbosity).toBe('brief');
   });
 });

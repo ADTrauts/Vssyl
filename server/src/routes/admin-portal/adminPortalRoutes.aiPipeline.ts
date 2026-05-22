@@ -57,6 +57,7 @@ import {
 } from '../../ai/pipeline/pipelineRetentionService';
 import type { AIPipelineTrace } from '../../ai/types/pipelineDiagnostics';
 import { enrichTraceWithInsights } from '../../ai/pipeline/pipelineTraceInsights';
+import { runModuleContextProviderHealthCheck } from '../../ai/services/moduleContextProviderHealthCheck';
 
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 
@@ -1058,6 +1059,57 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
       res.status(500).json({ error: 'Test lab run failed' });
     }
   });
+
+  router.post(
+    '/ai-pipeline/context-providers/health',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminUser = req.user;
+        if (!adminUser) {
+          return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        const body = req.body as Record<string, unknown>;
+        const targetUserId =
+          typeof body.userId === 'string' && body.userId.trim() !== ''
+            ? body.userId.trim()
+            : adminUser.id;
+        const moduleId = typeof body.moduleId === 'string' ? body.moduleId.trim() : undefined;
+        const businessId =
+          typeof body.businessId === 'string' && body.businessId.trim() !== ''
+            ? body.businessId.trim()
+            : undefined;
+        const dashboardId =
+          typeof body.dashboardId === 'string' && body.dashboardId.trim() !== ''
+            ? body.dashboardId.trim()
+            : undefined;
+
+        const report = await runModuleContextProviderHealthCheck({
+          userId: targetUserId,
+          ...(moduleId ? { moduleId } : {}),
+          ...(businessId ? { businessId } : {}),
+          ...(dashboardId ? { dashboardId } : {}),
+        });
+
+        void logger.info('Admin module context provider health check', {
+          operation: 'admin_ai_pipeline_context_provider_health',
+          userId: targetUserId,
+          summary: report.summary,
+        });
+
+        res.json({ success: true, data: report });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Admin module context provider health check failed', {
+          operation: 'admin_ai_pipeline_context_provider_health_error',
+          error: { message: err.message, stack: err.stack },
+        });
+        res.status(500).json({ error: 'Context provider health check failed' });
+      }
+    }
+  );
 
   router.get('/ai-pipeline/retention', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
     try {

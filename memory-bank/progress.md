@@ -1,5 +1,50 @@
 # Block-on-Block Platform - Progress
 
+## AI Platform Maturity — Phases 1–4 + Autonomy (May 2026) ✅
+
+**Status:** **COMPLETE** — Memory, learning, cross-module context, extensibility, and autonomy de-emphasis (A1–A8).
+
+| Phase | Outcome |
+|-------|---------|
+| **1** | Tenant-safe memory, provenance, retrieval, influence UX, memories view |
+| **2** | Learning contract, signals, application, observability |
+| **3** | Fetch policy, synthesis (gated), context budget, density diagnostics |
+| **4A** | Domain events + `AIEventConsumer` learning stubs |
+| **4B** | [`AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md), provider certification, admin health check |
+| **4C** | Webhook subscriptions MVP, HMAC executors, [`WEBHOOK_SUBSCRIPTIONS.md`](../docs/architecture/WEBHOOK_SUBSCRIPTIONS.md) |
+| **4D** | [`MODULE_AI_SDK_BOUNDARIES.md`](../docs/guides/MODULE_AI_SDK_BOUNDARIES.md), maturity gates, [`full-ai-contract-module.json`](../docs/test-modules/full-ai-contract-module.json) |
+| **Autonomy A1–A8** | Action-boundary copy; hidden Actions UI; deprecated `/api/ai/autonomous/*`; `PreferenceResolver`-only boundaries; admin docs |
+
+**Migrations to deploy:** `20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`
+
+**Canonical plans:** [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../docs/plans/AI_PLATFORM_MATURITY_PLAN.md), [`docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md`](../docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md)  
+**Active detail:** `memory-bank/activeContext.md`
+
+---
+
+## Dynamic AI orchestration registry — R0–R5 (May 2026) ✅
+
+**Status:** **COMPLETE** — Dynamic, validated, auditable admin registry for AI pipeline orchestration entities.
+
+| Slice | Outcome |
+|-------|---------|
+| **R0** | Widen `PipelineIntentId` / source / tool IDs to strings; protected `SYSTEM_*_IDS`; explicit validation instead of silent catalog filtering |
+| **R1** | Extended `ai-pipeline.prisma` policy models + migration `20260520120000`; backfill `isSystem=true` on existing rows |
+| **R2** | Validator + dependency graph JSON (`DUPLICATE_ID`, `ORPHAN_*`, `SYSTEM_PROTECTED`, warnings for `POLICY_ONLY_TOOL`, `NO_INFERENCE_MATCH`, …) |
+| **R3** | Archive-only CRUD service with policy audit + catalog cache invalidation |
+| **R4** | Admin routes: validate, graph, create/duplicate/archive/restore/enable/disable per entity type; `GET /catalog?includeArchived` |
+| **R5** | `web/.../ai-pipeline/registry/` components; intents page full registry UX; other catalog pages filters + existing modal editors |
+
+**Shipped to `main`:** `c648ce2d`, `966a8121` (May 2026).
+
+**Canonical doc:** `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md` (Dynamic Registry section).
+
+**Reference:** `memory-bank/activeContext.md` (Dynamic AI orchestration registry).
+
+**Not in v1:** catalog-driven inference for custom intents; graph visualization; hard delete.
+
+---
+
 ## Admin AI Pipeline tools — Phases 1–5 (May 2026) ✅
 
 **Status:** **COMPLETE** — Admin Portal tooling for AI grounding/orchestration diagnostics, policy editing, test lab, enforcement, evidence, and compliance.
@@ -18,11 +63,13 @@
 
 **Server:** `server/src/ai/pipeline/`, `adminPortalRoutes.aiPipeline.ts`, hooks in `DigitalLifeTwinCore.ts`, `ai.ts` (`clientIp`)
 
-**Prisma:** `prisma/modules/ai/ai-pipeline.prisma`; migrations `20260520010440`–`20260520013518`
+**Prisma:** `prisma/modules/ai/ai-pipeline.prisma`; migrations `20260520010440`–`20260520013518`, **`20260520120000_ai_pipeline_registry_metadata`**
+
+**Operations console:** `PipelineOperationsHub`, trace insights on diagnostics APIs (`c877cf9f`).
 
 **Canonical doc:** `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`
 
-**Reference:** `memory-bank/activeContext.md` (Admin AI Pipeline tools).
+**Reference:** `memory-bank/activeContext.md` (Admin AI Pipeline tools + Dynamic registry).
 
 ---
 

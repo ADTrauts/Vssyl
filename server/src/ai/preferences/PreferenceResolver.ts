@@ -17,6 +17,11 @@ import {
   buildQuestionnaireSoftPromptInstructions,
   extractQuestionnairePromptDetail,
 } from './questionnaireSoftPromptTemplates';
+import type { RetrievedMemoryFact } from '../../services/userMemoryFactService';
+import { memoryRetrievalService } from '../memory/MemoryRetrievalService';
+import { HUMAN_REVIEWABLE_EVENT_TYPES } from '../learning/learningProposalTypes';
+import { APPLIED_LEARNING_CONFIDENCE_FLOOR } from '../learning/learningApplicationTypes';
+import { readLearningEventArtifact } from '../learning/learningEventContract';
 
 const PROVIDER_KEY = 'ai_preferred_provider';
 const MODEL_OPENAI_KEY = 'ai_preferred_model_openai';
@@ -35,6 +40,8 @@ export interface PreferenceResolverInput {
   userId: string;
   dashboardId?: string | null;
   businessId?: string | null;
+  /** Pre-scored memory facts from MemoryRetrievalService (avoids duplicate DB query). */
+  retrievedMemoryFacts?: RetrievedMemoryFact[];
 }
 
 export const PREFERENCE_CONTEXT_BLOCK_TITLE = 'User communication and AI preference settings';
@@ -214,7 +221,8 @@ export class PreferenceResolver {
   async resolve(input: PreferenceResolverInput): Promise<ResolvedEffectivePreferences> {
     const { userId } = input;
 
-    const [prefs, profile, autonomy, inferredContexts, memoryFacts] = await Promise.all([
+    const [prefs, profile, autonomy, inferredContexts, appliedLearningEvents, memoryFactsFromDb] =
+      await Promise.all([
       this.prisma.userPreference.findMany({
         where: {
           userId,
@@ -234,19 +242,38 @@ export class PreferenceResolver {
         take: 5,
         select: { id: true, title: true, content: true, source: true, priority: true },
       }),
-      this.prisma.userMemoryFact.findMany({
+      this.prisma.aILearningEvent.findMany({
         where: {
           userId,
-          trashedAt: null,
-          ...(input.businessId
-            ? { OR: [{ scope: 'personal' }, { businessId: input.businessId }] }
-            : {}),
+          validated: true,
+          applied: true,
+          confidence: { gte: APPLIED_LEARNING_CONFIDENCE_FLOOR },
+          eventType: { in: [...HUMAN_REVIEWABLE_EVENT_TYPES] },
         },
-        orderBy: [{ confidence: 'desc' }, { updatedAt: 'desc' }],
+        orderBy: { updatedAt: 'desc' },
         take: 5,
-        select: { id: true, subject: true, predicate: true, confidence: true },
+        select: {
+          id: true,
+          eventType: true,
+          context: true,
+          newBehavior: true,
+          confidence: true,
+          patternData: true,
+        },
       }),
+      input.retrievedMemoryFacts
+        ? Promise.resolve(null)
+        : memoryRetrievalService.retrieve({
+            userId,
+            query: '',
+            businessId: input.businessId ?? undefined,
+            limit: 5,
+          }),
     ]);
+
+    const memoryFacts: RetrievedMemoryFact[] = input.retrievedMemoryFacts
+      ? input.retrievedMemoryFacts.slice(0, 5)
+      : (memoryFactsFromDb?.facts ?? []);
 
     const prefMap = new Map(prefs.map((p) => [p.key, p.value]));
     const providerRaw = prefMap.get(PROVIDER_KEY);
@@ -354,6 +381,26 @@ export class PreferenceResolver {
         label: fact.subject,
         value: fact.predicate.slice(0, 300),
         confidence: fact.confidence,
+        sourceType: fact.sourceType,
+        category: fact.category,
+        isExplicit: fact.isExplicit,
+      });
+    }
+
+    for (const event of appliedLearningEvents) {
+      const artifact = readLearningEventArtifact(event);
+      const summary =
+        isRecord(artifact) && typeof artifact.summary === 'string'
+          ? artifact.summary.trim()
+          : event.newBehavior.trim();
+      if (!summary) continue;
+      inferred.push({
+        id: event.id,
+        kind: 'learning_applied',
+        label: event.context.trim().slice(0, 80) || event.eventType,
+        value: summary.slice(0, 300),
+        confidence: event.confidence,
+        eventType: event.eventType,
       });
     }
 
@@ -361,7 +408,10 @@ export class PreferenceResolver {
     const topInferred = inferred.slice(0, 5);
 
     for (const item of topInferred) {
-      if (item.kind === 'context' && item.confidence >= 0.6) {
+      if (
+        (item.kind === 'context' || item.kind === 'learning_applied') &&
+        item.confidence >= 0.6
+      ) {
         applyInferredSoftOverride(soft, item, provenance);
       }
     }

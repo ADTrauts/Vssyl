@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Alert, Spinner } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
+import { formatSnakeCase } from '../../lib/formatSnakeCase';
 
 interface RecentInsight {
   id: string;
@@ -36,6 +37,68 @@ interface LearningDashboardProps {
   embedded?: boolean;
 }
 
+function normalizeEventTypes(eventTypes: unknown): Record<string, number> {
+  if (!eventTypes || typeof eventTypes !== 'object') return {};
+  if (Array.isArray(eventTypes)) {
+    const out: Record<string, number> = {};
+    for (const item of eventTypes) {
+      if (typeof item === 'string') {
+        const key = item || 'unknown';
+        out[key] = (out[key] ?? 0) + 1;
+        continue;
+      }
+      if (item && typeof item === 'object') {
+        const row = item as { type?: string; eventType?: string; count?: number };
+        const key = row.type ?? row.eventType ?? 'unknown';
+        out[key] = (out[key] ?? 0) + (typeof row.count === 'number' ? row.count : 1);
+      }
+    }
+    return out;
+  }
+  const out: Record<string, number> = {};
+  for (const [key, count] of Object.entries(eventTypes as Record<string, number>)) {
+    if (typeof count !== 'number') continue;
+    out[key || 'unknown'] = count;
+  }
+  return out;
+}
+
+function normalizeAnalytics(raw: Partial<LearningAnalytics> | undefined): LearningAnalytics {
+  return {
+    totalEvents: raw?.totalEvents ?? 0,
+    eventTypes: normalizeEventTypes(raw?.eventTypes),
+    patterns: raw?.patterns ?? 0,
+    predictions: raw?.predictions ?? 0,
+    confidence: raw?.confidence ?? 0,
+    learningProgress: raw?.learningProgress ?? 0,
+    recentInsights: (raw?.recentInsights ?? []).map((insight, index) => {
+      const row = insight as RecentInsight & { insightType?: string };
+      return {
+        id: row.id ?? `insight-${index}`,
+        type: row.type ?? row.insightType ?? 'insight',
+        description: row.description ?? '',
+        confidence: row.confidence ?? 0,
+        timestamp: row.timestamp ?? '',
+        impact: row.impact ?? '',
+        significance: row.significance ?? 0,
+      };
+    }),
+  };
+}
+
+function normalizePatterns(raw: LearningPattern[] | undefined): LearningPattern[] {
+  return (raw ?? []).map((pattern, index) => ({
+    ...pattern,
+    id: pattern.id ?? `pattern-${index}`,
+    patternType: pattern.patternType ?? 'behavioral',
+    description: pattern.description ?? '',
+    confidence: pattern.confidence ?? 0,
+    strength: pattern.strength ?? 0,
+    frequency: pattern.frequency ?? 0,
+    data: pattern.data ?? {},
+  }));
+}
+
 const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
   const [analytics, setAnalytics] = useState<LearningAnalytics | null>(null);
   const [patterns, setPatterns] = useState<LearningPattern[]>([]);
@@ -47,65 +110,44 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
   }, []);
 
   const loadLearningData = async () => {
-    console.log('LearningDashboard: Loading learning data...');
     try {
       setLoading(true);
       setError(null);
 
-      // Try to load data with error handling and proper auth
       const [analyticsResponse, patternsResponse] = await Promise.allSettled([
-        authenticatedApiCall<{ data: LearningAnalytics }>(
+        authenticatedApiCall<{ data: Partial<LearningAnalytics> }>(
           '/api/ai/intelligence/learning/analytics'
         ),
         authenticatedApiCall<{ data: LearningPattern[] }>(
           '/api/ai/intelligence/learning/patterns'
-        )
+        ),
       ]);
 
-      console.log('LearningDashboard: API responses', {
-        analytics: analyticsResponse.status,
-        patterns: patternsResponse.status
-      });
-
-      // Handle analytics response
       if (analyticsResponse.status === 'rejected') {
-        console.warn('LearningDashboard: Learning analytics endpoint not available yet');
-        setAnalytics({
-          totalEvents: 0,
-          eventTypes: {},
-          patterns: 0,
-          predictions: 0,
-          confidence: 0.7,
-          learningProgress: 0.6,
-          recentInsights: []
-        });
+        setAnalytics(
+          normalizeAnalytics({
+            totalEvents: 0,
+            eventTypes: {},
+            patterns: 0,
+            predictions: 0,
+            confidence: 0,
+            learningProgress: 0,
+            recentInsights: [],
+          })
+        );
       } else {
-        setAnalytics(analyticsResponse.value.data);
+        setAnalytics(normalizeAnalytics(analyticsResponse.value.data));
       }
 
-      // Handle patterns response
       if (patternsResponse.status === 'rejected') {
-        console.warn('LearningDashboard: Learning patterns endpoint not available yet');
         setPatterns([]);
       } else {
-        setPatterns(patternsResponse.value.data || []);
+        setPatterns(normalizePatterns(patternsResponse.value.data));
       }
-      
-      console.log('LearningDashboard: Data loading completed');
     } catch (err) {
       console.error('LearningDashboard: Error loading learning data:', err);
       setError('Learning analytics could not be loaded. Try again later.');
-      
-      // Set default data to prevent crashes
-      setAnalytics({
-        totalEvents: 0,
-        eventTypes: {},
-        patterns: 0,
-        predictions: 0,
-        confidence: 0.7,
-        learningProgress: 0.6,
-        recentInsights: []
-      });
+      setAnalytics(null);
       setPatterns([]);
     } finally {
       setLoading(false);
@@ -222,13 +264,19 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
             {Object.entries(analytics.eventTypes).map(([type, count]) => (
               <div key={type} className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                  {type.replace('_', ' ')}
+                  {formatSnakeCase(type, 'event')}
                 </span>
                 <div className="flex items-center space-x-2">
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${(count / analytics.totalEvents) * 100}%` }}
+                      style={{
+                        width: `${
+                          analytics.totalEvents > 0
+                            ? (count / analytics.totalEvents) * 100
+                            : 0
+                        }%`,
+                      }}
                     />
                   </div>
                   <span className="text-sm text-gray-500 dark:text-gray-400">{count}</span>
@@ -251,7 +299,7 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
                 <div key={pattern.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                      {pattern.patternType.replace('_', ' ')} Pattern
+                      {formatSnakeCase(pattern.patternType, 'pattern')} Pattern
                     </h4>
                     <Badge color={getConfidenceColor(pattern.confidence)}>
                       {(pattern.confidence * 100).toFixed(1)}% confidence
@@ -278,7 +326,7 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ embedded }) => {
               {analytics.recentInsights.slice(0, 3).map((insight: RecentInsight, index: number) => (
                 <div key={index} className="border-l-4 border-blue-500 pl-4">
                   <h4 className="font-medium text-gray-900 dark:text-gray-100 capitalize">
-                    {insight.type?.replace('_', ' ')} Insight
+                    {formatSnakeCase(insight.type, 'insight')} Insight
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{insight.description}</p>
                   <div className="flex items-center mt-2 space-x-2">

@@ -40,7 +40,7 @@ export default function AIBehaviorHub({
           </TabsTrigger>
           <TabsTrigger value="autonomy" className="flex items-center gap-1.5">
             <Settings className="w-4 h-4" />
-            Autonomy
+            Action boundaries
           </TabsTrigger>
         </TabsList>
 

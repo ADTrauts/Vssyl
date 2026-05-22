@@ -4,12 +4,20 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Card, Button, Spinner } from 'shared/components';
-import { Sparkles, MessageSquare, Settings2, BarChart3, ChevronRight } from 'lucide-react';
+import { Sparkles, MessageSquare, Settings2, BarChart3, ChevronRight, ArrowRight } from 'lucide-react';
 import {
   fetchPendingLearnings,
   reviewPendingLearning,
   type PendingLearningItem,
 } from '../../api/aiContextLearning';
+import {
+  fetchLearningWhatChanged,
+  type LearningWhatChangedSummary,
+} from '../../api/aiLearningWhatChanged';
+import {
+  getUserPrivacySettings,
+  updateUserPrivacySettings,
+} from '../../api/privacy';
 import PersonalLearningEventsReview from './PersonalLearningEventsReview';
 
 interface AILearningHubProps {
@@ -22,6 +30,37 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
   const [pendingContext, setPendingContext] = useState<PendingLearningItem[]>([]);
   const [loadingContext, setLoadingContext] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [whatChanged, setWhatChanged] = useState<LearningWhatChangedSummary | null>(null);
+  const [loadingWhatChanged, setLoadingWhatChanged] = useState(true);
+  const [collectiveOptIn, setCollectiveOptIn] = useState(false);
+  const [loadingCollective, setLoadingCollective] = useState(true);
+  const [savingCollective, setSavingCollective] = useState(false);
+
+  const loadWhatChanged = useCallback(async () => {
+    if (!session?.accessToken) return;
+    setLoadingWhatChanged(true);
+    try {
+      const summary = await fetchLearningWhatChanged(session.accessToken);
+      setWhatChanged(summary);
+    } catch {
+      setWhatChanged(null);
+    } finally {
+      setLoadingWhatChanged(false);
+    }
+  }, [session?.accessToken]);
+
+  const loadCollectiveSetting = useCallback(async () => {
+    if (!session?.accessToken) return;
+    setLoadingCollective(true);
+    try {
+      const res = await getUserPrivacySettings(session.accessToken);
+      setCollectiveOptIn(res.data.allowCollectiveLearning === true);
+    } catch {
+      setCollectiveOptIn(false);
+    } finally {
+      setLoadingCollective(false);
+    }
+  }, [session?.accessToken]);
 
   const loadPendingContext = useCallback(async () => {
     if (!session?.accessToken) return;
@@ -38,7 +77,30 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
 
   useEffect(() => {
     void loadPendingContext();
-  }, [loadPendingContext]);
+    void loadWhatChanged();
+    void loadCollectiveSetting();
+  }, [loadPendingContext, loadWhatChanged, loadCollectiveSetting]);
+
+  const handleCollectiveToggle = async () => {
+    if (!session?.accessToken || savingCollective) return;
+    const next = !collectiveOptIn;
+    setSavingCollective(true);
+    try {
+      await updateUserPrivacySettings(session.accessToken, {
+        allowCollectiveLearning: next,
+      });
+      setCollectiveOptIn(next);
+    } catch (err) {
+      console.error('Failed to update collective learning preference:', err);
+    } finally {
+      setSavingCollective(false);
+    }
+  };
+
+  const handleLearningChanged = useCallback(() => {
+    onLearningChanged?.();
+    void loadWhatChanged();
+  }, [loadWhatChanged, onLearningChanged]);
 
   const handleReviewContext = async (id: string, action: 'promote' | 'dismiss') => {
     if (!session?.accessToken) return;
@@ -46,7 +108,7 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
     try {
       await reviewPendingLearning(session.accessToken, id, action);
       setPendingContext((prev) => prev.filter((p) => p.id !== id));
-      onLearningChanged?.();
+      handleLearningChanged();
     } catch (err) {
       console.error('Failed to review pending learning:', err);
     } finally {
@@ -66,6 +128,46 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
           Identity — or choose not now. I won’t nag you.
         </p>
       </div>
+
+      <section className="space-y-4">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">What changed</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          After you save a learning, this shows what was added to your AI Identity.
+        </p>
+        {loadingWhatChanged ? (
+          <div className="flex justify-center py-6">
+            <Spinner size={24} />
+          </div>
+        ) : whatChanged ? (
+          <Card className="p-4 border-purple-100 dark:border-purple-900/50">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 text-sm">
+              <div className="flex-1 min-w-0 space-y-2">
+                <p className="text-gray-500 dark:text-gray-400 line-through truncate">
+                  {whatChanged.beforeSummary}
+                </p>
+                <div className="flex items-start gap-2">
+                  <ArrowRight className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">
+                    {whatChanged.afterSummary}
+                  </p>
+                </div>
+                {whatChanged.preferenceShiftNote ? (
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    {whatChanged.preferenceShiftNote}
+                  </p>
+                ) : null}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                {new Date(whatChanged.appliedAt).toLocaleDateString()}
+              </p>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            Nothing saved yet. Approve a suggestion below to see what updates in your AI Identity.
+          </Card>
+        )}
+      </section>
 
       <section className="space-y-4">
         <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -132,13 +234,13 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
           Broader behavior changes I inferred from how you work. Save to AI Identity when they feel
           right.
         </p>
-        <PersonalLearningEventsReview embedded onReviewed={onLearningChanged} />
+        <PersonalLearningEventsReview embedded onReviewed={handleLearningChanged} />
       </section>
 
       <Card className="p-5 bg-gray-50 dark:bg-slate-800/50">
         <div className="flex gap-3">
           <Settings2 className="w-5 h-5 text-purple-600 shrink-0" />
-          <div>
+          <div className="flex-1">
             <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
               Chat-only style adjustments
             </h3>
@@ -148,6 +250,33 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
               Identity — temporary by default.
             </p>
           </div>
+        </div>
+      </Card>
+
+      <Card className="p-5 border-gray-200 dark:border-slate-700">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+              Community learning (optional)
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-xl">
+              Off by default. When enabled, anonymized patterns may contribute to platform-wide
+              insights — and you may receive collective suggestions. Your personal data is never
+              shared verbatim.
+            </p>
+          </div>
+          {loadingCollective ? (
+            <Spinner size={22} />
+          ) : (
+            <Button
+              variant={collectiveOptIn ? 'primary' : 'secondary'}
+              size="sm"
+              disabled={savingCollective}
+              onClick={() => void handleCollectiveToggle()}
+            >
+              {collectiveOptIn ? 'Enabled' : 'Enable'}
+            </Button>
+          )}
         </div>
       </Card>
 

@@ -11,6 +11,7 @@
 
 import { AIAction, UserContext } from './DigitalLifeTwinService';
 import { ActionExecutionResult } from './ActionExecutor';
+import { buildSignedWebhookHeaders } from '../../services/webhookSigning';
 
 /**
  * Configuration for webhook-based executors (external modules)
@@ -18,6 +19,8 @@ import { ActionExecutionResult } from './ActionExecutor';
 export interface WebhookExecutorConfig {
   executorUrl: string;
   apiKey?: string;
+  /** HMAC signing secret for outbound executor payloads (Phase 4C). */
+  signingSecret?: string;
   timeout?: number; // milliseconds, default 30000
 }
 
@@ -39,6 +42,10 @@ export interface ModuleActionExecutor {
   executor?: InProcessExecutor; // For in-process modules
   webhookConfig?: WebhookExecutorConfig; // For external modules
   registeredAt: Date;
+}
+
+function newDeliveryId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 /**
@@ -178,27 +185,39 @@ export class ActionExecutorRegistry {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
+      const requestBody = {
+        action: action.operation,
+        parameters: action.parameters,
+        userId: userContext.userId,
+        context: userContext,
+        actionId: action.id,
+        requiresApproval: action.requiresApproval,
+        reasoning: action.reasoning,
+        affectedUsers: action.affectedUsers
+      };
+      const bodyString = JSON.stringify(requestBody);
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
-      if (config.apiKey) {
-        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      if (config.signingSecret) {
+        Object.assign(
+          headers,
+          buildSignedWebhookHeaders({
+            secret: config.signingSecret,
+            body: bodyString,
+            deliveryId: newDeliveryId('exec'),
+          })
+        );
+      } else if (config.apiKey) {
+        headers.Authorization = `Bearer ${config.apiKey}`;
       }
 
       const response = await fetch(config.executorUrl, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          action: action.operation,
-          parameters: action.parameters,
-          userId: userContext.userId,
-          context: userContext,
-          actionId: action.id,
-          requiresApproval: action.requiresApproval,
-          reasoning: action.reasoning,
-          affectedUsers: action.affectedUsers
-        }),
+        body: bodyString,
         signal: controller.signal
       });
 
@@ -237,4 +256,3 @@ export class ActionExecutorRegistry {
 
 // Singleton instance
 export const actionExecutorRegistry = new ActionExecutorRegistry();
-

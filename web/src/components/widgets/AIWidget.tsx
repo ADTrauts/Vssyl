@@ -488,11 +488,11 @@ export default function AIWidget({
               />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Proactive Mode</span>
+              <span className="text-sm font-medium">Show boundary summary</span>
               <input
                 type="checkbox"
-                checked={safeConfig.proactiveMode}
-                onChange={(e) => onConfigChange?.({ ...safeConfig, proactiveMode: e.target.checked })}
+                checked={safeConfig.autonomyDisplay}
+                onChange={(e) => onConfigChange?.({ ...safeConfig, autonomyDisplay: e.target.checked })}
                 className="rounded"
               />
             </div>
@@ -674,7 +674,7 @@ export default function AIWidget({
           
           {safeConfig.autonomyDisplay && autonomySettings && (
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Autonomy: {(autonomySettings.crossModuleActions as number)}% • 
+              Boundaries: {(autonomySettings.crossModuleActions as number)}% • 
               Context: {dashboardType} • 
               Status: Active
             </div>

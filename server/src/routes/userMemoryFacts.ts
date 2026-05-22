@@ -8,6 +8,7 @@ router.use(authenticateJWT);
 
 router.get('/', userMemoryFactController.getUserMemoryFacts);
 router.post('/', userMemoryFactController.postUserMemoryFact);
+router.patch('/:id', userMemoryFactController.patchUserMemoryFact);
 router.delete('/:id', userMemoryFactController.deleteUserMemoryFactHandler);
 
 export default router;

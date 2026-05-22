@@ -1,5 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { moduleAIContextService } from '../services/ModuleAIContextService';
+import {
+  buildModuleContextFetchParams,
+  resolveModulesToFetch,
+  selectContextProvider,
+  type ContextProviderConfig,
+} from '../services/moduleContextProviderSelection';
+import {
+  classifyProviderFailure,
+  type ProviderFetchAttempt,
+} from './contextDensityReport';
+import { isSyntheticContextEnabled } from './syntheticContextPolicy';
 import { prisma } from '../../lib/prisma';
 
 export interface UserContext {
@@ -498,6 +509,10 @@ export class CrossModuleContextEngine {
    * Generate cross-module insights
    */
   private async generateCrossModuleInsights(userId: string, data: ModuleContextData): Promise<CrossModuleInsight[]> {
+    if (!isSyntheticContextEnabled()) {
+      return [];
+    }
+
     const insights: CrossModuleInsight[] = [];
 
     // Work-life balance insights
@@ -896,16 +911,18 @@ export class CrossModuleContextEngine {
       });
 
       if (registryEntry) {
-        // Use the primary context provider for this module
-        const contextProviders = registryEntry.contextProviders as any;
-        const primaryProvider = contextProviders[0]; // First provider is typically primary
+        const contextProviders = registryEntry.contextProviders as ContextProviderConfig[];
+        const selectedProvider = selectContextProvider(moduleId, '', contextProviders);
 
-        if (primaryProvider) {
+        if (selectedProvider) {
+          const fetchParams = buildModuleContextFetchParams(moduleId, userId, {
+            businessId,
+          });
           const contextData = await moduleAIContextService.fetchModuleContext(
             moduleId,
-            primaryProvider.name,
+            selectedProvider.name,
             userId,
-            businessId ? { businessId } : undefined
+            fetchParams
           );
 
           return {
@@ -965,43 +982,68 @@ export class CrossModuleContextEngine {
       const installedModuleIds = await this.getActiveModules(userId);
       fullContext.activeModules = installedModuleIds;
 
-      // Step 3: Fetch context from only high-relevance modules (SLOW - API calls)
-      const highRelevanceModules = analysis.matchedModules.filter(
-        (m) => m.relevance === 'high'
-      );
+      // Step 3: Fetch context from relevant modules (high only, or high+medium when multi-module)
+      const modulesToFetch = resolveModulesToFetch(analysis.matchedModules, query);
 
       const moduleContexts: Record<string, unknown> = {};
+      const providerFetchAudit: ProviderFetchAttempt[] = [];
 
       // Fetch in parallel for speed
       await Promise.all(
-        highRelevanceModules.map(async (match) => {
+        modulesToFetch.map(async (match) => {
+          const provider = analysis.suggestedContextProviders.find(
+            (p) => p.moduleId === match.moduleId
+          );
+
+          if (!provider) {
+            providerFetchAudit.push({
+              moduleId: match.moduleId,
+              providerName: 'unknown',
+              status: 'skipped',
+              failureReason: 'not_found',
+              failureMessage: 'No context provider configured for module',
+            });
+            return;
+          }
+
           try {
-            // Use the first suggested provider for this module
-            const provider = analysis.suggestedContextProviders.find(
-              (p) => p.moduleId === match.moduleId
+            const fetchParams = buildModuleContextFetchParams(match.moduleId, userId, {
+              businessId,
+            });
+            const context = await moduleAIContextService.fetchModuleContext(
+              match.moduleId,
+              provider.providerName,
+              userId,
+              fetchParams
             );
 
-            if (provider) {
-              const context = await moduleAIContextService.fetchModuleContext(
-                match.moduleId,
-                provider.providerName,
-                userId,
-                businessId ? { businessId } : undefined
-              );
+            moduleContexts[match.moduleId] = {
+              ...context,
+              moduleName: match.moduleName,
+              relevance: match.relevance,
+              matchedKeywords: match.matchedKeywords,
+            };
 
-              moduleContexts[match.moduleId] = {
-                ...context,
-                moduleName: match.moduleName,
-                relevance: match.relevance,
-                matchedKeywords: match.matchedKeywords,
-              };
-            }
+            providerFetchAudit.push({
+              moduleId: match.moduleId,
+              providerName: provider.providerName,
+              status: 'succeeded',
+              cacheHit: context.cached === true,
+              latencyMs: context.latency,
+            });
           } catch (error) {
+            const failure = classifyProviderFailure(error);
+            providerFetchAudit.push({
+              moduleId: match.moduleId,
+              providerName: provider.providerName,
+              status: 'failed',
+              failureReason: failure.reason,
+              failureMessage: failure.message,
+            });
             console.warn(
               `⚠️ Error fetching context for ${match.moduleName}:`,
               error
             );
-            // Continue with other modules even if one fails
           }
         })
       );
@@ -1011,8 +1053,10 @@ export class CrossModuleContextEngine {
         analysis,
         fullContext,
         moduleContexts,
+        providerFetchAudit,
         installedModuleIds,
-        relevantModuleCount: highRelevanceModules.length,
+        relevantModuleCount: modulesToFetch.length,
+        multiModuleIntent: modulesToFetch.length >= 2,
         timestamp: new Date(),
       };
     } catch (error) {

@@ -86,6 +86,7 @@
     },
     "aiActionExecutor": {
       "executorUrl": "https://httpbin.org/post",
+      "signingSecret": "test-module-signing-secret-for-hmac-verification",
       "supportedOperations": [
         "create_test_item",
         "update_test_item",

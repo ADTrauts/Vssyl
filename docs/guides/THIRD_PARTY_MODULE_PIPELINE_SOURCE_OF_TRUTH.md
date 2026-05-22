@@ -256,6 +256,7 @@ Minimum required checks before publish:
 4. Permission audit completed.
 5. Admin review decision recorded.
 6. **Interoperability contract:** reviewer confirms the module meets the **module certification checklist** in [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) (permissions, tenant scoping, normalized activity events, safe realtime assumptions, notification metadata if applicable, AI context if AI-exposed, activity vs analytics). Reject or defer publish until gaps are addressed. Agent guardrails: `.cursor/rules/module-interoperability.mdc`. Partner summary: [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md).
+7. **AI platform maturity gates (Phase 4D):** for AI-exposed modules, confirm [`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md) gates **G1–G7**; compare manifest to [`docs/test-modules/full-ai-contract-module.json`](../test-modules/full-ai-contract-module.json); run or review `fullAiContractModule.certification.test.ts` pattern for provider validation.
 
 Scan architecture requirements:
 - **Baseline scanner (implemented)**: runs on finalize (`runBaselineZipScan`): unzip with `fflate`, reject empty archives / unsafe paths / excessive size or file counts, require at least one `.html` file. Persists `scanStatus` + `scanSummary` on `ModuleArtifact` (no longer hardcoded `PASSED`).

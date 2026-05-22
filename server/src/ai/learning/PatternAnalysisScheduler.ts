@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { CentralizedLearningEngine } from './CentralizedLearningEngine';
 
+/**
+ * Background scheduler for admin-operated collective pattern analysis.
+ * Not started by default — set ENABLE_PATTERN_ANALYSIS_SCHEDULER=true to opt in at deploy time.
+ * User-facing twin prompts never depend on this; collective patterns require per-user consent.
+ */
+
 export interface SchedulerConfig {
   patternAnalysisInterval: number; // minutes
   insightGenerationInterval: number; // minutes

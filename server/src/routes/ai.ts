@@ -22,6 +22,15 @@ import {
   updateAutonomySettingsForUser,
 } from '../services/aiAutonomySettingsService';
 import { personalAILearningEventsService } from '../services/personalAILearningEventsService';
+import { learningApplicationService } from '../services/learningApplicationService';
+import {
+  LearningSignalValidationError,
+  userLearningSignalService,
+} from '../services/userLearningSignalService';
+import {
+  extractTenantScopeFromRequestBody,
+  isLearningSignalType,
+} from '../ai/learning/learningSignalTypes';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -957,6 +966,18 @@ router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
       where: { id },
       data: { status: 'ACCEPTED', respondedAt: new Date() },
     });
+    const tenantScope = extractTenantScopeFromRequestBody(req.body);
+    try {
+      await userLearningSignalService.recordSuggestionAccepted({
+        userId,
+        suggestionId: id,
+        suggestionType: suggestion.type,
+        suggestionTitle: suggestion.title,
+        ...tenantScope,
+      });
+    } catch (signalErr: unknown) {
+      logSrvWarn('ai_suggestion_accept_signal_error', 'Accept suggestion signal failed', signalErr);
+    }
     const actionData = suggestion.actionData as Record<string, unknown> | null;
     const fileId = actionData?.fileId as string | undefined;
     const suggestedPrompt = actionData?.suggestedPrompt as string | undefined;
@@ -1002,6 +1023,23 @@ router.post('/suggestions/:id/dismiss', authenticateJWT, async (req, res) => {
       where: { id },
       data: { status: 'DISMISSED', respondedAt: new Date() },
     });
+    const tenantScope = extractTenantScopeFromRequestBody(req.body);
+    const reason =
+      req.body && typeof req.body === 'object' && typeof (req.body as { reason?: string }).reason === 'string'
+        ? (req.body as { reason: string }).reason
+        : undefined;
+    try {
+      await userLearningSignalService.recordSuggestionDismissed({
+        userId,
+        suggestionId: id,
+        suggestionType: suggestion.type,
+        suggestionTitle: suggestion.title,
+        reason,
+        ...tenantScope,
+      });
+    } catch (signalErr: unknown) {
+      logSrvWarn('ai_suggestion_dismiss_signal_error', 'Dismiss suggestion signal failed', signalErr);
+    }
     res.json({ success: true, data: { suggestionId: id } });
   } catch (error) {
     logSrvErr('ai_dismiss_suggestion_error', 'Dismiss suggestion error:', error);
@@ -1136,6 +1174,70 @@ router.put('/learning/events/:eventId/review', authenticateJWT, async (req, res)
     const notFound = err.message.includes('not found') || err.message.includes('reviewed');
     logSrvErr('ai_learning_event_review_error', 'Review learning event error:', err);
     res.status(notFound ? 404 : 500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/ai/learning/what-changed
+ * Latest promotion summary after approving learning (Phase 2C)
+ */
+router.get('/learning/what-changed', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
+    }
+
+    const summary = await learningApplicationService.getWhatChangedSummary(userId);
+    res.json({ success: true, data: summary });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logSrvErr('ai_learning_what_changed_error', 'What changed summary error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/ai/learning/signals
+ * Record explicit behavioral learning signals (regenerate, edit-resend, etc.)
+ */
+router.post('/learning/signals', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const signalType = typeof req.body?.signalType === 'string' ? req.body.signalType.trim() : '';
+    if (!isLearningSignalType(signalType)) {
+      return res.status(400).json({ success: false, error: 'Invalid signalType' });
+    }
+
+    const tenantScope = extractTenantScopeFromRequestBody(req.body);
+    const sourceModule =
+      typeof req.body?.sourceModule === 'string' ? req.body.sourceModule.trim() : undefined;
+    const metadata =
+      req.body?.metadata && typeof req.body.metadata === 'object' && !Array.isArray(req.body.metadata)
+        ? (req.body.metadata as Record<string, unknown>)
+        : undefined;
+    const summary = typeof req.body?.summary === 'string' ? req.body.summary.trim() : undefined;
+
+    const result = await userLearningSignalService.recordSignal({
+      userId,
+      signalType,
+      sourceModule,
+      summary,
+      metadata,
+      ...tenantScope,
+    });
+
+    res.status(201).json({ success: true, data: result });
+  } catch (error: unknown) {
+    if (error instanceof LearningSignalValidationError) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
+    logSrvErr('ai_learning_signal_error', 'Record learning signal error:', error);
+    res.status(500).json({ success: false, error: 'Failed to record learning signal' });
   }
 });
 
@@ -1464,8 +1566,9 @@ router.get('/history', authenticateJWT, async (req, res) => {
  */
 router.post('/feedback', authenticateJWT, async (req, res) => {
   try {
-    const { interactionId, feedback, rating } = req.body;
+    const { interactionId, feedback, rating, sourceModule } = req.body;
     const userId = req.user?.id;
+    const tenantScope = extractTenantScopeFromRequestBody(req.body);
     
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -1475,6 +1578,10 @@ router.post('/feedback', authenticateJWT, async (req, res) => {
       return res.status(400).json({
         error: 'interactionId, feedback, and rating are required'
       });
+    }
+
+    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'rating must be a number between 1 and 5' });
     }
 
     // Update the conversation history with feedback
@@ -1494,8 +1601,21 @@ router.post('/feedback', authenticateJWT, async (req, res) => {
       return res.status(404).json({ error: 'Interaction not found' });
     }
 
-    // Process feedback for learning
-    // TODO: Implement feedback processing in learning engine
+    try {
+      await userLearningSignalService.recordFeedbackOutcome({
+        userId,
+        interactionId,
+        rating,
+        feedback: typeof feedback === 'string' ? feedback : String(feedback),
+        sourceModule: typeof sourceModule === 'string' ? sourceModule : undefined,
+        ...tenantScope,
+      });
+    } catch (signalErr: unknown) {
+      if (signalErr instanceof LearningSignalValidationError) {
+        return res.status(400).json({ error: signalErr.message });
+      }
+      logSrvWarn('ai_feedback_signal_error', 'Feedback learning signal failed', signalErr);
+    }
 
     res.json({
       success: true,

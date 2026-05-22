@@ -9,15 +9,13 @@ import {
   reviewPersonalLearningEvent,
   type PersonalLearningEvent,
 } from '../../api/aiLearningEvents';
+import { formatSnakeCase } from '../../lib/formatSnakeCase';
 
 interface PersonalLearningEventsReviewProps {
   embedded?: boolean;
   onReviewed?: () => void;
 }
 
-function formatEventType(type: string): string {
-  return type.replace(/_/g, ' ');
-}
 
 export default function PersonalLearningEventsReview({
   embedded,
@@ -66,9 +64,10 @@ export default function PersonalLearningEventsReview({
       {!embedded && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Learning events</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Review what your AI learned from chats before it influences future behavior.
-          </p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Review suggestions about your preferences and corrections — not raw chat logs or system
+          analytics.
+        </p>
         </div>
       )}
 
@@ -112,7 +111,7 @@ export default function PersonalLearningEventsReview({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge size="sm" color="blue">
-                        {formatEventType(event.eventType)}
+                        {formatSnakeCase(event.eventType, 'learning')}
                       </Badge>
                       {event.sourceModule && (
                         <Badge size="sm" color="gray">

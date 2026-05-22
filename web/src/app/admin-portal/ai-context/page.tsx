@@ -59,6 +59,13 @@ export default function AIContextDebugPage() {
                 <p className="text-gray-700 dark:text-gray-300">Debug and monitor AI context across all modules</p>
               </div>
             </div>
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+              <strong>Action boundaries (not autonomous execution):</strong> User autonomy sliders and
+              Behavior settings shape <em>suggestion boundaries</em> in prompts via{' '}
+              <code className="text-xs">PreferenceResolver</code> — they do not auto-run module actions.
+              Legacy <code className="text-xs">/api/ai/autonomous/*</code> routes are deprecated and hidden
+              from the product UI unless <code className="text-xs">NEXT_PUBLIC_AI_ACTIONS_UI=true</code>.
+            </div>
           </div>
         </div>
       </div>
@@ -95,8 +102,9 @@ export default function AIContextDebugPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-blue-900 mb-2">User Context Inspector</h3>
               <p className="text-blue-800 text-sm">
-                Search for any user by ID, email, or name to inspect their AI context, 
-                including personality profile, autonomy settings, recent conversations, 
+                Search for any user by ID, email, or name to inspect their AI context,
+                including personality profile, <strong>action-boundary settings</strong> (autonomy sliders —
+                prompt influence only, not auto-execution), recent conversations,
                 and module installations.
               </p>
             </div>
@@ -123,9 +131,9 @@ export default function AIContextDebugPage() {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-yellow-900 mb-2">Context Validation Tools</h3>
               <p className="text-yellow-800 text-sm">
-                Validate AI context integrity for any user, checking personality profiles, 
-                autonomy settings, recent activity, and module installations to ensure 
-                proper AI functionality.
+                Validate AI context integrity for any user, checking personality profiles,
+                action-boundary settings, recent activity, and module installations to ensure
+                proper AI functionality. Autonomy fields reflect suggestion boundaries only.
               </p>
             </div>
             <ContextValidationTools />

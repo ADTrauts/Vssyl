@@ -4,6 +4,7 @@ import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
 import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { emitChatMessageSentEvent } from '../events/domainEventEmitters';
 
 // Request type definitions
 interface CreateConversationRequest {
@@ -879,6 +880,14 @@ export const createMessage = async (req: Request, res: Response) => {
         threadId: validatedThreadId,
         replyToId: replyToId ?? null,
       },
+    });
+
+    emitChatMessageSentEvent({
+      actorUserId: user.id,
+      messageId: message.id,
+      conversationId,
+      threadId: validatedThreadId ?? null,
+      attachmentCount: Array.isArray(fileIds) ? fileIds.length : 0,
     });
 
     // Create notifications for conversation participants
