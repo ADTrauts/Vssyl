@@ -2,7 +2,7 @@
 
 ## Most recent completed project — V_Link AI Pipeline integration (May 2026) ✅
 
-V_Link is now a **first-class AI Pipeline Context Source** (`vlink` / V_Link Relationships): registry + DB reconcile, permission-filtered runtime grounding in `DigitalLifeTwinCore`, `persistedVLinks` entity linking, and pipeline traces with `source: vlink`.
+V_Link is a **first-class AI Pipeline Context Source** (`vlink` / V_Link Relationships): registry + idempotent DB reconcile (context sources + grounding rules), permission-filtered runtime grounding in `DigitalLifeTwinCore`, `persistedVLinks` entity linking, and pipeline traces with `source: vlink`.
 
 ---
 
