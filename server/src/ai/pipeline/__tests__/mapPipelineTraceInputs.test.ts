@@ -17,7 +17,51 @@ describe('mapPipelineTraceInputs', () => {
       contextBlocks: [],
     });
     expect(rows.some((r) => r.provider === 'place')).toBe(true);
-    expect(rows.some((r) => r.source === 'module')).toBe(true);
+    expect(rows.some((r) => r.source === 'module_context')).toBe(true);
+  });
+
+  it('maps vlink evidence to source vlink (not module_context)', () => {
+    const rows = mapAssembledContextToRetrieved({
+      usedModules: ['vlink', 'calendar'],
+      evidence: [
+        {
+          label: 'V_Link Relationships',
+          sourceType: 'vlink',
+          sourceId: 'vlink',
+          confidence: 'high',
+        },
+      ],
+      contextBlocks: [],
+    });
+    expect(rows.some((r) => r.source === 'vlink' && r.provider === 'recent_vlinks')).toBe(true);
+    expect(rows.some((r) => r.provider === 'vlink' && r.source === 'module_context')).toBe(false);
+  });
+
+  it('includes vlink from query context in orchestration trace input', () => {
+    const input = mapOrchestrationToPipelineTraceInput({
+      userId: 'u1',
+      userMessage: 'What is connected to VL-111111111111?',
+      finalResponse: 'Here is what is linked.',
+      confidence: 0.8,
+      queryContext: {
+        vlinkPipelineContext: {
+          items: [],
+          vlinksConsidered: 1,
+          vlinksUsed: 1,
+          linkedEntitiesConsidered: 2,
+          accessibleLinkedEntities: 1,
+          restrictedLinkedEntities: 1,
+          suggestionsIgnored: 0,
+          querySignals: {
+            vlCodeReferenced: true,
+            relationshipQuery: true,
+            intentBoost: false,
+          },
+        },
+      },
+    });
+    expect(input.contextRetrieved?.some((r) => r.source === 'vlink')).toBe(true);
+    expect(input.sourcesUsed).toContain('vlink');
   });
 
   it('numericConfidenceToLevel buckets scores', () => {

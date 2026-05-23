@@ -11,8 +11,11 @@
 | **VL-3–4** | `/vlink` hub, sidebar icon under AI, drag-to-link infrastructure |
 | **VL-5–6** | Drive + Calendar first integrations |
 | **VL-7–10** | Sharing/ownership transfer, AI suggestions groundwork, AI context provider, Chat/Tasks placeholders |
+| **AI pipeline** | First-class context source `vlink`; runtime grounding + traces; idempotent reconcile for sources + grounding rules |
 
 **Migration:** `20260601120000_vlink_platform_foundation`
+
+**Runtime:** `server/src/ai/context/vlinkPipelineContextService.ts`; reconcile via `reconcileSystemPipelineContextSources()` + `reconcileSystemPipelineGroundingRules()` on catalog load
 
 **Canonical:** [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md), [`memory-bank/vlinkProductContext.md`](vlinkProductContext.md)
 

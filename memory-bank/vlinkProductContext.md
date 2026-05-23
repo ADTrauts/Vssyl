@@ -16,6 +16,21 @@ V_Link is a native operating-layer primitive that lets users connect related ite
 | Hub UI | `/vlink` — `web/src/components/vlink/VLinkModule.tsx` |
 | Sidebar | `web/src/components/vlink/VLinkSidebarButton.tsx` (under AI) |
 | AI context | `GET /api/vlinks/ai/context/recent` |
+| AI pipeline source | Admin **Context Sources** id `vlink` — `V_Link Relationships` |
+
+## AI pipeline integration (May 2026) ✅
+
+| Layer | Status |
+|-------|--------|
+| Module context provider | ✅ `recent_vlinks` in `registerBuiltInModules.ts` |
+| Pipeline context source | ✅ id `vlink`, label **V_Link Relationships** |
+| Grounding rules reconcile | ✅ `reconcileSystemPipelineGroundingRules()` merges optional `vlink` on system intents |
+| Runtime grounding | ✅ `vlinkPipelineContextService` + `DigitalLifeTwinCore` |
+| Entity linking | ✅ `persistedVLinks` preferred over inferred links |
+| Pipeline traces/diagnostics | ✅ `source: vlink` (not folded into generic `module_context`) |
+| Permission filtering | ✅ Restricted linked entities redacted; unapproved suggestions excluded |
+
+**Canonical runtime:** `server/src/ai/context/vlinkPipelineContextService.ts`
 
 ## Non-negotiables
 

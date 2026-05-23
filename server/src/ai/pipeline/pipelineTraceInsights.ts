@@ -66,6 +66,7 @@ const CONTEXT_CHECKLIST_ORDER: Array<{
   { id: 'drive_files', label: 'Drive / files' },
   { id: 'business_context', label: 'Business context' },
   { id: 'vssyl_place', label: 'Vssyl Place' },
+  { id: 'vlink', label: 'V_Link Relationships' },
   { id: 'web_search', label: 'Web search' },
   { id: 'module_context', label: 'Module context' },
   { id: 'tool_outputs', label: 'Tool outputs' },
@@ -134,14 +135,22 @@ function countForSource(
       return trace.contextRetrieved
         .filter((c) => matchesSource(normalizeToken(c.source + (c.provider ?? '')), 'place', 'vssyl'))
         .reduce((sum, c) => sum + c.itemCount, 0);
+    case 'vlink':
+      return trace.contextRetrieved
+        .filter((c) => matchesSource(normalizeToken(c.source + (c.provider ?? '')), 'vlink'))
+        .reduce((sum, c) => sum + Math.max(c.itemCount, 0), 0);
     case 'web_search':
       return trace.toolsUsed.some((t) => t.name === 'web_search') ? 1 : 0;
     case 'module_context':
       return (
         trace.contextRetrieved
-          .filter((c) => matchesSource(normalizeToken(c.source), 'module'))
+          .filter(
+            (c) =>
+              matchesSource(normalizeToken(c.source), 'module') &&
+              !matchesSource(normalizeToken(c.source + (c.provider ?? '')), 'vlink')
+          )
           .reduce((sum, c) => sum + c.itemCount, 0) +
-        (bundle?.assembledUsedModules.length ?? 0)
+        (bundle?.assembledUsedModules.filter((m) => m !== 'vlink').length ?? 0)
       );
     default:
       return 0;

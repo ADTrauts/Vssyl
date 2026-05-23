@@ -20,6 +20,10 @@ import {
   readLearningPipelineSnapshot,
 } from '../learning/learningPipelineTrace';
 import { readContextDensityReport } from '../context/contextDensityReport';
+import {
+  mapVLinkPipelineContextToRetrieved,
+  type VLinkPipelineContextResult,
+} from '../context/vlinkPipelineContextService';
 
 export function numericConfidenceToLevel(confidence: number): PipelineConfidenceLevel {
   if (confidence >= 0.85) return 'high';
@@ -37,16 +41,23 @@ export function mapAssembledContextToRetrieved(
   const usedModules = Array.isArray(ac.usedModules) ? ac.usedModules : [];
 
   const fromEvidence: PipelineContextRetrievedRecord[] = evidence.map((e) => ({
-    source: e.sourceType || 'unknown',
-    provider: e.label,
+    source:
+      e.sourceType === 'vlink'
+        ? 'vlink'
+        : e.sourceType === 'module'
+          ? 'module_context'
+          : e.sourceType || 'unknown',
+    provider: e.sourceType === 'vlink' ? 'recent_vlinks' : e.label,
     itemCount: 1,
   }));
 
-  const moduleRecords: PipelineContextRetrievedRecord[] = usedModules.map((mod) => ({
-    source: 'module_context',
-    provider: mod,
-    itemCount: 1,
-  }));
+  const moduleRecords: PipelineContextRetrievedRecord[] = usedModules
+    .filter((mod) => mod !== 'vlink')
+    .map((mod) => ({
+      source: 'module_context',
+      provider: mod,
+      itemCount: 1,
+    }));
 
   const contextBlocks = Array.isArray(ac.contextBlocks) ? ac.contextBlocks : [];
   if (contextBlocks.length > 0 && fromEvidence.length === 0 && moduleRecords.length === 0) {
@@ -139,15 +150,20 @@ export function mapOrchestrationToPipelineTraceInput(
   const ctx = params.queryContext ?? {};
   const memoryRetrieved = mapMemoryRetrievalToTrace(ctx);
 
+  const vlinkPipelineContext = ctx.vlinkPipelineContext as VLinkPipelineContextResult | undefined;
+  const vlinkRetrieved = mapVLinkPipelineContextToRetrieved(vlinkPipelineContext);
+
   const contextRetrieved = [
     ...(params.supplementalContextRetrieved ?? []),
+    ...vlinkRetrieved,
     ...mapAssembledContextToRetrieved(params.assembledContext),
   ];
   const toolsUsed = [...(params.supplementalToolsUsed ?? []), ...(params.toolsUsed ?? [])];
   const sourcesUsed = [
     ...new Set([
       ...(params.supplementalSourcesUsed ?? []),
-      ...mapSourcesUsedFromAssembled(params.assembledContext),
+      ...(vlinkPipelineContext?.vlinksUsed ? ['vlink'] : []),
+      ...mapSourcesUsedFromAssembled(params.assembledContext).filter((s) => s !== 'vlink'),
     ]),
   ];
 

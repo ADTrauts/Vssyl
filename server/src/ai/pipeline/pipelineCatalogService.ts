@@ -35,7 +35,12 @@ import {
   defaultToolCapabilities,
 } from './pipelineRegistryCapabilities';
 import { buildCatalogValidationSummary } from './pipelineRegistryValidator';
-import { isSystemIntentId, isValidRegistrySlug } from './pipelineRegistryIds';
+import { isSystemIntentId, isSystemContextSourceId, isValidRegistrySlug } from './pipelineRegistryIds';
+import {
+  computeGroundingRuleReconcileAction,
+  listSystemDefaultGroundingRules,
+  mergeSystemGroundingOptionalSources,
+} from './pipelineGroundingRuleReconcile';
 
 let cachedCatalog: PipelineCatalog | null = null;
 let cacheLoadedAt = 0;
@@ -232,6 +237,104 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
   return true;
 }
 
+/** Idempotently insert missing system context sources (e.g. after platform adds vlink). */
+export async function reconcileSystemPipelineContextSources(): Promise<number> {
+  const defaults = getDefaultPipelineCatalog();
+  let inserted = 0;
+
+  for (const src of defaults.contextSources) {
+    if (!isSystemContextSourceId(src.id)) continue;
+    const existing = await prisma.aIPipelineContextSourcePolicy.findUnique({ where: { id: src.id } });
+    if (existing) continue;
+
+    const lifecycle = src.wiredInTwin ? 'live' : 'planned';
+    const caps = defaultContextSourceCapabilities(src.wiredInTwin, lifecycle);
+    const mapped = SOURCE_TO_TOOLS[src.id] ?? [];
+    await prisma.aIPipelineContextSourcePolicy.create({
+      data: {
+        id: src.id,
+        label: src.label,
+        description: src.description,
+        enabled: src.enabled,
+        wiredInTwin: src.wiredInTwin,
+        isSystem: seedIsSystemForSource(src.id),
+        archived: false,
+        sourceType: 'platform',
+        lifecycleStatus: lifecycle,
+        mappedTools: mapped,
+        capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
+      },
+    });
+    inserted += 1;
+  }
+
+  if (inserted > 0) {
+    invalidatePipelineCatalogCache();
+  }
+  return inserted;
+}
+
+/** Idempotently insert missing system grounding rules and merge default optional sources (e.g. vlink). */
+export async function reconcileSystemPipelineGroundingRules(): Promise<{
+  inserted: number;
+  updated: number;
+}> {
+  let inserted = 0;
+  let updated = 0;
+
+  for (const rule of listSystemDefaultGroundingRules()) {
+    const existing = await prisma.aIPipelineGroundingRulePolicy.findUnique({
+      where: { intentId: rule.intentId },
+    });
+    const action = computeGroundingRuleReconcileAction(
+      existing
+        ? {
+            intentId: existing.intentId,
+            requiredSources: existing.requiredSources,
+            optionalSources: existing.optionalSources,
+            isSystem: existing.isSystem,
+            archived: existing.archived,
+          }
+        : null,
+      rule
+    );
+
+    if (action === 'insert') {
+      await prisma.aIPipelineGroundingRulePolicy.create({
+        data: {
+          intentId: rule.intentId,
+          requiredSources: rule.requiredSources,
+          optionalSources: rule.optionalSources,
+          requirementSummary: rule.requirementSummary,
+          enabled: true,
+          isSystem: seedIsSystemForIntent(rule.intentId),
+          archived: false,
+          requiredTools: SOURCE_TO_TOOLS[rule.requiredSources[0] ?? ''] ?? [],
+        },
+      });
+      inserted += 1;
+      continue;
+    }
+
+    if (action === 'merge_optional' && existing) {
+      const mergedOptional = mergeSystemGroundingOptionalSources(
+        existing.optionalSources,
+        rule.optionalSources
+      );
+      await prisma.aIPipelineGroundingRulePolicy.update({
+        where: { intentId: rule.intentId },
+        data: { optionalSources: mergedOptional },
+      });
+      updated += 1;
+    }
+  }
+
+  if (inserted > 0 || updated > 0) {
+    invalidatePipelineCatalogCache();
+  }
+  return { inserted, updated };
+}
+
 async function loadCatalogFromDb(): Promise<PipelineCatalog> {
   const defaults = getDefaultPipelineCatalog();
 
@@ -273,6 +376,8 @@ export async function getEffectivePipelineCatalog(options?: {
 }): Promise<PipelineCatalog> {
   try {
     await seedPipelinePoliciesIfEmpty();
+    await reconcileSystemPipelineContextSources();
+    await reconcileSystemPipelineGroundingRules();
     const catalog = await loadCatalogFromDb();
     const filtered = filterCatalogArchived(catalog, options?.includeArchived === true);
     setCache(filtered);

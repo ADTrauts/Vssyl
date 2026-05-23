@@ -35,6 +35,11 @@ import {
   linkEntitiesAcrossModules,
   type EntityLinkingResult,
 } from '../context/entityLinking';
+import {
+  fetchVLinkPipelineContext,
+  toPersistedVLinksForEntityLinking,
+  type VLinkPipelineContextResult,
+} from '../context/vlinkPipelineContextService';
 import { isSyntheticContextEnabled } from '../context/syntheticContextPolicy';
 import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
 import {
@@ -325,10 +330,53 @@ export class DigitalLifeTwinCore {
         if (sc?.moduleContexts && typeof sc.moduleContexts === 'object' && !Array.isArray(sc.moduleContexts)) {
           moduleContextsForAssembly = sc.moduleContexts as Record<string, unknown>;
         }
-        if (moduleContextsForAssembly && Object.keys(moduleContextsForAssembly).length > 0) {
-          const entityLinks = linkEntitiesAcrossModules({
-            moduleContexts: moduleContextsForAssembly,
+
+        const ctxRecordEarly = query.context as Record<string, unknown>;
+        const businessIdForVLink =
+          ctx && typeof ctx.businessId === 'string' && ctx.businessId.trim() !== ''
+            ? ctx.businessId.trim()
+            : undefined;
+        const dashboardIdForVLink =
+          typeof ctxRecordEarly.dashboardId === 'string' && ctxRecordEarly.dashboardId.trim() !== ''
+            ? ctxRecordEarly.dashboardId.trim()
+            : undefined;
+        const householdIdForVLink =
+          typeof ctxRecordEarly.householdId === 'string' && ctxRecordEarly.householdId.trim() !== ''
+            ? ctxRecordEarly.householdId.trim()
+            : undefined;
+
+        let vlinkPipelineContext: VLinkPipelineContextResult | undefined;
+        try {
+          const pipelineCatalogEarly = await getEffectivePipelineCatalog();
+          const vlinkSourceEnabled = pipelineCatalogEarly.contextSources.some(
+            (s) => s.id === 'vlink' && s.enabled && !s.archived
+          );
+          vlinkPipelineContext = await fetchVLinkPipelineContext({
+            userId: query.userId,
             query: query.query,
+            businessId: businessIdForVLink,
+            dashboardId: dashboardIdForVLink,
+            householdId: householdIdForVLink,
+            catalogEnabled: vlinkSourceEnabled,
+          });
+          ctxRecordEarly.vlinkPipelineContext = vlinkPipelineContext;
+        } catch (vlinkError: unknown) {
+          const err = vlinkError instanceof Error ? vlinkError : new Error(String(vlinkError));
+          void logger.warn('V_Link pipeline context fetch failed', {
+            operation: 'digital_life_twin_vlink_context',
+            error: { message: err.message },
+          });
+        }
+
+        const hasModuleContexts =
+          moduleContextsForAssembly && Object.keys(moduleContextsForAssembly).length > 0;
+        const hasVLinkContext = (vlinkPipelineContext?.vlinksUsed ?? 0) > 0;
+
+        if (hasModuleContexts || hasVLinkContext) {
+          const entityLinks = linkEntitiesAcrossModules({
+            moduleContexts: moduleContextsForAssembly ?? {},
+            query: query.query,
+            persistedVLinks: toPersistedVLinksForEntityLinking(vlinkPipelineContext),
           });
           const memoryFacts = Array.isArray((query.context as Record<string, unknown>).userMemoryFacts)
             ? ((query.context as Record<string, unknown>).userMemoryFacts as Array<{
@@ -338,7 +386,7 @@ export class DigitalLifeTwinCore {
             : undefined;
           const crossModuleSynthesis = synthesizeCrossModuleContext({
             query: query.query,
-            moduleContexts: moduleContextsForAssembly,
+            moduleContexts: moduleContextsForAssembly ?? {},
             entityLinks,
             memoryFacts,
           });
@@ -1370,14 +1418,31 @@ export class DigitalLifeTwinCore {
         typeof ctxRecord.businessId === 'string' && ctxRecord.businessId.trim() !== ''
           ? ctxRecord.businessId.trim()
           : undefined;
+      const dashboardId =
+        typeof ctxRecord.dashboardId === 'string' && ctxRecord.dashboardId.trim() !== ''
+          ? ctxRecord.dashboardId.trim()
+          : undefined;
+      const householdId =
+        typeof ctxRecord.householdId === 'string' && ctxRecord.householdId.trim() !== ''
+          ? ctxRecord.householdId.trim()
+          : undefined;
+      const existingVLinkPipelineContext = ctxRecord.vlinkPipelineContext as
+        | VLinkPipelineContextResult
+        | undefined;
       const boost = await runPipelineGroundingRetrieval({
         userId: query.userId,
         userMessage: query.query,
         catalog: pipelineCatalog,
         clientIp,
         businessId,
+        dashboardId,
+        householdId,
         existingModuleContexts: mergedModuleContexts,
+        existingVLinkPipelineContext,
       });
+      if (boost.vlinkPipelineContext) {
+        ctxRecord.vlinkPipelineContext = boost.vlinkPipelineContext;
+      }
       mergedModuleContexts = { ...mergedModuleContexts, ...boost.moduleContextsPatch };
       if (boost.locationSummary) {
         mergedModuleContexts._pipeline_grounding = {
@@ -1423,6 +1488,10 @@ export class DigitalLifeTwinCore {
         }>)
       : undefined;
 
+    const vlinkPipelineContextForAssembly = ctxRecord.vlinkPipelineContext as
+      | VLinkPipelineContextResult
+      | undefined;
+
     const assembledContext = assembleAIContext({
       query,
       userContext: userContext as UserContext & { dashboardContext?: Record<string, unknown> },
@@ -1444,6 +1513,7 @@ export class DigitalLifeTwinCore {
           : structuredResponseMode,
       effectivePreferencesContextBlock: effectivePreferences?.contextBlock,
       businessWorkspaceBoundaries,
+      vlinkPipelineContext: vlinkPipelineContextForAssembly,
     });
     options.assembledContext = assembledContext;
 

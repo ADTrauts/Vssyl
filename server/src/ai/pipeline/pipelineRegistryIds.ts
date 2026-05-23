@@ -25,6 +25,7 @@ export const SYSTEM_CONTEXT_SOURCE_IDS = [
   'drive_files',
   'business_context',
   'vssyl_place',
+  'vlink',
   'web_search',
   'module_context',
   'notifications_activity',

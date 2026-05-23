@@ -32,6 +32,7 @@ import {
   type BusinessWorkspaceBoundaryBlock,
 } from '../enterprise/businessWorkspaceBoundaries';
 import { prepareMemoryFactsForAssembly } from '../memory/memoryContextInjection';
+import type { VLinkPipelineContextResult } from './vlinkPipelineContextService';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -60,6 +61,7 @@ export type AIAssembledEvidenceSourceType =
   | 'drive'
   | 'business'
   | 'personal'
+  | 'vlink'
   | 'system'
   | 'unknown';
 
@@ -174,6 +176,8 @@ export interface AIContextAssemblyInput {
   effectivePreferencesContextBlock?: EffectivePreferencesContextBlock;
   /** Business workspace policies when chatting with businessId (separate from personal prefs). */
   businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock;
+  /** Confirmed V_Link pipeline context (first-class source; excludes unapproved suggestions). */
+  vlinkPipelineContext?: VLinkPipelineContextResult;
 }
 
 export interface ModuleContextAssemblyEntry {
@@ -529,6 +533,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     userMemoryFacts,
     effectivePreferencesContextBlock,
     businessWorkspaceBoundaries,
+    vlinkPipelineContext,
   } = input;
 
   const dashboardCtx =
@@ -956,7 +961,9 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     }
   }
 
-  const moduleContextEntries = normalizeModuleContexts(rawModuleContexts);
+  const moduleContextEntries = normalizeModuleContexts(rawModuleContexts).filter(
+    (entry) => entry.moduleId !== 'vlink'
+  );
   const moduleBlocksLoaded = Math.min(moduleContextEntries.length, MAX_ITEMS);
   for (const entry of moduleContextEntries.slice(0, MAX_ITEMS)) {
     const label = entry.moduleName || entry.moduleId;
@@ -977,6 +984,47 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
       detail: entry.providerName ? `provider ${entry.providerName}` : undefined,
       confidence: entry.relevance === 'high' ? 'high' : 'medium',
     });
+  }
+
+  if (vlinkPipelineContext && vlinkPipelineContext.vlinksUsed > 0) {
+    contextBlocks.push({
+      title: 'V_Link Relationships (confirmed)',
+      sourceType: 'vlink',
+      content: {
+        vlinks: vlinkPipelineContext.items.map((item) => ({
+          vlinkId: item.vlinkId,
+          publicCode: item.publicCode,
+          title: item.title,
+          scope: item.scope,
+          parentVLinkId: item.parentVLinkId,
+          updatedAt: item.updatedAt,
+          accessibleLinkedEntities: item.linkedEntities
+            .filter((e) => e.access === 'full')
+            .slice(0, 8)
+            .map((e) => ({
+              entityType: e.entityType,
+              entityId: e.entityId,
+              moduleId: e.moduleId,
+              title: e.title,
+              url: e.url,
+            })),
+          restrictedLinkedEntityCount: item.restrictedLinkedEntityCount,
+        })),
+        suggestionsIgnored: vlinkPipelineContext.suggestionsIgnored,
+      },
+      priority: 'high',
+      tier: 'tier4_cross_module',
+      inclusionReason: 'confirmed V_Link relationships (permission-filtered; unapproved suggestions excluded)',
+    });
+    evidence.push({
+      label: 'V_Link Relationships',
+      sourceType: 'vlink',
+      sourceId: 'vlink',
+      detail: `${vlinkPipelineContext.vlinksUsed} vlink(s); ${vlinkPipelineContext.accessibleLinkedEntities} accessible linked entity reference(s); ${vlinkPipelineContext.restrictedLinkedEntities} restricted`,
+      confidence: 'high',
+    });
+  } else if (vlinkPipelineContext?.skippedReason === 'source_disabled') {
+    missingContext.push('V_Link context source disabled in pipeline catalog');
   }
 
   if (

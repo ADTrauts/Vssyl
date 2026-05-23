@@ -1,5 +1,11 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## Most recent completed project — V_Link AI Pipeline integration (May 2026) ✅
+
+V_Link is now a **first-class AI Pipeline Context Source** (`vlink` / V_Link Relationships): registry + DB reconcile, permission-filtered runtime grounding in `DigitalLifeTwinCore`, `persistedVLinks` entity linking, and pipeline traces with `source: vlink`.
+
+---
+
 ## V_Link platform layer (May 2026) ✅
 
 **Status:** **IMPLEMENTED** — platform-wide contextual relationship layer (not a marketplace module).
@@ -16,7 +22,11 @@
 | **Hub UI** | `/vlink` — filters, detail tabs (Files/Calendar functional; Chat/Tasks placeholders) |
 | **Shell** | Right-sidebar icon under AI; drag-to-link + `VLinkConnectModal` |
 | **Integrations** | Drive (indicators, context menu, upload toast); Calendar (`EventDrawer`, event chips) |
-| **AI** | Context provider `GET /api/vlinks/ai/context/recent`; `entityLinking` persisted vlink merge; suggestion accept/reject API |
+| **AI** | Context provider + **pipeline source `vlink`**; `entityLinking` persisted vlink merge; traces show `source: vlink` |
+
+**AI pipeline completion (May 2026):** V_Link is a first-class Admin Portal Context Source (`vlink` / V_Link Relationships). Confirmed vlinks ground the twin via `vlinkPipelineContextService`; unapproved suggestions never ground responses.
+
+**Corrective fix (May 2026):** Grounding rules now reconcile idempotently (`reconcileSystemPipelineGroundingRules`) so existing DBs receive optional `vlink` on system intents without overwriting admin-customized non-system rows.
 
 **Non-negotiable (v1):** V_Link membership **does not** grant access to linked entity content; membership-only access (no UNLISTED); one primary vlink per entity.
 

@@ -79,6 +79,24 @@ describe('pipelineTraceInsights', () => {
     expect(buildFailureCategories(trace)).not.toContain('MISSING_CONTEXT');
   });
 
+  it('vlink source appears in context checklist and counts retrieved vlinks', () => {
+    const trace = buildPipelineTrace(
+      {
+        userId: 'u1',
+        userMessage: 'Everything connected to my QBR vlink',
+        finalResponse: 'Your confirmed vlinks connect these items.',
+        contextRetrieved: [{ source: 'vlink', provider: 'recent_vlinks', itemCount: 2 }],
+        sourcesUsed: ['vlink'],
+      },
+      { catalog }
+    );
+
+    const vlinkRow = buildContextUsedRows(trace, catalog).find((r) => r.id === 'vlink');
+    expect(vlinkRow?.label).toBe('V_Link Relationships');
+    expect(vlinkRow?.status).toBe('used');
+    expect(vlinkRow?.itemCount).toBe(2);
+  });
+
   it('web_search source => planned or disabled', () => {
     const trace = buildPipelineTrace(
       {

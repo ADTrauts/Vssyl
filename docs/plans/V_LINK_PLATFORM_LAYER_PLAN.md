@@ -593,7 +593,15 @@ Owner/editor/viewer, guest invites, **business ADMIN force-transfer ownership**,
 
 ### Phase VL-9: AI context provider
 
-Confirmed vlinks in twin assembly; auth filtering.
+**Status:** ✅ Complete — includes first-class AI Pipeline Context Source (`vlink`).
+
+- Module provider: `GET /api/vlinks/ai/context/recent`
+- Pipeline registry: `vlink` / **V_Link Relationships** in `pipelineCatalogDefaults.ts` (+ idempotent DB reconcile)
+- Grounding rules: optional `vlink` on planning/workflow/business/technical intents (+ idempotent DB reconcile via `reconcileSystemPipelineGroundingRules`)
+- Runtime: `vlinkPipelineContextService.ts` → `DigitalLifeTwinCore` → `entityLinking` (`persistedVLinks`)
+- Traces: `source: vlink` in admin pipeline diagnostics (not generic `module_context` only)
+- Grounding: optional `vlink` on planning / workflow / business intents; strong fetch on VL-code references
+- **Excluded from grounding truth:** pending `VLinkSuggestion` rows (accept/reject API only)
 
 ---
 

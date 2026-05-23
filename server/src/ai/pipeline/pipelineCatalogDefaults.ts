@@ -112,6 +112,12 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
     requirementSummary: 'location + (place_search | web_search)',
   },
   {
+    intentId: 'planning',
+    requiredSources: [],
+    optionalSources: ['user_memory', 'calendar', 'drive_files', 'vlink'],
+    requirementSummary: 'optional memory, calendar, drive, vlink',
+  },
+  {
     intentId: 'recommendation',
     requiredSources: ['user_memory'],
     optionalSources: ['web_search', 'profile', 'vssyl_place'],
@@ -126,7 +132,7 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'business_operations',
     requiredSources: ['business_context', 'module_context'],
-    optionalSources: ['notifications_activity', 'calendar'],
+    optionalSources: ['notifications_activity', 'calendar', 'vlink'],
     requirementSummary: 'business_context + module_context',
   },
   {
@@ -136,9 +142,15 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
     requirementSummary: 'optional memory',
   },
   {
+    intentId: 'workflow_action',
+    requiredSources: [],
+    optionalSources: ['calendar', 'drive_files', 'vlink', 'module_context'],
+    requirementSummary: 'optional workflow modules and vlink',
+  },
+  {
     intentId: 'technical_help',
     requiredSources: [],
-    optionalSources: ['repo_context', 'module_context'],
+    optionalSources: ['repo_context', 'module_context', 'vlink'],
     requirementSummary: 'optional repo_context',
   },
 ];
@@ -146,6 +158,7 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
 export const SOURCE_TO_TOOLS: Record<string, PipelineToolPolicy['toolId'][]> = {
   location: ['location'],
   vssyl_place: ['place_search'],
+  vlink: ['module_context'],
   web_search: ['web_search'],
   user_memory: ['memory'],
   business_context: ['business_context'],
@@ -214,6 +227,13 @@ export const DEFAULT_PIPELINE_CONTEXT_SOURCES: DefaultSourceSeed[] = [
     id: 'vssyl_place',
     label: 'Vssyl Place',
     description: 'Place module AI context providers',
+    enabled: true,
+    wiredInTwin: true,
+  },
+  {
+    id: 'vlink',
+    label: 'V_Link Relationships',
+    description: 'Permission-filtered relationship graph context from confirmed V_Links.',
     enabled: true,
     wiredInTwin: true,
   },

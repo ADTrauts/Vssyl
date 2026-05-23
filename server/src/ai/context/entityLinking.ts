@@ -20,11 +20,17 @@ export interface LinkedFile {
 }
 
 export interface EntityLinkRecord {
-  type: 'shared_participant' | 'chat_attachment_drive_file' | 'shared_file_reference';
+  type:
+    | 'shared_participant'
+    | 'chat_attachment_drive_file'
+    | 'shared_file_reference'
+    | 'confirmed_vlink_relationship';
   description: string;
   modules: string[];
   entities: string[];
   suggestedAction?: string;
+  linkKind?: 'confirmed' | 'inferred';
+  confidence?: number;
 }
 
 export interface EntityLinkingResult {
@@ -33,16 +39,20 @@ export interface EntityLinkingResult {
   links: EntityLinkRecord[];
 }
 
+export interface PersistedVLinkForEntityLinking {
+  vlinkId: string;
+  title: string;
+  publicCode: string;
+  entityTypes: string[];
+  linkKind: 'confirmed_vlink';
+  confidence: number;
+}
+
 export interface EntityLinkingInput {
   moduleContexts: Record<string, unknown>;
   query?: string;
-  /** Confirmed V_Link rows from persisted store (VL-9) — preferred over inference when present */
-  persistedVLinks?: Array<{
-    vlinkId: string;
-    title: string;
-    publicCode: string;
-    entityTypes: string[];
-  }>;
+  /** Confirmed V_Link rows from persisted store — preferred over inference when present */
+  persistedVLinks?: PersistedVLinkForEntityLinking[];
 }
 
 interface PersonRef {
@@ -287,6 +297,8 @@ export function linkEntitiesAcrossModules(input: EntityLinkingInput): EntityLink
       modules: person.modules,
       entities: [person.name],
       suggestedAction: 'Reference shared participants when discussing meetings or messages',
+      linkKind: 'inferred',
+      confidence: person.confidence,
     });
   }
 
@@ -297,17 +309,21 @@ export function linkEntitiesAcrossModules(input: EntityLinkingInput): EntityLink
       modules: file.modules,
       entities: [file.fileName ?? file.fileId],
       suggestedAction: 'Use the shared file when answering about recent collaboration',
+      linkKind: 'inferred',
+      confidence: file.confidence,
     });
   }
 
   if (input.persistedVLinks?.length) {
     for (const vlink of input.persistedVLinks) {
       links.push({
-        type: 'shared_file_reference',
+        type: 'confirmed_vlink_relationship',
         description: `Confirmed V_Link "${vlink.title}" (${vlink.publicCode}) connects ${vlink.entityTypes.join(', ')}`,
         modules: ['vlink', ...vlink.entityTypes],
         entities: [vlink.publicCode],
         suggestedAction: 'Use confirmed vlink relationships as grounding; do not invent new links',
+        linkKind: 'confirmed',
+        confidence: vlink.confidence,
       });
     }
   }
