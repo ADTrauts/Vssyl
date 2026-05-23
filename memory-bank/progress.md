@@ -28,6 +28,8 @@
 
 **Migrations:** `20260522120000_ai_suggestion_ambient_fields`, `20260522120100_ai_suggestion_enums`
 
+**Ops follow-up:** `pnpm prisma:migrate:deploy` when ready (includes ambient + V_Link migrations above).
+
 **Canonical:** [`docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](../docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md)
 
 ---

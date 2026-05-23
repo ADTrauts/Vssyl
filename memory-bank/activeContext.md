@@ -45,7 +45,7 @@
 
 **Ops follow-up (not code):** deploy pending migrations (`20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`) when ready.
 
-## AI Phase 5 — Ambient Contextual Assistance (May 2026) 📋
+## AI Phase 5 — Ambient Contextual Assistance (May 2026) ✅
 
 **Status:** **IMPLEMENTED (May 2026)** — Phases **5A–5F** complete per [`docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](../docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md).
 
