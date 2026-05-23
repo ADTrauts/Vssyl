@@ -25,7 +25,8 @@ import {
   Keyboard,
   CheckSquare,
   Square,
-  Check
+  Check,
+  Link2,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -63,6 +64,14 @@ import {
   moveFile,
   moveFolder
 } from '@/api/drive';
+import { VLinkIndicator, VLinkCornerMarker } from '@/components/vlink/VLinkIndicator';
+import { getVLinksForEntity } from '@/api/vlinks';
+import {
+  isVLinkSidebarDrag,
+  parseVLinkDropPayload,
+  useVLinkDrag,
+  type VLinkDragEntity,
+} from '@/contexts/VLinkDragContext';
 
 interface DriveItem {
   id: string;
@@ -97,6 +106,23 @@ const EMPTY_IMAGE_DATA_URL = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org
 function getFileThumbnailUrl(item: DriveItem): string {
   if (isTempUploadId(item.id)) return EMPTY_IMAGE_DATA_URL;
   return `/api/drive/files/${item.id}/download`;
+}
+
+function driveItemToVLinkEntity(
+  item: DriveItem,
+  dashboardId: string | null | undefined,
+  businessId: string | null | undefined,
+  householdId: string | null | undefined
+): VLinkDragEntity {
+  return {
+    entityType: item.type === 'folder' ? 'FOLDER' : 'FILE',
+    entityId: item.id,
+    moduleId: 'drive',
+    title: item.name,
+    dashboardId: dashboardId ?? undefined,
+    businessId: businessId ?? null,
+    householdId: householdId ?? null,
+  };
 }
 
 // Root drop zone component for moving items back to root
@@ -142,7 +168,9 @@ const DraggableItem = React.memo(function DraggableItem({
   handleShare,
   handleDownload,
   viewMode = 'grid',
-  dashboardId
+  dashboardId,
+  onSidebarVLinkDragOver,
+  onSidebarVLinkDrop,
 }: {
   item: DriveItem;
   isSelected: boolean;
@@ -158,6 +186,8 @@ const DraggableItem = React.memo(function DraggableItem({
   handleDownload: (id: string) => void;
   viewMode?: 'grid' | 'list';
   dashboardId?: string | null;
+  onSidebarVLinkDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onSidebarVLinkDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
 }) {
   // Use dnd-kit for folder-to-folder drag within Drive, but allow native drag for trash
   // We need both to work: native HTML5 drag for GlobalTrashBin, dnd-kit for folder moves
@@ -253,6 +283,8 @@ const DraggableItem = React.memo(function DraggableItem({
         style={style}
         draggable={true}
         onDragStart={handleNativeDragStart}
+        onDragOver={onSidebarVLinkDragOver}
+        onDrop={onSidebarVLinkDrop}
         className={`cursor-pointer hover:bg-gray-50 transition-colors ${
           isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : ''
         } ${isFocused && !isSelected ? 'ring-2 ring-blue-300 ring-offset-2' : ''} ${
@@ -266,6 +298,10 @@ const DraggableItem = React.memo(function DraggableItem({
         aria-selected={isSelected}
       >
         <Card className="p-4 relative">
+          <VLinkCornerMarker
+            entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+            entityId={item.id}
+          />
           {/* Pin indicator - Always visible in top left when pinned, clickable to unpin */}
           {item.starred && (
             <button
@@ -305,8 +341,13 @@ const DraggableItem = React.memo(function DraggableItem({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {item.name}
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-1 min-w-0">
+                <span className="truncate">{item.name}</span>
+                <VLinkIndicator
+                  entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+                  entityId={item.id}
+                  className="flex-shrink-0"
+                />
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Modified {formatDate(item.modifiedAt)} by {item.createdBy}
@@ -363,6 +404,8 @@ const DraggableItem = React.memo(function DraggableItem({
       style={style}
       draggable={true}
       onDragStart={handleNativeDragStart}
+      onDragOver={onSidebarVLinkDragOver}
+      onDrop={onSidebarVLinkDrop}
       className={`group relative cursor-pointer hover:shadow-md transition-shadow rounded-lg ${
         isSelected ? 'ring-2 ring-blue-500' : ''
       } ${isFocused && !isSelected ? 'ring-2 ring-blue-300 ring-offset-2' : ''} ${
@@ -375,6 +418,10 @@ const DraggableItem = React.memo(function DraggableItem({
       aria-label={`${item.type === 'folder' ? 'Folder' : 'File'}: ${item.name}`}
       aria-selected={isSelected}
     >
+      <VLinkCornerMarker
+        entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+        entityId={item.id}
+      />
       <Card className="p-4">
         {/* Pin indicator - Always visible in top left when pinned, clickable to unpin */}
         {item.starred && (
@@ -438,8 +485,16 @@ const DraggableItem = React.memo(function DraggableItem({
           <div className={`flex justify-center mb-2 ${item.mimeType?.startsWith('image/') ? 'w-full' : ''}`}>
             {getFileIcon(item)}
           </div>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.name}>
-            {item.name}
+          <p
+            className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate flex items-center justify-center gap-1 flex-wrap px-1"
+            title={item.name}
+          >
+            <span className="truncate max-w-full">{item.name}</span>
+            <VLinkIndicator
+              entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+              entityId={item.id}
+              className="flex-shrink-0"
+            />
           </p>
           {item.type === 'file' && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -507,6 +562,11 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const effectiveDashboardId = dashboardId || currentDashboard?.id || null;
   const { trashItem } = useGlobalTrash();
   const { setFilters: setGlobalSearchFilters } = useGlobalSearch();
+  const { openConnectModal } = useVLinkDrag();
+  const businessId =
+    currentDashboard && 'business' in currentDashboard ? currentDashboard.business?.id ?? null : null;
+  const householdId =
+    currentDashboard && 'household' in currentDashboard ? currentDashboard.household?.id ?? null : null;
 
   // Close filter menu when clicking outside
   useEffect(() => {
@@ -1208,6 +1268,63 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, item });
   };
+
+  const handleSidebarVLinkDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!isVLinkSidebarDrag(e.dataTransfer)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleSidebarVLinkDropForItem = useCallback(
+    (item: DriveItem, e: React.DragEvent<HTMLDivElement>) => {
+      if (!isVLinkSidebarDrag(e.dataTransfer)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const parsed = parseVLinkDropPayload(e.dataTransfer);
+      if (parsed) {
+        openConnectModal(parsed);
+        return;
+      }
+      openConnectModal(driveItemToVLinkEntity(item, effectiveDashboardId, businessId, householdId));
+    },
+    [openConnectModal, effectiveDashboardId, businessId, householdId]
+  );
+
+  const handleViewLinkedVLinks = useCallback(
+    async (driveItem: DriveItem) => {
+      if (!session?.accessToken) {
+        toast.error('Please log in');
+        return;
+      }
+      const entityType = driveItem.type === 'folder' ? 'FOLDER' : 'FILE';
+      try {
+        const refs = await getVLinksForEntity(session.accessToken, entityType, driveItem.id);
+        if (refs.length === 0) {
+          toast('No linked V_Links.', { duration: 3000 });
+          return;
+        }
+        toast.success(
+          () => (
+            <div className="text-sm text-gray-900">
+              <div className="font-medium text-gray-900 mb-1">Linked V_Links</div>
+              <ul className="space-y-0.5">
+                {refs.map((r) => (
+                  <li key={r.entityLinkId} className="text-gray-800">
+                    {r.title} <span className="text-gray-600">{r.publicCode}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ),
+          { duration: 6000 }
+        );
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Could not load V_Links');
+      }
+    },
+    [session?.accessToken]
+  );
 
   const handleDiscussInChat = useCallback((item: DriveItem) => {
     // Navigate to chat with file reference
@@ -2018,6 +2135,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                       handleStar={handleStar}
                       handleShare={handleShare}
                       handleDownload={handleDownload}
+                      onSidebarVLinkDragOver={handleSidebarVLinkDragOver}
+                      onSidebarVLinkDrop={(e) => handleSidebarVLinkDropForItem(item, e)}
                       dashboardId={effectiveDashboardId}
                     />
                   </div>
@@ -2050,6 +2169,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                       handleShare={handleShare}
                       handleDownload={handleDownload}
                       viewMode="list"
+                      onSidebarVLinkDragOver={handleSidebarVLinkDragOver}
+                      onSidebarVLinkDrop={(e) => handleSidebarVLinkDropForItem(item, e)}
                       dashboardId={effectiveDashboardId}
                     />
                   </div>
@@ -2090,6 +2211,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                         handleStar={handleStar}
                         handleShare={handleShare}
                         handleDownload={handleDownload}
+                        onSidebarVLinkDragOver={handleSidebarVLinkDragOver}
+                        onSidebarVLinkDrop={(e) => handleSidebarVLinkDropForItem(item, e)}
                         dashboardId={effectiveDashboardId}
                       />
                     </div>
@@ -2124,6 +2247,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
                         handleShare={handleShare}
                         handleDownload={handleDownload}
                         viewMode="list"
+                        onSidebarVLinkDragOver={handleSidebarVLinkDragOver}
+                        onSidebarVLinkDrop={(e) => handleSidebarVLinkDropForItem(item, e)}
                         dashboardId={effectiveDashboardId}
                       />
                     </div>
@@ -2223,6 +2348,37 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           >
             <Pin className="w-4 h-4" />
             <span>{contextMenu.item.starred ? 'Unpin' : 'Pin'}</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+            onClick={() => {
+              openConnectModal(
+                driveItemToVLinkEntity(
+                  contextMenu.item,
+                  effectiveDashboardId,
+                  businessId,
+                  householdId,
+                ),
+              );
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            aria-label={`Add ${contextMenu.item.name} to V_Link`}
+          >
+            <Link2 className="w-4 h-4" />
+            <span>Add to V_Link</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
+            onClick={() => {
+              void handleViewLinkedVLinks(contextMenu.item);
+              setContextMenu(null);
+            }}
+            role="menuitem"
+            aria-label={`View V_Links linked to ${contextMenu.item.name}`}
+          >
+            <Link2 className="w-4 h-4 opacity-70" />
+            <span>View linked vlinks</span>
           </button>
           {contextMenu.item.type === 'file' && (
             <>

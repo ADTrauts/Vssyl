@@ -21,6 +21,7 @@ import { Spinner, Alert } from 'shared/components';
 import ClientOnlyWrapper from '../../app/ClientOnlyWrapper';
 import AvatarContextMenu from '../AvatarContextMenu';
 import GlobalHeaderTabs from '../GlobalHeaderTabs';
+import { VLinkSidebarButton } from '../vlink/VLinkSidebarButton';
 import { useBusinessConfiguration } from '../../contexts/BusinessConfigurationContext';
 import { useGlobalBranding } from '../../contexts/GlobalBrandingContext';
 import { usePositionAwareModules } from '../PositionAwareModuleProvider';
@@ -754,6 +755,8 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           >
             <Brain size={22} />
           </button>
+
+          <VLinkSidebarButton />
           
           <button
             className="flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors hover:bg-gray-700 text-gray-300"

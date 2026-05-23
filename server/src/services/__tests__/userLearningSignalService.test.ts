@@ -7,6 +7,14 @@ import {
 import { LEARNING_SIGNAL_TYPES } from '../../ai/learning/learningSignalTypes';
 import { LEARNING_EVENT_TYPES } from '../../ai/learning/learningProposalTypes';
 
+vi.mock('../learningApplicationService', () => ({
+  learningApplicationService: {
+    createPendingPreferenceFromSuggestionPattern: vi.fn().mockResolvedValue({ id: 'ctx-1' }),
+  },
+}));
+
+import { learningApplicationService } from '../learningApplicationService';
+
 function mockDb() {
   return {
     businessMember: { findFirst: vi.fn().mockResolvedValue({ id: 'm1' }) },
@@ -16,6 +24,9 @@ function mockDb() {
       findFirst: vi.fn(),
       count: vi.fn(),
       update: vi.fn(),
+    },
+    aISuggestionFeedback: {
+      count: vi.fn().mockResolvedValue(0),
     },
   } as unknown as PrismaClient;
 }
@@ -65,6 +76,8 @@ describe('userLearningSignalService', () => {
       suggestionId: 'sug-2',
       suggestionType: 'document_upload',
       suggestionTitle: 'Review invoice',
+      doNotShowAgain: true,
+      correlationRuleId: 'document_upload_v1',
     });
 
     expect(db.aILearningEvent.create).toHaveBeenCalledWith(
@@ -74,6 +87,26 @@ describe('userLearningSignalService', () => {
             signalType: LEARNING_SIGNAL_TYPES.SUGGESTION_DISMISSED,
           }),
         }),
+      })
+    );
+  });
+
+  it('creates pending learning proposal after repeated accepts (Phase 5E)', async () => {
+    vi.mocked(db.aISuggestionFeedback.count).mockResolvedValue(3);
+
+    await service.recordSuggestionAccepted({
+      userId: 'user-1',
+      suggestionId: 'sug-3',
+      suggestionType: 'meeting_prep',
+      suggestionTitle: 'Prep for meeting',
+      correlationRuleId: 'meeting_prep_v1',
+    });
+
+    expect(learningApplicationService.createPendingPreferenceFromSuggestionPattern).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        suggestionType: 'meeting_prep',
+        acceptanceCount: 3,
       })
     );
   });

@@ -1765,6 +1765,27 @@ class AdminApiService {
     });
   }
 
+  async runSuggestionCorrelationDryRun(body: {
+    fixtureId?: 'meeting_prep' | 'thread_spike' | 'document_upload';
+    userId?: string;
+    dashboardId?: string;
+    recentSuggestionCount?: number;
+    suppressedKeys?: string[];
+    dismissCountByType?: Record<string, number>;
+  }) {
+    return this.makeRequest<import('../types/adminAiPipeline').SuggestionDryRunResult>(
+      '/ai-pipeline/suggestions/dry-run',
+      { method: 'POST', body: JSON.stringify(body) }
+    );
+  }
+
+  async getSuggestionFunnelMetrics(days?: number) {
+    const qs = days != null ? `?days=${days}` : '';
+    return this.makeRequest<import('../types/adminAiPipeline').SuggestionFunnelMetrics>(
+      `/ai-pipeline/suggestions/metrics${qs}`
+    );
+  }
+
   async runModuleContextProviderHealthCheck(body: {
     userId?: string;
     moduleId?: string;

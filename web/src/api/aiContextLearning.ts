@@ -5,6 +5,8 @@ export interface PendingLearningItem {
   title: string;
   content: string;
   contextType: string;
+  source?: string | null;
+  tags?: string[];
   createdAt: string;
 }
 

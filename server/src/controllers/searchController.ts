@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { Prisma, RelationshipStatus } from '@prisma/client';
 import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
+import { searchVLinksForUser } from '../services/vlinkService';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 
@@ -192,6 +193,27 @@ const placeSearchProvider: SearchProvider = {
   },
 };
 
+const vlinkSearchProvider: SearchProvider = {
+  moduleId: 'vlink',
+  moduleName: 'V_Link',
+  search: async (query, userId) => {
+    const rows = await searchVLinksForUser(userId, query);
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.publicCode,
+      moduleId: 'vlink',
+      moduleName: 'V_Link',
+      url: row.url,
+      type: 'vlink',
+      metadata: { publicCode: row.publicCode, scope: row.scope },
+      permissions: [{ type: 'read', granted: true }],
+      lastModified: new Date(),
+      relevanceScore: 0.85,
+    }));
+  },
+};
+
 // Provider registry
 const searchProviders: SearchProvider[] = [
   driveSearchProvider,
@@ -199,6 +221,7 @@ const searchProviders: SearchProvider[] = [
   dashboardSearchProvider,
   memberSearchProvider,
   placeSearchProvider,
+  vlinkSearchProvider,
 ];
 
 // Refactored global search using provider registry

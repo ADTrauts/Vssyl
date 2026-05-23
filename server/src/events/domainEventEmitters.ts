@@ -104,6 +104,7 @@ export function emitFileUploadedEvent(params: {
   fileId: string;
   folderId?: string | null;
   fileType?: string;
+  fileName?: string;
   sizeBytes?: number;
   dashboardId?: string | null;
 }): DomainEvent {
@@ -111,9 +112,11 @@ export function emitFileUploadedEvent(params: {
     buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FILE_UPLOADED, {
       actorUserId: params.actorUserId,
       entityId: params.fileId,
+      dashboardId: params.dashboardId,
       metadata: {
         ...(params.folderId != null ? { folderId: params.folderId } : {}),
         ...(params.fileType ? { fileType: params.fileType } : {}),
+        ...(params.fileName ? { fileName: params.fileName } : {}),
         ...(params.sizeBytes !== undefined ? { sizeBytes: params.sizeBytes } : {}),
         ...(params.dashboardId != null ? { dashboardId: params.dashboardId } : {}),
       },

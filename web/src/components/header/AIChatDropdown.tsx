@@ -32,6 +32,7 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import { toast } from 'react-hot-toast';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
+import AmbientSuggestionCard from '../ai/AmbientSuggestionCard';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -221,7 +222,22 @@ export default function AIChatDropdown({
     if (!session?.accessToken) return;
     setLoadingSuggestions(true);
     try {
-      const suggestions = await getSuggestions(session.accessToken);
+      const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
+      const businessId =
+        effectiveModuleContext?.businessId ||
+        (dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined);
+      const suggestions = await getSuggestions(session.accessToken, {
+        dashboardId: effectiveDashboardId,
+        businessId,
+        scope: 'pending',
+      });
       setAiSuggestions(suggestions);
     } catch (error) {
       console.error('Failed to load suggestions:', error);
@@ -236,7 +252,21 @@ export default function AIChatDropdown({
     if (!session?.accessToken) return;
     setSuggestionActionId(s.id);
     try {
-      const { fileId, suggestedPrompt } = await acceptSuggestion(s.id, session.accessToken);
+      const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
+      const businessId =
+        effectiveModuleContext?.businessId ||
+        (dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined);
+      const { fileId, suggestedPrompt } = await acceptSuggestion(s.id, session.accessToken, {
+        dashboardId: effectiveDashboardId,
+        businessId,
+      });
       setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
       toast.success('Suggestion accepted');
       
@@ -267,11 +297,30 @@ export default function AIChatDropdown({
   };
 
   // Handle dismissing a suggestion
-  const handleDismissSuggestion = async (s: AISuggestionItem) => {
+  const handleDismissSuggestion = async (
+    s: AISuggestionItem,
+    options?: { doNotShowAgain?: boolean; reason?: string }
+  ) => {
     if (!session?.accessToken) return;
     setSuggestionActionId(s.id);
     try {
-      await dismissSuggestion(s.id, session.accessToken);
+      const effectiveDashboardId = dashboardId ?? currentDashboard?.id;
+      const businessId =
+        effectiveModuleContext?.businessId ||
+        (dashboardType === 'business' &&
+        currentDashboard &&
+        'business' in currentDashboard &&
+        currentDashboard.business &&
+        typeof currentDashboard.business === 'object' &&
+        'id' in currentDashboard.business
+          ? (currentDashboard.business as { id: string }).id
+          : undefined);
+      await dismissSuggestion(s.id, session.accessToken, {
+        dashboardId: effectiveDashboardId,
+        businessId,
+        doNotShowAgain: options?.doNotShowAgain,
+        reason: options?.reason,
+      });
       setAiSuggestions((prev) => prev.filter((x) => x.id !== s.id));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to dismiss');
@@ -1307,52 +1356,24 @@ export default function AIChatDropdown({
 
           {/* AI Suggestions */}
           {!loadingSuggestions && aiSuggestions.length > 0 && (
-            <div className="px-4 pt-3 pb-2 border-t border-gray-100 bg-gradient-to-br from-purple-50 to-blue-50">
+            <div className="px-4 pt-3 pb-2 border-t border-gray-100 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-slate-900">
               <div className="flex items-center gap-1.5 mb-2">
                 <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">AI Suggestions</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                  Contextual suggestions
+                </span>
               </div>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {aiSuggestions.map((s) => {
-                  const busy = suggestionActionId === s.id;
-                  return (
-                    <div
-                      key={s.id}
-                      className="rounded-lg border border-purple-200 bg-white dark:bg-slate-900/80 p-2 text-left shadow-sm"
-                    >
-                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{s.title}</p>
-                      {s.body && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-1">{s.body}</p>
-                      )}
-                      <div className="mt-1.5 flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          className="flex-1 text-xs h-6 px-2"
-                          disabled={busy}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAcceptSuggestion(s);
-                          }}
-                        >
-                          {busy ? <Spinner size={12} /> : 'Accept'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs h-6 px-2"
-                          disabled={busy}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDismissSuggestion(s);
-                          }}
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {aiSuggestions.map((s) => (
+                  <AmbientSuggestionCard
+                    key={s.id}
+                    suggestion={s}
+                    compact
+                    busy={suggestionActionId === s.id}
+                    onAccept={handleAcceptSuggestion}
+                    onDismiss={handleDismissSuggestion}
+                  />
+                ))}
               </div>
             </div>
           )}

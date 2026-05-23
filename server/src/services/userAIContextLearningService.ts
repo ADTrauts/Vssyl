@@ -17,6 +17,8 @@ export interface PendingLearningSummary {
   title: string;
   content: string;
   contextType: string;
+  source?: string | null;
+  tags?: string[];
   createdAt: Date;
 }
 
@@ -49,6 +51,8 @@ export class UserAIContextLearningService {
         title: true,
         content: true,
         contextType: true,
+        source: true,
+        tags: true,
         createdAt: true,
       },
     });

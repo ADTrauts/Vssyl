@@ -16,6 +16,7 @@ import { useThemeColors } from '../hooks/useThemeColors';
 import { useBusinessConfiguration } from '../contexts/BusinessConfigurationContext';
 import { getBusiness } from '../api/business';
 import { getSuggestions } from '../api/aiSuggestions';
+import { resolveBusinessIdFromDashboard } from '../lib/resolveBusinessIdFromDashboard';
 
 // Helper: get dashboard icon
 function getDashboardIcon(name: string, type?: string) {
@@ -140,9 +141,14 @@ export default function GlobalHeaderTabs() {
     
     const loadSuggestionCount = async () => {
       try {
-        const suggestions = await getSuggestions(session.accessToken);
-        const pendingCount = suggestions.filter(s => s.status === 'PENDING').length;
-        setPendingSuggestionsCount(pendingCount);
+        const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
+        const businessId = resolveBusinessIdFromDashboard(currentDashboard, dashboardType);
+        const suggestions = await getSuggestions(session.accessToken, {
+          dashboardId: currentDashboardId ?? currentDashboard?.id,
+          businessId,
+          scope: 'pending',
+        });
+        setPendingSuggestionsCount(suggestions.length);
       } catch (error) {
         console.error('Failed to load suggestion count:', error);
       }
@@ -154,7 +160,7 @@ export default function GlobalHeaderTabs() {
     // Poll every 3 seconds
     const interval = setInterval(loadSuggestionCount, 3000);
     return () => clearInterval(interval);
-  }, [session?.accessToken]);
+  }, [session?.accessToken, currentDashboardId, currentDashboard, getDashboardType]);
 
 
   // Personal dashboards ordering

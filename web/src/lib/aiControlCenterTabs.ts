@@ -2,7 +2,7 @@
  * AI Identity (/ai) tab routing — canonical IDs and legacy query-param mapping.
  */
 
-export type AIPrimaryTab = 'identity' | 'learning' | 'memory' | 'behavior';
+export type AIPrimaryTab = 'identity' | 'learning' | 'suggestions' | 'memory' | 'behavior';
 export type AIMoreSection = 'provider' | 'actions' | 'insights';
 
 export const DEFAULT_AI_TAB: AIPrimaryTab = 'identity';
@@ -22,6 +22,7 @@ const LEGACY_TAB_MAP: Record<string, Omit<NormalizedAITab, 'intel'>> = {
   memories: { tab: 'memory' },
   memory: { tab: 'memory' },
   learning: { tab: 'learning' },
+  suggestions: { tab: 'suggestions' },
   behavior: { tab: 'behavior' },
   personality: { tab: 'behavior' },
   autonomy: { tab: 'behavior' },

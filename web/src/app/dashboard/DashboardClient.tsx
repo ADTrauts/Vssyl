@@ -26,6 +26,7 @@ import CalendarWidget from '../../components/widgets/CalendarWidget';
 import TodoWidget from '../../components/widgets/TodoWidget';
 import NotesWidget from '../../components/widgets/NotesWidget';
 import QuickStatsWidget from '../../components/widgets/QuickStatsWidget';
+import AIWidget from '../../components/widgets/AIWidget';
 import NotificationsWidget from '../../components/widgets/NotificationsWidget';
 import QuickNotesWidget from '../../components/widgets/QuickNotesWidget';
 import BookmarksWidget from '../../components/widgets/BookmarksWidget';
@@ -182,6 +183,15 @@ function WidgetContentRenderer({
     case 'scheduling':
       return (
         <SchedulingWidget
+          id={widget.id}
+          config={widgetConfig}
+          onConfigChange={onConfigChange}
+          {...dashboardContext}
+        />
+      );
+    case 'ai':
+      return (
+        <AIWidget
           id={widget.id}
           config={widgetConfig}
           onConfigChange={onConfigChange}

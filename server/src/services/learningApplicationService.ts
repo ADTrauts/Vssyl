@@ -352,6 +352,63 @@ export class LearningApplicationService {
       appliedAt: new Date().toISOString(),
     });
   }
+
+  /**
+   * Phase 5E — repeated suggestion accepts create a reviewable pending preference (not auto-promote).
+   */
+  async createPendingPreferenceFromSuggestionPattern(input: {
+    userId: string;
+    suggestionType: string;
+    correlationRuleId?: string | null;
+    acceptanceCount: number;
+    dashboardId?: string | null;
+    businessId?: string | null;
+  }): Promise<{ id: string } | null> {
+    const dedupeTag = `ambient_suggestion:${input.suggestionType}`;
+    const existing = await this.db.userAIContext.findFirst({
+      where: {
+        userId: input.userId,
+        learningStatus: 'pending',
+        tags: { has: dedupeTag },
+      },
+    });
+    if (existing) return null;
+
+    const typeLabel = input.suggestionType.replace(/_/g, ' ');
+    const title = `Prefer ${typeLabel} suggestions`;
+    const content =
+      `You've accepted ${input.acceptanceCount} "${typeLabel}" contextual suggestions recently. ` +
+      `Save this as a preference if you'd like me to keep surfacing similar ideas — or dismiss if not.`;
+
+    const context = await this.db.userAIContext.create({
+      data: {
+        userId: input.userId,
+        scope: input.businessId ? 'business' : 'personal',
+        scopeId: input.businessId ?? undefined,
+        moduleId: 'ai',
+        contextType: 'preference',
+        title,
+        content,
+        tags: ['ambient_suggestion', dedupeTag, input.suggestionType],
+        priority: 55,
+        active: false,
+        source: 'inferred',
+        learningStatus: 'pending',
+      },
+      select: { id: true },
+    });
+
+    void logger.info('Created pending learning from repeated suggestion accepts', {
+      operation: 'ambient_suggestion_learning_proposal',
+      userId: input.userId,
+      suggestionType: input.suggestionType,
+      contextId: context.id,
+      acceptanceCount: input.acceptanceCount,
+      correlationRuleId: input.correlationRuleId ?? undefined,
+    });
+
+    return context;
+  }
 }
 
 export const learningApplicationService = new LearningApplicationService();

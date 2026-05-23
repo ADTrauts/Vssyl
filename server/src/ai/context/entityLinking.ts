@@ -36,6 +36,13 @@ export interface EntityLinkingResult {
 export interface EntityLinkingInput {
   moduleContexts: Record<string, unknown>;
   query?: string;
+  /** Confirmed V_Link rows from persisted store (VL-9) — preferred over inference when present */
+  persistedVLinks?: Array<{
+    vlinkId: string;
+    title: string;
+    publicCode: string;
+    entityTypes: string[];
+  }>;
 }
 
 interface PersonRef {
@@ -291,6 +298,18 @@ export function linkEntitiesAcrossModules(input: EntityLinkingInput): EntityLink
       entities: [file.fileName ?? file.fileId],
       suggestedAction: 'Use the shared file when answering about recent collaboration',
     });
+  }
+
+  if (input.persistedVLinks?.length) {
+    for (const vlink of input.persistedVLinks) {
+      links.push({
+        type: 'shared_file_reference',
+        description: `Confirmed V_Link "${vlink.title}" (${vlink.publicCode}) connects ${vlink.entityTypes.join(', ')}`,
+        modules: ['vlink', ...vlink.entityTypes],
+        entities: [vlink.publicCode],
+        suggestedAction: 'Use confirmed vlink relationships as grounding; do not invent new links',
+      });
+    }
   }
 
   return { linkedPeople, linkedFiles, links };

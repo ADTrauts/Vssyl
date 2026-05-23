@@ -3,6 +3,7 @@ import { consumeDomainEventForAI, isAIConsumableDomainEvent } from '../AIEventCo
 import { DOMAIN_EVENT_TYPES } from '../../../events/domainEventRegistry';
 import type { DomainEvent } from '../../../events/types';
 import * as userLearningSignalServiceModule from '../../../services/userLearningSignalService';
+import * as ambientSuggestionServiceModule from '../../../services/ambientSuggestionService';
 import * as moduleActivityServiceModule from '../../../services/moduleActivityService';
 
 function baseEvent(overrides: Partial<DomainEvent> = {}): DomainEvent {
@@ -28,6 +29,9 @@ describe('AIEventConsumer (Phase 4A)', () => {
     const stubSpy = vi
       .spyOn(userLearningSignalServiceModule.userLearningSignalService, 'recordDomainEventLearningStub')
       .mockResolvedValue(undefined);
+    const scheduleSpy = vi
+      .spyOn(ambientSuggestionServiceModule.ambientSuggestionService, 'scheduleProcessDomainEvent')
+      .mockImplementation(() => undefined);
     const activitySpy = vi.spyOn(moduleActivityServiceModule, 'emitModuleActivityEvent');
 
     await consumeDomainEventForAI(baseEvent());
@@ -41,6 +45,7 @@ describe('AIEventConsumer (Phase 4A)', () => {
         dashboardId: 'dash-1',
       })
     );
+    expect(scheduleSpy).toHaveBeenCalledWith(expect.objectContaining({ id: 'evt_test_1' }));
     expect(activitySpy).not.toHaveBeenCalled();
   });
 

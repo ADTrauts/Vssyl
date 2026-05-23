@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { LayoutDashboard, Folder, MessageSquare, Shield, Home, Briefcase, GraduationCap, Plus, Settings, Users, BarChart3, Lock, Puzzle, Brain, Calendar as CalendarIcon, CheckSquare, MapPin } from 'lucide-react';
+import { VLinkSidebarButton } from '../../components/vlink/VLinkSidebarButton';
 import GlobalTrashBin from '../../components/GlobalTrashBin';
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from 'next/navigation';
@@ -1296,6 +1297,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
           >
             <Brain size={22} />
           </button>
+
+          <VLinkSidebarButton />
 
           <button
             className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/modules') ? 'bg-gray-800' : 'hover:bg-gray-700'} ${pathname?.startsWith('/modules') ? 'text-white' : 'text-gray-300'}`}

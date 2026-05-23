@@ -72,9 +72,11 @@ Vssyl’s maturity ladder defines **what we build now** vs **what we defer**. Hi
 | **4. Learning** | Adapt from signals with user-visible promotion | **Thin** — promote loop exists; event pipeline noisy |
 | **5. Cross-module synthesis** | Join entities across modules into coherent context | **Early** — mostly concatenation today |
 | **6. Prediction** | Anticipate needs from patterns (not auto-act) | **Limited** — analytics only; no silent injection |
-| **7. Recommendations** | Suggest next actions; user accepts or dismisses | **Live (partial)** — suggestions, structured actions |
+| **7. Recommendations** | Suggest next actions; user accepts or dismisses | **Live (partial)** — suggestions, structured actions; **Phase 5 expands** |
 | **8. Assisted workflows** | Multi-step flows with explicit user approval | **Live (partial)** — tools + approval-required actions |
 | **9. Autonomy** | Proactive execution without user initiation | **Intentionally not shipped** |
+
+**Phase 5 (Ambient Contextual Assistance):** Rung 7 is the primary target for the next AI tranche. See [`AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](./AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md) — pattern-aware, explainable suggestions fed by domain events and maturity infrastructure (memory, learning, context density, entity linking). User accepts or dismisses; **no autonomous execution, no agent marketing.**
 
 **Explicit stop line:** Vssyl is **intentionally stopping before autonomous execution**. Autonomous agents, proactive auto-execution, and “AI acts on your behalf” are **future infrastructure only** — kept dormant unless safely implemented *and* clearly user-initiated. Current focus: rungs 1–8 with honesty at each step.
 

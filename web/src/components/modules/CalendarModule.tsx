@@ -23,6 +23,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { VLinkIndicator } from '@/components/vlink/VLinkIndicator';
 
 interface CalendarModuleProps {
   businessId?: string;
@@ -598,7 +599,8 @@ export default function CalendarModule({ businessId, dashboardId, className = ''
                                   {formatTime(event.occurrenceStartAt || event.startAt, event.timezone)}
                                 </span>
                               )}
-                              <span className="truncate font-medium">{event.title}</span>
+                              <span className="truncate font-medium flex-1 min-w-0">{event.title}</span>
+                              <VLinkIndicator entityType="CALENDAR_EVENT" entityId={event.id} className="flex-shrink-0 self-center" />
                               {/* Hover tooltip */}
                               <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
                                 {event.title}

@@ -24,6 +24,15 @@ export const POLICY_ACTIONS = {
   FILE_UPLOAD: 'file:upload',
   FILE_SHARE: 'file:share',
   CALENDAR_EVENT_CREATE: 'calendar:event.create',
+  VLINK_CREATE: 'vlink:create',
+  VLINK_READ: 'vlink:read',
+  VLINK_UPDATE: 'vlink:update',
+  VLINK_ARCHIVE: 'vlink:archive',
+  VLINK_DELETE: 'vlink:delete',
+  VLINK_MEMBER_INVITE: 'vlink:member:invite',
+  VLINK_ENTITY_LINK: 'vlink:entity:link',
+  VLINK_ENTITY_UNLINK: 'vlink:entity:unlink',
+  VLINK_OWNERSHIP_TRANSFER: 'vlink:ownership:transfer',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

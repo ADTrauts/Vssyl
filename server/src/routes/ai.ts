@@ -31,6 +31,17 @@ import {
   extractTenantScopeFromRequestBody,
   isLearningSignalType,
 } from '../ai/learning/learningSignalTypes';
+import {
+  AmbientSuggestionValidationError,
+  ambientSuggestionService,
+} from '../services/ambientSuggestionService';
+
+function parseOptionalQueryString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  return undefined;
+}
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -919,7 +930,8 @@ router.post('/speech', authenticateJWT, async (req, res) => {
 
 /**
  * GET /api/ai/suggestions
- * List pending AI suggestions for the current user (Phase 7).
+ * List pending ambient suggestions for the current user (Phase 5A).
+ * Query: dashboardId, businessId (optional tenant filters)
  */
 router.get('/suggestions', authenticateJWT, async (req, res) => {
   try {
@@ -927,13 +939,23 @@ router.get('/suggestions', authenticateJWT, async (req, res) => {
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    const list = await prisma.aISuggestion.findMany({
-      where: { userId, status: 'PENDING' },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
+    const dashboardId = parseOptionalQueryString(req.query.dashboardId);
+    const businessId = parseOptionalQueryString(req.query.businessId);
+    const scopeRaw = parseOptionalQueryString(req.query.scope);
+    const scope =
+      scopeRaw === 'history' || scopeRaw === 'all' || scopeRaw === 'pending'
+        ? scopeRaw
+        : 'pending';
+    const list = await ambientSuggestionService.listSuggestions(userId, {
+      dashboardId,
+      businessId,
+      scope,
     });
     res.json({ success: true, data: list });
   } catch (error) {
+    if (error instanceof AmbientSuggestionValidationError) {
+      return res.status(400).json({ error: error.message });
+    }
     logSrvErr('ai_list_suggestions_error', 'List suggestions error:', error);
     res.status(500).json({
       error: 'Failed to list suggestions',
@@ -943,8 +965,43 @@ router.get('/suggestions', authenticateJWT, async (req, res) => {
 });
 
 /**
+ * GET /api/ai/suggestions/:id
+ * Get a single suggestion with explainability payload (Phase 5A).
+ */
+router.get('/suggestions/:id', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: 'Suggestion ID required' });
+    }
+    const suggestion = await ambientSuggestionService.getById(userId, id);
+    if (!suggestion) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+    const explain = ambientSuggestionService.getExplainPayload(suggestion);
+    res.json({
+      success: true,
+      data: {
+        ...suggestion,
+        explain,
+      },
+    });
+  } catch (error) {
+    logSrvErr('ai_get_suggestion_error', 'Get suggestion error:', error);
+    res.status(500).json({
+      error: 'Failed to get suggestion',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
  * POST /api/ai/suggestions/:id/accept
- * Mark suggestion as accepted (Phase 7). Optionally returns action URL for client to navigate.
+ * Mark suggestion as accepted (Phase 5A). Returns action URL for client navigation.
  */
 router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
   try {
@@ -956,41 +1013,14 @@ router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'Suggestion ID required' });
     }
-    const suggestion = await prisma.aISuggestion.findFirst({
-      where: { id, userId, status: 'PENDING' },
-    });
-    if (!suggestion) {
-      return res.status(404).json({ error: 'Suggestion not found or already handled' });
-    }
-    await prisma.aISuggestion.update({
-      where: { id },
-      data: { status: 'ACCEPTED', respondedAt: new Date() },
-    });
     const tenantScope = extractTenantScopeFromRequestBody(req.body);
-    try {
-      await userLearningSignalService.recordSuggestionAccepted({
-        userId,
-        suggestionId: id,
-        suggestionType: suggestion.type,
-        suggestionTitle: suggestion.title,
-        ...tenantScope,
-      });
-    } catch (signalErr: unknown) {
-      logSrvWarn('ai_suggestion_accept_signal_error', 'Accept suggestion signal failed', signalErr);
-    }
-    const actionData = suggestion.actionData as Record<string, unknown> | null;
-    const fileId = actionData?.fileId as string | undefined;
-    const suggestedPrompt = actionData?.suggestedPrompt as string | undefined;
-    res.json({
-      success: true,
-      data: {
-        suggestionId: id,
-        fileId: fileId,
-        suggestedPrompt: suggestedPrompt || `Extract key information from this document. Identify important details like dates, amounts, names, and any actionable items.`,
-        actionUrl: fileId ? `/ai-chat?fileIds=${encodeURIComponent(fileId)}&suggestion=extract` : '/ai-chat',
-      },
-    });
+    const result = await ambientSuggestionService.acceptSuggestion(userId, id, tenantScope);
+    res.json({ success: true, data: result });
   } catch (error) {
+    if (error instanceof AmbientSuggestionValidationError) {
+      const status = error.message.includes('expired') ? 410 : 404;
+      return res.status(status).json({ error: error.message });
+    }
     logSrvErr('ai_accept_suggestion_error', 'Accept suggestion error:', error);
     res.status(500).json({
       error: 'Failed to accept suggestion',
@@ -1001,7 +1031,7 @@ router.post('/suggestions/:id/accept', authenticateJWT, async (req, res) => {
 
 /**
  * POST /api/ai/suggestions/:id/dismiss
- * Mark suggestion as dismissed (Phase 7).
+ * Mark suggestion as dismissed (Phase 5A). Optional reason and doNotShowAgain.
  */
 router.post('/suggestions/:id/dismiss', authenticateJWT, async (req, res) => {
   try {
@@ -1013,35 +1043,27 @@ router.post('/suggestions/:id/dismiss', authenticateJWT, async (req, res) => {
     if (!id) {
       return res.status(400).json({ error: 'Suggestion ID required' });
     }
-    const suggestion = await prisma.aISuggestion.findFirst({
-      where: { id, userId, status: 'PENDING' },
-    });
-    if (!suggestion) {
-      return res.status(404).json({ error: 'Suggestion not found or already handled' });
-    }
-    await prisma.aISuggestion.update({
-      where: { id },
-      data: { status: 'DISMISSED', respondedAt: new Date() },
-    });
     const tenantScope = extractTenantScopeFromRequestBody(req.body);
     const reason =
       req.body && typeof req.body === 'object' && typeof (req.body as { reason?: string }).reason === 'string'
         ? (req.body as { reason: string }).reason
         : undefined;
-    try {
-      await userLearningSignalService.recordSuggestionDismissed({
-        userId,
-        suggestionId: id,
-        suggestionType: suggestion.type,
-        suggestionTitle: suggestion.title,
-        reason,
-        ...tenantScope,
-      });
-    } catch (signalErr: unknown) {
-      logSrvWarn('ai_suggestion_dismiss_signal_error', 'Dismiss suggestion signal failed', signalErr);
-    }
-    res.json({ success: true, data: { suggestionId: id } });
+    const doNotShowAgain =
+      req.body &&
+      typeof req.body === 'object' &&
+      typeof (req.body as { doNotShowAgain?: boolean }).doNotShowAgain === 'boolean'
+        ? (req.body as { doNotShowAgain: boolean }).doNotShowAgain
+        : undefined;
+    const result = await ambientSuggestionService.dismissSuggestion(userId, id, {
+      reason,
+      doNotShowAgain,
+      ...tenantScope,
+    });
+    res.json({ success: true, data: result });
   } catch (error) {
+    if (error instanceof AmbientSuggestionValidationError) {
+      return res.status(404).json({ error: error.message });
+    }
     logSrvErr('ai_dismiss_suggestion_error', 'Dismiss suggestion error:', error);
     res.status(500).json({
       error: 'Failed to dismiss suggestion',

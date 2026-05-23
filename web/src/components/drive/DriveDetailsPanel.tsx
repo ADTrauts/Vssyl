@@ -3,8 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from 'shared/components';
-import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw, Brain, History } from 'lucide-react';
+import { Download, Share, Edit, Move, Trash2, X, ChevronRight, ChevronLeft, ZoomIn, ZoomOut, Maximize2, RotateCw, Brain, History, Link2 } from 'lucide-react';
 import { getItemActivity, type Activity as DriveActivity, type NormalizedModuleActivityLog } from '../../api/drive';
+import { getVLinksForEntity, type EntityVLinkRef } from '@/api/vlinks';
+import { useVLinkDrag } from '@/contexts/VLinkDragContext';
+import { useDashboard } from '../../contexts/DashboardContext';
 // DriveItem interface - matches DriveModule.tsx
 interface DriveItem {
   id: string;
@@ -89,6 +92,14 @@ export default function DriveDetailsPanel({
   formatDate: formatDateProp
 }: DriveDetailsPanelProps) {
   const { data: session } = useSession();
+  const { openConnectModal } = useVLinkDrag();
+  const { currentDashboard, currentDashboardId } = useDashboard();
+  const businessId =
+    currentDashboard && 'business' in currentDashboard ? currentDashboard.business?.id ?? null : null;
+  const householdId =
+    currentDashboard && 'household' in currentDashboard ? currentDashboard.household?.id ?? null : null;
+  const [linkedVLinks, setLinkedVLinks] = useState<EntityVLinkRef[]>([]);
+  const [vlinksLoading, setVlinksLoading] = useState(false);
   const [legacyActivities, setLegacyActivities] = useState<DriveActivity[]>([]);
   const [normalizedEvents, setNormalizedEvents] = useState<NormalizedModuleActivityLog[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -150,6 +161,30 @@ export default function DriveDetailsPanel({
     };
 
     void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [item?.id, item?.type, session?.accessToken, activityRefreshTick]);
+
+  useEffect(() => {
+    if (!item?.id || !session?.accessToken || isTempUploadId(item.id)) {
+      setLinkedVLinks([]);
+      return;
+    }
+    const entityType = item.type === 'folder' ? 'FOLDER' : 'FILE';
+    let cancelled = false;
+    const loadLinked = async () => {
+      setVlinksLoading(true);
+      try {
+        const refs = await getVLinksForEntity(session.accessToken!, entityType, item.id);
+        if (!cancelled) setLinkedVLinks(refs);
+      } catch {
+        if (!cancelled) setLinkedVLinks([]);
+      } finally {
+        if (!cancelled) setVlinksLoading(false);
+      }
+    };
+    void loadLinked();
     return () => {
       cancelled = true;
     };
@@ -519,6 +554,52 @@ export default function DriveDetailsPanel({
               )}
             </div>
           </div>
+
+          {!isTempUploadId(item.id) && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                V_Link
+              </h3>
+              {vlinksLoading ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Loading linked V_Links…</p>
+              ) : linkedVLinks.length === 0 ? (
+                <p className="text-sm text-gray-600 dark:text-gray-400">Not linked to any V_Link yet.</p>
+              ) : (
+                <ul className="space-y-1.5 mb-3 max-h-32 overflow-y-auto pr-1">
+                  {linkedVLinks.map((r) => (
+                    <li
+                      key={r.entityLinkId}
+                      className="text-sm text-gray-900 dark:text-gray-100 flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+                    >
+                      <span className="font-medium">{r.title}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{r.publicCode}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full justify-center"
+                onClick={() =>
+                  openConnectModal({
+                    entityType: item.type === 'folder' ? 'FOLDER' : 'FILE',
+                    entityId: item.id,
+                    moduleId: 'drive',
+                    title: item.name,
+                    dashboardId: currentDashboardId ?? undefined,
+                    businessId,
+                    householdId,
+                  })
+                }
+                disabled={isLoading}
+              >
+                <Link2 className="w-4 h-4 mr-2" />
+                Add to V_Link
+              </Button>
+            </div>
+          )}
 
           {/* Activity (legacy file Activity rows + normalized module events) */}
           <div className="mb-6">

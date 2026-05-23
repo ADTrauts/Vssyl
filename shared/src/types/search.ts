@@ -82,6 +82,7 @@ export const SEARCH_RESULT_TYPES = {
   CALENDAR_EVENT: 'calendar_event',
   DASHBOARD: 'dashboard',
   WIDGET: 'widget',
+  VLINK: 'vlink',
 } as const;
 
 export type SearchResultType = typeof SEARCH_RESULT_TYPES[keyof typeof SEARCH_RESULT_TYPES];
@@ -93,6 +94,7 @@ export const MODULE_IDS = {
   DASHBOARD: 'dashboard',
   TASKS: 'tasks',
   CALENDAR: 'calendar',
+  VLINK: 'vlink',
   ADMIN: 'admin',
 } as const;
 

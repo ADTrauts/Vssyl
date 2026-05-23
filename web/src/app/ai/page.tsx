@@ -21,6 +21,7 @@ import {
   Settings,
   Zap,
   BarChart3,
+  Lightbulb,
 } from 'lucide-react';
 import AIIdentityHome from '../../components/ai/AIIdentityHome';
 import AILearningHub from '../../components/ai/AILearningHub';
@@ -30,10 +31,12 @@ import CustomContext from '../../components/ai/CustomContext';
 import ProviderSettings from '../../components/ai/ProviderSettings';
 import AutonomousActions from '../../components/ai/AutonomousActions';
 import AIIntelligenceHub, { resolveInsightsSubTab } from '../../components/ai/AIIntelligenceHub';
+import AmbientSuggestionsView from '../../components/ai/AmbientSuggestionsView';
 import AIIdentityTour from '../../components/ai/AIIdentityTour';
 import { clearAIIdentityTourSeen } from '../../lib/aiIdentityTour';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { fetchAIIdentitySnapshot, type AIIdentitySnapshot } from '../../api/aiIdentity';
+import { getSuggestions } from '../../api/aiSuggestions';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { resolveBusinessIdFromDashboard } from '../../lib/resolveBusinessIdFromDashboard';
 import {
@@ -68,6 +71,7 @@ export default function AIPage() {
   );
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [learningBadge, setLearningBadge] = useState(0);
+  const [suggestionsBadge, setSuggestionsBadge] = useState(0);
   const [identitySnapshot, setIdentitySnapshot] = useState<AIIdentitySnapshot | null>(null);
   const [showPersonalityOnboarding, setShowPersonalityOnboarding] = useState(false);
   const [profileCheckDone, setProfileCheckDone] = useState(false);
@@ -156,6 +160,31 @@ export default function AIPage() {
   useEffect(() => {
     void loadIdentitySnapshot();
   }, [loadIdentitySnapshot, activeTab]);
+
+  useEffect(() => {
+    const loadSuggestionBadge = async () => {
+      if (!session?.accessToken) {
+        setSuggestionsBadge(0);
+        return;
+      }
+      try {
+        const businessId = resolveBusinessIdFromDashboard(
+          currentDashboard,
+          currentDashboard ? getDashboardType(currentDashboard) : 'personal'
+        );
+        const { getSuggestions } = await import('../../api/aiSuggestions');
+        const items = await getSuggestions(session.accessToken, {
+          dashboardId: currentDashboard?.id,
+          businessId,
+          scope: 'pending',
+        });
+        setSuggestionsBadge(items.length);
+      } catch {
+        setSuggestionsBadge(0);
+      }
+    };
+    void loadSuggestionBadge();
+  }, [session?.accessToken, currentDashboard, getDashboardType, activeTab]);
 
   const navigateToTab = (
     tab: string,
@@ -275,6 +304,15 @@ export default function AIPage() {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="suggestions" className="flex items-center gap-2 relative">
+              <Lightbulb className="w-4 h-4" />
+              Suggestions
+              {suggestionsBadge > 0 && (
+                <span className="ml-1 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-purple-500 text-white text-xs font-medium flex items-center justify-center">
+                  {suggestionsBadge > 9 ? '9+' : suggestionsBadge}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="memory" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Memory
@@ -322,6 +360,10 @@ export default function AIPage() {
 
         <TabsContent value="learning" className="mt-6">
           <AILearningHub onLearningChanged={() => void loadIdentitySnapshot()} />
+        </TabsContent>
+
+        <TabsContent value="suggestions" className="mt-6">
+          <AmbientSuggestionsView />
         </TabsContent>
 
         <TabsContent value="memory" className="mt-6 space-y-10">

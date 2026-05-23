@@ -356,9 +356,9 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
           <button
             type="button"
             className="text-purple-600 dark:text-purple-400 underline-offset-2 hover:underline"
-            onClick={() => onNavigateToTab('learning')}
+            onClick={() => onNavigateToTab('suggestions')}
           >
-            Learning
+            Suggestions
           </button>
           .
         </p>

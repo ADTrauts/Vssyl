@@ -28,6 +28,7 @@ import ChatModuleWrapper from '../chat/ChatModuleWrapper';
 import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
 import { NotesModule } from '../notes/NotesModule';
+import { VLinkModule } from '../vlink/VLinkModule';
 import DriveSidebar from '../../app/drive/DriveSidebar';
 import CalendarListSidebar from '../calendar/CalendarListSidebar';
 import HRLayout from '../hr/HRLayout';
@@ -657,6 +658,12 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
           <NotesModule
             dashboardId={businessDashboardId}
             businessId={business.id}
+          />
+        );
+      case 'vlink':
+        return (
+          <VLinkModule
+            dashboardId={businessDashboardId}
           />
         );
       default:

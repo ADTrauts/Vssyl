@@ -1,5 +1,29 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## V_Link platform layer (May 2026) ✅
+
+**Status:** **IMPLEMENTED** — platform-wide contextual relationship layer (not a marketplace module).
+
+**Canonical plan:** [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md)  
+**Product context:** [`memory-bank/vlinkProductContext.md`](vlinkProductContext.md)
+
+**Shipped (VL-0–VL-10):**
+| Area | Delivered |
+|------|-----------|
+| **Schema** | `prisma/modules/platform/vlink.prisma`; migration `20260601120000_vlink_platform_foundation` |
+| **API** | `/api/vlinks` — CRUD, members, entity link/unlink, archive, ownership transfer, suggestions, activity |
+| **Events + search** | 14 `vlink.*` domain events; global search provider `vlink` |
+| **Hub UI** | `/vlink` — filters, detail tabs (Files/Calendar functional; Chat/Tasks placeholders) |
+| **Shell** | Right-sidebar icon under AI; drag-to-link + `VLinkConnectModal` |
+| **Integrations** | Drive (indicators, context menu, upload toast); Calendar (`EventDrawer`, event chips) |
+| **AI** | Context provider `GET /api/vlinks/ai/context/recent`; `entityLinking` persisted vlink merge; suggestion accept/reject API |
+
+**Non-negotiable (v1):** V_Link membership **does not** grant access to linked entity content; membership-only access (no UNLISTED); one primary vlink per entity.
+
+**Ops follow-up:** `pnpm prisma:migrate:deploy` (includes `20260601120000_vlink_platform_foundation`).
+
+---
+
 ## AI platform execution principles (May 2026) ✅
 
 **Status:** **IMPLEMENTED (May 2026)** — Phases **1–4** and **Autonomy A1–A8** shipped per [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../docs/plans/AI_PLATFORM_MATURITY_PLAN.md).
@@ -21,7 +45,31 @@
 
 **Ops follow-up (not code):** deploy pending migrations (`20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`) when ready.
 
-**Next product tranche:** not defined in maturity plan — pick from `activeContext.md` § other initiatives (orchestration registry UI parity, module platform, etc.).
+## AI Phase 5 — Ambient Contextual Assistance (May 2026) 📋
+
+**Status:** **IMPLEMENTED (May 2026)** — Phases **5A–5F** complete per [`docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](../docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md).
+
+**Canonical plan:** [`docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](../docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md)
+
+**Goal:** Move from “AI that answers with context” to “AI that gently helps users navigate life and work by surfacing relevant, explainable suggestions.” **Not autonomy** — user accepts, dismisses, or ignores; no auto-execution.
+
+**Builds on Phases 1–4:** memory influence, learning signals, context density, `contextUsed` / `responseInfluence`, context synthesis, domain events, webhook infrastructure, provider health, explain drawer, Learning tab, Memory tab.
+
+**Subphases:** 5A model + lifecycle → 5B event correlation → 5C meeting/file/thread rules → 5D UI surfaces → 5E feedback + learning loop → 5F admin diagnostics + tests.
+
+**Phase 5A (May 2026):** ✅ Schema + `ambientSuggestionService`; domain event → signal → document upload suggestion; API tenant filters + explain GET; migration `20260522120000` + `20260522120100`
+
+**Phase 5B (May 2026):** ✅ `SuggestionCorrelationService`, `SuggestionRankingService`, `suggestionRules.ts`; async consumer path; hourly expiry cron; tests
+
+**Phase 5C (May 2026):** ✅ `meeting_prep_v1`, `file_after_chat_v1`, `thread_activity_spike_v1` rules; entity linking for file/chat; correlation integration tests
+
+**Phase 5D (May 2026):** ✅ `AmbientSuggestionCard`, `AmbientSuggestionsView` tab; dashboard `ai` widget wired; header dropdown explain expander; NotificationsWidget `ai` category; GET `/api/ai/suggestions?scope=history|all`
+
+**Phase 5E (May 2026):** ✅ Dismissal decay in ranking; 90d do-not-show-again; repeated-accept → pending Learning proposal; quiet hours defer outbound `ai_suggestion` notification; correlation rule id in learning signals
+
+**Phase 5F (May 2026):** ✅ Admin suggestion dry-run + funnel metrics; `SuggestionCorrelationDryRunPanel` on Test Lab; `ambientSuggestionAcceptance.test.ts` (§14); Phase 5 exit criteria met
+
+**Next:** Phase 5 ambient assistance is **complete** — optional polish or Phase 6 per maturity plan.
 
 ### Implementation log (May 2026)
 - **Autonomy de-emphasis A1–A8:** Action-boundaries copy; More → Actions hidden unless `NEXT_PUBLIC_AI_ACTIONS_UI=true`; onboarding/widget proactive toggle removed; pattern insights copy softened (`PredictiveIntelligenceDashboard`); `/api/ai/autonomous/*` + `AutonomyManager` deprecated in code (prompt boundaries via `PreferenceResolver` only); admin AI Context docs updated

@@ -245,6 +245,20 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     capabilities: ['read', 'write', 'admin'],
   }),
   coreModule({
+    id: 'vlink',
+    name: 'V_Link',
+    description: 'Cross-module contextual relationships',
+    icon: 'vlink',
+    widgets: [],
+    routes: [
+      { moduleId: 'vlink', label: 'V_Link', routeKey: 'vlink', path: '/vlink', context: 'personal', requiredPermissions: ['view'] },
+      businessRoute('vlink', 'V_Link', 'vlink', '/vlink'),
+    ],
+    defaultRoute: 'vlink',
+    category: 'utility',
+    capabilities: ['read', 'write', 'ai'],
+  }),
+  coreModule({
     id: 'admin',
     name: 'Admin',
     description: 'Administrative controls',

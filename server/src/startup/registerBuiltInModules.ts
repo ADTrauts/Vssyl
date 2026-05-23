@@ -104,6 +104,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     pricingTier: 'free',
   },
   {
+    id: 'vlink',
+    name: 'V_Link',
+    description: 'Platform contextual relationship layer connecting files, events, and more',
+    version: '1.0.0',
+    category: 'PRODUCTIVITY',
+    tags: ['vlink', 'links', 'relationships', 'context'],
+    icon: 'link',
+    pricingTier: 'free',
+  },
+  {
     id: 'place',
     name: 'Vssyl Place',
     description: 'Personal Main Street — a user-built neighborhood connecting physical and digital businesses, services, and people',
@@ -624,6 +634,32 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           description: 'Get user\'s pinned notes',
           endpoint: '/api/notes/ai/context/pinned',
           cacheDuration: 300000, // 5 minutes
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'vlink',
+    moduleName: 'V_Link',
+    aiContext: {
+      purpose: 'Confirmed cross-module relationships (vlinks) scoped to user membership — does not grant entity access',
+      category: 'PRODUCTIVITY',
+      keywords: ['vlink', 'v_link', 'linked', 'relationship', 'context bundle'],
+      patterns: ['my vlinks', 'linked items', 'what is connected'],
+      concepts: ['contextual relationships', 'confirmed links'],
+      entities: [
+        { name: 'VLink', pluralName: 'VLinks', description: 'A confirmed cross-module relationship container' },
+      ],
+      actions: [
+        { name: 'list_vlinks', description: 'List user vlinks', permissions: ['vlink:read'] },
+        { name: 'link_entity', description: 'Link an entity to a vlink', permissions: ['vlink:entity:link'] },
+      ],
+      contextProviders: [
+        {
+          name: 'recent_vlinks',
+          description: 'Recent confirmed vlinks with accessible linked entity summaries',
+          endpoint: '/api/vlinks/ai/context/recent',
+          cacheDuration: 300000,
         },
       ],
     },

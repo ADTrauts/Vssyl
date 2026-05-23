@@ -29,6 +29,7 @@ import folderRouter from './routes/folder';
 import driveRouter from './routes/drive';
 import todoRouter from './routes/todo';
 import notesRouter from './routes/notes';
+import vlinksRouter from './routes/vlinks';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
 import webhookSubscriptionsRouter from './routes/webhookSubscriptions';
@@ -856,6 +857,7 @@ if (isDevRuntime) {
 app.use('/api/drive', driveRouter);
 app.use('/api/todo', todoRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/vlinks', vlinksRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
@@ -1236,6 +1238,38 @@ async function handleServerListening(): Promise<void> {
     const err = e as Error;
     void logger.error('Failed to schedule reminder dispatcher', {
       operation: 'cron_reminders',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
+  }
+
+  // Expire stale ambient AI suggestions hourly (Phase 5B)
+  try {
+    const { ambientSuggestionService } = await import('./services/ambientSuggestionService.js');
+    cron.schedule('0 * * * *', async () => {
+      try {
+        const count = await ambientSuggestionService.expireStaleSuggestions();
+        if (count > 0) {
+          void logger.info('Ambient suggestion expiry job completed', {
+            operation: 'cron_ambient_suggestion_expiry',
+            count,
+          }).catch(() => undefined);
+        }
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Ambient suggestion expiry job failed', {
+          operation: 'cron_ambient_suggestion_expiry',
+          error: { message: err.message, stack: err.stack },
+        }).catch(() => undefined);
+      }
+    });
+    void logger.info('Ambient suggestion expiry job scheduled', {
+      operation: 'cron_ambient_suggestion_expiry',
+      schedule: '0 * * * *',
+    }).catch(() => undefined);
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    void logger.error('Failed to schedule ambient suggestion expiry job', {
+      operation: 'cron_ambient_suggestion_expiry',
       error: { message: err.message, stack: err.stack },
     }).catch(() => undefined);
   }

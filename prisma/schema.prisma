@@ -337,6 +337,8 @@ model User {
   aiMessageRecallIndexes AIMessageRecallIndex[]
   aiExtractedExpenses AIExtractedExpense[]
   aiSuggestions       AISuggestion[]
+  aiSuggestionSignals AISuggestionSignal[]
+  aiSuggestionFeedbacks AISuggestionFeedback[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -391,6 +393,17 @@ model User {
   noteFoldersCreated NoteFolder[] @relation("NoteFolderCreator")
   noteSharesReceived NoteShare[]  @relation("NoteShareRecipient")
   noteSharesGiven    NoteShare[]  @relation("NoteShareSharer")
+
+  // V_Link platform relations
+  vlinksOwned              VLink[]            @relation("VLinkOwner")
+  vlinksCreated            VLink[]            @relation("VLinkCreator")
+  vlinksUpdated            VLink[]            @relation("VLinkUpdater")
+  vlinkMemberships         VLinkMember[]      @relation("VLinkMemberUser")
+  vlinkMemberInvitesSent   VLinkMember[]      @relation("VLinkMemberInviter")
+  vlinkEntitiesLinked      VLinkEntity[]      @relation("VLinkEntityLinker")
+  vlinkSuggestions         VLinkSuggestion[]  @relation("VLinkSuggestionUser")
+  vlinkSuggestionsReviewed VLinkSuggestion[]  @relation("VLinkSuggestionReviewer")
+  vlinkActivities          VLinkActivity[]    @relation("VLinkActivityActor")
 
   // Vssyl Place relations
   place               Place?
@@ -1892,6 +1905,201 @@ model WebhookDeliveryAttempt {
 
 
 // ============================================================================
+// PLATFORM MODULE
+// ============================================================================
+
+// ============================================================================
+// V_LINK PLATFORM LAYER
+// ============================================================================
+
+enum VLinkScope {
+  PERSONAL
+  BUSINESS
+  HOUSEHOLD
+}
+
+enum VLinkStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum VLinkMemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum VLinkEntityType {
+  FILE
+  FOLDER
+  CALENDAR_EVENT
+  CHAT_CONVERSATION
+  CHAT_THREAD
+  TASK
+  TODO
+  NOTE
+  DASHBOARD
+  WIDGET
+  USER
+  BUSINESS
+  HOUSEHOLD
+  MODULE_ENTITY
+}
+
+enum VLinkEntityRelationType {
+  PRIMARY
+  REFERENCE
+}
+
+enum VLinkEntitySource {
+  MANUAL
+  AI_SUGGESTED
+  SYSTEM
+}
+
+enum VLinkSuggestionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum VLinkSuggestionSource {
+  AI
+  SYSTEM
+}
+
+model VLink {
+  id            String       @id @default(uuid())
+  publicCode    String       @unique
+  title         String
+  description   String?
+  scope         VLinkScope
+  dashboardId   String
+  businessId    String?
+  householdId   String?
+  ownerUserId   String
+  owner         User         @relation("VLinkOwner", fields: [ownerUserId], references: [id])
+  parentVLinkId String?
+  parent        VLink?       @relation("VLinkNesting", fields: [parentVLinkId], references: [id], onDelete: SetNull)
+  children      VLink[]      @relation("VLinkNesting")
+  color         String?
+  icon          String?
+  status        VLinkStatus  @default(ACTIVE)
+  metadata      Json?
+  createdById   String
+  createdBy     User         @relation("VLinkCreator", fields: [createdById], references: [id])
+  updatedById   String?
+  updatedBy     User?        @relation("VLinkUpdater", fields: [updatedById], references: [id])
+  archivedAt    DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  members       VLinkMember[]
+  entities      VLinkEntity[]
+  suggestions   VLinkSuggestion[]
+  activities    VLinkActivity[]
+
+  @@index([dashboardId, businessId, householdId])
+  @@index([ownerUserId])
+  @@index([parentVLinkId])
+  @@index([status])
+  @@index([publicCode])
+  @@map("v_links")
+}
+
+model VLinkMember {
+  id          String          @id @default(uuid())
+  vlinkId     String
+  vlink       VLink           @relation(fields: [vlinkId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User            @relation("VLinkMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  role        VLinkMemberRole
+  invitedById String?
+  invitedBy   User?           @relation("VLinkMemberInviter", fields: [invitedById], references: [id])
+  acceptedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([vlinkId, userId])
+  @@index([userId])
+  @@index([vlinkId])
+  @@map("vlink_members")
+}
+
+model VLinkEntity {
+  id           String                  @id @default(uuid())
+  vlinkId      String
+  vlink        VLink                   @relation(fields: [vlinkId], references: [id], onDelete: Cascade)
+  entityType   VLinkEntityType
+  entityId     String
+  moduleId     String?
+  relationType VLinkEntityRelationType @default(PRIMARY)
+  isPrimary    Boolean                 @default(true)
+  linkedById   String
+  linkedBy     User                    @relation("VLinkEntityLinker", fields: [linkedById], references: [id])
+  source       VLinkEntitySource       @default(MANUAL)
+  metadata     Json?
+  unlinkedAt   DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@unique([vlinkId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([vlinkId])
+  @@map("vlink_entities")
+}
+
+model VLinkSuggestion {
+  id             String                 @id @default(uuid())
+  vlinkId        String?
+  vlink          VLink?                 @relation(fields: [vlinkId], references: [id], onDelete: SetNull)
+  suggestedTitle String?
+  entityType     VLinkEntityType
+  entityId       String
+  moduleId       String?
+  suggestedBy    VLinkSuggestionSource
+  confidence     Float?
+  reasonCodes    Json?
+  explanation    String?
+  status         VLinkSuggestionStatus  @default(PENDING)
+  reviewedById   String?
+  reviewedBy     User?                  @relation("VLinkSuggestionReviewer", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+  dashboardId    String?
+  businessId     String?
+  householdId    String?
+  userId         String
+  user           User                   @relation("VLinkSuggestionUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([userId, status])
+  @@index([vlinkId])
+  @@index([entityType, entityId])
+  @@map("vlink_suggestions")
+}
+
+model VLinkActivity {
+  id          String           @id @default(uuid())
+  vlinkId     String
+  vlink       VLink            @relation(fields: [vlinkId], references: [id], onDelete: Cascade)
+  actorUserId String?
+  actor       User?            @relation("VLinkActivityActor", fields: [actorUserId], references: [id])
+  action      String
+  entityType  VLinkEntityType?
+  entityId    String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  @@index([vlinkId, createdAt])
+  @@map("vlink_activities")
+}
+
+
+// ============================================================================
 // AI MODULE
 // ============================================================================
 
@@ -2515,30 +2723,98 @@ model AIExtractedExpense {
   @@map("ai_extracted_expenses")
 }
 
-// Phase 7: Proactive AI suggestions (e.g. after document upload)
+// Ambient contextual assistance — explainable suggestions (Phase 5A)
 model AISuggestion {
-  id          String   @id @default(uuid())
-  userId      String
-  type        String   // e.g. 'document_upload'
-  title       String
-  body        String
-  actionData  Json     // e.g. { fileId, suggestedAction: 'extract' | 'add_reminder' }
-  status      AISuggestionStatus @default(PENDING)
-  respondedAt DateTime?
-  createdAt   DateTime @default(now())
+  id                String               @id @default(uuid())
+  userId            String
+  dashboardId       String?
+  businessId        String?
+  householdId       String?
+  type              String               // legacy alias; keep in sync with suggestionType
+  suggestionType    String?
+  title             String
+  body              String
+  actionData        Json
+  status            AISuggestionStatus   @default(PENDING)
+  priority          AISuggestionPriority @default(normal)
+  confidence        Float?
+  explainability    Json?
+  expiresAt         DateTime?
+  shownAt           DateTime?
+  suppressionKey    String?
+  correlationRuleId String?
+  respondedAt       DateTime?
+  createdAt         DateTime             @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback          AISuggestionFeedback[]
 
   @@index([userId])
+  @@index([userId, dashboardId, status, createdAt])
+  @@index([userId, suppressionKey])
   @@index([status])
+  @@index([expiresAt])
   @@index([createdAt])
   @@map("ai_suggestions")
+}
+
+model AISuggestionSignal {
+  id              String    @id @default(uuid())
+  userId          String
+  dashboardId     String?
+  businessId      String?
+  domainEventId   String?
+  domainEventType String?
+  entityType      String?
+  entityId        String?
+  sourceModule    String
+  occurredAt      DateTime  @default(now())
+  metadata        Json      @default("{}")
+  processedAt     DateTime?
+  ruleIds         String[]  @default([])
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dashboardId, occurredAt])
+  @@index([domainEventId])
+  @@map("ai_suggestion_signals")
+}
+
+model AISuggestionFeedback {
+  id             String                     @id @default(uuid())
+  suggestionId   String
+  userId         String
+  action         AISuggestionFeedbackAction
+  reason         String?
+  doNotShowAgain Boolean                    @default(false)
+  suppressionKey String?
+  createdAt      DateTime                   @default(now())
+
+  suggestion     AISuggestion               @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([suggestionId])
+  @@index([userId, suppressionKey])
+  @@map("ai_suggestion_feedback")
 }
 
 enum AISuggestionStatus {
   PENDING
   ACCEPTED
   DISMISSED
+  EXPIRED
+}
+
+enum AISuggestionPriority {
+  low
+  normal
+  high
+}
+
+enum AISuggestionFeedbackAction {
+  accepted
+  dismissed
+  ignored
 }
 
 

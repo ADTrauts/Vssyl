@@ -382,18 +382,12 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
       fileId: fileRecord.id,
       folderId: fileRecord.folderId,
       fileType: mimetype,
+      fileName: originalname,
       sizeBytes: size,
       dashboardId: fileRecord.dashboardId,
     });
 
-    // Phase 7: Proactive suggestion for document uploads (fire-and-forget)
-    const { onFileUploaded } = await import('../services/proactiveSuggestionsService');
-    onFileUploaded({
-      userId,
-      fileId: fileRecord.id,
-      fileName: originalname,
-      mimetype: mimetype || '',
-    }).catch(() => {});
+    // Ambient suggestions: domain event → AIEventConsumer → ambientSuggestionService (Phase 5A)
 
     // Broadcast real-time drive event to owner
     try {

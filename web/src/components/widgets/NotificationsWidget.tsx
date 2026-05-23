@@ -11,6 +11,7 @@ import {
   Users,
   Check,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { Spinner, Badge } from 'shared/components';
 import { formatRelativeTime } from '../../utils/format';
@@ -43,7 +44,7 @@ interface Notification {
 const defaultConfig: NotificationsWidgetConfig = {
   maxItems: 5,
   showRead: false,
-  categories: ['chat', 'drive', 'calendar', 'todo', 'hr'],
+  categories: ['chat', 'drive', 'calendar', 'todo', 'hr', 'ai'],
 };
 
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -52,6 +53,7 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   calendar: Calendar,
   todo: CheckSquare,
   hr: Users,
+  ai: Sparkles,
   default: Bell,
 };
 
@@ -61,6 +63,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   calendar: 'text-green-600 bg-green-100',
   todo: 'text-violet-600 bg-violet-100',
   hr: 'text-teal-600 bg-teal-100',
+  ai: 'text-pink-600 bg-pink-100',
   default: 'text-gray-600 bg-gray-100',
 };
 
@@ -108,7 +111,7 @@ export default function NotificationsWidget({
   const filteredNotifications = notifications
     .filter((n) => {
       if (!safeConfig.showRead && n.read) return false;
-      const category = n.type.split('_')[0];
+      const category = n.type.startsWith('ai_') ? 'ai' : n.type.split('_')[0];
       if (safeConfig.categories.length > 0 && !safeConfig.categories.includes(category)) {
         return false;
       }
@@ -134,11 +137,17 @@ export default function NotificationsWidget({
   };
 
   const getIcon = (type: string) => {
+    if (type.startsWith('ai_')) {
+      return CATEGORY_ICONS.ai;
+    }
     const category = type.split('_')[0];
     return CATEGORY_ICONS[category] || CATEGORY_ICONS.default;
   };
 
   const getColor = (type: string) => {
+    if (type.startsWith('ai_')) {
+      return CATEGORY_COLORS.ai;
+    }
     const category = type.split('_')[0];
     return CATEGORY_COLORS[category] || CATEGORY_COLORS.default;
   };

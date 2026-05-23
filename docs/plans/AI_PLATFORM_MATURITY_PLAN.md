@@ -668,6 +668,8 @@ Execute **in parallel with Phase 1A** (UI/copy only; no backend deletion).
 
 ## Approval
 
-This plan is **documentation only** until approved. Implementers must follow [`AI_PLATFORM_EXECUTION_PRINCIPLES.md`](./AI_PLATFORM_EXECUTION_PRINCIPLES.md) for every subphase. Reply **`ACT`** with phase scope (e.g. “ACT Phase 1A + Autonomy A1–A4”) to begin implementation.
+Phases 1–4 and Autonomy de-emphasis are **complete** (May 2026). **Phase 5 (Ambient Contextual Assistance)** — explainable, user-initiated suggestions, not autonomy — see [`AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](./AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md).
+
+Implementers must follow [`AI_PLATFORM_EXECUTION_PRINCIPLES.md`](./AI_PLATFORM_EXECUTION_PRINCIPLES.md) for every subphase. Reply **`ACT`** with phase scope (e.g. “ACT Phase 5A”) to begin Phase 5 implementation.
 
 After each subphase: update `memory-bank/progress.md` and `memory-bank/activeContext.md` with status — do not duplicate full architecture here.

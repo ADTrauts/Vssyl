@@ -20,6 +20,8 @@ import { SessionReadyGate } from '../components/auth/SessionReadyGate';
 import { AuthErrorProvider } from '../contexts/AuthErrorContext';
 import { LoginModal } from '../components/auth/LoginModal';
 import ServiceWorkerRegistration from '../components/ServiceWorkerRegistration';
+import { VLinkDragProvider } from '../contexts/VLinkDragContext';
+import { GlobalVLinkConnectModal } from '../components/vlink/VLinkConnectModal';
 
 export const dynamic = "force-dynamic";
 
@@ -67,37 +69,40 @@ export default function RootLayout({
               <SessionReadyGate>
                 <WorkAuthProvider>
                   <DashboardProvider>
-                    <GlobalBrandingProvider>
-                      <GlobalSearchProvider>
-                        <ChatProvider>
-                          <GlobalTrashProvider>
-                            <AuthErrorProvider>
-                              <ToastProvider>
-                                <ErrorBoundaryWrapper>
-                                  {children}
-                                  <StackableChatContainer />
-                                  <Toaster 
-                                    position="top-right"
-                                    toastOptions={{
-                                      duration: 5000,
-                                      style: {
-                                        cursor: 'pointer',
-                                      },
-                                      error: {
-                                        duration: 6000,
-                                      },
-                                    }}
-                                  />
-                                  <LoginModal />
-                                  <DevelopmentHelper />
-                                  <ServiceWorkerRegistration />
-                                </ErrorBoundaryWrapper>
-                              </ToastProvider>
-                            </AuthErrorProvider>
-                          </GlobalTrashProvider>
-                        </ChatProvider>
-                      </GlobalSearchProvider>
-                    </GlobalBrandingProvider>
+                    <VLinkDragProvider>
+                      <GlobalBrandingProvider>
+                        <GlobalSearchProvider>
+                          <ChatProvider>
+                            <GlobalTrashProvider>
+                              <AuthErrorProvider>
+                                <ToastProvider>
+                                  <ErrorBoundaryWrapper>
+                                    {children}
+                                    <StackableChatContainer />
+                                    <Toaster 
+                                      position="top-right"
+                                      toastOptions={{
+                                        duration: 5000,
+                                        style: {
+                                          cursor: 'pointer',
+                                        },
+                                        error: {
+                                          duration: 6000,
+                                        },
+                                      }}
+                                    />
+                                    <LoginModal />
+                                    <GlobalVLinkConnectModal />
+                                    <DevelopmentHelper />
+                                    <ServiceWorkerRegistration />
+                                  </ErrorBoundaryWrapper>
+                                </ToastProvider>
+                              </AuthErrorProvider>
+                            </GlobalTrashProvider>
+                          </ChatProvider>
+                        </GlobalSearchProvider>
+                      </GlobalBrandingProvider>
+                    </VLinkDragProvider>
                   </DashboardProvider>
                 </WorkAuthProvider>
               </SessionReadyGate>

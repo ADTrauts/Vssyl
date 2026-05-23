@@ -385,6 +385,58 @@ export interface TestLabResult {
   };
 }
 
+export interface SuggestionDryRunCandidateReport {
+  correlationRuleId: string;
+  suggestionType: string;
+  confidence: number;
+  adjustedConfidence: number;
+  suppressionKey: string;
+  explainSummary: string;
+  contextModules: string[];
+  sourceEventIds: string[];
+  rankingAccepted: boolean;
+  rankingRejectionReason?: string;
+}
+
+export interface SuggestionDryRunResult {
+  fixtureId: string;
+  description: string;
+  triggerEvent: {
+    id: string;
+    type: string;
+    entityId: string;
+    createdAt: string;
+  };
+  evaluatedRuleIds: string[];
+  priorSignalCount: number;
+  candidates: SuggestionDryRunCandidateReport[];
+  wouldCreateCount: number;
+  rejectedByRankingCount: number;
+}
+
+export interface SuggestionFunnelMetrics {
+  windowDays: number;
+  totals: {
+    created: number;
+    pending: number;
+    accepted: number;
+    dismissed: number;
+    expired: number;
+  };
+  feedback: {
+    doNotShowAgainCount: number;
+    acceptedSignals: number;
+    dismissedSignals: number;
+  };
+  quality: {
+    explainabilityCompleteRate: number;
+    avgConfidence: number | null;
+  };
+  noise: {
+    avgCreatedPerUserDashboardDay: number | null;
+  };
+}
+
 export interface ModuleContextProviderHealthResult {
   moduleId: string;
   moduleName: string;

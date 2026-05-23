@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Card, Button, Spinner } from 'shared/components';
+import { Card, Button, Spinner, Badge } from 'shared/components';
 import { Sparkles, MessageSquare, Settings2, BarChart3, ChevronRight, ArrowRight } from 'lucide-react';
 import {
   fetchPendingLearnings,
@@ -171,11 +171,11 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
 
       <section className="space-y-4">
         <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-          Suggested from chat
+          Suggested for review
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Observations from our recent conversations. I don’t use these until you save them to AI
-          Identity.
+          Observations from chat or repeated contextual suggestions. I don&apos;t use these until
+          you save them to AI Identity.
         </p>
         {loadingContext ? (
           <div className="flex justify-center py-8">
@@ -187,14 +187,23 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
           </Card>
         ) : (
           <ul className="space-y-3">
-            {pendingContext.map((item) => (
+            {pendingContext.map((item) => {
+              const fromSuggestions = item.tags?.includes('ambient_suggestion') ?? false;
+              return (
               <li key={item.id}>
                 <Card className="p-4 border-amber-100 dark:border-amber-900/50">
                   <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                        {item.title}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                          {item.title}
+                        </p>
+                        {fromSuggestions && (
+                          <Badge size="sm" color="blue">
+                            From suggestions
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-3">
                         {item.content}
                       </p>
@@ -220,7 +229,8 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
                   </div>
                 </Card>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

@@ -1,5 +1,37 @@
 # Block-on-Block Platform - Progress
 
+## V_Link platform layer (May 2026) ✅
+
+**Status:** **COMPLETE** — Cross-module contextual relationship primitive (platform layer, not marketplace module).
+
+| Phase | Outcome |
+|-------|---------|
+| **VL-0** | [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md) |
+| **VL-1–2** | Prisma models, `/api/vlinks`, domain events, `VLinkActivity`, global search provider |
+| **VL-3–4** | `/vlink` hub, sidebar icon under AI, drag-to-link infrastructure |
+| **VL-5–6** | Drive + Calendar first integrations |
+| **VL-7–10** | Sharing/ownership transfer, AI suggestions groundwork, AI context provider, Chat/Tasks placeholders |
+
+**Migration:** `20260601120000_vlink_platform_foundation`
+
+**Canonical:** [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md), [`memory-bank/vlinkProductContext.md`](vlinkProductContext.md)
+
+---
+
+## AI Phase 5 — Ambient Contextual Assistance (May 2026) ✅
+
+**Status:** **COMPLETE** — explainable ambient suggestions (not autonomy).
+
+| Subphase | Outcome |
+|----------|---------|
+| **5A–5F** | Schema, correlation/ranking rules, UI surfaces, learning loop, admin dry-run + acceptance tests |
+
+**Migrations:** `20260522120000_ai_suggestion_ambient_fields`, `20260522120100_ai_suggestion_enums`
+
+**Canonical:** [`docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md`](../docs/plans/AI_AMBIENT_CONTEXTUAL_ASSISTANCE_PLAN.md)
+
+---
+
 ## AI Platform Maturity — Phases 1–4 + Autonomy (May 2026) ✅
 
 **Status:** **COMPLETE** — Memory, learning, cross-module context, extensibility, and autonomy de-emphasis (A1–A8).
@@ -15,7 +47,7 @@
 | **4D** | [`MODULE_AI_SDK_BOUNDARIES.md`](../docs/guides/MODULE_AI_SDK_BOUNDARIES.md), maturity gates, [`full-ai-contract-module.json`](../docs/test-modules/full-ai-contract-module.json) |
 | **Autonomy A1–A8** | Action-boundary copy; hidden Actions UI; deprecated `/api/ai/autonomous/*`; `PreferenceResolver`-only boundaries; admin docs |
 
-**Migrations to deploy:** `20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`
+**Migrations to deploy:** `20260521180000_user_memory_fact_provenance`, `20260521190000_module_context_provider_cache`, `20260521200000_webhook_subscriptions`, `20260522120000_ai_suggestion_ambient_fields`, `20260522120100_ai_suggestion_enums`, `20260601120000_vlink_platform_foundation`
 
 **Canonical plans:** [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../docs/plans/AI_PLATFORM_MATURITY_PLAN.md), [`docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md`](../docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md)  
 **Active detail:** `memory-bank/activeContext.md`

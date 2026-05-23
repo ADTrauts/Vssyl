@@ -1,12 +1,18 @@
 /**
- * AI platform consumer for domain events (Phase 4A).
+ * AI platform consumer for domain events (Phase 4A + 5B).
  * Records learning signal stubs — no auto-execution, no module activity emission.
+ * Ambient suggestion correlation runs asynchronously (non-blocking emit path).
  */
 
 import { DOMAIN_EVENT_TYPES } from '../../events/domainEventRegistry';
 import type { DomainEvent } from '../../events/types';
 import { logger } from '../../lib/logger';
+import { ambientSuggestionService } from '../../services/ambientSuggestionService';
 import { userLearningSignalService } from '../../services/userLearningSignalService';
+import {
+  resolveDashboardIdFromEvent,
+  resolveSourceModuleFromEvent,
+} from '../suggestions/suggestionEventUtils';
 
 const AI_CONSUMED_DOMAIN_EVENT_TYPES = new Set<string>([
   DOMAIN_EVENT_TYPES.FILE_UPLOADED,
@@ -17,38 +23,12 @@ const AI_CONSUMED_DOMAIN_EVENT_TYPES = new Set<string>([
   DOMAIN_EVENT_TYPES.MODULE_INSTALLED,
 ]);
 
-function resolveSourceModule(event: DomainEvent): string {
-  const metadata = event.metadata ?? {};
-  if (typeof metadata.moduleId === 'string' && metadata.moduleId.trim()) {
-    return metadata.moduleId.trim();
-  }
-
-  switch (event.type) {
-    case DOMAIN_EVENT_TYPES.FILE_UPLOADED:
-    case DOMAIN_EVENT_TYPES.FILE_DELETED:
-    case DOMAIN_EVENT_TYPES.FILE_SHARED:
-      return 'drive';
-    case DOMAIN_EVENT_TYPES.CHAT_MESSAGE_SENT:
-      return 'chat';
-    case DOMAIN_EVENT_TYPES.CALENDAR_EVENT_CREATED:
-      return 'calendar';
-    default:
-      return 'platform';
-  }
-}
-
-function resolveDashboardId(event: DomainEvent): string | null {
-  if (event.dashboardId) return event.dashboardId;
-  const fromMetadata = event.metadata?.dashboardId;
-  return typeof fromMetadata === 'string' && fromMetadata.trim() ? fromMetadata.trim() : null;
-}
-
 export function isAIConsumableDomainEvent(event: DomainEvent): boolean {
   return AI_CONSUMED_DOMAIN_EVENT_TYPES.has(event.type);
 }
 
 /**
- * Subscribe handler: translate authorized, post-mutation domain events into learning stubs.
+ * Subscribe handler: learning stub (await) + ambient correlation (async, Phase 5B).
  */
 export async function consumeDomainEventForAI(event: DomainEvent): Promise<void> {
   if (!isAIConsumableDomainEvent(event)) {
@@ -65,8 +45,8 @@ export async function consumeDomainEventForAI(event: DomainEvent): Promise<void>
     domainEventType: event.type,
     entityType: event.entityType,
     entityId: event.entityId,
-    sourceModule: resolveSourceModule(event),
-    dashboardId: resolveDashboardId(event),
+    sourceModule: resolveSourceModuleFromEvent(event),
+    dashboardId: resolveDashboardIdFromEvent(event),
     businessId: event.businessId ?? null,
     metadata: {
       action: event.action,
@@ -74,11 +54,13 @@ export async function consumeDomainEventForAI(event: DomainEvent): Promise<void>
     },
   });
 
+  ambientSuggestionService.scheduleProcessDomainEvent(event);
+
   void logger.debug('[AI_EVENT_CONSUMER]', {
     operation: 'ai_domain_event_consumed',
     domainEventId: event.id,
     type: event.type,
     userId: event.actorUserId,
-    sourceModule: resolveSourceModule(event),
+    sourceModule: resolveSourceModuleFromEvent(event),
   });
 }

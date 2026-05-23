@@ -99,6 +99,8 @@ model User {
   aiMessageRecallIndexes AIMessageRecallIndex[]
   aiExtractedExpenses AIExtractedExpense[]
   aiSuggestions       AISuggestion[]
+  aiSuggestionSignals AISuggestionSignal[]
+  aiSuggestionFeedbacks AISuggestionFeedback[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -153,6 +155,17 @@ model User {
   noteFoldersCreated NoteFolder[] @relation("NoteFolderCreator")
   noteSharesReceived NoteShare[]  @relation("NoteShareRecipient")
   noteSharesGiven    NoteShare[]  @relation("NoteShareSharer")
+
+  // V_Link platform relations
+  vlinksOwned              VLink[]            @relation("VLinkOwner")
+  vlinksCreated            VLink[]            @relation("VLinkCreator")
+  vlinksUpdated            VLink[]            @relation("VLinkUpdater")
+  vlinkMemberships         VLinkMember[]      @relation("VLinkMemberUser")
+  vlinkMemberInvitesSent   VLinkMember[]      @relation("VLinkMemberInviter")
+  vlinkEntitiesLinked      VLinkEntity[]      @relation("VLinkEntityLinker")
+  vlinkSuggestions         VLinkSuggestion[]  @relation("VLinkSuggestionUser")
+  vlinkSuggestionsReviewed VLinkSuggestion[]  @relation("VLinkSuggestionReviewer")
+  vlinkActivities          VLinkActivity[]    @relation("VLinkActivityActor")
 
   // Vssyl Place relations
   place               Place?

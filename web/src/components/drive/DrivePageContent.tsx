@@ -7,6 +7,8 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import DriveSidebar from '../../app/drive/DriveSidebar';
 import { DriveModuleWrapper } from './DriveModuleWrapper';
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
+import { toast } from 'react-hot-toast';
+import { useVLinkDrag } from '@/contexts/VLinkDragContext';
 
 interface DrivePageContentProps {
   className?: string;
@@ -15,6 +17,11 @@ interface DrivePageContentProps {
 export function DrivePageContent({ className = '' }: DrivePageContentProps) {
   const { data: session } = useSession();
   const { currentDashboard, navigateToDashboard } = useDashboard();
+  const { openConnectModal } = useVLinkDrag();
+  const businessId =
+    currentDashboard && 'business' in currentDashboard ? currentDashboard.business?.id ?? null : null;
+  const householdId =
+    currentDashboard && 'household' in currentDashboard ? currentDashboard.household?.id ?? null : null;
   const router = useRouter();
   const searchParams = useSearchParams();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -57,6 +64,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       if (!files || !session?.accessToken) return;
 
       try {
+        const uploaded: Array<{ id: string; name: string }> = [];
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const formData = new FormData();
@@ -71,7 +79,49 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
 
           if (!response.ok) {
             console.error('Upload failed:', response.status);
+            continue;
           }
+          try {
+            const data = (await response.json()) as { file?: { id?: string; name?: string | null } };
+            const fid = data.file?.id;
+            if (typeof fid === 'string' && fid.length > 0) {
+              uploaded.push({ id: fid, name: data.file?.name || file.name });
+            }
+          } catch {
+            // Response may omit JSON shape; omit from V_Link shortcut
+          }
+        }
+
+        if (uploaded.length === 1) {
+          const u = uploaded[0];
+          toast.success(
+            (tId) => (
+              <div className="flex flex-col gap-2 text-sm text-gray-900">
+                <span>{u.name} uploaded.</span>
+                <button
+                  type="button"
+                  className="text-left text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                  onClick={() => {
+                    toast.dismiss(tId.id);
+                    openConnectModal({
+                      entityType: 'FILE',
+                      entityId: u.id,
+                      moduleId: 'drive',
+                      title: u.name,
+                      dashboardId: currentDashboard?.id ?? undefined,
+                      businessId,
+                      householdId,
+                    });
+                  }}
+                >
+                  Add to V_Link
+                </button>
+              </div>
+            ),
+            { duration: 8000 }
+          );
+        } else if (uploaded.length > 1) {
+          toast.success(`${uploaded.length} files uploaded.`);
         }
         
         // Trigger refresh without page reload
@@ -81,7 +131,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       }
     };
     input.click();
-  }, [session, currentDashboard]);
+  }, [session, currentDashboard, openConnectModal, businessId, householdId]);
 
   // Folder creation handler
   const handleCreateFolder = useCallback(async () => {

@@ -58,6 +58,15 @@ import {
 import type { AIPipelineTrace } from '../../ai/types/pipelineDiagnostics';
 import { enrichTraceWithInsights } from '../../ai/pipeline/pipelineTraceInsights';
 import { runModuleContextProviderHealthCheck } from '../../ai/services/moduleContextProviderHealthCheck';
+import {
+  suggestionDryRunService,
+  type SuggestionDryRunResult,
+} from '../../ai/suggestions/SuggestionDryRunService';
+import {
+  SUGGESTION_FIXTURE_IDS,
+  isSuggestionFixtureId,
+} from '../../ai/suggestions/suggestionFixtures';
+import { getSuggestionFunnelMetrics } from '../../ai/suggestions/suggestionFunnelMetrics';
 
 const digitalLifeTwin = new DigitalLifeTwinService(prisma);
 
@@ -1223,6 +1232,90 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
         res.status(500).json({ error: err.message });
+      }
+    }
+  );
+
+  router.get(
+    '/ai-pipeline/suggestions/metrics',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const days = parseDays(req.query.days, 7);
+        const metrics = await getSuggestionFunnelMetrics(days);
+        res.json({ success: true, data: metrics });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Suggestion funnel metrics failed', {
+          operation: 'admin_suggestion_funnel_metrics_error',
+          error: { message: err.message, stack: err.stack },
+        });
+        res.status(500).json({ error: 'Failed to load suggestion metrics' });
+      }
+    }
+  );
+
+  router.post(
+    '/ai-pipeline/suggestions/dry-run',
+    authenticateJWT,
+    requireAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        const adminUser = req.user;
+        if (!adminUser) {
+          return res.status(401).json({ error: 'User not authenticated' });
+        }
+
+        const body = req.body as Record<string, unknown>;
+        const fixtureId =
+          typeof body.fixtureId === 'string' ? body.fixtureId.trim() : 'meeting_prep';
+        if (!isSuggestionFixtureId(fixtureId)) {
+          return res.status(400).json({
+            error: `fixtureId must be one of: ${SUGGESTION_FIXTURE_IDS.join(', ')}`,
+          });
+        }
+
+        const userId =
+          typeof body.userId === 'string' && body.userId.trim()
+            ? body.userId.trim()
+            : adminUser.id;
+        const dashboardId =
+          typeof body.dashboardId === 'string' && body.dashboardId.trim()
+            ? body.dashboardId.trim()
+            : 'admin-dry-run-dashboard';
+
+        const recentSuggestionCount =
+          typeof body.recentSuggestionCount === 'number'
+            ? body.recentSuggestionCount
+            : undefined;
+        const suppressedKeys = Array.isArray(body.suppressedKeys)
+          ? body.suppressedKeys.filter((k): k is string => typeof k === 'string')
+          : undefined;
+        const dismissCountByType =
+          body.dismissCountByType &&
+          typeof body.dismissCountByType === 'object' &&
+          !Array.isArray(body.dismissCountByType)
+            ? (body.dismissCountByType as Record<string, number>)
+            : undefined;
+
+        const result: SuggestionDryRunResult = await suggestionDryRunService.run({
+          fixtureId,
+          userId,
+          dashboardId,
+          recentSuggestionCount,
+          suppressedKeys,
+          dismissCountByType,
+        });
+
+        res.json({ success: true, data: result });
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.error('Suggestion correlation dry-run failed', {
+          operation: 'admin_suggestion_dry_run_error',
+          error: { message: err.message, stack: err.stack },
+        });
+        res.status(500).json({ error: 'Suggestion dry-run failed' });
       }
     }
   );

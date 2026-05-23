@@ -211,6 +211,7 @@ function buildSchema() {
     'auth',
     'chat',
     'business',
+    'platform',
     'ai',
     'billing',
     'calendar',

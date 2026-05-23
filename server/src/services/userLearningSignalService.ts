@@ -5,6 +5,11 @@ import { buildLearningEventArtifactEnvelope } from '../ai/learning/learningEvent
 import { upsertDerivedLearningEvent } from '../ai/learning/learningEventPersistence';
 import { LEARNING_EVENT_TYPES } from '../ai/learning/learningProposalTypes';
 import {
+  REPEATED_ACCEPT_THRESHOLD,
+  REPEATED_ACCEPT_WINDOW_MS,
+} from '../ai/suggestions/suggestionTypes';
+import { learningApplicationService } from './learningApplicationService';
+import {
   defaultSummaryForSignalType,
   LEARNING_SIGNAL_TYPES,
   type LearningSignalPayload,
@@ -183,6 +188,8 @@ export class UserLearningSignalService {
     suggestionId: string;
     suggestionType: string;
     suggestionTitle: string;
+    correlationRuleId?: string | null;
+    suppressionKey?: string | null;
     dashboardId?: string | null;
     businessId?: string | null;
   }): Promise<void> {
@@ -197,7 +204,42 @@ export class UserLearningSignalService {
         suggestionId: input.suggestionId,
         suggestionType: input.suggestionType,
         suggestionTitle: input.suggestionTitle,
+        ...(input.correlationRuleId ? { correlationRuleId: input.correlationRuleId } : {}),
+        ...(input.suppressionKey ? { suppressionKey: input.suppressionKey } : {}),
       },
+    });
+
+    await this.maybeCreateRepeatedAcceptProposal(input);
+  }
+
+  private async maybeCreateRepeatedAcceptProposal(input: {
+    userId: string;
+    suggestionType: string;
+    correlationRuleId?: string | null;
+    dashboardId?: string | null;
+    businessId?: string | null;
+  }): Promise<void> {
+    const since = new Date(Date.now() - REPEATED_ACCEPT_WINDOW_MS);
+    const acceptCount = await this.db.aISuggestionFeedback.count({
+      where: {
+        userId: input.userId,
+        action: 'accepted',
+        createdAt: { gte: since },
+        suggestion: {
+          OR: [{ suggestionType: input.suggestionType }, { type: input.suggestionType }],
+        },
+      },
+    });
+
+    if (acceptCount < REPEATED_ACCEPT_THRESHOLD) return;
+
+    await learningApplicationService.createPendingPreferenceFromSuggestionPattern({
+      userId: input.userId,
+      suggestionType: input.suggestionType,
+      correlationRuleId: input.correlationRuleId,
+      acceptanceCount: acceptCount,
+      dashboardId: input.dashboardId,
+      businessId: input.businessId,
     });
   }
 
@@ -206,6 +248,9 @@ export class UserLearningSignalService {
     suggestionId: string;
     suggestionType: string;
     suggestionTitle: string;
+    correlationRuleId?: string | null;
+    suppressionKey?: string | null;
+    doNotShowAgain?: boolean;
     reason?: string;
     dashboardId?: string | null;
     businessId?: string | null;
@@ -216,11 +261,14 @@ export class UserLearningSignalService {
       sourceModule: 'ai',
       dashboardId: input.dashboardId,
       businessId: input.businessId,
-      confidence: 0.7,
+      confidence: input.doNotShowAgain ? 0.85 : 0.7,
       metadata: {
         suggestionId: input.suggestionId,
         suggestionType: input.suggestionType,
         suggestionTitle: input.suggestionTitle,
+        ...(input.correlationRuleId ? { correlationRuleId: input.correlationRuleId } : {}),
+        ...(input.suppressionKey ? { suppressionKey: input.suppressionKey } : {}),
+        ...(input.doNotShowAgain ? { doNotShowAgain: true } : {}),
         ...(input.reason ? { reason: input.reason } : {}),
       },
     });

@@ -618,28 +618,96 @@ model AIExtractedExpense {
   @@map("ai_extracted_expenses")
 }
 
-// Phase 7: Proactive AI suggestions (e.g. after document upload)
+// Ambient contextual assistance — explainable suggestions (Phase 5A)
 model AISuggestion {
-  id          String   @id @default(uuid())
-  userId      String
-  type        String   // e.g. 'document_upload'
-  title       String
-  body        String
-  actionData  Json     // e.g. { fileId, suggestedAction: 'extract' | 'add_reminder' }
-  status      AISuggestionStatus @default(PENDING)
-  respondedAt DateTime?
-  createdAt   DateTime @default(now())
+  id                String               @id @default(uuid())
+  userId            String
+  dashboardId       String?
+  businessId        String?
+  householdId       String?
+  type              String               // legacy alias; keep in sync with suggestionType
+  suggestionType    String?
+  title             String
+  body              String
+  actionData        Json
+  status            AISuggestionStatus   @default(PENDING)
+  priority          AISuggestionPriority @default(normal)
+  confidence        Float?
+  explainability    Json?
+  expiresAt         DateTime?
+  shownAt           DateTime?
+  suppressionKey    String?
+  correlationRuleId String?
+  respondedAt       DateTime?
+  createdAt         DateTime             @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback          AISuggestionFeedback[]
 
   @@index([userId])
+  @@index([userId, dashboardId, status, createdAt])
+  @@index([userId, suppressionKey])
   @@index([status])
+  @@index([expiresAt])
   @@index([createdAt])
   @@map("ai_suggestions")
+}
+
+model AISuggestionSignal {
+  id              String    @id @default(uuid())
+  userId          String
+  dashboardId     String?
+  businessId      String?
+  domainEventId   String?
+  domainEventType String?
+  entityType      String?
+  entityId        String?
+  sourceModule    String
+  occurredAt      DateTime  @default(now())
+  metadata        Json      @default("{}")
+  processedAt     DateTime?
+  ruleIds         String[]  @default([])
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dashboardId, occurredAt])
+  @@index([domainEventId])
+  @@map("ai_suggestion_signals")
+}
+
+model AISuggestionFeedback {
+  id             String                     @id @default(uuid())
+  suggestionId   String
+  userId         String
+  action         AISuggestionFeedbackAction
+  reason         String?
+  doNotShowAgain Boolean                    @default(false)
+  suppressionKey String?
+  createdAt      DateTime                   @default(now())
+
+  suggestion     AISuggestion               @relation(fields: [suggestionId], references: [id], onDelete: Cascade)
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([suggestionId])
+  @@index([userId, suppressionKey])
+  @@map("ai_suggestion_feedback")
 }
 
 enum AISuggestionStatus {
   PENDING
   ACCEPTED
   DISMISSED
+  EXPIRED
+}
+
+enum AISuggestionPriority {
+  low
+  normal
+  high
+}
+
+enum AISuggestionFeedbackAction {
+  accepted
+  dismissed
+  ignored
 }

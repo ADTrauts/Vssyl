@@ -1,8 +1,13 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSession } from 'next-auth/react';
+import { Button } from 'shared/components';
+import { Link2 } from 'lucide-react';
 import { calendarAPI, Calendar, EventItem, Attendee, EventComment } from '../../api/calendar';
-import { useCalendarContext } from '../../contexts/CalendarContext';
+import { getVLinksForEntity, type EntityVLinkRef } from '@/api/vlinks';
+import { useVLinkDrag } from '@/contexts/VLinkDragContext';
 import { useDashboard } from '../../contexts/DashboardContext';
+import { useCalendarContext } from '../../contexts/CalendarContext';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { toast } from 'react-hot-toast';
 
@@ -51,6 +56,15 @@ interface ICSEventData {
 }
 
 export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, contextType, contextId, defaultStart, defaultEnd, eventToEdit }: EventDrawerProps) {
+  const { data: session } = useSession();
+  const { openConnectModal } = useVLinkDrag();
+  const { currentDashboard, currentDashboardId } = useDashboard();
+  const businessId =
+    currentDashboard && 'business' in currentDashboard ? currentDashboard.business?.id ?? null : null;
+  const householdId =
+    currentDashboard && 'household' in currentDashboard ? currentDashboard.household?.id ?? null : null;
+  const [eventVLinks, setEventVLinks] = useState<EntityVLinkRef[]>([]);
+  const [eventVLinksLoading, setEventVLinksLoading] = useState(false);
   const { trashItem } = useGlobalTrash();
   const [title, setTitle] = useState('');
   const [startAt, setStartAt] = useState<string>('');
@@ -121,6 +135,29 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
       setEditSeriesMode('SERIES');
     }
   }, [isOpen, defaultStart, defaultEnd, eventToEdit]);
+
+  useEffect(() => {
+    if (!isOpen || !eventToEdit?.id || !session?.accessToken) {
+      setEventVLinks([]);
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      setEventVLinksLoading(true);
+      try {
+        const refs = await getVLinksForEntity(session.accessToken!, 'CALENDAR_EVENT', eventToEdit.id);
+        if (!cancelled) setEventVLinks(refs);
+      } catch {
+        if (!cancelled) setEventVLinks([]);
+      } finally {
+        if (!cancelled) setEventVLinksLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, eventToEdit?.id, session?.accessToken]);
 
   const listParams = useMemo(() => {
     if (contextType && contextId) {
@@ -573,6 +610,48 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
             <button onClick={onClose} className="px-3 py-1 border rounded">Cancel</button>
             <button onClick={handleSave} disabled={saving || !title} className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50">{saving ? 'Saving…' : (eventToEdit ? 'Save' : 'Create')}</button>
           </div>
+          {eventToEdit?.id && (
+            <div className="pt-3 border-t space-y-2">
+              <div className="text-sm font-medium flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-gray-600" />
+                V_Link
+              </div>
+              {eventVLinksLoading ? (
+                <p className="text-xs text-gray-600 dark:text-gray-400">Loading linked V_Links…</p>
+              ) : eventVLinks.length === 0 ? (
+                <p className="text-xs text-gray-600 dark:text-gray-400">Not linked to any V_Link yet.</p>
+              ) : (
+                <ul className="space-y-1 max-h-28 overflow-y-auto text-xs text-gray-800 dark:text-gray-200">
+                  {eventVLinks.map((r) => (
+                    <li key={r.entityLinkId} className="flex flex-wrap gap-x-2">
+                      <span className="font-medium">{r.title}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{r.publicCode}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full justify-center"
+                onClick={() =>
+                  openConnectModal({
+                    entityType: 'CALENDAR_EVENT',
+                    entityId: eventToEdit.id,
+                    moduleId: 'calendar',
+                    title: title || eventToEdit.title,
+                    dashboardId: currentDashboardId ?? contextId ?? undefined,
+                    businessId,
+                    householdId,
+                  })
+                }
+              >
+                <Link2 className="w-4 h-4 mr-2" />
+                Add to V_Link
+              </Button>
+            </div>
+          )}
           {/* Comments */}
           {eventToEdit?.id && (
             <div className="pt-2 border-t">

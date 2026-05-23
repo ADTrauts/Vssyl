@@ -72,7 +72,7 @@ Full contracts (version, description, `recommendedMetadataFields`, `disallowedMe
 | socket | `subscribers/socketDomainEventSubscriber.ts` | `platform:domain_event` to actor |
 | notification_placeholder | `subscribers/notificationDomainEventSubscriber.ts` | Debug placeholder |
 | analytics_placeholder | `subscribers/analyticsDomainEventSubscriber.ts` | Debug placeholder |
-| **ai_event_consumer** | `ai/consumers/AIEventConsumer.ts` | Learning signal stubs (`domain_event`); no auto-exec |
+| **ai_event_consumer** | `ai/consumers/AIEventConsumer.ts` | Learning stubs + ambient suggestion signals (`domain_event`); no auto-exec |
 
 Subscriber failures are logged; they do not roll back the mutation.
 
@@ -82,10 +82,12 @@ Subscriber failures are logged; they do not roll back the mutation.
 
 | Domain event | Source module | Notes |
 |--------------|---------------|--------|
-| `file.uploaded` | drive | Proactive document suggestion remains in `proactiveSuggestionsService.onFileUploaded` at emit site |
+| `file.uploaded` | drive | Correlation rule `document_upload_v1` + learning stub (Phase 5B) |
 | `chat.message.sent` | chat | No message body in event metadata |
 | `calendar.event.created` | calendar | Schedule metadata only (no title/description) |
 | `module.installed` / `module.enabled` / `module.disabled` | platform | Enable/disable via `PUT /modules/:id/configure` `{ enabled: boolean }` |
+
+**Phase 5B (Ambient contextual assistance):** `SuggestionCorrelationService` records `AISuggestionSignal` rows and evaluates registered rules (`suggestionRules.ts`). `SuggestionRankingService` applies confidence + frequency caps before `ambientSuggestionService` creates `AISuggestion` rows. Processing is **async** from the AI consumer (`scheduleProcessDomainEvent`) so emit sites are not blocked.
 
 The AI consumer **never** calls `emitModuleActivityEvent` and **never** executes autonomous actions.
 
@@ -170,7 +172,7 @@ Emit **only after** DB success and authorization. Safe metadata only: `fileId`, 
 
 | Event | Emit site | Safe metadata |
 |-------|-----------|---------------|
-| `file.uploaded` | `uploadFile` | `folderId`, `fileType`, `sizeBytes`, `dashboardId` |
+| `file.uploaded` | `uploadFile` | `folderId`, `fileType`, `fileName`, `sizeBytes`, `dashboardId` |
 | `file.deleted` | `deleteFile` | `folderId`, `softDelete` |
 | `file.shared` | `grantFilePermission` | `recipientUserId`, `shareRole` (`read` / `write` / `read_write`) |
 | `folder.shared` | `grantFolderPermission` | `recipientUserId`, `shareRole` |
