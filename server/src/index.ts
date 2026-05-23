@@ -1069,18 +1069,27 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(status).json(body);
 });
 
-/** Failed deploys left this row in `_prisma_migrations`; Prisma then returns P3009 until resolved. */
-const TAGS_MIGRATION_RECOVERY_NAME = '20260419203000_tasks_tags_not_null_default';
+/** Failed deploys left rows in `_prisma_migrations`; Prisma then returns P3009 until resolved. */
+const RECOVERABLE_FAILED_MIGRATIONS = [
+  '20260419203000_tasks_tags_not_null_default',
+  /** Duplicate CREATE TYPE in first draft; migration is idempotent after resolve + redeploy. */
+  '20260522120100_ai_suggestion_enums',
+] as const;
 
-function shouldRecoverFailedTagsMigration(combinedOutput: string): boolean {
-  if (!combinedOutput.includes(TAGS_MIGRATION_RECOVERY_NAME)) {
-    return false;
-  }
-  return (
+function findRecoverableFailedMigration(combinedOutput: string): string | null {
+  const isFailedState =
     combinedOutput.includes('P3009') ||
     combinedOutput.includes('P3018') ||
-    combinedOutput.includes('migrate found failed migrations in the target database')
-  );
+    combinedOutput.includes('migrate found failed migrations in the target database');
+  if (!isFailedState) {
+    return null;
+  }
+  for (const migrationName of RECOVERABLE_FAILED_MIGRATIONS) {
+    if (combinedOutput.includes(migrationName)) {
+      return migrationName;
+    }
+  }
+  return null;
 }
 
 function spawnPrisma(
@@ -1168,21 +1177,22 @@ async function runProductionStartupMigrations(): Promise<void> {
 
   const deployArgs = ['migrate', 'deploy', '--schema', schemaPath];
   let first = spawnPrisma(deployArgs, execOpts);
-  if (!first.ok && shouldRecoverFailedTagsMigration(first.combined)) {
+  const recoverableMigration = !first.ok ? findRecoverableFailedMigration(first.combined) : null;
+  if (recoverableMigration) {
     void logger
-      .warn('Recovering failed tasks tags migration (resolve rolled-back, then redeploy)', {
-        operation: 'prisma_migrate_recovery_tags',
-        migration: TAGS_MIGRATION_RECOVERY_NAME,
+      .warn('Recovering failed migration (resolve rolled-back, then redeploy)', {
+        operation: 'prisma_migrate_recovery',
+        migration: recoverableMigration,
       })
       .catch(() => undefined);
 
     const resolveResult = spawnPrisma(
-      ['migrate', 'resolve', '--rolled-back', TAGS_MIGRATION_RECOVERY_NAME, '--schema', schemaPath],
+      ['migrate', 'resolve', '--rolled-back', recoverableMigration, '--schema', schemaPath],
       execOpts
     );
     if (!resolveResult.ok) {
       throw new Error(
-        `prisma migrate resolve --rolled-back failed for ${TAGS_MIGRATION_RECOVERY_NAME}: ${resolveResult.combined}`
+        `prisma migrate resolve --rolled-back failed for ${recoverableMigration}: ${resolveResult.combined}`
       );
     }
     first = spawnPrisma(deployArgs, execOpts);
