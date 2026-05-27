@@ -35,6 +35,29 @@ Filtering by `[VISION_PIPELINE]` or by `requestId` (from the trace context) lets
 
 ---
 
+## Troubleshooting flowchart: images work locally but not prod
+
+```mermaid
+flowchart TD
+  Start["Image works locally but not prod"] --> Logs["Search Cloud Run logs for VISION_PIPELINE"]
+  Logs --> Files{"vision_pipeline_files filesLength > 0?"}
+  Files -->|"No"| Link["Attachment linking / DB query issue"]
+  Files -->|"Yes"| Parts{"vision_pipeline_vision_parts visionImagePartsLength > 0?"}
+  Parts -->|"No"| Skip["Check vision_image_parts skipReason"]
+  Skip --> NoPath["no_path — bad file.path / file.url"]
+  Skip --> BufferFail["getFileBuffer_failed — GCS auth / bucket / key"]
+  Skip --> Mime["unsupported MIME / size cap"]
+  Parts -->|"Yes"| Handoff{"provider_data includes visionImageParts?"}
+  Handoff -->|"No"| Bug1["Core / providerData handoff bug"]
+  Handoff -->|"Yes"| Request{"provider_request hasVision && isMultimodal?"}
+  Request -->|"No"| Bug2["Provider request builder bug"]
+  Request -->|"Yes"| Model{"Vision model selected?"}
+  Model -->|"No"| Bug3["capabilities / model override bug"]
+  Model -->|"Yes"| Quality["Prompt / model quality issue"]
+```
+
+---
+
 ## If images work locally but not in production
 
 Work through this checklist:

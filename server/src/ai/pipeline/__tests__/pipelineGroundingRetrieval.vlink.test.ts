@@ -2,6 +2,26 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { getDefaultPipelineCatalog } from '../pipelineCatalogDefaults';
 import { runPipelineGroundingRetrieval } from '../pipelineGroundingRetrieval';
 
+vi.mock('../../context/ContextProviderOrchestrator', () => ({
+  orchestratePipelineModuleSources: vi.fn(async () => ({
+    query: '',
+    analysis: { query: '', matchedModules: [], suggestedContextProviders: [] },
+    fullContext: {},
+    moduleContexts: {},
+    providerFetchAudit: [],
+    providerSelectionDiagnostics: [],
+    installedModuleIds: [],
+    relevantModuleCount: 0,
+    multiModuleIntent: false,
+    timestamp: new Date(),
+    contextOrchestration: { contextGenerationId: 'mock', generatedAt: new Date().toISOString() },
+    groundingFailure: false,
+    requiredSourceFailures: [],
+    staleContextWarnings: [],
+    groundingSourceToProvider: [],
+  })),
+}));
+
 vi.mock('../../context/vlinkPipelineContextService', () => ({
   detectVLinkQuerySignals: vi.fn(() => ({
     vlCodeReferenced: false,

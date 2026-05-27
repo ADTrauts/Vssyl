@@ -64,6 +64,70 @@ describe('mapPipelineTraceInputs', () => {
     expect(input.sourcesUsed).toContain('vlink');
   });
 
+  it('embeds orchestration diagnostics into contextDensity on trace input', () => {
+    const input = mapOrchestrationToPipelineTraceInput({
+      userId: 'u1',
+      userMessage: 'show files',
+      finalResponse: 'ok',
+      confidence: 0.8,
+      queryContext: {
+        contextGenerationId: 'gen-abc',
+        contextGenerations: [{ contextGenerationId: 'gen-abc', generatedAt: new Date().toISOString() }],
+        providerSelectionDiagnostics: [
+          { providerId: 'drive.recent_files', moduleId: 'drive', providerName: 'recent_files', phase: 'selected' },
+          { providerId: 'drive.storage_overview', moduleId: 'drive', providerName: 'storage_overview', phase: 'skipped', reason: 'can_handle_false' },
+        ],
+        requiredSourceFailures: [],
+        staleContextWarnings: [],
+        groundingSourceToProvider: [
+          { sourceId: 'drive_files', providerId: 'drive.recent_files', moduleId: 'drive', providerName: 'recent_files' },
+        ],
+        orchestrationSnapshots: [
+          {
+            snapshotId: 'snap-abc',
+            schemaVersion: 1,
+            contextGenerationId: 'gen-abc',
+            userId: 'u1',
+            queryPreview: 'show files',
+            passKind: 'module_context',
+            groundingSources: { required: [], optional: [], mappedProviders: [] },
+            selectedProviders: [],
+            skippedProviders: [],
+            requiredSourceFailures: [],
+            timing: {
+              startedAt: new Date().toISOString(),
+              completedAt: new Date().toISOString(),
+              totalLatencyMs: 1,
+            },
+            outcome: {
+              providerCount: 0,
+              selectedCount: 0,
+              skippedCount: 0,
+              requiredFailureCount: 0,
+            },
+          },
+        ],
+        contextDensityReport: {
+          providers: { attempted: 1, succeeded: 1, failed: 0, cacheHits: 0, attempts: [] },
+          memory: { factsLoaded: 0, factsInjected: 0, recalledMessagesLoaded: 0 },
+          modules: { contextsLoaded: 1, blocksLoaded: 1, blocksInjected: 1, matchedHighRelevance: 1 },
+          blocks: { loaded: 1, afterProfile: 1, ranked: 1, injected: 1, synthetic: 0, live: 1, profileExcluded: 0 },
+          tokenBudget: { totalAllocated: 6000, totalUsedEstimate: 100, byTier: [] },
+          missingContextCount: 0,
+        },
+      },
+    });
+
+    expect(input.contextDensity?.orchestration?.contextGenerationId).toBe('gen-abc');
+    expect(input.contextDensity?.orchestration?.providerSelectionDiagnostics).toHaveLength(2);
+    expect(input.contextDensity?.orchestration?.snapshots?.[0]?.contextGenerationId).toBe(
+      'gen-abc'
+    );
+    expect(input.contextDensity?.orchestration?.groundingSourceToProvider?.[0]?.sourceId).toBe(
+      'drive_files'
+    );
+  });
+
   it('numericConfidenceToLevel buckets scores', () => {
     expect(numericConfidenceToLevel(0.9)).toBe('high');
     expect(numericConfidenceToLevel(0.7)).toBe('medium');

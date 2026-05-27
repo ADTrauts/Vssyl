@@ -11,9 +11,12 @@ import { CentralizedLearningEngine } from '../learning/CentralizedLearningEngine
 import { userAllowsCollectiveLearning } from '../learning/collectiveLearningConsent';
 import {
   buildContextDensityReport,
+  buildOrchestrationDiagnosticsFromQueryContext,
   toContextDensitySummary,
   type ProviderFetchAttempt,
 } from '../context/contextDensityReport';
+import { appendOrchestrationSnapshot } from '../context/orchestrationSnapshot';
+import type { AIOrchestrationSnapshot } from '../../../../shared/src/types/ai-orchestration-snapshot';
 import { randomUUID } from 'crypto';
 import { prisma as sharedPrisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
@@ -251,6 +254,22 @@ export interface LifeTwinQuery {
   preferredModel?: string;
 }
 
+const MAX_CONTEXT_GENERATIONS_PER_REQUEST = 2;
+
+function appendContextGenerationRecord(
+  queryContext: Record<string, unknown>,
+  record: Record<string, unknown>
+): void {
+  const existing = Array.isArray(queryContext.contextGenerations)
+    ? (queryContext.contextGenerations as Record<string, unknown>[])
+    : [];
+  const next = [...existing, record].slice(-MAX_CONTEXT_GENERATIONS_PER_REQUEST);
+  queryContext.contextGenerations = next;
+  if (typeof record.contextGenerationId === 'string') {
+    queryContext.contextGenerationId = record.contextGenerationId;
+  }
+}
+
 export class DigitalLifeTwinCore {
   private prisma: PrismaClient;
   private contextEngine: CrossModuleContextEngine;
@@ -316,12 +335,25 @@ export class DigitalLifeTwinCore {
           ctx && typeof ctx.businessId === 'string' && ctx.businessId.trim() !== ''
             ? ctx.businessId.trim()
             : undefined;
-        // Use the NEW intelligent context fetching system
-        smartContext = await this.contextEngine?.getContextForAIQuery(
-          query.userId,
-          query.query,
-          businessId
-        );
+        const dashboardIdForContext =
+          ctx && typeof ctx.dashboardId === 'string' && ctx.dashboardId.trim() !== ''
+            ? ctx.dashboardId.trim()
+            : undefined;
+        const householdIdForContext =
+          ctx && typeof ctx.householdId === 'string' && ctx.householdId.trim() !== ''
+            ? ctx.householdId.trim()
+            : undefined;
+        const conversationIdForContext =
+          ctx && typeof ctx.conversationId === 'string' && ctx.conversationId.trim() !== ''
+            ? ctx.conversationId.trim()
+            : undefined;
+        smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query, {
+          businessId,
+          dashboardId: dashboardIdForContext,
+          householdId: householdIdForContext,
+          requestId,
+          conversationId: conversationIdForContext,
+        });
         
         // Convert smart context to UserContext format for backward compatibility
         userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
@@ -395,6 +427,43 @@ export class DigitalLifeTwinCore {
         }
         if (Array.isArray(sc?.providerFetchAudit)) {
           (query.context as Record<string, unknown>).providerFetchAudit = sc.providerFetchAudit;
+        }
+        if (Array.isArray(sc?.providerSelectionDiagnostics)) {
+          (query.context as Record<string, unknown>).providerSelectionDiagnostics =
+            sc.providerSelectionDiagnostics;
+        }
+        if (sc?.contextOrchestration && typeof sc.contextOrchestration === 'object') {
+          appendContextGenerationRecord(query.context as Record<string, unknown>, {
+            ...(sc.contextOrchestration as Record<string, unknown>),
+            groundingFailure: sc.groundingFailure === true,
+            requiredSourceFailures: Array.isArray(sc.requiredSourceFailures)
+              ? (sc.requiredSourceFailures as string[])
+              : [],
+          });
+        }
+        if (Array.isArray(sc?.requiredSourceFailures) && sc.requiredSourceFailures.length > 0) {
+          (query.context as Record<string, unknown>).requiredSourceFailures =
+            sc.requiredSourceFailures;
+        }
+        if (sc?.groundingFailure === true) {
+          (query.context as Record<string, unknown>).contextGroundingFailure = true;
+        }
+        if (Array.isArray(sc?.staleContextWarnings)) {
+          (query.context as Record<string, unknown>).staleContextWarnings = sc.staleContextWarnings;
+        }
+        if (
+          sc?.orchestrationSnapshot &&
+          typeof sc.orchestrationSnapshot === 'object' &&
+          !Array.isArray(sc.orchestrationSnapshot)
+        ) {
+          appendOrchestrationSnapshot(
+            query.context as Record<string, unknown>,
+            sc.orchestrationSnapshot as AIOrchestrationSnapshot
+          );
+        }
+        if (Array.isArray(sc?.groundingSourceToProvider)) {
+          (query.context as Record<string, unknown>).groundingSourceToProvider =
+            sc.groundingSourceToProvider;
         }
         if (Array.isArray(sc?.installedModuleIds) && sc.installedModuleIds.length > 0) {
           userContext = {
@@ -1429,6 +1498,11 @@ export class DigitalLifeTwinCore {
       const existingVLinkPipelineContext = ctxRecord.vlinkPipelineContext as
         | VLinkPipelineContextResult
         | undefined;
+      const conversationIdForGrounding =
+        typeof ctxRecord.conversationId === 'string' && ctxRecord.conversationId.trim() !== ''
+          ? ctxRecord.conversationId.trim()
+          : traceContext?.conversationId;
+
       const boost = await runPipelineGroundingRetrieval({
         userId: query.userId,
         userMessage: query.query,
@@ -1439,6 +1513,8 @@ export class DigitalLifeTwinCore {
         householdId,
         existingModuleContexts: mergedModuleContexts,
         existingVLinkPipelineContext,
+        requestId: traceContext?.requestId,
+        conversationId: conversationIdForGrounding,
       });
       if (boost.vlinkPipelineContext) {
         ctxRecord.vlinkPipelineContext = boost.vlinkPipelineContext;
@@ -1458,6 +1534,46 @@ export class DigitalLifeTwinCore {
       groundingBoostSources = boost.sourcesUsed;
       retrievalBoostApplied =
         boost.contextRetrieved.some((c) => c.itemCount > 0) || boost.toolsUsed.some((t) => t.success);
+
+      if (boost.contextOrchestration) {
+        appendContextGenerationRecord(ctxRecord, {
+          ...boost.contextOrchestration,
+          requiredSourceFailures: boost.requiredSourceFailures ?? [],
+        });
+      }
+      if (boost.providerSelectionDiagnostics?.length) {
+        const existing = Array.isArray(ctxRecord.providerSelectionDiagnostics)
+          ? (ctxRecord.providerSelectionDiagnostics as unknown[])
+          : [];
+        ctxRecord.providerSelectionDiagnostics = [
+          ...existing,
+          ...boost.providerSelectionDiagnostics,
+        ];
+      }
+      if (boost.requiredSourceFailures?.length) {
+        const mergedFailures = [
+          ...(Array.isArray(ctxRecord.requiredSourceFailures)
+            ? (ctxRecord.requiredSourceFailures as string[])
+            : []),
+          ...boost.requiredSourceFailures,
+        ];
+        ctxRecord.requiredSourceFailures = [...new Set(mergedFailures)];
+      }
+      if (boost.staleContextWarnings?.length) {
+        const mergedStale = [
+          ...(Array.isArray(ctxRecord.staleContextWarnings)
+            ? (ctxRecord.staleContextWarnings as string[])
+            : []),
+          ...boost.staleContextWarnings,
+        ];
+        ctxRecord.staleContextWarnings = [...new Set(mergedStale)];
+      }
+      if (boost.groundingSourceToProvider?.length) {
+        ctxRecord.groundingSourceToProvider = boost.groundingSourceToProvider;
+      }
+      if (boost.orchestrationSnapshot) {
+        appendOrchestrationSnapshot(ctxRecord, boost.orchestrationSnapshot);
+      }
     }
 
     const recentConversationMemory = Array.isArray(ctxRecord.recentConversationMemory)
@@ -1520,9 +1636,15 @@ export class DigitalLifeTwinCore {
     const providerFetchAudit = Array.isArray(ctxRecord.providerFetchAudit)
       ? (ctxRecord.providerFetchAudit as ProviderFetchAttempt[])
       : [];
+    const requiredSourceFailures = Array.isArray(ctxRecord.requiredSourceFailures)
+      ? (ctxRecord.requiredSourceFailures as string[])
+      : [];
+
     const densityReport = buildContextDensityReport({
       assembled: assembledContext,
       providerFetchAudit,
+      requiredSourceFailures,
+      orchestration: buildOrchestrationDiagnosticsFromQueryContext(ctxRecord),
       assemblyMetrics: assembledContext.assemblyMetrics,
     });
     ctxRecord.contextDensityReport = densityReport;

@@ -33,29 +33,71 @@ An **additive** Admin Portal **AI Pipeline** section instruments the live twin p
 
 ## Architecture
 
+**Platform hub:** [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md)
+
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph twin [Live twin path]
     Twin["POST /api/ai/twin"]
     Core["DigitalLifeTwinCore"]
+    VLink["fetchVLinkPipelineContext"]
+    Ground["runPipelineGroundingRetrieval"]
     Assemble["assembleAIContext"]
     Provider["AI provider"]
     Trace["buildPipelineTrace"]
+    Evidence["buildPipelineEvidenceBundle"]
     Enforce["applyPipelineEnforcement"]
-    Twin --> Core --> Assemble --> Provider
-    Core --> Trace --> Enforce
+    Twin --> Core
+    Core --> VLink --> Assemble
+    Core --> Ground --> Assemble
+    Core --> Assemble --> Provider
+    Core --> Trace
+    Provider --> Trace
+    Trace --> Evidence
+    Trace --> Enforce
   end
+
+  subgraph catalog [Pipeline catalog DB]
+    Cat["pipelineCatalogService"]
+    Reconcile["reconcileSystemPipelineGroundingRules"]
+    Intents["Intent policies"]
+    Sources["Context sources incl. vlink"]
+    Rules["Grounding rules"]
+    Tools["Tool policies"]
+    Cat --> Reconcile
+    Cat --> Intents
+    Cat --> Sources
+    Cat --> Rules
+    Cat --> Tools
+  end
+
   subgraph admin [Admin Portal]
     Lab["Test Lab dry-run"]
-    Diag["Diagnostics list"]
+    Diag["Diagnostics + trace insights"]
+    Registry["Registry CRUD + validate"]
     Policies["Policy editors"]
     Comp["Compliance export"]
   end
+
+  Cat --> Ground
+  Cat --> Trace
+  Sources --> VLink
   Trace --> Diag
+  Evidence --> Diag
   Lab --> Core
-  Policies --> Catalog["pipelineCatalogService"]
-  Catalog --> Trace
+  Registry --> Cat
+  Policies --> Cat
+  Comp --> Diag
 ```
+
+### V_Link grounding reconcile (May 2026)
+
+System grounding rules are **reconciled idempotently** on catalog load so existing databases receive optional `vlink` on system intents without overwriting admin-customized non-system rows:
+
+- **`reconcileSystemPipelineGroundingRules`** in `pipelineCatalogService.ts`
+- Context source **`vlink`** must be enabled in catalog for runtime fetch
+- Trace shows **`source: vlink`** when confirmed links ground the twin
+- Unapproved V_Link suggestions never appear in grounding context
 
 ### Core server modules
 
@@ -70,7 +112,9 @@ flowchart LR
 | `server/src/ai/pipeline/mapPipelineTraceInputs.ts` | Map orchestration → trace input |
 | `server/src/ai/pipeline/pipelineDiagnosticPersistence.ts` | Persist/list/stats |
 | `server/src/ai/pipeline/pipelineEnforcement.ts` | Block/disclose/regenerate rules |
-| `server/src/ai/pipeline/pipelineGroundingRetrieval.ts` | Location + Place prepass |
+| `server/src/ai/pipeline/pipelineGroundingRetrieval.ts` | Location + Place + V_Link prepass |
+| `server/src/ai/pipeline/pipelineGroundingRuleReconcile.ts` | System grounding rule reconcile helpers |
+| `server/src/ai/context/vlinkPipelineContextService.ts` | V_Link confirmed-link context for twin |
 | `server/src/ai/pipeline/buildPipelineEvidenceBundle.ts` | Assembled vs structured evidence |
 | `server/src/ai/pipeline/pipelineRetentionService.ts` | Export, purge, retention settings |
 | `server/src/routes/admin-portal/adminPortalRoutes.aiPipeline.ts` | Admin HTTP API |
@@ -194,6 +238,52 @@ Computed by `server/src/ai/pipeline/pipelineTraceInsights.ts` and attached as `t
 
 ---
 
+## Grounding diagnostics flow (admin / developer)
+
+How a prompt moves through intent classification, retrieval, and diagnostics when grounding fails or generic risk is high.
+
+```mermaid
+flowchart TD
+  Prompt["Prompt submitted"] --> Classify["Intent classification inferPipelineIntents"]
+  Classify --> Policy["Grounding rule policy from catalog"]
+
+  Policy --> Req["Required sources"]
+  Policy --> Opt["Optional sources"]
+  Policy --> Unsafe["Unsafe / unsupported — blocked"]
+
+  Req --> Retrieve["Context retrieval prepass + assembly"]
+  Opt --> Retrieve
+
+  Retrieve --> Status{"Retrieval status"}
+  Status -->|"Missing required"| Missing["Missing required context"]
+  Missing --> GF["GROUNDING_FAILURE"]
+  Status -->|"Available"| Quality["Context quality check"]
+
+  Quality --> Risk{"Generic risk high?"}
+  Risk -->|"Yes"| Warn["Generic response warning"]
+  Risk -->|"No"| Allowed["Provider call allowed"]
+
+  Allowed --> Provider["OpenAI / Anthropic / Local"]
+  Provider --> Meta["Provider metadata model / fallback / request shape"]
+  Provider --> Validate["Structured response validation"]
+  Validate --> Conf["Confidence + warnings"]
+
+  GF --> Diag["Diagnostics panel / debug output"]
+  Warn --> Diag
+  Meta --> Diag
+  Conf --> Diag
+
+  Diag --> Review["Developer / Admin review"]
+  Review --> Fix1["Fix intent classification"]
+  Review --> Fix2["Fix grounding rules"]
+  Review --> Fix3["Fix context sources incl. vlink"]
+  Review --> Fix4["Fix prompt / renderer behavior"]
+```
+
+Use **Test Lab** dry-run and **trace insights** (`contextUsed`, `failureCategories`) before changing production policies.
+
+---
+
 ## Dynamic AI orchestration registry (R0–R5, May 2026)
 
 Admin-managed **orchestration registry** for intents, context sources, tool policies, and grounding rules. This is infrastructure for a future cognitive/relationship graph — not plain CRUD.
@@ -265,4 +355,4 @@ Create / duplicate / archive / restore / enable / disable for intents, sources, 
 - `web_search` wiring in twin
 - Replacing legacy `QueryIntent` with pipeline intents in production routing
 
-**Last updated:** 2026-05-20 (dynamic registry R0–R5)
+**Last updated:** 2026-05-23 (V_Link pipeline grounding + reconcile diagrams)

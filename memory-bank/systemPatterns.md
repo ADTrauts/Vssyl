@@ -47,7 +47,7 @@ Update Rules for systemPatterns.md
 - [Add future major changes here.]
 
 ## Cross-References & Modular Context Pattern
-- **Visual maps:** consolidated Mermaid diagrams (platform, interoperability lifecycle, module surfaces) → **[applicationMermaidDiagrams.md](./applicationMermaidDiagrams.md)**.
+- **Visual maps:** consolidated Mermaid diagrams (platform, interoperability lifecycle, module surfaces) → **[applicationMermaidDiagrams.md](./applicationMermaidDiagrams.md)**. **AI system diagrams (twin, context, pipeline, V_Link):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../docs/architecture/AI_PLATFORM_OVERVIEW.md).
 - **See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) (index)** and split rules: `api-and-auth.mdc`, `database-prisma.mdc`, `storage-and-ai-attachments.mdc`, `ui-standards.mdc`, `typescript-quality.mdc`; quick list: [../.cursor/rules/RULES_SUMMARY.md](../.cursor/rules/RULES_SUMMARY.md).
 - See [projectbrief.md](./projectbrief.md) for project vision and requirements.
 - See [moduleSpecs.md](./moduleSpecs.md) for module and feature specifications.
@@ -3643,6 +3643,27 @@ export async function getOverviewContext(req: Request, res: Response) {
   });
 }
 ```
+
+#### **Module AI Context Orchestration Pattern (May 2026 — Context Provider Contract)**
+
+Built-in and marketplace modules still expose HTTP context providers; the **platform** selects and fetches them via **`ContextProviderOrchestrator`** (not per-module twin changes).
+
+```
+User query → DigitalLifeTwinCore
+  → CrossModuleContextEngine.getContextForAIQuery (unless AI_CONTEXT_ORCHESTRATOR_ENABLED=false)
+    → orchestrateContextRetrieval (intent + grounding plan + provider fetch + snapshot)
+  → pipelineGroundingRetrieval (optional second pass)
+    → orchestratePipelineModuleSources for vssyl_place | drive_files | calendar only
+  → assembleAIContext (module blocks + memory + preferences)
+```
+
+**Rules:**
+- Register optional metadata on providers: `supportedIntents`, `retrievalCost`, `priority`, `pipelineSourceIds` (wave-1: drive, calendar, chat, place, hr, scheduling).
+- **`contextGenerationId`** per orchestration pass; max **2** snapshots/generations per twin request on `query.context`.
+- Required grounding failures always recorded; block only under pipeline enforcement `block`/`regenerate`.
+- Observability: `AIOrchestrationSnapshot` (metadata only) when `AI_ORCHESTRATION_SNAPSHOT_ENABLED=true`.
+
+**Canonical:** `memory-bank/aiContextSystem.md` (Context Provider Contract section); `docs/guides/AI_CONTEXT_PROVIDER_API.md`.
 
 #### **Module Installation Flow**
 

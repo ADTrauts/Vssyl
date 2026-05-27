@@ -3,6 +3,7 @@
  * Counts and status only — no raw provider payloads.
  */
 
+import type { AIOrchestrationSnapshot } from '../../../../shared/src/types/ai-orchestration-snapshot';
 import type { AIAssembledContext, AIContextTier } from './AIContextAssembler';
 import {
   CONVERSATION_CONTEXT_BUDGET_TOKENS,
@@ -14,14 +15,37 @@ export type ProviderFailureReason = 'timeout' | 'not_found' | 'auth' | 'network'
 
 export type ProviderFetchStatus = 'succeeded' | 'failed' | 'skipped';
 
+export type ProviderResultStatus = 'hit' | 'miss' | 'error' | 'skipped';
+
 export interface ProviderFetchAttempt {
   moduleId: string;
   providerName: string;
   status: ProviderFetchStatus;
+  providerId?: string;
+  requiredForGrounding?: boolean;
+  skipReason?: string;
+  resultStatus?: ProviderResultStatus;
+  freshness?: 'fresh' | 'stale' | 'unknown';
   cacheHit?: boolean;
   latencyMs?: number;
   failureReason?: ProviderFailureReason;
   failureMessage?: string;
+}
+
+export interface ContextOrchestrationDiagnostics {
+  contextGenerationId?: string;
+  contextGenerations?: Array<Record<string, unknown>>;
+  providerSelectionDiagnostics?: Array<Record<string, unknown>>;
+  requiredSourceFailures?: string[];
+  staleContextWarnings?: string[];
+  groundingSourceToProvider?: Array<{
+    sourceId: string;
+    providerId: string;
+    moduleId: string;
+    providerName: string;
+  }>;
+  /** Phase B.5 — metadata-only orchestration snapshots (cap 2 per request). */
+  snapshots?: AIOrchestrationSnapshot[];
 }
 
 export interface ContextDensityTierUsage {
@@ -38,6 +62,7 @@ export interface ContextDensityReport {
     failed: number;
     cacheHits: number;
     attempts: ProviderFetchAttempt[];
+    requiredSourceFailures?: string[];
   };
   memory: {
     factsLoaded: number;
@@ -65,6 +90,7 @@ export interface ContextDensityReport {
     byTier: ContextDensityTierUsage[];
   };
   missingContextCount: number;
+  orchestration?: ContextOrchestrationDiagnostics;
 }
 
 /** Compact counts for twin metadata (no attempt details). */
@@ -150,6 +176,8 @@ export function classifyProviderFailure(error: unknown): {
 export interface BuildContextDensityReportInput {
   assembled: AIAssembledContext;
   providerFetchAudit?: ProviderFetchAttempt[];
+  requiredSourceFailures?: string[];
+  orchestration?: ContextOrchestrationDiagnostics;
   assemblyMetrics?: {
     blocksLoaded: number;
     blocksAfterProfile: number;
@@ -218,6 +246,10 @@ export function buildContextDensityReport(
       failed: audit.filter((a) => a.status === 'failed').length,
       cacheHits: audit.filter((a) => a.cacheHit === true).length,
       attempts: audit,
+      requiredSourceFailures:
+        input.requiredSourceFailures && input.requiredSourceFailures.length > 0
+          ? [...input.requiredSourceFailures]
+          : undefined,
     },
     memory: {
       factsLoaded: metrics?.memoryFactsLoaded ?? 0,
@@ -245,6 +277,58 @@ export function buildContextDensityReport(
       byTier,
     },
     missingContextCount: input.assembled.missingContext.length,
+    orchestration: input.orchestration,
+  };
+}
+
+export function buildOrchestrationDiagnosticsFromQueryContext(
+  queryContext?: Record<string, unknown>
+): ContextOrchestrationDiagnostics | undefined {
+  if (!queryContext || typeof queryContext !== 'object') return undefined;
+
+  const contextGenerationId =
+    typeof queryContext.contextGenerationId === 'string'
+      ? queryContext.contextGenerationId
+      : undefined;
+  const contextGenerations = Array.isArray(queryContext.contextGenerations)
+    ? (queryContext.contextGenerations as Array<Record<string, unknown>>)
+    : undefined;
+  const providerSelectionDiagnostics = Array.isArray(queryContext.providerSelectionDiagnostics)
+    ? (queryContext.providerSelectionDiagnostics as Array<Record<string, unknown>>)
+    : undefined;
+  const requiredSourceFailures = Array.isArray(queryContext.requiredSourceFailures)
+    ? (queryContext.requiredSourceFailures as string[])
+    : undefined;
+  const staleContextWarnings = Array.isArray(queryContext.staleContextWarnings)
+    ? (queryContext.staleContextWarnings as string[])
+    : undefined;
+  const groundingSourceToProvider = Array.isArray(queryContext.groundingSourceToProvider)
+    ? (queryContext.groundingSourceToProvider as ContextOrchestrationDiagnostics['groundingSourceToProvider'])
+    : undefined;
+  const snapshots = Array.isArray(queryContext.orchestrationSnapshots)
+    ? (queryContext.orchestrationSnapshots as AIOrchestrationSnapshot[])
+    : undefined;
+
+  if (
+    !contextGenerationId &&
+    !contextGenerations?.length &&
+    !providerSelectionDiagnostics?.length &&
+    !requiredSourceFailures?.length &&
+    !staleContextWarnings?.length &&
+    !groundingSourceToProvider?.length &&
+    !snapshots?.length
+  ) {
+    return undefined;
+  }
+
+  return {
+    contextGenerationId,
+    contextGenerations,
+    providerSelectionDiagnostics,
+    requiredSourceFailures,
+    staleContextWarnings,
+    groundingSourceToProvider,
+    ...(snapshots?.length ? { snapshots } : {}),
   };
 }
 

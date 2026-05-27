@@ -45,6 +45,34 @@ When **local** is selected and the user attached images, vision parts are **not*
 
 ---
 
+## callAIProvider routing
+
+```mermaid
+flowchart TD
+  Req["callAIProvider request"] --> HasVision{"visionImageParts.length > 0?"}
+  HasVision -->|"No"| TextOnly["Text-only request"]
+  HasVision -->|"Yes"| Caps["getProviderCapabilities capabilities.ts"]
+
+  Caps --> Supports{"supportsVisionInput?"}
+  Supports -->|"Yes openai"| OAI["visionModelOverride gpt-4o text + image_url blocks"]
+  Supports -->|"Yes anthropic"| Ant["visionModelOverride claude-3-5-sonnet text + image blocks"]
+  Supports -->|"No local"| Local["Local provider summaries only"]
+
+  TextOnly --> Selected["Selected provider"]
+  OAI --> Selected
+  Ant --> Selected
+  Local --> Selected
+
+  Selected --> Result{"Provider result"}
+  Result -->|"Success"| Final["Final AI response"]
+  Result -->|"RATE_LIMITED or TEMP_UNAVAILABLE"| Retry["Retry once alternate provider"]
+  Retry --> Fallback["OpenAI ↔ Anthropic fallback"]
+  Fallback --> Final
+  Final --> Meta["metadata usedVisionParts on successful call only"]
+```
+
+---
+
 ## Fallback when vision is not used
 
 - **Provider does not support vision (e.g. local)**: Prompt already includes the **attached-files section** (text summaries from getFileSummaries). User sees the reply plus any **fileIssues** if some files failed.

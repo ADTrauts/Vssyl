@@ -19,7 +19,10 @@ import {
   buildLearningPipelineTrace,
   readLearningPipelineSnapshot,
 } from '../learning/learningPipelineTrace';
-import { readContextDensityReport } from '../context/contextDensityReport';
+import {
+  buildOrchestrationDiagnosticsFromQueryContext,
+  readContextDensityReport,
+} from '../context/contextDensityReport';
 import {
   mapVLinkPipelineContextToRetrieved,
   type VLinkPipelineContextResult,
@@ -172,8 +175,43 @@ export function mapOrchestrationToPipelineTraceInput(
     ? buildLearningPipelineTrace(snapshot)
     : undefined;
 
-  const contextDensity: PipelineContextDensityReport | undefined =
-    readContextDensityReport(ctx);
+  const contextDensityBase = readContextDensityReport(ctx);
+  const orchestration = buildOrchestrationDiagnosticsFromQueryContext(ctx);
+  const contextDensity: PipelineContextDensityReport | undefined = contextDensityBase
+    ? {
+        ...contextDensityBase,
+        ...(orchestration ? { orchestration } : {}),
+      }
+    : orchestration
+      ? {
+          providers: {
+            attempted: 0,
+            succeeded: 0,
+            failed: 0,
+            cacheHits: 0,
+            attempts: [],
+          },
+          memory: { factsLoaded: 0, factsInjected: 0, recalledMessagesLoaded: 0 },
+          modules: {
+            contextsLoaded: 0,
+            blocksLoaded: 0,
+            blocksInjected: 0,
+            matchedHighRelevance: 0,
+          },
+          blocks: {
+            loaded: 0,
+            afterProfile: 0,
+            ranked: 0,
+            injected: 0,
+            synthetic: 0,
+            live: 0,
+            profileExcluded: 0,
+          },
+          tokenBudget: { totalAllocated: 0, totalUsedEstimate: 0, byTier: [] },
+          missingContextCount: 0,
+          orchestration,
+        }
+      : undefined;
 
   return {
     userId: params.userId,

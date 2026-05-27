@@ -12,6 +12,12 @@ import {
 } from './contextDensityReport';
 import { isSyntheticContextEnabled } from './syntheticContextPolicy';
 import { prisma } from '../../lib/prisma';
+import {
+  orchestrateContextRetrieval,
+  type OrchestrateContextScope,
+} from './ContextProviderOrchestrator';
+import type { ProviderSelectionDiagnostic } from '../../../../shared/src/types/ai-context-provider-contract';
+import type { ContextOrchestrationMeta } from '../../../../shared/src/types/ai-context-provider-contract';
 
 export interface UserContext {
   userId: string;
@@ -964,31 +970,77 @@ export class CrossModuleContextEngine {
   }
 
   /**
-   * NEW: Intelligently get context for an AI query
-   * Uses the registry to determine which modules are relevant, then fetches only from those
-   * This is MUCH faster than querying all modules!
+   * Intelligently get context for an AI query via ContextProviderOrchestrator (Phase A).
+   * Uses lazy skim fullContext by default — not buildUserContext().
    */
   async getContextForAIQuery(
     userId: string,
     query: string,
-    businessId?: string
+    scopeOrBusinessId?: string | OrchestrateContextScope
   ): Promise<Record<string, unknown>> {
-    try {
-      // Step 1: Analyze query to find relevant modules (FAST - database lookup)
-      const analysis = await moduleAIContextService.analyzeQuery(query, userId);
+    if (process.env.AI_CONTEXT_ORCHESTRATOR_ENABLED === 'false') {
+      return this.getContextForAIQueryLegacy(userId, query, scopeOrBusinessId);
+    }
 
-      // Step 2: Get full user context (cached) with installation-accurate active modules
+    try {
+      const scope = normalizeOrchestrateScope(scopeOrBusinessId);
+      const result = await orchestrateContextRetrieval({
+        userId,
+        query,
+        scope,
+        snapshotOptions: {
+          force: scope?.snapshotForce,
+          conversationId: scope?.conversationId,
+        },
+      });
+
+      return {
+        query: result.query,
+        analysis: result.analysis,
+        fullContext: result.fullContext,
+        moduleContexts: result.moduleContexts,
+        providerFetchAudit: result.providerFetchAudit,
+        providerSelectionDiagnostics: result.providerSelectionDiagnostics,
+        contextOrchestration: result.contextOrchestration,
+        groundingFailure: result.groundingFailure,
+        requiredSourceFailures: result.requiredSourceFailures,
+        staleContextWarnings: result.staleContextWarnings,
+        groundingSourceToProvider: result.groundingSourceToProvider,
+        installedModuleIds: result.installedModuleIds,
+        relevantModuleCount: result.relevantModuleCount,
+        multiModuleIntent: result.multiModuleIntent,
+        timestamp: result.timestamp,
+        ...(result.orchestrationSnapshot
+          ? { orchestrationSnapshot: result.orchestrationSnapshot }
+          : {}),
+      };
+    } catch (error) {
+      console.error('❌ Error getting context for AI query:', error);
+      throw error;
+    }
+  }
+
+  /** Legacy path when AI_CONTEXT_ORCHESTRATOR_ENABLED=false */
+  private async getContextForAIQueryLegacy(
+    userId: string,
+    query: string,
+    scopeOrBusinessId?: string | OrchestrateContextScope
+  ): Promise<Record<string, unknown>> {
+    const businessId =
+      typeof scopeOrBusinessId === 'string'
+        ? scopeOrBusinessId
+        : scopeOrBusinessId?.businessId;
+
+    try {
+      const analysis = await moduleAIContextService.analyzeQuery(query, userId);
       const fullContext = await this.getUserContext(userId);
       const installedModuleIds = await this.getActiveModules(userId);
       fullContext.activeModules = installedModuleIds;
 
-      // Step 3: Fetch context from relevant modules (high only, or high+medium when multi-module)
       const modulesToFetch = resolveModulesToFetch(analysis.matchedModules, query);
-
       const moduleContexts: Record<string, unknown> = {};
       const providerFetchAudit: ProviderFetchAttempt[] = [];
 
-      // Fetch in parallel for speed
       await Promise.all(
         modulesToFetch.map(async (match) => {
           const provider = analysis.suggestedContextProviders.find(
@@ -1040,10 +1092,7 @@ export class CrossModuleContextEngine {
               failureReason: failure.reason,
               failureMessage: failure.message,
             });
-            console.warn(
-              `⚠️ Error fetching context for ${match.moduleName}:`,
-              error
-            );
+            console.warn(`⚠️ Error fetching context for ${match.moduleName}:`, error);
           }
         })
       );
@@ -1060,7 +1109,7 @@ export class CrossModuleContextEngine {
         timestamp: new Date(),
       };
     } catch (error) {
-      console.error('❌ Error getting context for AI query:', error);
+      console.error('❌ Error getting context for AI query (legacy):', error);
       throw error;
     }
   }
@@ -1072,5 +1121,16 @@ export class CrossModuleContextEngine {
     this.contextCache.delete(`context_${userId}`);
   }
 }
+
+function normalizeOrchestrateScope(
+  scopeOrBusinessId?: string | OrchestrateContextScope
+): OrchestrateContextScope | undefined {
+  if (typeof scopeOrBusinessId === 'string') {
+    return { businessId: scopeOrBusinessId };
+  }
+  return scopeOrBusinessId;
+}
+
+export type { ProviderSelectionDiagnostic, ContextOrchestrationMeta };
 
 export default CrossModuleContextEngine;

@@ -1,6 +1,63 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
-## Most recent completed project — V_Link AI Pipeline integration (May 2026) ✅
+## Most recent completed project — Context Provider Contract Phase A / B / B.5 (May 2026) ✅
+
+**Status:** **IMPLEMENTED** — Intent-aware **Context Provider Orchestrator** replaces ad-hoc module fetches in `CrossModuleContextEngine`; pipeline grounding for module-backed sources; metadata-only **orchestration snapshots** for replay/debug.
+
+**Canonical docs:**
+- [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md) — provider API + orchestrator + snapshots
+- [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md) — assembly + orchestration flow
+- [`memory-bank/aiContextSystem.md`](aiContextSystem.md) — full AI context system reference (orchestrator section)
+
+### Phase A — Orchestrator core ✅
+
+| Delivered | Path / behavior |
+|-----------|-----------------|
+| **Contract types** | `shared/src/types/ai-context-provider-contract.ts` |
+| **Orchestrator** | `ContextProviderOrchestrator.ts` — selection, fetch, lazy `fullContext` (`lazyUserContext.ts`) |
+| **Registry / selection** | `contextProviderRegistry.ts`, `contextProviderSelection.ts`, `legacyProviderCanHandle.ts`, `fetchModuleContextProvider.ts` |
+| **Engine delegate** | `CrossModuleContextEngine.getContextForAIQuery` → orchestrator (legacy if `AI_CONTEXT_ORCHESTRATOR_ENABLED=false`) |
+| **Twin wiring** | `DigitalLifeTwinCore` — scope (`businessId`, `dashboardId`, `householdId`, `requestId`); `contextGenerations[]` cap **2** |
+| **`contextGenerationId`** | New UUID **per orchestration pass** (module fetch + optional grounding pass) |
+
+### Phase B — Metadata, grounding bridge, diagnostics ✅
+
+| Delivered | Notes |
+|-----------|--------|
+| **Wave-1 provider metadata** | `registerBuiltInModules.ts`: `drive`, `calendar`, `chat`, `place`, `hr`, `scheduling` — optional `supportedIntents`, `retrievalCost`, `priority`, `pipelineSourceIds`, `volatility`, `freshnessPolicy` |
+| **Certification parse** | `parseContextProviders` preserves optional metadata from registry JSON |
+| **Grounding bridge** | `pipelineGroundingRetrieval` → `orchestratePipelineModuleSources` for `vssyl_place`, `drive_files`, `calendar`; **no double-fetch** when `existingModuleContexts` has place/drive/calendar |
+| **Platform sources unchanged** | `location`, `vlink`, `web_search`, `business_context` |
+| **Freshness diagnostics** | `contextProviderFreshness.ts` — `fresh` \| `stale` \| `unknown`, `staleContextWarnings[]` (no invalidation/SWR yet) |
+| **Required grounding (hybrid)** | `requiredSourceFailures` always recorded; block only when enforcement `block` / `regenerate` |
+| **Diagnostics** | `contextDensityReport.orchestration`, `mapPipelineTraceInputs`, `ai-context-debug` — selection, grounding map, generations |
+| **Build order** | Root `type-check` / `verify:ci` run `build:shared` first; server `pretest` / `pretype-check` build shared |
+
+### Phase B.5 — Orchestration snapshots ✅
+
+| Delivered | Notes |
+|-----------|--------|
+| **Types** | `shared/src/types/ai-orchestration-snapshot.ts` — `AIOrchestrationSnapshot` |
+| **Builder** | `orchestrationSnapshot.ts` — `buildOrchestrationSnapshot`, `deriveOrchestrationTraceTags`, `redactQueryPreview` |
+| **Emit** | Structured log `operation: ai_orchestration_snapshot`; in-request `query.context.orchestrationSnapshots[]` (cap 2); trace `contextDensity.orchestration.snapshots` |
+| **`orchestratorVersion`** | Central constant `phase-b5-v1` (bump when selection/freshness/ranking semantics change) |
+| **`traceTags`** | Deterministic: `grounding_failure`, `required_source_failure`, `stale_context`, `admin_debug`, `grounding_boost`, `fallback_provider`, `high_latency`, `sampled_snapshot` (prod emit) |
+| **Env** | `AI_ORCHESTRATION_SNAPSHOT_ENABLED` (default off prod), `AI_ORCHESTRATION_SNAPSHOT_SAMPLE_RATE`, `AI_ORCHESTRATION_SNAPSHOT_LOG_LEVEL` |
+| **Admin** | `POST /api/ai-context-debug/assemble` uses `snapshotForce: true` |
+
+**Env (orchestrator):** `AI_CONTEXT_ORCHESTRATOR_ENABLED=false` → legacy `getContextForAIQueryLegacy` path.
+
+**Tests:** `contextProviderSelection.test.ts`, `contextProviderOrchestrator.test.ts`, `lazyUserContext.test.ts`, `contextProviderFreshness.test.ts`, `contextProviderRegistryMetadata.test.ts`, `pipelineGroundingRetrieval.orchestrator.test.ts`, `orchestrationSnapshot.test.ts`, `mapPipelineTraceInputs.test.ts` (60+ cases in context/grounding suite).
+
+**Deferred (Phase C — not started):** runtime `invalidatedByEvents` cache bust; websocket context refresh; stale-while-revalidate queues; health-based adaptive ranking; Active Context Graph; dedicated snapshot Prisma table + replay API; Test Lab snapshot UI panel; vector/embedding routing in orchestrator.
+
+**Next (Phase C candidates):** event invalidation subscriber; optional `AI_CONTEXT_FRESHNESS_RANKING_ENABLED`; admin Test Lab orchestration snapshot card; certification validator for optional metadata shapes.
+
+**Cross-ref:** `memory-bank/progress.md` (Context Provider Contract); `memory-bank/aiContextSystem.md` (orchestrator + snapshots).
+
+---
+
+## V_Link AI Pipeline integration (May 2026) ✅
 
 V_Link is a **first-class AI Pipeline Context Source** (`vlink` / V_Link Relationships): registry + idempotent DB reconcile (context sources + grounding rules), permission-filtered runtime grounding in `DigitalLifeTwinCore`, `persistedVLinks` entity linking, and pipeline traces with `source: vlink`.
 

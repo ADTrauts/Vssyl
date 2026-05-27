@@ -2,7 +2,9 @@
 
 Canonical **visual maps** of Vssyl for onboarding and AI context. These complement prose in `systemPatterns.md` and `techContext.md`.
 
-**Last updated:** 2026-05-15
+**AI-specific diagrams (May 2026):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../docs/architecture/AI_PLATFORM_OVERVIEW.md) — twin path, context assembly, pipeline admin, V_Link, ambient suggestions.
+
+**Last updated:** 2026-05-23
 
 ## Diagram 1 — Platform and deployment (whole application)
 
@@ -35,7 +37,7 @@ flowchart TB
       RT["Socket.io realtime"]
       CTL["Controllers"]
       SVC["Services domain logic"]
-      AI["AI orchestration providers"]
+      AI["AI: ContextProviderOrchestrator + module context providers"]
       STG["storageService GCS or local"]
     end
     SQL[("Cloud SQL PostgreSQL")]

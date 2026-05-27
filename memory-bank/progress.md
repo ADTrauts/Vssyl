@@ -1,5 +1,35 @@
 # Block-on-Block Platform - Progress
 
+## Context Provider Contract — Phase A / B / B.5 (May 2026) ✅
+
+**Status:** **COMPLETE** — Intent-aware module context orchestration + grounding bridge + metadata-only orchestration snapshots.
+
+| Phase | Outcome |
+|-------|---------|
+| **A** | `ContextProviderOrchestrator`; `CrossModuleContextEngine` delegate; lazy `fullContext`; `contextGenerationId` per pass; `contextGenerations[]` cap 2; legacy fallback env |
+| **B** | Wave-1 metadata on 6 built-ins; `pipelineGroundingRetrieval` orchestrator for place/drive/calendar; freshness diagnostics; density/trace/debug orchestration fields; shared-before-server build order |
+| **B.5** | `AIOrchestrationSnapshot`; structured logging + in-request snapshots; `orchestratorVersion` + `traceTags`; admin assemble `snapshotForce` |
+
+**Key server paths:**
+- `server/src/ai/context/ContextProviderOrchestrator.ts`
+- `server/src/ai/context/orchestrationSnapshot.ts`
+- `server/src/ai/context/pipelineSourceProviderMap.ts`
+- `server/src/ai/pipeline/pipelineGroundingRetrieval.ts`
+- `shared/src/types/ai-context-provider-contract.ts`
+- `shared/src/types/ai-orchestration-snapshot.ts`
+
+**Env:**
+- `AI_CONTEXT_ORCHESTRATOR_ENABLED` (default on; `false` = legacy)
+- `AI_ORCHESTRATION_SNAPSHOT_ENABLED`, `AI_ORCHESTRATION_SNAPSHOT_SAMPLE_RATE`, `AI_ORCHESTRATION_SNAPSHOT_LOG_LEVEL`
+
+**No new Prisma migrations** for A/B/B.5.
+
+**Canonical:** [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md), [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md), [`memory-bank/aiContextSystem.md`](aiContextSystem.md)
+
+**Deferred:** Phase C invalidation, SWR, websocket refresh, health ranking, snapshot DB, Test Lab snapshot UI.
+
+---
+
 ## V_Link platform layer (May 2026) ✅
 
 **Status:** **COMPLETE** — Cross-module contextual relationship primitive (platform layer, not marketplace module).

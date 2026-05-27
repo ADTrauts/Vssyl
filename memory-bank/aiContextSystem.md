@@ -117,7 +117,129 @@ Plan: `docs/plans/AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md`
 
 **Learning events (personal):** `AILearningEvent` review on `/ai` → **Learning** tab (`AILearningHub` + `PersonalLearningEventsReview`; `personalAILearningEventsService`). Optional analytics: **More → Insights**. Business workspace events use Workspace AI admin APIs — not mixed with personal rows.
 
-**Canonical docs:** `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`, `AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`, `AI_INTELLIGENCE_HUB.md`. **Status:** `memory-bank/activeContext.md`, `memory-bank/progress.md` (AI Control Center audit, commit `789c5f05`).
+**Canonical docs:** `docs/architecture/AI_PLATFORM_OVERVIEW.md`, `AI_TWIN_PROMPT_PIPELINE.md`, `AI_CONTEXT_ASSEMBLY.md`, `AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`, `AI_INTELLIGENCE_HUB.md`. **Status:** `memory-bank/activeContext.md`, `memory-bank/progress.md` (AI Control Center audit, commit `789c5f05`).
+
+### Context Provider Contract — Phase A / B / B.5 (May 2026) ✅
+
+**Status:** Shipped. Orchestrator **on by default**; legacy path via `AI_CONTEXT_ORCHESTRATOR_ENABLED=false`.
+
+**Problem solved:** `CrossModuleContextEngine` was a bottleneck — ad-hoc module fetches, weak intent/provider selection, no unified grounding→provider mapping, limited replay diagnostics.
+
+**Solution:** Thin orchestration layer between query analysis and HTTP provider fetches; pipeline grounding reuses same orchestrator for module-backed catalog sources.
+
+#### Architecture (orchestration path)
+
+```mermaid
+flowchart TB
+  Twin["DigitalLifeTwinCore"] --> Engine["CrossModuleContextEngine.getContextForAIQuery"]
+  Engine --> Orch["ContextProviderOrchestrator.orchestrateContextRetrieval"]
+  Ground["pipelineGroundingRetrieval"] --> OrchMod["orchestratePipelineModuleSources"]
+  OrchMod --> Orch
+  Orch --> Sel["contextProviderSelection + registry"]
+  Orch --> Fetch["fetchModuleContextProvider"]
+  Orch --> Snap["buildOrchestrationSnapshot + emit"]
+  Fetch --> Providers["/api/{module}/ai/context/*"]
+  Orch --> Lazy["lazyUserContext skim fullContext"]
+  Twin --> Asm["assembleAIContext"]
+  Orch --> Ctx["query.context diagnostics + snapshots cap 2"]
+  Ctx --> Trace["mapPipelineTraceInputs → pipelineTrace"]
+```
+
+#### Phase A — Core orchestrator
+
+| Piece | Location | Notes |
+|-------|----------|-------|
+| Contract types | `shared/src/types/ai-context-provider-contract.ts` | `ProviderSelectionDiagnostic`, `ContextOrchestrationMeta`, `ContextGenerationRecord` |
+| Orchestrator | `server/src/ai/context/ContextProviderOrchestrator.ts` | `orchestrateContextRetrieval`, `orchestratePipelineModuleSources` |
+| Registry | `contextProviderRegistry.ts` | `normalizeRegistryProvider`, `loadInstalledRegistryProviders` |
+| Selection | `contextProviderSelection.ts` | Intent + grounding source plan; budget (`maxLatencyMs`, `maxOptionalProviders`) |
+| Fetch adapter | `fetchModuleContextProvider.ts` | JWT internal fetch; audit rows |
+| Legacy compat | `legacyProviderCanHandle.ts` | Sub-intent provider pick (e.g. drive quota → `storage_overview`) |
+| Lazy user context | `lazyUserContext.ts` | `fullContext` not loaded unless needed |
+| Engine delegate | `CrossModuleContextEngine.ts` | Returns orchestration fields on smart context object |
+| Twin | `DigitalLifeTwinCore.ts` | Merges diagnostics; `appendContextGenerationRecord` (cap 2) |
+
+**`contextGenerationId`:** new UUID **per orchestration pass** (typically 1× module context fetch + 0–1× grounding module-source pass). **Not** one id for the entire twin HTTP request.
+
+**`contextGenerations[]`:** lightweight records on `query.context` (cap 2) for trace/debug correlation.
+
+#### Phase B — Metadata, grounding, diagnostics
+
+| Piece | Notes |
+|-------|--------|
+| **Wave-1 metadata** | `registerBuiltInModules.ts`: `drive`, `calendar`, `chat`, `place`, `hr`, `scheduling` — optional `supportedIntents`, `retrievalCost`, `priority`, `pipelineSourceIds`, `volatility`, `freshnessPolicy`, `freshnessWindowMs`, `invalidatedByEvents` (declarative only) |
+| **Certification** | `moduleContextProviderCertification.parseContextProviders` round-trips optional fields |
+| **Source map** | `pipelineSourceProviderMap.ts` — `vssyl_place`→place, `drive_files`→drive, `calendar`→calendar (+ fallback provider names) |
+| **Grounding bridge** | `pipelineGroundingRetrieval.ts` calls orchestrator for module-backed sources only; skips fetch when `existingModuleContexts` already has module payload |
+| **Platform adapters** | `location` (IP geolocation), `vlink` (`vlinkPipelineContextService`), `web_search`, `business_context` — unchanged |
+| **Freshness diagnostics** | `contextProviderFreshness.ts` — `fresh` \| `stale` \| `unknown` from cache age vs `maxAgeMs`; `staleContextWarnings[]` — **no** invalidation or SWR in B |
+| **Required grounding** | Hybrid: `requiredSourceFailures` always on snapshot/trace; twin blocks only when pipeline enforcement is `block` or `regenerate` |
+| **Diagnostics surfaces** | `contextDensityReport.buildOrchestrationDiagnosticsFromQueryContext`; `mapPipelineTraceInputs`; `POST /api/ai-context-debug/assemble` |
+
+#### Phase B.5 — Orchestration snapshots (observability only)
+
+Metadata-only **`AIOrchestrationSnapshot`** per pass — no provider payloads, no prompt text.
+
+| Field | Purpose |
+|-------|---------|
+| `snapshotId` | Unique row id for logs/replay |
+| `schemaVersion` | `1` — snapshot JSON shape |
+| `orchestratorVersion` | `phase-b5-v1` (central constant in `orchestrationSnapshot.ts`; bump when orchestration semantics change) |
+| `traceTags` | Deterministic filter labels (see table below) |
+| `queryPreview` | Redacted/truncated query (≤120 chars) |
+| `passKind` | `module_context` \| `grounding_module_sources` |
+| `selectedProviders` / `skippedProviders` | Selection outcome metadata |
+| `groundingSources` | required/optional catalog ids + `mappedProviders` |
+| `timing.totalLatencyMs` | Pass wall time |
+| `outcome` | Counts, `groundingFailure`, enforcement mode |
+
+**`traceTags` (initial rules):**
+
+| Tag | Condition |
+|-----|-----------|
+| `grounding_failure` | `outcome.groundingFailure === true` |
+| `required_source_failure` | `requiredSourceFailures.length > 0` |
+| `stale_context` | `staleContextWarnings.length > 0` |
+| `admin_debug` | `snapshotForce === true` |
+| `grounding_boost` | `passKind === 'grounding_module_sources'` |
+| `fallback_provider` | Selected provider is known pipeline fallback (`storage_overview`, `upcoming_events`) |
+| `high_latency` | `totalLatencyMs >= 1800` |
+| `sampled_snapshot` | Emitted in production sample (not dev, not admin force) |
+
+**Storage:** structured logs (`operation: ai_orchestration_snapshot`) + `query.context.orchestrationSnapshots[]` (cap 2) + optional embed in persisted pipeline `traceJson` when `AIPipelineDiagnostic` persist runs — **no** dedicated Prisma table in B.5.
+
+#### Environment variables
+
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `AI_CONTEXT_ORCHESTRATOR_ENABLED` | on (not `false`) | Orchestrator path vs legacy engine |
+| `AI_ORCHESTRATION_SNAPSHOT_ENABLED` | off in prod | Master snapshot switch |
+| `AI_ORCHESTRATION_SNAPSHOT_SAMPLE_RATE` | `0.02` | Prod sampling when enabled |
+| `AI_ORCHESTRATION_SNAPSHOT_LOG_LEVEL` | `info` | Log level for snapshot emit |
+
+#### Build order
+
+Server `tsc` requires compiled shared types. Root `pnpm type-check` and `pnpm verify:ci` run `build:shared` first; `vssyl-server` `pretest` / `pretype-check` build `vssyl-shared`.
+
+#### Tests (representative)
+
+`contextProviderSelection.test.ts`, `contextProviderOrchestrator.test.ts`, `lazyUserContext.test.ts`, `contextProviderFreshness.test.ts`, `contextProviderRegistryMetadata.test.ts`, `pipelineGroundingRetrieval.orchestrator.test.ts`, `pipelineGroundingRetrieval.vlink.test.ts`, `orchestrationSnapshot.test.ts`, `mapPipelineTraceInputs.test.ts`, `contextDensityReport.test.ts`
+
+#### Deferred (Phase C+)
+
+- Runtime cache invalidation from `invalidatedByEvents` / domain events
+- WebSocket-driven context refresh
+- Stale-while-revalidate fetch queues
+- Health-based adaptive provider ranking (`AI_CONTEXT_FRESHNESS_RANKING_ENABLED`)
+- Active Context Graph materialization
+- Dedicated `AIOrchestrationSnapshot` DB + admin replay API
+- Test Lab snapshot timeline UI
+- Vector DB / embedding routing in orchestrator
+- Tags: `vision_request`, `optional_provider_skipped`, per-provider telemetry tags
+
+**Canonical docs:** [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md), [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md), [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../docs/architecture/AI_PLATFORM_OVERVIEW.md)
+
+**Status pointers:** [`memory-bank/activeContext.md`](activeContext.md), [`memory-bank/progress.md`](progress.md)
 
 ---
 
@@ -150,30 +272,34 @@ With AI context, the AI assistant:
 
 ### How It Works
 
+**Canonical diagrams (May 2026):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../docs/architecture/AI_PLATFORM_OVERVIEW.md) · [AI_CONTEXT_ASSEMBLY.md](../docs/architecture/AI_CONTEXT_ASSEMBLY.md) · [AI_TWIN_PROMPT_PIPELINE.md](../docs/architecture/AI_TWIN_PROMPT_PIPELINE.md)
+
 ```mermaid
-graph TD
-    User[User asks question] --> AI[AI Assistant]
-    AI --> Router[AI Router]
-    Router --> Context[Context Engine]
-    Context --> Provider1[Drive Context]
-    Context --> Provider2[HR Context]
-    Context --> Provider3[Calendar Context]
-    Context --> ProviderN[Other Modules...]
-    
-    Provider1 --> API1[/api/drive/ai/context/*]
-    Provider2 --> API2[/api/hr/ai/context/*]
-    Provider3 --> API3[/api/calendar/ai/context/*]
-    
-    API1 --> DB[(Database)]
-    API2 --> DB
-    API3 --> DB
-    
-    DB --> API1
-    API2 --> Context
-    API3 --> Context
-    Context --> AI
-    AI --> Response[Intelligent Answer]
+flowchart TB
+  User["User query /api/ai/twin"] --> Core["DigitalLifeTwinCore"]
+  Core --> Prefs["PreferenceResolver"]
+  Core --> Engine["CrossModuleContextEngine"]
+  Engine --> Orch["ContextProviderOrchestrator"]
+  Orch --> Fetch["Module context providers + cache"]
+  Core --> VLink["fetchVLinkPipelineContext confirmed only"]
+  Fetch --> Link["entityLinking"]
+  VLink --> Link
+  Core --> Ground["pipelineGroundingRetrieval"]
+  Ground --> OrchGround["orchestratePipelineModuleSources"]
+  OrchGround --> Orch
+  Link --> Asm["assembleAIContext"]
+  Ground --> Asm
+  Prefs --> Asm
+  Fetch --> Asm
+  VLink --> Asm
+  Orch --> Snap["orchestrationSnapshots cap 2"]
+  Asm --> Provider["OpenAI / Anthropic"]
+  Core --> Trace["buildPipelineTrace + enforcement"]
+  Provider --> Trace
+  Trace --> Response["Response + explain metadata"]
 ```
+
+Legacy note: the old “AI Router → Context Engine” diagram described pre-2026 architecture. Module HTTP providers unchanged; **selection and fetch** go through **`ContextProviderOrchestrator`** (May 2026) unless `AI_CONTEXT_ORCHESTRATOR_ENABLED=false`.
 
 ### Three-Layer System
 
@@ -244,7 +370,7 @@ Create a dedicated `*AIContextController.ts` file:
  * [Module] AI Context Provider Controller
  * 
  * Provides context data about [Module] to the AI system.
- * These endpoints are called by the CrossModuleContextEngine when processing AI queries.
+ * These endpoints are called by the ContextProviderOrchestrator (via CrossModuleContextEngine) when processing AI queries.
  */
 
 import { Request, Response } from 'express';

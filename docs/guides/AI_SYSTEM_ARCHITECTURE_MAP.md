@@ -1,5 +1,14 @@
 # 🤖 Vssyl AI System Architecture Map
 
+> **⚠️ Partially superseded (May 2026):** Backend service names, autonomy flows, and context diagrams in this file reflect pre–platform-maturity architecture. For **canonical Mermaid diagrams**, use:
+>
+> - **[`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)** — master hub (twin, context, V_Link, ambient, admin)
+> - **[`docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`](../architecture/AI_TWIN_PROMPT_PIPELINE.md)** — live `/api/ai/twin` path
+> - **[`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../architecture/AI_CONTEXT_ASSEMBLY.md)** — module providers, budget, entity linking, V_Link
+> - **[`docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md`](../architecture/AI_PIPELINE_ADMIN_TOOLS.md)** — diagnostics, registry, grounding
+>
+> **Still useful here:** entry-point inventory, module developer checklist, admin portal surface list (verify against live routes before relying on backend names like `AutonomyManager` or `CrossModuleContextEngine`).
+
 ## Complete System Overview
 
 This document provides a comprehensive map of how the AI system works across personal, business, and administrative contexts.

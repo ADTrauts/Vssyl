@@ -541,19 +541,17 @@ router.post('/assemble', authenticateJWT, requireAdmin, async (req, res) => {
       '../ai/context/CrossModuleContextEngine.js'
     );
     const { assembleAIContext } = await import('../ai/context/AIContextAssembler.js');
-    const { buildContextDensityReport, toContextDensitySummary } = await import(
-      '../ai/context/contextDensityReport.js'
-    );
+    const { buildContextDensityReport, buildOrchestrationDiagnosticsFromQueryContext, toContextDensitySummary } =
+      await import('../ai/context/contextDensityReport.js');
     const { synthesizeCrossModuleContext } = await import(
       '../ai/context/ContextSynthesisService.js'
     );
 
     const contextEngine = new CrossModuleContextEngine();
-    const smartContext = await contextEngine.getContextForAIQuery(
-      userId,
-      query.trim(),
-      typeof businessId === 'string' ? businessId : undefined
-    );
+    const smartContext = await contextEngine.getContextForAIQuery(userId, query.trim(), {
+      ...(typeof businessId === 'string' ? { businessId } : {}),
+      snapshotForce: true,
+    });
 
     const moduleContexts =
       smartContext.moduleContexts && typeof smartContext.moduleContexts === 'object'
@@ -586,9 +584,58 @@ router.post('/assemble', authenticateJWT, requireAdmin, async (req, res) => {
       ? smartContext.providerFetchAudit
       : [];
 
+    const orchestrationSnapshots = Array.isArray(
+      (smartContext as Record<string, unknown>).orchestrationSnapshots
+    )
+      ? ((smartContext as Record<string, unknown>).orchestrationSnapshots as Array<
+          Record<string, unknown>
+        >)
+      : smartContext.orchestrationSnapshot
+        ? [smartContext.orchestrationSnapshot as Record<string, unknown>]
+        : undefined;
+
+    const orchestration = buildOrchestrationDiagnosticsFromQueryContext({
+      orchestrationSnapshots,
+      contextGenerationId:
+        typeof smartContext.contextOrchestration === 'object' &&
+        smartContext.contextOrchestration !== null &&
+        typeof (smartContext.contextOrchestration as Record<string, unknown>).contextGenerationId ===
+          'string'
+          ? ((smartContext.contextOrchestration as Record<string, unknown>).contextGenerationId as string)
+          : undefined,
+      contextGenerations: Array.isArray(
+        (smartContext as Record<string, unknown>).contextGenerations
+      )
+        ? ((smartContext as Record<string, unknown>).contextGenerations as Array<
+            Record<string, unknown>
+          >)
+        : smartContext.contextOrchestration
+          ? [smartContext.contextOrchestration as Record<string, unknown>]
+          : undefined,
+      providerSelectionDiagnostics: Array.isArray(smartContext.providerSelectionDiagnostics)
+        ? (smartContext.providerSelectionDiagnostics as Array<Record<string, unknown>>)
+        : undefined,
+      requiredSourceFailures: Array.isArray(smartContext.requiredSourceFailures)
+        ? (smartContext.requiredSourceFailures as string[])
+        : undefined,
+      staleContextWarnings: Array.isArray(smartContext.staleContextWarnings)
+        ? (smartContext.staleContextWarnings as string[])
+        : undefined,
+      groundingSourceToProvider: Array.isArray(smartContext.groundingSourceToProvider)
+        ? (smartContext.groundingSourceToProvider as Array<{
+            sourceId: string;
+            providerId: string;
+            moduleId: string;
+            providerName: string;
+          }>)
+        : undefined,
+    });
+
     const contextDensityReport = buildContextDensityReport({
       assembled,
       providerFetchAudit,
+      orchestration,
+      requiredSourceFailures: orchestration?.requiredSourceFailures,
       assemblyMetrics: assembled.assemblyMetrics,
     });
 
@@ -602,6 +649,13 @@ router.post('/assemble', authenticateJWT, requireAdmin, async (req, res) => {
         assemblyMetrics: assembled.assemblyMetrics,
         contextDensityReport,
         contextDensitySummary: toContextDensitySummary(contextDensityReport),
+        contextOrchestration: smartContext.contextOrchestration,
+        contextGenerations: orchestration?.contextGenerations,
+        providerSelectionDiagnostics: orchestration?.providerSelectionDiagnostics,
+        requiredSourceFailures: orchestration?.requiredSourceFailures,
+        staleContextWarnings: orchestration?.staleContextWarnings,
+        groundingSourceToProvider: orchestration?.groundingSourceToProvider,
+        orchestrationSnapshots: orchestration?.snapshots ?? orchestrationSnapshots,
         contextAvailability: assembled.contextAvailability,
         blocksDropped: assembled.assemblyMetrics?.blocksDropped ?? 0,
         crossModuleSynthesis,

@@ -24,12 +24,32 @@ export interface ModuleAction {
 /**
  * Context provider - endpoint the AI calls to get live data
  */
+export type ModuleContextRetrievalCost = 'low' | 'medium' | 'high';
+
+export type ModuleContextVolatility = 'static' | 'slow' | 'dynamic' | 'realtime';
+
+export interface ModuleContextFreshnessPolicy {
+  maxAgeMs?: number;
+  staleWhileRevalidate?: boolean;
+  realtimeSubscription?: boolean;
+}
+
 export interface ModuleContextProvider {
   name: string;
   endpoint: string;
   cacheDuration: number; // milliseconds
   description?: string;
   parameters?: Record<string, unknown>;
+  /** Phase A+ contract metadata (optional, backward compatible). */
+  supportedIntents?: string[];
+  supportedEntities?: string[];
+  priority?: number;
+  retrievalCost?: ModuleContextRetrievalCost;
+  freshnessWindowMs?: number;
+  freshnessPolicy?: ModuleContextFreshnessPolicy;
+  volatility?: ModuleContextVolatility;
+  invalidatedByEvents?: string[];
+  pipelineSourceIds?: string[];
 }
 
 /**

@@ -2,7 +2,11 @@
  * Structural validation for module AI context provider registration (Phase 4B).
  */
 
-import type { ModuleContextProvider } from '../../../../shared/src/types/module-ai-context';
+import type {
+  ModuleContextProvider,
+  ModuleContextRetrievalCost,
+  ModuleContextVolatility,
+} from '../../../../shared/src/types/module-ai-context';
 import {
   MODULE_CONTEXT_PROVIDER_DEFAULT_CACHE_MS,
   MODULE_CONTEXT_PROVIDER_MAX_CACHE_MS,
@@ -39,12 +43,57 @@ export function parseContextProviders(raw: unknown): ModuleContextProvider[] {
         ? item.cacheDuration
         : MODULE_CONTEXT_PROVIDER_DEFAULT_CACHE_MS;
 
+    const retrievalCost =
+      item.retrievalCost === 'low' || item.retrievalCost === 'medium' || item.retrievalCost === 'high'
+        ? (item.retrievalCost as ModuleContextRetrievalCost)
+        : undefined;
+    const volatility =
+      item.volatility === 'static' ||
+      item.volatility === 'slow' ||
+      item.volatility === 'dynamic' ||
+      item.volatility === 'realtime'
+        ? (item.volatility as ModuleContextVolatility)
+        : undefined;
+
     parsed.push({
       name,
       endpoint,
       cacheDuration,
       ...(typeof item.description === 'string' ? { description: item.description } : {}),
       ...(isRecord(item.parameters) ? { parameters: item.parameters } : {}),
+      ...(Array.isArray(item.supportedIntents)
+        ? { supportedIntents: item.supportedIntents.filter((v): v is string => typeof v === 'string') }
+        : {}),
+      ...(Array.isArray(item.supportedEntities)
+        ? {
+            supportedEntities: item.supportedEntities.filter(
+              (v): v is string => typeof v === 'string'
+            ),
+          }
+        : {}),
+      ...(typeof item.priority === 'number' && Number.isFinite(item.priority)
+        ? { priority: item.priority }
+        : {}),
+      ...(retrievalCost ? { retrievalCost } : {}),
+      ...(typeof item.freshnessWindowMs === 'number' && Number.isFinite(item.freshnessWindowMs)
+        ? { freshnessWindowMs: item.freshnessWindowMs }
+        : {}),
+      ...(isRecord(item.freshnessPolicy) ? { freshnessPolicy: item.freshnessPolicy } : {}),
+      ...(volatility ? { volatility } : {}),
+      ...(Array.isArray(item.invalidatedByEvents)
+        ? {
+            invalidatedByEvents: item.invalidatedByEvents.filter(
+              (v): v is string => typeof v === 'string'
+            ),
+          }
+        : {}),
+      ...(Array.isArray(item.pipelineSourceIds)
+        ? {
+            pipelineSourceIds: item.pipelineSourceIds.filter(
+              (v): v is string => typeof v === 'string'
+            ),
+          }
+        : {}),
     });
   }
 

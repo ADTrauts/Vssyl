@@ -1,6 +1,6 @@
 # Module AI Context Provider API
 
-**Status:** Canonical contract (Phase 4B, May 2026)  
+**Status:** Canonical contract (Phase 4B + Context Provider Contract Phase A/B, May 2026)  
 **Audience:** First-party module authors, marketplace partners, admin reviewers  
 **Related:** `memory-bank/aiContextSystem.md`, `memory-bank/moduleSpecs.md`, `server/src/startup/registerBuiltInModules.ts`
 
@@ -123,6 +123,26 @@ contextProviders: [
 | `endpoint` | Matches `/api/.../ai/context/...` or `/api/.../ai/query/...` |
 | `cacheDuration` | 60_000 – 86_400_000 ms (1 min – 24 h) |
 
+### Optional orchestrator metadata (Phase B — backward compatible)
+
+All fields below are **optional**. Legacy and marketplace modules without them behave as before.
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `supportedIntents` | `string[]` | Pipeline intent ids this provider is useful for (e.g. `local_discovery`, `planning`). Default: `workflow_action`, `general_chat`. |
+| `supportedEntities` | `string[]` | Entity types for future graph routing (declarative only in Phase B). |
+| `priority` | `number` | Selection tie-breaker (higher wins within same cost tier). Default `50`. |
+| `retrievalCost` | `low` \| `medium` \| `high` | Budget-aware selection ordering. Default `medium`. |
+| `pipelineSourceIds` | `string[]` | Maps catalog grounding source ids → this provider (e.g. `drive_files` → drive `recent_files`). |
+| `volatility` | `static` \| `slow` \| `dynamic` \| `realtime` | Declarative hint for future invalidation (no runtime SWR in Phase B). |
+| `freshnessPolicy` | `{ maxAgeMs, staleWhileRevalidate?, realtimeSubscription? }` | Preferred freshness window; `maxAgeMs` drives **diagnostics only** in Phase B. |
+| `freshnessWindowMs` | `number` | Legacy alias for `freshnessPolicy.maxAgeMs`. |
+| `invalidatedByEvents` | `string[]` | Canonical `DOMAIN_EVENT_TYPES` strings — **documented only** until Phase C invalidation. |
+
+**Wave-1 built-ins** with metadata: `drive`, `calendar`, `chat`, `place`, `hr`, `scheduling` in `registerBuiltInModules.ts`.
+
+`parseContextProviders` (certification + registry load) preserves these fields when present in stored JSON.
+
 On install, registry entry is created via `ModuleAIContextService.registerModuleContext`. Per-user cache lives on `ModuleInstallation.contextProviderCache` keyed `providerName:scope`.
 
 ---
@@ -201,6 +221,79 @@ View in **AI Test Lab** → Context density panel after a dry-run prompt.
 
 ---
 
+## Context Provider Orchestrator (Phase A/B)
+
+**Code:** `server/src/ai/context/ContextProviderOrchestrator.ts`  
+**Entry:** `CrossModuleContextEngine.getContextForAIQuery` delegates when `AI_CONTEXT_ORCHESTRATOR_ENABLED` is not `false` (default: on).
+
+### `contextGenerationId`
+
+- A new UUID is minted **per orchestration pass** (module context fetch for a query, or a grounding-only pass).
+- `DigitalLifeTwinCore` keeps at most **two** recent generations on `query.context.contextGenerations[]` for trace/debug.
+- Pipeline grounding may add a **second** generation when `runPipelineGroundingRetrieval` calls `orchestratePipelineModuleSources`.
+
+### Selection and lazy `fullContext`
+
+- Providers are ranked by intent match, `retrievalCost`, `priority`, and legacy `canHandle` compatibility.
+- **`fullContext`** (user profile / preferences bundle) is **lazy**: not loaded unless a selected provider or explicit flag requires it.
+- **Stale diagnostics (Phase B):** when cache metadata includes `cachedAt` and `maxAgeMs`, orchestration exposes `fresh` \| `stale` \| `unknown` and `staleContextWarnings[]`. No cache invalidation, websocket refresh, or stale-while-revalidate queues in Phase B.
+
+### Required grounding failures (hybrid)
+
+- Missing required module-backed sources are always recorded in `requiredSourceFailures`.
+- Twin **blocks** only when pipeline enforcement mode is `block` or `regenerate` (unchanged semantics).
+
+### Pipeline grounding source mapping
+
+| Catalog `contextSources.id` | Module | Typical provider |
+|---------------------------|--------|------------------|
+| `vssyl_place` | `place` | `place_discoveries` |
+| `drive_files` | `drive` | `recent_files` |
+| `calendar` | `calendar` | `upcoming_events` |
+
+`pipelineGroundingRetrieval` uses `orchestratePipelineModuleSources` for module-backed ids above. **Skips fetch** when `existingModuleContexts` already has data for that module. Platform adapters unchanged: `location`, `vlink`, `web_search`, `business_context`.
+
+Diagnostics on trace / `POST /api/ai-context-debug/assemble`:
+
+- `contextGenerationId`, `contextGenerations[]`
+- `providerSelectionDiagnostics` (considered / selected / skipped + reasons)
+- `requiredSourceFailures`, `groundingSourceToProvider`
+- `staleContextWarnings`
+
+### Build order
+
+Server `tsc` requires compiled shared types (`ai-context-provider-contract.d.ts`). Root `type-check` and `verify:ci` run `build:shared` first; `vssyl-server` `pretest` / `pretype-check` build `vssyl-shared`.
+
+### Orchestration snapshots (Phase B.5)
+
+Metadata-only **`AIOrchestrationSnapshot`** per orchestration pass for debugging and future quality analysis.
+
+| Env | Default | Purpose |
+|-----|---------|---------|
+| `AI_ORCHESTRATION_SNAPSHOT_ENABLED` | `false` (prod) | Master switch |
+| `AI_ORCHESTRATION_SNAPSHOT_SAMPLE_RATE` | `0.02` | Prod sampling when enabled |
+| `AI_ORCHESTRATION_SNAPSHOT_LOG_LEVEL` | `info` | Structured log level |
+
+- **Builder:** `server/src/ai/context/orchestrationSnapshot.ts`
+- **Emit:** end of `orchestrateContextRetrieval` → `operation: ai_orchestration_snapshot`
+- **In-request:** `query.context.orchestrationSnapshots[]` (cap 2)
+- **Trace:** `contextDensity.orchestration.snapshots`
+- **Admin assemble:** `snapshotForce: true` on `getContextForAIQuery`
+- **Privacy:** `queryPreview` redacted/truncated (≤120 chars); no provider payloads
+- **`orchestratorVersion`:** centralized label (e.g. `phase-b5-v1`) for replay when selection/freshness/ranking semantics change
+- **`traceTags`:** optional deterministic tags from build metadata (`grounding_failure`, `required_source_failure`, `stale_context`, `admin_debug`, `grounding_boost`, `fallback_provider`, `high_latency`, `sampled_snapshot` on prod emit) — for dashboards/Test Lab filters; no provider payloads in tags
+
+### Intentionally deferred (Phase C+)
+
+- Runtime event invalidation from `invalidatedByEvents`
+- Health-based adaptive ranking (`AI_CONTEXT_FRESHNESS_RANKING_ENABLED`)
+- Stale-while-revalidate fetch queues
+- WebSocket-driven context refresh
+- Active Context Graph materialization
+- Vector DB / embedding routing in orchestrator
+
+---
+
 ## Constants (source of truth in code)
 
 ```typescript
@@ -217,3 +310,4 @@ MODULE_CONTEXT_PROVIDER_DEFAULT_CACHE_MS = 900000
 | Date | Change |
 |------|--------|
 | 2026-05-21 | Phase 4B — canonical spec, certification hardening, admin health check |
+| 2026-05-26 | Context Provider Contract Phase A/B — orchestrator, optional metadata, grounding bridge, diagnostics |

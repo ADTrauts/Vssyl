@@ -2,6 +2,7 @@
  * Admin AI pipeline diagnostics — trace types for grounding/orchestration inspection.
  */
 
+import type { AIOrchestrationSnapshot } from '../../../../shared/src/types/ai-orchestration-snapshot';
 import type {
   SystemPipelineContextSourceId,
   SystemPipelineIntentId,
@@ -141,6 +142,20 @@ export interface PipelineContextDensityReport {
     byTier: PipelineContextDensityTierUsage[];
   };
   missingContextCount: number;
+  orchestration?: {
+    contextGenerationId?: string;
+    contextGenerations?: Array<Record<string, unknown>>;
+    providerSelectionDiagnostics?: Array<Record<string, unknown>>;
+    requiredSourceFailures?: string[];
+    staleContextWarnings?: string[];
+    groundingSourceToProvider?: Array<{
+      sourceId: string;
+      providerId: string;
+      moduleId: string;
+      providerName: string;
+    }>;
+    snapshots?: AIOrchestrationSnapshot[];
+  };
 }
 
 export interface PipelineContextDensitySummary {
