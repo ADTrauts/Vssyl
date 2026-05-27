@@ -11,7 +11,6 @@ import type {
   OrchestrationSnapshotPassKind,
   OrchestrationSnapshotTraceTag,
 } from '../../../../shared/src/types/ai-orchestration-snapshot';
-import { AI_ORCHESTRATION_SNAPSHOT_SCHEMA_VERSION } from '../../../../shared/src/types/ai-orchestration-snapshot';
 import type { ProviderSelectionDiagnostic } from '../../../../shared/src/types/ai-context-provider-contract';
 import type { PipelineEnforcementSettings } from '../types/pipelineDiagnostics';
 import type { ProviderFetchAttempt } from './contextDensityReport';
@@ -20,6 +19,9 @@ import { logger } from '../../lib/logger';
 import { PIPELINE_SOURCE_PROVIDER_MAP } from './pipelineSourceProviderMap';
 
 export const MAX_ORCHESTRATION_SNAPSHOTS_PER_REQUEST = 2;
+
+/** Keep in sync with `AI_ORCHESTRATION_SNAPSHOT_SCHEMA_VERSION` in shared types. */
+export const AI_ORCHESTRATION_SNAPSHOT_SCHEMA_VERSION = 1 as const;
 
 /**
  * Central orchestrator behavior label for snapshot replay compatibility.
