@@ -6,7 +6,17 @@ import {
   registerGlobalTrashModuleHandler,
 } from '../../services/globalTrashModuleRegistry';
 import * as driveDeleteService from '../../services/driveDeleteService';
+import type { DriveItemMutationInput } from '../../services/driveDeleteService';
 import { prisma } from '../../lib/prisma';
+
+function toDriveItemInput(input: {
+  userId: string;
+  type: string;
+  id: string;
+}): DriveItemMutationInput | null {
+  if (input.type !== 'file' && input.type !== 'folder') return null;
+  return { userId: input.userId, type: input.type, id: input.id };
+}
 
 vi.mock('../../services/driveDeleteService', () => ({
   permanentlyDeleteDriveItem: vi.fn(),
@@ -31,8 +41,16 @@ describe('trashController drive integration', () => {
       moduleId: 'drive',
       moduleName: 'File Hub',
       supportedTypes: ['file', 'folder'],
-      restore: (input) => driveDeleteService.restoreDriveItem(input),
-      permanentDelete: (input) => driveDeleteService.permanentlyDeleteDriveItem(input),
+      restore: (input) => {
+        const driveInput = toDriveItemInput(input);
+        return driveInput ? driveDeleteService.restoreDriveItem(driveInput) : Promise.resolve(false);
+      },
+      permanentDelete: (input) => {
+        const driveInput = toDriveItemInput(input);
+        return driveInput
+          ? driveDeleteService.permanentlyDeleteDriveItem(driveInput)
+          : Promise.resolve(false);
+      },
       emptyModuleTrash: (input) => driveDeleteService.emptyDriveTrash(input),
     });
   });
