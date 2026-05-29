@@ -9,6 +9,7 @@ import { DriveModuleWrapper } from './DriveModuleWrapper';
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from '@dnd-kit/core';
 import { toast } from 'react-hot-toast';
 import { useVLinkDrag } from '@/contexts/VLinkDragContext';
+import { resolveDriveUploadFolderId } from '@/lib/driveDragDrop';
 
 interface DrivePageContentProps {
   className?: string;
@@ -64,12 +65,14 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       if (!files || !session?.accessToken) return;
 
       try {
+        const uploadFolderId = resolveDriveUploadFolderId(null, selectedFolder?.id ?? null);
         const uploaded: Array<{ id: string; name: string }> = [];
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const formData = new FormData();
           formData.append('file', file);
           if (currentDashboard?.id) formData.append('dashboardId', currentDashboard.id);
+          if (uploadFolderId) formData.append('folderId', uploadFolderId);
 
           const response = await fetch('/api/drive/files', {
             method: 'POST',
@@ -131,7 +134,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       }
     };
     input.click();
-  }, [session, currentDashboard, openConnectModal, businessId, householdId]);
+  }, [session, currentDashboard, openConnectModal, businessId, householdId, selectedFolder?.id]);
 
   // Folder creation handler
   const handleCreateFolder = useCallback(async () => {
@@ -150,7 +153,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
         body: JSON.stringify({ 
           name,
           dashboardId: currentDashboard?.id || null,
-          parentId: null
+          parentId: resolveDriveUploadFolderId(null, selectedFolder?.id ?? null),
         }),
       });
 
@@ -163,7 +166,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
     } catch (error) {
       console.error('Error creating folder:', error);
     }
-  }, [session, currentDashboard]);
+  }, [session, currentDashboard, selectedFolder?.id]);
 
   // Context switch handler
   const handleContextSwitch = useCallback(async (dashboardId: string) => {

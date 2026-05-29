@@ -72,6 +72,10 @@ import {
   useVLinkDrag,
   type VLinkDragEntity,
 } from '@/contexts/VLinkDragContext';
+import {
+  isExternalFileDragTransfer,
+  resolveDriveUploadFolderId,
+} from '@/lib/driveDragDrop';
 
 interface DriveItem {
   id: string;
@@ -190,22 +194,10 @@ const DraggableItem = React.memo(function DraggableItem({
   onSidebarVLinkDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
   onSidebarVLinkDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
 }) {
-  // Use dnd-kit for folder-to-folder drag within Drive, but allow native drag for trash
-  // We need both to work: native HTML5 drag for GlobalTrashBin, dnd-kit for folder moves
   const { attributes, listeners, setNodeRef, transform, isDragging: isDraggingItem } = useDraggable({
     id: item.id,
     disabled: false,
   });
-
-  // Filter out dnd-kit's pointer event handlers that interfere with native drag
-  // Keep other handlers for dnd-kit functionality
-  const filteredListeners = React.useMemo(() => {
-    if (!listeners) return {};
-    // Remove pointer event handlers that prevent native drag
-    // But keep other handlers that might be needed
-    const { onPointerDown, onPointerMove, onPointerCancel, ...rest } = listeners;
-    return rest;
-  }, [listeners]);
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: item.id,
@@ -250,40 +242,13 @@ const DraggableItem = React.memo(function DraggableItem({
     onClick(e);
   };
 
-  // Native HTML5 drag support for GlobalTrashBin and other consumers
-  const handleNativeDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    // Don't stop propagation - let both native and dnd-kit work
-    // Native drag will work for GlobalTrashBin, dnd-kit will handle folder-to-folder
-    
-    try {
-      const payload = {
-        id: item.id,
-        name: item.name,
-        type: item.type,
-        moduleId: 'drive',
-        moduleName: 'File Hub',
-        metadata: {
-          dashboardId: dashboardId || undefined,
-        },
-      };
-      const jsonPayload = JSON.stringify(payload);
-      e.dataTransfer.setData('application/json', jsonPayload);
-      e.dataTransfer.effectAllowed = 'move';
-      // Also set as text/plain as fallback for better compatibility
-      e.dataTransfer.setData('text/plain', jsonPayload);
-    } catch (error) {
-      // Non-critical: log and continue
-      console.error('Failed to set native drag data for File Hub item:', error);
-    }
-  };
+  // Native HTML5 drag removed — internal moves/trash use dnd-kit (see handleDragEnd).
 
   if (viewMode === 'list') {
     return (
       <div
         ref={combinedRef}
         style={style}
-        draggable={true}
-        onDragStart={handleNativeDragStart}
         onDragOver={onSidebarVLinkDragOver}
         onDrop={onSidebarVLinkDrop}
         className={`cursor-pointer hover:bg-gray-50 transition-colors ${
@@ -294,7 +259,7 @@ const DraggableItem = React.memo(function DraggableItem({
         onClick={handleClick}
         onContextMenu={onContextMenu}
         {...(attributes as unknown as Record<string, unknown>)}
-        {...(filteredListeners as unknown as Record<string, unknown>)}
+        {...(listeners as unknown as Record<string, unknown>)}
         aria-label={`${item.type === 'folder' ? 'Folder' : 'File'}: ${item.name}`}
         aria-selected={isSelected}
       >
@@ -403,8 +368,6 @@ const DraggableItem = React.memo(function DraggableItem({
     <div
       ref={combinedRef}
       style={style}
-      draggable={true}
-      onDragStart={handleNativeDragStart}
       onDragOver={onSidebarVLinkDragOver}
       onDrop={onSidebarVLinkDrop}
       className={`group relative cursor-pointer hover:shadow-md transition-shadow rounded-lg ${
@@ -415,7 +378,7 @@ const DraggableItem = React.memo(function DraggableItem({
       onClick={handleClick}
       onContextMenu={onContextMenu}
       {...attributes}
-      {...(filteredListeners as unknown as Record<string, unknown>)}
+      {...(listeners as unknown as Record<string, unknown>)}
       aria-label={`${item.type === 'folder' ? 'Folder' : 'File'}: ${item.name}`}
       aria-selected={isSelected}
     >
@@ -538,7 +501,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size' | 'type'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isDragging, setIsDragging] = useState(false);
+  const [isExternalFileDrag, setIsExternalFileDrag] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
   const [pinnedOnly, setPinnedOnly] = useState(false);
@@ -885,6 +848,11 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     }
   }, [selectedFolderId, currentFolder]);
 
+  const uploadFolderId = useMemo(
+    () => resolveDriveUploadFolderId(currentFolder, selectedFolderId),
+    [currentFolder, selectedFolderId]
+  );
+
   const deepLinkFileIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -986,7 +954,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           const formData = new FormData();
           formData.append('file', file);
           if (effectiveDashboardId) formData.append('dashboardId', effectiveDashboardId);
-          if (currentFolder) formData.append('folderId', currentFolder);
+          if (uploadFolderId) formData.append('folderId', uploadFolderId);
 
           const response = await fetch('/api/drive/files', {
             method: 'POST',
@@ -1033,7 +1001,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         body: JSON.stringify({ 
           name,
           dashboardId: effectiveDashboardId,
-          parentId: currentFolder || null
+          parentId: uploadFolderId,
         }),
       });
 
@@ -1575,17 +1543,12 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     }
 
     // If dropping on a folder (either in main view or sidebar), move the item to that folder
-    // Check if over.id is a folder ID (could be from sidebar or main view)
     if (targetItem && targetItem.type === 'folder' && draggedItem.id !== targetItem.id) {
-      // Track pending operation for conflict detection
       pendingOperationsRef.current.add(draggedItem.id);
-      
-      // Optimistic update: move item immediately
+
       const previousItems = [...items];
-      setItems(prev => prev.map(i => 
-        i.id === draggedItem.id ? { ...i, folderId: targetItem.id } : i
-      ));
-      
+      setItems((prev) => prev.filter((i) => i.id !== draggedItem.id));
+
       try {
         if (draggedItem.type === 'file') {
           await moveFile(session.accessToken, draggedItem.id, targetItem.id);
@@ -1594,10 +1557,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           await moveFolder(session.accessToken, draggedItem.id, targetItem.id);
           toast.success(`Moved ${draggedItem.name} to ${targetItem.name}`);
         }
-        // Note: WebSocket will trigger refresh with correct data
+        await loadFilesAndFolders();
       } catch (error) {
         console.error('Failed to move item:', error);
-        // Rollback optimistic update on error
         setItems(previousItems);
         toast.error(`Failed to move ${draggedItem.name}`);
       } finally {
@@ -1609,7 +1571,6 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     }
 
     // Handle sidebar folder drops (folder ID that's not in current items list)
-    // If over.id is a string and not in items, it might be a sidebar folder
     if (
       typeof over.id === 'string' &&
       !targetItem &&
@@ -1617,16 +1578,11 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       over.id !== 'drive-root' &&
       over.id !== 'drive-root-sidebar'
     ) {
-      // Track pending operation for conflict detection
       pendingOperationsRef.current.add(draggedItem.id);
-      
-      // Optimistic update: move item immediately
+
       const previousItems = [...items];
-      setItems(prev => prev.map(i => 
-        i.id === draggedItem.id ? { ...i, folderId: over.id as string } : i
-      ));
-      
-      // Try to move to this folder ID (could be from sidebar)
+      setItems((prev) => prev.filter((i) => i.id !== draggedItem.id));
+
       try {
         if (draggedItem.type === 'file') {
           await moveFile(session.accessToken, draggedItem.id, over.id);
@@ -1635,10 +1591,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           await moveFolder(session.accessToken, draggedItem.id, over.id);
           toast.success(`Moved ${draggedItem.name}`);
         }
-        // Note: WebSocket will trigger refresh with correct data
+        await loadFilesAndFolders();
       } catch (error) {
         console.error('Failed to move item:', error);
-        // Rollback optimistic update on error
         setItems(previousItems);
         toast.error(`Failed to move ${draggedItem.name}`);
       } finally {
@@ -1651,15 +1606,11 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
 
     // If dropping on the root area (not on an item), move to root
     if (over.id === 'drive-root' || over.id === 'drive-root-sidebar') {
-      // Track pending operation for conflict detection
       pendingOperationsRef.current.add(draggedItem.id);
-      
-      // Optimistic update: move item to root immediately
+
       const previousItems = [...items];
-      setItems(prev => prev.map(i => 
-        i.id === draggedItem.id ? { ...i, folderId: null } : i
-      ));
-      
+      setItems((prev) => prev.filter((i) => i.id !== draggedItem.id));
+
       try {
         if (draggedItem.type === 'file') {
           await moveFile(session.accessToken, draggedItem.id, null);
@@ -1667,10 +1618,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           await moveFolder(session.accessToken, draggedItem.id, null);
         }
         toast.success(`Moved ${draggedItem.name} to root`);
-        // Note: WebSocket will trigger refresh with correct data
+        await loadFilesAndFolders();
       } catch (error) {
         console.error('Failed to move item:', error);
-        // Rollback optimistic update on error
         setItems(previousItems);
         toast.error(`Failed to move ${draggedItem.name}`);
       } finally {
@@ -1680,7 +1630,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       }
       return;
     }
-  }, [items, session, currentFolder, loadFilesAndFolders, effectiveDashboardId, trashItem]);
+  }, [items, session, loadFilesAndFolders, effectiveDashboardId, trashItem]);
 
   // Listen for custom events from GlobalTrashBin when items are trashed (after loadFilesAndFolders is defined)
   useEffect(() => {
@@ -1719,23 +1669,38 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     }
   }, [onRegisterDragEndHandler, handleDragEnd]);
 
-  // Drag and drop handlers for file uploads (from file system)
+  // Drag and drop handlers for file uploads (from file system only)
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!isExternalFileDragTransfer(e.dataTransfer)) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(true);
+    e.dataTransfer.dropEffect = 'copy';
+    setIsExternalFileDrag(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!isExternalFileDragTransfer(e.dataTransfer)) {
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    const related = e.relatedTarget as Node | null;
+    if (related && e.currentTarget.contains(related)) {
+      return;
+    }
+    setIsExternalFileDrag(false);
   }, []);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    setIsExternalFileDrag(false);
+
+    if (!isExternalFileDragTransfer(e.dataTransfer)) {
+      return;
+    }
 
     const files = e.dataTransfer.files;
     if (!files || files.length === 0 || !session?.accessToken) return;
@@ -1746,11 +1711,11 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         const formData = new FormData();
         formData.append('file', file);
         if (effectiveDashboardId) formData.append('dashboardId', effectiveDashboardId);
-        if (currentFolder) formData.append('folderId', currentFolder);
+        if (uploadFolderId) formData.append('folderId', uploadFolderId);
 
         const response = await fetch('/api/drive/files', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.accessToken}` },
+          headers: { Authorization: `Bearer ${session.accessToken}` },
           body: formData,
         });
 
@@ -1760,14 +1725,13 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           toast.success(`Uploaded ${file.name}`);
         }
       }
-      
-      // Refresh file list
-      loadFilesAndFolders();
+
+      await loadFilesAndFolders();
     } catch (error) {
       console.error('Drop upload failed:', error);
       toast.error('Failed to upload files');
     }
-  }, [session, currentDashboard, currentFolder, loadFilesAndFolders]);
+  }, [session, effectiveDashboardId, uploadFolderId, loadFilesAndFolders]);
 
   // Filter and sort items - Memoized for performance
   const filteredItems = useMemo(() => {
@@ -1890,19 +1854,19 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     <div className={`flex h-full ${className}`}>
       {/* Main Content Area */}
       <div 
-        className={`relative flex-1 space-y-6 p-6 overflow-auto ${isDragging ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
+        className={`relative flex-1 space-y-6 p-6 overflow-auto ${isExternalFileDrag ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-      {/* Drag Overlay */}
-      {isDragging && (
+      {/* External file upload overlay — not shown for internal dnd-kit moves */}
+      {isExternalFileDrag && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-50 bg-opacity-90">
           <div className="text-center">
             <Upload className="w-16 h-16 text-blue-600 mx-auto mb-4" />
             <p className="text-xl font-medium text-blue-900">Drop files to upload</p>
             <p className="text-sm text-blue-700 mt-2">
-              {currentFolder ? `Upload to current folder` : `Upload to ${currentDashboard?.name || 'My Drive'}`}
+              {uploadFolderId ? 'Upload to current folder' : `Upload to ${currentDashboard?.name || 'My Drive'}`}
             </p>
           </div>
         </div>
