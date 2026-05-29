@@ -188,6 +188,8 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
     }
   }, [searchParams]);
 
+  const selectedFileId = searchParams?.get('file') ?? null;
+
   return (
     <DndContext
       sensors={sensors}
@@ -212,6 +214,7 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
             className="h-full" 
             refreshTrigger={refreshTrigger}
             selectedFolderId={selectedFolder?.id || null}
+            selectedFileId={selectedFileId}
             onFolderSelect={(folderId) => {
               // Update selected folder state with folderId from DriveModuleWrapper
               setSelectedFolder(folderId ? { id: folderId, name: '' } : null);

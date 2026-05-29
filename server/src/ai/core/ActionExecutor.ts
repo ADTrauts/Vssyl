@@ -203,6 +203,7 @@ export class ActionExecutor {
       dashboard: this.executeDashboardAction.bind(this),
       calendar: this.executeCalendarAction.bind(this),
       tasks: this.executeTasksAction.bind(this),
+      todo: this.executeTasksAction.bind(this),
       notifications: this.executeNotificationsAction.bind(this),
       scheduling: this.executeSchedulingAction.bind(this),
       hr: this.executeHRAction.bind(this)

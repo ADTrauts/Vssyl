@@ -16,6 +16,9 @@
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import type { ModuleAIContext } from 'shared/types/module-ai-context';
+import type { BuiltInModuleId } from '../constants/builtInModuleIds';
+import { reconcileBuiltInManifest } from './builtInModuleManifests';
+import { Prisma } from '@prisma/client';
 
 // ============================================================================
 // BUILT-IN MODULE DEFINITIONS (for creating Module records)
@@ -979,12 +982,28 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
     });
 
     if (existingModule) {
-      // Update if name or description has changed (e.g., "Drive" → "File Hub")
-      if (existingModule.name !== moduleDef.name || existingModule.description !== moduleDef.description) {
-        logRegistrationInfo('Updating module metadata', 'register_modules_update_module', {
+      const manifestRecord =
+        existingModule.manifest && typeof existingModule.manifest === 'object'
+          ? (existingModule.manifest as Record<string, unknown>)
+          : {};
+      const reconciledManifest = reconcileBuiltInManifest(
+        moduleId as BuiltInModuleId,
+        manifestRecord
+      );
+      const metadataChanged =
+        existingModule.name !== moduleDef.name ||
+        existingModule.description !== moduleDef.description ||
+        existingModule.icon !== moduleDef.icon ||
+        JSON.stringify(existingModule.tags) !== JSON.stringify(moduleDef.tags) ||
+        existingModule.category !== moduleDef.category;
+      const manifestChanged =
+        JSON.stringify(manifestRecord) !== JSON.stringify(reconciledManifest);
+
+      if (metadataChanged || manifestChanged) {
+        logRegistrationInfo('Reconciling built-in module record', 'register_modules_reconcile_module', {
           moduleId,
-          previousName: existingModule.name,
-          nextName: moduleDef.name,
+          metadataChanged,
+          manifestChanged,
         });
         await prisma.module.update({
           where: { id: moduleId },
@@ -994,9 +1013,11 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
             icon: moduleDef.icon,
             tags: moduleDef.tags,
             category: moduleDef.category,
+            manifest: reconciledManifest as Prisma.InputJsonValue,
+            permissions: reconciledManifest.permissions as string[],
           },
         });
-        logRegistrationInfo('Module updated successfully', 'register_modules_update_module_success', {
+        logRegistrationInfo('Module reconciled successfully', 'register_modules_reconcile_module_success', {
           moduleId,
           moduleName: moduleDef.name,
         });
@@ -1009,6 +1030,7 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
       moduleId,
       moduleName: moduleDef.name,
     });
+    const reconciledManifest = reconcileBuiltInManifest(moduleId as BuiltInModuleId, null);
     await prisma.module.create({
       data: {
         id: moduleDef.id,
@@ -1024,13 +1046,9 @@ async function ensureModuleExists(moduleId: string, developerId: string): Promis
         downloads: 0,
         rating: 0,
         reviewCount: 0,
-        manifest: {
-          entryPoint: `/${moduleDef.id}`,
-          permissions: [`${moduleDef.id}:read`, `${moduleDef.id}:write`],
-          isBuiltIn: true,
-        },
+        manifest: reconciledManifest as Prisma.InputJsonValue,
         dependencies: [],
-        permissions: [`${moduleDef.id}:read`, `${moduleDef.id}:write`],
+        permissions: reconciledManifest.permissions as string[],
         pricingTier: moduleDef.pricingTier,
         basePrice: 0,
         enterprisePrice: 0,

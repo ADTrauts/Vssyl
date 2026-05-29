@@ -166,6 +166,42 @@ Example (avoid): two emissions with the same user-visible meaning in feed and do
 - [ ] Metadata passes sanitization (no disallowed fields)
 - [ ] Tests updated (`domainEventRegistry.test.ts`, `domainEventBus.test.ts`, `moduleInstallDomainEvent.test.ts`, `driveDomainEvents.test.ts`)
 
+## Per-module adoption matrix
+
+Audit baseline (2026-05-28). **Target:** important mutations emit module activity (feed) and/or domain events (platform fan-out) per coexistence rules above.
+
+| Module | Module activity (`emitModuleActivityEvent`) | Domain events (`emitDomainEvent`) | Notes |
+|--------|---------------------------------------------|-----------------------------------|-------|
+| **drive** | ✅ file/folder CRUD, share | ✅ `file.*`, `folder.shared` | Exemplar — both emitters |
+| **chat** | ✅ message create, thread ops | ✅ `chat.message.sent` | Activity + domain on messages |
+| **calendar** | ❌ not emitted | ✅ `calendar.event.created` | Domain only today — add activity Batch 2 |
+| **vlink** | ❌ | ✅ full `vlink.*` taxonomy via `vlinkDomainEventEmitters` | Platform layer |
+| **platform** | — | ✅ module install/uninstall/enable/disable; business member; user prefs | `moduleProvisionController`, `businessController`, `userController` |
+| **todo** | ✅ create/delete | ❌ | Batch 2 partial — activity added |
+| **notes** | ✅ create/delete | ❌ | Global Trash trashedAt migration |
+| **hr** | ❌ | ❌ | Batch 2 |
+| **scheduling** | ❌ | ❌ | Batch 2 |
+| **place** | ❌ | ❌ | Batch 2 |
+| **dashboard** | ❌ | ❌ | Low priority — widget ops lightweight |
+
+### Deferred registry types
+
+| Constant | Status |
+|----------|--------|
+| `FILE_MOVED`, `FOLDER_CREATED` | Contract exists; emit sites deferred |
+
+### Subscriber wiring status
+
+| Subscriber | Status |
+|------------|--------|
+| activity | ✅ Wired |
+| socket | ✅ Wired |
+| ai_event_consumer | ✅ Wired |
+| notification_placeholder | ✅ Wired (file.shared, business.member.added, module.installed) |
+| analytics_placeholder | ❌ Stub — product decision pending |
+
+**Last updated:** 2026-05-28 (per-module adoption matrix added)
+
 ### Drive adoption (DE-D1, PE-D2)
 
 Emit **only after** DB success and authorization. Safe metadata only: `fileId`, `folderId`, `targetFolderId`, `fileType`, `sizeBytes`, `shareRole`, `recipientUserId`, `softDelete`, `dashboardId` — never file contents, signed URLs, storage paths, or tokens.
@@ -178,5 +214,3 @@ Emit **only after** DB success and authorization. Safe metadata only: `fileId`, 
 | `folder.shared` | `grantFolderPermission` | `recipientUserId`, `shareRole` |
 
 `emitModuleActivityEvent` remains on these paths for module feed visibility.
-
-**Last updated:** 2026-05-21 (Phase 4A — chat/calendar/module enable-disable adoption + AI consumer)

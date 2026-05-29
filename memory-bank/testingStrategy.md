@@ -30,9 +30,9 @@ Update Rules for testingStrategy.md
   - Used for exploratory testing, UI/UX review, and edge cases not easily automated.
 
 ## Recommended Tools & Frameworks
-- **Unit/Integration:** Jest (Node/React), ts-jest, supertest (API)
-- **E2E:** Playwright or Cypress
-- **Coverage:** Built-in Jest coverage, Playwright/Cypress coverage tools
+- **Unit/Integration:** Vitest (server + web runtime), supertest (API)
+- **E2E:** Playwright (`.ts` specs in `tests/e2e/`)
+- **Coverage:** Vitest coverage, Playwright trace/report tools
 - **Linting/Type Checking:** See [lintingAndCodeQuality.md](./lintingAndCodeQuality.md)
 
 ## QA Workflow

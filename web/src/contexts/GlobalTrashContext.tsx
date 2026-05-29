@@ -30,9 +30,10 @@ interface GlobalTrashContextType {
   itemCount: number;
   refreshTrash: () => Promise<void>;
   trashItem: (item: Omit<TrashedItem, 'trashedAt'>) => Promise<void>;
-  restoreItem: (id: string) => Promise<void>;
-  deleteItem: (id: string) => Promise<void>;
+  restoreItem: (id: string, item?: Pick<TrashedItem, 'moduleId' | 'type'>) => Promise<void>;
+  deleteItem: (id: string, item?: Pick<TrashedItem, 'moduleId' | 'type'>) => Promise<void>;
   emptyTrash: () => Promise<void>;
+  emptyDriveTrash: () => Promise<void>;
 }
 
 const GlobalTrashContext = createContext<GlobalTrashContextType | undefined>(undefined);
@@ -94,27 +95,28 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const restoreItem = async (id: string) => {
+  const restoreItem = async (id: string, itemHint?: Pick<TrashedItem, 'moduleId' | 'type'>) => {
     if (!session?.accessToken) return;
     
-    // Find the item being restored to get its metadata
-    const itemToRestore = trashedItems.find(item => item.id === id);
+    const itemToRestore = trashedItems.find((item) => item.id === id);
+    const moduleId = itemHint?.moduleId ?? itemToRestore?.moduleId;
+    const type = itemHint?.type ?? itemToRestore?.type;
     
     try {
       const response = await fetch(`/api/trash/restore/${id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ moduleId, type }),
       });
       
       if (!response.ok) {
         throw new Error('Failed to restore item');
       }
       
-      // Dispatch generic itemRestored event for all modules
       if (itemToRestore) {
-        // Dispatch generic event that all modules can listen to
         window.dispatchEvent(new CustomEvent('itemRestored', {
           detail: {
             id: itemToRestore.id,
@@ -135,11 +137,17 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteItem = async (id: string) => {
+  const deleteItem = async (id: string, itemHint?: Pick<TrashedItem, 'moduleId' | 'type'>) => {
     if (!session?.accessToken) return;
+
+    const itemToDelete = itemHint ?? trashedItems.find(item => item.id === id);
     
     try {
-      const response = await fetch(`/api/trash/delete/${id}`, {
+      const query =
+        itemToDelete?.moduleId && itemToDelete?.type
+          ? `?moduleId=${encodeURIComponent(itemToDelete.moduleId)}&type=${encodeURIComponent(itemToDelete.type)}`
+          : '';
+      const response = await fetch(`/api/trash/delete/${id}${query}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.accessToken}`,
@@ -154,6 +162,28 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
       await refreshTrash();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete item');
+      throw err;
+    }
+  };
+
+  const emptyDriveTrash = async () => {
+    if (!session?.accessToken) return;
+
+    try {
+      const response = await fetch('/api/trash/empty?moduleId=drive', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to empty File Hub trash');
+      }
+
+      setTrashedItems((prev) => prev.filter((item) => item.moduleId !== 'drive'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to empty File Hub trash');
       throw err;
     }
   };
@@ -198,6 +228,7 @@ export function GlobalTrashProvider({ children }: { children: ReactNode }) {
     restoreItem,
     deleteItem,
     emptyTrash,
+    emptyDriveTrash,
   };
 
   return (

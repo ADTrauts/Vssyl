@@ -13,7 +13,9 @@ export default function BusinessWorkspaceDrivePage() {
   const businessId = params?.id as string;
 
   useEffect(() => {
-    // Redirect to main drive page with business dashboard context
+    console.warn(
+      '[File Hub] /business/.../workspace/drive is deprecated; use /business/:id/workspace?module=drive instead.'
+    );
     window.location.href = `/drive?dashboard=${businessId}`;
   }, [businessId]);
 

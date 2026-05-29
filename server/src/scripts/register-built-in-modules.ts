@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use server startup `registerBuiltInModulesOnStartup()` instead.
+ * See docs/architecture/LEGACY_CLEANUP.md — retained for one-off admin recovery only.
+ *
  * REGISTER BUILT-IN MODULES
  * 
  * This script registers AI contexts for all built-in Vssyl modules.

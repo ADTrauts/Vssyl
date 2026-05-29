@@ -13,6 +13,7 @@ interface DriveModuleWrapperProps {
   dashboardId?: string | null;
   businessId?: string;
   selectedFolderId?: string | null;
+  selectedFileId?: string | null;
   onFolderSelect?: (folderId: string | null) => void;
   onRegisterDragEndHandler?: (handler: (event: any) => Promise<void>) => void;
 }
@@ -30,6 +31,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
   dashboardId,
   businessId,
   selectedFolderId,
+  selectedFileId,
   onFolderSelect,
   onRegisterDragEndHandler
 }) => {
@@ -80,6 +82,7 @@ export const DriveModuleWrapper: React.FC<DriveModuleWrapperProps> = ({
       className={className}
       refreshTrigger={refreshTrigger}
       selectedFolderId={selectedFolderId}
+      selectedFileId={selectedFileId}
       onFolderSelect={onFolderSelect}
       onRegisterDragEndHandler={onRegisterDragEndHandler}
     />

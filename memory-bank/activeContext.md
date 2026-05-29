@@ -1,6 +1,48 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
-## Most recent completed project — Context Provider Contract Phase A / B / B.5 (May 2026) ✅
+## Most recent completed project — Platform Standards Migration Batches 1–4 (May 2026) ✅
+
+**Status:** **IMPLEMENTED** — Constitutional framework published **and** core migration batches executed in code (manifest/provisioning, workspace gaps, trash, events, V_Link resolvers, job registry).
+
+**Canonical doc:** [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md)  
+**Agent rule:** `.cursor/rules/platform-standards.mdc`  
+**Migration tracker:** §30 in constitutional doc + [`memory-bank/progress.md`](progress.md)
+
+### What shipped
+
+| Batch | Outcome |
+|-------|---------|
+| **1 Foundation** | `BUILT_IN_MODULE_IDS`; manifest reconcile (`builtInModuleManifests.ts`); `moduleProvisionController` all 10 built-ins; `todo`/`place` in `BusinessWorkspaceContent` + `coreModuleRegistry`; ActionExecutor `todo` alias; `testingStrategy.md` → Vitest |
+| **2 Contracts** | Notes `trashedAt` + migration `20260628120000_notes_trashed_at`; module activity on todo/notes create-delete; `moduleMutationPolicyDual`; notification domain-event subscriber (file.shared, member.added, module.installed) |
+| **3 Integration** | V_Link resolvers for TASK/TODO, NOTE, CHAT_CONVERSATION; `orgChartPolicyAdapter.ts`; `BrandedWorkDashboard` → `MODULE_ICONS`; extended `ModuleCapability` type |
+| **4 Platform infra** | `registerPlatformJob()` + `platformCronJobs.ts`; cleanup dedupe; workflow router + search index stubs on domain event bus |
+
+### Key paths
+
+- `server/src/constants/builtInModuleIds.ts`
+- `server/src/startup/builtInModuleManifests.ts`
+- `server/src/jobs/platformJobRegistry.ts`, `platformCronJobs.ts`
+- `server/src/auth/moduleMutationPolicyDual.ts`, `orgChartPolicyAdapter.ts`
+- `server/src/services/vlinkEntityResolverService.ts` (expanded)
+- `docs/architecture/LEGACY_CLEANUP.md`, `DOMAIN_EVENTS.md` (adoption matrix)
+
+### Deploy note
+
+Run `pnpm prisma:migrate:deploy` for Notes Global Trash migration before relying on `trashedAt` in production.
+
+### Deferred (next platform work)
+
+- Extract `todoService` / `notesService`; slim `toolExecutor` + `ActionExecutor`
+- hr/scheduling module activity + domain events
+- Retire dead `WorkspaceLanding` components or wire hubs
+- Wrap `WorkflowAutomationService` behind domain-event workflow router
+- Optional `drive` → `file-hub` module id rename
+
+**Cross-ref:** Runtime Kernel, extension boundaries, read/write paths, tiers — all in constitutional doc §1–3, §16, Appendix B.
+
+---
+
+## Context Provider Contract Phase A / B / B.5 (May 2026) ✅
 
 **Status:** **IMPLEMENTED** — Intent-aware **Context Provider Orchestrator** replaces ad-hoc module fetches in `CrossModuleContextEngine`; pipeline grounding for module-backed sources; metadata-only **orchestration snapshots** for replay/debug.
 

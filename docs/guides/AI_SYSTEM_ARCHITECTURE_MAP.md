@@ -1,6 +1,10 @@
 # 🤖 Vssyl AI System Architecture Map
 
-> **⚠️ Partially superseded (May 2026):** Backend service names, autonomy flows, and context diagrams in this file reflect pre–platform-maturity architecture. For **canonical Mermaid diagrams**, use:
+> **⚠️ Partially superseded (May 2026):** Backend service names, autonomy flows, and context diagrams in this file reflect pre–platform-maturity architecture.
+>
+> **Start here for narrative onboarding:** **[`docs/architecture/AI_SYSTEM_TEXTBOOK.md`](../architecture/AI_SYSTEM_TEXTBOOK.md)** — internal AI system textbook (mental model, lifecycle, orchestration, grounding, observability, ops).
+>
+> For **canonical Mermaid diagrams**, use:
 >
 > - **[`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)** — master hub (twin, context, V_Link, ambient, admin)
 > - **[`docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`](../architecture/AI_TWIN_PROMPT_PIPELINE.md)** — live `/api/ai/twin` path

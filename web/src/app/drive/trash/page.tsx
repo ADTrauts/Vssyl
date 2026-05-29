@@ -28,6 +28,7 @@ export default function TrashPage() {
     restoreItem,
     deleteItem,
     trashItem,
+    emptyDriveTrash,
   } = useGlobalTrash();
 
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +130,7 @@ export default function TrashPage() {
   const handleRestore = async (item: TrashedItem) => {
     setActionLoading(item.id);
     try {
-      await restoreItem(item.id);
+      await restoreItem(item.id, { moduleId: item.moduleId, type: item.type });
       await refreshTrash();
     } catch {
       setError('Failed to restore');
@@ -141,10 +142,25 @@ export default function TrashPage() {
   const handleDelete = async (item: TrashedItem) => {
     setActionLoading(item.id);
     try {
-      await deleteItem(item.id);
+      await deleteItem(item.id, { moduleId: item.moduleId, type: item.type });
       await refreshTrash();
     } catch {
       setError('Failed to delete');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleEmptyDriveTrash = async () => {
+    if (!window.confirm('Permanently delete all File Hub items in trash?')) return;
+    setActionLoading('empty');
+    try {
+      await emptyDriveTrash();
+      await refreshTrash();
+      toast.success('File Hub trash emptied');
+    } catch {
+      setError('Failed to empty trash');
+      toast.error('Failed to empty File Hub trash');
     } finally {
       setActionLoading(null);
     }
@@ -233,12 +249,24 @@ export default function TrashPage() {
           </div>
         ) : (
           <div className="p-6">
-            <div className="mb-8 flex items-center gap-4">
-              <TrashIcon className="w-8 h-8 text-gray-700 dark:text-gray-300" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Trash</h1>
-                <p className="text-gray-700 dark:text-gray-300">Items in trash will be permanently deleted after 30 days.</p>
+            <div className="mb-8 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <TrashIcon className="w-8 h-8 text-gray-700 dark:text-gray-300" />
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Trash</h1>
+                  <p className="text-gray-700 dark:text-gray-300">Items in trash will be permanently deleted after 30 days.</p>
+                </div>
               </div>
+              {!isEmpty && (
+                <button
+                  onClick={handleEmptyDriveTrash}
+                  disabled={actionLoading === 'empty'}
+                  className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  <ArchiveBoxXMarkIcon className="w-4 h-4" />
+                  Empty File Hub Trash
+                </button>
+              )}
             </div>
 
             {isEmpty ? (

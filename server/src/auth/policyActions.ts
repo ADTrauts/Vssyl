@@ -33,6 +33,12 @@ export const POLICY_ACTIONS = {
   VLINK_ENTITY_LINK: 'vlink:entity:link',
   VLINK_ENTITY_UNLINK: 'vlink:entity:unlink',
   VLINK_OWNERSHIP_TRANSFER: 'vlink:ownership:transfer',
+  TASK_CREATE: 'task:create',
+  TASK_UPDATE: 'task:update',
+  TASK_DELETE: 'task:delete',
+  NOTE_CREATE: 'note:create',
+  NOTE_UPDATE: 'note:update',
+  NOTE_DELETE: 'note:delete',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

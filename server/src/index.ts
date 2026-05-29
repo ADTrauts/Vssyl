@@ -62,14 +62,12 @@ import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService, getChatSocketService } from './services/chatSocketService';
 import { registerDomainEventSubscribers } from './events/registerDomainEventSubscribers';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
+import { registerGlobalTrashHandlers } from './startup/registerGlobalTrashHandlers';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
 import { seedNotesModuleOnStartup } from './startup/seedNotesModule';
 import { seedSchedulingModuleOnStartup } from './startup/seedSchedulingModule';
-import cron from 'node-cron';
-import { dispatchDueReminders } from './services/reminderService';
-import { AIQueryService } from './services/aiQueryService';
-import { OverageBillingService } from './services/overageBillingService';
+import { registerPlatformCronJobs } from './jobs/platformCronJobs';
 import type { JwtPayload } from 'jsonwebtoken';
 import userRouter from './routes/user';
 import memberRouter from './routes/member';
@@ -146,6 +144,7 @@ import { buildExpressErrorResponse } from './lib/expressErrorHandlerResponse';
 
 
 const app: express.Application = express();
+registerGlobalTrashHandlers();
 const port = process.env.PORT || 5000;
 /** Avoid per-request debug logging in production (scheduling troubleshooting middleware). */
 const isDevRuntime = process.env.NODE_ENV !== 'production';
@@ -1239,203 +1238,23 @@ async function handleServerListening(): Promise<void> {
     }).catch(() => undefined);
   }
 
-  // Run reminder dispatcher every minute (MVP)
   try {
-    cron.schedule('* * * * *', async () => {
-      await dispatchDueReminders(5);
-    });
+    registerGlobalTrashHandlers();
   } catch (e: unknown) {
     const err = e as Error;
-    void logger.error('Failed to schedule reminder dispatcher', {
-      operation: 'cron_reminders',
+    void logger.error('Global Trash handler registration failed (non-critical)', {
+      operation: 'startup_global_trash_handlers',
       error: { message: err.message, stack: err.stack },
     }).catch(() => undefined);
   }
 
-  // Expire stale ambient AI suggestions hourly (Phase 5B)
+  // Platform cron jobs (Batch 4 — registerPlatformJob)
   try {
-    const { ambientSuggestionService } = await import('./services/ambientSuggestionService.js');
-    cron.schedule('0 * * * *', async () => {
-      try {
-        const count = await ambientSuggestionService.expireStaleSuggestions();
-        if (count > 0) {
-          void logger.info('Ambient suggestion expiry job completed', {
-            operation: 'cron_ambient_suggestion_expiry',
-            count,
-          }).catch(() => undefined);
-        }
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        void logger.error('Ambient suggestion expiry job failed', {
-          operation: 'cron_ambient_suggestion_expiry',
-          error: { message: err.message, stack: err.stack },
-        }).catch(() => undefined);
-      }
-    });
-    void logger.info('Ambient suggestion expiry job scheduled', {
-      operation: 'cron_ambient_suggestion_expiry',
-      schedule: '0 * * * *',
-    }).catch(() => undefined);
-  } catch (e: unknown) {
-    const err = e instanceof Error ? e : new Error(String(e));
-    void logger.error('Failed to schedule ambient suggestion expiry job', {
-      operation: 'cron_ambient_suggestion_expiry',
-      error: { message: err.message, stack: err.stack },
-    }).catch(() => undefined);
-  }
-
-  // Reset AI query allowances on the 1st of each month at midnight
-  try {
-    cron.schedule('0 0 1 * *', async () => {
-      void logger.info('Running monthly AI query allowance reset', { operation: 'cron_ai_allowance_reset' }).catch(
-        () => undefined
-      );
-      try {
-        await AIQueryService.resetMonthlyAllowance();
-        void logger.info('Monthly AI query allowance reset completed', {
-          operation: 'cron_ai_allowance_reset',
-        }).catch(() => undefined);
-      } catch (error: unknown) {
-        const err = error as Error;
-        void logger.error('Error resetting AI query allowances', {
-          operation: 'cron_ai_allowance_reset',
-          error: { message: err.message, stack: err.stack },
-        }).catch(() => undefined);
-      }
-    }, {
-      timezone: 'America/New_York'
-    });
-    void logger.info('Monthly AI query allowance reset job scheduled', {
-      operation: 'cron_ai_allowance_reset',
-      schedule: '0 0 1 * * America/New_York',
-    }).catch(() => undefined);
+    await registerPlatformCronJobs();
   } catch (e: unknown) {
     const err = e as Error;
-    void logger.error('Failed to schedule AI query allowance reset job', {
-      operation: 'cron_ai_allowance_reset',
-      error: { message: err.message, stack: err.stack },
-    }).catch(() => undefined);
-  }
-
-  // Update developer small business eligibility on the 1st of each month at 1am
-  try {
-    const { RevenueSplitService } = await import('./services/revenueSplitService');
-    cron.schedule('0 1 1 * *', async () => {
-      void logger.info('Running monthly developer lifetime revenue calculation', {
-        operation: 'cron_developer_revenue',
-      }).catch(() => undefined);
-      try {
-        const result = await RevenueSplitService.updateAllModuleSmallBusinessEligibility();
-        void logger.info('Developer lifetime revenue calculation completed', {
-          operation: 'cron_developer_revenue',
-          updated: result.updated,
-          errors: result.errors,
-        }).catch(() => undefined);
-      } catch (error: unknown) {
-        const err = error as Error;
-        void logger.error('Error calculating developer lifetime revenue', {
-          operation: 'cron_developer_revenue',
-          error: { message: err.message, stack: err.stack },
-        }).catch(() => undefined);
-      }
-    }, {
-      timezone: 'America/New_York'
-    });
-    void logger.info('Monthly developer lifetime revenue job scheduled', {
-      operation: 'cron_developer_revenue',
-      schedule: '0 1 1 * * America/New_York',
-    }).catch(() => undefined);
-  } catch (e: unknown) {
-    const err = e as Error;
-    void logger.error('Failed to schedule developer lifetime revenue calculation job', {
-      operation: 'cron_developer_revenue',
-      error: { message: err.message, stack: err.stack },
-    }).catch(() => undefined);
-  }
-
-  // Process overage billing daily at 3am
-  try {
-    cron.schedule('0 3 * * *', async () => {
-      void logger.info('Running daily overage billing processing', { operation: 'cron_overage_billing' }).catch(
-        () => undefined
-      );
-      try {
-        const result = await OverageBillingService.processAllOverageBilling();
-        if (result.processed > 0) {
-          void logger.info('Overage billing processed', {
-            operation: 'cron_overage_billing',
-            processed: result.processed,
-            successful: result.successful,
-            failed: result.failed,
-            totalOverage: result.totalOverage,
-          }).catch(() => undefined);
-        } else {
-          void logger.info('No subscriptions with ended billing periods (overage)', {
-            operation: 'cron_overage_billing',
-          }).catch(() => undefined);
-        }
-      } catch (error: unknown) {
-        const err = error as Error;
-        void logger.error('Error processing overage billing', {
-          operation: 'cron_overage_billing',
-          error: { message: err.message, stack: err.stack },
-        }).catch(() => undefined);
-      }
-    }, {
-      timezone: 'America/New_York'
-    });
-    void logger.info('Daily overage billing job scheduled', {
-      operation: 'cron_overage_billing',
-      schedule: '0 3 * * * America/New_York',
-    }).catch(() => undefined);
-  } catch (e: unknown) {
-    const err = e as Error;
-    void logger.error('Failed to schedule overage billing job', {
-      operation: 'cron_overage_billing',
-      error: { message: err.message, stack: err.stack },
-    }).catch(() => undefined);
-  }
-
-  // Sync AI provider usage/expense data daily at 4am
-  try {
-    const { ProviderSyncService } = await import('./services/aiProviderServices/providerSyncService');
-    const providerSyncService = new ProviderSyncService();
-
-    cron.schedule('0 4 * * *', async () => {
-      void logger.info('Running daily AI provider data sync', { operation: 'cron_ai_provider_sync' }).catch(
-        () => undefined
-      );
-      try {
-        await providerSyncService.syncProviderData();
-        void logger.info('AI provider data sync completed', { operation: 'cron_ai_provider_sync' }).catch(
-          () => undefined
-        );
-      } catch (error: unknown) {
-        const err = error as Error;
-        void logger.error('Error syncing AI provider data', {
-          operation: 'cron_ai_provider_sync',
-          error: { message: err.message, stack: err.stack },
-        }).catch(() => undefined);
-      }
-    }, {
-      timezone: 'America/New_York'
-    });
-    void logger.info('Daily AI provider data sync job scheduled', {
-      operation: 'cron_ai_provider_sync',
-      schedule: '0 4 * * * America/New_York',
-    }).catch(() => undefined);
-
-    providerSyncService.syncProviderData().catch((error: unknown) => {
-      const err = error as Error;
-      void logger.warn('Initial provider sync failed (non-critical)', {
-        operation: 'ai_provider_sync_initial',
-        error: { message: err.message, stack: err.stack },
-      }).catch(() => undefined);
-    });
-  } catch (e: unknown) {
-    const err = e as Error;
-    void logger.error('Failed to schedule AI provider sync job', {
-      operation: 'cron_ai_provider_sync',
+    void logger.error('Failed to register platform cron jobs', {
+      operation: 'platform_cron_jobs_register',
       error: { message: err.message, stack: err.stack },
     }).catch(() => undefined);
   }

@@ -6470,7 +6470,9 @@ model Note {
   // Sharing
   shares          NoteShare[]
 
-  // Soft delete
+  // Soft delete (Global Trash — aligns with platform §18)
+  trashedAt       DateTime?
+  /** @deprecated use trashedAt — retained for migration reads only */
   deletedAt       DateTime?
 
   createdAt       DateTime @default(now())
@@ -6479,6 +6481,7 @@ model Note {
   @@index([dashboardId, businessId])
   @@index([createdById])
   @@index([deletedAt])
+  @@index([trashedAt])
   @@index([pinned])
   @@index([folderId])
   @@map("notes")

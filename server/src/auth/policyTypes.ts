@@ -15,7 +15,10 @@ export type PolicyResourceType =
   | 'business'
   | 'household'
   | 'calendar_event'
-  | 'module';
+  | 'module'
+  | 'task'
+  | 'note'
+  | 'place';
 
 export interface PolicyScope {
   dashboardId?: string;

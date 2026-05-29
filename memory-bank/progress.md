@@ -1,5 +1,68 @@
 # Block-on-Block Platform - Progress
 
+## Vssyl Platform Standards and Module Contract (May 2026) ✅
+
+**Status:** **DOCUMENTATION + CORE MIGRATION COMPLETE** — Constitutional framework published; Batches 1–4 implemented in code (2026-05-28).
+
+| Deliverable | Location |
+|-------------|----------|
+| Constitutional doc (§0–30 + appendices) | [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) |
+| Extracts | [GLOBAL_TRASH](../docs/architecture/GLOBAL_TRASH.md), [V_LINK](../docs/architecture/V_LINK.md), [PLATFORM_ENTITY_MODEL](../docs/architecture/PLATFORM_ENTITY_MODEL.md), [PLATFORM_JOB_REGISTRY](../docs/architecture/PLATFORM_JOB_REGISTRY.md) |
+| Legacy deprecation tracker | [LEGACY_CLEANUP.md](../docs/architecture/LEGACY_CLEANUP.md) |
+| Agent rule | `.cursor/rules/platform-standards.mdc` |
+| Domain event adoption matrix | [DOMAIN_EVENTS.md](../docs/architecture/DOMAIN_EVENTS.md) |
+
+### Batch 1 — Foundation ✅
+
+| Item | Implementation |
+|------|----------------|
+| Manifest reconcile on startup | `server/src/startup/builtInModuleManifests.ts` + `ensureModuleExists` merge |
+| Built-in provisioning list | `server/src/constants/builtInModuleIds.ts` → `moduleProvisionController` |
+| Business workspace gaps | `todo`, `place` cases in `BusinessWorkspaceContent.tsx` |
+| Runtime registry | `place` + `todo` business routes in `coreModuleRegistry.ts` |
+| AI executor id | `ActionExecutor` maps `todo` and `tasks` |
+| Testing docs | `memory-bank/testingStrategy.md` → Vitest + Playwright |
+| Legacy scripts | `@deprecated` on duplicate registration scripts; `LEGACY_CLEANUP.md` |
+
+### Batch 2 — Contract enforcement (partial) ✅
+
+| Item | Implementation |
+|------|----------------|
+| Notes Global Trash | `trashedAt` on Note; migration `20260628120000_notes_trashed_at`; controller uses `trashedAt` |
+| Module activity | todo + notes create/delete → `emitModuleActivityEvent` |
+| PE dual hooks | `moduleMutationPolicyDual.ts` + `TASK_*` / `NOTE_*` policy actions |
+| Notification subscriber | `notificationDomainEventSubscriber.ts` — file.shared, business.member.added, module.installed |
+| Manifest capabilities | Reconciled in startup manifest merge |
+
+**Remaining Batch 2:** `toolExecutor` / `ActionExecutor` → canonical services; `todoService` / `notesService` extraction; hr/scheduling events; WorkspaceLanding consolidation.
+
+### Batch 3 — Integration ✅
+
+| Item | Implementation |
+|------|----------------|
+| V_Link resolvers | chat conversation, task/todo, note in `vlinkEntityResolverService.ts` |
+| Org-chart → PE bridge | `server/src/auth/orgChartPolicyAdapter.ts` |
+| Icon/name registry | `BrandedWorkDashboard` uses `MODULE_ICONS`; `place` icon added |
+
+**Remaining Batch 3:** optional `drive` → `file-hub` rename.
+
+### Batch 4 — Platform infrastructure ✅
+
+| Item | Implementation |
+|------|----------------|
+| Job registry | `server/src/jobs/platformJobRegistry.ts` — `registerPlatformJob()` |
+| Cron consolidation | `platformCronJobs.ts`; `index.ts` delegates; `cleanupService` deduped |
+| Workflow router stub | `server/src/workflows/domainEventWorkflowRouter.ts` |
+| Search index stub | `searchIndexDomainEventSubscriber.ts` |
+
+**Remaining Batch 4:** retire/wrap `WorkflowAutomationService`.
+
+**Deploy:** `pnpm prisma:migrate:deploy` for Notes `trashedAt` migration.
+
+**Cross-ref:** [`memory-bank/activeContext.md`](activeContext.md) (current focus); [`memory-bank/moduleSpecs.md`](moduleSpecs.md) (certification checklist unchanged authority).
+
+---
+
 ## Context Provider Contract — Phase A / B / B.5 (May 2026) ✅
 
 **Status:** **COMPLETE** — Intent-aware module context orchestration + grounding bridge + metadata-only orchestration snapshots.

@@ -15,6 +15,9 @@ import {
   assertUserOwnedTaskDashboardContext,
   assertUserOwnedDashboardBusinessAlignment,
 } from '../services/taskDashboardBinding';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { evaluateModuleMutationPolicyDual } from '../auth/moduleMutationPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 /**
  * Helper function to automatically create or update calendar event for a task
@@ -408,6 +411,19 @@ export async function createTask(req: Request, res: Response): Promise<void> {
       throw e;
     }
 
+    const policyBlock = await evaluateModuleMutationPolicyDual({
+      userId,
+      moduleId: 'todo',
+      action: POLICY_ACTIONS.TASK_CREATE,
+      resourceType: 'task',
+      resourceId: 'new',
+      scope: { dashboardId, businessId: businessId || undefined, householdId: householdId || undefined },
+    });
+    if (policyBlock.blocked) {
+      res.status(403).json({ error: 'Not authorized to create task' });
+      return;
+    }
+
     const task = await prisma.task.create({
       data: {
         title,
@@ -453,6 +469,18 @@ export async function createTask(req: Request, res: Response): Promise<void> {
       operation: 'todo_create_task',
       taskId: task.id,
       userId,
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'todo',
+      action: 'create',
+      targetType: 'task',
+      targetId: task.id,
+      dashboardId: task.dashboardId,
+      businessId: task.businessId,
+      householdId: task.householdId,
+      metadata: { title: task.title, status: task.status },
     });
 
     // Automatically create calendar event if task has a due date
@@ -896,10 +924,39 @@ export async function deleteTask(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const policyBlock = await evaluateModuleMutationPolicyDual({
+      userId,
+      moduleId: 'todo',
+      action: POLICY_ACTIONS.TASK_DELETE,
+      resourceType: 'task',
+      resourceId: id,
+      scope: {
+        dashboardId: task.dashboardId,
+        businessId: task.businessId ?? undefined,
+        householdId: task.householdId ?? undefined,
+      },
+    });
+    if (policyBlock.blocked) {
+      res.status(403).json({ error: 'Not authorized to delete task' });
+      return;
+    }
+
     // Soft delete
     await prisma.task.update({
       where: { id },
       data: { trashedAt: new Date() },
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'todo',
+      action: 'delete',
+      targetType: 'task',
+      targetId: id,
+      dashboardId: task.dashboardId,
+      businessId: task.businessId,
+      householdId: task.householdId,
+      metadata: { softDelete: true },
     });
 
     await logger.info('Task deleted', {

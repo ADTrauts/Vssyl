@@ -72,6 +72,57 @@ async function userCanReadCalendarEvent(userId: string, eventId: string): Promis
   return { allowed: true, title: event.title };
 }
 
+async function userCanReadTask(userId: string, taskId: string): Promise<{ allowed: boolean; title?: string }> {
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      trashedAt: null,
+      OR: [{ createdById: userId }, { assignedToId: userId }],
+    },
+    select: { id: true, title: true },
+  });
+  if (!task) {
+    return { allowed: false };
+  }
+  return { allowed: true, title: task.title };
+}
+
+async function userCanReadNote(userId: string, noteId: string): Promise<{ allowed: boolean; title?: string }> {
+  const note = await prisma.note.findFirst({
+    where: {
+      id: noteId,
+      trashedAt: null,
+      OR: [
+        { createdById: userId },
+        { shares: { some: { sharedWithUserId: userId } } },
+      ],
+    },
+    select: { id: true, title: true },
+  });
+  if (!note) {
+    return { allowed: false };
+  }
+  return { allowed: true, title: note.title };
+}
+
+async function userCanReadChatConversation(
+  userId: string,
+  conversationId: string
+): Promise<{ allowed: boolean; title?: string }> {
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      id: conversationId,
+      trashedAt: null,
+      participants: { some: { userId, isActive: true } },
+    },
+    select: { id: true, name: true },
+  });
+  if (!conversation) {
+    return { allowed: false };
+  }
+  return { allowed: true, title: conversation.name ?? 'Conversation' };
+}
+
 export async function resolveEntityAccess(
   userId: string,
   entityType: VLinkEntityType,
@@ -120,6 +171,28 @@ export async function resolveEntityAccess(
       }
       return { access: 'full', title: result.title, url: `/calendar?event=${entityId}` };
     }
+    case VLinkEntityType.TASK:
+    case VLinkEntityType.TODO: {
+      const result = await userCanReadTask(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted' };
+      }
+      return { access: 'full', title: result.title, url: `/todo?task=${entityId}` };
+    }
+    case VLinkEntityType.NOTE: {
+      const result = await userCanReadNote(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted' };
+      }
+      return { access: 'full', title: result.title, url: `/notes?note=${entityId}` };
+    }
+    case VLinkEntityType.CHAT_CONVERSATION: {
+      const result = await userCanReadChatConversation(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted' };
+      }
+      return { access: 'full', title: result.title, url: `/chat?conversation=${entityId}` };
+    }
     default:
       return { access: 'restricted' };
   }
@@ -137,6 +210,13 @@ export async function userCanLinkEntity(
       return userCanReadFolder(userId, entityId);
     case VLinkEntityType.CALENDAR_EVENT:
       return (await userCanReadCalendarEvent(userId, entityId)).allowed;
+    case VLinkEntityType.TASK:
+    case VLinkEntityType.TODO:
+      return (await userCanReadTask(userId, entityId)).allowed;
+    case VLinkEntityType.NOTE:
+      return (await userCanReadNote(userId, entityId)).allowed;
+    case VLinkEntityType.CHAT_CONVERSATION:
+      return (await userCanReadChatConversation(userId, entityId)).allowed;
     default:
       return false;
   }
@@ -157,6 +237,8 @@ export function entityTypeLabel(entityType: VLinkEntityType): string {
     case VLinkEntityType.TASK:
     case VLinkEntityType.TODO:
       return 'Task';
+    case VLinkEntityType.NOTE:
+      return 'Note';
     default:
       return 'Item';
   }

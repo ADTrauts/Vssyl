@@ -17,6 +17,7 @@ import {
   emitModuleEnabledEvent,
   emitModuleDisabledEvent,
 } from '../../events/domainEventEmitters';
+import { BUILT_IN_MODULE_IDS, isBuiltInModuleId } from '../../constants/builtInModuleIds';
 
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
@@ -98,7 +99,7 @@ export const getInstalledModules = async (req: Request, res: Response) => {
     });
 
     // Get built-in modules (always available for personal users)
-    const builtInModuleIds = ['drive', 'chat', 'calendar'];
+    const builtInModuleIds = [...BUILT_IN_MODULE_IDS];
     const builtInModules = await prisma.module.findMany({
       where: {
         id: { in: builtInModuleIds },
@@ -307,8 +308,7 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const modulesWithStatus = modules.map((module: any) => {
       // Check if this is a built-in module for personal scope
-      const builtInModuleIds = ['drive', 'chat', 'calendar'];
-      const isBuiltInModule = builtInModuleIds.includes(module.id);
+      const isBuiltInModule = isBuiltInModuleId(module.id);
       
       // Determine status based on scope and installation
       let status: 'installed' | 'available';

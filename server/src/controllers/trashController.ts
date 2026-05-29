@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { getGlobalTrashModuleHandler } from '../services/globalTrashModuleRegistry';
+import { DriveDeleteError } from '../services/driveDeleteService';
 
 function hasUserId(user: unknown): user is { id: string } | { sub: string } {
   return typeof user === 'object' && user !== null && 
@@ -15,6 +17,61 @@ interface TrashItemRequest {
   moduleId: string;
   moduleName: string;
   metadata?: Record<string, unknown>;
+}
+
+function resolveTrashUserId(req: Request): string {
+  const user = req.user as { id?: string; sub?: string };
+  return user.id || user.sub || '';
+}
+
+function parseDriveTrashHint(req: Request): { moduleId?: string; type?: string } {
+  const body = req.body as { moduleId?: string; type?: string } | undefined;
+  const moduleId =
+    typeof req.query.moduleId === 'string' ? req.query.moduleId : body?.moduleId;
+  const type = typeof req.query.type === 'string' ? req.query.type : body?.type;
+  return { moduleId, type };
+}
+
+async function tryDriveRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('drive');
+  if (!handler) return false;
+
+  if (moduleId === 'drive' && (type === 'file' || type === 'folder')) {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'file', id })) return true;
+    if (await handler.restore({ userId, type: 'folder', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryDrivePermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('drive');
+  if (!handler) return false;
+
+  if (moduleId === 'drive' && (type === 'file' || type === 'folder')) {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'file', id })) return true;
+    if (await handler.permanentDelete({ userId, type: 'folder', id })) return true;
+  }
+
+  return false;
 }
 
 export async function listTrashedItems(req: Request, res: Response) {
@@ -356,7 +413,13 @@ export async function listTrashedItems(req: Request, res: Response) {
     // Sort by trashed date (most recent first)
     items.sort((a, b) => new Date(b.trashedAt!).getTime() - new Date(a.trashedAt!).getTime());
 
-    res.json({ items });
+    const moduleFilter =
+      typeof req.query.moduleId === 'string' ? req.query.moduleId : undefined;
+    const filteredItems = moduleFilter
+      ? items.filter((item) => item.moduleId === moduleFilter)
+      : items;
+
+    res.json({ items: filteredItems });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : new Error(String(error));
     const userId = (req.user as { id?: string; sub?: string } | undefined)?.id ?? (req.user as { sub?: string } | undefined)?.sub;
@@ -385,18 +448,29 @@ export async function trashItem(req: Request, res: Response) {
 
     switch (type) {
       case 'file':
-        result = await prisma.file.updateMany({
-          where: { id, userId, trashedAt: null },
-          data: { trashedAt: new Date() },
-        });
-        break;
-
-      case 'folder':
-        result = await prisma.folder.updateMany({
-          where: { id, userId, trashedAt: null },
-          data: { trashedAt: new Date() },
-        });
-        break;
+      case 'folder': {
+        if (moduleId !== 'drive' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for file/folder trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('drive');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Drive trash handler not registered' });
+          }
+          await handler.softTrash({ userId, type, id, metadata });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (error instanceof DriveDeleteError) {
+            if (error.code === 'forbidden') {
+              return res.status(403).json({ message: 'Forbidden' });
+            }
+            if (error.code === 'not_found') {
+              return res.status(404).json({ message: 'Item not found or already trashed' });
+            }
+          }
+          throw error;
+        }
+      }
 
       case 'conversation':
         // For conversations, we need to check if user is a participant
@@ -618,37 +692,28 @@ export async function restoreItem(req: Request, res: Response) {
   }
 
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = resolveTrashUserId(req);
     const { id } = req.params;
+    const { moduleId, type } = parseDriveTrashHint(req);
 
-    // Try to restore from each table
-    let result = await prisma.file.updateMany({
-      where: { id, userId, trashedAt: { not: null } },
+    if (await tryDriveRestore(userId, id, moduleId, type)) {
+      return res.json({ success: true, message: 'Item restored' });
+    }
+
+    // Try to restore from each table (non-drive modules)
+    let result = await prisma.conversation.updateMany({
+      where: {
+        id,
+        participants: {
+          some: {
+            userId: userId,
+            isActive: true,
+          },
+        },
+        trashedAt: { not: null },
+      },
       data: { trashedAt: null },
     });
-
-    if (result.count === 0) {
-      result = await prisma.folder.updateMany({
-        where: { id, userId, trashedAt: { not: null } },
-        data: { trashedAt: null },
-      });
-    }
-
-    if (result.count === 0) {
-      result = await prisma.conversation.updateMany({
-        where: { 
-          id, 
-          participants: {
-            some: {
-              userId: userId,
-              isActive: true
-            }
-          },
-          trashedAt: { not: null } 
-        },
-        data: { trashedAt: null },
-      });
-    }
 
     if (result.count === 0) {
       result = await prisma.dashboard.updateMany({
@@ -733,34 +798,27 @@ export async function deleteItem(req: Request, res: Response) {
   }
 
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = resolveTrashUserId(req);
     const { id } = req.params;
+    const { moduleId, type } = parseDriveTrashHint(req);
 
-    // Try to delete from each table
-    let result = await prisma.file.deleteMany({
-      where: { id, userId, trashedAt: { not: null } },
-    });
-
-    if (result.count === 0) {
-      result = await prisma.folder.deleteMany({
-        where: { id, userId, trashedAt: { not: null } },
-      });
+    if (await tryDrivePermanentDelete(userId, id, moduleId, type)) {
+      return res.json({ success: true, message: 'Item permanently deleted' });
     }
 
-    if (result.count === 0) {
-      result = await prisma.conversation.deleteMany({
-        where: { 
-          id, 
-          participants: {
-            some: {
-              userId: userId,
-              isActive: true
-            }
+    // Try to delete from each table (non-drive modules)
+    let result = await prisma.conversation.deleteMany({
+      where: {
+        id,
+        participants: {
+          some: {
+            userId: userId,
+            isActive: true,
           },
-          trashedAt: { not: null } 
         },
-      });
-    }
+        trashedAt: { not: null },
+      },
+    });
 
     if (result.count === 0) {
       result = await prisma.dashboard.deleteMany({
@@ -840,16 +898,30 @@ export async function emptyTrash(req: Request, res: Response) {
   }
 
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    const userId = resolveTrashUserId(req);
+    const moduleId =
+      typeof req.query.moduleId === 'string' ? req.query.moduleId : undefined;
 
-    // Delete all trashed items from all tables
+    if (moduleId === 'drive') {
+      const handler = getGlobalTrashModuleHandler('drive');
+      if (!handler) {
+        return res.status(500).json({ message: 'Drive trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'File Hub trash emptied',
+        deletedCount,
+      });
+    }
+
+    // Delete all trashed items from all tables (global empty includes drive via handler path below for files/folders)
+    const driveHandler = getGlobalTrashModuleHandler('drive');
+    if (driveHandler) {
+      await driveHandler.emptyModuleTrash({ userId });
+    }
+
     await Promise.all([
-      prisma.file.deleteMany({
-        where: { userId, trashedAt: { not: null } },
-      }),
-      prisma.folder.deleteMany({
-        where: { userId, trashedAt: { not: null } },
-      }),
       prisma.conversation.deleteMany({
         where: { 
           participants: {

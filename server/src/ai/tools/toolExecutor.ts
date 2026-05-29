@@ -5,6 +5,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
+import { grantFileSharePermission, DriveShareError } from '../../services/driveFileShareService';
 import type { AIToolName } from './toolDefinitions';
 
 export interface ToolExecutionContext {
@@ -61,22 +62,31 @@ export async function executeTool(
           result = { success: false, message: `No user found with email "${targetUserEmail}".` };
           break;
         }
-        const file = await prisma.file.findFirst({
-          where: { id: fileId, userId, trashedAt: null },
-        });
-        if (!file) {
-          result = { success: false, message: 'File not found or you do not own it.' };
-          break;
+        try {
+          const { file } = await grantFileSharePermission({
+            ownerUserId: userId,
+            fileId,
+            targetUserId: targetUser.id,
+            canRead: true,
+            canWrite,
+          });
+          result = {
+            success: true,
+            message: `Shared "${file.name}" with ${targetUserEmail} (${canWrite ? 'read and write' : 'read only'}).`,
+          };
+        } catch (shareError: unknown) {
+          if (shareError instanceof DriveShareError) {
+            result = {
+              success: false,
+              message:
+                shareError.statusCode === 403
+                  ? 'File not found or you do not have permission to share it.'
+                  : shareError.message,
+            };
+          } else {
+            throw shareError;
+          }
         }
-        await prisma.filePermission.upsert({
-          where: { fileId_userId: { fileId, userId: targetUser.id } },
-          update: { canRead: true, canWrite },
-          create: { fileId, userId: targetUser.id, canRead: true, canWrite },
-        });
-        result = {
-          success: true,
-          message: `Shared "${file.name}" with ${targetUserEmail} (${canWrite ? 'read and write' : 'read only'}).`,
-        };
         break;
       }
       case 'create_todo': {

@@ -8,6 +8,8 @@ The AI Context System is a **mandatory component** of every module in the Vssyl 
 
 **Canonical provider API contract (auth, response shape, cache, certification):** [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md)
 
+**Internal AI system textbook (architecture narrative):** [`docs/architecture/AI_SYSTEM_TEXTBOOK.md`](../docs/architecture/AI_SYSTEM_TEXTBOOK.md)
+
 **Partner SDK boundaries (marketplace can/cannot):** [`docs/guides/MODULE_AI_SDK_BOUNDARIES.md`](../docs/guides/MODULE_AI_SDK_BOUNDARIES.md)
 
 > 📖 **Architecture deep-dive (archived copy, April 2026):** [`docs/archive/guides-merged-2026/AI_CONTEXT_SYSTEM_ARCHITECTURE.md`](../../docs/archive/guides-merged-2026/AI_CONTEXT_SYSTEM_ARCHITECTURE.md)

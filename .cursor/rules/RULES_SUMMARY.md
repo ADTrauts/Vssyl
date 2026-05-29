@@ -25,11 +25,13 @@ Quick index; each `.mdc` file is the source of truth for its topic. **Placement 
 | **`module-development.mdc`** | Hub, AI, trash, manifests | `docs/guides/MODULE_DEVELOPMENT_GUIDE.md` |
 | **`third-party-modules.mdc`** | Marketplace modules | `docs/guides/THIRD_PARTY_MODULE_RULEBOOK.md` |
 | **`release-safety-gates.mdc`** | CI, deploy, health | — |
+| **`platform-standards.mdc`** | Runtime Kernel, tiers, read/write paths, drift | `docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md` |
 
 ## Architecture docs (`docs/architecture/`)
 
 | Doc | Use when |
 |-----|----------|
+| **`VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`** | Platform architecture, module contract, governance, migration |
 | `POLICY_ENGINE.md` | Adding or migrating authorization |
 | `DOMAIN_EVENTS.md` | Choosing emitters, subscribers, sockets |
 | `WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md` | Runtime contracts, module/widget metadata |
@@ -61,7 +63,7 @@ Index: `docs/architecture/README.md`
 | Frontend UI | `ui-standards.mdc`, `frontend-proxy-auth-consistency.mdc`, `runtime-state-boundaries.mdc` |
 | Dashboard / business workspace runtime | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
 | Schema / DB | `database-prisma.mdc` |
-| New module (first-party) | `module-interoperability.mdc`, `module-development.mdc` |
+| New module (first-party) | `module-interoperability.mdc`, `module-development.mdc`, **`platform-standards.mdc`** |
 | Marketplace / partner | `third-party-modules.mdc`, rulebook in `docs/guides/` |
 | Deploy / CI | `release-safety-gates.mdc` |
 

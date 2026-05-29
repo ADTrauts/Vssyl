@@ -17,6 +17,9 @@ function logNotesError(message: string, operation: string, err: unknown): void {
 }
 import { Prisma } from '@prisma/client';
 import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { evaluateModuleMutationPolicyDual } from '../auth/moduleMutationPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 /**
  * GET /api/notes
@@ -40,7 +43,7 @@ export async function getNotes(req: Request, res: Response): Promise<void> {
     // NoteWhereInput may lag in generated types (shares, folderId)
     const where: Record<string, unknown> = {
       dashboardId,
-      deletedAt: null,
+      trashedAt: null,
     };
 
     if (String(sharedWithMe) === 'true') {
@@ -131,7 +134,7 @@ export async function getNoteById(req: Request, res: Response): Promise<void> {
     const note = await prisma.note.findFirst({
       where: {
         id,
-        deletedAt: null,
+        trashedAt: null,
         OR: [
           { createdById: userId },
           { shares: { some: { sharedWithUserId: userId } } },
@@ -237,6 +240,19 @@ export async function createNote(req: Request, res: Response): Promise<void> {
       }
     }
 
+    const policyBlock = await evaluateModuleMutationPolicyDual({
+      userId,
+      moduleId: 'notes',
+      action: POLICY_ACTIONS.NOTE_CREATE,
+      resourceType: 'note',
+      resourceId: 'new',
+      scope: { dashboardId, businessId: normalizedBusinessId ?? undefined },
+    });
+    if (policyBlock.blocked) {
+      res.status(403).json({ error: 'Not authorized to create note' });
+      return;
+    }
+
     const note = await prisma.note.create({
       data: {
         title: title.trim(),
@@ -249,6 +265,17 @@ export async function createNote(req: Request, res: Response): Promise<void> {
         createdById: userId,
         updatedById: userId,
       } as unknown as Prisma.NoteCreateInput,
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'notes',
+      action: 'create',
+      targetType: 'note',
+      targetId: note.id,
+      dashboardId: note.dashboardId,
+      businessId: note.businessId,
+      metadata: { title: note.title },
     });
 
     res.status(201).json(note);
@@ -282,7 +309,7 @@ export async function updateNote(req: Request, res: Response): Promise<void> {
     const existing = await prisma.note.findFirst({
       where: {
         id,
-        deletedAt: null,
+        trashedAt: null,
         OR: [
           { createdById: userId },
           { shares: { some: { sharedWithUserId: userId, role: 'editor' } } },
@@ -350,7 +377,7 @@ export async function deleteNote(req: Request, res: Response): Promise<void> {
       where: {
         id,
         createdById: userId,
-        deletedAt: null,
+        trashedAt: null,
       },
     });
 
@@ -359,11 +386,38 @@ export async function deleteNote(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    const policyBlock = await evaluateModuleMutationPolicyDual({
+      userId,
+      moduleId: 'notes',
+      action: POLICY_ACTIONS.NOTE_DELETE,
+      resourceType: 'note',
+      resourceId: id,
+      scope: {
+        dashboardId: existing.dashboardId,
+        businessId: existing.businessId ?? undefined,
+      },
+    });
+    if (policyBlock.blocked) {
+      res.status(403).json({ error: 'Not authorized to delete note' });
+      return;
+    }
+
     await prisma.note.update({
       where: { id },
       data: {
-        deletedAt: new Date(),
+        trashedAt: new Date(),
       },
+    });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'notes',
+      action: 'delete',
+      targetType: 'note',
+      targetId: id,
+      dashboardId: existing.dashboardId,
+      businessId: existing.businessId,
+      metadata: { softDelete: true },
     });
 
     res.status(204).send();

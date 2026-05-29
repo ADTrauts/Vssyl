@@ -25,6 +25,7 @@ import { useBusinessBranding, BusinessBrandingProvider, BrandedHeader, BrandedBu
 import { getBusiness } from '../api/business';
 import { EmployeeAIAssistant } from './work/EmployeeAIAssistant';
 import { getModuleDisplayName, normalizeModuleId } from '../runtime/modules/moduleRegistry';
+import { MODULE_ICONS } from '../config/moduleIcons';
 
 interface Business {
   id: string;
@@ -127,17 +128,8 @@ export default function BrandedWorkDashboard({
   };
 
   const getModuleIcon = (module: string) => {
-    switch (module) {
-      case 'dashboard': return LayoutDashboard;
-      case 'drive': return Folder;
-      case 'chat': return MessageSquare;
-      case 'calendar': return Calendar;
-      case 'members': return Users;
-      case 'hr': return UserCheck;
-      case 'scheduling': return CalendarClock;
-      case 'admin': return Settings;
-      default: return LayoutDashboard;
-    }
+    const routeId = normalizeModuleId(module);
+    return MODULE_ICONS[routeId] ?? LayoutDashboard;
   };
 
   const getModuleName = (module: string) => {

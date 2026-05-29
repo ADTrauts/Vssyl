@@ -104,9 +104,10 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     description: 'Tasks and priorities',
     icon: 'todo',
     widgets: ['todo'],
-    routes: [],
+    routes: [businessRoute('todo', 'To-Do', 'todo')],
+    defaultRoute: 'todo',
     category: 'productivity',
-    capabilities: ['read', 'write'],
+    capabilities: ['read', 'write', 'trash', 'ai', 'businessWorkspace'],
   }),
   coreModule({
     id: 'notes',
@@ -257,6 +258,20 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'vlink',
     category: 'utility',
     capabilities: ['read', 'write', 'ai'],
+  }),
+  coreModule({
+    id: 'place',
+    name: 'Place',
+    description: 'Personal Main Street and business listings',
+    icon: 'place',
+    widgets: [],
+    routes: [
+      { moduleId: 'place', label: 'Place', routeKey: 'place', path: '/place', context: 'personal', requiredPermissions: ['view'] },
+      businessRoute('place', 'Place', 'place', '/place'),
+    ],
+    defaultRoute: 'place',
+    category: 'utility',
+    capabilities: ['read', 'write', 'ai', 'businessWorkspace'],
   }),
   coreModule({
     id: 'admin',

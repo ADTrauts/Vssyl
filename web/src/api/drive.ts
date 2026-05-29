@@ -406,7 +406,7 @@ export async function toggleFolderStarred(token: string, folderId: string): Prom
   return response.json();
 }
 
-// List trashed files
+/** @deprecated Use Global Trash GET /api/trash/items?moduleId=drive via useGlobalTrash(). */
 export async function listTrashedFiles(token: string) {
   const res = await fetch('/api/drive/files/trashed', { headers: authHeaders(token) });
   
@@ -424,7 +424,7 @@ export async function listTrashedFiles(token: string) {
   return data.files;
 }
 
-// Restore a trashed file
+/** @deprecated Use Global Trash POST /api/trash/restore/:id via useGlobalTrash().restoreItem(). */
 export async function restoreFile(token: string, id: string) {
   const res = await fetch(`/api/drive/files/${id}/restore`, { 
     method: 'POST', 
@@ -441,7 +441,7 @@ export async function restoreFile(token: string, id: string) {
   return true;
 }
 
-// Permanently delete a trashed file
+/** @deprecated Use Global Trash DELETE /api/trash/delete/:id via useGlobalTrash().deleteItem(). */
 export async function hardDeleteFile(token: string, id: string) {
   const res = await fetch(`/api/drive/files/${id}/hard-delete`, {
     method: 'DELETE',
@@ -458,7 +458,7 @@ export async function hardDeleteFile(token: string, id: string) {
   return true;
 }
 
-// List trashed folders
+/** @deprecated Use Global Trash GET /api/trash/items?moduleId=drive via useGlobalTrash(). */
 export async function listTrashedFolders(token: string) {
   const res = await fetch('/api/drive/folders/trashed', { headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to fetch trashed folders');
@@ -466,14 +466,14 @@ export async function listTrashedFolders(token: string) {
   return data.folders;
 }
 
-// Restore a trashed folder
+/** @deprecated Use Global Trash POST /api/trash/restore/:id via useGlobalTrash().restoreItem(). */
 export async function restoreFolder(token: string, id: string) {
   const res = await fetch(`/api/drive/folders/${id}/restore`, { method: 'POST', headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to restore folder');
   return true;
 }
 
-// Permanently delete a trashed folder
+/** @deprecated Use Global Trash DELETE /api/trash/delete/:id via useGlobalTrash().deleteItem(). */
 export async function hardDeleteFolder(token: string, id: string) {
   const res = await fetch(`/api/drive/folders/${id}/hard`, { method: 'DELETE', headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to permanently delete folder');

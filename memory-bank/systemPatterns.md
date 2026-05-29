@@ -18,6 +18,7 @@ Update Rules for systemPatterns.md
 -->
 
 ## Summary of Major Changes / Update History
+- **2026-05-28: Platform Standards Migration Batches 1–4** — Constitutional doc + Runtime Kernel governance; manifest reconcile; all 10 built-ins in provisioning; todo/place business workspace; Notes Global Trash (`trashedAt`); module activity + PE dual on todo/notes; V_Link resolvers (chat/task/note); `registerPlatformJob()` cron registry; notification domain-event subscriber. See **Platform Runtime Kernel & Module Contract** section and [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md).
 - **2026-05-17: Platform Hardening Phase Complete** — Policy Engine v1 + legacy dual enforcement (business, module install/uninstall, Drive); domain event taxonomy/adoption; workspace runtime mount + ref-counted `realtimeClient`; marketplace `ModuleVersion` certification validator/persistence/activation gate; CI web runtime tests. See dedicated sections below and `memory-bank/progress.md`.
 - **2025-01-22: Added Backend Performance Optimization Patterns (database connection pool scaling, composite indexes, request timeout middleware, query timeout protection, preventing 504 errors and WebSocket connection issues).**
 - **2025-01: Added To-Do Module Calendar Integration Pattern (automatic event creation, event synchronization, calendar context filtering, calendar view integration).**
@@ -47,6 +48,7 @@ Update Rules for systemPatterns.md
 - [Add future major changes here.]
 
 ## Cross-References & Modular Context Pattern
+- **Platform standards (constitutional):** [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) — Runtime Kernel, module contract, read/write paths, migration §30. Agent rule: `platform-standards.mdc`.
 - **Visual maps:** consolidated Mermaid diagrams (platform, interoperability lifecycle, module surfaces) → **[applicationMermaidDiagrams.md](./applicationMermaidDiagrams.md)**. **AI system diagrams (twin, context, pipeline, V_Link):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../docs/architecture/AI_PLATFORM_OVERVIEW.md).
 - **See [../.cursor/rules/coding-standards.mdc](../.cursor/rules/coding-standards.mdc) (index)** and split rules: `api-and-auth.mdc`, `database-prisma.mdc`, `storage-and-ai-attachments.mdc`, `ui-standards.mdc`, `typescript-quality.mdc`; quick list: [../.cursor/rules/RULES_SUMMARY.md](../.cursor/rules/RULES_SUMMARY.md).
 - See [projectbrief.md](./projectbrief.md) for project vision and requirements.
@@ -265,6 +267,51 @@ WidgetPicker / WorkspaceRuntimeProvider (WR-Q1: dashboard + business roots)
 - **Runtime state:** avoid cross-tenant leakage — `.cursor/rules/runtime-state-boundaries.mdc`
 - **Tests:** `pnpm --filter vssyl-web test` (~22) in GitHub Actions `verify` job
 
+#### **Platform Standards & Runtime Kernel** — May 2026 (Batches 1–4)
+
+Constitutional framework: [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md). Modules **extend** Tier 0 infrastructure; they do not replace it.
+
+| Tier 0 system | Canonical entry | Rule |
+|---------------|-----------------|------|
+| Identity / tenancy | JWT → `req.user`, dashboard/business/household scope | Never trust client tenant ids alone |
+| Policy Engine | `authorize()` | New privileged routes must use PE |
+| Domain events + module activity | `emitDomainEvent`, `emitModuleActivityEvent` | After successful mutation only |
+| Global Trash | `trashedAt`, `trashController` | Notes migrated 2026-05-28 |
+| V_Link | `vlinkService`, resolvers | Membership ≠ content access |
+| Storage | `storageService` | No Cloud Run local filesystem |
+| Job scheduler | `registerPlatformJob()` | No new scattered `setInterval` |
+
+**Write path:** UI/API/AI → canonical service → PE → Prisma → events → notify/realtime.  
+**Read path:** resolvers / providers / search with permission filtering.
+
+**Built-in modules (10):** `drive`, `chat`, `calendar`, `hr`, `scheduling`, `todo`, `notes`, `vlink`, `place`, `dashboard` — `BUILT_IN_MODULE_IDS`; manifest reconcile on startup (`builtInModuleManifests.ts`).
+
+**Agent rule:** `platform-standards.mdc`  
+**Status / batches:** `memory-bank/progress.md`, `memory-bank/activeContext.md`
+
+#### **Platform Runtime Kernel & Standards** — May 2026 (Batches 1–4)
+
+**Constitutional doc:** [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md)
+
+The **Runtime Kernel** (Tier 0) is protected platform infrastructure — modules **extend**, never replace: Policy Engine, domain events, Global Trash, `storageService`, V_Link, AI orchestrator, job registry, entity contracts.
+
+| Pattern | Rule |
+|---------|------|
+| **Write path** | UI/API/AI → canonical service → PE → persistence → domain events + module activity |
+| **Read path** | Resolvers / providers / search with permission filtering |
+| **Built-in modules** | `BUILT_IN_MODULE_IDS` (10 ids); manifest reconcile on startup (`builtInModuleManifests.ts`) |
+| **Provisioning** | Personal scope: all built-ins always installed — no spurious marketplace install |
+| **Background jobs** | `registerPlatformJob()` in `platformJobRegistry.ts`; crons in `platformCronJobs.ts` |
+| **Module activity** | `emitModuleActivityEvent` for feed-visible actions; domain events for platform fan-out |
+| **V_Link resolvers** | Implement in `vlinkEntityResolverService` before claiming `vlink` capability |
+| **Drift prevention** | Appendix B checklist before new Tier 0 systems |
+
+**Key paths:** `server/src/constants/builtInModuleIds.ts`, `server/src/startup/builtInModuleManifests.ts`, `server/src/jobs/`, `server/src/auth/moduleMutationPolicyDual.ts`, `server/src/auth/orgChartPolicyAdapter.ts`.
+
+**Agent rule:** `platform-standards.mdc`. **Migration status:** `memory-bank/progress.md` § Platform Standards.
+
+**Deferred:** full `todoService`/`notesService` extraction; `toolExecutor` canonical routing; hr/scheduling events; `WorkflowAutomationService` wrap.
+
 #### **Policy Engine (v1)** — May 2026 hardening
 
 Centralized authorization in `server/src/auth/` (re-export `server/src/services/policyEngine.ts`). **Fail closed** outside v1 action list. **Always after JWT.**
@@ -275,24 +322,31 @@ Centralized authorization in `server/src/auth/` (re-export `server/src/services/
 | Module | `module:install`, `module:uninstall` | `moduleInstallPolicyDual`, `moduleUninstallPolicyDual` | `moduleProvisionController` |
 | Business members | `business:member.*` | `businessMemberPolicyDual` | `businessController`, `memberController` |
 | Business profile | `business:update` | `businessUpdatePolicyDual` | `businessController` (update, logo) |
+| Todo / Notes (partial) | `task:create/update/delete`, `note:create/update/delete` | `moduleMutationPolicyDual.ts` | `todoController`, `notesController` (create/delete) |
 | Read (partial) | `dashboard:read`, `file:read` (folder) | — | tests; `listFolderPermissions` uses `authorize` |
 
 **Dual enforcement pattern:** legacy permission check **first** → `evaluate*PolicyDual` → block only on `INSUFFICIENT_ROLE`, `TENANT_MISMATCH`, `NOT_OWNER` (share). `delegate_not_found` does not block (handler owns 404). Log mismatches: `operation: policy_legacy_dual_enforce`.
 
+**Module mutation dual (Batch 2):** `moduleMutationPolicyDual.ts` — todo/notes create/delete; actions `task:create/delete`, `note:create/delete` (fail-open on `POLICY_NOT_IMPLEMENTED`).
+
 **Drive helpers:** `server/src/services/drivePermissionHelpers.ts` (`canReadFile`, `canWriteFile`, `canReadFolder`, `canWriteFolder`).
 
-**Deferred:** restore/hard-delete/reorder/revoke Drive routes; HR/scheduling/calendar/chat policy; remove dual when legacy aligned per route.
+**Org-chart bridge (Batch 3):** `orgChartPolicyAdapter.ts` — membership checks feed PE when actions not implemented.
+
+**Deferred:** restore/hard-delete/reorder/revoke Drive routes; HR/scheduling/calendar/chat policy expansion; remove dual when legacy aligned per route.
 
 - **Docs:** `docs/architecture/POLICY_ENGINE.md`
 - **Agent rule:** `policy-engine.mdc`
 
 #### **Domain event bus** — May 2026 hardening
 
-`emitDomainEvent` + typed helpers in `domainEventEmitters.ts`; contracts in `domainEventRegistry.ts` with metadata sanitization. Fans out to activity subscriber, socket (`platform:domain_event` to **actor only**), notification/analytics placeholders. **Emit only after authorized DB success.** Distinct from **`emitModuleActivityEvent`** (module feed — keep both on Drive when feed visibility matters).
+`emitDomainEvent` + typed helpers in `domainEventEmitters.ts`; contracts in `domainEventRegistry.ts` with metadata sanitization. Fans out to activity subscriber, socket (`platform:domain_event` to **actor only**), **notification subscriber** (file.shared, business.member.added, module.installed), analytics placeholder, AI consumer, webhooks, **search index stub**, **workflow router stub**. **Emit only after authorized DB success.** Distinct from **`emitModuleActivityEvent`** (module feed — keep both on Drive when feed visibility matters).
 
-**Adopted types:** `user.preference.updated`, `module.installed` / `uninstalled`, `business.member.added` / `removed`, `business.updated`, `file.uploaded` / `deleted` / `shared`, `folder.shared`.
+**Adopted types:** `user.preference.updated`, `module.installed/uninstalled/enabled/disabled`, `business.member.added/removed`, `business.updated`, `file.*`, `folder.shared`, `chat.message.sent`, `calendar.event.created`, full `vlink.*` taxonomy.
 
-**Deferred registry types:** `module.enabled/disabled`, `chat.message.sent`, `calendar.event.created`, `file.moved`, `folder.created`.
+**Module activity adoption:** drive, chat (exemplars); todo, notes (create/delete — Batch 2). hr, scheduling pending.
+
+**Per-module matrix:** `docs/architecture/DOMAIN_EVENTS.md`
 
 - **Docs:** `docs/architecture/DOMAIN_EVENTS.md`
 - **Agent rule:** `domain-events.mdc`

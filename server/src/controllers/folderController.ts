@@ -9,6 +9,10 @@ import { assertUserOwnsDashboard } from '../services/taskDashboardBinding';
 import { emitModuleActivityEvent } from '../services/moduleActivityService';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
+import {
+  permanentlyDeleteDriveFolderCascade,
+  restoreDriveItem,
+} from '../services/driveDeleteService';
 
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
@@ -421,10 +425,14 @@ export async function deleteFolder(req: Request, res: Response) {
   }
 }
 
-// List trashed folders for the user
+/** @deprecated Use Global Trash GET /api/trash/items?moduleId=drive instead. */
 export async function listTrashedFolders(req: Request, res: Response) {
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
+    await logger.warn('Deprecated drive-only listTrashedFolders endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'listTrashedFolders',
+    });
+    const userId = (req.user as { id?: string; sub?: string }).id || (req.user as { sub?: string }).sub;
     const folders = await prisma.folder.findMany({
       where: { userId, trashedAt: { not: null } },
       orderBy: { trashedAt: 'desc' },
@@ -435,31 +443,44 @@ export async function listTrashedFolders(req: Request, res: Response) {
   }
 }
 
-// Restore a trashed folder
+/** @deprecated Use Global Trash POST /api/trash/restore/:id with { moduleId: "drive", type: "folder" }. */
 export async function restoreFolder(req: Request, res: Response) {
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
-    const { id } = req.params;
-    const folder = await prisma.folder.updateMany({
-      where: { id, userId, trashedAt: { not: null } },
-      data: { trashedAt: null },
+    await logger.warn('Deprecated drive-only restoreFolder endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'restoreFolder',
     });
-    if (folder.count === 0) return res.status(404).json({ message: 'Folder not found or not trashed' });
+    const userId = (req.user as { id?: string; sub?: string }).id || (req.user as { sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    const restored = await restoreDriveItem({ userId, type: 'folder', id });
+    if (!restored) {
+      return res.status(404).json({ message: 'Folder not found or not trashed' });
+    }
     res.json({ restored: true });
   } catch (err) {
     res.status(500).json({ message: 'Failed to restore folder' });
   }
 }
 
-// Permanently delete a trashed folder
+/** @deprecated Use Global Trash DELETE /api/trash/delete/:id with { moduleId: "drive", type: "folder" }. */
 export async function hardDeleteFolder(req: Request, res: Response) {
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
-    const { id } = req.params;
-    const folder = await prisma.folder.deleteMany({
-      where: { id, userId, trashedAt: { not: null } },
+    await logger.warn('Deprecated drive-only hardDeleteFolder endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'hardDeleteFolder',
     });
-    if (folder.count === 0) return res.status(404).json({ message: 'Folder not found or not trashed' });
+    const userId = (req.user as { id?: string; sub?: string }).id || (req.user as { sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    const deleted = await permanentlyDeleteDriveFolderCascade({ userId, folderId: id });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Folder not found or not trashed' });
+    }
     res.json({ deleted: true });
   } catch (err) {
     res.status(500).json({ message: 'Failed to permanently delete folder' });

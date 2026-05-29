@@ -21,7 +21,12 @@ export type ModuleCapability =
   | 'ai'
   | 'analytics'
   | 'notifications'
-  | 'admin';
+  | 'admin'
+  | 'vlink'
+  | 'trash'
+  | 'search'
+  | 'businessWorkspace'
+  | 'globalActivity';
 
 export type WidgetRefreshMode = 'manual' | 'polling' | 'socket' | 'cache';
 

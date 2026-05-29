@@ -6,6 +6,10 @@
 
 This document is the **visual hub** for the live AI platform. Detailed sub-diagrams live in linked architecture docs; avoid duplicating long prose here.
 
+**Narrative textbook (May 2026):** [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) — internal onboarding; links here for canonical diagrams.
+
+**Platform standards:** AI integration rules (§6) — [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md). AI actions MUST use canonical services; no direct Prisma bypass.
+
 **Supersedes in part:** [`docs/guides/AI_SYSTEM_ARCHITECTURE_MAP.md`](../guides/AI_SYSTEM_ARCHITECTURE_MAP.md) (legacy map — see deprecation banner there).
 
 ---

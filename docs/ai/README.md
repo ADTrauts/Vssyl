@@ -4,6 +4,8 @@ Runbooks and rules for **vision, providers, and multimodal** behavior in product
 
 **Canonical platform diagrams (May 2026):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)
 
+**Internal architecture textbook:** [`docs/architecture/AI_SYSTEM_TEXTBOOK.md`](../architecture/AI_SYSTEM_TEXTBOOK.md) — narrative onboarding; ops chapters link back here for vision runbooks.
+
 | File | Purpose | Diagrams |
 |------|---------|----------|
 | **ARCHITECTURE.md** | Attachment + vision pipelines (client → GCS → provider) | ✅ Mermaid |

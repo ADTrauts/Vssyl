@@ -315,7 +315,7 @@ export default function DriveWidget({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => window.location.href = '/drive?view=shared'}
+              onClick={() => window.location.href = '/drive/shared'}
               className="text-orange-700 dark:text-orange-300 hover:text-orange-800 dark:hover:text-orange-200"
             >
               View All

@@ -4,6 +4,11 @@ import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { getOrCreateChatFilesFolder } from '../services/driveService';
+import { grantFileSharePermission, DriveShareError } from '../services/driveFileShareService';
+import {
+  permanentlyDeleteDriveFile,
+  restoreDriveItem,
+} from '../services/driveDeleteService';
 import { NotificationService } from '../services/notificationService';
 import { storageService } from '../services/storageService';
 import { prisma } from '../lib/prisma';
@@ -17,7 +22,6 @@ import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
   emitFileDeletedEvent,
-  emitFileSharedEvent,
   emitFileUploadedEvent,
 } from '../events/domainEventEmitters';
 
@@ -86,6 +90,23 @@ export async function listFiles(req: Request, res: Response) {
     const folderId = req.query.folderId;
     const starred = req.query.starred;
     const dashboardId = req.query.dashboardId;
+    const fileIdQuery = req.query.fileId;
+
+    if (fileIdQuery && typeof fileIdQuery === 'string') {
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+      if (!(await canReadFile(userId, fileIdQuery))) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      const file = await prisma.file.findFirst({
+        where: { id: fileIdQuery, trashedAt: null },
+      });
+      if (!file) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+      return res.json({ files: [file] });
+    }
     
     // Validate folderId if provided
     if (folderId && typeof folderId !== 'string') {
@@ -987,81 +1008,22 @@ export async function grantFilePermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id } = req.params; // file id
+    const { id } = req.params;
     const { userId, canRead, canWrite } = req.body;
-    
-    // Only owner can grant permissions
-    const file = await prisma.file.findUnique({ 
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-    
-    if (!file || file.userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
 
-    const sharePolicyDual = await evaluateDrivePolicyDual({
-      userId: ownerId,
-      action: POLICY_ACTIONS.FILE_SHARE,
-      resourceType: 'file',
-      resourceId: id,
-      scope: file.dashboardId ? { dashboardId: file.dashboardId } : undefined,
-    });
-    if (sharePolicyDual.blocked) {
-      return res.status(403).json({ message: 'Forbidden', reason: sharePolicyDual.reason });
-    }
-
-    const permission = await prisma.filePermission.upsert({
-      where: { fileId_userId: { fileId: id, userId } },
-      update: { canRead, canWrite },
-      create: { fileId: id, userId, canRead, canWrite },
-    });
-
-    // Create notification for the user who was granted permission
-    try {
-      const permissionType = canRead && canWrite ? 'read and write' : canRead ? 'read' : 'write';
-      
-      await NotificationService.handleNotification({
-        type: 'drive_permission',
-        title: `${file.user?.name || 'Someone'} shared a file with you`,
-        body: `You now have ${permissionType} access to "${file.name}"`,
-        data: {
-          fileId: id,
-          fileName: file.name,
-          permissionType,
-          ownerId: file.userId,
-          ownerName: file.user?.name
-        },
-        recipients: [userId],
-        senderId: ownerId
-      });
-    } catch (notificationError) {
-      await logger.error('Failed to create file permission notification', {
-        operation: 'file_permission_notification',
-        error: {
-          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          stack: notificationError instanceof Error ? notificationError.stack : undefined
-        }
-      });
-      // Don't fail the permission grant if notification fails
-    }
-
-    emitFileSharedEvent({
-      actorUserId: ownerId,
+    const { permission } = await grantFileSharePermission({
+      ownerUserId: ownerId,
       fileId: id,
-      recipientUserId: userId,
+      targetUserId: userId,
       canRead: Boolean(canRead),
       canWrite: Boolean(canWrite),
     });
 
     res.status(201).json({ permission });
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     res.status(500).json({ message: 'Failed to grant permission' });
   }
 }
@@ -1158,12 +1120,17 @@ export async function revokeFilePermission(req: Request, res: Response) {
 }
 
 // List trashed files for the user
+/** @deprecated Use Global Trash GET /api/trash/items?moduleId=drive instead. */
 export async function listTrashedFiles(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
     res.sendStatus(401);
     return;
   }
   try {
+    await logger.warn('Deprecated drive-only listTrashedFiles endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'listTrashedFiles',
+    });
     const userId = (req as AuthenticatedRequest).user?.id;
     const files = await prisma.file.findMany({
       where: { userId, trashedAt: { not: null } },
@@ -1182,68 +1149,54 @@ export async function listTrashedFiles(req: Request, res: Response) {
   }
 }
 
-// Restore a trashed file
+/** @deprecated Use Global Trash POST /api/trash/restore/:id with { moduleId: "drive", type: "file" }. */
 export async function restoreFile(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
     res.sendStatus(401);
     return;
   }
   try {
-    const userId = (req as AuthenticatedRequest).user?.id;
-    const { id } = req.params;
-    const file = await prisma.file.updateMany({
-      where: { id, userId, trashedAt: { not: null } },
-      data: { trashedAt: null },
+    await logger.warn('Deprecated drive-only restoreFile endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'restoreFile',
     });
-    if (file.count === 0) return res.status(404).json({ message: 'File not found or not trashed' });
+    const userId = (req as AuthenticatedRequest).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    const restored = await restoreDriveItem({ userId, type: 'file', id });
+    if (!restored) {
+      return res.status(404).json({ message: 'File not found or not trashed' });
+    }
     res.json({ restored: true });
   } catch (err) {
     res.status(500).json({ message: 'Failed to restore file' });
   }
 }
 
-// Permanently delete a trashed file
+/** @deprecated Use Global Trash DELETE /api/trash/delete/:id with { moduleId: "drive", type: "file" }. */
 export async function hardDeleteFile(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
     res.sendStatus(401);
     return;
   }
   try {
+    await logger.warn('Deprecated drive-only hardDeleteFile endpoint called', {
+      operation: 'drive_trash_api_deprecated',
+      endpoint: 'hardDeleteFile',
+    });
     const userId = (req as AuthenticatedRequest).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     const { id } = req.params;
-    
-    // Get file details before deletion
-    const fileToDelete = await prisma.file.findFirst({
-      where: { id, userId, trashedAt: { not: null } },
-    });
-    
-    if (!fileToDelete) {
+
+    const deleted = await permanentlyDeleteDriveFile({ userId, fileId: id });
+    if (!deleted) {
       return res.status(404).json({ message: 'File not found or not trashed' });
     }
-    
-    // Delete file from storage if path exists
-    if (fileToDelete.path) {
-      const deleteResult = await storageService.deleteFile(fileToDelete.path);
-      if (!deleteResult.success) {
-        await logger.warn('Failed to delete file from storage', {
-          operation: 'file_storage_delete',
-          error: {
-            message: deleteResult.error || 'Unknown error'
-          }
-        });
-        // Continue with database deletion even if storage deletion fails
-      }
-    }
-    
-    // Delete from database
-    const file = await prisma.file.deleteMany({
-      where: { id, userId, trashedAt: { not: null } },
-    });
-    
-    if (file.count === 0) {
-      return res.status(404).json({ message: 'File not found or not trashed' });
-    }
-    
+
     res.json({ deleted: true });
   } catch (err) {
     await logger.error('Failed to hard delete file', {
@@ -1259,16 +1212,70 @@ export async function hardDeleteFile(req: Request, res: Response) {
 
 // Toggle the starred status of a file
 export async function toggleFileStarred(req: Request, res: Response) {
+  if (!hasUserId(req.user)) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const userId = (req as AuthenticatedRequest).user?.id;
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
   const { id } = req.params;
   try {
     const file = await prisma.file.findUnique({ where: { id } });
-    if (!file) {
+    if (!file || file.trashedAt) {
       return res.status(404).json({ message: 'File not found' });
     }
+
+    if (!(await canWriteFile(userId, id))) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const starPolicyDual = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FILE_UPDATE,
+      resourceType: 'file',
+      resourceId: id,
+      scope: file.dashboardId ? { dashboardId: file.dashboardId } : undefined,
+    });
+    if (starPolicyDual.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: starPolicyDual.reason });
+    }
+
     const updatedFile = await prisma.file.update({
       where: { id },
       data: { starred: !file.starred },
     });
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: updatedFile.starred ? 'pin' : 'unpin',
+      targetType: 'file',
+      targetId: updatedFile.id,
+      parentType: updatedFile.folderId ? 'folder' : undefined,
+      parentId: updatedFile.folderId ?? undefined,
+      dashboardId: updatedFile.dashboardId,
+      metadata: { starred: updatedFile.starred },
+    });
+
+    try {
+      getChatSocketService().broadcastDriveEvent(file.userId, 'drive:item:pinned', {
+        itemId: updatedFile.id,
+        itemType: 'file',
+        dashboardId: updatedFile.dashboardId,
+        folderId: updatedFile.folderId,
+        starred: updatedFile.starred,
+      });
+    } catch (socketError: unknown) {
+      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
+      await logger.error('Failed to broadcast drive:item:pinned event', {
+        operation: 'file_pin_socket_broadcast',
+        error: { message: err.message, stack: err.stack },
+      });
+    }
+
     res.json(updatedFile);
   } catch (err) {
     res.status(500).json({ message: 'Failed to toggle star on file' });

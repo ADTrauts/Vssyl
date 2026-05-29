@@ -1,6 +1,6 @@
 # AI Coding Standards & Best Practices
 
-> **DEPRECATED (2026-05-16):** Do not use this file for new work. Canonical agent rules live under **`.cursor/rules/`** — start with **`RULES_SUMMARY.md`**, **`typescript-quality.mdc`**, **`api-and-auth.mdc`**, and **`coding-standards.mdc`**. This file is retained for historical reference only; it may be archived later.
+> **DEPRECATED (2026-05-16):** Do not use this file for new work. Canonical agent rules live under **`.cursor/rules/`** — start with **`RULES_SUMMARY.md`**, **`typescript-quality.mdc`**, **`api-and-auth.mdc`**, and **`platform-standards.mdc`**. Platform architecture: [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md). See [`docs/architecture/LEGACY_CLEANUP.md`](../docs/architecture/LEGACY_CLEANUP.md). This file is retained for historical reference only; it may be archived later.
 
 ## Overview
 This document established coding standards for the legacy Block-on-Block naming era. Content below is **not maintained** and may contradict current rules.

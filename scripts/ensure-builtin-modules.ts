@@ -1,4 +1,7 @@
 /**
+ * @deprecated Use server startup `registerBuiltInModulesOnStartup()` instead.
+ * See docs/architecture/LEGACY_CLEANUP.md — retained for one-off admin recovery only.
+ *
  * Ensure Built-in Modules Script
  * 
  * Ensures that File Hub, Chat, Calendar, HR, and Scheduling Module records exist in the database

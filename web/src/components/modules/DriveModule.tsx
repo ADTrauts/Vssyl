@@ -93,6 +93,7 @@ interface DriveModuleProps {
   refreshTrigger?: number;
   dashboardId?: string | null;
   selectedFolderId?: string | null;
+  selectedFileId?: string | null;
   onFolderSelect?: (folderId: string | null) => void;
   onRegisterDragEndHandler?: (handler: (event: DragEndEvent | null) => Promise<void>) => void;
 }
@@ -524,7 +525,7 @@ const DraggableItem = React.memo(function DraggableItem({
   );
 });
 
-export default function DriveModule({ dashboardId, className = '', refreshTrigger, selectedFolderId, onFolderSelect, onRegisterDragEndHandler }: DriveModuleProps) {
+export default function DriveModule({ dashboardId, className = '', refreshTrigger, selectedFolderId, selectedFileId, onFolderSelect, onRegisterDragEndHandler }: DriveModuleProps) {
   const { data: session } = useSession();
   const { currentDashboard, getDashboardType } = useDashboard();
   const [items, setItems] = useState<DriveItem[]>([]);
@@ -883,6 +884,64 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       }
     }
   }, [selectedFolderId, currentFolder]);
+
+  const deepLinkFileIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof selectedFileId !== 'string' || !session?.accessToken) return;
+    const fileId = selectedFileId;
+    if (deepLinkFileIdRef.current === fileId) return;
+
+    let cancelled = false;
+    const accessToken = session.accessToken;
+
+    async function openDeepLinkedFile() {
+      try {
+        const response = await fetch(
+          `/api/drive/files?fileId=${encodeURIComponent(fileId)}`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+        if (!response.ok || cancelled) return;
+
+        const data = await response.json();
+        const file = data.files?.[0] as DriveFile | undefined;
+        if (!file || cancelled) return;
+
+        const driveItem: DriveItem = {
+          id: file.id,
+          name: file.name,
+          type: 'file',
+          size: file.size,
+          modifiedAt: file.updatedAt || file.createdAt,
+          createdBy: 'You',
+          permissions: ['view', 'edit'],
+          mimeType: file.type,
+          starred: file.starred,
+          shared: false,
+          url: file.url,
+        };
+
+        deepLinkFileIdRef.current = fileId;
+        if (file.folderId && file.folderId !== currentFolder) {
+          setCurrentFolder(file.folderId);
+          onFolderSelect?.(file.folderId);
+        }
+        setSelectedItemForDetails(driveItem);
+        setDetailsPanelOpen(true);
+        setDetailsPanelCollapsed(false);
+        setSelectedItems(new Set([file.id]));
+      } catch {
+        // Deep link open is best-effort
+      }
+    }
+
+    void openDeepLinkedFile();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFileId, session?.accessToken, currentFolder, onFolderSelect]);
 
   // Close context menu when clicking outside
   useEffect(() => {

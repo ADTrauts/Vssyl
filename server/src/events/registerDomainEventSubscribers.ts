@@ -3,10 +3,12 @@ import { subscribeDomainEvents } from './domainEventBus';
 import type { DomainEvent } from './types';
 import { recordDomainEventToActivityLog } from './subscribers/activityDomainEventSubscriber';
 import { broadcastDomainEventOnSocket } from './subscribers/socketDomainEventSubscriber';
-import { placeholderNotificationDomainEventConsumer } from './subscribers/notificationDomainEventSubscriber';
+import { notificationDomainEventConsumer } from './subscribers/notificationDomainEventSubscriber';
 import { placeholderAnalyticsDomainEventConsumer } from './subscribers/analyticsDomainEventSubscriber';
 import { consumeDomainEventForAI } from '../ai/consumers/AIEventConsumer';
 import { deliverDomainEventToWebhooks } from './subscribers/webhookDomainEventSubscriber';
+import { searchIndexDomainEventConsumer } from './subscribers/searchIndexDomainEventSubscriber';
+import { routeDomainEventToWorkflows } from '../workflows/domainEventWorkflowRouter';
 
 let registered = false;
 
@@ -42,13 +44,13 @@ export function registerDomainEventSubscribers(): void {
     void runSubscriber('socket', (e) => {
       broadcastDomainEventOnSocket(e);
     }, event);
-    void runSubscriber('notification_placeholder', (e) => {
-      placeholderNotificationDomainEventConsumer(e);
-    }, event);
+    void runSubscriber('notification', (e) => notificationDomainEventConsumer(e), event);
     void runSubscriber('analytics_placeholder', (e) => {
       placeholderAnalyticsDomainEventConsumer(e);
     }, event);
     void runSubscriber('ai_event_consumer', (e) => consumeDomainEventForAI(e), event);
     void runSubscriber('webhook_subscriptions', (e) => deliverDomainEventToWebhooks(e), event);
+    void runSubscriber('search_index_stub', (e) => searchIndexDomainEventConsumer(e), event);
+    void runSubscriber('workflow_router_stub', (e) => routeDomainEventToWorkflows(e), event);
   });
 }

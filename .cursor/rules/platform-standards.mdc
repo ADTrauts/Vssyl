@@ -1,0 +1,28 @@
+---
+description: Vssyl Platform Standards constitutional framework — Runtime Kernel, tiers, read/write paths, drift prevention
+alwaysApply: false
+---
+
+# Platform standards
+
+**Authoritative doc:** `docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`  
+**Module checklist:** `memory-bank/moduleSpecs.md`  
+**Index:** `.cursor/rules/RULES_SUMMARY.md`
+
+## Must
+
+- Treat **Runtime Kernel** (Tier 0) as protected — extend, never replace: PE, events, trash, storage, V_Link, AI orchestrator, scheduler, entity contracts.
+- Route **writes** through canonical services: authorize → mutate → emit → notify (§16 write path).
+- Route **reads** for cross-module/AI through resolvers, providers, search — with permission filtering (§16 read path).
+- Check **Infrastructure Tier** before adding systems: Tier 0 requires constitutional doc update.
+- Run **Appendix B drift checklist** before new platform infrastructure, event buses, schedulers, or permission maps.
+- Register new recurring jobs in §22 annex until `registerPlatformJob()` exists.
+
+## Must not
+
+- Duplicate Tier 0 systems (parallel trash, events, PE, storage, schedulers).
+- Direct Prisma domain mutations from controllers, AI tools, job handlers, or third-party code.
+- Add new `setInterval` background loops.
+- Bypass tenant scope or Policy Engine on new privileged paths.
+
+**Last updated:** 2026-05-28

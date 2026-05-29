@@ -14,6 +14,10 @@ Update Rules for moduleSpecs.md
 
 ## [2026-04-21] Canonical Module Interoperability Contract
 
+> **Platform standards:** Full constitutional framework — Runtime Kernel, extension boundaries, read/write paths, tiers, drift checklist — in [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md). This section remains the **certification checklist** authority for module interoperability.
+
+> **Implementation status (May 2026):** Migration Batches 1–4 core items shipped — manifest reconcile, all 10 built-ins provisioned, todo/place business workspace, Notes `trashedAt`, todo/notes activity, V_Link resolvers (chat/task/note), `registerPlatformJob()`. See [`memory-bank/progress.md`](progress.md) and constitutional doc §30 for remaining work (service extraction, hr/scheduling events).
+
 This section is the canonical architecture contract for all Vssyl modules (first-party and third-party).  
 If any module-specific document conflicts with this section, this section wins unless explicitly superseded here.
 
