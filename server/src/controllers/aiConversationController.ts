@@ -9,6 +9,7 @@ import {
   refreshConversationThreadMemory,
 } from '../services/aiConversationMemoryService';
 import { indexAIMessageForRecall } from '../services/aiMessageRecallService';
+import { validateAccessibleFileIds } from '../services/driveVisibilityService';
 
 function logAiConversationError(
   message: string,
@@ -430,27 +431,15 @@ export const addMessage = async (req: Request, res: Response) => {
     // Validate file access for user messages with attachments
     let attachments: { fileIds: string[] } | null = null;
     if (validatedData.fileIds && validatedData.fileIds.length > 0 && validatedData.role === 'user') {
-      const accessibleFiles = await prisma.file.findMany({
-        where: {
-          id: { in: validatedData.fileIds },
-          trashedAt: null,
-          OR: [
-            { userId },
-            { permissions: { some: { userId, canRead: true } } },
-          ],
-        },
-        select: { id: true },
-      });
-      const accessibleIds = new Set(accessibleFiles.map((f) => f.id));
-      const invalidIds = validatedData.fileIds.filter((fileId) => !accessibleIds.has(fileId));
-      if (invalidIds.length > 0) {
+      const { accessibleIds, deniedIds } = await validateAccessibleFileIds(userId, validatedData.fileIds);
+      if (deniedIds.length > 0) {
         return res.status(403).json({
           success: false,
           error: 'Access denied to one or more files',
-          invalidFileIds: invalidIds,
+          invalidFileIds: deniedIds,
         });
       }
-      attachments = { fileIds: validatedData.fileIds };
+      attachments = { fileIds: accessibleIds };
     }
 
     // Create message

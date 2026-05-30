@@ -3,6 +3,7 @@ import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { emitFileSharedEvent } from '../events/domainEventEmitters';
 import { NotificationService } from './notificationService';
+import { emitModuleActivityEvent } from './moduleActivityService';
 import { logger } from '../lib/logger';
 
 export class DriveShareError extends Error {
@@ -92,6 +93,23 @@ export async function grantFileSharePermission(input: GrantFileShareInput) {
     recipientUserId: targetUserId,
     canRead: Boolean(canRead),
     canWrite: Boolean(canWrite),
+  });
+
+  await emitModuleActivityEvent({
+    actorUserId: ownerUserId,
+    moduleId: 'drive',
+    action: 'share',
+    targetType: 'file',
+    targetId: fileId,
+    parentType: file.folderId ? 'folder' : undefined,
+    parentId: file.folderId ?? undefined,
+    dashboardId: file.dashboardId,
+    metadata: {
+      targetUserId,
+      canRead: Boolean(canRead),
+      canWrite: Boolean(canWrite),
+      fileName: file.name,
+    },
   });
 
   return { permission, file };

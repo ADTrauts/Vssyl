@@ -230,7 +230,7 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
 
     const file = await prisma.file.findUnique({
       where: { id },
-      select: { dashboardId: true, trashedAt: true, name: true, folderId: true },
+      select: { dashboardId: true, trashedAt: true, name: true, folderId: true, userId: true },
     });
     if (!file?.trashedAt) return false;
 
@@ -247,7 +247,37 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       where: { id, trashedAt: { not: null } },
       data: { trashedAt: null },
     });
-    return result.count > 0;
+    if (result.count === 0) return false;
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'restore',
+      targetType: 'file',
+      targetId: id,
+      parentType: file.folderId ? 'folder' : undefined,
+      parentId: file.folderId ?? undefined,
+      dashboardId: file.dashboardId,
+      metadata: { fileName: file.name },
+    });
+
+    try {
+      getChatSocketService().broadcastDriveEvent(file.userId, 'drive:item:updated', {
+        itemId: id,
+        itemType: 'file',
+        dashboardId: file.dashboardId,
+        folderId: file.folderId,
+        restored: true,
+      });
+    } catch (socketError: unknown) {
+      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
+      await logger.error('Failed to broadcast drive restore event', {
+        operation: 'drive_restore_file_socket',
+        error: { message: err.message, stack: err.stack },
+      });
+    }
+
+    return true;
   }
 
   if (type === 'folder') {
@@ -255,7 +285,7 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
 
     const folder = await prisma.folder.findUnique({
       where: { id },
-      select: { dashboardId: true, trashedAt: true },
+      select: { dashboardId: true, trashedAt: true, name: true, parentId: true, userId: true },
     });
     if (!folder?.trashedAt) return false;
 
@@ -272,7 +302,37 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       where: { id, trashedAt: { not: null } },
       data: { trashedAt: null },
     });
-    return result.count > 0;
+    if (result.count === 0) return false;
+
+    await emitModuleActivityEvent({
+      actorUserId: userId,
+      moduleId: 'drive',
+      action: 'restore',
+      targetType: 'folder',
+      targetId: id,
+      parentType: folder.parentId ? 'folder' : undefined,
+      parentId: folder.parentId ?? undefined,
+      dashboardId: folder.dashboardId,
+      metadata: { name: folder.name },
+    });
+
+    try {
+      getChatSocketService().broadcastDriveEvent(folder.userId, 'drive:item:updated', {
+        itemId: id,
+        itemType: 'folder',
+        dashboardId: folder.dashboardId,
+        folderId: folder.parentId,
+        restored: true,
+      });
+    } catch (socketError: unknown) {
+      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
+      await logger.error('Failed to broadcast drive restore event', {
+        operation: 'drive_restore_folder_socket',
+        error: { message: err.message, stack: err.stack },
+      });
+    }
+
+    return true;
   }
 
   return false;

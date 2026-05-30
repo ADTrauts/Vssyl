@@ -13,6 +13,7 @@ import { authenticateJWT } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { FeatureGatingService } from '../services/featureGatingService';
+import { fetchAccessibleActiveFiles } from '../services/driveVisibilityService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
 import { logger } from '../lib/logger';
@@ -709,17 +710,7 @@ router.post('/extract-document', authenticateJWT, async (req, res) => {
     }
     const type: 'invoice' | 'receipt' = documentType === 'receipt' ? 'receipt' : 'invoice';
 
-    const files = await prisma.file.findMany({
-      where: {
-        id: { in: ids },
-        trashedAt: null,
-        OR: [
-          { userId },
-          { permissions: { some: { userId, canRead: true } } },
-        ],
-      },
-      select: { id: true, name: true, path: true, url: true, size: true, type: true },
-    });
+    const files = await fetchAccessibleActiveFiles(userId, ids);
 
     if (files.length === 0) {
       return res.status(404).json({ error: 'No accessible files found' });

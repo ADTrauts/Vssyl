@@ -7,6 +7,7 @@ import { authorize } from '../auth/policyEngine';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { emitFolderSharedEvent } from '../events/domainEventEmitters';
+import { emitModuleActivityEvent } from '../services/moduleActivityService';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
@@ -142,6 +143,23 @@ export async function grantFolderPermission(req: Request, res: Response) {
       canWrite: Boolean(canWrite),
     });
 
+    await emitModuleActivityEvent({
+      actorUserId: ownerId,
+      moduleId: 'drive',
+      action: 'share',
+      targetType: 'folder',
+      targetId: id,
+      parentType: folder.parentId ? 'folder' : undefined,
+      parentId: folder.parentId ?? undefined,
+      dashboardId: folder.dashboardId,
+      metadata: {
+        targetUserId: userId,
+        canRead: Boolean(canRead),
+        canWrite: Boolean(canWrite),
+        folderName: folder.name,
+      },
+    });
+
     res.status(201).json({ permission });
   } catch (err: unknown) {
     const error = err as Error;
@@ -227,6 +245,19 @@ export async function revokeFolderPermission(req: Request, res: Response) {
     }
     
     await prisma.folderPermission.deleteMany({ where: { folderId: id, userId } });
+
+    await emitModuleActivityEvent({
+      actorUserId: ownerId,
+      moduleId: 'drive',
+      action: 'unshare',
+      targetType: 'folder',
+      targetId: id,
+      dashboardId: folder.dashboardId,
+      metadata: {
+        targetUserId: userId,
+        folderName: folder.name,
+      },
+    });
     
     // Create notification for the user whose permission was revoked
     try {

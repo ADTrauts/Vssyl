@@ -635,6 +635,17 @@ export async function moveFolder(req: Request, res: Response) {
       return res.status(404).json({ message: 'Folder not found' });
     }
 
+    const movePolicy = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FOLDER_UPDATE,
+      resourceType: 'folder',
+      resourceId: id,
+      scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
+    });
+    if (movePolicy.blocked) {
+      return res.status(403).json({ message: 'Forbidden', reason: movePolicy.reason });
+    }
+
     // Verify the target parent folder exists and user has write permissions (if specified)
     if (targetParentId) {
       const canWriteParent = await canWriteFolder(userId, targetParentId);

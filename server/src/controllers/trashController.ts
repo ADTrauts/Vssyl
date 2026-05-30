@@ -3,6 +3,10 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getGlobalTrashModuleHandler } from '../services/globalTrashModuleRegistry';
 import { DriveDeleteError } from '../services/driveDeleteService';
+import {
+  listAccessibleTrashedFiles,
+  listAccessibleTrashedFolders,
+} from '../services/driveVisibilityService';
 
 function hasUserId(user: unknown): user is { id: string } | { sub: string } {
   return typeof user === 'object' && user !== null && 
@@ -82,37 +86,11 @@ export async function listTrashedItems(req: Request, res: Response) {
   try {
     const userId = (req.user as any).id || (req.user as any).sub;
 
-    // Get trashed files
-    const trashedFiles = await prisma.file.findMany({
-      where: { 
-        userId, 
-        trashedAt: { not: null } 
-      },
-      select: {
-        id: true,
-        name: true,
-        size: true,
-        type: true,
-        trashedAt: true,
-        userId: true,
-      },
-      orderBy: { trashedAt: 'desc' },
-    });
+    // Get trashed files (owner + shared collaborators)
+    const trashedFiles = await listAccessibleTrashedFiles(userId);
 
-    // Get trashed folders
-    const trashedFolders = await prisma.folder.findMany({
-      where: { 
-        userId, 
-        trashedAt: { not: null } 
-      },
-      select: {
-        id: true,
-        name: true,
-        trashedAt: true,
-        userId: true,
-      },
-      orderBy: { trashedAt: 'desc' },
-    });
+    // Get trashed folders (owner + shared collaborators)
+    const trashedFolders = await listAccessibleTrashedFolders(userId);
 
     // Get trashed conversations
     const trashedConversations = await prisma.conversation.findMany({

@@ -4,6 +4,7 @@ import * as driveHelpers from '../drivePermissionHelpers';
 import * as drivePolicyDual from '../../auth/drivePolicyDual';
 import * as storageService from '../storageService';
 import * as moduleActivity from '../moduleActivityService';
+import * as chatSocket from '../chatSocketService';
 import * as domainEmitters from '../../events/domainEventEmitters';
 import {
   emptyDriveTrash,
@@ -114,16 +115,30 @@ describe('driveDeleteService', () => {
     });
   });
 
-  it('restoreDriveItem clears trashedAt when authorized', async () => {
+  it('restoreDriveItem clears trashedAt, emits activity, and broadcasts socket', async () => {
     vi.spyOn(prisma.file, 'findUnique').mockResolvedValue({
       id: 'file-1',
       trashedAt: new Date(),
       dashboardId: 'dash-1',
+      folderId: 'folder-1',
+      name: 'doc.txt',
+      userId: 'owner-1',
     } as never);
     vi.spyOn(prisma.file, 'updateMany').mockResolvedValue({ count: 1 });
+    const broadcast = vi.fn();
+    vi.mocked(chatSocket.getChatSocketService).mockReturnValue({ broadcastDriveEvent: broadcast } as never);
 
     const ok = await restoreDriveItem({ userId: 'owner-1', type: 'file', id: 'file-1' });
+
     expect(ok).toBe(true);
+    expect(moduleActivity.emitModuleActivityEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'restore', targetType: 'file', targetId: 'file-1' })
+    );
+    expect(broadcast).toHaveBeenCalledWith(
+      'owner-1',
+      'drive:item:updated',
+      expect.objectContaining({ itemId: 'file-1', restored: true })
+    );
   });
 
   it('softTrashDriveItem sets trashedAt and emits soft delete event', async () => {

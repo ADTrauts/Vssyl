@@ -10,6 +10,10 @@ import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import { Prisma } from '@prisma/client';
+import {
+  accessibleOwnedOrSharedFileClause,
+  listAccessibleDriveFiles,
+} from '../services/driveVisibilityService';
 
 // Type definitions for AI context responses
 interface RecentFileData {
@@ -25,15 +29,6 @@ interface RecentFileData {
     id: string;
     name: string;
   } | null;
-}
-
-interface FileCountWhere {
-  userId: string;
-  trashedAt: null;
-  folderId?: string;
-  updatedAt?: {
-    gte: Date;
-  };
 }
 
 /**
@@ -53,12 +48,15 @@ export async function getRecentFilesContext(req: Request, res: Response) {
       });
     }
     
-    // Get user's most recent files (last 10)
-    const recentFiles = await prisma.file.findMany({
-      where: {
-        userId,
-        trashedAt: null
-      },
+    // Get recent accessible files (owned + shared), same visibility model as UI/AI tools
+    const recentFiles = await listAccessibleDriveFiles({
+      userId,
+      limit: 10,
+      applyPolicyEngine: true,
+    });
+
+    const recentFilesWithFolder = await prisma.file.findMany({
+      where: { id: { in: recentFiles.map((f) => f.id) } },
       select: {
         id: true,
         name: true,
@@ -71,20 +69,16 @@ export async function getRecentFilesContext(req: Request, res: Response) {
         folder: {
           select: {
             id: true,
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
-      orderBy: [
-        { updatedAt: 'desc' },
-        { createdAt: 'desc' }
-      ],
-      take: 10
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     });
     
     // Format for AI consumption
     const context = {
-      recentFiles: recentFiles.map((file: RecentFileData) => ({
+      recentFiles: recentFilesWithFolder.map((file: RecentFileData) => ({
         id: file.id,
         name: file.name,
         type: file.type,
@@ -94,9 +88,9 @@ export async function getRecentFilesContext(req: Request, res: Response) {
         starred: file.starred
       })),
       summary: {
-        totalRecentFiles: recentFiles.length,
-        hasStarredFiles: recentFiles.some((f: RecentFileData) => f.starred),
-        mostRecentUpdate: recentFiles[0]?.updatedAt.toISOString()
+        totalRecentFiles: recentFilesWithFolder.length,
+        hasStarredFiles: recentFilesWithFolder.some((f: RecentFileData) => f.starred),
+        mostRecentUpdate: recentFilesWithFolder[0]?.updatedAt.toISOString()
       }
     };
     
@@ -141,7 +135,12 @@ export async function getStorageStatsContext(req: Request, res: Response) {
       });
     }
     
-    // Get file counts by type and calculate storage
+    const accessibleWhere = {
+      trashedAt: null,
+      ...accessibleOwnedOrSharedFileClause(userId),
+    };
+
+    // Get file counts by type and calculate storage (owned + shared readable files)
     const [
       totalFiles,
       documentFiles,
@@ -150,12 +149,11 @@ export async function getStorageStatsContext(req: Request, res: Response) {
       files
     ] = await Promise.all([
       prisma.file.count({
-        where: { userId, trashedAt: null }
+        where: accessibleWhere,
       }),
       prisma.file.count({
         where: { 
-          userId, 
-          trashedAt: null,
+          ...accessibleWhere,
           type: {
             in: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain']
           }
@@ -163,8 +161,7 @@ export async function getStorageStatsContext(req: Request, res: Response) {
       }),
       prisma.file.count({
         where: { 
-          userId, 
-          trashedAt: null,
+          ...accessibleWhere,
           type: {
             startsWith: 'image/'
           }
@@ -172,15 +169,14 @@ export async function getStorageStatsContext(req: Request, res: Response) {
       }),
       prisma.file.count({
         where: { 
-          userId, 
-          trashedAt: null,
+          ...accessibleWhere,
           type: {
             startsWith: 'video/'
           }
         }
       }),
       prisma.file.findMany({
-        where: { userId, trashedAt: null },
+        where: accessibleWhere,
         select: { size: true }
       })
     ]);
@@ -254,25 +250,20 @@ export async function getFileCount(req: Request, res: Response) {
       });
     }
     
-    const where: FileCountWhere = {
-      userId,
-      trashedAt: null
+    const countWhere: Prisma.FileWhereInput = {
+      trashedAt: null,
+      ...accessibleOwnedOrSharedFileClause(userId),
     };
-    
-    // Apply type filter
+
     if (type === 'folder' && folderId && typeof folderId === 'string') {
-      where.folderId = folderId;
+      countWhere.folderId = folderId;
     } else if (type === 'recent') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      where.updatedAt = {
-        gte: sevenDaysAgo
-      };
+      countWhere.updatedAt = { gte: sevenDaysAgo };
     }
-    
-    const count = await prisma.file.count({ 
-      where: where as Prisma.FileWhereInput 
-    });
+
+    const count = await prisma.file.count({ where: countWhere });
     
     res.json({
       success: true,

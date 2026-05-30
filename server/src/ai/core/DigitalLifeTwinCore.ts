@@ -24,6 +24,7 @@ import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { FileIssue } from '../types/fileIssues';
 import { getMessageForCode } from '../types/fileIssues';
 import { executeTool } from '../tools/toolExecutor';
+import { fetchAccessibleActiveFiles } from '../../services/driveVisibilityService';
 import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
@@ -515,25 +516,7 @@ export class DigitalLifeTwinCore {
 
         if (contextFileIds.length > 0) {
           const t0 = Date.now();
-          const files = await this.prisma.file.findMany({
-            where: {
-              id: { in: contextFileIds },
-              trashedAt: null,
-              OR: [
-                { userId: query.userId },
-                { permissions: { some: { userId: query.userId, canRead: true } } },
-              ],
-            },
-            select: {
-              id: true,
-              name: true,
-              size: true,
-              path: true,
-              url: true,
-              type: true,
-              createdAt: true,
-            },
-          });
+          const files = await fetchAccessibleActiveFiles(query.userId, contextFileIds);
           const t_findMany_ms = Date.now() - t0;
           logger.info(`${VISION_PIPELINE_PREFIX} stage=findMany ms=${t_findMany_ms}`, {
             operation: 'vision_pipeline_timing',

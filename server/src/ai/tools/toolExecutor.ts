@@ -6,6 +6,7 @@
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { grantFileSharePermission, DriveShareError } from '../../services/driveFileShareService';
+import { listAccessibleDriveFiles } from '../../services/driveVisibilityService';
 import type { AIToolName } from './toolDefinitions';
 
 export interface ToolExecutionContext {
@@ -31,16 +32,12 @@ export async function executeTool(
       case 'list_drive_files': {
         const folderId = (args.folderId as string) ?? null;
         const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 50);
-        const files = await prisma.file.findMany({
-          where: {
-            userId,
-            trashedAt: null,
-            folderId,
-            dashboardId: dashboardId ?? null,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: limit,
-          select: { id: true, name: true, type: true, size: true },
+        const files = await listAccessibleDriveFiles({
+          userId,
+          dashboardId: dashboardId ?? null,
+          folderId,
+          limit,
+          applyPolicyEngine: true,
         });
         result = {
           success: true,

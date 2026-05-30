@@ -1085,6 +1085,19 @@ export async function revokeFilePermission(req: Request, res: Response) {
     if (!file || file.userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
     
     await prisma.filePermission.deleteMany({ where: { fileId: id, userId } });
+
+    await emitModuleActivityEvent({
+      actorUserId: ownerId,
+      moduleId: 'drive',
+      action: 'unshare',
+      targetType: 'file',
+      targetId: id,
+      dashboardId: file.dashboardId,
+      metadata: {
+        targetUserId: userId,
+        fileName: file.name,
+      },
+    });
     
     // Create notification for the user whose permission was revoked
     try {

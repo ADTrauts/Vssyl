@@ -11,6 +11,7 @@ const SECURITY_DENY_REASONS: PolicyDenyReason[] = [
 ];
 
 export type DrivePolicyAction =
+  | typeof POLICY_ACTIONS.FILE_READ
   | typeof POLICY_ACTIONS.FILE_UPDATE
   | typeof POLICY_ACTIONS.FILE_DELETE
   | typeof POLICY_ACTIONS.FILE_MOVE
