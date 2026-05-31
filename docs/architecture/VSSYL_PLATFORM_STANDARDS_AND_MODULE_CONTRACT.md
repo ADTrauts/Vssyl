@@ -1,7 +1,7 @@
 # Vssyl Platform Standards and Module Contract
 
 **Version:** 1.0.0  
-**Last updated:** 2026-05-28  
+**Last updated:** 2026-05-31  
 **Status:** Constitutional framework — authoritative for platform architecture and module development
 
 ## Authority
@@ -14,6 +14,8 @@
 | Memory Bank | Product intent, status | Over stale architecture prose |
 | [`.cursor/rules/*.mdc`](../../.cursor/rules/) | Agent enforcement (short) | — |
 | [`docs/guides/`](../../docs/guides/) | How-to | — |
+| [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md) | Operational certification status | — |
+| [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md) | Reference implementation pattern catalog | — |
 
 **Related deep dives:** [POLICY_ENGINE.md](./POLICY_ENGINE.md), [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md), [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md), [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md), [GLOBAL_TRASH.md](./GLOBAL_TRASH.md), [V_LINK.md](./V_LINK.md), [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md), [PLATFORM_JOB_REGISTRY.md](./PLATFORM_JOB_REGISTRY.md), [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md)
 
@@ -61,6 +63,8 @@
 ## 0. Current system inventory and legacy cleanup
 
 **Purpose:** Audit baseline before migration batches (§30). Refresh quarterly alongside §22 job inventory.
+
+**Certification ledger:** Review [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md) whenever Section 0 inventory is refreshed — certification levels and wave progress must stay aligned with inventory findings.
 
 ### 0.1 Existing-system inventory
 
@@ -492,6 +496,8 @@ Extend `ModuleCapability` in manifest + `coreModuleRegistry.ts`: `read`, `write`
 
 Capability-driven before feature-flag-driven (§26).
 
+**Capability validation:** Manifest and runtime capability truthfulness follow **Pattern 14** in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md).
+
 ### Per-module capability matrix (audit baseline)
 
 | Module | ai | vlink | trash | realtime | notifications | businessWorkspace | globalActivity |
@@ -633,6 +639,8 @@ Mark → overlap period → migrate consumers → archive docs → remove code.
 
 **Principles:** incremental stabilization; additive standardization; no massive rewrites.
 
+**Certification tracking:** After each module modernization wave, update certification status in [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md). Level changes (e.g. Legacy → Certified) must be reflected there before the wave is considered closed.
+
 **Tracker:** [`memory-bank/progress.md`](../../memory-bank/progress.md) — Platform Standards section.
 
 ### Batch 1 — Foundation (doc + provisioning)
@@ -691,7 +699,7 @@ Mark → overlap period → migrate consumers → archive docs → remove code.
 11. Tests: auth, permission, tenant, events, service boundaries  
 12. PR: certification checklist + drift checklist (Appendix B)
 
-**Canonical exemplar:** **drive (File Hub)** — full stack contract compliance.
+**Canonical exemplar:** **drive (File Hub)** — Level 4 Reference Implementation; implementation guidance in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md).
 
 ---
 
@@ -739,7 +747,7 @@ Full inventory: [§0](#0-current-system-inventory-and-legacy-cleanup). Deprecati
 
 | Pattern | Exemplar | Why |
 |---------|----------|-----|
-| Full-stack contract | **drive (File Hub)** | PE, activity, domain events, trash, AI providers, V_Link, enterprise wrapper |
+| Full-stack contract (Level 4) | **drive (File Hub)** | Reference Implementation — patterns in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md) |
 | Rich manifest | **notes** (seed) | Permissions, routes, notifications in manifest |
 | Enterprise tier gating | **hr** | `tierFeatures`, business_advanced vs enterprise |
 | AI provider metadata | **place** | Full orchestrator metadata on providers |

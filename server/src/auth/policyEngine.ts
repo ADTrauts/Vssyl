@@ -767,7 +767,42 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizeBusinessUpdate(input);
   }
 
+  if (
+    (action === POLICY_ACTIONS.CHAT_CONVERSATION_READ ||
+      action === POLICY_ACTIONS.CHAT_MESSAGE_CREATE) &&
+    input.resourceType === 'conversation'
+  ) {
+    return authorizeChatConversationParticipant(input);
+  }
+
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
+}
+
+async function authorizeChatConversationParticipant(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const conversationId = input.resourceId;
+  if (!conversationId || typeof conversationId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      conversationId,
+      userId,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  if (!participant) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy: 'chat_active_participant' };
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

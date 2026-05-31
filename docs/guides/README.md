@@ -11,6 +11,7 @@ Technical references used during development and ops. **Troubleshooting** starts
 | **Build / env / DB options** | [`MODULE_PLATFORM_ENVIRONMENT_MATRIX.md`](./MODULE_PLATFORM_ENVIRONMENT_MATRIX.md), [`ALTERNATIVE_DATABASE_SOLUTIONS.md`](./ALTERNATIVE_DATABASE_SOLUTIONS.md) |
 | **Third-party modules** | [`THIRD_PARTY_MODULE_RULEBOOK.md`](./THIRD_PARTY_MODULE_RULEBOOK.md) (review checklist), [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) (onboarding), [`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) (authoritative pipeline) |
 | **Module dev** | [`MODULE_DEVELOPMENT_GUIDE.md`](./MODULE_DEVELOPMENT_GUIDE.md) — templates/examples; short rule: `.cursor/rules/module-development.mdc` |
+| **File Hub reference patterns (modernization)** | [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](./MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md) |
 | **Doc placement** | [`DOCUMENTATION_PLACEMENT.md`](./DOCUMENTATION_PLACEMENT.md) |
 | **Logging & notifications** | [`LOGGING_PHASE3_GUIDE.md`](./LOGGING_PHASE3_GUIDE.md), [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) |
 | **Platform architecture** | [`../architecture/README.md`](../architecture/README.md) — Policy Engine, domain events, workspace runtime, **AI platform diagrams** |

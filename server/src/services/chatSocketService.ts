@@ -3,6 +3,7 @@ import { Server as HTTPServer } from 'http';
 import { prisma } from '../lib/prisma';
 import { verifyToken } from '../utils/tokenUtils';
 import { logger } from '../lib/logger';
+import { ChatServiceError } from './chat/chatErrors';
 
 interface AuthenticatedSocket {
   userId: string;
@@ -525,61 +526,32 @@ export class ChatSocketService {
 
   private async handleMessageReaction(socket: SocketWithData, data: { messageId: string; emoji: string }) {
     const user = socket.data.user as AuthenticatedSocket;
-    
+
     try {
       if (!data?.messageId || typeof data.messageId !== 'string' || !data?.emoji || typeof data.emoji !== 'string') {
         socket.emit('error', { message: 'Invalid reaction payload' });
         return;
       }
 
-      const conversationId = await this.assertMessageConversationMember(data.messageId, user.userId);
-      if (!conversationId) {
-        socket.emit('error', { message: 'Not a member of this conversation' });
-        return;
-      }
+      const { toggleReaction } = await import('./chatMessageService.js');
 
-      // Save reaction to database only after membership is proven (A-015 / F-017)
-      const reaction = await prisma.messageReaction.upsert({
-        where: {
-          messageId_userId_emoji: {
-            messageId: data.messageId,
-            userId: user.userId,
-            emoji: data.emoji
-          }
-        },
-        update: {
-          emoji: data.emoji
-        },
-        create: {
-          messageId: data.messageId,
-          userId: user.userId,
-          emoji: data.emoji
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true }
-          }
-        }
-      });
-
-      this.io.to(`conversation_${conversationId}`).emit('message_reaction', {
+      await toggleReaction({
+        userId: user.userId,
+        actorName: user.userName?.trim() || user.userEmail?.split('@')[0] || 'Someone',
         messageId: data.messageId,
-        reaction: {
-          id: reaction.id,
-          messageId: reaction.messageId,
-          userId: reaction.userId,
-          emoji: reaction.emoji,
-          createdAt: reaction.createdAt,
-          user: reaction.user
-        }
+        emoji: data.emoji,
       });
     } catch (error) {
+      if (error instanceof ChatServiceError) {
+        socket.emit('error', { message: error.message });
+        return;
+      }
       await logger.error('Failed to handle message reaction', {
         operation: 'socket_handle_reaction',
         error: {
           message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        }
+          stack: error instanceof Error ? error.stack : undefined,
+        },
       });
       socket.emit('error', { message: 'Failed to add reaction' });
     }
@@ -587,63 +559,30 @@ export class ChatSocketService {
 
   private async handleMarkAsRead(socket: SocketWithData, messageId: string) {
     const user = socket.data.user as AuthenticatedSocket;
-    
+
     try {
-      const conversationId = await this.assertMessageConversationMember(messageId, user.userId);
-      if (!conversationId) {
-        socket.emit('error', { message: 'Not a member of this conversation' });
+      if (!messageId || typeof messageId !== 'string') {
+        socket.emit('error', { message: 'Invalid message id' });
         return;
       }
 
-      // Save read receipt to database
-      const readReceipt = await prisma.readReceipt.upsert({
-        where: {
-          messageId_userId: {
-            messageId: messageId,
-            userId: user.userId
-          }
-        },
-        update: {
-          readAt: new Date()
-        },
-        create: {
-          messageId: messageId,
-          userId: user.userId,
-          readAt: new Date()
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true }
-          }
-        }
-      });
+      const { markAsRead } = await import('./chatMessageService.js');
 
-      // Get message to find conversation
-      const message = await prisma.message.findUnique({
-        where: { id: messageId },
-        select: { conversationId: true }
+      await markAsRead({
+        userId: user.userId,
+        messageId,
       });
-
-      if (message) {
-        // Broadcast read receipt to conversation
-        this.io.to(`conversation_${message.conversationId}`).emit('message_read', {
-          messageId: messageId,
-          readReceipt: {
-            id: readReceipt.id,
-            messageId: readReceipt.messageId,
-            userId: readReceipt.userId,
-            readAt: readReceipt.readAt,
-            user: readReceipt.user
-          }
-        });
-      }
     } catch (error) {
+      if (error instanceof ChatServiceError) {
+        socket.emit('error', { message: error.message });
+        return;
+      }
       await logger.error('Failed to handle mark as read', {
         operation: 'socket_handle_mark_read',
         error: {
           message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        }
+          stack: error instanceof Error ? error.stack : undefined,
+        },
       });
       socket.emit('error', { message: 'Failed to mark as read' });
     }
@@ -708,6 +647,20 @@ export class ChatSocketService {
   // Public methods for external use
   public broadcastMessage(conversationId: string, message: Record<string, unknown>) {
     this.io.to(`conversation_${conversationId}`).emit('message_received', message);
+  }
+
+  public broadcastMessageReaction(
+    conversationId: string,
+    payload: { messageId: string; reaction: Record<string, unknown> | null; action: 'added' | 'removed' }
+  ) {
+    this.io.to(`conversation_${conversationId}`).emit('message_reaction', payload);
+  }
+
+  public broadcastReadReceipt(
+    conversationId: string,
+    payload: { messageId: string; readReceipt: Record<string, unknown> }
+  ) {
+    this.io.to(`conversation_${conversationId}`).emit('message_read', payload);
   }
 
   public broadcastToUser(userId: string, event: string, data: Record<string, unknown>) {

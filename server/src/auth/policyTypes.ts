@@ -18,7 +18,9 @@ export type PolicyResourceType =
   | 'module'
   | 'task'
   | 'note'
-  | 'place';
+  | 'place'
+  | 'conversation'
+  | 'message';
 
 export interface PolicyScope {
   dashboardId?: string;

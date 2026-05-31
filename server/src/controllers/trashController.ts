@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getGlobalTrashModuleHandler } from '../services/globalTrashModuleRegistry';
 import { DriveDeleteError } from '../services/driveDeleteService';
+import { ChatTrashError } from '../services/chatTrashService';
 import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
@@ -23,12 +24,22 @@ interface TrashItemRequest {
   metadata?: Record<string, unknown>;
 }
 
+interface TrashedListItem {
+  id: string;
+  name: string;
+  type: string;
+  moduleId: string;
+  moduleName: string;
+  trashedAt: Date | null;
+  metadata?: Record<string, unknown>;
+}
+
 function resolveTrashUserId(req: Request): string {
   const user = req.user as { id?: string; sub?: string };
   return user.id || user.sub || '';
 }
 
-function parseDriveTrashHint(req: Request): { moduleId?: string; type?: string } {
+function parseTrashHint(req: Request): { moduleId?: string; type?: string } {
   const body = req.body as { moduleId?: string; type?: string } | undefined;
   const moduleId =
     typeof req.query.moduleId === 'string' ? req.query.moduleId : body?.moduleId;
@@ -78,6 +89,62 @@ async function tryDrivePermanentDelete(
   return false;
 }
 
+async function tryChatRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('chat');
+  if (!handler) return false;
+
+  if (moduleId === 'chat' && (type === 'conversation' || type === 'message')) {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'conversation', id })) return true;
+    if (await handler.restore({ userId, type: 'message', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryChatPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('chat');
+  if (!handler) return false;
+
+  if (moduleId === 'chat' && (type === 'conversation' || type === 'message')) {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'conversation', id })) return true;
+    if (await handler.permanentDelete({ userId, type: 'message', id })) return true;
+  }
+
+  return false;
+}
+
+function mapChatTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof ChatTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function listTrashedItems(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -92,24 +159,10 @@ export async function listTrashedItems(req: Request, res: Response) {
     // Get trashed folders (owner + shared collaborators)
     const trashedFolders = await listAccessibleTrashedFolders(userId);
 
-    // Get trashed conversations
-    const trashedConversations = await prisma.conversation.findMany({
-      where: { 
-        participants: {
-          some: {
-            userId: userId,
-            isActive: true
-          }
-        },
-        trashedAt: { not: null } 
-      },
-      select: {
-        id: true,
-        name: true,
-        trashedAt: true,
-      },
-      orderBy: { trashedAt: 'desc' },
-    });
+    const chatHandler = getGlobalTrashModuleHandler('chat');
+    const trashedChatConversations: TrashedListItem[] = chatHandler?.listTrashed
+      ? (await chatHandler.listTrashed({ userId })) as TrashedListItem[]
+      : [];
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({
@@ -144,55 +197,6 @@ export async function listTrashedItems(req: Request, res: Response) {
       });
     } catch (e) {
       logger.warn('Trash: profile photos query failed (table/column may not exist)', {
-        operation: 'list_trashed_items',
-        userId,
-        error: e instanceof Error ? { message: e.message } : undefined,
-      });
-    }
-
-    // Get trashed messages (optional – schema may differ)
-    let trashedMessages: Array<{
-      id: string;
-      content: string;
-      deletedAt: Date | null;
-      senderId: string;
-      conversationId: string;
-      conversation: { name: string | null };
-    }> = [];
-    try {
-      trashedMessages = await prisma.message.findMany({
-        where: {
-          OR: [
-            { senderId: userId },
-            {
-              conversation: {
-                participants: {
-                  some: {
-                    userId: userId,
-                    isActive: true,
-                  },
-                },
-              },
-            },
-          ],
-          deletedAt: { not: null },
-        },
-        select: {
-          id: true,
-          content: true,
-          deletedAt: true,
-          senderId: true,
-          conversationId: true,
-          conversation: {
-            select: {
-              name: true,
-            },
-          },
-        },
-        orderBy: { deletedAt: 'desc' },
-      });
-    } catch (e) {
-      logger.warn('Trash: messages query failed (schema may differ)', {
         operation: 'list_trashed_items',
         userId,
         error: e instanceof Error ? { message: e.message } : undefined,
@@ -289,7 +293,7 @@ export async function listTrashedItems(req: Request, res: Response) {
     }
 
     // Transform all items to a consistent format
-    const items = [
+    const items: TrashedListItem[] = [
       ...trashedFiles.map(file => ({
         id: file.id,
         name: file.name,
@@ -311,15 +315,7 @@ export async function listTrashedItems(req: Request, res: Response) {
         trashedAt: folder.trashedAt,
         metadata: {},
       })),
-      ...trashedConversations.map(conversation => ({
-        id: conversation.id,
-        name: conversation.name || 'Untitled Conversation',
-        type: 'conversation' as const,
-        moduleId: 'chat',
-        moduleName: 'Chat',
-        trashedAt: conversation.trashedAt,
-        metadata: {},
-      })),
+      ...trashedChatConversations,
       ...trashedDashboards.map(dashboard => ({
         id: dashboard.id,
         name: dashboard.name,
@@ -328,19 +324,6 @@ export async function listTrashedItems(req: Request, res: Response) {
         moduleName: 'Dashboard',
         trashedAt: dashboard.trashedAt,
         metadata: {},
-      })),
-      ...trashedMessages.map(message => ({
-        id: message.id,
-        name: message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content,
-        type: 'message' as const,
-        moduleId: 'chat',
-        moduleName: 'Chat',
-        trashedAt: message.deletedAt,
-        metadata: {
-          conversationId: message.conversationId,
-          senderId: message.senderId,
-          conversationName: message.conversation.name || 'Untitled Conversation',
-        },
       })),
       ...trashedAIConversations.map(conversation => ({
         id: conversation.id,
@@ -451,89 +434,27 @@ export async function trashItem(req: Request, res: Response) {
       }
 
       case 'conversation':
-        // For conversations, we need to check if user is a participant
-        const conversation = await prisma.conversation.findFirst({
-          where: {
-            id,
-            participants: {
-              some: {
-                userId: userId,
-                isActive: true
-              }
-            },
-            trashedAt: null
+      case 'message': {
+        if (moduleId !== 'chat' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for chat trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('chat');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Chat trash handler not registered' });
           }
-        });
-        
-        if (!conversation) {
-          return res.status(404).json({ message: 'Conversation not found or access denied' });
-        }
-        
-        result = await prisma.conversation.updateMany({
-          where: { 
-            id, 
-            participants: {
-              some: {
-                userId: userId,
-                isActive: true
-              }
-            },
-            trashedAt: null 
-          },
-          data: { trashedAt: new Date() },
-        });
-        break;
-
-      case 'message':
-        // For messages, we need to check if user is the sender or has access to the conversation
-        const message = await prisma.message.findFirst({
-          where: {
+          await handler.softTrash({
+            userId,
+            type,
             id,
-            deletedAt: null
-          },
-          include: {
-            conversation: {
-              include: {
-                participants: {
-                  where: {
-                    userId: userId,
-                    isActive: true
-                  }
-                }
-              }
-            }
-          }
-        });
-        
-        if (!message) {
-          return res.status(404).json({ message: 'Message not found' });
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapChatTrashError(res, error)) return;
+          throw error;
         }
-        
-        if (message.conversation.participants.length === 0 && message.senderId !== userId) {
-          return res.status(403).json({ message: 'Access denied' });
-        }
-        
-        result = await prisma.message.updateMany({
-          where: { 
-            id,
-            deletedAt: null,
-            OR: [
-              { senderId: userId },
-              {
-                conversation: {
-                  participants: {
-                    some: {
-                      userId: userId,
-                      isActive: true
-                    }
-                  }
-                }
-              }
-            ]
-          },
-          data: { deletedAt: new Date() },
-        });
-        break;
+      }
 
       case 'dashboard_tab':
         result = await prisma.dashboard.updateMany({
@@ -672,56 +593,21 @@ export async function restoreItem(req: Request, res: Response) {
   try {
     const userId = resolveTrashUserId(req);
     const { id } = req.params;
-    const { moduleId, type } = parseDriveTrashHint(req);
+    const { moduleId, type } = parseTrashHint(req);
 
     if (await tryDriveRestore(userId, id, moduleId, type)) {
       return res.json({ success: true, message: 'Item restored' });
     }
 
-    // Try to restore from each table (non-drive modules)
-    let result = await prisma.conversation.updateMany({
-      where: {
-        id,
-        participants: {
-          some: {
-            userId: userId,
-            isActive: true,
-          },
-        },
-        trashedAt: { not: null },
-      },
+    if (await tryChatRestore(userId, id, moduleId, type)) {
+      return res.json({ success: true, message: 'Item restored' });
+    }
+
+    // Try to restore from each table (non-module handlers)
+    let result = await prisma.dashboard.updateMany({
+      where: { id, userId, trashedAt: { not: null } },
       data: { trashedAt: null },
     });
-
-    if (result.count === 0) {
-      result = await prisma.dashboard.updateMany({
-        where: { id, userId, trashedAt: { not: null } },
-        data: { trashedAt: null },
-      });
-    }
-
-    if (result.count === 0) {
-      result = await prisma.message.updateMany({
-        where: { 
-          id,
-          deletedAt: { not: null },
-          OR: [
-            { senderId: userId },
-            {
-              conversation: {
-                participants: {
-                  some: {
-                    userId: userId,
-                    isActive: true
-                  }
-                }
-              }
-            }
-          ]
-        },
-        data: { deletedAt: null },
-      });
-    }
 
     if (result.count === 0) {
       result = await prisma.aIConversation.updateMany({
@@ -778,53 +664,20 @@ export async function deleteItem(req: Request, res: Response) {
   try {
     const userId = resolveTrashUserId(req);
     const { id } = req.params;
-    const { moduleId, type } = parseDriveTrashHint(req);
+    const { moduleId, type } = parseTrashHint(req);
 
     if (await tryDrivePermanentDelete(userId, id, moduleId, type)) {
       return res.json({ success: true, message: 'Item permanently deleted' });
     }
 
-    // Try to delete from each table (non-drive modules)
-    let result = await prisma.conversation.deleteMany({
-      where: {
-        id,
-        participants: {
-          some: {
-            userId: userId,
-            isActive: true,
-          },
-        },
-        trashedAt: { not: null },
-      },
+    if (await tryChatPermanentDelete(userId, id, moduleId, type)) {
+      return res.json({ success: true, message: 'Item permanently deleted' });
+    }
+
+    // Try to delete from each table (non-module handlers)
+    let result = await prisma.dashboard.deleteMany({
+      where: { id, userId, trashedAt: { not: null } },
     });
-
-    if (result.count === 0) {
-      result = await prisma.dashboard.deleteMany({
-        where: { id, userId, trashedAt: { not: null } },
-      });
-    }
-
-    if (result.count === 0) {
-      result = await prisma.message.deleteMany({
-        where: { 
-          id,
-          deletedAt: { not: null },
-          OR: [
-            { senderId: userId },
-            {
-              conversation: {
-                participants: {
-                  some: {
-                    userId: userId,
-                    isActive: true
-                  }
-                }
-              }
-            }
-          ]
-        },
-      });
-    }
 
     if (result.count === 0) {
       result = await prisma.aIConversation.deleteMany({
@@ -893,44 +746,32 @@ export async function emptyTrash(req: Request, res: Response) {
       });
     }
 
-    // Delete all trashed items from all tables (global empty includes drive via handler path below for files/folders)
+    if (moduleId === 'chat') {
+      const handler = getGlobalTrashModuleHandler('chat');
+      if (!handler) {
+        return res.status(500).json({ message: 'Chat trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'Chat trash emptied',
+        deletedCount,
+      });
+    }
+
     const driveHandler = getGlobalTrashModuleHandler('drive');
     if (driveHandler) {
       await driveHandler.emptyModuleTrash({ userId });
     }
 
+    const chatHandler = getGlobalTrashModuleHandler('chat');
+    if (chatHandler) {
+      await chatHandler.emptyModuleTrash({ userId });
+    }
+
     await Promise.all([
-      prisma.conversation.deleteMany({
-        where: { 
-          participants: {
-            some: {
-              userId: userId,
-              isActive: true
-            }
-          },
-          trashedAt: { not: null } 
-        },
-      }),
       prisma.dashboard.deleteMany({
         where: { userId, trashedAt: { not: null } },
-      }),
-      prisma.message.deleteMany({
-        where: { 
-          OR: [
-            { senderId: userId },
-            {
-              conversation: {
-                participants: {
-                  some: {
-                    userId: userId,
-                    isActive: true
-                  }
-                }
-              }
-            }
-          ],
-          deletedAt: { not: null } 
-        },
       }),
       prisma.aIConversation.deleteMany({
         where: { userId, trashedAt: { not: null } },

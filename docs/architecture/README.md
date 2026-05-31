@@ -7,6 +7,8 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Topic | Document | Cursor rule |
 |-------|----------|-------------|
 | **Platform standards (constitutional)** | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | `platform-standards.mdc` |
+| **Module certification ledger** | [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md) | `platform-standards.mdc` |
+| **Governance foundation (complete)** | [GOVERNANCE_FOUNDATION_COMPLETE.md](./GOVERNANCE_FOUNDATION_COMPLETE.md) | — |
 | Legacy cleanup / deprecation | [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md) | `platform-standards.mdc` |
 | Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) | `module-development.mdc` |
 | V_Link | [V_LINK.md](./V_LINK.md) | — |
@@ -26,7 +28,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Control Center / Learning hub | [AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md) | — |
 | **File Hub (reference module) audits** | [audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) | `module-development.mdc` |
 
-**Reference implementation:** File Hub (`drive`) — tag `file-hub-reference-implementation`. Use FH audits under [`audits/`](./audits/) as the template for module compliance phases.
+**Reference implementation:** File Hub (`drive`) — tag `file-hub-reference-implementation`. Use FH audits under [`audits/`](./audits/) as the template for module compliance phases. Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md). Executive status: [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md). **Chat Wave 1:** Phase 0 audit + operation matrix; Phase 1A [`CHAT_SERVICE_EXTRACTION_PLAN.md`](./audits/CHAT_SERVICE_EXTRACTION_PLAN.md); Phase 1B core services (`server/src/services/chat*.ts`).
 
 **Onboarding and how-to guides** stay in [`docs/guides/README.md`](../guides/README.md).
 

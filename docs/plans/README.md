@@ -6,6 +6,8 @@ Long-lived execution plans, audits, and feature roadmaps. **Active “what’s n
 
 | Topic | File |
 |-------|------|
+| **Platform module modernization (master roadmap)** | `PLATFORM_MODULE_MODERNIZATION_ROADMAP.md` |
+| **Certification ledger (architecture health)** | `../architecture/CERTIFICATION_LEDGER.md` |
 | **Open work after audit / AI phases** | `PROJECT_NEXT_PHASE_OPEN_WORK.md` |
 | AI conversational continuity + rendering source of truth | `AI_CONVERSATIONAL_CONTINUITY_AND_RENDERING_SOURCE_OF_TRUTH.md` |
 | System audit tracker | `SYSTEM_AUDIT_SOURCE_OF_TRUTH.md` |

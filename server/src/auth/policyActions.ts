@@ -39,6 +39,8 @@ export const POLICY_ACTIONS = {
   NOTE_CREATE: 'note:create',
   NOTE_UPDATE: 'note:update',
   NOTE_DELETE: 'note:delete',
+  CHAT_CONVERSATION_READ: 'chat:conversation.read',
+  CHAT_MESSAGE_CREATE: 'chat:message.create',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

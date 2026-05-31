@@ -4,6 +4,7 @@ import { Prisma, RelationshipStatus } from '@prisma/client';
 import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
 import { searchVLinksForUser } from '../services/vlinkService';
 import { searchAccessibleDriveFiles, searchAccessibleDriveFolders, type DriveSearchMimeCategory } from '../services/driveVisibilityService';
+import { searchAccessibleChat } from '../services/chatVisibilityService';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 
@@ -109,7 +110,7 @@ const driveSearchProvider: SearchProvider = {
 const chatSearchProvider: SearchProvider = {
   moduleId: 'chat',
   moduleName: 'Chat',
-  search: async (query, userId, filters) => await searchChat(query, userId, filters),
+  search: async (query, userId, filters) => await searchAccessibleChat(query, userId, filters),
 };
 
 const dashboardSearchProvider: SearchProvider = {
@@ -428,130 +429,6 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
 
   await logger.debug('Drive search total results', {
     operation: 'search_drive_total',
-    count: results.length
-  });
-  return results;
-}
-
-// Search in Chat module
-async function searchChat(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  await logger.debug('Chat search starting', {
-    operation: 'search_chat_start',
-    query,
-    userId
-  });
-  const results: SearchResult[] = [];
-
-  // Search messages
-  await logger.debug('Chat search messages', {
-    operation: 'search_chat_messages'
-  });
-  const messages = await prisma.message.findMany({
-    where: {
-      content: { contains: query, mode: 'insensitive' },
-      conversation: {
-        participants: {
-          some: {
-            userId: userId,
-            isActive: true,
-          },
-        },
-      },
-      deletedAt: null,
-    },
-    include: {
-      sender: {
-        select: { id: true, name: true, email: true },
-      },
-      conversation: {
-        select: { id: true, name: true, type: true },
-      },
-    },
-    take: 10,
-  });
-
-  await logger.debug('Chat search messages found', {
-    operation: 'search_chat_messages_found',
-    count: messages.length
-  });
-
-  for (const message of messages) {
-    const relevanceScore = calculateRelevanceScore(message.content, query);
-    results.push({
-      id: message.id,
-      title: message.content.substring(0, 50) + (message.content.length > 50 ? '...' : ''),
-      description: `Message from ${message.sender.name || message.sender.email} in ${message.conversation.name || 'conversation'}`,
-      moduleId: 'chat',
-      moduleName: 'Chat',
-      url: `/chat?conversation=${message.conversation.id}&message=${message.id}`,
-      type: 'message',
-      metadata: {
-        senderId: message.sender.id,
-        conversationId: message.conversation.id,
-        conversationType: message.conversation.type,
-      },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: message.createdAt,
-      relevanceScore,
-    });
-  }
-
-  // Search conversations
-  await logger.debug('Chat search conversations', {
-    operation: 'search_chat_conversations'
-  });
-  const conversations = await prisma.conversation.findMany({
-    where: {
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { messages: { some: { content: { contains: query, mode: 'insensitive' } } } },
-      ],
-      participants: {
-        some: {
-          userId: userId,
-          isActive: true,
-        },
-      },
-    },
-    include: {
-      participants: {
-        include: {
-          user: {
-            select: { id: true, name: true, email: true },
-          },
-        },
-      },
-    },
-    take: 5,
-  });
-
-  await logger.debug('Chat search conversations found', {
-    operation: 'search_chat_conversations_found',
-    count: conversations.length
-  });
-
-  for (const conversation of conversations) {
-    const relevanceScore = calculateRelevanceScore(conversation.name || '', query);
-    results.push({
-      id: conversation.id,
-      title: conversation.name || `${conversation.type} conversation`,
-      description: `${conversation.participants.length} participants`,
-      moduleId: 'chat',
-      moduleName: 'Chat',
-      url: `/chat?conversation=${conversation.id}`,
-      type: 'conversation',
-      metadata: {
-        type: conversation.type,
-        participantCount: conversation.participants.length,
-      },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: conversation.updatedAt,
-      relevanceScore,
-    });
-  }
-
-  await logger.debug('Chat search total results', {
-    operation: 'search_chat_total',
     count: results.length
   });
   return results;

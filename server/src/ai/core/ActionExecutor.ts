@@ -521,188 +521,174 @@ export class ActionExecutor {
     }
   }
 
+  private chatActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'chat' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private chatActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.chatActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: { success: true, data: outcome.data },
+      metadata: this.chatActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
   /**
-   * Chat module action executor
+   * Chat module action executor — canonical services only (Phase 1F).
    */
   private async executeChatAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
     const startTime = Date.now();
     const { operation, parameters } = action;
 
     try {
+      const {
+        aiSendMessage,
+        aiCreateConversation,
+        aiRespondToMessage,
+      } = await import('../../services/chatAIActionService.js');
+
       switch (operation) {
         case 'send_message': {
           const { conversationId, content, fileIds, replyToId, threadId } = parameters || {};
-          
+
           if (!conversationId || !content) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'conversationId and content are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'chat',
-                operation: 'send_message',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.chatActionResult(
+              action,
+              startTime,
+              'send_message',
+              { success: false, error: 'conversationId and content are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { createMessage } = await import('../../controllers/chatController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { conversationId },
-            body: {
-              content,
-              fileIds: fileIds || [],
-              replyToId: replyToId || null,
-              threadId: threadId || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiSendMessage({
+            userId: userContext.userId,
+            conversationId: String(conversationId),
+            content: String(content),
+            fileIds: Array.isArray(fileIds) ? fileIds.map(String) : undefined,
+            replyToId: replyToId != null ? String(replyToId) : null,
+            threadId: threadId != null ? String(threadId) : null,
+          });
 
-          await createMessage(mockReq, mockRes);
-
-      return {
-        actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-        metadata: {
-              executionTime: Date.now() - startTime,
-          module: 'chat',
-              operation: 'send_message',
-          affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.chatActionResult(
+            action,
+            startTime,
+            'send_message',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'create_conversation': {
           const { name, type, participantIds, dashboardId } = parameters || {};
-          
+
           if (!type || !participantIds || !Array.isArray(participantIds)) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'type and participantIds array are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'chat',
-                operation: 'create_conversation',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.chatActionResult(
+              action,
+              startTime,
+              'create_conversation',
+              { success: false, error: 'type and participantIds array are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          // Validate type
-          const validTypes = ['DIRECT', 'GROUP', 'CHANNEL'];
-          if (!validTypes.includes(type as string)) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: `type must be one of: ${validTypes.join(', ')}`,
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'chat',
-                operation: 'create_conversation',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+          const validTypes = ['DIRECT', 'GROUP', 'CHANNEL'] as const;
+          if (!validTypes.includes(type as (typeof validTypes)[number])) {
+            return this.chatActionResult(
+              action,
+              startTime,
+              'create_conversation',
+              {
+                success: false,
+                error: `type must be one of: ${validTypes.join(', ')}`,
+              },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { createConversation } = await import('../../controllers/chatController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: {
-              name: name || null,
-              type: type as 'DIRECT' | 'GROUP' | 'CHANNEL',
-              participantIds,
-              dashboardId: dashboardId || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiCreateConversation({
+            userId: userContext.userId,
+            type: type as (typeof validTypes)[number],
+            participantIds: participantIds.map(String),
+            name: typeof name === 'string' ? name : undefined,
+            dashboardId: typeof dashboardId === 'string' ? dashboardId : undefined,
+          });
 
-          await createConversation(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'chat',
-              operation: 'create_conversation',
-              affectedUsers: action.affectedUsers || participantIds || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.chatActionResult(
+            action,
+            startTime,
+            'create_conversation',
+            outcome,
+            action.affectedUsers || participantIds.map(String),
+            true
+          );
         }
 
         case 'respond_to_message': {
-          // This is essentially send_message with replyToId
           const { conversationId, messageId, content, fileIds } = parameters || {};
-          
+
           if (!conversationId || !messageId || !content) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'conversationId, messageId, and content are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'chat',
-                operation: 'respond_to_message',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.chatActionResult(
+              action,
+              startTime,
+              'respond_to_message',
+              {
+                success: false,
+                error: 'conversationId, messageId, and content are required',
+              },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { createMessage } = await import('../../controllers/chatController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { conversationId },
-            body: {
-              content,
-              replyToId: messageId,
-              fileIds: fileIds || []
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiRespondToMessage({
+            userId: userContext.userId,
+            conversationId: String(conversationId),
+            messageId: String(messageId),
+            content: String(content),
+            fileIds: Array.isArray(fileIds) ? fileIds.map(String) : undefined,
+          });
 
-          await createMessage(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'chat',
-              operation: 'respond_to_message',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.chatActionResult(
+            action,
+            startTime,
+            'respond_to_message',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'schedule_message': {
