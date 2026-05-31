@@ -190,6 +190,216 @@ export function emitFolderSharedEvent(params: {
   );
 }
 
+export function emitFileRenamedEvent(params: {
+  actorUserId: string;
+  fileId: string;
+  fileName: string;
+  previousName: string;
+  folderId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FILE_RENAMED, {
+      actorUserId: params.actorUserId,
+      entityId: params.fileId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        fileName: params.fileName,
+        previousName: params.previousName,
+        ...(params.folderId != null ? { folderId: params.folderId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFileMovedEvent(params: {
+  actorUserId: string;
+  fileId: string;
+  fileName?: string;
+  folderId?: string | null;
+  previousFolderId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FILE_MOVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.fileId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        ...(params.fileName ? { fileName: params.fileName } : {}),
+        ...(params.folderId != null ? { folderId: params.folderId } : {}),
+        ...(params.previousFolderId != null ? { previousFolderId: params.previousFolderId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFileRestoredEvent(params: {
+  actorUserId: string;
+  fileId: string;
+  fileName?: string;
+  folderId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FILE_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.fileId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        ...(params.fileName ? { fileName: params.fileName } : {}),
+        ...(params.folderId != null ? { folderId: params.folderId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFileUnsharedEvent(params: {
+  actorUserId: string;
+  fileId: string;
+  recipientUserId: string;
+  fileName?: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FILE_UNSHARED, {
+      actorUserId: params.actorUserId,
+      entityId: params.fileId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        recipientUserId: params.recipientUserId,
+        ...(params.fileName ? { fileName: params.fileName } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderCreatedEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  folderName: string;
+  parentId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        folderName: params.folderName,
+        ...(params.parentId != null ? { parentId: params.parentId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderRenamedEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  folderName: string;
+  previousName: string;
+  parentId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_RENAMED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        folderName: params.folderName,
+        previousName: params.previousName,
+        ...(params.parentId != null ? { parentId: params.parentId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderMovedEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  folderName?: string;
+  parentId?: string | null;
+  previousParentId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_MOVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        ...(params.folderName ? { folderName: params.folderName } : {}),
+        ...(params.parentId != null ? { parentId: params.parentId } : {}),
+        ...(params.previousParentId != null ? { previousParentId: params.previousParentId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderDeletedEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  folderName?: string;
+  parentId?: string | null;
+  softDelete?: boolean;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        softDelete: params.softDelete ?? true,
+        ...(params.folderName ? { folderName: params.folderName } : {}),
+        ...(params.parentId != null ? { parentId: params.parentId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderRestoredEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  folderName?: string;
+  parentId?: string | null;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        ...(params.folderName ? { folderName: params.folderName } : {}),
+        ...(params.parentId != null ? { parentId: params.parentId } : {}),
+      },
+    })
+  );
+}
+
+export function emitFolderUnsharedEvent(params: {
+  actorUserId: string;
+  folderId: string;
+  recipientUserId: string;
+  folderName?: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.FOLDER_UNSHARED, {
+      actorUserId: params.actorUserId,
+      entityId: params.folderId,
+      dashboardId: params.dashboardId,
+      metadata: {
+        recipientUserId: params.recipientUserId,
+        ...(params.folderName ? { folderName: params.folderName } : {}),
+      },
+    })
+  );
+}
+
 export function emitBusinessUpdatedEvent(params: {
   actorUserId: string;
   businessId: string;

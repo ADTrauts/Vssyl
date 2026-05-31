@@ -25,6 +25,7 @@ export type ModuleCapability =
   | 'vlink'
   | 'trash'
   | 'search'
+  | 'preview'
   | 'businessWorkspace'
   | 'globalActivity';
 

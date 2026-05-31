@@ -63,6 +63,7 @@ import { initializeChatSocketService, getChatSocketService } from './services/ch
 import { registerDomainEventSubscribers } from './events/registerDomainEventSubscribers';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
 import { registerGlobalTrashHandlers } from './startup/registerGlobalTrashHandlers';
+import { registerPlatformEntities } from './startup/registerPlatformEntities';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
 import { seedNotesModuleOnStartup } from './startup/seedNotesModule';
@@ -145,6 +146,7 @@ import { buildExpressErrorResponse } from './lib/expressErrorHandlerResponse';
 
 const app: express.Application = express();
 registerGlobalTrashHandlers();
+registerPlatformEntities();
 const port = process.env.PORT || 5000;
 /** Avoid per-request debug logging in production (scheduling troubleshooting middleware). */
 const isDevRuntime = process.env.NODE_ENV !== 'production';
@@ -1240,6 +1242,7 @@ async function handleServerListening(): Promise<void> {
 
   try {
     registerGlobalTrashHandlers();
+    registerPlatformEntities();
   } catch (e: unknown) {
     const err = e as Error;
     void logger.error('Global Trash handler registration failed (non-critical)', {

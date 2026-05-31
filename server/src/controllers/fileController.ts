@@ -23,7 +23,12 @@ import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
   emitFileDeletedEvent,
   emitFileUploadedEvent,
+  emitFileMovedEvent,
+  emitFileRenamedEvent,
+  emitFileUnsharedEvent,
 } from '../events/domainEventEmitters';
+import { broadcastDriveShareChange } from '../services/driveRealtimeService';
+import { listAccessibleDriveFilesForBrowse } from '../services/driveVisibilityService';
 
 interface JWTPayload {
   sub?: string;
@@ -81,21 +86,20 @@ function hasUserId(user: any): user is { id: string } {
   return user && typeof user.id === 'string';
 }
 
-// List files with dashboard context support
+// List files with dashboard context support (owned + shared — FH-2)
 export async function listFiles(req: Request, res: Response) {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
-    
-    // Validate query parameters with proper type checking
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
     const folderId = req.query.folderId;
     const starred = req.query.starred;
     const dashboardId = req.query.dashboardId;
     const fileIdQuery = req.query.fileId;
 
     if (fileIdQuery && typeof fileIdQuery === 'string') {
-      if (!userId) {
-        return res.status(401).json({ message: 'Authentication required' });
-      }
       if (!(await canReadFile(userId, fileIdQuery))) {
         return res.status(403).json({ message: 'Forbidden' });
       }
@@ -107,100 +111,39 @@ export async function listFiles(req: Request, res: Response) {
       }
       return res.json({ files: [file] });
     }
-    
-    // Validate folderId if provided
+
     if (folderId && typeof folderId !== 'string') {
       return res.status(400).json({ error: 'folderId must be a string' });
     }
-    
-    // Validate starred if provided
     if (starred && typeof starred !== 'string') {
       return res.status(400).json({ error: 'starred must be a string' });
     }
-    
-    // Validate dashboardId if provided
     if (dashboardId && typeof dashboardId !== 'string') {
       return res.status(400).json({ error: 'dashboardId must be a string' });
     }
-    
+
     const folderIdStr = folderId as string | undefined;
     const starredStr = starred as string | undefined;
     const dashboardIdStr = dashboardId as string | undefined;
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { userId };
-    
-    if (folderIdStr) {
-      where.folderId = folderIdStr;
-    } else {
-      where.folderId = null;
-    }
-    
-    // Add starred filtering
-    if (starredStr === 'true') {
-      where.starred = true;
-    } else if (starredStr === 'false') {
-      where.starred = false;
-    }
-    
-    // Use raw SQL to include order field in sorting
-    let query = `SELECT * FROM "files" WHERE "userId" = $1`;
-    const params = [userId];
-    let paramIndex = 2;
-    
-    // Dashboard context filtering
-    // When fetching starred items, show across all dashboards (don't filter by dashboardId)
-    if (starredStr === 'true') {
-      // Show starred items from all dashboards
-      await logger.debug('Starred items requested - showing across all dashboards', {
-        operation: 'file_list_starred_all_dashboards'
-      });
-    } else if (dashboardIdStr) {
-      query += ` AND "dashboardId" = $${paramIndex}`;
-      params.push(dashboardIdStr);
-      paramIndex++;
-      await logger.debug('Dashboard context requested', {
-        operation: 'file_list_dashboard_context',
-        dashboardId: dashboardIdStr
-      });
-    } else {
-      query += ` AND "dashboardId" IS NULL`;
-    }
-    
-    if (folderIdStr) {
-      query += ` AND "folderId" = $${paramIndex}`;
-      params.push(folderIdStr);
-      paramIndex++;
-    } else {
-      query += ` AND "folderId" IS NULL`;
-    }
-    
-    if (starredStr === 'true') {
-      query += ` AND "starred" = true`;
-    } else if (starred === 'false') {
-      query += ` AND "starred" = false`;
-    }
-    
-    // Exclude trashed files
-    query += ` AND "trashedAt" IS NULL`;
-    
-    query += ` ORDER BY "order" ASC, "createdAt" DESC`;
-    
-    const files = await prisma.$queryRawUnsafe(query, ...params) as Array<any>;
-    
-    // Convert file URLs to download endpoint for consistent, authenticated access
-    // This ensures images work regardless of storage provider or public access settings
-    const baseUrl = process.env.BACKEND_URL || 
-                   process.env.NEXT_PUBLIC_API_BASE_URL || 
-                   'https://vssyl-server-235369681725.us-central1.run.app';
-    
-    const filesWithFullUrls = files.map((file: Record<string, any>) => ({
+    const isStarred = starredStr === 'true';
+
+    const files = await listAccessibleDriveFilesForBrowse({
+      userId,
+      folderId: folderIdStr ?? null,
+      dashboardId: isStarred ? undefined : (dashboardIdStr ?? null),
+      starred: isStarred,
+    });
+
+    const baseUrl =
+      process.env.BACKEND_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      'https://vssyl-server-235369681725.us-central1.run.app';
+
+    const filesWithFullUrls = files.map((file) => ({
       ...file,
-      // Always use download endpoint for file access (handles both GCS and local storage)
-      url: `${baseUrl}/api/drive/files/${file.id}/download`
+      url: `${baseUrl}/api/drive/files/${file.id}/download`,
     }));
-    
-    // Return array directly to match folders API format
+
     res.json(filesWithFullUrls);
   } catch (err) {
     await logger.error('Failed to list files', {
@@ -853,6 +796,27 @@ export async function updateFile(req: Request, res: Response) {
       },
     });
 
+    const didMove = folderId !== undefined && folderId !== originalFile.folderId;
+    if (didMove) {
+      emitFileMovedEvent({
+        actorUserId: userId,
+        fileId: id,
+        fileName: updated?.name ?? originalFile.name,
+        folderId: updated?.folderId ?? null,
+        previousFolderId: originalFile.folderId,
+        dashboardId: updated?.dashboardId ?? originalFile.dashboardId,
+      });
+    } else if (name !== undefined && name !== originalFile.name) {
+      emitFileRenamedEvent({
+        actorUserId: userId,
+        fileId: id,
+        fileName: name,
+        previousName: originalFile.name,
+        folderId: updated?.folderId ?? originalFile.folderId,
+        dashboardId: updated?.dashboardId ?? originalFile.dashboardId,
+      });
+    }
+
     // Broadcast real-time drive event to owner
     try {
       const socketService = getChatSocketService();
@@ -1097,6 +1061,24 @@ export async function revokeFilePermission(req: Request, res: Response) {
         targetUserId: userId,
         fileName: file.name,
       },
+    });
+
+    emitFileUnsharedEvent({
+      actorUserId: ownerId,
+      fileId: id,
+      recipientUserId: userId,
+      fileName: file.name,
+      dashboardId: file.dashboardId,
+    });
+
+    broadcastDriveShareChange({
+      ownerUserId: file.userId,
+      recipientUserId: userId,
+      itemId: id,
+      itemType: 'file',
+      action: 'unshare',
+      dashboardId: file.dashboardId,
+      folderId: file.folderId,
     });
     
     // Create notification for the user whose permission was revoked
@@ -1584,6 +1566,15 @@ export async function moveFile(req: Request, res: Response) {
         originalFolderId,
         newFolderId: targetFolderId,
       },
+    });
+
+    emitFileMovedEvent({
+      actorUserId: userId,
+      fileId: id,
+      fileName: file.name,
+      folderId: updatedFile.folderId,
+      previousFolderId: originalFolderId,
+      dashboardId: updatedFile.dashboardId,
     });
 
     // Broadcast real-time drive event to owner

@@ -1,7 +1,8 @@
 import { prisma } from '../lib/prisma';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
-import { canReadFile } from './drivePermissionHelpers';
+import { canReadFile, canReadFolder } from './drivePermissionHelpers';
+import type { Prisma } from '@prisma/client';
 
 /** Prisma OR branch: user owns or has explicit file share. */
 export function accessibleOwnedOrSharedFileClause(userId: string) {
@@ -108,8 +109,29 @@ export async function listAccessibleDriveFiles(input: ListAccessibleDriveFilesIn
     return candidates;
   }
 
-  const allowed = [];
-  for (const file of candidates) {
+  return filterFilesByReadPolicy(userId, candidates);
+}
+
+export interface DriveBrowseQuery {
+  userId: string;
+  dashboardId?: string | null;
+  starred?: boolean;
+}
+
+export interface DriveFileBrowseQuery extends DriveBrowseQuery {
+  folderId?: string | null;
+}
+
+export interface DriveFolderBrowseQuery extends DriveBrowseQuery {
+  parentId?: string | null;
+}
+
+async function filterFilesByReadPolicy<T extends { id: string; dashboardId: string | null }>(
+  userId: string,
+  files: T[]
+): Promise<T[]> {
+  const allowed: T[] = [];
+  for (const file of files) {
     if (!(await canReadFile(userId, file.id))) continue;
     const policy = await evaluateDrivePolicyDual({
       userId,
@@ -118,11 +140,80 @@ export async function listAccessibleDriveFiles(input: ListAccessibleDriveFilesIn
       resourceId: file.id,
       scope: file.dashboardId ? { dashboardId: file.dashboardId } : undefined,
     });
-    if (!policy.blocked) {
-      allowed.push(file);
-    }
+    if (!policy.blocked) allowed.push(file);
   }
   return allowed;
+}
+
+async function filterFoldersByReadPolicy<T extends { id: string; dashboardId: string | null }>(
+  userId: string,
+  folders: T[]
+): Promise<T[]> {
+  const allowed: T[] = [];
+  for (const folder of folders) {
+    if (!(await canReadFolder(userId, folder.id))) continue;
+    const policy = await evaluateDrivePolicyDual({
+      userId,
+      action: POLICY_ACTIONS.FILE_READ,
+      resourceType: 'folder',
+      resourceId: folder.id,
+      scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
+    });
+    if (!policy.blocked) allowed.push(folder);
+  }
+  return allowed;
+}
+
+/** UI browse: owned + shared active files in a folder context (FH-2). */
+export async function listAccessibleDriveFilesForBrowse(query: DriveFileBrowseQuery) {
+  const { userId, folderId = null, dashboardId, starred } = query;
+
+  const where: Prisma.FileWhereInput = {
+    trashedAt: null,
+    ...accessibleOwnedOrSharedFileClause(userId),
+    folderId,
+  };
+
+  if (starred) {
+    where.starred = true;
+  } else if (dashboardId !== undefined) {
+    where.dashboardId = dashboardId;
+  } else {
+    where.dashboardId = null;
+  }
+
+  const candidates = await prisma.file.findMany({
+    where,
+    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+  });
+
+  return filterFilesByReadPolicy(userId, candidates);
+}
+
+/** UI browse: owned + shared active folders in a parent context (FH-2). */
+export async function listAccessibleDriveFoldersForBrowse(query: DriveFolderBrowseQuery) {
+  const { userId, parentId = null, dashboardId, starred } = query;
+
+  const where: Prisma.FolderWhereInput = {
+    trashedAt: null,
+    ...accessibleOwnedOrSharedFolderClause(userId),
+    parentId,
+  };
+
+  if (starred) {
+    where.starred = true;
+  } else if (dashboardId !== undefined) {
+    where.dashboardId = dashboardId;
+  } else {
+    where.dashboardId = null;
+  }
+
+  const candidates = await prisma.folder.findMany({
+    where,
+    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+  });
+
+  return filterFoldersByReadPolicy(userId, candidates);
 }
 
 export async function validateAccessibleFileIds(userId: string, fileIds: string[]): Promise<{
@@ -189,11 +280,18 @@ export async function fetchAccessibleActiveFiles(userId: string, fileIds: string
   });
 }
 
-/** Documented permission model for File Hub trash visibility (FH-1). */
+/** Documented permission model for File Hub visibility (FH-1 / FH-2). */
 export const DRIVE_TRASH_VISIBILITY_MODEL = {
   files:
     'Owner OR FilePermission.canRead OR FilePermission.canWrite on trashed file; restore/delete requires canWriteFile + PE.',
   folders:
     'Owner OR FolderPermission.canRead OR FolderPermission.canWrite on trashed folder; restore/delete requires canWriteFolder + PE.',
   excludes: 'Items with no permission relation to the requesting user.',
+} as const;
+
+export const DRIVE_BROWSE_VISIBILITY_MODEL = {
+  files:
+    'Owner OR FilePermission (canRead/canWrite) in folder/dashboard context; Policy Engine file:read per row.',
+  folders:
+    'Owner OR FolderPermission (canRead/canWrite) in parent/dashboard context; Policy Engine file:read on folder resource.',
 } as const;

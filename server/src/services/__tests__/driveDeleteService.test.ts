@@ -5,6 +5,7 @@ import * as drivePolicyDual from '../../auth/drivePolicyDual';
 import * as storageService from '../storageService';
 import * as moduleActivity from '../moduleActivityService';
 import * as chatSocket from '../chatSocketService';
+import * as driveRealtime from '../driveRealtimeService';
 import * as domainEmitters from '../../events/domainEventEmitters';
 import {
   emptyDriveTrash,
@@ -28,6 +29,11 @@ vi.mock('../chatSocketService', () => ({
   getChatSocketService: vi.fn().mockReturnValue({
     broadcastDriveEvent: vi.fn(),
   }),
+}));
+
+vi.mock('../driveRealtimeService', () => ({
+  broadcastDriveEventToUsers: vi.fn(),
+  broadcastDriveShareChange: vi.fn(),
 }));
 
 describe('driveDeleteService', () => {
@@ -125,8 +131,6 @@ describe('driveDeleteService', () => {
       userId: 'owner-1',
     } as never);
     vi.spyOn(prisma.file, 'updateMany').mockResolvedValue({ count: 1 });
-    const broadcast = vi.fn();
-    vi.mocked(chatSocket.getChatSocketService).mockReturnValue({ broadcastDriveEvent: broadcast } as never);
 
     const ok = await restoreDriveItem({ userId: 'owner-1', type: 'file', id: 'file-1' });
 
@@ -134,8 +138,8 @@ describe('driveDeleteService', () => {
     expect(moduleActivity.emitModuleActivityEvent).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'restore', targetType: 'file', targetId: 'file-1' })
     );
-    expect(broadcast).toHaveBeenCalledWith(
-      'owner-1',
+    expect(driveRealtime.broadcastDriveEventToUsers).toHaveBeenCalledWith(
+      ['owner-1', 'owner-1'],
       'drive:item:updated',
       expect.objectContaining({ itemId: 'file-1', restored: true })
     );

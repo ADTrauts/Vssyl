@@ -6,8 +6,9 @@ import { logger } from '../lib/logger';
 import { authorize } from '../auth/policyEngine';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
-import { emitFolderSharedEvent } from '../events/domainEventEmitters';
+import { emitFolderSharedEvent, emitFolderUnsharedEvent } from '../events/domainEventEmitters';
 import { emitModuleActivityEvent } from '../services/moduleActivityService';
+import { broadcastDriveShareChange } from '../services/driveRealtimeService';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
@@ -160,6 +161,16 @@ export async function grantFolderPermission(req: Request, res: Response) {
       },
     });
 
+    broadcastDriveShareChange({
+      ownerUserId: folder.userId,
+      recipientUserId: userId,
+      itemId: id,
+      itemType: 'folder',
+      action: 'share',
+      dashboardId: folder.dashboardId,
+      folderId: folder.parentId,
+    });
+
     res.status(201).json({ permission });
   } catch (err: unknown) {
     const error = err as Error;
@@ -257,6 +268,24 @@ export async function revokeFolderPermission(req: Request, res: Response) {
         targetUserId: userId,
         folderName: folder.name,
       },
+    });
+
+    emitFolderUnsharedEvent({
+      actorUserId: ownerId,
+      folderId: id,
+      recipientUserId: userId,
+      folderName: folder.name,
+      dashboardId: folder.dashboardId,
+    });
+
+    broadcastDriveShareChange({
+      ownerUserId: folder.userId,
+      recipientUserId: userId,
+      itemId: id,
+      itemType: 'folder',
+      action: 'unshare',
+      dashboardId: folder.dashboardId,
+      folderId: folder.parentId,
     });
     
     // Create notification for the user whose permission was revoked

@@ -4,7 +4,8 @@ import { POLICY_ACTIONS } from '../auth/policyActions';
 import { canWriteFile, canWriteFolder } from './drivePermissionHelpers';
 import { storageService } from './storageService';
 import { emitModuleActivityEvent } from './moduleActivityService';
-import { emitFileDeletedEvent } from '../events/domainEventEmitters';
+import { emitFileDeletedEvent, emitFileRestoredEvent, emitFolderDeletedEvent, emitFolderRestoredEvent } from '../events/domainEventEmitters';
+import { broadcastDriveEventToUsers } from './driveRealtimeService';
 import { getChatSocketService } from './chatSocketService';
 import { logger } from '../lib/logger';
 
@@ -202,6 +203,15 @@ export async function softTrashDriveItem(input: DriveItemMutationInput): Promise
       metadata: { name: folderToDelete.name, softDelete: true },
     });
 
+    emitFolderDeletedEvent({
+      actorUserId: userId,
+      folderId: folderToDelete.id,
+      folderName: folderToDelete.name,
+      parentId: folderToDelete.parentId,
+      softDelete: true,
+      dashboardId: folderToDelete.dashboardId,
+    });
+
     try {
       getChatSocketService().broadcastDriveEvent(folderToDelete.userId, 'drive:item:deleted', {
         itemId: folderToDelete.id,
@@ -261,21 +271,21 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       metadata: { fileName: file.name },
     });
 
-    try {
-      getChatSocketService().broadcastDriveEvent(file.userId, 'drive:item:updated', {
+    emitFileRestoredEvent({
+      actorUserId: userId,
+      fileId: id,
+      fileName: file.name,
+      folderId: file.folderId,
+      dashboardId: file.dashboardId,
+    });
+
+    broadcastDriveEventToUsers([file.userId, userId], 'drive:item:updated', {
         itemId: id,
         itemType: 'file',
         dashboardId: file.dashboardId,
         folderId: file.folderId,
         restored: true,
-      });
-    } catch (socketError: unknown) {
-      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
-      await logger.error('Failed to broadcast drive restore event', {
-        operation: 'drive_restore_file_socket',
-        error: { message: err.message, stack: err.stack },
-      });
-    }
+    });
 
     return true;
   }
@@ -316,21 +326,21 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       metadata: { name: folder.name },
     });
 
-    try {
-      getChatSocketService().broadcastDriveEvent(folder.userId, 'drive:item:updated', {
-        itemId: id,
-        itemType: 'folder',
-        dashboardId: folder.dashboardId,
-        folderId: folder.parentId,
-        restored: true,
-      });
-    } catch (socketError: unknown) {
-      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
-      await logger.error('Failed to broadcast drive restore event', {
-        operation: 'drive_restore_folder_socket',
-        error: { message: err.message, stack: err.stack },
-      });
-    }
+    emitFolderRestoredEvent({
+      actorUserId: userId,
+      folderId: id,
+      folderName: folder.name,
+      parentId: folder.parentId,
+      dashboardId: folder.dashboardId,
+    });
+
+    broadcastDriveEventToUsers([folder.userId, userId], 'drive:item:updated', {
+      itemId: id,
+      itemType: 'folder',
+      dashboardId: folder.dashboardId,
+      folderId: folder.parentId,
+      restored: true,
+    });
 
     return true;
   }
@@ -359,6 +369,14 @@ export async function permanentlyDeleteDriveFile(input: {
     scope: fileToDelete.dashboardId ? { dashboardId: fileToDelete.dashboardId } : undefined,
   });
   if (policy.blocked) return false;
+
+  broadcastDriveEventToUsers([userId, fileToDelete.userId], 'drive:item:deleted', {
+    itemId: fileId,
+    itemType: 'file',
+    dashboardId: fileToDelete.dashboardId,
+    folderId: fileToDelete.folderId,
+    permanent: true,
+  });
 
   await deleteFileBlob(fileToDelete.path);
   const deleted = await deleteFileRecords(fileId);
@@ -410,6 +428,23 @@ export async function permanentlyDeleteDriveFolderCascade(input: {
   if (policy.blocked) return false;
 
   await deleteFolderTreeRecords(folderId);
+
+  emitFolderDeletedEvent({
+    actorUserId: userId,
+    folderId,
+    folderName: folder.name,
+    parentId: folder.parentId,
+    softDelete: false,
+    dashboardId: folder.dashboardId,
+  });
+
+  broadcastDriveEventToUsers([userId, folder.userId], 'drive:item:deleted', {
+    itemId: folderId,
+    itemType: 'folder',
+    dashboardId: folder.dashboardId,
+    folderId: folder.parentId,
+    permanent: true,
+  });
 
   await emitModuleActivityEvent({
     actorUserId: userId,

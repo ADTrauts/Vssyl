@@ -9,8 +9,18 @@ export interface BuiltInManifestCapabilities {
   trash?: boolean;
   notifications?: boolean;
   search?: boolean;
+  preview?: boolean;
   businessWorkspace?: boolean;
   globalActivity?: boolean;
+}
+
+export interface BuiltInManifestEntity {
+  type: string;
+  displayName: string;
+  pluralName: string;
+  vlinkEntityType?: string;
+  supportsTrash?: boolean;
+  supportsSearch?: boolean;
 }
 
 export interface BuiltInModuleManifest {
@@ -19,6 +29,7 @@ export interface BuiltInModuleManifest {
   permissions: string[];
   capabilities: BuiltInManifestCapabilities;
   routes?: Array<{ path: string; label: string }>;
+  entities?: BuiltInManifestEntity[];
 }
 
 const CAP = {
@@ -47,10 +58,29 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           realtime: true,
           notifications: true,
           search: true,
+          preview: true,
           businessWorkspace: true,
           globalActivity: true,
         }),
         routes: [{ path: '/drive', label: 'File Hub' }],
+        entities: [
+          {
+            type: 'file',
+            displayName: 'File',
+            pluralName: 'Files',
+            vlinkEntityType: 'FILE',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+          {
+            type: 'folder',
+            displayName: 'Folder',
+            pluralName: 'Folders',
+            vlinkEntityType: 'FOLDER',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
       };
     case 'chat':
       return {
@@ -175,5 +205,6 @@ export function reconcileBuiltInManifest(
       ...canonical.capabilities,
     },
     ...(canonical.routes ? { routes: canonical.routes } : {}),
+    ...(canonical.entities ? { entities: canonical.entities } : {}),
   };
 }

@@ -147,7 +147,7 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
     moduleId: 'drive',
     moduleName: 'File Hub',
     aiContext: {
-      purpose: 'File and folder storage with organization, sharing, and versioning capabilities',
+      purpose: 'File and folder storage with organization, sharing, and collaboration',
       category: 'PRODUCTIVITY',
       keywords: ['file', 'folder', 'document', 'storage', 'drive', 'file hub', 'upload', 'download', 'share', 'organize'],
       patterns: [

@@ -10,6 +10,15 @@ import { emitModuleActivityEvent } from '../services/moduleActivityService';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
+  accessibleOwnedOrSharedFolderClause,
+  listAccessibleDriveFoldersForBrowse,
+} from '../services/driveVisibilityService';
+import {
+  emitFolderCreatedEvent,
+  emitFolderRenamedEvent,
+  emitFolderMovedEvent,
+} from '../events/domainEventEmitters';
+import {
   permanentlyDeleteDriveFolderCascade,
   restoreDriveItem,
 } from '../services/driveDeleteService';
@@ -53,69 +62,31 @@ export async function listFolders(req: Request, res: Response) {
     const parentIdStr = parentId as string | undefined;
     const starredStr = starred as string | undefined;
     const dashboardIdStr = dashboardId as string | undefined;
-    
-    // Build where conditions for Prisma ORM query
-    // Start with folders owned by the user (we'll add shared folders later if needed)
-    const whereConditions: Prisma.FolderWhereInput = {
+    const isStarred = starredStr === 'true';
+
+    const folders = await listAccessibleDriveFoldersForBrowse({
       userId,
-      trashedAt: null,
-    };
-
-    // Dashboard context filtering
-    if (starredStr === 'true') {
-      whereConditions.starred = true;
-      // Don't filter by dashboardId when fetching starred items - show across all dashboards
-    } else {
-      if (dashboardIdStr) {
-        whereConditions.dashboardId = dashboardIdStr;
-        await logger.debug('Dashboard context requested for folders', {
-          operation: 'folder_list_dashboard_context',
-          dashboardId: dashboardIdStr
-        });
-      } else {
-        // Only set to null if we're NOT fetching starred items
-        whereConditions.dashboardId = null;
-      }
-    }
-
-    // Parent folder filtering
-    if (parentIdStr) {
-      whereConditions.parentId = parentIdStr;
-    } else {
-      // Root level folders have parentId = null
-      whereConditions.parentId = null;
-    }
-
-    if (starred === 'false') {
-      whereConditions.starred = false;
-    }
-
-    // Fetch folders with Prisma ORM
-    const folders = await prisma.folder.findMany({
-      where: whereConditions,
-      orderBy: [
-        { order: 'asc' },
-        { createdAt: 'desc' },
-      ],
+      parentId: parentIdStr ?? null,
+      dashboardId: isStarred ? undefined : (dashboardIdStr ?? null),
+      starred: isStarred,
     });
 
-    // Add hasChildren count for each folder
     const foldersWithChildren = await Promise.all(
       folders.map(async (folder) => {
         const childCount = await prisma.folder.count({
           where: {
             parentId: folder.id,
-            userId: folder.userId,
             trashedAt: null,
+            ...accessibleOwnedOrSharedFolderClause(userId),
           },
         });
         return {
           ...folder,
-          hasChildren: childCount,
+          hasChildren: childCount > 0,
         };
       })
     );
-    
+
     res.json(foldersWithChildren);
     } catch (err: unknown) {
     const error = err as Error;
@@ -201,6 +172,14 @@ export async function createFolder(req: Request, res: Response) {
       parentId: folder.parentId ?? undefined,
       dashboardId: folder.dashboardId,
       metadata: { name: folder.name },
+    });
+
+    emitFolderCreatedEvent({
+      actorUserId: userId,
+      folderId: folder.id,
+      folderName: folder.name,
+      parentId: folder.parentId,
+      dashboardId: folder.dashboardId,
     });
 
     // Broadcast real-time drive event to owner
@@ -299,6 +278,27 @@ export async function updateFolder(req: Request, res: Response) {
         previousParentId: folderBeforeUpdate.parentId,
       },
     });
+
+    const didMove = parentId !== undefined && parentId !== folderBeforeUpdate.parentId;
+    if (didMove) {
+      emitFolderMovedEvent({
+        actorUserId: userId,
+        folderId: updated.id,
+        folderName: updated.name,
+        parentId: updated.parentId,
+        previousParentId: folderBeforeUpdate.parentId,
+        dashboardId: updated.dashboardId,
+      });
+    } else if (name !== undefined && name !== folderBeforeUpdate.name) {
+      emitFolderRenamedEvent({
+        actorUserId: userId,
+        folderId: updated.id,
+        folderName: name,
+        previousName: folderBeforeUpdate.name,
+        parentId: updated.parentId,
+        dashboardId: updated.dashboardId,
+      });
+    }
     
     // Broadcast real-time drive event
     try {
@@ -690,6 +690,15 @@ export async function moveFolder(req: Request, res: Response) {
       metadata: {
         previousParentId: originalParentId,
       },
+    });
+
+    emitFolderMovedEvent({
+      actorUserId: userId,
+      folderId: updatedFolder.id,
+      folderName: updatedFolder.name,
+      parentId: updatedFolder.parentId,
+      previousParentId: originalParentId,
+      dashboardId: updatedFolder.dashboardId,
     });
 
     // Broadcast real-time drive event

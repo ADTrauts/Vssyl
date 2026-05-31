@@ -162,3 +162,17 @@ No realtime redesign in FH-1 — only restore broadcast added.
 - Canonical operation, event, activity, and realtime matrices delivered.
 
 Proceed to **FH-1.5 / FH-2** only after explicit approval; do not start capability reconciliation or V_Link UX in this batch.
+
+---
+
+## FH-2 progress (in flight — post `file-hub-fh-1-complete`)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Browse visibility | **Done** | `listFiles` / `listFolders` → `driveVisibilityService` browse helpers |
+| Entity model | **Done** | `platformEntityRegistry` + manifest `entities[]` + startup registration |
+| Capability matrix | **Done** | `coreModuleRegistry` + manifest `preview`; AI purpose versioning claim removed |
+| Domain events | **Done** | `file.renamed/moved/restored/unshared`, `folder.created/renamed/moved/deleted/restored/unshared` |
+| Realtime | **Done** | Share/unshare fan-out; permanent delete + restore multi-user broadcast |
+
+**Remaining FH-2:** AI save-to-drive canonical pipeline, satellite page consolidation, notification manifest metadata block, legacy `prisma.activity` consolidation.

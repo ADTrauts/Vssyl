@@ -4,6 +4,7 @@ import { POLICY_ACTIONS } from '../auth/policyActions';
 import { emitFileSharedEvent } from '../events/domainEventEmitters';
 import { NotificationService } from './notificationService';
 import { emitModuleActivityEvent } from './moduleActivityService';
+import { broadcastDriveShareChange } from './driveRealtimeService';
 import { logger } from '../lib/logger';
 
 export class DriveShareError extends Error {
@@ -110,6 +111,16 @@ export async function grantFileSharePermission(input: GrantFileShareInput) {
       canWrite: Boolean(canWrite),
       fileName: file.name,
     },
+  });
+
+  broadcastDriveShareChange({
+    ownerUserId: file.userId,
+    recipientUserId: targetUserId,
+    itemId: fileId,
+    itemType: 'file',
+    action: 'share',
+    dashboardId: file.dashboardId,
+    folderId: file.folderId,
   });
 
   return { permission, file };

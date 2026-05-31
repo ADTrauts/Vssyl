@@ -6,6 +6,7 @@ import {
   accessibleOwnedOrSharedFileClause,
   listAccessibleTrashedFiles,
   listAccessibleDriveFiles,
+  listAccessibleDriveFilesForBrowse,
   validateAccessibleFileIds,
   fetchAccessibleActiveFiles,
   DRIVE_TRASH_VISIBILITY_MODEL,
@@ -78,6 +79,27 @@ describe('driveVisibilityService', () => {
     expect(prisma.file.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: { in: ['f1'] }, trashedAt: null },
+      })
+    );
+  });
+
+  it('listAccessibleDriveFilesForBrowse uses owned-or-shared clause', async () => {
+    const findMany = vi.spyOn(prisma.file, 'findMany').mockResolvedValue([] as never);
+
+    await listAccessibleDriveFilesForBrowse({
+      userId: 'user-1',
+      folderId: 'folder-a',
+      dashboardId: 'dash-1',
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          trashedAt: null,
+          folderId: 'folder-a',
+          dashboardId: 'dash-1',
+          OR: accessibleOwnedOrSharedFileClause('user-1').OR,
+        }),
       })
     );
   });
