@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import { Prisma, RelationshipStatus } from '@prisma/client';
 import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
 import { searchVLinksForUser } from '../services/vlinkService';
+import { searchAccessibleDriveFiles, searchAccessibleDriveFolders, type DriveSearchMimeCategory } from '../services/driveVisibilityService';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 
@@ -347,7 +348,7 @@ export const getSuggestions = async (req: Request, res: Response) => {
   }
 };
 
-// Search in Drive module
+// Search in Drive module (FH-4: permission-aware via driveVisibilityService)
 async function searchDrive(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
   await logger.debug('Drive search starting', {
     operation: 'search_drive_start',
@@ -356,7 +357,6 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
   });
   const results: SearchResult[] = [];
 
-  // Normalize optional filters (date range, pinned, mime category)
   let dateStart: Date | undefined;
   let dateEnd: Date | undefined;
   if (filters?.dateRange) {
@@ -366,79 +366,15 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
     dateEnd = endValue ? new Date(endValue) : undefined;
   }
 
-  const pinnedOnly = filters?.pinned === true;
-  const driveMimeCategory = filters?.driveMimeCategory;
+  const driveFilters = {
+    dateStart,
+    dateEnd,
+    pinnedOnly: filters?.pinned === true,
+    driveMimeCategory: filters?.driveMimeCategory as DriveSearchMimeCategory | undefined,
+  };
 
-  // Build file where conditions
-  const fileAndConditions: Prisma.FileWhereInput[] = [
-    {
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-      ],
-    },
-    { userId: userId },
-    { trashedAt: null },
-  ];
-
-  if (dateStart || dateEnd) {
-    fileAndConditions.push({
-      updatedAt: {
-        ...(dateStart ? { gte: dateStart } : {}),
-        ...(dateEnd ? { lte: dateEnd } : {}),
-      },
-    });
-  }
-
-  if (pinnedOnly) {
-    fileAndConditions.push({ starred: true });
-  }
-
-  if (driveMimeCategory) {
-    // Map high-level category to underlying Prisma conditions
-    const mimeConditions: Prisma.FileWhereInput[] = [];
-    if (driveMimeCategory === 'documents') {
-      mimeConditions.push(
-        { type: { contains: 'pdf', mode: 'insensitive' } },
-        { type: { contains: 'word', mode: 'insensitive' } },
-        { type: { contains: 'document', mode: 'insensitive' } },
-      );
-    } else if (driveMimeCategory === 'spreadsheets') {
-      mimeConditions.push(
-        { type: { contains: 'excel', mode: 'insensitive' } },
-        { type: { contains: 'spreadsheet', mode: 'insensitive' } },
-      );
-    } else if (driveMimeCategory === 'images') {
-      mimeConditions.push({ type: { startsWith: 'image/', mode: 'insensitive' } });
-    } else if (driveMimeCategory === 'videos') {
-      mimeConditions.push({ type: { startsWith: 'video/', mode: 'insensitive' } });
-    }
-
-    if (mimeConditions.length > 0) {
-      fileAndConditions.push({
-        OR: mimeConditions,
-      });
-    }
-  }
-
-  // Search files
-  await logger.debug('Drive search files', {
-    operation: 'search_drive_files',
-    filtersApplied: {
-      dateStart,
-      dateEnd,
-      pinnedOnly,
-      driveMimeCategory,
-    },
-  });
-  const files = await prisma.file.findMany({
-    where: {
-      AND: fileAndConditions,
-    },
-    include: {
-      folder: true,
-    },
-    take: 10,
-  });
+  const files = await searchAccessibleDriveFiles(userId, query, driveFilters, 10);
+  const folders = await searchAccessibleDriveFolders(userId, query, driveFilters, 5);
 
   await logger.debug('Drive search files found', {
     operation: 'search_drive_files_found',
@@ -452,7 +388,7 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
       title: file.name,
       description: `File in ${file.folder?.name || 'root'}`,
       moduleId: 'drive',
-      moduleName: 'Drive',
+      moduleName: 'File Hub',
       url: `/drive?file=${file.id}`,
       type: 'file',
       metadata: {
@@ -466,42 +402,6 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
     });
   }
 
-  // Build folder where conditions (share date/pinned filters where appropriate)
-  const folderAndConditions: Prisma.FolderWhereInput[] = [
-    { name: { contains: query, mode: 'insensitive' } },
-    { userId: userId },
-    { trashedAt: null },
-  ];
-
-  if (dateStart || dateEnd) {
-    folderAndConditions.push({
-      updatedAt: {
-        ...(dateStart ? { gte: dateStart } : {}),
-        ...(dateEnd ? { lte: dateEnd } : {}),
-      },
-    });
-  }
-
-  if (pinnedOnly) {
-    folderAndConditions.push({ starred: true });
-  }
-
-  // Search folders
-  await logger.debug('Drive search folders', {
-    operation: 'search_drive_folders',
-    filtersApplied: {
-      dateStart,
-      dateEnd,
-      pinnedOnly,
-    },
-  });
-  const folders = await prisma.folder.findMany({
-    where: {
-      AND: folderAndConditions,
-    },
-    take: 5,
-  });
-
   await logger.debug('Drive search folders found', {
     operation: 'search_drive_folders_found',
     count: folders.length
@@ -514,7 +414,7 @@ async function searchDrive(query: string, userId: string, filters?: SearchFilter
       title: folder.name,
       description: 'Folder',
       moduleId: 'drive',
-      moduleName: 'Drive',
+      moduleName: 'File Hub',
       url: `/drive?folder=${folder.id}`,
       type: 'folder',
       metadata: {

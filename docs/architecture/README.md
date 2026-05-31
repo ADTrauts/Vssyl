@@ -24,9 +24,12 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Attachments & vision pipelines | [../ai/ARCHITECTURE.md](../ai/ARCHITECTURE.md) | — |
 | Vision provider routing / runbook | [../ai/PROVIDERS.md](../ai/PROVIDERS.md), [../ai/RUNBOOK.md](../ai/RUNBOOK.md) | — |
 | Control Center / Learning hub | [AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md) | — |
+| **File Hub (reference module) audits** | [audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) | `module-development.mdc` |
+
+**Reference implementation:** File Hub (`drive`) — tag `file-hub-reference-implementation`. Use FH audits under [`audits/`](./audits/) as the template for module compliance phases.
 
 **Onboarding and how-to guides** stay in [`docs/guides/README.md`](../guides/README.md).
 
 **Textbook maintenance:** Update [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) when changing `server/src/ai/` orchestration, pipeline catalog, grounding enforcement, or twin request contract.
 
-**Last updated:** 2026-05-28
+**Last updated:** 2026-05-31

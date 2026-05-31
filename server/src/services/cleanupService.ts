@@ -85,7 +85,7 @@ export const startCleanupJob = () => {
     schedule: '0 0 * * *',
     handler: deleteOldTrashedItems,
     timezone: 'America/New_York',
-    tier: 'transitional',
+    tier: 'canonical',
     operation: 'cron_trash_permanent_delete',
     description: 'Permanently delete files/folders trashed >30 days',
   });

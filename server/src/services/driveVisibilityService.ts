@@ -295,3 +295,119 @@ export const DRIVE_BROWSE_VISIBILITY_MODEL = {
   folders:
     'Owner OR FolderPermission (canRead/canWrite) in parent/dashboard context; Policy Engine file:read on folder resource.',
 } as const;
+
+export type DriveSearchMimeCategory = 'documents' | 'spreadsheets' | 'images' | 'videos';
+
+export interface DriveSearchFilters {
+  dateStart?: Date;
+  dateEnd?: Date;
+  pinnedOnly?: boolean;
+  driveMimeCategory?: DriveSearchMimeCategory;
+}
+
+function buildDriveMimeCategoryCondition(
+  driveMimeCategory: DriveSearchMimeCategory | undefined
+): Prisma.FileWhereInput | null {
+  if (!driveMimeCategory) return null;
+
+  const mimeConditions: Prisma.FileWhereInput[] = [];
+  if (driveMimeCategory === 'documents') {
+    mimeConditions.push(
+      { type: { contains: 'pdf', mode: 'insensitive' } },
+      { type: { contains: 'word', mode: 'insensitive' } },
+      { type: { contains: 'document', mode: 'insensitive' } }
+    );
+  } else if (driveMimeCategory === 'spreadsheets') {
+    mimeConditions.push(
+      { type: { contains: 'excel', mode: 'insensitive' } },
+      { type: { contains: 'spreadsheet', mode: 'insensitive' } }
+    );
+  } else if (driveMimeCategory === 'images') {
+    mimeConditions.push({ type: { startsWith: 'image/', mode: 'insensitive' } });
+  } else if (driveMimeCategory === 'videos') {
+    mimeConditions.push({ type: { startsWith: 'video/', mode: 'insensitive' } });
+  }
+
+  return mimeConditions.length > 0 ? { OR: mimeConditions } : null;
+}
+
+function buildDriveSearchDateCondition(filters?: DriveSearchFilters): Prisma.FileWhereInput | null {
+  if (!filters?.dateStart && !filters?.dateEnd) return null;
+  return {
+    updatedAt: {
+      ...(filters.dateStart ? { gte: filters.dateStart } : {}),
+      ...(filters.dateEnd ? { lte: filters.dateEnd } : {}),
+    },
+  };
+}
+
+/** Federated search: owned + shared active files with PE read gate (FH-4). */
+export async function searchAccessibleDriveFiles(
+  userId: string,
+  query: string,
+  filters?: DriveSearchFilters,
+  limit = 10
+) {
+  const andConditions: Prisma.FileWhereInput[] = [
+    {
+      OR: [{ name: { contains: query, mode: 'insensitive' } }],
+    },
+    accessibleOwnedOrSharedFileClause(userId),
+    { trashedAt: null },
+  ];
+
+  const dateCondition = buildDriveSearchDateCondition(filters);
+  if (dateCondition) andConditions.push(dateCondition);
+  if (filters?.pinnedOnly) andConditions.push({ starred: true });
+
+  const mimeCondition = buildDriveMimeCategoryCondition(filters?.driveMimeCategory);
+  if (mimeCondition) andConditions.push(mimeCondition);
+
+  const candidates = await prisma.file.findMany({
+    where: { AND: andConditions },
+    include: { folder: true },
+    take: Math.min(Math.max(limit, 1), 25),
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  return filterFilesByReadPolicy(userId, candidates);
+}
+
+/** Federated search: owned + shared active folders with PE read gate (FH-4). */
+export async function searchAccessibleDriveFolders(
+  userId: string,
+  query: string,
+  filters?: DriveSearchFilters,
+  limit = 5
+) {
+  const andConditions: Prisma.FolderWhereInput[] = [
+    { name: { contains: query, mode: 'insensitive' } },
+    accessibleOwnedOrSharedFolderClause(userId),
+    { trashedAt: null },
+  ];
+
+  if (filters?.dateStart || filters?.dateEnd) {
+    andConditions.push({
+      updatedAt: {
+        ...(filters.dateStart ? { gte: filters.dateStart } : {}),
+        ...(filters.dateEnd ? { lte: filters.dateEnd } : {}),
+      },
+    });
+  }
+  if (filters?.pinnedOnly) andConditions.push({ starred: true });
+
+  const candidates = await prisma.folder.findMany({
+    where: { AND: andConditions },
+    take: Math.min(Math.max(limit, 1), 15),
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  return filterFoldersByReadPolicy(userId, candidates);
+}
+
+export const DRIVE_SEARCH_VISIBILITY_MODEL = {
+  files:
+    'Same as browse: owner OR FilePermission; Policy Engine file:read per hit; trashed excluded.',
+  folders:
+    'Same as browse: owner OR FolderPermission; Policy Engine file:read on folder; trashed excluded.',
+} as const;

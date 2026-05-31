@@ -9,4 +9,8 @@ This repository defines the canonical references for VSSYL:
 5. **Outdated docs should be archived, not deleted**
 6. **Implementation status must be updated after major changes**
 
+### Module reference implementation
+
+**File Hub** (`drive`, user-facing: File Hub) is the canonical first-party **Reference Implementation** (tag: `file-hub-reference-implementation`, maturity 87/100). Compliance audits and operation matrix live under [`docs/architecture/audits/`](architecture/audits/) — start with [`FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md`](architecture/audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md). Status: [`memory-bank/progress.md`](../memory-bank/progress.md).
+
 Use this document as the baseline reference across custom GPT, Cursor, and ChatGPT conversations.

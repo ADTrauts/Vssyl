@@ -157,7 +157,17 @@ export interface CreateNotificationData {
 }
 
 export interface NotificationTrigger {
-  type: 'chat_message' | 'chat_mention' | 'chat_reaction' | 'drive_shared' | 'drive_permission' | 'business_invitation' | 'member_request' | 'system_alert';
+  type:
+    | 'chat_message'
+    | 'chat_mention'
+    | 'chat_reaction'
+    | 'drive_shared'
+    | 'drive_permission'
+    | 'drive_item_restored'
+    | 'drive_item_deleted'
+    | 'business_invitation'
+    | 'member_request'
+    | 'system_alert';
   title: string;
   body?: string;
   data?: Record<string, unknown>;
@@ -463,6 +473,8 @@ export class NotificationService {
       
       case 'drive_shared':
       case 'drive_permission':
+      case 'drive_item_restored':
+      case 'drive_item_deleted':
         return await this.handleDriveNotification(trigger);
       
       case 'business_invitation':

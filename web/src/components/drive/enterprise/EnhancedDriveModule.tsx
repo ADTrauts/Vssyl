@@ -26,6 +26,9 @@ import {
   Filter
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useGlobalTrash } from '../../../contexts/GlobalTrashContext';
+import { useDriveWebSocket } from '../../../hooks/useDriveWebSocket';
+import { VLinkIndicator, VLinkCornerMarker } from '@/components/vlink/VLinkIndicator';
 
 // Import enterprise components
 import AdvancedSharingModal from './AdvancedSharingModal';
@@ -90,6 +93,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
   const [storageUsage, setStorageUsage] = useState({ used: 0, total: 10 * 1024 * 1024 * 1024 }); // 10GB default
   const [isDragging, setIsDragging] = useState(false);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
+  const { trashItem } = useGlobalTrash();
 
   // Load files with enterprise data
   const loadEnhancedFiles = useCallback(async () => {
@@ -206,6 +210,16 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
     }
   }, [session?.accessToken, effectiveDashboardId, currentFolder, recordUsage]);
 
+  useDriveWebSocket({
+    enabled: true,
+    events: {
+      onItemCreated: async () => { await loadEnhancedFiles(); },
+      onItemUpdated: async () => { await loadEnhancedFiles(); },
+      onItemDeleted: async () => { await loadEnhancedFiles(); },
+      onItemMoved: async () => { await loadEnhancedFiles(); },
+      onItemPinned: async () => { await loadEnhancedFiles(); },
+    },
+  });
 
   useEffect(() => {
     loadEnhancedFiles();
@@ -268,6 +282,29 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
         case 'audit':
           setShowAuditLogs(true);
           break;
+        case 'delete': {
+          const itemsToDelete = Array.from(selectedItems)
+            .map((id) => items.find((i) => i.id === id))
+            .filter(Boolean) as DriveItem[];
+          if (itemsToDelete.length === 0) break;
+          if (!confirm(`Move ${itemsToDelete.length} item(s) to trash?`)) break;
+          await Promise.all(
+            itemsToDelete.map((item) =>
+              trashItem({
+                id: item.id,
+                name: item.name,
+                type: item.type,
+                moduleId: 'drive',
+                moduleName: 'File Hub',
+                metadata: { dashboardId: effectiveDashboardId || undefined },
+              })
+            )
+          );
+          setSelectedItems(new Set());
+          await loadEnhancedFiles();
+          toast.success(`${itemsToDelete.length} item(s) moved to trash`);
+          break;
+        }
         default:
           toast.success(`Bulk ${action} not implemented yet`);
       }
@@ -790,10 +827,14 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
         {filteredItems.map((item) => (
           <Card 
             key={item.id} 
-            className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+            className={`p-4 cursor-pointer transition-all hover:shadow-md relative ${
               selectedItems.has(item.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
             } ${viewMode === 'list' ? 'flex items-center space-x-4' : ''}`}
           >
+            <VLinkCornerMarker
+              entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+              entityId={item.id}
+            />
             <div onClick={() => {
               const newSelection = new Set(selectedItems);
               if (newSelection.has(item.id)) {
@@ -817,7 +858,14 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
               </div>
               
               <div className={`flex-1 ${viewMode === 'grid' ? '' : 'mr-4'}`}>
-                <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</div>
+                <div className="font-medium text-gray-900 dark:text-gray-100 truncate flex items-center gap-1">
+                  <span className="truncate">{item.name}</span>
+                  <VLinkIndicator
+                    entityType={item.type === 'folder' ? 'FOLDER' : 'FILE'}
+                    entityId={item.id}
+                    className="flex-shrink-0"
+                  />
+                </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {item.type === 'file' && item.size && (
                     <span>{(item.size / 1024 / 1024).toFixed(1)} MB • </span>

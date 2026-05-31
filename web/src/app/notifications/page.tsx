@@ -63,6 +63,8 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'mentions': 'mentions',
   'drive_shared': 'drive',
   'drive_permission': 'drive',
+  'drive_item_restored': 'drive',
+  'drive_item_deleted': 'drive',
   'business_invitation': 'business',
   'member_request': 'members',
   'system_alert': 'system',

@@ -1,5 +1,31 @@
 # Block-on-Block Platform - Progress
 
+## File Hub — Reference Implementation (May 2026) ✅
+
+**Status:** **ARCHITECTURE COMPLETE** — File Hub (`drive`) is the canonical Vssyl module reference implementation. Maturity **87/100**.
+
+| Milestone | Tag |
+|-----------|-----|
+| FH-1 read/write compliance | `file-hub-fh-1-complete` |
+| FH-2 entity/events/capabilities | `file-hub-fh-2-complete` |
+| FH-3A V_Link compliance | `file-hub-fh-3a-complete` |
+| FH-4 production hardening | *(included in reference tag)* |
+| FH-5 notifications | *(included in reference tag)* |
+| FH-6 consolidation + certification | `file-hub-reference-implementation` |
+
+**Canonical audits:** [`docs/architecture/audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md`](../docs/architecture/audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [`FILE_HUB_MATURITY_ASSESSMENT.md`](../docs/architecture/audits/FILE_HUB_MATURITY_ASSESSMENT.md), [`FILE_HUB_OPERATION_MATRIX.md`](../docs/architecture/audits/FILE_HUB_OPERATION_MATRIX.md)
+
+**Reusable patterns (extract to platform guidance):** `driveDeleteService`, `driveFileShareService`, `driveUploadService`, `driveVisibilityService`, `driveNotificationService`, `driveVlinkAccessService`, Global Trash handler registration.
+
+**Deferred (not File Hub architecture):**
+- **FH-1.5 / Platform Scheduler Hardening** — retire `transitional` cron tiers platform-wide (`platformCronJobs.ts`); not drive-specific.
+- **FH-3B V_Link UX** — related-items panel, tombstone metadata, enterprise graph UX; product polish backlog.
+- **P2:** legacy `prisma.activity` read migration; deprecated drive trash route retirement.
+
+**Next recommended module:** **Chat** (realtime, notifications, share/delete templates).
+
+---
+
 ## Vssyl Platform Standards and Module Contract (May 2026) ✅
 
 **Status:** **DOCUMENTATION + CORE MIGRATION COMPLETE** — Constitutional framework published; Batches 1–4 implemented in code (2026-05-28).

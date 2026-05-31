@@ -7,11 +7,18 @@ import { emitModuleActivityEvent } from './moduleActivityService';
 import { emitFileDeletedEvent, emitFileRestoredEvent, emitFolderDeletedEvent, emitFolderRestoredEvent } from '../events/domainEventEmitters';
 import { broadcastDriveEventToUsers } from './driveRealtimeService';
 import {
+  collectFileCollaboratorIds,
+  collectFolderCollaboratorIds,
+  collectDriveRealtimeUserIds,
+  notifyDriveItemPermanentlyDeleted,
+  notifyDriveItemRestored,
+  notifyDriveItemTrashed,
+} from './driveNotificationService';
+import {
   unlinkDriveEntityFromAllVLinks,
   unlinkDriveFolderTreeFromAllVLinks,
 } from './driveVlinkLifecycleService';
 import { VLinkEntityType } from '@prisma/client';
-import { getChatSocketService } from './chatSocketService';
 import { logger } from '../lib/logger';
 
 export class DriveDeleteError extends Error {
@@ -108,20 +115,6 @@ export async function softTrashDriveItem(input: DriveItemMutationInput): Promise
       throw new DriveDeleteError('File not found', 'not_found');
     }
 
-    await prisma.activity.create({
-      data: {
-        type: 'delete',
-        userId,
-        fileId: id,
-        details: {
-          action: 'file_moved_to_trash',
-          fileName: fileToDelete.name,
-          fileType: fileToDelete.type,
-          fileSize: fileToDelete.size,
-        },
-      },
-    });
-
     await emitModuleActivityEvent({
       actorUserId: userId,
       moduleId: 'drive',
@@ -142,20 +135,24 @@ export async function softTrashDriveItem(input: DriveItemMutationInput): Promise
       dashboardId: fileToDelete.dashboardId,
     });
 
-    try {
-      getChatSocketService().broadcastDriveEvent(userId, 'drive:item:deleted', {
-        itemId: id,
-        itemType: 'file',
-        dashboardId: fileToDelete.dashboardId,
-        folderId: fileToDelete.folderId,
-      });
-    } catch (socketError: unknown) {
-      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
-      await logger.error('Failed to broadcast drive:item:deleted event', {
-        operation: 'drive_soft_trash_file_socket',
-        error: { message: err.message, stack: err.stack },
-      });
-    }
+    const trashedAt = new Date();
+    await notifyDriveItemTrashed({
+      actorUserId: userId,
+      itemType: 'file',
+      itemId: id,
+      itemName: fileToDelete.name,
+      dashboardId: fileToDelete.dashboardId,
+      parentFolderId: fileToDelete.folderId,
+      trashedAt,
+    });
+
+    const realtimeUserIds = await collectDriveRealtimeUserIds('file', id, userId);
+    broadcastDriveEventToUsers(realtimeUserIds, 'drive:item:deleted', {
+      itemId: id,
+      itemType: 'file',
+      dashboardId: fileToDelete.dashboardId,
+      folderId: fileToDelete.folderId,
+    });
     return;
   }
 
@@ -217,20 +214,24 @@ export async function softTrashDriveItem(input: DriveItemMutationInput): Promise
       dashboardId: folderToDelete.dashboardId,
     });
 
-    try {
-      getChatSocketService().broadcastDriveEvent(folderToDelete.userId, 'drive:item:deleted', {
-        itemId: folderToDelete.id,
-        itemType: 'folder',
-        dashboardId: folderToDelete.dashboardId,
-        folderId: folderToDelete.parentId,
-      });
-    } catch (socketError: unknown) {
-      const err = socketError instanceof Error ? socketError : new Error(String(socketError));
-      await logger.error('Failed to broadcast drive:item:deleted event', {
-        operation: 'drive_soft_trash_folder_socket',
-        error: { message: err.message, stack: err.stack },
-      });
-    }
+    const trashedAt = new Date();
+    await notifyDriveItemTrashed({
+      actorUserId: userId,
+      itemType: 'folder',
+      itemId: folderToDelete.id,
+      itemName: folderToDelete.name,
+      dashboardId: folderToDelete.dashboardId,
+      parentFolderId: folderToDelete.parentId,
+      trashedAt,
+    });
+
+    const folderRealtimeUserIds = await collectDriveRealtimeUserIds('folder', folderToDelete.id, userId);
+    broadcastDriveEventToUsers(folderRealtimeUserIds, 'drive:item:deleted', {
+      itemId: folderToDelete.id,
+      itemType: 'folder',
+      dashboardId: folderToDelete.dashboardId,
+      folderId: folderToDelete.parentId,
+    });
     return;
   }
 
@@ -284,7 +285,17 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       dashboardId: file.dashboardId,
     });
 
-    broadcastDriveEventToUsers([file.userId, userId], 'drive:item:updated', {
+    await notifyDriveItemRestored({
+      actorUserId: userId,
+      itemType: 'file',
+      itemId: id,
+      itemName: file.name,
+      dashboardId: file.dashboardId,
+      parentFolderId: file.folderId,
+    });
+
+    const restoreRealtimeUserIds = await collectDriveRealtimeUserIds('file', id, userId);
+    broadcastDriveEventToUsers(restoreRealtimeUserIds, 'drive:item:updated', {
         itemId: id,
         itemType: 'file',
         dashboardId: file.dashboardId,
@@ -339,7 +350,17 @@ export async function restoreDriveItem(input: DriveItemMutationInput): Promise<b
       dashboardId: folder.dashboardId,
     });
 
-    broadcastDriveEventToUsers([folder.userId, userId], 'drive:item:updated', {
+    await notifyDriveItemRestored({
+      actorUserId: userId,
+      itemType: 'folder',
+      itemId: id,
+      itemName: folder.name,
+      dashboardId: folder.dashboardId,
+      parentFolderId: folder.parentId,
+    });
+
+    const folderRestoreRealtimeUserIds = await collectDriveRealtimeUserIds('folder', id, userId);
+    broadcastDriveEventToUsers(folderRestoreRealtimeUserIds, 'drive:item:updated', {
       itemId: id,
       itemType: 'folder',
       dashboardId: folder.dashboardId,
@@ -375,7 +396,22 @@ export async function permanentlyDeleteDriveFile(input: {
   });
   if (policy.blocked) return false;
 
-  broadcastDriveEventToUsers([userId, fileToDelete.userId], 'drive:item:deleted', {
+  const { recipientIds } = await collectFileCollaboratorIds(fileId);
+  const deletedAt = new Date();
+
+  await notifyDriveItemPermanentlyDeleted({
+    actorUserId: userId,
+    itemType: 'file',
+    itemId: fileId,
+    itemName: fileToDelete.name,
+    dashboardId: fileToDelete.dashboardId,
+    parentFolderId: fileToDelete.folderId,
+    recipientIds,
+    deletedAt,
+  });
+
+  const permanentRealtimeUserIds = await collectDriveRealtimeUserIds('file', fileId, userId);
+  broadcastDriveEventToUsers(permanentRealtimeUserIds, 'drive:item:deleted', {
     itemId: fileId,
     itemType: 'file',
     dashboardId: fileToDelete.dashboardId,
@@ -438,6 +474,20 @@ export async function permanentlyDeleteDriveFolderCascade(input: {
   });
   if (policy.blocked) return false;
 
+  const { recipientIds } = await collectFolderCollaboratorIds(folderId);
+  const deletedAt = new Date();
+
+  await notifyDriveItemPermanentlyDeleted({
+    actorUserId: userId,
+    itemType: 'folder',
+    itemId: folderId,
+    itemName: folder.name,
+    dashboardId: folder.dashboardId,
+    parentFolderId: folder.parentId,
+    recipientIds,
+    deletedAt,
+  });
+
   await unlinkDriveFolderTreeFromAllVLinks({ actorUserId: userId, folderId });
 
   await deleteFolderTreeRecords(folderId);
@@ -451,7 +501,8 @@ export async function permanentlyDeleteDriveFolderCascade(input: {
     dashboardId: folder.dashboardId,
   });
 
-  broadcastDriveEventToUsers([userId, folder.userId], 'drive:item:deleted', {
+  const folderPermanentRealtimeUserIds = await collectDriveRealtimeUserIds('folder', folderId, userId);
+  broadcastDriveEventToUsers(folderPermanentRealtimeUserIds, 'drive:item:deleted', {
     itemId: folderId,
     itemType: 'folder',
     dashboardId: folder.dashboardId,

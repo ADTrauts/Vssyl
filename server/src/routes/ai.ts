@@ -14,6 +14,7 @@ import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { FeatureGatingService } from '../services/featureGatingService';
 import { fetchAccessibleActiveFiles } from '../services/driveVisibilityService';
+import { createDriveFile, DriveUploadError } from '../services/driveUploadService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
 import { logger } from '../lib/logger';
@@ -494,8 +495,6 @@ router.post('/generate-image/save-to-drive', authenticateJWT, async (req, res) =
     const folderIdStr = folderId && typeof folderId === 'string' ? folderId : null;
     const fileName = (name && typeof name === 'string' && name.trim()) ? name.trim() : `ai-generated-${Date.now()}.png`;
 
-    const { storageService } = await import('../services/storageService');
-
     const imageRes = await fetch(imageUrl, { method: 'GET' });
     if (!imageRes.ok) {
       return res.status(502).json({ error: 'Failed to fetch image from URL' });
@@ -504,50 +503,30 @@ router.post('/generate-image/save-to-drive', authenticateJWT, async (req, res) =
     const arrayBuffer = await imageRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const ext = path.extname(fileName) || (contentType.includes('png') ? '.png' : '.jpg');
-    const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
-
-    const fileLike: Express.Multer.File = {
-      fieldname: 'file',
-      originalname: fileName,
-      encoding: '7bit',
-      mimetype: contentType,
-      buffer,
-      size: buffer.length,
-    } as Express.Multer.File;
-
-    const uploadResult = await storageService.uploadFile(fileLike, uniqueFilename, {
-      makePublic: true,
-      metadata: {
-        userId,
-        originalName: fileName,
-        folderId: folderIdStr || '',
-        dashboardId: dashboardIdStr || '',
-      },
-    });
-
-    const fileRecord = await prisma.file.create({
-      data: {
-        userId,
-        name: fileName,
-        type: contentType,
+    const fileRecord = await createDriveFile({
+      userId,
+      source: {
+        buffer,
+        originalname: fileName,
+        mimetype: contentType,
         size: buffer.length,
-        url: uploadResult.url,
-        path: uploadResult.path,
-        folderId: folderIdStr,
-        dashboardId: dashboardIdStr,
       },
+      folderId: folderIdStr,
+      dashboardId: dashboardIdStr,
     });
 
     res.json({
       success: true,
       data: {
         fileId: fileRecord.id,
-        url: uploadResult.url,
+        url: fileRecord.url,
         name: fileRecord.name,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof DriveUploadError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logSrvErr('ai_save_generated_image_to_drive_error', 'Save generated image to Drive error:', error);
     res.status(500).json({
       error: 'Failed to save image to Drive',
@@ -646,34 +625,19 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
       } else {
         return res.status(502).json({ error: 'No image data to save' });
       }
-      const ext = path.extname(fileName) || (contentType.includes('png') ? '.png' : '.jpg');
-      const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
-      const fileLike = {
-        fieldname: 'file',
-        originalname: fileName,
-        encoding: '7bit' as const,
-        mimetype: contentType,
-        buffer,
-        size: buffer.length,
-      } as Express.Multer.File;
-      const uploadResult = await storageService.uploadFile(fileLike, uniqueFilename, {
-        makePublic: true,
-        metadata: { userId, originalName: fileName, folderId: folderIdStr || '', dashboardId: dashboardIdStr || '' },
-      });
-      const created = await prisma.file.create({
-        data: {
-          userId,
-          name: fileName,
-          type: contentType,
+      const created = await createDriveFile({
+        userId,
+        source: {
+          buffer,
+          originalname: fileName,
+          mimetype: contentType,
           size: buffer.length,
-          url: uploadResult.url,
-          path: uploadResult.path,
-          folderId: folderIdStr,
-          dashboardId: dashboardIdStr,
         },
+        folderId: folderIdStr,
+        dashboardId: dashboardIdStr,
       });
       fileRecord = { id: created.id, name: created.name };
-      url = uploadResult.url;
+      url = created.url ?? url;
     }
     res.json({
       success: true,
@@ -683,7 +647,10 @@ router.post('/edit-image', authenticateJWT, async (req, res) => {
         name: fileRecord?.name,
       },
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof DriveUploadError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     const err = error instanceof Error ? error : new Error('Unknown error');
     logSrvErr('ai_edit_image', 'Edit image error', error);
     res.status(500).json({

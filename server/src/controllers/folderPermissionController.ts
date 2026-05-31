@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
 import { authorize } from '../auth/policyEngine';
 import { POLICY_ACTIONS } from '../auth/policyActions';
-import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
-import { emitFolderSharedEvent, emitFolderUnsharedEvent } from '../events/domainEventEmitters';
-import { emitModuleActivityEvent } from '../services/moduleActivityService';
-import { broadcastDriveShareChange } from '../services/driveRealtimeService';
+import {
+  grantFolderSharePermission,
+  revokeFolderSharePermission,
+  updateFolderSharePermission,
+  DriveShareError,
+} from '../services/driveFileShareService';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasUserId(user: any): user is { id: string } {
@@ -69,110 +70,22 @@ export async function grantFolderPermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id } = req.params; // folder id
+    const { id } = req.params;
     const { userId, canRead, canWrite } = req.body;
-    
-    // Only owner can grant permissions
-    const folder = await prisma.folder.findUnique({ 
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-    
-    if (!folder || folder.userId !== ownerId) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
 
-    const sharePolicyDual = await evaluateDrivePolicyDual({
-      userId: ownerId,
-      action: POLICY_ACTIONS.FOLDER_SHARE,
-      resourceType: 'folder',
-      resourceId: id,
-      scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
-    });
-    if (sharePolicyDual.blocked) {
-      return res.status(403).json({ message: 'Forbidden', reason: sharePolicyDual.reason });
-    }
-
-    const permission = await prisma.folderPermission.upsert({
-      where: { folderId_userId: { folderId: id, userId } },
-      update: { canRead, canWrite },
-      create: { folderId: id, userId, canRead, canWrite },
-    });
-
-    // Create notification for the user who was granted permission
-    try {
-      const permissionType = canRead && canWrite ? 'read and write' : canRead ? 'read' : 'write';
-      
-      await NotificationService.handleNotification({
-        type: 'drive_permission',
-        title: `${folder.user?.name || 'Someone'} shared a folder with you`,
-        body: `You now have ${permissionType} access to "${folder.name}"`,
-        data: {
-          folderId: id,
-          folderName: folder.name,
-          permissionType,
-          ownerId: folder.userId,
-          ownerName: folder.user?.name
-        },
-        recipients: [userId],
-        senderId: ownerId
-      });
-    } catch (notificationError) {
-      await logger.error('Failed to create folder permission notification', {
-        operation: 'folder_permission_notification',
-        error: {
-          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          stack: notificationError instanceof Error ? notificationError.stack : undefined
-        }
-      });
-      // Don't fail the permission grant if notification fails
-    }
-
-    emitFolderSharedEvent({
-      actorUserId: ownerId,
+    const { permission } = await grantFolderSharePermission({
+      ownerUserId: ownerId,
       folderId: id,
-      recipientUserId: userId,
+      targetUserId: userId,
       canRead: Boolean(canRead),
       canWrite: Boolean(canWrite),
     });
 
-    await emitModuleActivityEvent({
-      actorUserId: ownerId,
-      moduleId: 'drive',
-      action: 'share',
-      targetType: 'folder',
-      targetId: id,
-      parentType: folder.parentId ? 'folder' : undefined,
-      parentId: folder.parentId ?? undefined,
-      dashboardId: folder.dashboardId,
-      metadata: {
-        targetUserId: userId,
-        canRead: Boolean(canRead),
-        canWrite: Boolean(canWrite),
-        folderName: folder.name,
-      },
-    });
-
-    broadcastDriveShareChange({
-      ownerUserId: folder.userId,
-      recipientUserId: userId,
-      itemId: id,
-      itemType: 'folder',
-      action: 'share',
-      dashboardId: folder.dashboardId,
-      folderId: folder.parentId,
-    });
-
     res.status(201).json({ permission });
   } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     const error = err as Error;
     await logger.error('Failed to grant folder permission', {
       operation: 'folder_grant_permission',
@@ -196,22 +109,22 @@ export async function updateFolderPermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id, userId } = req.params; // folder id, user id
+    const { id, userId } = req.params;
     const { canRead, canWrite } = req.body;
-    // Only owner can update permissions
-    const folder = await prisma.folder.findUnique({ where: { id } });
-    if (!folder || folder.userId !== ownerId) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-    const permission = await prisma.folderPermission.updateMany({
-      where: { folderId: id, userId },
-      data: { canRead, canWrite },
+
+    const result = await updateFolderSharePermission({
+      ownerUserId: ownerId,
+      folderId: id,
+      targetUserId: userId,
+      canRead: Boolean(canRead),
+      canWrite: Boolean(canWrite),
     });
-    if (permission.count === 0) {
-      return res.status(404).json({ message: 'Permission not found' });
-    }
-    res.json({ updated: permission.count });
+
+    res.json({ updated: result.updated });
   } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     const error = err as Error;
     await logger.error('Failed to update folder permission', {
       operation: 'folder_update_permission',
@@ -235,88 +148,19 @@ export async function revokeFolderPermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id, userId } = req.params; // folder id, user id
-    
-    // Only owner can revoke permissions
-    const folder = await prisma.folder.findUnique({ 
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-    
-    if (!folder || folder.userId !== ownerId) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-    
-    await prisma.folderPermission.deleteMany({ where: { folderId: id, userId } });
+    const { id, userId } = req.params;
 
-    await emitModuleActivityEvent({
-      actorUserId: ownerId,
-      moduleId: 'drive',
-      action: 'unshare',
-      targetType: 'folder',
-      targetId: id,
-      dashboardId: folder.dashboardId,
-      metadata: {
-        targetUserId: userId,
-        folderName: folder.name,
-      },
-    });
-
-    emitFolderUnsharedEvent({
-      actorUserId: ownerId,
+    await revokeFolderSharePermission({
+      ownerUserId: ownerId,
       folderId: id,
-      recipientUserId: userId,
-      folderName: folder.name,
-      dashboardId: folder.dashboardId,
+      targetUserId: userId,
     });
 
-    broadcastDriveShareChange({
-      ownerUserId: folder.userId,
-      recipientUserId: userId,
-      itemId: id,
-      itemType: 'folder',
-      action: 'unshare',
-      dashboardId: folder.dashboardId,
-      folderId: folder.parentId,
-    });
-    
-    // Create notification for the user whose permission was revoked
-    try {
-      await NotificationService.handleNotification({
-        type: 'drive_permission',
-        title: `Folder access revoked`,
-        body: `Your access to "${folder.name}" has been removed`,
-        data: {
-          folderId: id,
-          folderName: folder.name,
-          action: 'revoked',
-          ownerId: folder.userId,
-          ownerName: folder.user?.name
-        },
-        recipients: [userId],
-        senderId: ownerId
-      });
-    } catch (notificationError) {
-      await logger.error('Failed to create folder permission revocation notification', {
-        operation: 'folder_permission_revocation_notification',
-        error: {
-          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          stack: notificationError instanceof Error ? notificationError.stack : undefined
-        }
-      });
-      // Don't fail the permission revocation if notification fails
-    }
-    
     res.json({ revoked: true });
   } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     const error = err as Error;
     await logger.error('Failed to revoke folder permission', {
       operation: 'folder_revoke_permission',
@@ -328,6 +172,3 @@ export async function revokeFolderPermission(req: Request, res: Response) {
     res.status(500).json({ message: 'Failed to revoke permission' });
   }
 }
-
-export { canReadFolder, canWriteFolder } from '../services/drivePermissionHelpers';
-

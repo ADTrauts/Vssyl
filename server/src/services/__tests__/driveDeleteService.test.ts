@@ -145,7 +145,7 @@ describe('driveDeleteService', () => {
       expect.objectContaining({ action: 'restore', targetType: 'file', targetId: 'file-1' })
     );
     expect(driveRealtime.broadcastDriveEventToUsers).toHaveBeenCalledWith(
-      ['owner-1', 'owner-1'],
+      ['owner-1'],
       'drive:item:updated',
       expect.objectContaining({ itemId: 'file-1', restored: true })
     );

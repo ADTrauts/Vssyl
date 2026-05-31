@@ -11,10 +11,22 @@ vi.mock('../../services/moduleActivityService', () => ({
   emitModuleActivityEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
+import * as driveDeleteService from '../../services/driveDeleteService';
+
 vi.mock('../../services/chatSocketService', () => ({
   getChatSocketService: vi.fn().mockReturnValue({
     broadcastDriveEvent: vi.fn(),
   }),
+}));
+
+vi.mock('../../services/driveDeleteService', () => ({
+  softTrashDriveItem: vi.fn().mockResolvedValue(undefined),
+  DriveDeleteError: class DriveDeleteError extends Error {
+    constructor(message: string, readonly code: 'not_found' | 'forbidden' | 'invalid' = 'invalid') {
+      super(message);
+      this.name = 'DriveDeleteError';
+    }
+  },
 }));
 
 function mockResponse() {
@@ -151,13 +163,7 @@ describe('fileController update/delete collaborator parity', () => {
   });
 
   describe('deleteFile', () => {
-    it('collaborator with canWrite can soft-delete by file id', async () => {
-      vi.spyOn(driveHelpers, 'canWriteFile').mockResolvedValue(true);
-      vi.spyOn(prisma.file, 'findUnique')
-        .mockResolvedValueOnce({ dashboardId: 'dash-1' } as never)
-        .mockResolvedValueOnce(baseFile as never);
-      const updateManySpy = vi.spyOn(prisma.file, 'updateMany').mockResolvedValue({ count: 1 });
-
+    it('routes delete through softTrashDriveItem', async () => {
       const req = {
         user: { id: 'collab-1' },
         params: { id: 'file-1' },
@@ -166,20 +172,18 @@ describe('fileController update/delete collaborator parity', () => {
 
       await deleteFile(req, res);
 
-      expect(updateManySpy).toHaveBeenCalledWith({
-        where: { id: 'file-1', trashedAt: null },
-        data: { trashedAt: expect.any(Date) },
+      expect(driveDeleteService.softTrashDriveItem).toHaveBeenCalledWith({
+        userId: 'collab-1',
+        type: 'file',
+        id: 'file-1',
       });
       expect(res.json).toHaveBeenCalledWith({ trashed: true });
-      expect(domainEmitters.emitFileDeletedEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ fileId: 'file-1', softDelete: true })
-      );
     });
 
-    it('does not emit file.deleted when delete is denied', async () => {
-      vi.spyOn(driveHelpers, 'canWriteFile').mockResolvedValue(false);
-      vi.spyOn(prisma.file, 'findUnique').mockResolvedValue({ dashboardId: 'dash-1' } as never);
-      vi.spyOn(prisma.file, 'updateMany');
+    it('maps forbidden DriveDeleteError to 403', async () => {
+      vi.mocked(driveDeleteService.softTrashDriveItem).mockRejectedValueOnce(
+        new driveDeleteService.DriveDeleteError('Forbidden', 'forbidden')
+      );
 
       const req = {
         user: { id: 'viewer-1' },
@@ -190,15 +194,12 @@ describe('fileController update/delete collaborator parity', () => {
       await deleteFile(req, res);
 
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(domainEmitters.emitFileDeletedEvent).not.toHaveBeenCalled();
     });
 
-    it('trashed file returns 404 without delete mutation', async () => {
-      vi.spyOn(driveHelpers, 'canWriteFile').mockResolvedValue(true);
-      vi.spyOn(prisma.file, 'findUnique')
-        .mockResolvedValueOnce({ dashboardId: 'dash-1' } as never)
-        .mockResolvedValueOnce({ ...baseFile, trashedAt: new Date() } as never);
-      const updateManySpy = vi.spyOn(prisma.file, 'updateMany');
+    it('maps not_found DriveDeleteError to 404', async () => {
+      vi.mocked(driveDeleteService.softTrashDriveItem).mockRejectedValueOnce(
+        new driveDeleteService.DriveDeleteError('Not found', 'not_found')
+      );
 
       const req = {
         user: { id: 'owner-1' },
@@ -209,8 +210,6 @@ describe('fileController update/delete collaborator parity', () => {
       await deleteFile(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(updateManySpy).not.toHaveBeenCalled();
-      expect(moduleActivity.emitModuleActivityEvent).not.toHaveBeenCalled();
     });
   });
 });

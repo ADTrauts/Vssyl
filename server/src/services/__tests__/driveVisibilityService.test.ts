@@ -7,6 +7,9 @@ import {
   listAccessibleTrashedFiles,
   listAccessibleDriveFiles,
   listAccessibleDriveFilesForBrowse,
+  searchAccessibleDriveFiles,
+  searchAccessibleDriveFolders,
+  accessibleOwnedOrSharedFolderClause,
   validateAccessibleFileIds,
   fetchAccessibleActiveFiles,
   DRIVE_TRASH_VISIBILITY_MODEL,
@@ -99,6 +102,46 @@ describe('driveVisibilityService', () => {
           folderId: 'folder-a',
           dashboardId: 'dash-1',
           OR: accessibleOwnedOrSharedFileClause('user-1').OR,
+        }),
+      })
+    );
+  });
+
+  it('searchAccessibleDriveFiles includes shared files and applies PE filter', async () => {
+    const findMany = vi.spyOn(prisma.file, 'findMany').mockResolvedValue([
+      { id: 'owned', name: 'report.pdf', updatedAt: new Date(), dashboardId: null, folder: null, size: 1, type: 'application/pdf', folderId: null, userId: 'user-1' },
+      { id: 'shared', name: 'shared-report.pdf', updatedAt: new Date(), dashboardId: 'd1', folder: null, size: 2, type: 'application/pdf', folderId: null, userId: 'other' },
+    ] as never);
+    vi.spyOn(drivePolicyDual, 'evaluateDrivePolicyDual')
+      .mockResolvedValueOnce({ blocked: false })
+      .mockResolvedValueOnce({ blocked: true, reason: 'denied' });
+
+    const results = await searchAccessibleDriveFiles('user-1', 'report');
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({ OR: accessibleOwnedOrSharedFileClause('user-1').OR }),
+          ]),
+        }),
+      })
+    );
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBe('owned');
+  });
+
+  it('searchAccessibleDriveFolders uses owned-or-shared folder clause', async () => {
+    const findMany = vi.spyOn(prisma.folder, 'findMany').mockResolvedValue([] as never);
+
+    await searchAccessibleDriveFolders('user-1', 'docs');
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({ OR: accessibleOwnedOrSharedFolderClause('user-1').OR }),
+          ]),
         }),
       })
     );

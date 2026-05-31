@@ -3,13 +3,18 @@ import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
-import { getOrCreateChatFilesFolder } from '../services/driveService';
-import { grantFileSharePermission, DriveShareError } from '../services/driveFileShareService';
+import {
+  grantFileSharePermission,
+  revokeFileSharePermission,
+  updateFileSharePermission,
+  DriveShareError,
+} from '../services/driveFileShareService';
 import {
   permanentlyDeleteDriveFile,
   restoreDriveItem,
+  softTrashDriveItem,
+  DriveDeleteError,
 } from '../services/driveDeleteService';
-import { NotificationService } from '../services/notificationService';
 import { storageService } from '../services/storageService';
 import { prisma } from '../lib/prisma';
 import { getChatSocketService } from '../services/chatSocketService';
@@ -21,14 +26,11 @@ import { canReadFile, canWriteFile, canWriteFolder } from '../services/drivePerm
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
-  emitFileDeletedEvent,
-  emitFileUploadedEvent,
   emitFileMovedEvent,
   emitFileRenamedEvent,
-  emitFileUnsharedEvent,
 } from '../events/domainEventEmitters';
-import { broadcastDriveShareChange } from '../services/driveRealtimeService';
 import { listAccessibleDriveFilesForBrowse } from '../services/driveVisibilityService';
+import { createDriveFile, DriveUploadError } from '../services/driveUploadService';
 
 interface JWTPayload {
   sub?: string;
@@ -192,188 +194,21 @@ export async function uploadFile(req: RequestWithFile, res: Response) {
     
     let { folderId, chat, dashboardId } = req.body;
 
-    const toTrimmedString = (v: unknown): string | null => {
-      if (v === undefined || v === null) return null;
-      const s = String(v).trim();
-      return s === '' ? null : s;
-    };
-
-    // If this is a chat upload, always use the Chat Files folder
-    if (chat) {
-      const chatFolder = await getOrCreateChatFilesFolder(userId);
-      folderId = chatFolder.id;
-    }
-
-    let folderIdStr = toTrimmedString(folderId);
-    const dashboardIdStr = toTrimmedString(dashboardId);
-
-    let folderRow: { dashboardId: string | null } | null = null;
-    if (folderIdStr) {
-      const folder = await prisma.folder.findUnique({
-        where: { id: folderIdStr },
-        select: { dashboardId: true, trashedAt: true },
-      });
-      if (!folder || folder.trashedAt) {
-        return res.status(404).json({ message: 'Folder not found' });
-      }
-      if (!(await canWriteFolder(userId, folderIdStr))) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-      const uploadPolicyDual = await evaluateDrivePolicyDual({
-        userId,
-        action: POLICY_ACTIONS.FILE_UPLOAD,
-        resourceType: 'folder',
-        resourceId: folderIdStr,
-        scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
-      });
-      if (uploadPolicyDual.blocked) {
-        return res.status(403).json({ message: 'Access denied', reason: uploadPolicyDual.reason });
-      }
-      folderRow = folder;
-      if (dashboardIdStr !== null && (folder.dashboardId ?? null) !== dashboardIdStr) {
-        return res.status(400).json({ message: 'folderId does not match dashboardId' });
-      }
-    }
-
-    const effectiveDashboardId = dashboardIdStr ?? folderRow?.dashboardId ?? null;
-
-    if (!folderIdStr) {
-      const rootUploadPolicyDual = await evaluateDrivePolicyDual({
-        userId,
-        action: POLICY_ACTIONS.FILE_UPLOAD,
-        resourceType: 'folder',
-        resourceId: userId,
-        metadata: { uploadRoot: true },
-        scope: effectiveDashboardId ? { dashboardId: effectiveDashboardId } : undefined,
-      });
-      if (rootUploadPolicyDual.blocked) {
-        return res.status(403).json({ message: 'Access denied', reason: rootUploadPolicyDual.reason });
-      }
-    }
-    if (effectiveDashboardId) {
-      try {
-        await assertUserOwnsDashboard(prisma, userId, effectiveDashboardId);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : '';
-        if (msg === 'Task dashboard not found') {
-          return res.status(403).json({ message: 'Access denied' });
-        }
-        throw err;
-      }
-    }
-    
-    const { originalname, mimetype, size } = req.file;
-    
-    // Generate unique file path
-    const fileExtension = path.extname(originalname);
-    const uniqueFilename = `files/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
-    
-    // Upload file using storage service
-    await logger.info('Uploading file to storage', {
-      operation: 'file_upload_to_storage',
-      context: {
-        filename: uniqueFilename,
-        provider: storageService.getProvider(),
-        isGCS: storageService.isGCSConfigured()
-      }
-    });
-    
-    const uploadResult = await storageService.uploadFile(req.file, uniqueFilename, {
-      makePublic: true,
-      metadata: {
-        userId,
-        originalName: originalname,
-        folderId: folderIdStr || '',
-        dashboardId: effectiveDashboardId || '',
-      },
-    });
-    
-    await logger.info('File uploaded successfully', {
-      operation: 'file_upload_success',
-      context: {
-        url: uploadResult.url,
-        path: uploadResult.path
-      }
-    });
-    
-    // Create file record in database
-    const fileRecord = await prisma.file.create({
-      data: {
-        userId,
-        name: originalname,
-        type: mimetype,
-        size,
-        url: uploadResult.url,
-        path: uploadResult.path,
-        folderId: folderIdStr || null,
-        dashboardId: effectiveDashboardId,
-      },
-    });
-
-    // Create activity record for file upload
-    await prisma.activity.create({
-      data: {
-        type: 'create',
-        userId,
-        fileId: fileRecord.id,
-        details: {
-          action: 'file_uploaded',
-          fileName: originalname,
-          fileSize: size,
-          fileType: mimetype,
-        },
-      },
-    });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'drive',
-      action: 'create',
-      targetType: 'file',
-      targetId: fileRecord.id,
-      parentType: fileRecord.folderId ? 'folder' : undefined,
-      parentId: fileRecord.folderId ?? undefined,
-      dashboardId: fileRecord.dashboardId,
-      metadata: {
-        fileName: originalname,
-        fileType: mimetype,
-        fileSize: size,
-      },
-    });
-
-    emitFileUploadedEvent({
-      actorUserId: userId,
-      fileId: fileRecord.id,
-      folderId: fileRecord.folderId,
-      fileType: mimetype,
-      fileName: originalname,
-      sizeBytes: size,
-      dashboardId: fileRecord.dashboardId,
-    });
-
-    // Ambient suggestions: domain event → AIEventConsumer → ambientSuggestionService (Phase 5A)
-
-    // Broadcast real-time drive event to owner
     try {
-      const socketService = getChatSocketService();
-      socketService.broadcastDriveEvent(userId, 'drive:item:created', {
-        itemId: fileRecord.id,
-        itemType: 'file',
-        dashboardId: fileRecord.dashboardId,
-        folderId: fileRecord.folderId,
+      const fileRecord = await createDriveFile({
+        userId,
+        source: req.file,
+        folderId: folderId as string | null | undefined,
+        dashboardId: dashboardId as string | null | undefined,
+        chat: Boolean(chat),
       });
-    } catch (socketError) {
-      await logger.error('Failed to broadcast drive:item:created event', {
-        operation: 'file_upload_socket_broadcast',
-        error: {
-          message: socketError instanceof Error ? socketError.message : 'Unknown error',
-          stack: socketError instanceof Error ? socketError.stack : undefined
-        }
-      });
-      // Do not fail the upload if socket broadcast fails
+      res.status(201).json({ file: fileRecord });
+    } catch (err: unknown) {
+      if (err instanceof DriveUploadError) {
+        return res.status(err.statusCode).json({ message: err.message });
+      }
+      throw err;
     }
-
-    res.status(201).json({ file: fileRecord });
   } catch (err) {
     await logger.error('Failed to upload file', {
       operation: 'file_upload',
@@ -553,20 +388,7 @@ export async function downloadFile(req: Request, res: Response) {
       (file.path && !file.path.startsWith('/') && !file.path.includes('uploads'))
     );
     
-    // Create activity record for file download
-    await prisma.activity.create({
-      data: {
-        type: 'download',
-        userId,
-        fileId: id,
-        details: {
-          action: 'file_downloaded',
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-        },
-      },
-    });
+    // Download audit: normalized module activity only (legacy prisma.activity removed FH-6)
     
     // For GCS files, always serve through backend (bucket may have public access prevention)
     if (isGCSFile || storageService.getProvider() === 'gcs') {
@@ -765,22 +587,6 @@ export async function updateFile(req: Request, res: Response) {
     if (file.count === 0) return res.status(404).json({ message: 'File not found' });
     const updated = await prisma.file.findUnique({ where: { id } });
 
-    // Create activity record for file update
-    await prisma.activity.create({
-      data: {
-        type: 'edit',
-        userId,
-        fileId: id,
-        details: {
-          action: 'file_updated',
-          originalName: originalFile.name,
-          newName: name || originalFile.name,
-          originalFolderId: originalFile.folderId,
-          newFolderId: folderId,
-        },
-      },
-    });
-
     await emitModuleActivityEvent({
       actorUserId: userId,
       moduleId: 'drive',
@@ -851,93 +657,17 @@ export async function deleteFile(req: Request, res: Response) {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    if (!(await canWriteFile(userId, id))) return res.status(403).json({ message: 'Forbidden' });
-
-    const deleteScopeRow = await prisma.file.findUnique({
-      where: { id },
-      select: { dashboardId: true },
-    });
-    const deletePolicyDual = await evaluateDrivePolicyDual({
-      userId,
-      action: POLICY_ACTIONS.FILE_DELETE,
-      resourceType: 'file',
-      resourceId: id,
-      scope: deleteScopeRow?.dashboardId ? { dashboardId: deleteScopeRow.dashboardId } : undefined,
-    });
-    if (deletePolicyDual.blocked) {
-      return res.status(403).json({ message: 'Forbidden', reason: deletePolicyDual.reason });
-    }
-
-    const fileToDelete = await prisma.file.findUnique({ where: { id } });
-    if (!fileToDelete || fileToDelete.trashedAt) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-
-    const file = await prisma.file.updateMany({
-      where: { id, trashedAt: null },
-      data: { trashedAt: new Date() },
-    });
-    if (file.count === 0) return res.status(404).json({ message: 'File not found' });
-
-    // Create activity record for file deletion (moved to trash)
-    await prisma.activity.create({
-      data: {
-        type: 'delete',
-        userId,
-        fileId: id,
-        details: {
-          action: 'file_moved_to_trash',
-          fileName: fileToDelete.name,
-          fileType: fileToDelete.type,
-          fileSize: fileToDelete.size,
-        },
-      },
-    });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'drive',
-      action: 'delete',
-      targetType: 'file',
-      targetId: id,
-      parentType: fileToDelete.folderId ? 'folder' : undefined,
-      parentId: fileToDelete.folderId ?? undefined,
-      dashboardId: fileToDelete.dashboardId,
-      metadata: {
-        fileName: fileToDelete.name,
-        softDelete: true,
-      },
-    });
-
-    emitFileDeletedEvent({
-      actorUserId: userId,
-      fileId: id,
-      folderId: fileToDelete.folderId,
-      softDelete: true,
-      dashboardId: fileToDelete.dashboardId,
-    });
-
-    // Broadcast real-time drive event to owner
-    try {
-      const socketService = getChatSocketService();
-      socketService.broadcastDriveEvent(userId, 'drive:item:deleted', {
-        itemId: id,
-        itemType: 'file',
-        dashboardId: fileToDelete.dashboardId,
-        folderId: fileToDelete.folderId,
-      });
-    } catch (socketError) {
-      await logger.error('Failed to broadcast drive:item:deleted event', {
-        operation: 'file_delete_socket_broadcast',
-        error: {
-          message: socketError instanceof Error ? socketError.message : 'Unknown error',
-          stack: socketError instanceof Error ? socketError.stack : undefined
-        }
-      });
-    }
-
+    await softTrashDriveItem({ userId, type: 'file', id });
     res.json({ trashed: true });
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof DriveDeleteError) {
+      if (err.code === 'not_found') {
+        return res.status(404).json({ message: 'File not found' });
+      }
+      if (err.code === 'forbidden') {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
     res.status(500).json({ message: 'Failed to move file to trash' });
   }
 }
@@ -1003,18 +733,22 @@ export async function updateFilePermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id, userId } = req.params; // file id, user id
+    const { id, userId } = req.params;
     const { canRead, canWrite } = req.body;
-    // Only owner can update permissions
-    const file = await prisma.file.findUnique({ where: { id } });
-    if (!file || file.userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
-    const permission = await prisma.filePermission.updateMany({
-      where: { fileId: id, userId },
-      data: { canRead, canWrite },
+
+    const result = await updateFileSharePermission({
+      ownerUserId: ownerId,
+      fileId: id,
+      targetUserId: userId,
+      canRead: Boolean(canRead),
+      canWrite: Boolean(canWrite),
     });
-    if (permission.count === 0) return res.status(404).json({ message: 'Permission not found' });
-    res.json({ updated: permission.count });
-  } catch (err) {
+
+    res.json({ updated: result.updated });
+  } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     res.status(500).json({ message: 'Failed to update permission' });
   }
 }
@@ -1030,86 +764,19 @@ export async function revokeFilePermission(req: Request, res: Response) {
     if (!ownerId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { id, userId } = req.params; // file id, user id
-    
-    // Only owner can revoke permissions
-    const file = await prisma.file.findUnique({ 
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-    
-    if (!file || file.userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
-    
-    await prisma.filePermission.deleteMany({ where: { fileId: id, userId } });
+    const { id, userId } = req.params;
 
-    await emitModuleActivityEvent({
-      actorUserId: ownerId,
-      moduleId: 'drive',
-      action: 'unshare',
-      targetType: 'file',
-      targetId: id,
-      dashboardId: file.dashboardId,
-      metadata: {
-        targetUserId: userId,
-        fileName: file.name,
-      },
-    });
-
-    emitFileUnsharedEvent({
-      actorUserId: ownerId,
+    await revokeFileSharePermission({
+      ownerUserId: ownerId,
       fileId: id,
-      recipientUserId: userId,
-      fileName: file.name,
-      dashboardId: file.dashboardId,
+      targetUserId: userId,
     });
 
-    broadcastDriveShareChange({
-      ownerUserId: file.userId,
-      recipientUserId: userId,
-      itemId: id,
-      itemType: 'file',
-      action: 'unshare',
-      dashboardId: file.dashboardId,
-      folderId: file.folderId,
-    });
-    
-    // Create notification for the user whose permission was revoked
-    try {
-      await NotificationService.handleNotification({
-        type: 'drive_permission',
-        title: `File access revoked`,
-        body: `Your access to "${file.name}" has been removed`,
-        data: {
-          fileId: id,
-          fileName: file.name,
-          action: 'revoked',
-          ownerId: file.userId,
-          ownerName: file.user?.name
-        },
-        recipients: [userId],
-        senderId: ownerId
-      });
-    } catch (notificationError) {
-      await logger.error('Failed to create file permission revocation notification', {
-        operation: 'file_permission_revocation_notification',
-        error: {
-          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          stack: notificationError instanceof Error ? notificationError.stack : undefined
-        }
-      });
-      // Don't fail the permission revocation if notification fails
-    }
-    
     res.json({ revoked: true });
-  } catch (err) {
+  } catch (err: unknown) {
+    if (err instanceof DriveShareError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     res.status(500).json({ message: 'Failed to revoke permission' });
   }
 }
@@ -1535,21 +1202,6 @@ export async function moveFile(req: Request, res: Response) {
     const updatedFile = await prisma.file.update({
       where: { id },
       data: { folderId: targetFolderId || null },
-    });
-
-    // Create activity record for file move
-    await prisma.activity.create({
-      data: {
-        type: 'edit',
-        userId,
-        fileId: id,
-        details: {
-          action: 'file_moved',
-          fileName: file.name,
-          originalFolderId: originalFolderId,
-          newFolderId: targetFolderId,
-        },
-      },
     });
 
     await emitModuleActivityEvent({

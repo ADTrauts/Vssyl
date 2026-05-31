@@ -23,6 +23,18 @@ export interface BuiltInManifestEntity {
   supportsSearch?: boolean;
 }
 
+export interface BuiltInManifestNotification {
+  type: string;
+  name: string;
+  description: string;
+  category: string;
+  defaultChannels?: { inApp?: boolean; email?: boolean; push?: boolean };
+  priority?: 'low' | 'normal' | 'high';
+  requiresAction?: boolean;
+  /** When true, type is registered for discovery but not yet emitted by server. */
+  planned?: boolean;
+}
+
 export interface BuiltInModuleManifest {
   entryPoint: string;
   isBuiltIn: true;
@@ -30,6 +42,7 @@ export interface BuiltInModuleManifest {
   capabilities: BuiltInManifestCapabilities;
   routes?: Array<{ path: string; label: string }>;
   entities?: BuiltInManifestEntity[];
+  notifications?: BuiltInManifestNotification[];
 }
 
 const CAP = {
@@ -79,6 +92,84 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             vlinkEntityType: 'FOLDER',
             supportsTrash: true,
             supportsSearch: true,
+          },
+        ],
+        notifications: [
+          {
+            type: 'drive_permission',
+            name: 'File or folder shared',
+            description: 'Sent when a file or folder is shared with you or permissions change',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+          },
+          {
+            type: 'drive_shared',
+            name: 'File shared (legacy)',
+            description: 'Legacy share notification type; prefer drive_permission',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'normal',
+            requiresAction: false,
+          },
+          {
+            type: 'drive_file_shared',
+            name: 'File shared',
+            description: 'Alias catalog entry when file share is distinguished from folder share',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+            planned: true,
+          },
+          {
+            type: 'drive_file_unshared',
+            name: 'File unshared',
+            description: 'Sent when file access is revoked',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'normal',
+            requiresAction: false,
+            planned: true,
+          },
+          {
+            type: 'drive_folder_shared',
+            name: 'Folder shared',
+            description: 'Sent when a folder is shared with you',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+            planned: true,
+          },
+          {
+            type: 'drive_folder_unshared',
+            name: 'Folder unshared',
+            description: 'Sent when folder access is revoked',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'normal',
+            requiresAction: false,
+            planned: true,
+          },
+          {
+            type: 'drive_item_restored',
+            name: 'Item restored from trash',
+            description: 'Sent when a shared file or folder is restored from trash',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'normal',
+            requiresAction: false,
+          },
+          {
+            type: 'drive_item_deleted',
+            name: 'Item trashed or permanently deleted',
+            description: 'Sent when a shared file or folder is moved to trash or permanently deleted',
+            category: 'drive',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'normal',
+            requiresAction: false,
           },
         ],
       };
@@ -206,5 +297,6 @@ export function reconcileBuiltInManifest(
     },
     ...(canonical.routes ? { routes: canonical.routes } : {}),
     ...(canonical.entities ? { entities: canonical.entities } : {}),
+    ...(canonical.notifications ? { notifications: canonical.notifications } : {}),
   };
 }

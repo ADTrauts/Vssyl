@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import { canReadFolder, canWriteFolder } from './folderPermissionController';
+import { canReadFolder, canWriteFolder } from '../services/drivePermissionHelpers';
 import { AuthenticatedRequest, getUserFromRequest } from '../middleware/auth';
 import { getChatSocketService } from '../services/chatSocketService';
 import { Prisma } from '@prisma/client';
@@ -21,6 +21,8 @@ import {
 import {
   permanentlyDeleteDriveFolderCascade,
   restoreDriveItem,
+  softTrashDriveItem,
+  DriveDeleteError,
 } from '../services/driveDeleteService';
 
 // List folders with dashboard context support
@@ -345,78 +347,24 @@ export async function updateFolder(req: Request, res: Response) {
 
 export async function deleteFolder(req: Request, res: Response) {
   try {
-    const userId = (req as AuthenticatedRequest).user?.id || (req.user as any).id || (req.user as any).sub;
+    const userId = (req as AuthenticatedRequest).user?.id || (req.user as { id?: string; sub?: string }).id || (req.user as { sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     const { id } = req.params;
-    
-    // Check write permissions
-    const canWrite = await canWriteFolder(userId, id);
-    if (!canWrite) {
-      return res.status(403).json({ message: 'You do not have permission to delete this folder' });
-    }
 
-    const folderScopeRow = await prisma.folder.findUnique({
-      where: { id },
-      select: { dashboardId: true },
-    });
-    const deletePolicyDual = await evaluateDrivePolicyDual({
-      userId,
-      action: POLICY_ACTIONS.FOLDER_DELETE,
-      resourceType: 'folder',
-      resourceId: id,
-      scope: folderScopeRow?.dashboardId ? { dashboardId: folderScopeRow.dashboardId } : undefined,
-    });
-    if (deletePolicyDual.blocked) {
-      return res.status(403).json({
-        message: 'You do not have permission to delete this folder',
-        reason: deletePolicyDual.reason,
-      });
-    }
-
-    // Get folder before deleting to broadcast event
-    const folderToDelete = await prisma.folder.findUnique({ where: { id } });
-    if (!folderToDelete) return res.status(404).json({ message: 'Folder not found' });
-    
-    const folder = await prisma.folder.updateMany({
-      where: { id, trashedAt: null },
-      data: { trashedAt: new Date() },
-    });
-    if (folder.count === 0) return res.status(404).json({ message: 'Folder not found' });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'drive',
-      action: 'delete',
-      targetType: 'folder',
-      targetId: folderToDelete.id,
-      parentType: folderToDelete.parentId ? 'folder' : undefined,
-      parentId: folderToDelete.parentId ?? undefined,
-      dashboardId: folderToDelete.dashboardId,
-      metadata: { name: folderToDelete.name, softDelete: true },
-    });
-    
-    // Broadcast real-time drive event
-    try {
-      const socketService = getChatSocketService();
-      socketService.broadcastDriveEvent(folderToDelete.userId, 'drive:item:deleted', {
-        itemId: folderToDelete.id,
-        itemType: 'folder',
-        dashboardId: folderToDelete.dashboardId,
-        folderId: folderToDelete.parentId,
-      });
-    } catch (socketError) {
-      await logger.error('Failed to broadcast drive:item:deleted event', {
-        operation: 'folder_delete_socket_broadcast',
-        error: {
-          message: socketError instanceof Error ? socketError.message : 'Unknown error',
-          stack: socketError instanceof Error ? socketError.stack : undefined
-        }
-      });
-      // Do not fail the operation if socket broadcast fails
-    }
-    
+    await softTrashDriveItem({ userId, type: 'folder', id });
     res.json({ trashed: true });
   } catch (err: unknown) {
-    const error = err as Error;
+    if (err instanceof DriveDeleteError) {
+      if (err.code === 'not_found') {
+        return res.status(404).json({ message: 'Folder not found' });
+      }
+      if (err.code === 'forbidden') {
+        return res.status(403).json({ message: 'You do not have permission to delete this folder' });
+      }
+    }
+    const error = err instanceof Error ? err : new Error(String(err));
     await logger.error('Error in deleteFolder', {
       operation: 'deleteFolder',
       error: { message: error.message, stack: error.stack }
