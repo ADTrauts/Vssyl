@@ -6,6 +6,7 @@ import * as storageService from '../storageService';
 import * as moduleActivity from '../moduleActivityService';
 import * as chatSocket from '../chatSocketService';
 import * as driveRealtime from '../driveRealtimeService';
+import * as driveVlinkLifecycle from '../driveVlinkLifecycleService';
 import * as domainEmitters from '../../events/domainEventEmitters';
 import {
   emptyDriveTrash,
@@ -34,6 +35,11 @@ vi.mock('../chatSocketService', () => ({
 vi.mock('../driveRealtimeService', () => ({
   broadcastDriveEventToUsers: vi.fn(),
   broadcastDriveShareChange: vi.fn(),
+}));
+
+vi.mock('../driveVlinkLifecycleService', () => ({
+  unlinkDriveEntityFromAllVLinks: vi.fn().mockResolvedValue(0),
+  unlinkDriveFolderTreeFromAllVLinks: vi.fn().mockResolvedValue(0),
 }));
 
 describe('driveDeleteService', () => {
@@ -142,6 +148,27 @@ describe('driveDeleteService', () => {
       ['owner-1', 'owner-1'],
       'drive:item:updated',
       expect.objectContaining({ itemId: 'file-1', restored: true })
+    );
+  });
+
+  it('permanent file delete unlinks V_Link entity rows', async () => {
+    vi.spyOn(prisma.file, 'findUnique').mockResolvedValue({
+      id: 'file-1',
+      userId: 'owner-1',
+      path: 'files/blob-1',
+      trashedAt: new Date(),
+      dashboardId: 'dash-1',
+      folderId: null,
+      name: 'doc.txt',
+    } as never);
+    vi.spyOn(prisma.filePermission, 'deleteMany').mockResolvedValue({ count: 0 });
+    vi.spyOn(prisma.activity, 'deleteMany').mockResolvedValue({ count: 0 });
+    vi.spyOn(prisma.file, 'deleteMany').mockResolvedValue({ count: 1 });
+
+    await permanentlyDeleteDriveFile({ userId: 'owner-1', fileId: 'file-1' });
+
+    expect(driveVlinkLifecycle.unlinkDriveEntityFromAllVLinks).toHaveBeenCalledWith(
+      expect.objectContaining({ entityId: 'file-1' })
     );
   });
 

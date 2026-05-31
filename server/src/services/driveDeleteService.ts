@@ -6,6 +6,11 @@ import { storageService } from './storageService';
 import { emitModuleActivityEvent } from './moduleActivityService';
 import { emitFileDeletedEvent, emitFileRestoredEvent, emitFolderDeletedEvent, emitFolderRestoredEvent } from '../events/domainEventEmitters';
 import { broadcastDriveEventToUsers } from './driveRealtimeService';
+import {
+  unlinkDriveEntityFromAllVLinks,
+  unlinkDriveFolderTreeFromAllVLinks,
+} from './driveVlinkLifecycleService';
+import { VLinkEntityType } from '@prisma/client';
 import { getChatSocketService } from './chatSocketService';
 import { logger } from '../lib/logger';
 
@@ -378,6 +383,12 @@ export async function permanentlyDeleteDriveFile(input: {
     permanent: true,
   });
 
+  await unlinkDriveEntityFromAllVLinks({
+    actorUserId: userId,
+    entityType: VLinkEntityType.FILE,
+    entityId: fileId,
+  });
+
   await deleteFileBlob(fileToDelete.path);
   const deleted = await deleteFileRecords(fileId);
   if (!deleted) return false;
@@ -426,6 +437,8 @@ export async function permanentlyDeleteDriveFolderCascade(input: {
     scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
   });
   if (policy.blocked) return false;
+
+  await unlinkDriveFolderTreeFromAllVLinks({ actorUserId: userId, folderId });
 
   await deleteFolderTreeRecords(folderId);
 
