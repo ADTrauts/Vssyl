@@ -88,7 +88,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 |--------|-----------|---------------------------|---------------------|---------------------|--------|----------|
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
-| **Calendar** | `calendar` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~1,713-line controller; minimal domain events |
+| **Calendar** | `calendar` | **Low** | **Low** | **0 — Legacy** | Wave 1 Phase 1B (2026-06-01) | Core services extracted; controller still holds reads + side effects |
 | **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~4,401-line controller; AI `toolExecutor` Prisma |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
@@ -224,9 +224,11 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Todo | **●** | ○ | ○ | ○ | ○ | 3 |
 | Notes | **●** | ○ | ○ | ○ | ○ | 3 |
 
-**Calendar Phase 0 (2026-05-31):** [CALENDAR_CONSTITUTIONAL_AUDIT](./audits/CALENDAR_CONSTITUTIONAL_AUDIT.md), [CALENDAR_OPERATION_MATRIX](./audits/CALENDAR_OPERATION_MATRIX.md) — audit only; no implementation.
+**Calendar Phase 0 (2026-05-31):** [CALENDAR_CONSTITUTIONAL_AUDIT](./audits/CALENDAR_CONSTITUTIONAL_AUDIT.md), [CALENDAR_OPERATION_MATRIX](./audits/CALENDAR_OPERATION_MATRIX.md).
 
-**Sequencing note:** Calendar Wave 1 implementation starts after Phase 0 approval; Todo follows Calendar to reuse PE/trash/scheduler patterns.
+**Calendar Phase 1A–1B (2026-06-01):** [CALENDAR_SERVICE_EXTRACTION_PLAN](./audits/CALENDAR_SERVICE_EXTRACTION_PLAN.md) — `calendarPermissionService`, `calendarService`, `calendarEventService`, `calendarRecurrenceService`, `calendarAttendeeService`; controller delegates core writes.
+
+**Sequencing note:** Phase 1C (visibility + PE) is next; Todo follows Calendar Wave 1 to reuse PE/trash/scheduler patterns.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

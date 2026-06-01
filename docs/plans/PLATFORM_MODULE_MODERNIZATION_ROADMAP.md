@@ -495,7 +495,7 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** Calendar (Wave 2) — Phase 0 audit complete; implementation not started.
+- **Next module:** Calendar (Wave 2) — Phase 1B core services complete (2026-06-01); Phase 1C visibility + PE next.
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 
@@ -561,6 +561,8 @@ Controllers become thin HTTP adapters.
 ---
 
 ### 5.2 Calendar (Priority 2)
+
+- **Phase 1B (core domain services):** complete (2026-06-01) — `calendarPermissionService`, `calendarService`, `calendarEventService`, `calendarRecurrenceService`, `calendarAttendeeService`; controller delegates calendar/event writes and RSVP; `listEventsInRange` uses `calendarRecurrenceService` for expansion.
 
 #### Phase 0 — Audit (2026-05-31) — Complete
 

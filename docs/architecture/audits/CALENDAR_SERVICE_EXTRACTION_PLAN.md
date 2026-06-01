@@ -3,8 +3,8 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Phase 1A — Design only (no implementation)  
-**Wave:** Calendar Wave 1 — Phase 1A
+**Status:** Phase 1B complete (2026-06-01); Phase 1C not started  
+**Wave:** Calendar Wave 1 — Phase 1A (design) + Phase 1B (core services)
 
 **Authorities:**
 
@@ -1019,7 +1019,8 @@ Per user request — answers without implementation:
 | Constitutional audit | ✅ |
 | Operation matrix | ✅ |
 | Service extraction plan (this doc) | ✅ |
-| Implementation (1B+) | ❌ Blocked until plan approval |
+| Phase 1B core services | ✅ `calendarPermissionService`, `calendarService`, `calendarEventService`, `calendarRecurrenceService`, `calendarAttendeeService` |
+| Phase 1C+ | ❌ Not started |
 
 ---
 

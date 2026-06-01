@@ -251,7 +251,8 @@ entities[]: MISSING
 | Constitutional audit (this doc) | ✅ |
 | Operation matrix | ✅ [CALENDAR_OPERATION_MATRIX.md](./CALENDAR_OPERATION_MATRIX.md) |
 | Service extraction plan | ✅ [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
-| Implementation | ❌ Explicitly out of scope |
+| Phase 1B core services | ✅ (2026-06-01) — calendar CRUD + event writes + recurrence helpers + RSVP |
+| Phase 1C+ | ❌ Not started |
 
 ---
 

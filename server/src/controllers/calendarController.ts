@@ -2,63 +2,31 @@ import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { rrulestr } from 'rrule';
-import { getLocalYmd, zonedTimeToUtcFromDate } from '../utils/timezone';
+import { zonedTimeToUtcFromDate } from '../utils/timezone';
 import { getChatSocketService } from '../services/chatSocketService';
 import { AuditService } from '../services/auditService';
 import { sendCalendarInviteEmail, sendCalendarUpdateEmail, sendCalendarCancelEmail } from '../services/emailService';
 import { createRsvpToken, validateRsvpToken } from '../utils/tokenUtils';
 import { logger } from '../lib/logger';
 import { emitCalendarEventCreatedEvent } from '../events/domainEventEmitters';
+import { CalendarServiceError } from '../services/calendar/calendarErrors';
+import * as calendarAttendeeService from '../services/calendarAttendeeService';
+import * as calendarEventService from '../services/calendarEventService';
+import {
+  buildExceptionKeySet,
+  expandRecurringEventsInRange,
+} from '../services/calendarRecurrenceService';
+import * as calendarService from '../services/calendarService';
 
 function getUserId(req: Request): string | null {
   const user = (req as AuthenticatedRequest).user;
   return user?.id || null;
 }
 
-/** Ensures the caller may create calendars in the given context (membership / personal id). */
-async function enforceCalendarContextMembership(
-  userId: string,
-  contextType: unknown,
-  contextId: unknown
-): Promise<void> {
-  if (typeof contextType !== 'string' || typeof contextId !== 'string') {
-    const err = new Error('Invalid context');
-    (err as Error & { status?: number }).status = 400;
-    throw err;
+function respondCalendarServiceError(res: Response, error: unknown): Response | void {
+  if (error instanceof CalendarServiceError) {
+    return res.status(error.status).json({ error: error.message });
   }
-  if (contextType === 'PERSONAL') {
-    if (contextId !== userId) {
-      const err = new Error('Forbidden');
-      (err as Error & { status?: number }).status = 403;
-      throw err;
-    }
-    return;
-  }
-  if (contextType === 'BUSINESS') {
-    const member = await prisma.businessMember.findFirst({
-      where: { businessId: contextId, userId, isActive: true },
-    });
-    if (!member) {
-      const err = new Error('Forbidden');
-      (err as Error & { status?: number }).status = 403;
-      throw err;
-    }
-    return;
-  }
-  if (contextType === 'HOUSEHOLD') {
-    const member = await prisma.householdMember.findFirst({
-      where: { householdId: contextId, userId, isActive: true },
-    });
-    if (!member) {
-      const err = new Error('Forbidden');
-      (err as Error & { status?: number }).status = 403;
-      throw err;
-    }
-    return;
-  }
-  const err = new Error('Invalid contextType');
-  (err as Error & { status?: number }).status = 400;
-  throw err;
 }
 
 export async function listCalendars(req: Request, res: Response) {
@@ -95,28 +63,24 @@ export async function createCalendar(req: Request, res: Response) {
   }
 
   try {
-    await enforceCalendarContextMembership(userId, contextType, contextId);
-  } catch (e: unknown) {
-    const err = e as Error & { status?: number };
-    const code = err.status ?? 500;
-    return res.status(code).json({ error: err.message });
-  }
-
-  const calendar = await prisma.calendar.create({
-    data: {
+    const calendar = await calendarService.createCalendar({
+      userId,
       name,
       color,
       type,
       contextType,
       contextId,
-      isPrimary: Boolean(isPrimary),
-      isSystem: Boolean(isSystem),
-      isDeletable: isDeletable === false ? false : true,
-      defaultReminderMinutes: defaultReminderMinutes ?? 10,
-      members: { create: { userId, role: 'OWNER' } }
-    }
-  });
-  res.status(201).json({ success: true, data: calendar });
+      isPrimary,
+      isSystem,
+      isDeletable,
+      defaultReminderMinutes,
+    });
+    return res.status(201).json({ success: true, data: calendar });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
+  }
 }
 
 export async function updateCalendar(req: Request, res: Response) {
@@ -125,15 +89,20 @@ export async function updateCalendar(req: Request, res: Response) {
   const { id } = req.params;
   const { name, color, defaultReminderMinutes } = req.body;
 
-  // Only members can update; ownership checks can be added later
-  const isMember = await prisma.calendarMember.findFirst({ where: { calendarId: id, userId } });
-  if (!isMember) return res.status(403).json({ error: 'Forbidden' });
-
-  const calendar = await prisma.calendar.update({
-    where: { id },
-    data: { name, color, defaultReminderMinutes }
-  });
-  res.json({ success: true, data: calendar });
+  try {
+    const calendar = await calendarService.updateCalendar({
+      userId,
+      calendarId: id,
+      name,
+      color,
+      defaultReminderMinutes,
+    });
+    return res.json({ success: true, data: calendar });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
+  }
 }
 
 export async function deleteCalendar(req: Request, res: Response) {
@@ -141,16 +110,14 @@ export async function deleteCalendar(req: Request, res: Response) {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   const { id } = req.params;
 
-  const cal = await prisma.calendar.findUnique({ where: { id } });
-  if (!cal) return res.status(404).json({ error: 'Not found' });
-  if (cal.isSystem === true || cal.isDeletable === false) {
-    return res.status(400).json({ error: 'Calendar cannot be deleted' });
+  try {
+    await calendarService.deleteCalendar({ userId, calendarId: id });
+    return res.json({ success: true });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
   }
-  const isOwner = await prisma.calendarMember.findFirst({ where: { calendarId: id, userId, role: 'OWNER' } });
-  if (!isOwner) return res.status(403).json({ error: 'Forbidden' });
-
-  await prisma.calendar.delete({ where: { id } });
-  res.json({ success: true });
 }
 
 export async function autoProvisionCalendar(req: Request, res: Response) {
@@ -161,52 +128,20 @@ export async function autoProvisionCalendar(req: Request, res: Response) {
   if (!contextType || !contextId) return res.status(400).json({ error: 'Missing context' });
 
   try {
-    await enforceCalendarContextMembership(userId, contextType, contextId);
-  } catch (e: unknown) {
-    const err = e as Error & { status?: number };
-    const code = err.status ?? 500;
-    return res.status(code).json({ error: err.message });
-  }
-
-  // Module-driven provisioning gate: require Calendar widget active on a dashboard for this context
-  try {
-    // Find any dashboard matching this context that has a calendar widget
-    const dashboards = await prisma.dashboard.findMany({
-      where: {
-        OR: [
-          contextType === 'PERSONAL' ? { userId: contextId } : undefined,
-          contextType === 'BUSINESS' ? { businessId: contextId } : undefined,
-          contextType === 'HOUSEHOLD' ? { householdId: contextId } : undefined,
-        ].filter((item): item is NonNullable<typeof item> => item !== undefined),
-      },
-      include: { widgets: true }
-    });
-    const calendarEnabled = dashboards.some(d => d.widgets?.some(w => w.type === 'calendar'));
-    if (!calendarEnabled) {
-      return res.status(409).json({ error: 'Calendar module is not installed for this tab/context' });
-    }
-  } catch (e) {
-    // If widget lookup fails unexpectedly, be safe and block provisioning
-    return res.status(409).json({ error: 'Unable to verify Calendar module installation' });
-  }
-
-  // Ensure one primary per context per user
-  const existing = await prisma.calendar.findFirst({ where: { contextType, contextId, isPrimary: true } });
-  if (existing) return res.json({ success: true, data: existing });
-
-  const calendar = await prisma.calendar.create({
-    data: {
-      name: name || 'Calendar',
+    const result = await calendarService.autoProvisionCalendar({
+      userId,
       contextType,
       contextId,
-      isPrimary: isPrimary ?? true,
-      isSystem: contextType === 'PERSONAL',
-      isDeletable: contextType !== 'PERSONAL',
-      defaultReminderMinutes: 10,
-      members: { create: { userId, role: 'OWNER' } }
-    }
-  });
-  res.status(201).json({ success: true, data: calendar });
+      name,
+      isPrimary,
+    });
+    const status = result.created ? 201 : 200;
+    return res.status(status).json({ success: true, data: result.calendar });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
+  }
 }
 
 export async function listEventsInRange(req: Request, res: Response) {
@@ -339,63 +274,8 @@ export async function listEventsInRange(req: Request, res: Response) {
     where: eventWhere,
     include: { attendees: true, reminders: true, attachments: true }
   });
-  // Handle recurrence expansion with basic exceptions via child events
-  // Child exceptions are modeled as events with parentEventId set to the series parent
-  const exceptionKeySet = new Set<string>();
-  for (const child of events) {
-    if (child.parentEventId) {
-      const key = `${child.parentEventId}|${new Date(child.startAt).toISOString()}`;
-      exceptionKeySet.add(key);
-    }
-  }
-
-  const expanded: Array<Record<string, unknown>> = [];
-  for (const ev of events) {
-    // If this is a child exception or a normal one-off event, include as-is
-    if (!ev.recurrenceRule) {
-      expanded.push({ ...ev, occurrenceStartAt: ev.startAt, occurrenceEndAt: ev.endAt });
-      continue;
-    }
-
-    // Only expand series parents (no parentEventId)
-    if (ev.parentEventId) {
-      // Safety: if a recurring child exists (rare), treat as non-recurring above
-      expanded.push({ ...ev, occurrenceStartAt: ev.startAt, occurrenceEndAt: ev.endAt });
-      continue;
-    }
-
-    // Support RRULE with optional EXDATE by forcing a set when needed
-    // TODO: Timezone/DST: normalize dtstart and between() range using event.timezone
-    const rule = rrulestr(ev.recurrenceRule, { dtstart: new Date(ev.startAt), forceset: /EXDATE/i.test(ev.recurrenceRule) });
-    let occs = (rule as any).between ? (rule as any).between(startAt, endAt, true) : (rule as any).all().filter((d: Date) => d >= startAt && d <= endAt);
-    // Respect recurrenceEndAt if provided
-    if (ev.recurrenceEndAt) {
-      const until = new Date(ev.recurrenceEndAt);
-      occs = occs.filter((d: Date) => d.getTime() <= until.getTime());
-    }
-    const durationMs = new Date(ev.endAt).getTime() - new Date(ev.startAt).getTime();
-    for (const occ of occs) {
-      const occIso = new Date(occ).toISOString();
-      const key = `${ev.id}|${occIso}`;
-      if (exceptionKeySet.has(key)) {
-        // Skip this occurrence because a child exception exists for it
-        continue;
-      }
-      if (ev.allDay && ev.timezone) {
-        // Normalize all-day to local day in event timezone: 00:00 to 23:59 local
-        const ymd = getLocalYmd(new Date(occ), ev.timezone);
-        const startUtc = zonedTimeToUtcFromDate(new Date(ymd.year, ymd.month - 1, ymd.day, 0, 0, 0), ev.timezone);
-        const endUtc = zonedTimeToUtcFromDate(new Date(ymd.year, ymd.month - 1, ymd.day, 23, 59, 59), ev.timezone);
-        expanded.push({ ...ev, occurrenceStartAt: startUtc, occurrenceEndAt: endUtc });
-      } else {
-        expanded.push({
-          ...ev,
-          occurrenceStartAt: occ,
-          occurrenceEndAt: new Date(occ.getTime() + durationMs)
-        });
-      }
-    }
-  }
+  const exceptionKeySet = buildExceptionKeySet(events);
+  const expanded = expandRecurringEventsInRange(events, startAt, endAt, exceptionKeySet);
   res.json({ success: true, data: expanded });
   } catch (error: unknown) {
     const err = error as Error;
@@ -624,60 +504,32 @@ export async function createEvent(req: Request, res: Response) {
   const { calendarId, title, description, location, onlineMeetingLink, startAt, endAt, allDay, timezone, reminders, attendees, recurrenceRule, recurrenceEndAt } = req.body;
   if (!calendarId || !title || !startAt || !endAt) return res.status(400).json({ error: 'Missing required fields' });
 
-  // Ensure user can write to the calendar
-  const cal = await prisma.calendar.findUnique({ where: { id: calendarId } });
-  const member = await prisma.calendarMember.findFirst({ where: { calendarId, userId, role: { in: ['OWNER', 'ADMIN', 'EDITOR'] } } });
-  if (!member) return res.status(403).json({ error: 'Forbidden' });
-  // Household child protections: deny writes for TEEN/CHILD on household calendars
-  if (cal?.contextType === 'HOUSEHOLD') {
-    const hhMember = await prisma.householdMember.findFirst({ where: { householdId: cal.contextId, userId } });
-    if (hhMember && (hhMember.role === 'TEEN' || hhMember.role === 'CHILD')) {
-      return res.status(403).json({ error: 'Read-only role in household' });
-    }
-  }
-
-  // Determine default reminders if none provided
-  let remindersData: Record<string, any> | undefined = undefined;
-  if (Array.isArray(reminders) && reminders.length > 0) {
-    remindersData = { create: reminders.map((r: Record<string, any>) => ({ method: r.method || 'APP', minutesBefore: r.minutesBefore ?? 10 })) };
-  } else {
-    // Use calendar default for timed events; 9:00 AM local for all-day
-    if (cal) {
-      if (allDay) {
-        // Reminder at 9:00 AM on the event day; compute minutesBefore from startAt
-        const start = new Date(startAt);
-        const reminderAt = new Date(start);
-        reminderAt.setHours(9, 0, 0, 0);
-        // Allow negative offsets so dispatcher fires after start (e.g., 9:00 AM for all-day starting 00:00)
-        const minutesBefore = Math.floor((start.getTime() - reminderAt.getTime()) / 60000);
-        remindersData = { create: [{ method: 'APP', minutesBefore }] };
-      } else {
-        remindersData = { create: [{ method: 'APP', minutesBefore: cal.defaultReminderMinutes }] };
-      }
-    }
-  }
-
-  const event = await prisma.event.create({
-    data: ({
+  let event;
+  let cal;
+  try {
+    const result = await calendarEventService.createEvent({
+      userId,
       calendarId,
       title,
       description,
       location,
       onlineMeetingLink,
-      startAt: new Date(startAt),
-      endAt: new Date(endAt),
-      allDay: Boolean(allDay),
-      timezone: timezone || 'UTC',
-      recurrenceRule: recurrenceRule || null,
-      recurrenceEndAt: recurrenceEndAt ? new Date(recurrenceEndAt) : null,
-      createdById: userId,
-      attendees: attendees && Array.isArray(attendees)
-        ? { create: attendees.map((a: Record<string, any>) => ({ userId: a.userId, email: a.email, response: a.response || 'NEEDS_ACTION' })) }
-        : { create: [] },
-      reminders: remindersData
-    } as any),
-    include: { attendees: true, reminders: true }
-  });
+      startAt,
+      endAt,
+      allDay,
+      timezone,
+      reminders,
+      attendees,
+      recurrenceRule,
+      recurrenceEndAt,
+    });
+    event = result.event;
+    cal = result.calendar;
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
+  }
 
   emitCalendarEventCreatedEvent({
     actorUserId: userId,
@@ -686,8 +538,8 @@ export async function createEvent(req: Request, res: Response) {
     allDay: event.allDay,
     startAt: event.startAt.toISOString(),
     endAt: event.endAt.toISOString(),
-    businessId: cal?.contextType === 'BUSINESS' ? cal.contextId : null,
-    householdId: cal?.contextType === 'HOUSEHOLD' ? cal.contextId : null,
+    businessId: cal.contextType === 'BUSINESS' ? cal.contextId : null,
+    householdId: cal.contextType === 'HOUSEHOLD' ? cal.contextId : null,
   });
 
   res.status(201).json({ success: true, data: event });
@@ -781,80 +633,38 @@ export async function updateEvent(req: Request, res: Response) {
   const { id } = req.params;
   const data = req.body || {};
 
-  // Ensure user can access the event's calendar
-  const ev = await prisma.event.findUnique({ where: { id } });
-  if (!ev) return res.status(404).json({ error: 'Not found' });
-  const member = await prisma.calendarMember.findFirst({ where: { calendarId: ev.calendarId, userId, role: { in: ['OWNER', 'ADMIN', 'EDITOR'] } } });
-  if (!member) return res.status(403).json({ error: 'Forbidden' });
-  // Household child protections for updates
-  const upCal = await prisma.calendar.findUnique({ where: { id: ev.calendarId } });
-  if (upCal?.contextType === 'HOUSEHOLD') {
-    const hhMember = await prisma.householdMember.findFirst({ where: { householdId: upCal.contextId, userId } });
-    if (hhMember && (hhMember.role === 'TEEN' || hhMember.role === 'CHILD')) {
-      return res.status(403).json({ error: 'Read-only role in household' });
-    }
-  }
-
-  // Handle edit scope for recurring events: THIS occurrence vs SERIES
-  const editMode = (data.editMode as 'THIS' | 'SERIES' | undefined) || 'SERIES';
-  const occurrenceStartAt = data.occurrenceStartAt ? new Date(data.occurrenceStartAt) : null;
-
-  if ((ev as any).recurrenceRule && editMode === 'THIS' && occurrenceStartAt) {
-    // Create an exception child for this single occurrence
-    const parentDurationMs = new Date(ev.endAt).getTime() - new Date(ev.startAt).getTime();
-    const childStart = data.startAt ? new Date(data.startAt) : occurrenceStartAt;
-    const childEnd = data.endAt ? new Date(data.endAt) : new Date(childStart.getTime() + parentDurationMs);
-
-    const child = await prisma.event.create({
-      data: ({
-        calendarId: ev.calendarId,
-        title: data.title ?? ev.title,
-        description: data.description ?? ev.description,
-        location: data.location ?? ev.location,
-        onlineMeetingLink: data.onlineMeetingLink ?? ev.onlineMeetingLink,
-        startAt: childStart,
-        endAt: childEnd,
-        allDay: typeof data.allDay === 'boolean' ? Boolean(data.allDay) : ev.allDay,
-        timezone: data.timezone || ev.timezone || 'UTC',
-        status: ev.status,
-        parentEventId: ev.id,
-        createdById: userId,
-      } as any),
-      include: { attendees: true, reminders: true, attachments: true }
-    });
-    // Note: Parent recurrence occurrence at occurrenceStartAt will be suppressed
-    // in listEventsInRange by exceptionKeySet logic
-    return res.json({ success: true, data: child });
-  }
-
-  // Default: update the event (series or one-off)
-  const updated = await prisma.event.update({
-    where: { id },
-    data: ({
+  let updateResult;
+  try {
+    updateResult = await calendarEventService.updateEvent({
+      userId,
+      eventId: id,
+      editMode: data.editMode,
+      occurrenceStartAt: data.occurrenceStartAt,
       title: data.title,
       description: data.description,
       location: data.location,
       onlineMeetingLink: data.onlineMeetingLink,
-      startAt: data.startAt ? new Date(data.startAt) : undefined,
-      endAt: data.endAt ? new Date(data.endAt) : undefined,
+      startAt: data.startAt,
+      endAt: data.endAt,
       allDay: data.allDay,
       timezone: data.timezone,
       recurrenceRule: data.recurrenceRule,
-      recurrenceEndAt: data.recurrenceEndAt ? new Date(data.recurrenceEndAt) : undefined,
-    } as any),
-    include: { attendees: true, reminders: true, attachments: true }
-  });
-
-  // Replace attendees if provided
-  if (Array.isArray(data.attendees)) {
-    await prisma.eventAttendee.deleteMany({ where: { eventId: id } });
-    if (data.attendees.length > 0) {
-      await prisma.eventAttendee.createMany({
-        data: data.attendees.map((a: Record<string, any>) => ({ eventId: id, userId: a.userId || null, email: a.email || null, response: a.response || 'NEEDS_ACTION' }))
-      });
-    }
+      recurrenceEndAt: data.recurrenceEndAt,
+      attendees: data.attendees,
+    });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
   }
-  const refreshed = await prisma.event.findUnique({ where: { id }, include: { attendees: true, reminders: true, attachments: true } });
+
+  if (updateResult.type === 'occurrence_exception') {
+    return res.json({ success: true, data: updateResult.event });
+  }
+
+  const refreshed = updateResult.event;
+  if (!refreshed) return res.status(404).json({ error: 'Not found' });
+
   res.json({ success: true, data: refreshed });
   // Audit: event updated
   try {
@@ -864,7 +674,10 @@ export async function updateEvent(req: Request, res: Response) {
   } catch {}
   // Realtime: broadcast update
   try {
-    const members = await prisma.calendarMember.findMany({ where: { calendarId: ev.calendarId }, select: { userId: true } });
+    const members = await prisma.calendarMember.findMany({
+      where: { calendarId: refreshed.calendarId },
+      select: { userId: true },
+    });
     const socket = getChatSocketService();
     const payload = { type: 'event', action: 'updated', event: refreshed };
     for (const m of members) {
@@ -935,64 +748,26 @@ export async function deleteEvent(req: Request, res: Response) {
   const { id } = req.params;
   const editMode = req.query.editMode as 'THIS' | 'SERIES' | undefined;
   const occurrenceStartAt = typeof req.query.occurrenceStartAt === 'string' ? req.query.occurrenceStartAt : undefined;
-  const ev = await prisma.event.findFirst({ 
-    where: { 
-      id,
-      trashedAt: null // Only allow trashing non-trashed events
-    } 
-  });
-  if (!ev) return res.status(404).json({ error: 'Not found' });
-  const member = await prisma.calendarMember.findFirst({ where: { calendarId: ev.calendarId, userId, role: { in: ['OWNER', 'ADMIN', 'EDITOR'] } } });
-  if (!member) return res.status(403).json({ error: 'Forbidden' });
-  // Household child protections for delete
-  const delCal = await prisma.calendar.findUnique({ where: { id: ev.calendarId } });
-  if (delCal?.contextType === 'HOUSEHOLD') {
-    const hhMember = await prisma.householdMember.findFirst({ where: { householdId: delCal.contextId, userId } });
-    if (hhMember && (hhMember.role === 'TEEN' || hhMember.role === 'CHILD')) {
-      return res.status(403).json({ error: 'Read-only role in household' });
-    }
+
+  let deleteResult;
+  try {
+    deleteResult = await calendarEventService.deleteEvent({
+      userId,
+      eventId: id,
+      editMode,
+      occurrenceStartAt,
+    });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
   }
 
-  // Delete only this occurrence by creating a canceled exception child
-  if ((ev as any).recurrenceRule && editMode === 'THIS' && occurrenceStartAt) {
-    try {
-      const occStart = new Date(occurrenceStartAt);
-      const durationMs = new Date(ev.endAt).getTime() - new Date(ev.startAt).getTime();
-      const occEnd = new Date(occStart.getTime() + durationMs);
-      await prisma.event.create({
-        data: ({
-          calendarId: ev.calendarId,
-          title: ev.title,
-          description: ev.description,
-          location: ev.location,
-          onlineMeetingLink: ev.onlineMeetingLink,
-          startAt: occStart,
-          endAt: occEnd,
-          allDay: ev.allDay,
-          timezone: ev.timezone,
-          status: 'CANCELED',
-          parentEventId: ev.id,
-          createdById: userId,
-        } as any)
-      });
-      return res.json({ success: true });
-    } catch (e) {
-      await logger.error('Failed to create canceled exception child', {
-        operation: 'calendar_create_canceled_exception',
-        error: {
-          message: e instanceof Error ? e.message : 'Unknown error',
-          stack: e instanceof Error ? e.stack : undefined
-        }
-      });
-      return res.status(500).json({ error: 'Failed to skip occurrence' });
-    }
+  if (deleteResult.type === 'canceled_occurrence') {
+    return res.json({ success: true });
   }
 
-  // Move event to trash instead of hard delete
-  await prisma.event.update({
-    where: { id },
-    data: { trashedAt: new Date() },
-  });
+  const ev = deleteResult.event;
   res.json({ success: true });
   // Audit: event deleted
   try {
@@ -1058,18 +833,16 @@ export async function rsvpEvent(req: Request, res: Response) {
   const { id } = req.params;
   const { response } = req.body as { response: 'NEEDS_ACTION' | 'ACCEPTED' | 'DECLINED' | 'TENTATIVE' };
 
-  const ev = await prisma.event.findUnique({ where: { id }, include: { attendees: true } });
-  if (!ev) return res.status(404).json({ error: 'Not found' });
-  const member = await prisma.calendarMember.findFirst({ where: { calendarId: ev.calendarId, userId } });
-  if (!member) return res.status(403).json({ error: 'Forbidden' });
-
-  const existing = ev.attendees.find(a => a.userId === userId);
-  if (existing) {
-    await prisma.eventAttendee.update({ where: { id: existing.id }, data: { response } });
-  } else {
-    await prisma.eventAttendee.create({ data: { eventId: id, userId, response } });
+  let refreshed;
+  try {
+    refreshed = await calendarAttendeeService.rsvpEvent({ userId, eventId: id, response });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
   }
-  const refreshed = await prisma.event.findUnique({ where: { id }, include: { attendees: true, reminders: true, attachments: true } });
+
+  if (!refreshed) return res.status(404).json({ error: 'Not found' });
   res.json({ success: true, data: refreshed });
   // Realtime: broadcast RSVP change
   try {

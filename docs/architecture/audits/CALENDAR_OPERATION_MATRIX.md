@@ -1,7 +1,7 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Phase 1A design complete — implementation blocked until plan approval  
+**Status:** Phase 1B complete (2026-06-01) — core write paths service-owned; reads/side-effect adapters pending Phase 1C–1D  
 **Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
@@ -36,18 +36,18 @@
 | Operation | Controller | Service | PE | Activity | Event | Notification | Sched | Realtime | AI | Notes |
 | --------- | ---------- | ------- | -- | -------- | ----- | ------------ | ----- | -------- | -- | ----- |
 | **List calendars** | `listCalendars` | — | N | N | N | N | — | — | — | Inline Prisma; member OR personal context |
-| **Create calendar** | `createCalendar` | — | N | N | N | N | — | — | — | Context membership enforced |
-| **Update calendar** | `updateCalendar` | — | N | N | N | N | — | — | — | Any member can update |
-| **Delete calendar** | `deleteCalendar` | — | N | N | N | N | — | — | — | Hard delete; OWNER only; system calendars protected |
-| **Auto-provision calendar** | `autoProvisionCalendar` | — | N | N | N | N | — | — | — | Context bootstrap |
+| **Create calendar** | `createCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B — permission via `calendarPermissionService` |
+| **Update calendar** | `updateCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B |
+| **Delete calendar** | `deleteCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B — hard delete; OWNER only |
+| **Auto-provision calendar** | `autoProvisionCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B |
 | **List events in range** | `listEventsInRange` | — | N | N | N | N | — | — | Context | Recurrence expansion in controller |
 | **Search events** | `searchEvents` | — | N | N | N | N | — | — | — | Text + date filters; inline Prisma |
 | **Check conflicts** | `checkConflicts` | — | N | N | N | N | — | — | `check_availability` | Recurrence-aware overlap |
 | **Get free/busy** | `getFreeBusy` | — | N | N | N | N | — | — | — | Availability windows |
-| **Create event** | `createEvent` | — | N | N | P | P | — | P | `create_event` | Domain event + socket + email; reminders nested create |
-| **Update event** | `updateEvent` | — | N | N | N | N | — | P | `create_event` (update path) | THIS/SERIES modes; socket + email |
-| **Delete event (soft trash)** | `deleteEvent` | — | N | N | N | N | — | P | `cancel_event` | `trashedAt`; recurrence exception path; socket |
-| **RSVP (auth)** | `rsvpEvent` | — | N | N | N | N | — | — | `rsvp` | Attendee upsert |
+| **Create event** | `createEvent` | `calendarEventService` | N | N | P | P | — | P | `create_event` | Phase 1B persist in service; side effects remain in controller (1D) |
+| **Update event** | `updateEvent` | `calendarEventService` | N | N | N | N | — | P | `create_event` (update path) | Phase 1B — THIS/SERIES via `calendarRecurrenceService` |
+| **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` | N | N | N | N | — | P | `cancel_event` | Phase 1B |
+| **RSVP (auth)** | `rsvpEvent` | `calendarAttendeeService` | N | N | N | N | — | — | `rsvp` | Phase 1B |
 | **RSVP (public token)** | `rsvpEventPublic` / route inline | — | N | N | N | N | — | — | — | Token + inline Prisma in route |
 | **Import ICS** | `importIcsEvents` | — | N | N | N | N | — | — | — | Bulk create from ICS |
 | **Export ICS (events)** | `exportIcsEvents` | — | N | N | N | N | — | — | — | Range export |
