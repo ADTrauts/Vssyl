@@ -145,6 +145,55 @@ function mapChatTrashError(res: Response, error: unknown): boolean {
   return false;
 }
 
+async function loadTrashedDriveFiles(userId: string): Promise<Awaited<ReturnType<typeof listAccessibleTrashedFiles>>> {
+  try {
+    return await listAccessibleTrashedFiles(userId);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: drive files query failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'drive',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
+async function loadTrashedDriveFolders(userId: string): Promise<Awaited<ReturnType<typeof listAccessibleTrashedFolders>>> {
+  try {
+    return await listAccessibleTrashedFolders(userId);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: drive folders query failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'drive',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
+async function loadTrashedChatItems(userId: string): Promise<TrashedListItem[]> {
+  const chatHandler = getGlobalTrashModuleHandler('chat');
+  if (!chatHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await chatHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: chat handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'chat',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
 export async function listTrashedItems(req: Request, res: Response) {
   if (!hasUserId(req.user)) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -153,16 +202,9 @@ export async function listTrashedItems(req: Request, res: Response) {
   try {
     const userId = (req.user as any).id || (req.user as any).sub;
 
-    // Get trashed files (owner + shared collaborators)
-    const trashedFiles = await listAccessibleTrashedFiles(userId);
-
-    // Get trashed folders (owner + shared collaborators)
-    const trashedFolders = await listAccessibleTrashedFolders(userId);
-
-    const chatHandler = getGlobalTrashModuleHandler('chat');
-    const trashedChatConversations: TrashedListItem[] = chatHandler?.listTrashed
-      ? (await chatHandler.listTrashed({ userId })) as TrashedListItem[]
-      : [];
+    const trashedFiles = await loadTrashedDriveFiles(userId);
+    const trashedFolders = await loadTrashedDriveFolders(userId);
+    const trashedChatConversations = await loadTrashedChatItems(userId);
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({

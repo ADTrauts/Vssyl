@@ -1,8 +1,9 @@
 import { prisma } from '../lib/prisma';
+import { logger } from '../lib/logger';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { canReadFile, canReadFolder } from './drivePermissionHelpers';
-import type { Prisma } from '@prisma/client';
+import type { Folder, Prisma } from '@prisma/client';
 
 /** Prisma OR branch: user owns or has explicit file share. */
 export function accessibleOwnedOrSharedFileClause(userId: string) {
@@ -46,11 +47,8 @@ export async function listAccessibleTrashedFiles(userId: string) {
 }
 
 export async function listAccessibleTrashedFolders(userId: string) {
-  return prisma.folder.findMany({
-    where: {
-      trashedAt: { not: null },
-      ...accessibleOwnedOrSharedFolderClause(userId),
-    },
+  const contextWhere: Prisma.FolderWhereInput = { trashedAt: { not: null } };
+  return listOwnedAndSharedFolders(userId, contextWhere, {
     select: {
       id: true,
       name: true,
@@ -126,6 +124,89 @@ export interface DriveFolderBrowseQuery extends DriveBrowseQuery {
   parentId?: string | null;
 }
 
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function buildFolderBrowseContextWhere(query: Pick<DriveFolderBrowseQuery, 'parentId' | 'dashboardId' | 'starred'>): Prisma.FolderWhereInput {
+  const { parentId = null, dashboardId, starred } = query;
+  const where: Prisma.FolderWhereInput = {
+    trashedAt: null,
+    parentId,
+  };
+
+  if (starred) {
+    where.starred = true;
+  } else if (dashboardId !== undefined) {
+    where.dashboardId = dashboardId;
+  } else {
+    where.dashboardId = null;
+  }
+
+  return where;
+}
+
+/** FolderPermission rows for shared visibility; owned-only fallback when lookup fails. */
+async function listSharedFolderIdsForUser(userId: string): Promise<string[]> {
+  try {
+    const permissions = await prisma.folderPermission.findMany({
+      where: {
+        userId,
+        OR: [{ canRead: true }, { canWrite: true }],
+      },
+      select: { folderId: true },
+    });
+    return [...new Set(permissions.map((permission) => permission.folderId))];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.warn('FolderPermission lookup failed; using owned-only folder visibility', {
+      operation: 'drive_folder_permission_lookup',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
+async function listOwnedAndSharedFolders<T extends Folder>(
+  userId: string,
+  contextWhere: Prisma.FolderWhereInput,
+  findArgs: Omit<Prisma.FolderFindManyArgs, 'where'>
+): Promise<T[]> {
+  const owned = (await prisma.folder.findMany({
+    where: { AND: [contextWhere, { userId }] },
+    ...findArgs,
+  })) as T[];
+
+  const sharedIds = await listSharedFolderIdsForUser(userId);
+  if (sharedIds.length === 0) {
+    return owned;
+  }
+
+  const shared = (await prisma.folder.findMany({
+    where: {
+      AND: [contextWhere, { id: { in: sharedIds }, NOT: { userId } }],
+    },
+    ...findArgs,
+  })) as T[];
+
+  return dedupeById([...owned, ...shared]);
+}
+
+/** Count active child folders visible to the user (browse hasChildren helper). */
+export async function countAccessibleChildFolders(userId: string, parentFolderId: string): Promise<number> {
+  const children = await listOwnedAndSharedFolders(userId, { parentId: parentFolderId, trashedAt: null }, {
+    select: { id: true, dashboardId: true },
+  });
+  const allowed = await filterFoldersByReadPolicy(userId, children);
+  return allowed.length;
+}
+
 async function filterFilesByReadPolicy<T extends { id: string; dashboardId: string | null }>(
   userId: string,
   files: T[]
@@ -151,15 +232,25 @@ async function filterFoldersByReadPolicy<T extends { id: string; dashboardId: st
 ): Promise<T[]> {
   const allowed: T[] = [];
   for (const folder of folders) {
-    if (!(await canReadFolder(userId, folder.id))) continue;
-    const policy = await evaluateDrivePolicyDual({
-      userId,
-      action: POLICY_ACTIONS.FILE_READ,
-      resourceType: 'folder',
-      resourceId: folder.id,
-      scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
-    });
-    if (!policy.blocked) allowed.push(folder);
+    try {
+      if (!(await canReadFolder(userId, folder.id))) continue;
+      const policy = await evaluateDrivePolicyDual({
+        userId,
+        action: POLICY_ACTIONS.FILE_READ,
+        resourceType: 'folder',
+        resourceId: folder.id,
+        scope: folder.dashboardId ? { dashboardId: folder.dashboardId } : undefined,
+      });
+      if (!policy.blocked) allowed.push(folder);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.warn('Drive folder read policy check failed; skipping row', {
+        operation: 'drive_folder_read_policy',
+        userId,
+        folderId: folder.id,
+        error: { message: err.message },
+      });
+    }
   }
   return allowed;
 }
@@ -193,26 +284,10 @@ export async function listAccessibleDriveFilesForBrowse(query: DriveFileBrowseQu
 /** UI browse: owned + shared active folders in a parent context (FH-2). */
 export async function listAccessibleDriveFoldersForBrowse(query: DriveFolderBrowseQuery) {
   const { userId, parentId = null, dashboardId, starred } = query;
-
-  const where: Prisma.FolderWhereInput = {
-    trashedAt: null,
-    ...accessibleOwnedOrSharedFolderClause(userId),
-    parentId,
-  };
-
-  if (starred) {
-    where.starred = true;
-  } else if (dashboardId !== undefined) {
-    where.dashboardId = dashboardId;
-  } else {
-    where.dashboardId = null;
-  }
-
-  const candidates = await prisma.folder.findMany({
-    where,
+  const contextWhere = buildFolderBrowseContextWhere({ parentId, dashboardId, starred });
+  const candidates = await listOwnedAndSharedFolders(userId, contextWhere, {
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
   });
-
   return filterFoldersByReadPolicy(userId, candidates);
 }
 
@@ -380,24 +455,20 @@ export async function searchAccessibleDriveFolders(
   filters?: DriveSearchFilters,
   limit = 5
 ) {
-  const andConditions: Prisma.FolderWhereInput[] = [
-    { name: { contains: query, mode: 'insensitive' } },
-    accessibleOwnedOrSharedFolderClause(userId),
-    { trashedAt: null },
-  ];
+  const contextWhere: Prisma.FolderWhereInput = {
+    name: { contains: query, mode: 'insensitive' },
+    trashedAt: null,
+  };
 
   if (filters?.dateStart || filters?.dateEnd) {
-    andConditions.push({
-      updatedAt: {
-        ...(filters.dateStart ? { gte: filters.dateStart } : {}),
-        ...(filters.dateEnd ? { lte: filters.dateEnd } : {}),
-      },
-    });
+    contextWhere.updatedAt = {
+      ...(filters.dateStart ? { gte: filters.dateStart } : {}),
+      ...(filters.dateEnd ? { lte: filters.dateEnd } : {}),
+    };
   }
-  if (filters?.pinnedOnly) andConditions.push({ starred: true });
+  if (filters?.pinnedOnly) contextWhere.starred = true;
 
-  const candidates = await prisma.folder.findMany({
-    where: { AND: andConditions },
+  const candidates = await listOwnedAndSharedFolders(userId, contextWhere, {
     take: Math.min(Math.max(limit, 1), 15),
     orderBy: { updatedAt: 'desc' },
   });

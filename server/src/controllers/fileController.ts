@@ -129,6 +129,18 @@ export async function listFiles(req: Request, res: Response) {
     const dashboardIdStr = dashboardId as string | undefined;
     const isStarred = starredStr === 'true';
 
+    if (dashboardIdStr) {
+      try {
+        await assertUserOwnsDashboard(prisma, userId, dashboardIdStr);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg === 'Task dashboard not found') {
+          return res.status(404).json({ message: 'Dashboard not found' });
+        }
+        throw err;
+      }
+    }
+
     const files = await listAccessibleDriveFilesForBrowse({
       userId,
       folderId: folderIdStr ?? null,

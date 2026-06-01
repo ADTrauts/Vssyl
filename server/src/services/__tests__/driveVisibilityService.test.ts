@@ -5,8 +5,11 @@ import * as drivePolicyDual from '../../auth/drivePolicyDual';
 import {
   accessibleOwnedOrSharedFileClause,
   listAccessibleTrashedFiles,
+  listAccessibleTrashedFolders,
   listAccessibleDriveFiles,
   listAccessibleDriveFilesForBrowse,
+  listAccessibleDriveFoldersForBrowse,
+  countAccessibleChildFolders,
   searchAccessibleDriveFiles,
   searchAccessibleDriveFolders,
   accessibleOwnedOrSharedFolderClause,
@@ -15,11 +18,21 @@ import {
   DRIVE_TRASH_VISIBILITY_MODEL,
 } from '../driveVisibilityService';
 
+vi.mock('../../lib/logger', () => ({
+  logger: {
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+    info: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 describe('driveVisibilityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(drivePolicyDual, 'evaluateDrivePolicyDual').mockResolvedValue({ blocked: false });
     vi.spyOn(driveHelpers, 'canReadFile').mockResolvedValue(true);
+    vi.spyOn(driveHelpers, 'canReadFolder').mockResolvedValue(true);
   });
 
   it('documents trash visibility permission model', () => {
@@ -86,6 +99,70 @@ describe('driveVisibilityService', () => {
     );
   });
 
+  it('listAccessibleTrashedFolders scopes to owned folders and shared folder ids', async () => {
+    vi.spyOn(prisma.folder, 'findMany')
+      .mockResolvedValueOnce([{ id: 'owned-folder' }] as never)
+      .mockResolvedValueOnce([] as never);
+    vi.spyOn(prisma.folderPermission, 'findMany').mockResolvedValue([
+      { folderId: 'shared-folder' },
+    ] as never);
+
+    await listAccessibleTrashedFolders('user-1');
+
+    expect(prisma.folder.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: { AND: [{ trashedAt: { not: null } }, { userId: 'user-1' }] },
+      })
+    );
+    expect(prisma.folder.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: {
+          AND: [
+            { trashedAt: { not: null } },
+            { id: { in: ['shared-folder'] }, NOT: { userId: 'user-1' } },
+          ],
+        },
+      })
+    );
+  });
+
+  it('listAccessibleDriveFoldersForBrowse falls back to owned folders when permission lookup fails', async () => {
+    vi.spyOn(prisma.folderPermission, 'findMany').mockRejectedValue(
+      new Error('relation "folder_permissions" does not exist')
+    );
+    vi.spyOn(prisma.folder, 'findMany').mockResolvedValue([
+      { id: 'owned', dashboardId: 'dash-1', userId: 'user-1' },
+    ] as never);
+
+    const folders = await listAccessibleDriveFoldersForBrowse({
+      userId: 'user-1',
+      parentId: null,
+      dashboardId: 'dash-1',
+    });
+
+    expect(folders).toHaveLength(1);
+    expect(folders[0]?.id).toBe('owned');
+    expect(prisma.folder.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('countAccessibleChildFolders uses owned and shared child lookup', async () => {
+    vi.spyOn(prisma.folderPermission, 'findMany').mockResolvedValue([] as never);
+    vi.spyOn(prisma.folder, 'findMany').mockResolvedValue([
+      { id: 'child-1', dashboardId: null },
+    ] as never);
+
+    const count = await countAccessibleChildFolders('user-1', 'parent-1');
+
+    expect(count).toBe(1);
+    expect(prisma.folder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { AND: [{ parentId: 'parent-1', trashedAt: null }, { userId: 'user-1' }] },
+      })
+    );
+  });
+
   it('listAccessibleDriveFilesForBrowse uses owned-or-shared clause', async () => {
     const findMany = vi.spyOn(prisma.file, 'findMany').mockResolvedValue([] as never);
 
@@ -131,18 +208,23 @@ describe('driveVisibilityService', () => {
     expect(results[0]?.id).toBe('owned');
   });
 
-  it('searchAccessibleDriveFolders uses owned-or-shared folder clause', async () => {
+  it('searchAccessibleDriveFolders uses owned and shared folder lookup', async () => {
+    vi.spyOn(prisma.folderPermission, 'findMany').mockResolvedValue([] as never);
     const findMany = vi.spyOn(prisma.folder, 'findMany').mockResolvedValue([] as never);
 
     await searchAccessibleDriveFolders('user-1', 'docs');
 
     expect(findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({
-          AND: expect.arrayContaining([
-            expect.objectContaining({ OR: accessibleOwnedOrSharedFolderClause('user-1').OR }),
-          ]),
-        }),
+        where: {
+          AND: [
+            {
+              name: { contains: 'docs', mode: 'insensitive' },
+              trashedAt: null,
+            },
+            { userId: 'user-1' },
+          ],
+        },
       })
     );
   });

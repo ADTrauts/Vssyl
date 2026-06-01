@@ -10,7 +10,7 @@ import { emitModuleActivityEvent } from '../services/moduleActivityService';
 import { evaluateDrivePolicyDual } from '../auth/drivePolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
-  accessibleOwnedOrSharedFolderClause,
+  countAccessibleChildFolders,
   listAccessibleDriveFoldersForBrowse,
 } from '../services/driveVisibilityService';
 import {
@@ -66,6 +66,18 @@ export async function listFolders(req: Request, res: Response) {
     const dashboardIdStr = dashboardId as string | undefined;
     const isStarred = starredStr === 'true';
 
+    if (dashboardIdStr) {
+      try {
+        await assertUserOwnsDashboard(prisma, userId, dashboardIdStr);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : '';
+        if (msg === 'Task dashboard not found') {
+          return res.status(404).json({ message: 'Dashboard not found' });
+        }
+        throw err;
+      }
+    }
+
     const folders = await listAccessibleDriveFoldersForBrowse({
       userId,
       parentId: parentIdStr ?? null,
@@ -75,13 +87,7 @@ export async function listFolders(req: Request, res: Response) {
 
     const foldersWithChildren = await Promise.all(
       folders.map(async (folder) => {
-        const childCount = await prisma.folder.count({
-          where: {
-            parentId: folder.id,
-            trashedAt: null,
-            ...accessibleOwnedOrSharedFolderClause(userId),
-          },
-        });
+        const childCount = await countAccessibleChildFolders(userId, folder.id);
         return {
           ...folder,
           hasChildren: childCount > 0,

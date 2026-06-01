@@ -105,6 +105,52 @@ async function authorizeDashboardRead(input: PolicyInput): Promise<PolicyDecisio
   return { allow: true, matchedPolicy: 'dashboard_owner' };
 }
 
+async function authorizeFileRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  const fileId = input.resourceId;
+  if (!fileId || typeof fileId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  if (input.resourceType !== 'file') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const file = await prisma.file.findUnique({
+    where: { id: fileId },
+    select: { id: true, userId: true, dashboardId: true, trashedAt: true },
+  });
+
+  if (!file || file.trashedAt) {
+    return { allow: true, matchedPolicy: 'delegate_not_found' };
+  }
+
+  const dashErr = scopeDashboardMatchesResource(input.scope, file.dashboardId);
+  if (dashErr) {
+    return deny(input, dashErr);
+  }
+
+  if (file.userId === userId) {
+    return { allow: true, matchedPolicy: 'file_owner' };
+  }
+
+  const perm = await prisma.filePermission.findFirst({
+    where: {
+      fileId,
+      userId,
+      OR: [{ canRead: true }, { canWrite: true }],
+    },
+    select: { id: true },
+  });
+  if (perm) {
+    return { allow: true, matchedPolicy: 'file_permission_read' };
+  }
+
+  return deny(input, 'INSUFFICIENT_ROLE');
+}
+
 async function authorizeFileReadFolder(input: PolicyInput): Promise<PolicyDecision> {
   const userId = resolveUserId(input);
   if (!userId) {
@@ -137,7 +183,11 @@ async function authorizeFileReadFolder(input: PolicyInput): Promise<PolicyDecisi
   }
 
   const perm = await prisma.folderPermission.findFirst({
-    where: { folderId, userId, canRead: true },
+    where: {
+      folderId,
+      userId,
+      OR: [{ canRead: true }, { canWrite: true }],
+    },
     select: { id: true },
   });
   if (perm) {
@@ -689,6 +739,10 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
 
   if (action === POLICY_ACTIONS.DASHBOARD_READ) {
     return authorizeDashboardRead(input);
+  }
+
+  if (action === POLICY_ACTIONS.FILE_READ && input.resourceType === 'file') {
+    return authorizeFileRead(input);
   }
 
   if (action === POLICY_ACTIONS.FILE_READ && input.resourceType === 'folder') {
