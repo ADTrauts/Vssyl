@@ -1,23 +1,29 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { CalendarServiceError } from '../services/calendar/calendarErrors';
 import * as calendarAttendeeService from '../services/calendarAttendeeService';
 import * as calendarEventService from '../services/calendarEventService';
+import * as calendarIcsService from '../services/calendarIcsService';
 import * as calendarService from '../services/calendarService';
 import * as calendarVisibilityService from '../services/calendarVisibilityService';
-import { recordEventImported } from '../services/calendarActivityService';
-import { broadcastCalendarEventCreated } from '../services/calendarRealtimeService';
 
 function getUserId(req: Request): string | null {
   const user = (req as AuthenticatedRequest).user;
   return user?.id || null;
 }
 
-function respondCalendarServiceError(res: Response, error: unknown): Response | void {
+function respondCalendarServiceError(
+  res: Response,
+  error: unknown,
+  shape: 'error' | 'success' = 'error'
+): Response | void {
   if (error instanceof CalendarServiceError) {
-    return res.status(error.status).json({ error: error.message });
+    const body =
+      shape === 'success'
+        ? { success: false, message: error.message }
+        : { error: error.message };
+    return res.status(error.status).json(body);
   }
 }
 
@@ -356,7 +362,7 @@ export async function rsvpEventPublic(req: Request, res: Response) {
       response: response as 'ACCEPTED' | 'DECLINED' | 'TENTATIVE',
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         message: `Successfully ${response} the event invitation`,
@@ -364,9 +370,8 @@ export async function rsvpEventPublic(req: Request, res: Response) {
       },
     });
   } catch (error: unknown) {
-    if (error instanceof CalendarServiceError) {
-      return res.status(error.status).json({ success: false, message: error.message });
-    }
+    const handled = respondCalendarServiceError(res, error, 'success');
+    if (handled) return handled;
     await logger.error('Failed to process public RSVP', {
       operation: 'calendar_process_public_rsvp',
       error: {
@@ -374,166 +379,25 @@ export async function rsvpEventPublic(req: Request, res: Response) {
         stack: error instanceof Error ? error.stack : undefined
       }
     });
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
 
-/**
- * ICS import/export remain controller-owned (Phase 1D).
- * Import uses activity + realtime adapters only; full ICS service extraction is Phase 1E+.
- */
 export async function importIcsEvents(req: Request, res: Response) {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { calendarId, icsContent } = req.body;
+  if (!calendarId || !icsContent) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
   try {
-    const { calendarId, icsContent } = req.body;
-    const userId = (req as AuthenticatedRequest).user?.id;
-
-    if (!userId || !calendarId || !icsContent) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
-    }
-
-    const calendar = await prisma.calendar.findFirst({
-      where: { id: calendarId }
-    });
-
-    if (!calendar) {
-      return res.status(404).json({ success: false, message: 'Calendar not found' });
-    }
-
-    const hasAccess = calendar.contextType === 'PERSONAL' && calendar.contextId === userId ||
-                     calendar.contextType === 'BUSINESS' && calendar.contextId === userId ||
-                     calendar.contextType === 'HOUSEHOLD' && calendar.contextId === userId;
-
-    if (!hasAccess) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
-    }
-
-    const lines = icsContent.split('\n');
-    const events: Array<Record<string, string>> = [];
-    let currentEvent: Record<string, string> = {};
-    let inEvent = false;
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('BEGIN:VEVENT')) {
-        inEvent = true;
-        currentEvent = {};
-      } else if (trimmedLine.startsWith('END:VEVENT')) {
-        inEvent = false;
-        if (currentEvent.summary && currentEvent.dtstart) {
-          events.push(currentEvent);
-        }
-      } else if (inEvent && trimmedLine.includes(':')) {
-        const [key, ...valueParts] = trimmedLine.split(':');
-        const value = valueParts.join(':');
-
-        switch (key) {
-          case 'SUMMARY':
-            currentEvent.summary = value;
-            break;
-          case 'DTSTART':
-            currentEvent.dtstart = value;
-            break;
-          case 'DTEND':
-            currentEvent.dtend = value;
-            break;
-          case 'DESCRIPTION':
-            currentEvent.description = value;
-            break;
-          case 'LOCATION':
-            currentEvent.location = value;
-            break;
-          case 'RRULE':
-            currentEvent.rrule = value;
-            break;
-          case 'UID':
-            currentEvent.uid = value;
-            break;
-        }
-      }
-    }
-
-    const createdEvents = [];
-    for (const event of events) {
-      try {
-        let startAt: Date;
-        let endAt: Date;
-        let allDay = false;
-
-        if (event.dtstart.length === 8) {
-          allDay = true;
-          startAt = new Date(
-            parseInt(event.dtstart.slice(0, 4)),
-            parseInt(event.dtstart.slice(4, 6)) - 1,
-            parseInt(event.dtstart.slice(6, 8))
-          );
-        } else {
-          startAt = new Date(event.dtstart);
-          allDay = false;
-        }
-
-        if (event.dtend) {
-          if (event.dtend.length === 8) {
-            endAt = new Date(
-              parseInt(event.dtend.slice(0, 4)),
-              parseInt(event.dtend.slice(4, 6)) - 1,
-              parseInt(event.dtend.slice(6, 8))
-            );
-          } else {
-            endAt = new Date(event.dtend);
-          }
-        } else {
-          endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
-        }
-
-        const newEvent = await prisma.event.create({
-          data: {
-            calendarId,
-            title: event.summary,
-            description: event.description || '',
-            location: event.location || '',
-            startAt,
-            endAt,
-            allDay,
-            timezone: 'UTC',
-            recurrenceRule: event.rrule || undefined,
-            createdById: userId
-          }
-        });
-
-        createdEvents.push(newEvent);
-
-        await recordEventImported({
-          actorUserId: userId,
-          eventId: newEvent.id,
-          calendarId,
-          title: newEvent.title,
-        });
-
-      } catch (error) {
-        await logger.error('Failed to create event from ICS', {
-          operation: 'calendar_create_from_ics',
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined
-          }
-        });
-      }
-    }
-
-    if (createdEvents.length > 0) {
-      const last = createdEvents[createdEvents.length - 1];
-      broadcastCalendarEventCreated([userId], last as Record<string, unknown>);
-    }
-
-    res.json({
-      success: true,
-      data: {
-        imported: createdEvents.length,
-        events: createdEvents
-      }
-    });
-
-  } catch (error) {
+    const data = await calendarIcsService.importIcsEvents({ userId, calendarId, icsContent });
+    return res.json({ success: true, data });
+  } catch (error: unknown) {
+    const handled = respondCalendarServiceError(res, error, 'success');
+    if (handled) return handled;
     await logger.error('Failed to import ICS events', {
       operation: 'calendar_import_ics',
       error: {
@@ -541,164 +405,34 @@ export async function importIcsEvents(req: Request, res: Response) {
         stack: error instanceof Error ? error.stack : undefined
       }
     });
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
 
 export async function exportIcsEvents(req: Request, res: Response) {
+  const userId = getUserId(req);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { start, end, calendarIds, contexts } = req.query;
+  if (!start || !end) {
+    return res.status(400).json({ success: false, message: 'Missing required parameters' });
+  }
+
   try {
-    const { start, end, calendarIds, contexts } = req.query;
-    const userId = (req as AuthenticatedRequest).user?.id;
-
-    if (!userId || !start || !end) {
-      return res.status(400).json({ success: false, message: 'Missing required parameters' });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      startAt: { gte: new Date(start as string) },
-      endAt: { lte: new Date(end as string) }
-    };
-
-    if (calendarIds) {
-      const calendarIdArray = Array.isArray(calendarIds) ? calendarIds : [calendarIds];
-      where.calendarId = { in: calendarIdArray as string[] };
-    }
-
-    if (contexts) {
-      const contextArray = Array.isArray(contexts) ? contexts : [contexts];
-      const dashboardContexts = [];
-
-      for (const contextId of contextArray) {
-        const dashboard = await prisma.dashboard.findUnique({
-          where: { id: contextId as string },
-          select: {
-            businessId: true,
-            institutionId: true,
-            householdId: true
-          }
-        });
-
-        if (dashboard) {
-          if (dashboard.businessId) {
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.businessId });
-          } else if (dashboard.institutionId) {
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.institutionId });
-          } else if (dashboard.householdId) {
-            dashboardContexts.push({ contextType: 'HOUSEHOLD', contextId: dashboard.householdId });
-          } else {
-            dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-          }
-        } else {
-          dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-        }
-      }
-
-      if (dashboardContexts.length > 0) {
-        where.calendar = {
-          OR: dashboardContexts
-        };
-      }
-    }
-
-    const events = await prisma.event.findMany({
-      where,
-      include: {
-        calendar: true,
-        attendees: true,
-        reminders: true
-      }
+    const icsContent = await calendarIcsService.exportIcsEvents({
+      userId,
+      start: String(start),
+      end: String(end),
+      calendarIds: queryStringOrStringArray(calendarIds),
+      contexts: queryStringOrStringArray(contexts),
     });
-
-    let icsContent = 'BEGIN:VCALENDAR\r\n';
-    icsContent += 'VERSION:2.0\r\n';
-    icsContent += 'PRODID:-//Vssyl//Calendar//EN\r\n';
-    icsContent += 'CALSCALE:GREGORIAN\r\n';
-    icsContent += 'METHOD:PUBLISH\r\n';
-
-    const timezones = new Set<string>();
-    events.forEach(event => {
-      if (event.timezone && event.timezone !== 'UTC') {
-        timezones.add(event.timezone);
-      }
-    });
-
-    timezones.forEach(timezone => {
-      icsContent += 'BEGIN:VTIMEZONE\r\n';
-      icsContent += `TZID:${timezone}\r\n`;
-      if (timezone === 'America/New_York') {
-        icsContent += 'BEGIN:DAYLIGHT\r\n';
-        icsContent += 'TZOFFSETFROM:-0500\r\n';
-        icsContent += 'TZOFFSETTO:-0400\r\n';
-        icsContent += 'DTSTART:19700308T020000\r\n';
-        icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU\r\n';
-        icsContent += 'TZNAME:EDT\r\n';
-        icsContent += 'END:DAYLIGHT\r\n';
-        icsContent += 'BEGIN:STANDARD\r\n';
-        icsContent += 'TZOFFSETFROM:-0400\r\n';
-        icsContent += 'TZOFFSETTO:-0500\r\n';
-        icsContent += 'DTSTART:19701101T020000\r\n';
-        icsContent += 'RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU\r\n';
-        icsContent += 'TZNAME:EST\r\n';
-        icsContent += 'END:STANDARD\r\n';
-      }
-      icsContent += 'END:VTIMEZONE\r\n';
-    });
-
-    events.forEach(event => {
-      icsContent += 'BEGIN:VEVENT\r\n';
-      icsContent += `UID:${event.id}\r\n`;
-      icsContent += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z\r\n`;
-
-      if (event.allDay) {
-        icsContent += `DTSTART;VALUE=DATE:${new Date(event.startAt).toISOString().slice(0, 10).replace(/-/g, '')}\r\n`;
-      } else {
-        icsContent += `DTSTART;TZID=${event.timezone}:${new Date(event.startAt).toISOString().replace(/[-:]/g, '').split('.')[0]}\r\n`;
-      }
-
-      if (event.allDay) {
-        icsContent += `DTEND;VALUE=DATE:${new Date(event.endAt).toISOString().slice(0, 10).replace(/-/g, '')}\r\n`;
-      } else {
-        icsContent += `DTEND;TZID=${event.timezone}:${new Date(event.endAt).toISOString().replace(/[-:]/g, '').split('.')[0]}\r\n`;
-      }
-
-      icsContent += `SUMMARY:${event.title.replace(/\r?\n/g, '\\n')}\r\n`;
-
-      if (event.description) {
-        icsContent += `DESCRIPTION:${event.description.replace(/\r?\n/g, '\\n')}\r\n`;
-      }
-
-      if (event.location) {
-        icsContent += `LOCATION:${event.location.replace(/\r?\n/g, '\\n')}\r\n`;
-      }
-
-      if (event.recurrenceRule) {
-        icsContent += `RRULE:${event.recurrenceRule}\r\n`;
-      }
-
-      event.attendees.forEach(attendee => {
-        icsContent += `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=${attendee.response || 'NEEDS-ACTION'}:mailto:${attendee.email}\r\n`;
-      });
-
-      event.reminders.forEach(reminder => {
-        icsContent += 'BEGIN:VALARM\r\n';
-        icsContent += `TRIGGER:-PT${reminder.minutesBefore}M\r\n`;
-        icsContent += 'ACTION:DISPLAY\r\n';
-        icsContent += `DESCRIPTION:${event.title}\r\n`;
-        icsContent += 'END:VALARM\r\n';
-      });
-
-      icsContent += 'END:VEVENT\r\n';
-    });
-
-    icsContent += 'END:VCALENDAR\r\n';
 
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="calendar-export-${new Date().toISOString().slice(0, 10)}.ics"`);
-
-    res.send(icsContent);
-
-  } catch (error) {
+    return res.send(icsContent);
+  } catch (error: unknown) {
+    const handled = respondCalendarServiceError(res, error, 'success');
+    if (handled) return handled;
     await logger.error('Failed to export ICS events', {
       operation: 'calendar_export_ics',
       error: {
@@ -706,7 +440,7 @@ export async function exportIcsEvents(req: Request, res: Response) {
         stack: error instanceof Error ? error.stack : undefined
       }
     });
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
 

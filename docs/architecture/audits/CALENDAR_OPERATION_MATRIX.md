@@ -1,7 +1,7 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Phase 1D complete (2026-06-01) — side-effect adapters service-owned; ICS import/export remain in controller  
+**Status:** Phase 1E complete (2026-06-01) — thin controller; ICS in `calendarIcsService`  
 **Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
@@ -49,8 +49,8 @@
 | **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` | P | P | P | P | P | P | `cancel_event` | Phase 1D adapters |
 | **RSVP (auth)** | `rsvpEvent` | `calendarAttendeeService` | P | P | P | P | P | — | `rsvp` | Phase 1D realtime + domain + activity |
 | **RSVP (public token)** | `rsvpEventPublic` | `calendarAttendeeService` | N | P | P | N | — | — | — | Phase 1D service-owned; email via `calendarNotificationService` |
-| **Import ICS** | `importIcsEvents` | — | N | N | N | N | — | — | — | Bulk create from ICS |
-| **Export ICS (events)** | `exportIcsEvents` | — | N | N | N | N | — | — | — | Range export |
+| **Import ICS** | `importIcsEvents` | `calendarIcsService` | P | P | N | N | — | P | — | Phase 1E; `createImportedEvent` + import activity |
+| **Export ICS (events)** | `exportIcsEvents` | `calendarIcsService` | P | N | N | N | — | — | — | Phase 1E; visibility-scoped export |
 | **Export calendar ICS** | `calendarUtils.exportIcs` | — | N | N | N | N | — | — | — | Utils controller |
 | **List event comments** | `listComments` | — | N | N | N | N | — | — | — | `eventCommentController` |
 | **Add event comment** | `addComment` | — | N | N | N | N | — | — | — | Inline Prisma |

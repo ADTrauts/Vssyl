@@ -254,7 +254,8 @@ entities[]: MISSING
 | Phase 1B core services | ✅ (2026-06-01) — calendar CRUD + event writes + recurrence helpers + RSVP |
 | Phase 1C visibility + PE | ✅ (2026-06-01) — `calendarVisibilityService`, `calendarPolicyDual`, read paths |
 | Phase 1D side-effect adapters | ✅ (2026-06-01) — activity/notification/realtime/domain + reminder/scheduler |
-| Phase 1E+ | ❌ Not started |
+| Phase 1E controller collapse | ✅ (2026-06-01) — `calendarIcsService`; zero Prisma in controller |
+| Phase 1F+ | ❌ Not started |
 
 ---
 

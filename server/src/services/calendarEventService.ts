@@ -17,7 +17,12 @@ import {
   shouldApplyThisOccurrenceDelete,
   shouldApplyThisOccurrenceEdit,
 } from './calendarRecurrenceService';
-import { recordEventCreated, recordEventDeleted, recordEventUpdated } from './calendarActivityService';
+import {
+  recordEventCreated,
+  recordEventDeleted,
+  recordEventImported,
+  recordEventUpdated,
+} from './calendarActivityService';
 import {
   recordCalendarEventCreatedDomainEvent,
   recordCalendarEventDeletedDomainEvent,
@@ -172,6 +177,46 @@ export async function createEvent(input: CreateEventInput) {
   });
 
   return { event, calendar: cal };
+}
+
+/** ICS import path: persist only + import activity (no invite/realtime/domain fan-out). */
+export async function createImportedEvent(input: {
+  userId: string;
+  calendarId: string;
+  title: string;
+  description?: string;
+  location?: string;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  timezone?: string;
+  recurrenceRule?: string;
+}) {
+  await getCalendarForWrite(input.calendarId, input.userId);
+
+  const event = await prisma.event.create({
+    data: {
+      calendarId: input.calendarId,
+      title: input.title,
+      description: input.description || '',
+      location: input.location || '',
+      startAt: input.startAt,
+      endAt: input.endAt,
+      allDay: input.allDay,
+      timezone: input.timezone || 'UTC',
+      recurrenceRule: input.recurrenceRule || null,
+      createdById: input.userId,
+    },
+  });
+
+  await recordEventImported({
+    actorUserId: input.userId,
+    eventId: event.id,
+    calendarId: input.calendarId,
+    title: event.title,
+  });
+
+  return event;
 }
 
 export type UpdateEventResult =
