@@ -49,11 +49,7 @@ describe('vlinkEntityResolverService chat compliance', () => {
   });
 
   it('userCanLinkEntity for CHAT_CONVERSATION uses chat link permission helper', async () => {
-    vi.spyOn(chatVlinkAccess, 'resolveChatConversationForVLink').mockResolvedValue({
-      allowed: false,
-      state: 'active',
-      title: 'Private',
-    });
+    vi.spyOn(chatVlinkAccess, 'userCanLinkChatConversation').mockResolvedValue(false);
 
     await expect(
       userCanLinkEntity('outsider', VLinkEntityType.CHAT_CONVERSATION, 'conv-1')

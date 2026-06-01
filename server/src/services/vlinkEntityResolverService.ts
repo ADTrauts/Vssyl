@@ -1,5 +1,9 @@
 import { VLinkEntityType } from '@prisma/client';
 import {
+  resolveChatConversationForVLink,
+  userCanLinkChatConversation,
+} from './chatVlinkAccessService';
+import {
   resolveDriveFileForVLink,
   resolveDriveFolderForVLink,
   userCanLinkDriveFile,
@@ -38,6 +42,17 @@ export async function resolveEntityAccess(
         return { access: 'restricted', title: result.title };
       }
       return { access: 'full', title: result.title, url: result.url };
+    }
+    case VLinkEntityType.CHAT_CONVERSATION: {
+      const result = await resolveChatConversationForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
     }
     default:
       return resolveNonDriveEntityAccess(userId, entityType, entityId);
@@ -95,22 +110,6 @@ async function resolveNonDriveEntityAccess(
       if (!note) return { access: 'restricted' };
       return { access: 'full', title: note.title, url: `/notes?note=${entityId}` };
     }
-    case VLinkEntityType.CHAT_CONVERSATION: {
-      const conversation = await prisma.conversation.findFirst({
-        where: {
-          id: entityId,
-          trashedAt: null,
-          participants: { some: { userId, isActive: true } },
-        },
-        select: { id: true, name: true },
-      });
-      if (!conversation) return { access: 'restricted' };
-      return {
-        access: 'full',
-        title: conversation.name ?? 'Conversation',
-        url: `/chat?conversation=${entityId}`,
-      };
-    }
     default:
       return { access: 'restricted' };
   }
@@ -126,6 +125,8 @@ export async function userCanLinkEntity(
       return userCanLinkDriveFile(userId, entityId);
     case VLinkEntityType.FOLDER:
       return userCanLinkDriveFolder(userId, entityId);
+    case VLinkEntityType.CHAT_CONVERSATION:
+      return userCanLinkChatConversation(userId, entityId);
     default: {
       const resolved = await resolveEntityAccess(userId, entityType, entityId);
       return resolved.access === 'full';
