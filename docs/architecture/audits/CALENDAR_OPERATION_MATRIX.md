@@ -1,7 +1,8 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Phase 0 — Audit only (pre–Wave 1)  
+**Status:** Phase 1A design complete — implementation blocked until plan approval  
+**Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
 

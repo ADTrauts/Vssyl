@@ -250,7 +250,7 @@ entities[]: MISSING
 |-------------|--------|
 | Constitutional audit (this doc) | ✅ |
 | Operation matrix | ✅ [CALENDAR_OPERATION_MATRIX.md](./CALENDAR_OPERATION_MATRIX.md) |
-| Service extraction plan | ⏳ Phase 1A (not in Phase 0) |
+| Service extraction plan | ✅ [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
 | Implementation | ❌ Explicitly out of scope |
 
 ---
