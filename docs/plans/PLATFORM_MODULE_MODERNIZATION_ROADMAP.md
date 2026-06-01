@@ -495,7 +495,7 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** Calendar Wave 2 — Phase 2A–2B complete (2026-06-01); Phase 4 Level 3 certification review pending. Wave 1 Phases 1A–1F complete.
+- **Next module:** **Todo** (Wave 2) — Calendar **Level 3 Certified** and **Reference Module #3** (2026-06-01). See [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md).
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 

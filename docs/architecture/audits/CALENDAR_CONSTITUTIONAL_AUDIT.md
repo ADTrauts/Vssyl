@@ -259,25 +259,27 @@ entities[]: MISSING
 | Wave 1 complete | ✅ Phases 1A–1F |
 | Phase 2A Global Trash | ✅ (2026-06-01) — [`CALENDAR_GLOBAL_TRASH_PHASE2A.md`](./CALENDAR_GLOBAL_TRASH_PHASE2A.md) |
 | Phase 2B V_Link + entities | ✅ (2026-06-01) — [`CALENDAR_VLINK_PHASE2B.md`](./CALENDAR_VLINK_PHASE2B.md) |
-| Phase 3 / 4 | ❌ Not started |
+| Phase 4 Level 3 certification | ✅ (2026-06-01) — [`CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md`](./CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
 
 ---
 
-## 11. Post–Wave 1 / Phase 2A compliance snapshot (2026-06-01)
+## 11. Post–Wave 1 / Wave 2 compliance snapshot (2026-06-01)
 
-Historical sections 1–9 describe **pre–Wave 1** state. Current gaps after Phase 2A:
+Historical sections 1–9 describe **pre–Wave 1** state. **Level 3 Certified** per [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md).
 
 | Area | Status | Notes |
 |------|--------|-------|
-| **Global Trash** (§7) | 🟢 | `calendarTrashService` + handler; `trashController` delegates |
-| **Canonical services** | 🟡 | Wave 1 services + `calendarTrashService`; comments/utils still inline |
-| **Thin controller** | 🟢 | `calendarController` collapsed (Phase 1E) |
-| **Policy Engine** | 🟡 | `calendarPolicyDual` on writes; not all trash actions have dedicated PE actions |
-| **V_Link / entities** | 🟢 | `calendar:event` registered; `calendarVlinkAccessService` + lifecycle on permanent delete |
-| **Manifest truthfulness** | 🟡 | `entities[]`, `calendar_reminder`, trash/vlink/search/realtime aligned; email invite types not in-app catalog |
+| **Global Trash** (§7) | 🟢 | `calendarTrashService` + handler |
+| **Canonical services** | 🟢 | Full `calendar*` service layer; comments/utils residual |
+| **Thin controller** | 🟢 | Zero Prisma in `calendarController` |
+| **Policy Engine** | 🟢 | `calendarPolicyDual` on reads and mutations |
+| **V_Link / entities** | 🟢 | `calendar:event`; access + lifecycle |
+| **Manifest truthfulness** | 🟢 | Capabilities aligned; SMTP-only emails not overclaimed |
 
-**Remaining Level 3 blockers:** operation matrix gaps (comments, calendar CRUD), manifest email notification parity (optional), formal certification review (Phase 4).
+**Reference Module #3 (Level 3)** — scheduling, recurrence, reminders, scheduler delegation.
+
+**Non-blocking punch-list:** event comments extraction, optional workspace landing hub, matrix doc refresh.
 
 ---
 
-*End of Calendar Constitutional Audit — Phase 0 + living updates through Phase 2A.*
+*End of Calendar Constitutional Audit — Phase 0 + living updates through Phase 4 certification.*

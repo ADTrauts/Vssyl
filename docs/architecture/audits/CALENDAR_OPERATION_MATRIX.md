@@ -1,7 +1,7 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Calendar Wave 1 complete (2026-06-01) — thin controller; AI via `calendarAIActionService` + visibility helpers  
+**Status:** Level 3 Certified (2026-06-01) — see [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md)  
 **Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
@@ -89,14 +89,14 @@
 
 | Action | Module activity | Domain event | Target (Wave 1) |
 |--------|-----------------|--------------|-----------------|
-| Create event | N | `calendar.event.created` (controller) | Both from `calendarEventService` |
-| Update event | N | N | `calendar.event.updated` |
+| Create event | ✅ | ✅ `calendar.event.created` | `calendarEventService` |
+| Update event | ✅ | ✅ `calendar.event.updated` | `calendarEventService` |
 | Trash event | C | C | `calendar.event.trashed` |
 | Restore event | C | C | `calendar.event.restored` |
 | Permanent delete | C | C | `calendar.event.permanentlyDeleted` |
-| Create calendar | N | N | Optional `calendar.calendar.created` |
-| RSVP | N | N | Optional `calendar.event.rsvp` |
-| Reminder fired | N | N | Optional `calendar.reminder.dispatched` |
+| Create / update / delete calendar | ✅ | ✅ | `calendarService` |
+| RSVP | ✅ | ✅ `calendar.event.rsvpUpdated` | `calendarAttendeeService` |
+| Reminder fired | ✅ | ✅ `calendar.event.reminderDispatched` | `calendarReminderService` |
 
 ---
 
@@ -123,7 +123,7 @@
 
 | Job ID | Schedule | Calls | Service-owned target |
 |--------|----------|-------|----------------------|
-| `reminder_dispatch` | `* * * * *` | `dispatchDueReminders(5)` | `calendarReminderService` (proposed) |
+| `reminder_dispatch` | `* * * * *` | `runReminderDispatch(5)` | `calendarSchedulerService` → `calendarReminderService` |
 
 ---
 

@@ -3,7 +3,7 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2A Global Trash complete; Phase 2B V_Link + entities complete (2026-06-01); Phase 4 certification not started  
+**Status:** Calendar **Level 3 Certified** + **Reference Module #3** (2026-06-01) — [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md)  
 **Wave:** Calendar Wave 1 — Phase 1A–1F
 
 **Authorities:**
@@ -1037,7 +1037,7 @@ Per user request — answers without implementation:
 | Phase 1F AI compliance | ✅ `calendarAIActionService`; visibility AI helpers; ActionExecutor migration |
 | Phase 2A Global Trash | ✅ Complete |
 | Phase 2B V_Link + entities | ✅ Complete |
-| Phase 3 / 4 | ❌ Not started |
+| Phase 4 Level 3 certification | ✅ Complete |
 
 ---
 
