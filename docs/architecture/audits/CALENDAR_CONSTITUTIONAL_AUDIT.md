@@ -255,7 +255,9 @@ entities[]: MISSING
 | Phase 1C visibility + PE | ✅ (2026-06-01) — `calendarVisibilityService`, `calendarPolicyDual`, read paths |
 | Phase 1D side-effect adapters | ✅ (2026-06-01) — activity/notification/realtime/domain + reminder/scheduler |
 | Phase 1E controller collapse | ✅ (2026-06-01) — `calendarIcsService`; zero Prisma in controller |
-| Phase 1F+ | ❌ Not started |
+| Phase 1F AI compliance | ✅ (2026-06-01) — `calendarAIActionService`; AI context via visibility |
+| Wave 1 complete | ✅ Phases 1A–1F |
+| Phase 2+ | ❌ Not started |
 
 ---
 

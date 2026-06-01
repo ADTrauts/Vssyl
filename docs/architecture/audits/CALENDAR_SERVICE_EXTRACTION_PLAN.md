@@ -3,8 +3,8 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Phase 1E complete (2026-06-01); Phase 1F not started  
-**Wave:** Calendar Wave 1 — Phase 1A–1E
+**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2 not started  
+**Wave:** Calendar Wave 1 — Phase 1A–1F
 
 **Authorities:**
 
@@ -1023,7 +1023,8 @@ Per user request — answers without implementation:
 | Phase 1C visibility + PE | ✅ `calendarVisibilityService`, `calendarPolicyDual`, read path migration |
 | Phase 1D side-effect adapters | ✅ activity/notification/realtime/domain event + reminder/scheduler services |
 | Phase 1E controller collapse | ✅ `calendarIcsService`; thin `calendarController` |
-| Phase 1F+ | ❌ Not started |
+| Phase 1F AI compliance | ✅ `calendarAIActionService`; visibility AI helpers; ActionExecutor migration |
+| Phase 2+ | ❌ Not started |
 
 ---
 

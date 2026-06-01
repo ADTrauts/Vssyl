@@ -495,7 +495,7 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** Calendar (Wave 2) — Phase 1E controller collapse complete (2026-06-01); Phase 1F AI migration next.
+- **Next module:** Calendar Wave 2 (trash, V_Link, certification) — Wave 1 Phases 1A–1F complete (2026-06-01).
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 
@@ -565,6 +565,8 @@ Controllers become thin HTTP adapters.
 - **Phase 1B (core domain services):** complete (2026-06-01) — `calendarPermissionService`, `calendarService`, `calendarEventService`, `calendarRecurrenceService`, `calendarAttendeeService`; controller delegates calendar/event writes and RSVP.
 - **Phase 1C (visibility + PE):** complete (2026-06-01) — `calendarVisibilityService`, `calendarPolicyDual`, policy engine calendar actions; read paths migrated; recurrence read helpers centralized.
 - **Phase 1D (side-effect adapters):** complete (2026-06-01) — activity/notification/realtime/domain event services; `calendarReminderService` + `calendarSchedulerService`; cron wired via scheduler.
+- **Phase 1E (controller collapse):** complete (2026-06-01) — `calendarIcsService`; thin `calendarController` (no Prisma/side effects); contract test enforced.
+- **Phase 1F (AI compliance):** complete (2026-06-01) — `calendarAIActionService`; ActionExecutor uses services; `calendarAIContextController` delegates to visibility AI helpers.
 
 #### Phase 0 — Audit (2026-05-31) — Complete
 

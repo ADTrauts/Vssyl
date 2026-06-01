@@ -1,7 +1,7 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Phase 1E complete (2026-06-01) — thin controller; ICS in `calendarIcsService`  
+**Status:** Calendar Wave 1 complete (2026-06-01) — thin controller; AI via `calendarAIActionService` + visibility helpers  
 **Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
@@ -59,9 +59,9 @@
 | **Restore event (Global Trash)** | — (`trashController`) | — | N | N | N | N | — | — | — | No module handler |
 | **Permanent delete event** | — (`trashController`) | — | N | N | N | N | — | — | — | Hard delete from trash |
 | **Dispatch reminders** | — | `calendarSchedulerService` → `calendarReminderService` | P | P | P | P | P | — | — | Phase 1D; cron delegates to scheduler |
-| **AI upcoming context** | `getUpcomingEventsContext` | — | N | N | N | N | — | — | Provider | Personal calendars only |
-| **AI today context** | `getTodayScheduleContext` | — | N | N | N | N | — | — | Provider | Direct Prisma |
-| **AI availability** | `checkAvailability` | — | N | N | N | N | — | — | Provider | Overlap query |
+| **AI upcoming context** | `getUpcomingEventsContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getUpcomingEventsForAI` |
+| **AI today context** | `getTodayScheduleContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getTodayScheduleForAI` |
+| **AI availability** | `checkAvailability` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getAvailabilityForAI` |
 | **V_Link resolve event** | — | `vlinkEntityResolverService` | N | N | N | N | — | — | — | `CALENDAR_EVENT`; `trashedAt: null` |
 | **Place → calendar link** | `placeMeetingController` | — | N | N | N | N | — | — | — | Integration test exists |
 | **Realtime fan-out** | `calendarController` | — | N | N | N | N | — | P | — | `chatSocketService` `calendar_event` |
@@ -134,8 +134,8 @@
 3. Extract `calendarTrashService` + register Global Trash handler.
 4. Extract `calendarNotificationService` + manifest `notifications[]`.
 5. Implement `calendarPolicyDual` + wire `CALENDAR_EVENT_*` actions in policy engine.
-6. Migrate `ActionExecutor` off `calendarController`.
-7. Move AI context to visibility service.
+6. ~~Migrate `ActionExecutor` off `calendarController`.~~ ✅ Phase 1F
+7. ~~Move AI context to visibility service.~~ ✅ Phase 1F
 8. Register `calendar: event` platform entity + `calendarVlinkAccessService` / lifecycle.
 9. Expand domain event registry beyond `calendar.event.created`.
 10. Add `emitModuleActivityEvent` for writes.

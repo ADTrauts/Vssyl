@@ -897,298 +897,278 @@ export class ActionExecutor {
     }
   }
 
+  private calendarActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'calendar' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private calendarActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.calendarActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: outcome.data,
+      metadata: this.calendarActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
   /**
-   * Calendar module action executor
+   * Calendar module action executor — canonical services only (Phase 1F).
    */
   private async executeCalendarAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
     const startTime = Date.now();
     const { operation, parameters } = action;
 
     try {
+      const {
+        aiCreateEvent,
+        aiUpdateEvent,
+        aiDeleteEvent,
+        aiRsvpEvent,
+        aiCheckConflicts,
+      } = await import('../../services/calendarAIActionService.js');
+
       switch (operation) {
         case 'create_event': {
-          const { calendarId, title, description, location, startAt, endAt, allDay, timezone, attendees, recurrenceRule, recurrenceEndAt } = parameters || {};
-          
+          const {
+            calendarId,
+            title,
+            description,
+            location,
+            startAt,
+            endAt,
+            allDay,
+            timezone,
+            attendees,
+            recurrenceRule,
+            recurrenceEndAt,
+          } = parameters || {};
+
           if (!calendarId || !title || !startAt || !endAt) {
-    return {
-      actionId: action.id,
-      success: false,
-              error: 'calendarId, title, startAt, and endAt are required',
-      metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'create_event',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'create_event',
+              {
+                success: false,
+                error: 'calendarId, title, startAt, and endAt are required',
+              },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { createEvent } = await import('../../controllers/calendarController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: {
-              calendarId,
-              title,
-              description,
-              location,
-              startAt: new Date(startAt as string),
-              endAt: new Date(endAt as string),
-              allDay: allDay || false,
-              timezone: timezone || 'UTC',
-              attendees: (attendees as string[]) || [],
-              recurrenceRule: recurrenceRule || null,
-              recurrenceEndAt: recurrenceEndAt ? new Date(recurrenceEndAt as string) : null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiCreateEvent({
+            userId: userContext.userId,
+            calendarId: String(calendarId),
+            title: String(title),
+            description: description != null ? String(description) : undefined,
+            location: location != null ? String(location) : undefined,
+            startAt: String(startAt),
+            endAt: String(endAt),
+            allDay: Boolean(allDay),
+            timezone: timezone != null ? String(timezone) : undefined,
+            attendees,
+            recurrenceRule: recurrenceRule != null ? String(recurrenceRule) : null,
+            recurrenceEndAt: recurrenceEndAt != null ? String(recurrenceEndAt) : null,
+          });
 
-          await createEvent(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'calendar',
-              operation: 'create_event',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.calendarActionResult(
+            action,
+            startTime,
+            'create_event',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'update_event': {
-          const { eventId, title, description, location, startAt, endAt, allDay, timezone, attendees, editMode, occurrenceStartAt } = parameters || {};
-          
+          const {
+            eventId,
+            title,
+            description,
+            location,
+            startAt,
+            endAt,
+            allDay,
+            timezone,
+            attendees,
+            editMode,
+            occurrenceStartAt,
+          } = parameters || {};
+
           if (!eventId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'eventId is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'update_event',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'update_event',
+              { success: false, error: 'eventId is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { updateEvent } = await import('../../controllers/calendarController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: eventId },
-            body: {
-              title,
-              description,
-              location,
-              startAt: startAt ? new Date(startAt as string) : undefined,
-              endAt: endAt ? new Date(endAt as string) : undefined,
-              allDay,
-              timezone,
-              attendees,
-              editMode: editMode || 'SERIES',
-              occurrenceStartAt: occurrenceStartAt ? new Date(occurrenceStartAt as string) : null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiUpdateEvent({
+            userId: userContext.userId,
+            eventId: String(eventId),
+            title: title != null ? String(title) : undefined,
+            description: description != null ? String(description) : undefined,
+            location: location != null ? String(location) : undefined,
+            startAt: startAt != null ? String(startAt) : undefined,
+            endAt: endAt != null ? String(endAt) : undefined,
+            allDay: allDay != null ? Boolean(allDay) : undefined,
+            timezone: timezone != null ? String(timezone) : undefined,
+            attendees,
+            editMode: (editMode as 'THIS' | 'SERIES' | undefined) || 'SERIES',
+            occurrenceStartAt: occurrenceStartAt != null ? String(occurrenceStartAt) : null,
+          });
 
-          await updateEvent(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'calendar',
-              operation: 'update_event',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.calendarActionResult(
+            action,
+            startTime,
+            'update_event',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'delete_event': {
           const { eventId, editMode, occurrenceStartAt } = parameters || {};
-          
+
           if (!eventId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'eventId is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'delete_event',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'delete_event',
+              { success: false, error: 'eventId is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { deleteEvent } = await import('../../controllers/calendarController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: eventId },
-            query: {
-              editMode: editMode || 'SERIES',
-              occurrenceStartAt: occurrenceStartAt || undefined
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiDeleteEvent({
+            userId: userContext.userId,
+            eventId: String(eventId),
+            editMode: (editMode as 'THIS' | 'SERIES' | undefined) || 'SERIES',
+            occurrenceStartAt:
+              occurrenceStartAt != null ? String(occurrenceStartAt) : undefined,
+          });
 
-          await deleteEvent(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'calendar',
-              operation: 'delete_event',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.calendarActionResult(
+            action,
+            startTime,
+            'delete_event',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'rsvp_event': {
           const { eventId, response } = parameters || {};
-          
+
           if (!eventId || !response) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'eventId and response are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'rsvp_event',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'rsvp_event',
+              { success: false, error: 'eventId and response are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          // Validate response value
-          const validResponses = ['NEEDS_ACTION', 'ACCEPTED', 'DECLINED', 'TENTATIVE'];
-          if (!validResponses.includes(response as string)) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: `response must be one of: ${validResponses.join(', ')}`,
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'rsvp_event',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+          const validResponses = ['NEEDS_ACTION', 'ACCEPTED', 'DECLINED', 'TENTATIVE'] as const;
+          if (!validResponses.includes(response as (typeof validResponses)[number])) {
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'rsvp_event',
+              {
+                success: false,
+                error: `response must be one of: ${validResponses.join(', ')}`,
+              },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { rsvpEvent } = await import('../../controllers/calendarController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: eventId },
-            body: { response: response as 'NEEDS_ACTION' | 'ACCEPTED' | 'DECLINED' | 'TENTATIVE' }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiRsvpEvent({
+            userId: userContext.userId,
+            eventId: String(eventId),
+            response: response as (typeof validResponses)[number],
+          });
 
-          await rsvpEvent(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'calendar',
-              operation: 'rsvp_event',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          return this.calendarActionResult(
+            action,
+            startTime,
+            'rsvp_event',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'check_conflicts': {
           const { start, end, calendarIds } = parameters || {};
-          
+
           if (!start || !end) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'start and end are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'calendar',
-                operation: 'check_conflicts',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.calendarActionResult(
+              action,
+              startTime,
+              'check_conflicts',
+              { success: false, error: 'start and end are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { checkConflicts } = await import('../../controllers/calendarController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            query: {
-              start: start as string,
-              end: end as string,
-              calendarIds: calendarIds || undefined
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiCheckConflicts({
+            userId: userContext.userId,
+            start: String(start),
+            end: String(end),
+            calendarIds: Array.isArray(calendarIds)
+              ? calendarIds.map(String)
+              : calendarIds != null
+                ? String(calendarIds)
+                : undefined,
+          });
 
-          await checkConflicts(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'calendar',
-              operation: 'check_conflicts',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: false
-            }
-          };
+          return this.calendarActionResult(
+            action,
+            startTime,
+            'check_conflicts',
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
         }
 
         default:
@@ -1196,28 +1176,28 @@ export class ActionExecutor {
             actionId: action.id,
             success: false,
             error: `Unknown calendar operation: ${operation}`,
-            metadata: {
-              executionTime: Date.now() - startTime,
-        module: 'calendar',
-        operation: action.operation,
-        affectedUsers: action.affectedUsers || [],
-        rollbackAvailable: false
+            metadata: this.calendarActionMetadata(
+              action,
+              startTime,
+              operation,
+              action.affectedUsers || [],
+              false
+            ),
+          };
       }
-    };
-      }
-    } catch (error) {
-      const err = error as Error;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       return {
         actionId: action.id,
         success: false,
         error: err.message || 'Unknown error occurred',
-        metadata: {
-          executionTime: Date.now() - startTime,
-          module: 'calendar',
-          operation: action.operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: false
-        }
+        metadata: this.calendarActionMetadata(
+          action,
+          startTime,
+          operation,
+          action.affectedUsers || [],
+          false
+        ),
       };
     }
   }

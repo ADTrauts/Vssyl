@@ -88,7 +88,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 |--------|-----------|---------------------------|---------------------|---------------------|--------|----------|
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
-| **Calendar** | `calendar` | **Low** | **Low** | **0 — Legacy** | Wave 1 Phase 1E (2026-06-01) | Thin controller; `calendarIcsService`; AI executor still in controller |
+| **Calendar** | `calendar` | **Low–Med** | **Low** | **0 — Legacy** | Wave 1 complete (2026-06-01) | Service layer + thin controller; Phase 2 trash/V_Link pending |
 | **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~4,401-line controller; AI `toolExecutor` Prisma |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
@@ -232,9 +232,11 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Calendar Phase 1D (2026-06-01):** Side-effect adapters + reminder/scheduler services.
 
-**Calendar Phase 1E (2026-06-01):** `calendarIcsService`; `calendarController` has no Prisma or direct side effects.
+**Calendar Phase 1E (2026-06-01):** `calendarIcsService`; thin `calendarController`.
 
-**Sequencing note:** Phase 1F (AI executor migration) is next; Todo follows Calendar Wave 1 to reuse PE/trash/scheduler patterns.
+**Calendar Phase 1F (2026-06-01):** `calendarAIActionService`; ActionExecutor off controllers; AI context via visibility helpers.
+
+**Sequencing note:** Calendar Wave 2 (trash, V_Link, certification) is next; Todo follows Calendar Wave 1 patterns.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

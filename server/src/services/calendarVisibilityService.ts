@@ -497,3 +497,193 @@ export async function getFreeBusy(input: {
     busy: mergeBusyTimeSlots(busyTimes),
   };
 }
+
+type AiEventRow = {
+  id: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  status?: string;
+  trashedAt?: Date | null;
+  occurrenceStartAt?: Date;
+  occurrenceEndAt?: Date;
+};
+
+function eventStartAt(row: AiEventRow): Date {
+  return row.occurrenceStartAt ?? row.startAt;
+}
+
+function eventEndAt(row: AiEventRow): Date {
+  return row.occurrenceEndAt ?? row.endAt;
+}
+
+function isActiveAiEvent(row: AiEventRow): boolean {
+  if (row.trashedAt) return false;
+  if (row.status === 'CANCELED') return false;
+  return true;
+}
+
+/** Upcoming events for AI context providers (permission-aware, recurrence-expanded). */
+export async function getUpcomingEventsForAI(userId: string) {
+  const now = new Date();
+  const sevenDaysFromNow = new Date(now);
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+  const expanded = (await listEventsInRange({
+    userId,
+    start: now.toISOString(),
+    end: sevenDaysFromNow.toISOString(),
+  })) as AiEventRow[];
+
+  const upcomingEvents = expanded
+    .filter(isActiveAiEvent)
+    .sort((a, b) => eventStartAt(a).getTime() - eventStartAt(b).getTime())
+    .slice(0, 20);
+
+  const eventsByDay = new Map<string, AiEventRow[]>();
+  for (const event of upcomingEvents) {
+    const dayKey = eventStartAt(event).toISOString().split('T')[0];
+    const bucket = eventsByDay.get(dayKey) ?? [];
+    bucket.push(event);
+    eventsByDay.set(dayKey, bucket);
+  }
+
+  return {
+    upcomingEvents: upcomingEvents.map((event) => ({
+      id: event.id,
+      title: event.title,
+      description: event.description || null,
+      startTime: eventStartAt(event).toISOString(),
+      endTime: eventEndAt(event).toISOString(),
+      location: event.location || null,
+      isAllDay: event.allDay,
+      daysUntil: Math.floor((eventStartAt(event).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+    })),
+    summary: {
+      totalUpcomingEvents: upcomingEvents.length,
+      nextEventTitle: upcomingEvents[0]?.title,
+      nextEventTime: upcomingEvents[0] ? eventStartAt(upcomingEvents[0]).toISOString() : undefined,
+      busyDays: eventsByDay.size,
+      hasEventsToday: Array.from(eventsByDay.keys()).includes(now.toISOString().split('T')[0]),
+      weekSummary: Array.from(eventsByDay.entries()).map(([date, events]) => ({
+        date,
+        eventCount: events.length,
+        summary: `${events.length} event${events.length > 1 ? 's' : ''}`,
+      })),
+    },
+  };
+}
+
+/** Today's schedule for AI context providers. */
+export async function getTodayScheduleForAI(userId: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const expanded = (await listEventsInRange({
+    userId,
+    start: today.toISOString(),
+    end: tomorrow.toISOString(),
+  })) as AiEventRow[];
+
+  const todaysEvents = expanded
+    .filter(isActiveAiEvent)
+    .sort((a, b) => {
+      if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+      return eventStartAt(a).getTime() - eventStartAt(b).getTime();
+    });
+
+  const now = new Date();
+  const timedEvents = todaysEvents
+    .filter((e) => !e.allDay)
+    .sort((a, b) => eventStartAt(a).getTime() - eventStartAt(b).getTime());
+
+  const currentOrNextEvent = timedEvents.find((e) => eventEndAt(e) > now);
+
+  return {
+    todaySchedule: {
+      date: today.toISOString().split('T')[0],
+      events: todaysEvents.map((event) => ({
+        id: event.id,
+        title: event.title,
+        startTime: eventStartAt(event).toISOString(),
+        endTime: eventEndAt(event).toISOString(),
+        duration: Math.round((eventEndAt(event).getTime() - eventStartAt(event).getTime()) / (1000 * 60)),
+        location: event.location || null,
+        isAllDay: event.allDay,
+        status:
+          eventEndAt(event) < now
+            ? 'completed'
+            : eventStartAt(event) <= now && eventEndAt(event) > now
+              ? 'in-progress'
+              : 'upcoming',
+      })),
+      allDayEvents: todaysEvents.filter((e) => e.allDay).map((e) => e.title),
+    },
+    summary: {
+      totalEvents: todaysEvents.length,
+      timedEvents: timedEvents.length,
+      allDayEvents: todaysEvents.filter((e) => e.allDay).length,
+      currentEvent:
+        currentOrNextEvent && eventStartAt(currentOrNextEvent) <= now
+          ? {
+              title: currentOrNextEvent.title,
+              endsAt: eventEndAt(currentOrNextEvent).toISOString(),
+            }
+          : null,
+      nextEvent:
+        currentOrNextEvent && eventStartAt(currentOrNextEvent) > now
+          ? {
+              title: currentOrNextEvent.title,
+              startsAt: eventStartAt(currentOrNextEvent).toISOString(),
+              minutesUntil: Math.round(
+                (eventStartAt(currentOrNextEvent).getTime() - now.getTime()) / (1000 * 60)
+              ),
+            }
+          : null,
+      dayStatus:
+        todaysEvents.length === 0
+          ? 'free'
+          : todaysEvents.length > 5
+            ? 'very-busy'
+            : todaysEvents.length > 2
+              ? 'busy'
+              : 'light',
+    },
+  };
+}
+
+/** Availability check for AI query endpoint (conflict-aware, visibility-scoped). */
+export async function getAvailabilityForAI(userId: string, startTime: string, endTime: string) {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    throw new CalendarServiceError('Invalid date format. Use ISO8601 format', 'invalid', 400);
+  }
+
+  const conflicts = await checkConflicts({
+    userId,
+    start: start.toISOString(),
+    end: end.toISOString(),
+  });
+
+  return {
+    available: conflicts.length === 0,
+    conflicts: conflicts.map((event) => ({
+      id: event.id,
+      title: event.title,
+      startTime: event.startAt,
+      endTime: event.endAt,
+    })),
+    requestedTimeSlot: {
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+      duration: Math.round((end.getTime() - start.getTime()) / (1000 * 60)),
+    },
+  };
+}
