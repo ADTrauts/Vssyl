@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../calendarVlinkLifecycleService', () => ({
+  unlinkCalendarEventFromAllVLinks: vi.fn().mockResolvedValue(0),
+}));
+
 import { prisma } from '../../lib/prisma';
 import * as calendarPermission from '../calendarPermissionService';
 import * as calendarActivity from '../calendarActivityService';
 import * as calendarDomain from '../calendarDomainEventService';
 import * as calendarNotification from '../calendarNotificationService';
 import * as calendarRealtime from '../calendarRealtimeService';
+import { unlinkCalendarEventFromAllVLinks } from '../calendarVlinkLifecycleService';
 import {
   CalendarTrashError,
   emptyCalendarTrash,
@@ -38,6 +44,7 @@ describe('calendarTrashService', () => {
       () => undefined
     );
     vi.spyOn(calendarNotification, 'sendEventCanceledEmails').mockResolvedValue(undefined);
+    vi.mocked(unlinkCalendarEventFromAllVLinks).mockResolvedValue(0);
   });
 
   it('soft trash sets trashedAt and emits side effects', async () => {
@@ -125,6 +132,10 @@ describe('calendarTrashService', () => {
     expect(deleted).toBe(true);
     expect(calendarActivity.recordEventPermanentlyDeleted).toHaveBeenCalled();
     expect(calendarDomain.recordCalendarEventPermanentlyDeletedDomainEvent).toHaveBeenCalled();
+    expect(unlinkCalendarEventFromAllVLinks).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      eventId: 'evt-1',
+    });
   });
 
   it('listTrashedCalendarEventsForGlobalTrash returns mapped items', async () => {

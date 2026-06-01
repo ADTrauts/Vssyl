@@ -495,7 +495,7 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** Calendar Wave 2 — Phase 2A Global Trash complete (2026-06-01); Phase 2B V_Link + Phase 3 entities + Phase 4 certification pending. Wave 1 Phases 1A–1F complete.
+- **Next module:** Calendar Wave 2 — Phase 2A–2B complete (2026-06-01); Phase 4 Level 3 certification review pending. Wave 1 Phases 1A–1F complete.
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 
@@ -863,7 +863,7 @@ Controllers become thin HTTP adapters.
 | **Constitutional Requirements** | §7 — modules register handlers; `trashedAt` universal; module views are filters. |
 | **File Hub Patterns** | `driveDeleteService` + handler registration template (FH Part 9). |
 | **Gaps** | todo, notes declare `trash: true` without handlers. |
-| **Phases** | (1) Handler interface checklist per module (2) Register chat → calendar ✅ → todo → notes (3) Retire module-local trash APIs (4) Empty-trash and permanent-delete parity tests |
+| **Phases** | (1) Handler interface checklist per module (2) Register chat → calendar ✅ → todo → notes (3) V_Link access/lifecycle per entity — calendar event ✅ (4) Retire module-local trash APIs (5) Empty-trash and permanent-delete parity tests |
 | **Acceptance Criteria** | All modules with `trash: true` have working handlers; deprecated module trash routes removed per module audit. |
 
 ### 6.2 Notifications Consolidation

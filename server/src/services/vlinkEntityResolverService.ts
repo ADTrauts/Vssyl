@@ -1,5 +1,9 @@
 import { VLinkEntityType } from '@prisma/client';
 import {
+  resolveCalendarEventForVLink,
+  userCanLinkCalendarEvent,
+} from './calendarVlinkAccessService';
+import {
   resolveChatConversationForVLink,
   userCanLinkChatConversation,
 } from './chatVlinkAccessService';
@@ -54,6 +58,17 @@ export async function resolveEntityAccess(
         url: result.url,
       };
     }
+    case VLinkEntityType.CALENDAR_EVENT: {
+      const result = await resolveCalendarEventForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
+    }
     default:
       return resolveNonDriveEntityAccess(userId, entityType, entityId);
   }
@@ -68,23 +83,6 @@ async function resolveNonDriveEntityAccess(
   const { prisma } = await import('../lib/prisma');
 
   switch (entityType) {
-    case VLinkEntityType.CALENDAR_EVENT: {
-      const event = await prisma.event.findFirst({
-        where: {
-          id: entityId,
-          trashedAt: null,
-          calendar: {
-            OR: [
-              { members: { some: { userId } } },
-              { contextType: 'PERSONAL', contextId: userId },
-            ],
-          },
-        },
-        select: { id: true, title: true },
-      });
-      if (!event) return { access: 'restricted' };
-      return { access: 'full', title: event.title, url: `/calendar?event=${entityId}` };
-    }
     case VLinkEntityType.TASK:
     case VLinkEntityType.TODO: {
       const task = await prisma.task.findFirst({
@@ -127,6 +125,8 @@ export async function userCanLinkEntity(
       return userCanLinkDriveFolder(userId, entityId);
     case VLinkEntityType.CHAT_CONVERSATION:
       return userCanLinkChatConversation(userId, entityId);
+    case VLinkEntityType.CALENDAR_EVENT:
+      return userCanLinkCalendarEvent(userId, entityId);
     default: {
       const resolved = await resolveEntityAccess(userId, entityType, entityId);
       return resolved.access === 'full';

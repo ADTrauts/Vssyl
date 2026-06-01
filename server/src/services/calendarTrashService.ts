@@ -20,6 +20,7 @@ import {
   broadcastCalendarEventDeleted,
   broadcastCalendarEventUpdated,
 } from './calendarRealtimeService';
+import { unlinkCalendarEventFromAllVLinks } from './calendarVlinkLifecycleService';
 
 export class CalendarTrashError extends Error {
   constructor(
@@ -185,6 +186,11 @@ export async function permanentlyDeleteCalendarEvent(params: {
   } catch (error: unknown) {
     mapCalendarServiceError(error);
   }
+
+  await unlinkCalendarEventFromAllVLinks({
+    actorUserId: params.userId,
+    eventId: params.eventId,
+  });
 
   const deleted = await prisma.event.deleteMany({
     where: { id: params.eventId, trashedAt: { not: null } },

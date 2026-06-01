@@ -238,9 +238,32 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           trash: true,
           notifications: true,
           search: true,
+          realtime: true,
+          globalActivity: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/calendar', label: 'Calendar' }],
+        entities: [
+          {
+            type: 'event',
+            displayName: 'Calendar event',
+            pluralName: 'Calendar events',
+            vlinkEntityType: 'CALENDAR_EVENT',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
+        notifications: [
+          {
+            type: 'calendar_reminder',
+            name: 'Event reminder',
+            description: 'Sent when a calendar event reminder is due',
+            category: 'calendar',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+          },
+        ],
       };
     case 'todo':
       return {

@@ -62,7 +62,7 @@
 | **AI upcoming context** | `getUpcomingEventsContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getUpcomingEventsForAI` |
 | **AI today context** | `getTodayScheduleContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getTodayScheduleForAI` |
 | **AI availability** | `checkAvailability` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getAvailabilityForAI` |
-| **V_Link resolve event** | — | `vlinkEntityResolverService` | N | N | N | N | — | — | — | `CALENDAR_EVENT`; `trashedAt: null` |
+| **V_Link resolve event** | — | `calendarVlinkAccessService` | C | N | N | N | — | — | — | Phase 2B; trashed/deleted fail closed |
 | **Place → calendar link** | `placeMeetingController` | — | N | N | N | N | — | — | — | Integration test exists |
 | **Realtime fan-out** | `calendarController` | — | N | N | N | N | — | P | — | `chatSocketService` `calendar_event` |
 

@@ -258,7 +258,8 @@ entities[]: MISSING
 | Phase 1F AI compliance | ✅ (2026-06-01) — `calendarAIActionService`; AI context via visibility |
 | Wave 1 complete | ✅ Phases 1A–1F |
 | Phase 2A Global Trash | ✅ (2026-06-01) — [`CALENDAR_GLOBAL_TRASH_PHASE2A.md`](./CALENDAR_GLOBAL_TRASH_PHASE2A.md) |
-| Phase 2B+ / 3 / 4 | ❌ Not started |
+| Phase 2B V_Link + entities | ✅ (2026-06-01) — [`CALENDAR_VLINK_PHASE2B.md`](./CALENDAR_VLINK_PHASE2B.md) |
+| Phase 3 / 4 | ❌ Not started |
 
 ---
 
@@ -272,10 +273,10 @@ Historical sections 1–9 describe **pre–Wave 1** state. Current gaps after Ph
 | **Canonical services** | 🟡 | Wave 1 services + `calendarTrashService`; comments/utils still inline |
 | **Thin controller** | 🟢 | `calendarController` collapsed (Phase 1E) |
 | **Policy Engine** | 🟡 | `calendarPolicyDual` on writes; not all trash actions have dedicated PE actions |
-| **V_Link / entities** | 🔴 | Phase 3 |
-| **Manifest truthfulness** | 🟡 | `trash` capability now backed by handler; notifications/entities still gaps |
+| **V_Link / entities** | 🟢 | `calendar:event` registered; `calendarVlinkAccessService` + lifecycle on permanent delete |
+| **Manifest truthfulness** | 🟡 | `entities[]`, `calendar_reminder`, trash/vlink/search/realtime aligned; email invite types not in-app catalog |
 
-**Remaining Level 3 blockers:** platform entity registration, V_Link access + lifecycle, manifest `notifications[]` completeness, certification review (Phase 4).
+**Remaining Level 3 blockers:** operation matrix gaps (comments, calendar CRUD), manifest email notification parity (optional), formal certification review (Phase 4).
 
 ---
 

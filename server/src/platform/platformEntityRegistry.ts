@@ -77,6 +77,20 @@ export function registerChatPlatformEntities(): void {
   });
 }
 
+/** Calendar event entity descriptor — Wave 2 Phase 2B (calendar/reminder/attendee deferred). */
+export function registerCalendarPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'event',
+    moduleId: 'calendar',
+    displayName: 'Calendar event',
+    pluralName: 'Calendar events',
+    vlinkEntityType: 'CALENDAR_EVENT',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'event',
+  });
+}
+
 /** Test-only reset. */
 export function clearPlatformEntityRegistryForTests(): void {
   registry.clear();

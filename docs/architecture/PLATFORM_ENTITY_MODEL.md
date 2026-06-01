@@ -29,7 +29,7 @@ Modules **own** Prisma schemas. Platform infrastructure operates on **`(entityTy
 |-----------------|--------|----------|-------|--------|-----------|
 | FILE | drive | ✅ | ✅ | ✅ | ✅ |
 | FOLDER | drive | ✅ | ✅ | ✅ | partial |
-| CALENDAR_EVENT | calendar | ✅ | ✅ | partial | ✅ |
+| CALENDAR_EVENT | calendar | ✅ (`calendarVlinkAccessService`) | ✅ | ✅ (`searchEvents`) | ✅ |
 | CHAT_CONVERSATION | chat | ✅ (`chatVlinkAccessService`) | ✅ | ✅ | conversation only |
 | CHAT_THREAD | chat | ❌ deferred | partial | partial | not registered |
 | TASK / TODO | todo | ❌ | ✅ | ❌ | pending |
@@ -47,4 +47,6 @@ Do not add enum values without resolver + link permission implementation.
 | FILE | file | File |
 | CALENDAR_EVENT | event | CalendarEvent |
 
-**Last updated:** 2026-05-28
+**Registry (startup):** `drive` (file, folder), `chat` (conversation), `calendar` (event) — see `registerPlatformEntities.ts`.
+
+**Last updated:** 2026-06-01

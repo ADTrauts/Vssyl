@@ -3,7 +3,7 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2A Global Trash complete (2026-06-01); Phase 2B+ not started  
+**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2A Global Trash complete; Phase 2B V_Link + entities complete (2026-06-01); Phase 4 certification not started  
 **Wave:** Calendar Wave 1 — Phase 1A–1F
 
 **Authorities:**
@@ -525,24 +525,26 @@ Never emit activity, domain events, or notifications on failed or unauthorized a
 
 ---
 
-### 4.15 `calendarVlinkAccessService` (Phase 3 — design only)
+### 4.15 `calendarVlinkAccessService` (Phase 2B — complete)
 
 | Field | Detail |
 |-------|--------|
 | **Purpose** | V_Link resolve for `CALENDAR_EVENT` |
-| **Operations owned** | `resolveCalendarEventForVLink(userId, eventId)` → title, url, access (`full` / `restricted`); calendar membership + PE read; `trashedAt: null` |
-| **Migration** | Replace inline Prisma in `vlinkEntityResolverService` case |
+| **File** | `server/src/services/calendarVlinkAccessService.ts` |
+| **Operations owned** | `resolveCalendarEventForVLink`; `userCanLinkCalendarEvent` — member/attendee + `CALENDAR_EVENT_READ`; trashed/deleted fail closed |
+| **Migration** | Inline Prisma removed from `vlinkEntityResolverService` |
 
-**Reference patterns:** `chatVlinkAccessService`, `driveVlinkAccessService`.
+**Reference patterns:** `chatVlinkAccessService`, `driveVlinkAccessService`. Audit: [`CALENDAR_VLINK_PHASE2B.md`](./CALENDAR_VLINK_PHASE2B.md).
 
 ---
 
-### 4.16 `calendarVlinkLifecycleService` (Phase 3 — design only)
+### 4.16 `calendarVlinkLifecycleService` (Phase 2B — complete)
 
 | Field | Detail |
 |-------|--------|
-| **Purpose** | Unlink / restrict on trash and permanent delete |
-| **Operations owned** | `onEventTrashed`, `onEventPermanentlyDeleted` |
+| **Purpose** | Unlink V_Link rows on permanent delete |
+| **File** | `server/src/services/calendarVlinkLifecycleService.ts` |
+| **Operations owned** | `unlinkCalendarEventFromAllVLinks` (wired in `calendarTrashService.permanentlyDeleteCalendarEvent`) |
 | **Reference patterns** | `chatVlinkLifecycleService`, `driveVlinkLifecycleService` |
 
 ---
@@ -885,24 +887,25 @@ flowchart LR
 | Domain events `trashed` / `restored` / `permanentlyDeleted` | ✅ |
 | `deleteEvent` → `softTrashCalendarEvent` | ✅ |
 
-### Phase 2B — V_Link trash hooks (not started)
+### Phase 2B — V_Link + platform entity (complete 2026-06-01)
 
-| Deliverable | |
-|-------------|--|
-| V_Link restrict on trash (optional notify) | |
+| Deliverable | Status |
+|-------------|--------|
+| `registerCalendarPlatformEntities` (`calendar:event`) | ✅ |
+| `calendarVlinkAccessService` + resolver delegation | ✅ |
+| `calendarVlinkLifecycleService` on permanent delete | ✅ |
+| Manifest `entities[]`, `calendar_reminder` notification | ✅ |
 
 ---
 
-### Phase 3 — Entities + V_Link + manifest
+### Phase 3 — Remaining manifest / comments (not started)
 
-**Goal:** Platform truthfulness.
+**Goal:** Residual platform truthfulness.
 
 | Deliverable | |
 |-------------|--|
-| `registerCalendarPlatformEntities` | |
-| `calendarVlinkAccessService` + resolver delegation | |
-| `calendarVlinkLifecycleService` | |
-| Manifest `entities[]`, `notifications[]` complete | |
+| Event comments service extraction | |
+| Optional in-app types for invite/update/cancel email flows | |
 
 ---
 
@@ -1033,7 +1036,8 @@ Per user request — answers without implementation:
 | Phase 1E controller collapse | ✅ `calendarIcsService`; thin `calendarController` |
 | Phase 1F AI compliance | ✅ `calendarAIActionService`; visibility AI helpers; ActionExecutor migration |
 | Phase 2A Global Trash | ✅ Complete |
-| Phase 2B+ / 3 / 4 | ❌ Not started |
+| Phase 2B V_Link + entities | ✅ Complete |
+| Phase 3 / 4 | ❌ Not started |
 
 ---
 

@@ -42,7 +42,7 @@ Legacy `calendar.event.deleted` with `softDelete: true` is **not** emitted on so
 - `trashController.resilience.test.ts` (calendar handler path)
 - `calendarEventService.test.ts` (delete delegates to trash service)
 
-## Deferred (Phase 2B+)
+## Follow-up (Phase 2B — complete)
 
-- V_Link restrict/unlink on trash and permanent delete (`calendarVlinkLifecycleService`)
-- Optional trash-specific notifications beyond cancel emails
+- V_Link unlink on permanent delete: [`CALENDAR_VLINK_PHASE2B.md`](./CALENDAR_VLINK_PHASE2B.md)
+- Soft trash does not unlink V_Links (links remain restricted via `calendarVlinkAccessService` until restore or permanent delete)
