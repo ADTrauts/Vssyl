@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildExceptionKeySet,
+  expandEventsForConflictCheck,
   expandRecurringEventsInRange,
   shouldApplyThisOccurrenceEdit,
 } from '../calendarRecurrenceService';
@@ -82,6 +83,28 @@ describe('calendarRecurrenceService', () => {
     );
 
     expect(expanded.length).toBe(1);
+  });
+
+  it('expandEventsForConflictCheck expands recurring series', () => {
+    const expanded = expandEventsForConflictCheck(
+      [
+        {
+          id: 'series-1',
+          calendarId: 'cal-1',
+          title: 'Daily',
+          startAt: new Date('2026-06-01T10:00:00.000Z'),
+          endAt: new Date('2026-06-01T11:00:00.000Z'),
+          allDay: false,
+          timezone: 'UTC',
+          recurrenceRule: 'FREQ=DAILY;COUNT=2',
+        },
+      ],
+      new Date('2026-06-01T00:00:00.000Z'),
+      new Date('2026-06-05T00:00:00.000Z')
+    );
+
+    expect(expanded.length).toBe(2);
+    expect(expanded[0].startAt).toContain('2026-06-01');
   });
 
   it('detects THIS occurrence edit mode', () => {

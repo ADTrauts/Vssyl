@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
-import { rrulestr } from 'rrule';
-import { zonedTimeToUtcFromDate } from '../utils/timezone';
 import { getChatSocketService } from '../services/chatSocketService';
 import { AuditService } from '../services/auditService';
 import { sendCalendarInviteEmail, sendCalendarUpdateEmail, sendCalendarCancelEmail } from '../services/emailService';
@@ -12,11 +10,8 @@ import { emitCalendarEventCreatedEvent } from '../events/domainEventEmitters';
 import { CalendarServiceError } from '../services/calendar/calendarErrors';
 import * as calendarAttendeeService from '../services/calendarAttendeeService';
 import * as calendarEventService from '../services/calendarEventService';
-import {
-  buildExceptionKeySet,
-  expandRecurringEventsInRange,
-} from '../services/calendarRecurrenceService';
 import * as calendarService from '../services/calendarService';
+import * as calendarVisibilityService from '../services/calendarVisibilityService';
 
 function getUserId(req: Request): string | null {
   const user = (req as AuthenticatedRequest).user;
@@ -29,28 +24,33 @@ function respondCalendarServiceError(res: Response, error: unknown): Response | 
   }
 }
 
+function queryStringOrStringArray(
+  value: unknown
+): string | string[] | undefined {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
+    return value;
+  }
+  return undefined;
+}
+
 export async function listCalendars(req: Request, res: Response) {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  // Optional filters: contextType, contextId
   const { contextType, contextId } = req.query as { contextType?: string; contextId?: string };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {
-    OR: [
-      { members: { some: { userId } } },
-      { contextType: 'PERSONAL', contextId: userId },
-    ]
-  };
-  if (contextType) where.contextType = contextType;
-  if (contextId) where.contextId = contextId;
-  
-  const calendars = await prisma.calendar.findMany({
-    where,
-    include: { members: { where: { userId } } }
-  });
-  res.json({ success: true, data: calendars });
+  try {
+    const calendars = await calendarVisibilityService.listAccessibleCalendars(userId, {
+      contextType,
+      contextId,
+    });
+    return res.json({ success: true, data: calendars });
+  } catch (e: unknown) {
+    const handled = respondCalendarServiceError(res, e);
+    if (handled) return handled;
+    throw e;
+  }
 }
 
 export async function createCalendar(req: Request, res: Response) {
@@ -150,133 +150,16 @@ export async function listEventsInRange(req: Request, res: Response) {
   const { start, end, contexts, calendarIds } = req.query as { start?: string; end?: string; contexts?: string | string[]; calendarIds?: string | string[]; };
 
   if (!start || !end) return res.status(400).json({ error: 'Missing start/end' });
-  const startAt = new Date(start);
-  const endAt = new Date(end);
 
   try {
-  // Find calendars user can see, with optional context filters
-  const contextFilters = Array.isArray(contexts) ? contexts : (contexts ? [contexts] : []);
-  const requestedCalendarIds = Array.isArray(calendarIds) ? calendarIds : (calendarIds ? [calendarIds] : []);
-  
-  // Track dashboard contexts to determine if this is a personal context query
-  const dashboardContexts: Array<{ contextType: string; contextId: string }> = [];
-  
-  let calendarIdList: string[];
-  if (requestedCalendarIds.length > 0) {
-    // Caller explicitly specified calendars; ensure user has access
-    const allowed = await prisma.calendar.findMany({
-      where: { id: { in: requestedCalendarIds }, OR: [{ members: { some: { userId } } }, { contextType: 'PERSONAL', contextId: userId }] },
-      select: { id: true }
+    const expanded = await calendarVisibilityService.listEventsInRange({
+      userId,
+      start,
+      end,
+      contexts,
+      calendarIds,
     });
-    calendarIdList = allowed.map(c => c.id);
-  } else {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereCalendar: any = { OR: [{ members: { some: { userId } } }, { contextType: 'PERSONAL', contextId: userId }] };
-    
-    if (contextFilters.length > 0) {
-      // Handle dashboard IDs - look up the dashboard to determine context type
-      for (const contextId of contextFilters) {
-        // Check if this is a dashboard ID by looking up the dashboard
-        const dashboard = await prisma.dashboard.findUnique({
-          where: { id: contextId },
-          select: { 
-            businessId: true, 
-            institutionId: true, 
-            householdId: true 
-          }
-        });
-        
-        if (dashboard) {
-          // Determine context type based on dashboard relationships
-          if (dashboard.businessId) {
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.businessId });
-          } else if (dashboard.institutionId) {
-            // Educational institutions don't have a specific context type, 
-            // so we'll use BUSINESS context type as a fallback
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.institutionId });
-          } else if (dashboard.householdId) {
-            dashboardContexts.push({ contextType: 'HOUSEHOLD', contextId: dashboard.householdId });
-          } else {
-            // Personal dashboard - use user ID as context
-            dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-          }
-        } else {
-          // Fallback: treat as personal context if dashboard not found
-          dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-        }
-      }
-      
-      if (dashboardContexts.length > 0) {
-        whereCalendar.AND = [
-          { OR: dashboardContexts }
-        ];
-      }
-    }
-    
-    const calendars = await prisma.calendar.findMany({ where: whereCalendar, select: { id: true } });
-    calendarIdList = calendars.map(c => c.id);
-  }
-
-  // Determine if we should filter by attendee
-  // Only filter when viewing PERSONAL context and Schedule calendar is included
-  const hasBusinessContext = dashboardContexts.some(ctx => ctx.contextType === 'BUSINESS');
-  
-  // Get calendar types
-  const calendarsWithContext = await prisma.calendar.findMany({
-    where: { id: { in: calendarIdList } },
-    select: { id: true, contextType: true, contextId: true, name: true }
-  });
-  
-  const scheduleCalendarIds = calendarsWithContext
-    .filter(c => c.contextType === 'BUSINESS' && c.name === 'Schedule')
-    .map(c => c.id);
-  
-  // Build event query
-  const eventWhere: any = {
-    calendarId: { in: calendarIdList },
-    trashedAt: null, // Exclude trashed events
-    OR: [
-      { startAt: { lt: endAt }, endAt: { gt: startAt } }
-    ]
-  };
-  
-  // Only filter Schedule calendar events when in PERSONAL context (not BUSINESS)
-  if (!hasBusinessContext && scheduleCalendarIds.length > 0) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true }
-    });
-    const userEmail = user?.email;
-    
-    if (userEmail) {
-      const nonScheduleCalendarIds = calendarIdList.filter(id => !scheduleCalendarIds.includes(id));
-      
-      eventWhere.AND = [
-        {
-          OR: [
-            // Non-Schedule calendars - show all events
-            { calendarId: { in: nonScheduleCalendarIds } },
-            // Schedule calendar - only show events where user is attendee
-            {
-              AND: [
-                { calendarId: { in: scheduleCalendarIds } },
-                { attendees: { some: { email: userEmail } } }
-              ]
-            }
-          ]
-        }
-      ];
-    }
-  }
-  // If BUSINESS context, show ALL events (no filtering) - default behavior
-
-  const events = await prisma.event.findMany({
-    where: eventWhere,
-    include: { attendees: true, reminders: true, attachments: true }
-  });
-  const exceptionKeySet = buildExceptionKeySet(events);
-  const expanded = expandRecurringEventsInRange(events, startAt, endAt, exceptionKeySet);
-  res.json({ success: true, data: expanded });
+    res.json({ success: true, data: expanded });
   } catch (error: unknown) {
     const err = error as Error;
     const prismaCode = typeof (error as { code?: string }).code === 'string' ? (error as { code: string }).code : undefined;
@@ -294,98 +177,21 @@ export async function searchEvents(req: Request, res: Response) {
   try {
     const { text, start, end, contexts, calendarIds } = req.query;
     const userId = getUserId(req);
-    
+
     if (!userId || !text) {
       return res.status(400).json({ success: false, message: 'Missing required parameters' });
     }
-    
-    // Build search query
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {
-      OR: [
-        { title: { contains: text as string, mode: 'insensitive' } },
-        { description: { contains: text as string, mode: 'insensitive' } },
-        { location: { contains: text as string, mode: 'insensitive' } },
-      ],
-    };
-    
-    if (start && end) {
-      where.OR.push({
-        startAt: { gte: new Date(start as string) },
-        endAt: { lte: new Date(end as string) },
-      });
-    }
-    
-    if (contexts) {
-      const contextArray = Array.isArray(contexts) ? contexts : [contexts];
-      
-      // Handle dashboard IDs - look up the dashboard to determine context type
-      const dashboardContexts = [];
-      
-      for (const contextId of contextArray) {
-        // Check if this is a dashboard ID by looking up the dashboard
-        const dashboard = await prisma.dashboard.findUnique({
-          where: { id: contextId as string },
-          select: { 
-            businessId: true, 
-            institutionId: true, 
-            householdId: true 
-          }
-        });
-        
-        if (dashboard) {
-          // Determine context type based on dashboard relationships
-          if (dashboard.businessId) {
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.businessId });
-          } else if (dashboard.institutionId) {
-            // Educational institutions don't have a specific context type, 
-            // so we'll use BUSINESS context type as a fallback
-            dashboardContexts.push({ contextType: 'BUSINESS', contextId: dashboard.institutionId });
-          } else if (dashboard.householdId) {
-            dashboardContexts.push({ contextType: 'HOUSEHOLD', contextId: dashboard.householdId });
-          } else {
-            // Personal dashboard - use user ID as context
-            dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-          }
-        } else {
-          // Fallback: treat as personal context if dashboard not found
-          dashboardContexts.push({ contextType: 'PERSONAL', contextId: userId });
-        }
-      }
-      
-      if (dashboardContexts.length > 0) {
-        where.calendar = {
-          OR: dashboardContexts
-        };
-      }
-    }
-    
-    if (calendarIds) {
-      const calendarIdArray = Array.isArray(calendarIds) ? calendarIds : [calendarIds];
-      where.calendarId = { in: calendarIdArray as string[] };
-    }
-    
-    // Add access control
-    where.calendar = {
-      ...where.calendar,
-      members: { some: { userId } },
-    };
-    
-    // Exclude trashed events
-    where.trashedAt = null;
-    
-    const events = await prisma.event.findMany({
-      where,
-      include: {
-        calendar: true,
-        attendees: true,
-      },
-      orderBy: { startAt: 'asc' },
-      take: 100, // Limit results
+
+    const events = await calendarVisibilityService.searchEvents({
+      userId,
+      text: String(text),
+      start: typeof start === 'string' ? start : undefined,
+      end: typeof end === 'string' ? end : undefined,
+      contexts: queryStringOrStringArray(contexts),
+      calendarIds: queryStringOrStringArray(calendarIds),
     });
-    
+
     res.json({ success: true, data: events });
-    
   } catch (error) {
     await logger.error('Failed to search events', {
       operation: 'calendar_search_events',
@@ -402,90 +208,19 @@ export async function checkConflicts(req: Request, res: Response) {
   try {
     const { start, end, calendarIds } = req.query;
     const userId = getUserId(req);
-    
+
     if (!userId || !start || !end) {
       return res.status(400).json({ success: false, message: 'Missing required parameters' });
     }
-    
-    const startDate = new Date(start as string);
-    const endDate = new Date(end as string);
-    const calendarIdArray = Array.isArray(calendarIds) ? calendarIds : calendarIds ? [calendarIds] : [];
-    
-    // Build conflict query
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {
-      startAt: { lt: endDate },
-      endAt: { gt: startDate },
-    };
-    
-    if (calendarIdArray.length > 0) {
-      where.calendarId = { in: calendarIdArray as string[] };
-    }
-    
-    // Add access control
-    where.calendar = {
-      members: { some: { userId } },
-    };
-    
-    const conflicts = await prisma.event.findMany({
-      where,
-      select: {
-        id: true,
-        calendarId: true,
-        title: true,
-        startAt: true,
-        endAt: true,
-        allDay: true,
-        timezone: true,
-        recurrenceRule: true,
-      },
-      orderBy: { startAt: 'asc' },
+
+    const expandedConflicts = await calendarVisibilityService.checkConflicts({
+      userId,
+      start: String(start),
+      end: String(end),
+      calendarIds: queryStringOrStringArray(calendarIds),
     });
-    
-    // Expand recurring events to check for conflicts
-    const expandedConflicts = [];
-    for (const event of conflicts) {
-      if ((event as any).recurrenceRule) {
-        try {
-          const rule = rrulestr((event as any).recurrenceRule, {
-            dtstart: zonedTimeToUtcFromDate(new Date(event.startAt), event.timezone),
-          });
-          
-          const occurrences = (rule as any).between ? (rule as any).between(startDate, endDate, true) : [];
-          occurrences.forEach((date: Date) => {
-            const eventStart = new Date(date);
-            const eventEnd = new Date(eventStart.getTime() + (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()));
-            
-            if (eventStart < endDate && eventEnd > startDate) {
-              expandedConflicts.push({
-                id: event.id,
-                calendarId: event.calendarId,
-                title: event.title,
-                startAt: eventStart.toISOString(),
-                endAt: eventEnd.toISOString(),
-                allDay: event.allDay,
-                timezone: event.timezone,
-              });
-            }
-          });
-        } catch (error) {
-          await logger.error('Failed to parse recurrence rule for conflict check', {
-            operation: 'calendar_parse_recurrence_conflict',
-            error: {
-              message: error instanceof Error ? error.message : 'Unknown error',
-              stack: error instanceof Error ? error.stack : undefined
-            }
-          });
-          // Add original event if recurrence parsing fails
-          expandedConflicts.push(event);
-        }
-      } else {
-        expandedConflicts.push(event);
-      }
-    }
-    
+
     res.json({ success: true, data: expandedConflicts });
-    
   } catch (error) {
     await logger.error('Failed to check calendar conflicts', {
       operation: 'calendar_check_conflicts',
@@ -1318,160 +1053,20 @@ export async function getFreeBusy(req: Request, res: Response) {
   try {
     const { start, end, calendarIds, attendeeEmails } = req.query;
     const userId = getUserId(req);
-    
+
     if (!userId || !start || !end) {
       return res.status(400).json({ success: false, message: 'Missing required parameters' });
     }
-    
-    const startDate = new Date(start as string);
-    const endDate = new Date(end as string);
-    const calendarIdArray = Array.isArray(calendarIds) ? calendarIds : calendarIds ? [calendarIds] : [];
-    const attendeeEmailArray = Array.isArray(attendeeEmails) ? attendeeEmails : attendeeEmails ? [attendeeEmails] : [];
-    
-    // Get busy times from specified calendars
-    const busyTimes = [];
-    
-    if (calendarIdArray.length > 0) {
-      const events = await prisma.event.findMany({
-        where: {
-          calendarId: { in: calendarIdArray as string[] },
-          startAt: { lt: endDate },
-          endAt: { gt: startDate },
-        },
-        select: {
-          startAt: true,
-          endAt: true,
-          allDay: true,
-          timezone: true,
-          recurrenceRule: true,
-        },
-      });
-      
-      // Expand recurring events and add to busy times
-      for (const event of events) {
-        if (event.recurrenceRule) {
-          try {
-            const rule = rrulestr(event.recurrenceRule, {
-              dtstart: zonedTimeToUtcFromDate(new Date(event.startAt), event.timezone),
-            });
-            
-            const occurrences = (rule as any).between ? (rule as any).between(startDate, endDate, true) : [];
-            occurrences.forEach((date: Date) => {
-              const eventStart = new Date(date);
-              const eventEnd = new Date(eventStart.getTime() + (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()));
-              busyTimes.push({
-                startAt: eventStart.toISOString(),
-                endAt: eventEnd.toISOString(),
-              });
-            });
-          } catch (error) {
-            await logger.error('Failed to parse recurrence rule', {
-              operation: 'calendar_parse_recurrence',
-              error: {
-                message: error instanceof Error ? error.message : 'Unknown error',
-                stack: error instanceof Error ? error.stack : undefined
-              }
-            });
-          }
-        } else {
-          busyTimes.push({
-            startAt: event.startAt.toISOString(),
-            endAt: event.endAt.toISOString(),
-          });
-        }
-      }
-    }
-    
-    // Get busy times from attendee calendars (if they have accounts)
-    if (attendeeEmailArray.length > 0) {
-      const attendeeUsers = await prisma.user.findMany({
-        where: { email: { in: attendeeEmailArray as string[] } },
-        select: { id: true, email: true },
-      });
-      
-      for (const user of attendeeUsers) {
-        const userEvents = await prisma.event.findMany({
-          where: {
-            calendar: {
-              members: { some: { userId: user.id } },
-            },
-            startAt: { lt: endDate },
-            endAt: { gt: startDate },
-          },
-          select: {
-            startAt: true,
-            endAt: true,
-            allDay: true,
-            timezone: true,
-            recurrenceRule: true,
-          },
-        });
-        
-        // Expand recurring events for attendees
-        for (const event of userEvents) {
-          if (event.recurrenceRule) {
-            try {
-              const rule = rrulestr(event.recurrenceRule, {
-                dtstart: zonedTimeToUtcFromDate(new Date(event.startAt), event.timezone),
-              });
-              
-              const occurrences = (rule as any).between ? (rule as any).between(startDate, endDate, true) : [];
-              occurrences.forEach((date: Date) => {
-                const eventStart = new Date(date);
-                const eventEnd = new Date(eventStart.getTime() + (new Date(event.endAt).getTime() - new Date(event.startAt).getTime()));
-                busyTimes.push({
-                  startAt: eventStart.toISOString(),
-                  endAt: eventEnd.toISOString(),
-                });
-              });
-            } catch (error) {
-              await logger.error('Failed to parse recurrence rule for attendee', {
-                operation: 'calendar_parse_recurrence_attendee',
-                error: {
-                  message: error instanceof Error ? error.message : 'Unknown error',
-                  stack: error instanceof Error ? error.stack : undefined
-                }
-              });
-            }
-          } else {
-            busyTimes.push({
-              startAt: event.startAt.toISOString(),
-              endAt: event.endAt.toISOString(),
-            });
-          }
-        }
-      }
-    }
-    
-    // Sort busy times by start
-    busyTimes.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-    
-    // Merge overlapping busy times
-    const mergedBusyTimes = [];
-    for (const busy of busyTimes) {
-      if (mergedBusyTimes.length === 0) {
-        mergedBusyTimes.push(busy);
-      } else {
-        const last = mergedBusyTimes[mergedBusyTimes.length - 1];
-        if (new Date(busy.startAt) <= new Date(last.endAt)) {
-          // Overlap, merge
-          last.endAt = new Date(Math.max(new Date(last.endAt).getTime(), new Date(busy.endAt).getTime())).toISOString();
-        } else {
-          // No overlap, add new
-          mergedBusyTimes.push(busy);
-        }
-      }
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        busy: mergedBusyTimes,
-      },
+
+    const data = await calendarVisibilityService.getFreeBusy({
+      userId,
+      start: String(start),
+      end: String(end),
+      calendarIds: queryStringOrStringArray(calendarIds),
+      attendeeEmails: queryStringOrStringArray(attendeeEmails),
     });
-    
+
+    res.json({ success: true, data });
   } catch (error) {
     await logger.error('Failed to get free-busy', {
       operation: 'calendar_get_free_busy',

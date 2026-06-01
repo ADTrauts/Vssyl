@@ -74,17 +74,31 @@ describe('authorize (policyEngine)', () => {
     expect(d.matchedPolicy).toBe('delegate_owner_scope');
   });
 
-  it('fails closed with POLICY_NOT_IMPLEMENTED for unimplemented actions', async () => {
-    vi.spyOn(logger, 'warn').mockResolvedValue(undefined as never);
+  it('calendar:event.create allows editor membership', async () => {
+    vi.spyOn(prisma.calendarMember, 'findFirst').mockResolvedValue({ id: 'm1' } as never);
 
     const d = await authorize({
       userId: 'u1',
       action: POLICY_ACTIONS.CALENDAR_EVENT_CREATE,
       resourceType: 'calendar_event',
-      resourceId: 'ev1',
+      resourceId: 'cal-1',
+      metadata: { calendarId: 'cal-1' },
+    });
+    expect(d.allow).toBe(true);
+    expect(d.matchedPolicy).toBe('calendar_event_create_editor');
+  });
+
+  it('calendar:calendar.read denies non-member', async () => {
+    vi.spyOn(prisma.calendar, 'findFirst').mockResolvedValue(null);
+
+    const d = await authorize({
+      userId: 'u1',
+      action: POLICY_ACTIONS.CALENDAR_READ,
+      resourceType: 'calendar',
+      resourceId: 'cal-1',
     });
     expect(d.allow).toBe(false);
-    expect(d.reason).toBe('POLICY_NOT_IMPLEMENTED');
+    expect(d.reason).toBe('NOT_MEMBER');
   });
 
   it('file:read on folder allows owner', async () => {

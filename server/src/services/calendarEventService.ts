@@ -8,6 +8,8 @@ import type {
   UpdateEventInput,
 } from './calendar/calendarTypes';
 import { eventWithRelationsInclude } from './calendar/calendarIncludes';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateCalendarPolicyDual } from '../auth/calendarPolicyDual';
 import { getCalendarForWrite } from './calendarPermissionService';
 import {
   createCanceledOccurrenceException,
@@ -74,7 +76,28 @@ export async function createEvent(input: CreateEventInput) {
     recurrenceEndAt,
   } = input;
 
-  const cal = await getCalendarForWrite(calendarId, userId);
+  await getCalendarForWrite(calendarId, userId);
+
+  const createPolicyDual = await evaluateCalendarPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CALENDAR_EVENT_CREATE,
+    resourceType: 'calendar',
+    resourceId: calendarId,
+  });
+  if (createPolicyDual.blocked) {
+    throw new CalendarServiceError('Forbidden', 'forbidden', 403);
+  }
+
+  const cal = await prisma.calendar.findUniqueOrThrow({
+    where: { id: calendarId },
+    select: {
+      id: true,
+      contextType: true,
+      contextId: true,
+      defaultReminderMinutes: true,
+    },
+  });
+
   const start = new Date(startAt);
   const end = new Date(endAt);
   const remindersData = buildRemindersCreateInput({

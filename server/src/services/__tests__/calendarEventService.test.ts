@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../lib/prisma';
+import * as calendarPolicyDual from '../../auth/calendarPolicyDual';
 import * as calendarPermission from '../calendarPermissionService';
 import { createEvent } from '../calendarEventService';
 import { CalendarServiceError } from '../calendar/calendarErrors';
@@ -7,15 +8,19 @@ import { CalendarServiceError } from '../calendar/calendarErrors';
 describe('calendarEventService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(calendarPolicyDual, 'evaluateCalendarPolicyDual').mockResolvedValue({
+      blocked: false,
+    });
   });
 
   it('creates an event when write access is granted', async () => {
-    vi.spyOn(calendarPermission, 'getCalendarForWrite').mockResolvedValue({
+    vi.spyOn(calendarPermission, 'getCalendarForWrite').mockResolvedValue(undefined as never);
+    vi.spyOn(prisma.calendar, 'findUniqueOrThrow').mockResolvedValue({
       id: 'cal-1',
       contextType: 'PERSONAL',
       contextId: 'user-1',
       defaultReminderMinutes: 10,
-    });
+    } as never);
     const created = {
       id: 'evt-1',
       calendarId: 'cal-1',

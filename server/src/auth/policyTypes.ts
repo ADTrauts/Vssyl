@@ -14,6 +14,7 @@ export type PolicyResourceType =
   | 'file'
   | 'business'
   | 'household'
+  | 'calendar'
   | 'calendar_event'
   | 'module'
   | 'task'

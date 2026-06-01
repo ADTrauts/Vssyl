@@ -848,6 +848,40 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizeChatMessageParticipant(input);
   }
 
+  const calendarReadActions: string[] = [
+    POLICY_ACTIONS.CALENDAR_READ,
+    POLICY_ACTIONS.CALENDAR_UPDATE,
+    POLICY_ACTIONS.CALENDAR_EVENT_RSVP,
+  ];
+  if (calendarReadActions.includes(action) && input.resourceType === 'calendar') {
+    return authorizeCalendarMember(input);
+  }
+
+  if (action === POLICY_ACTIONS.CALENDAR_CREATE) {
+    return authorizeCalendarCreate(input);
+  }
+
+  if (action === POLICY_ACTIONS.CALENDAR_DELETE) {
+    return authorizeCalendarOwner(input);
+  }
+
+  const calendarEventReadActions: string[] = [
+    POLICY_ACTIONS.CALENDAR_EVENT_READ,
+    POLICY_ACTIONS.CALENDAR_EVENT_UPDATE,
+    POLICY_ACTIONS.CALENDAR_EVENT_DELETE,
+  ];
+  if (calendarEventReadActions.includes(action) && input.resourceType === 'calendar_event') {
+    return authorizeCalendarEventAccess(input);
+  }
+
+  if (action === POLICY_ACTIONS.CALENDAR_EVENT_CREATE && input.resourceType === 'calendar_event') {
+    return authorizeCalendarEventCreate(input);
+  }
+
+  if (action === POLICY_ACTIONS.CALENDAR_AVAILABILITY_READ) {
+    return authorizeCalendarAvailabilityRead(input);
+  }
+
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
 }
 
@@ -942,6 +976,133 @@ async function authorizeChatMessageParticipant(input: PolicyInput): Promise<Poli
   }
 
   return { allow: true, matchedPolicy: 'chat_message_active_participant' };
+}
+
+const CALENDAR_WRITE_ROLES = ['OWNER', 'ADMIN', 'EDITOR'] as const;
+
+async function authorizeCalendarMember(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const calendarId = input.resourceId;
+  if (!calendarId || typeof calendarId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const calendar = await prisma.calendar.findFirst({
+    where: {
+      id: calendarId,
+      OR: [
+        { members: { some: { userId } } },
+        { contextType: 'PERSONAL', contextId: userId },
+      ],
+    },
+    select: { id: true },
+  });
+
+  if (!calendar) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy: 'calendar_member' };
+}
+
+async function authorizeCalendarOwner(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const calendarId = input.resourceId;
+  if (!calendarId || typeof calendarId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const owner = await prisma.calendarMember.findFirst({
+    where: { calendarId, userId, role: 'OWNER' },
+    select: { id: true },
+  });
+
+  if (!owner) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  return { allow: true, matchedPolicy: 'calendar_owner' };
+}
+
+async function authorizeCalendarCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'calendar_authenticated_create' };
+}
+
+async function authorizeCalendarEventAccess(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const eventId = input.resourceId;
+  if (!eventId || typeof eventId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, trashedAt: null },
+    select: { calendarId: true },
+  });
+
+  if (!event) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return authorizeCalendarMember({
+    ...input,
+    resourceType: 'calendar',
+    resourceId: event.calendarId,
+  });
+}
+
+async function authorizeCalendarEventCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const calendarId =
+    (typeof input.metadata?.calendarId === 'string' ? input.metadata.calendarId : undefined) ??
+    input.resourceId;
+
+  if (!calendarId || typeof calendarId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const member = await prisma.calendarMember.findFirst({
+    where: {
+      calendarId,
+      userId,
+      role: { in: [...CALENDAR_WRITE_ROLES] },
+    },
+    select: { id: true },
+  });
+
+  if (!member) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  return { allow: true, matchedPolicy: 'calendar_event_create_editor' };
+}
+
+async function authorizeCalendarAvailabilityRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'calendar_availability_authenticated' };
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

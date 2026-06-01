@@ -201,6 +201,169 @@ export function shouldApplyThisOccurrenceEdit(
   return Boolean(recurrenceRule && editMode === 'THIS' && occurrenceStartAt);
 }
 
+export type RecurrenceConflictEvent = {
+  id: string;
+  calendarId: string;
+  title: string;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  timezone: string;
+  recurrenceRule: string | null;
+};
+
+export type ConflictOccurrence = {
+  id: string;
+  calendarId: string;
+  title: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  timezone: string;
+};
+
+/** Conflict checks use zoned dtstart (preserves controller behavior). */
+export function expandEventsForConflictCheck(
+  events: RecurrenceConflictEvent[],
+  rangeStart: Date,
+  rangeEnd: Date
+): ConflictOccurrence[] {
+  const expanded: ConflictOccurrence[] = [];
+
+  for (const event of events) {
+    if (event.recurrenceRule) {
+      try {
+        const rule = rrulestr(event.recurrenceRule, {
+          dtstart: zonedTimeToUtcFromDate(new Date(event.startAt), event.timezone),
+        });
+        const ruleWithBetween = rule as {
+          between?: (a: Date, b: Date, inc: boolean) => Date[];
+        };
+        const occurrences = ruleWithBetween.between
+          ? ruleWithBetween.between(rangeStart, rangeEnd, true)
+          : [];
+
+        const durationMs =
+          new Date(event.endAt).getTime() - new Date(event.startAt).getTime();
+
+        for (const date of occurrences) {
+          const eventStart = new Date(date);
+          const eventEnd = new Date(eventStart.getTime() + durationMs);
+          if (eventStart < rangeEnd && eventEnd > rangeStart) {
+            expanded.push({
+              id: event.id,
+              calendarId: event.calendarId,
+              title: event.title,
+              startAt: eventStart.toISOString(),
+              endAt: eventEnd.toISOString(),
+              allDay: event.allDay,
+              timezone: event.timezone,
+            });
+          }
+        }
+      } catch {
+        expanded.push({
+          id: event.id,
+          calendarId: event.calendarId,
+          title: event.title,
+          startAt: new Date(event.startAt).toISOString(),
+          endAt: new Date(event.endAt).toISOString(),
+          allDay: event.allDay,
+          timezone: event.timezone,
+        });
+      }
+    } else {
+      expanded.push({
+        id: event.id,
+        calendarId: event.calendarId,
+        title: event.title,
+        startAt: new Date(event.startAt).toISOString(),
+        endAt: new Date(event.endAt).toISOString(),
+        allDay: event.allDay,
+        timezone: event.timezone,
+      });
+    }
+  }
+
+  return expanded;
+}
+
+export type BusyTimeSlot = { startAt: string; endAt: string };
+
+export function expandEventsToBusySlots(
+  events: Array<{
+    startAt: Date;
+    endAt: Date;
+    timezone: string;
+    recurrenceRule: string | null;
+  }>,
+  rangeStart: Date,
+  rangeEnd: Date
+): BusyTimeSlot[] {
+  const busyTimes: BusyTimeSlot[] = [];
+
+  for (const event of events) {
+    if (event.recurrenceRule) {
+      try {
+        const rule = rrulestr(event.recurrenceRule, {
+          dtstart: zonedTimeToUtcFromDate(new Date(event.startAt), event.timezone),
+        });
+        const ruleWithBetween = rule as {
+          between?: (a: Date, b: Date, inc: boolean) => Date[];
+        };
+        const occurrences = ruleWithBetween.between
+          ? ruleWithBetween.between(rangeStart, rangeEnd, true)
+          : [];
+
+        const durationMs =
+          new Date(event.endAt).getTime() - new Date(event.startAt).getTime();
+
+        for (const date of occurrences) {
+          const eventStart = new Date(date);
+          const eventEnd = new Date(eventStart.getTime() + durationMs);
+          busyTimes.push({
+            startAt: eventStart.toISOString(),
+            endAt: eventEnd.toISOString(),
+          });
+        }
+      } catch {
+        // skip malformed recurrence in busy expansion (matches controller)
+      }
+    } else {
+      busyTimes.push({
+        startAt: event.startAt.toISOString(),
+        endAt: event.endAt.toISOString(),
+      });
+    }
+  }
+
+  return busyTimes;
+}
+
+export function mergeBusyTimeSlots(busyTimes: BusyTimeSlot[]): BusyTimeSlot[] {
+  const sorted = [...busyTimes].sort(
+    (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+  );
+  const merged: BusyTimeSlot[] = [];
+
+  for (const busy of sorted) {
+    if (merged.length === 0) {
+      merged.push(busy);
+      continue;
+    }
+    const last = merged[merged.length - 1];
+    if (new Date(busy.startAt) <= new Date(last.endAt)) {
+      last.endAt = new Date(
+        Math.max(new Date(last.endAt).getTime(), new Date(busy.endAt).getTime())
+      ).toISOString();
+    } else {
+      merged.push(busy);
+    }
+  }
+
+  return merged;
+}
+
 export function shouldApplyThisOccurrenceDelete(
   recurrenceRule: string | null | undefined,
   editMode: CalendarEditMode | undefined,
