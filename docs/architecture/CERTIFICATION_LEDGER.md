@@ -87,7 +87,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | Module | Module id | Constitutional Compliance | File Hub Compliance | Certification Level | Status | Evidence |
 |--------|-----------|---------------------------|---------------------|---------------------|--------|----------|
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
-| **Chat** | `chat` | **Low** | **Low** | **0 — Legacy** | Audit complete (Wave 1) | [CHAT_CONSTITUTIONAL_AUDIT](./audits/CHAT_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
+| **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
 | **Calendar** | `calendar` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~1,713-line controller; minimal domain events |
 | **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~4,401-line controller; AI `toolExecutor` Prisma |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
@@ -102,10 +102,10 @@ Track cross-cutting certification separately; modules depend on these.
 
 | System | Constitutional Compliance | File Hub Compliance | Level | Status |
 |--------|---------------------------|---------------------|-------|--------|
-| Global Trash API | High | High (drive handler only) | 2 | Expansion in progress — handlers missing for chat/calendar/todo/notes |
+| Global Trash API | High | High (drive + chat handlers) | 2 | Expansion in progress — calendar/todo/notes handlers pending |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — manifest metadata gaps per module |
-| V_Link | High | High (drive resolvers) | 2 | Expansion — enum wider than resolver coverage |
-| Policy Engine | Partial (drive only dual) | High (drive only) | 1 | Rollout — module `*PolicyDual` required |
+| V_Link | High | High (drive + chat conversation) | 2 | Expansion — enum wider than resolver coverage |
+| Policy Engine | Partial | High (drive + chat dual) | 2 | Rollout — remaining modules need `*PolicyDual` |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
 | AI Tools / Actions | Low | Partial (drive tools compliant) | 0 | `toolExecutor` / `ActionExecutor` violations |
@@ -162,21 +162,21 @@ Copy row into module audit; mark ✅ / ⚠️ / ❌.
 
 | Requirement | File Hub | Chat | Calendar | Todo | Notes | Place | Dashboard | Analytics | Bus. Workspace |
 |-------------|----------|------|----------|------|-------|-------|-----------|-----------|----------------|
-| Canonical services | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Thin controllers | ✅ | ❌ | ❌ | ❌ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
-| Policy Engine | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Global Trash handler | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
-| V_Link (if declared) | ✅ | ❌ | ⚠️ | ❌ | ❌ | ❌ | ❌ | N/A | ⚠️ |
-| Platform entities | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Domain events | ✅ | ⚠️ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Module activity writes | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ |
-| Notifications | ✅ | ⚠️ | ⚠️ | ❌ | ⚠️ | ❌ | ❌ | N/A | ⚠️ |
-| Realtime | ✅ | ⚠️ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
-| AI compliance | ✅ | ⚠️ | ⚠️ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Capability truth | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Tests | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Documentation | ✅ | ❌ | ❌ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Legacy retired | ⚠️ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Canonical services | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Thin controllers | ✅ | ✅ | ❌ | ❌ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
+| Policy Engine | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Global Trash handler | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| V_Link (if declared) | ✅ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ | N/A | ⚠️ |
+| Platform entities | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Domain events | ✅ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Module activity writes | ✅ | ✅ | ❌ | ⚠️ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ |
+| Notifications | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ❌ | ❌ | N/A | ⚠️ |
+| Realtime | ✅ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| AI compliance | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| Capability truth | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| Tests | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| Documentation | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Legacy retired | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
 
 ---
 
@@ -198,7 +198,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
-| Chat | ○ | ○ | ○ | **●** | ○ | 3 |
+| Chat | ○ | ○ | ○ | ○ | ○ | **3 — Certified** |
 
 **Entry criteria:** Ledger v1.0 published; [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md) available.  
 **Exit criteria:** Level 3 row in certification matrix; `CHAT_*` audit linked below.
@@ -209,16 +209,24 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Operation matrix | [`audits/CHAT_OPERATION_MATRIX.md`](./audits/CHAT_OPERATION_MATRIX.md) ✅ |
 | Service extraction (Phase 1) | `chat*Service` layer + thin controller + `chatAIActionService` ✅ |
 | Global Trash (Phase 2) | [`CHAT_GLOBAL_TRASH_PHASE2.md`](./audits/CHAT_GLOBAL_TRASH_PHASE2.md) ✅ |
+| Compliance layer (Phase 3) | Policy Dual (mutations + trash), domain events (service-owned), manifest `notifications[]`, `chatVlinkLifecycleService` ✅ |
+| Platform entities (Phase 4) | `registerChatPlatformEntities`, manifest `entities[]` (conversation), `chatVlinkAccessService`, truthful `vlink: true` ✅ |
+| Level 3 certification (Phase 5) | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) — **Certified**; **Reference Module #2** |
+| Reference architecture | [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](./CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅ |
+
+**Post–Level 3 punch-list (non-blocking):** thread domain event; message `trashedAt` migration; `ChatWorkspaceLanding.tsx`; Level 4 council review.
 
 ### Wave 2 — Calendar, Todo, Notes
 
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
-| Calendar | **●** | ○ | ○ | ○ | ○ | 3 |
+| Calendar | ○ | **●** | ○ | ○ | ○ | 3 |
 | Todo | **●** | ○ | ○ | ○ | ○ | 3 |
 | Notes | **●** | ○ | ○ | ○ | ○ | 3 |
 
-**Sequencing note:** Calendar may start audit in parallel with Chat **service extraction** only after Chat Phase 0 patterns are validated; Todo should follow Calendar audit to reuse PE/trash patterns.
+**Calendar Phase 0 (2026-05-31):** [CALENDAR_CONSTITUTIONAL_AUDIT](./audits/CALENDAR_CONSTITUTIONAL_AUDIT.md), [CALENDAR_OPERATION_MATRIX](./audits/CALENDAR_OPERATION_MATRIX.md) — audit only; no implementation.
+
+**Sequencing note:** Calendar Wave 1 implementation starts after Phase 0 approval; Todo follows Calendar to reuse PE/trash/scheduler patterns.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

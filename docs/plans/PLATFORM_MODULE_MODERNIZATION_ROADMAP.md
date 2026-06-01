@@ -490,7 +490,12 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 1E (controller collapse):** complete (2026-05-31) — zero Prisma/side effects in `chatController.ts`; `chatUserSearchService`, `chatAnalyticsService`; contract test; `CHAT_OPERATION_MATRIX` HTTP rows → **P**.
 - **Phase 1F (AI executor migration):** complete (2026-05-31) — `chatAIActionService`; `ActionExecutor` chat ops → services; integration tests; Wave 1 service extraction closed in ledger.
 - **Phase 2 (Global Trash):** complete (2026-05-31) — `chatTrashService`, handler registration, `trashController` delegation; see [`CHAT_GLOBAL_TRASH_PHASE2.md`](../architecture/audits/CHAT_GLOBAL_TRASH_PHASE2.md).
-- **Next:** Phase 3 — Policy Engine hardening, V_Link lifecycle, manifest/notifications metadata.
+- **Phase 3 (compliance layer):** complete (2026-05-31) — full `chatPolicyDual` on mutations/trash; domain events (service-owned); manifest `notifications[]`; `chatVlinkLifecycleService` on permanent conversation delete.
+- **Phase 4 (platform entities):** complete (2026-05-31) — `registerChatPlatformEntities` (`conversation` only); manifest `entities[]` + `vlink: true`; `chatVlinkAccessService` wired in `vlinkEntityResolverService`.
+- **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
+- **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
+- **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
+- **Next module:** Calendar (Wave 2) — Phase 0 audit complete; implementation not started.
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 
@@ -556,6 +561,13 @@ Controllers become thin HTTP adapters.
 ---
 
 ### 5.2 Calendar (Priority 2)
+
+#### Phase 0 — Audit (2026-05-31) — Complete
+
+- [CALENDAR_CONSTITUTIONAL_AUDIT.md](../architecture/audits/CALENDAR_CONSTITUTIONAL_AUDIT.md)
+- [CALENDAR_OPERATION_MATRIX.md](../architecture/audits/CALENDAR_OPERATION_MATRIX.md)
+- **Level 0 — Legacy**; **Reference Module #3 candidate** post–Wave 1
+- **No code changes** in Phase 0
 
 #### Current State
 
