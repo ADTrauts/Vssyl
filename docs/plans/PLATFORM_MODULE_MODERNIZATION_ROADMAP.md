@@ -495,7 +495,9 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** **Todo** (Wave 2) — Calendar **Level 3 Certified** and **Reference Module #3** (2026-06-01). See [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md).
+- **Next module:** **Todo Wave 1** — Phase 0 audit complete (2026-06-01); **Phase 1B implementation** is next. Calendar **Level 3 Certified** / **Reference Module #3**. See [REFERENCE_MODULE_CATALOG.md](../architecture/REFERENCE_MODULE_CATALOG.md), [TODO_SERVICE_EXTRACTION_PLAN.md](../architecture/audits/TODO_SERVICE_EXTRACTION_PLAN.md).
+
+**Todo Wave 1 — Phase 0 (2026-06-01):** complete — [TODO_CONSTITUTIONAL_AUDIT.md](../architecture/audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX.md](../architecture/audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN.md](../architecture/audits/TODO_SERVICE_EXTRACTION_PLAN.md). **~50** operations inventoried; **4,401-line** controller; **no code changes**. Planned phases: 1B core writes → 1C visibility → 1D adapters/reminders → 1E controller collapse → 1F AI → 1G satellites → 2 trash/V_Link → 4 certification. Copy guide: [REFERENCE_MODULE_CATALOG.md](../architecture/REFERENCE_MODULE_CATALOG.md).
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 

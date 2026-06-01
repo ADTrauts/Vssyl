@@ -89,7 +89,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
 | **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Level 3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
-| **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~4,401-line controller; AI `toolExecutor` Prisma |
+| **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Wave 1 Phase 0 complete (2026-06-01) | [TODO_CONSTITUTIONAL_AUDIT](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN](./audits/TODO_SERVICE_EXTRACTION_PLAN.md) |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
@@ -221,7 +221,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
 | Calendar | ○ | **●** | **●** | **●** | **●** | 3 |
-| Todo | **●** | ○ | ○ | ○ | ○ | 3 |
+| Todo | ○ | **●** | ○ | ○ | ○ | 3 |
 | Notes | **●** | ○ | ○ | ○ | ○ | 3 |
 
 **Calendar Phase 0 (2026-05-31):** [CALENDAR_CONSTITUTIONAL_AUDIT](./audits/CALENDAR_CONSTITUTIONAL_AUDIT.md), [CALENDAR_OPERATION_MATRIX](./audits/CALENDAR_OPERATION_MATRIX.md).
@@ -242,7 +242,9 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Calendar Phase 4 (2026-06-01):** [`CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md`](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 Certified**; **Reference Module #3**.
 
-**Sequencing note:** **Todo** is next (Wave 2); apply Calendar + Chat patterns. Calendar Level 4 / council review out of scope.
+**Todo Phase 0 (2026-06-01):** [TODO_CONSTITUTIONAL_AUDIT](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN](./audits/TODO_SERVICE_EXTRACTION_PLAN.md). Copy patterns from [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md).
+
+**Sequencing note:** **Todo Wave 1 Phase 1B** is next (implementation); Calendar Level 4 / council review out of scope.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

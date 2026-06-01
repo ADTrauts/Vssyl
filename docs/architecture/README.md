@@ -8,6 +8,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 |-------|----------|-------------|
 | **Platform standards (constitutional)** | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | `platform-standards.mdc` |
 | **Module certification ledger** | [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md) | `platform-standards.mdc` |
+| **Reference Module Catalog** | [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) | `module-development.mdc` |
 | **Governance foundation (complete)** | [GOVERNANCE_FOUNDATION_COMPLETE.md](./GOVERNANCE_FOUNDATION_COMPLETE.md) | — |
 | Legacy cleanup / deprecation | [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md) | `platform-standards.mdc` |
 | Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) | `module-development.mdc` |
@@ -28,10 +29,22 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Control Center / Learning hub | [AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md) | — |
 | **File Hub (reference module) audits** | [audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) | `module-development.mdc` |
 
-**Reference implementation:** File Hub (`drive`) — tag `file-hub-reference-implementation`. Use FH audits under [`audits/`](./audits/) as the template for module compliance phases. Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md). Executive status: [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md). **Chat Wave 1:** Phase 0 audit + operation matrix; Phase 1A [`CHAT_SERVICE_EXTRACTION_PLAN.md`](./audits/CHAT_SERVICE_EXTRACTION_PLAN.md); Phase 1B core services (`server/src/services/chat*.ts`).
+**Reference modules:**
+
+| # | Module | Doc |
+|---|--------|-----|
+| 1 | File Hub (L4) | [FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) |
+| 2 | Chat (L3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) |
+| 3 | Calendar (L3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
+
+**Copy guide:** [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) — which patterns to take from which module.
+
+Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md). Executive status: [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md).
+
+**Module audits (Phase 0):** [`audits/`](./audits/) — e.g. [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX.md](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN.md](./audits/TODO_SERVICE_EXTRACTION_PLAN.md).
 
 **Onboarding and how-to guides** stay in [`docs/guides/README.md`](../guides/README.md).
 
 **Textbook maintenance:** Update [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) when changing `server/src/ai/` orchestration, pipeline catalog, grounding enforcement, or twin request contract.
 
-**Last updated:** 2026-05-31
+**Last updated:** 2026-06-01
