@@ -2,6 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import * as calendarPolicyDual from '../../auth/calendarPolicyDual';
 import * as calendarPermission from '../calendarPermissionService';
+import * as calendarActivity from '../calendarActivityService';
+import * as calendarDomain from '../calendarDomainEventService';
+import * as calendarNotification from '../calendarNotificationService';
+import * as calendarRealtime from '../calendarRealtimeService';
 import { createEvent } from '../calendarEventService';
 import { CalendarServiceError } from '../calendar/calendarErrors';
 
@@ -11,6 +15,11 @@ describe('calendarEventService', () => {
     vi.spyOn(calendarPolicyDual, 'evaluateCalendarPolicyDual').mockResolvedValue({
       blocked: false,
     });
+    vi.spyOn(calendarNotification, 'resolveCalendarMemberUserIds').mockResolvedValue(['u1']);
+    vi.spyOn(calendarRealtime, 'broadcastCalendarEventCreated').mockImplementation(() => undefined);
+    vi.spyOn(calendarActivity, 'recordEventCreated').mockResolvedValue(undefined);
+    vi.spyOn(calendarDomain, 'recordCalendarEventCreatedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(calendarNotification, 'sendEventCreatedInviteEmails').mockResolvedValue(undefined);
   });
 
   it('creates an event when write access is granted', async () => {
@@ -44,6 +53,9 @@ describe('calendarEventService', () => {
 
     expect(result.event.id).toBe('evt-1');
     expect(prisma.event.create).toHaveBeenCalled();
+    expect(calendarRealtime.broadcastCalendarEventCreated).toHaveBeenCalled();
+    expect(calendarActivity.recordEventCreated).toHaveBeenCalled();
+    expect(calendarDomain.recordCalendarEventCreatedDomainEvent).toHaveBeenCalled();
   });
 
   it('denies create when write access fails', async () => {

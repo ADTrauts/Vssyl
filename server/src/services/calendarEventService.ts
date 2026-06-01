@@ -17,6 +17,23 @@ import {
   shouldApplyThisOccurrenceDelete,
   shouldApplyThisOccurrenceEdit,
 } from './calendarRecurrenceService';
+import { recordEventCreated, recordEventDeleted, recordEventUpdated } from './calendarActivityService';
+import {
+  recordCalendarEventCreatedDomainEvent,
+  recordCalendarEventDeletedDomainEvent,
+  recordCalendarEventUpdatedDomainEvent,
+} from './calendarDomainEventService';
+import {
+  resolveCalendarMemberUserIds,
+  sendEventCanceledEmails,
+  sendEventCreatedInviteEmails,
+  sendEventUpdatedEmails,
+} from './calendarNotificationService';
+import {
+  broadcastCalendarEventCreated,
+  broadcastCalendarEventDeleted,
+  broadcastCalendarEventUpdated,
+} from './calendarRealtimeService';
 
 function buildRemindersCreateInput(params: {
   reminders: CalendarReminderInput[] | undefined;
@@ -127,6 +144,33 @@ export async function createEvent(input: CreateEventInput) {
     include: eventWithRelationsInclude,
   });
 
+  const memberIds = await resolveCalendarMemberUserIds(calendarId);
+  broadcastCalendarEventCreated(memberIds, event as Record<string, unknown>);
+
+  await recordEventCreated({
+    actorUserId: userId,
+    eventId: event.id,
+    calendarId: event.calendarId,
+    startAt: event.startAt,
+    endAt: event.endAt,
+  });
+
+  recordCalendarEventCreatedDomainEvent({
+    actorUserId: userId,
+    eventId: event.id,
+    calendarId: event.calendarId,
+    allDay: event.allDay,
+    startAt: event.startAt,
+    endAt: event.endAt,
+    calendar: cal,
+  });
+
+  await sendEventCreatedInviteEmails({
+    actorUserId: userId,
+    event: event,
+    attendees,
+  });
+
   return { event, calendar: cal };
 }
 
@@ -203,6 +247,37 @@ export async function updateEvent(input: UpdateEventInput): Promise<UpdateEventR
     include: eventWithRelationsInclude,
   });
 
+  if (refreshed) {
+    const cal = await prisma.calendar.findUniqueOrThrow({
+      where: { id: refreshed.calendarId },
+      select: { contextType: true, contextId: true },
+    });
+    const memberIds = await resolveCalendarMemberUserIds(refreshed.calendarId);
+    broadcastCalendarEventUpdated(memberIds, refreshed as Record<string, unknown>);
+
+    await recordEventUpdated({
+      actorUserId: userId,
+      eventId: refreshed.id,
+      calendarId: refreshed.calendarId,
+      title: refreshed.title,
+    });
+
+    recordCalendarEventUpdatedDomainEvent({
+      actorUserId: userId,
+      eventId: refreshed.id,
+      calendarId: refreshed.calendarId,
+      allDay: refreshed.allDay,
+      startAt: refreshed.startAt,
+      endAt: refreshed.endAt,
+      calendar: cal,
+    });
+
+    await sendEventUpdatedEmails({
+      actorUserId: userId,
+      event: refreshed,
+    });
+  }
+
   return { type: 'updated', event: refreshed };
 }
 
@@ -235,6 +310,29 @@ export async function deleteEvent(input: DeleteEventInput): Promise<DeleteEventR
     where: { id: eventId },
     data: { trashedAt: new Date() },
   });
+
+  const cal = await prisma.calendar.findUniqueOrThrow({
+    where: { id: ev.calendarId },
+    select: { contextType: true, contextId: true },
+  });
+  const memberIds = await resolveCalendarMemberUserIds(ev.calendarId);
+  broadcastCalendarEventDeleted(memberIds, ev.id);
+
+  await recordEventDeleted({
+    actorUserId: userId,
+    eventId: ev.id,
+    calendarId: ev.calendarId,
+  });
+
+  recordCalendarEventDeletedDomainEvent({
+    actorUserId: userId,
+    eventId: ev.id,
+    calendarId: ev.calendarId,
+    calendar: cal,
+    softDelete: true,
+  });
+
+  await sendEventCanceledEmails({ eventId: ev.id });
 
   return {
     type: 'trashed',

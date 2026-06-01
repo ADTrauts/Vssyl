@@ -253,7 +253,8 @@ entities[]: MISSING
 | Service extraction plan | ✅ [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
 | Phase 1B core services | ✅ (2026-06-01) — calendar CRUD + event writes + recurrence helpers + RSVP |
 | Phase 1C visibility + PE | ✅ (2026-06-01) — `calendarVisibilityService`, `calendarPolicyDual`, read paths |
-| Phase 1D+ | ❌ Not started |
+| Phase 1D side-effect adapters | ✅ (2026-06-01) — activity/notification/realtime/domain + reminder/scheduler |
+| Phase 1E+ | ❌ Not started |
 
 ---
 

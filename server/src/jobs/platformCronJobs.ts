@@ -3,7 +3,7 @@
  * Called from handleServerListening in index.ts.
  */
 import { registerPlatformJob } from './platformJobRegistry';
-import { dispatchDueReminders } from '../services/reminderService';
+import { runReminderDispatch } from '../services/calendarSchedulerService';
 import { AIQueryService } from '../services/aiQueryService';
 import { OverageBillingService } from '../services/overageBillingService';
 import { logger } from '../lib/logger';
@@ -13,7 +13,7 @@ export async function registerPlatformCronJobs(): Promise<void> {
     id: 'reminder_dispatch',
     schedule: '* * * * *',
     handler: async () => {
-      await dispatchDueReminders(5);
+      await runReminderDispatch(5);
     },
     tier: 'transitional',
     operation: 'cron_reminders',

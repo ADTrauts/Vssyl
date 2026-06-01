@@ -3,8 +3,8 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Phase 1C complete (2026-06-01); Phase 1D not started  
-**Wave:** Calendar Wave 1 — Phase 1A–1C
+**Status:** Phase 1D complete (2026-06-01); Phase 1E not started  
+**Wave:** Calendar Wave 1 — Phase 1A–1D
 
 **Authorities:**
 
@@ -1021,7 +1021,8 @@ Per user request — answers without implementation:
 | Service extraction plan (this doc) | ✅ |
 | Phase 1B core services | ✅ `calendarPermissionService`, `calendarService`, `calendarEventService`, `calendarRecurrenceService`, `calendarAttendeeService` |
 | Phase 1C visibility + PE | ✅ `calendarVisibilityService`, `calendarPolicyDual`, read path migration |
-| Phase 1D+ | ❌ Not started |
+| Phase 1D side-effect adapters | ✅ activity/notification/realtime/domain event + reminder/scheduler services |
+| Phase 1E+ | ❌ Not started |
 
 ---
 

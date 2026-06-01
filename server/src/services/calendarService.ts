@@ -11,6 +11,16 @@ import {
   assertCalendarMember,
   enforceCalendarContextMembership,
 } from './calendarPermissionService';
+import {
+  recordCalendarCreated,
+  recordCalendarDeleted,
+  recordCalendarUpdated,
+} from './calendarActivityService';
+import {
+  recordCalendarCreatedDomainEvent,
+  recordCalendarDeletedDomainEvent,
+  recordCalendarUpdatedDomainEvent,
+} from './calendarDomainEventService';
 
 export async function createCalendar(input: CreateCalendarInput) {
   const {
@@ -28,7 +38,7 @@ export async function createCalendar(input: CreateCalendarInput) {
 
   await enforceCalendarContextMembership(userId, contextType, contextId);
 
-  return prisma.calendar.create({
+  const calendar = await prisma.calendar.create({
     data: {
       name,
       color,
@@ -42,16 +52,46 @@ export async function createCalendar(input: CreateCalendarInput) {
       members: { create: { userId, role: 'OWNER' } },
     },
   });
+
+  await recordCalendarCreated({
+    actorUserId: userId,
+    calendarId: calendar.id,
+    contextType: calendar.contextType,
+    contextId: calendar.contextId,
+  });
+
+  recordCalendarCreatedDomainEvent({
+    actorUserId: userId,
+    calendarId: calendar.id,
+    contextType: calendar.contextType,
+    contextId: calendar.contextId,
+  });
+
+  return calendar;
 }
 
 export async function updateCalendar(input: UpdateCalendarInput) {
   const { userId, calendarId, name, color, defaultReminderMinutes } = input;
   await assertCalendarMember(userId, calendarId);
 
-  return prisma.calendar.update({
+  const calendar = await prisma.calendar.update({
     where: { id: calendarId },
     data: { name, color, defaultReminderMinutes },
   });
+
+  await recordCalendarUpdated({
+    actorUserId: userId,
+    calendarId: calendar.id,
+  });
+
+  recordCalendarUpdatedDomainEvent({
+    actorUserId: userId,
+    calendarId: calendar.id,
+    contextType: calendar.contextType,
+    contextId: calendar.contextId,
+  });
+
+  return calendar;
 }
 
 export async function deleteCalendar(input: DeleteCalendarInput) {
@@ -67,6 +107,18 @@ export async function deleteCalendar(input: DeleteCalendarInput) {
 
   await assertCalendarOwner(userId, calendarId);
   await prisma.calendar.delete({ where: { id: calendarId } });
+
+  await recordCalendarDeleted({
+    actorUserId: userId,
+    calendarId,
+  });
+
+  recordCalendarDeletedDomainEvent({
+    actorUserId: userId,
+    calendarId,
+    contextType: cal.contextType,
+    contextId: cal.contextId,
+  });
 }
 
 export async function autoProvisionCalendar(input: AutoProvisionCalendarInput) {
@@ -116,6 +168,20 @@ export async function autoProvisionCalendar(input: AutoProvisionCalendarInput) {
       defaultReminderMinutes: 10,
       members: { create: { userId, role: 'OWNER' } },
     },
+  });
+
+  await recordCalendarCreated({
+    actorUserId: userId,
+    calendarId: calendar.id,
+    contextType: calendar.contextType,
+    contextId: calendar.contextId,
+  });
+
+  recordCalendarCreatedDomainEvent({
+    actorUserId: userId,
+    calendarId: calendar.id,
+    contextType: calendar.contextType,
+    contextId: calendar.contextId,
   });
 
   return { calendar, created: true as const };

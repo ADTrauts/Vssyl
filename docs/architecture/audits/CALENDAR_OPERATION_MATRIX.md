@@ -1,7 +1,7 @@
 # Calendar Operation Matrix
 
 **Module id:** `calendar`  
-**Status:** Phase 1C complete (2026-06-01) — read paths in `calendarVisibilityService`; side-effect adapters pending Phase 1D  
+**Status:** Phase 1D complete (2026-06-01) — side-effect adapters service-owned; ICS import/export remain in controller  
 **Extraction plan:** [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./CALENDAR_SERVICE_EXTRACTION_PLAN.md)  
 **Last updated:** 2026-05-31  
 **Related:** [CALENDAR_CONSTITUTIONAL_AUDIT.md](./CALENDAR_CONSTITUTIONAL_AUDIT.md), [CHAT_OPERATION_MATRIX.md](./CHAT_OPERATION_MATRIX.md), [FILE_HUB_OPERATION_MATRIX.md](./FILE_HUB_OPERATION_MATRIX.md)
@@ -36,7 +36,7 @@
 | Operation | Controller | Service | PE | Activity | Event | Notification | Sched | Realtime | AI | Notes |
 | --------- | ---------- | ------- | -- | -------- | ----- | ------------ | ----- | -------- | -- | ----- |
 | **List calendars** | `listCalendars` | `calendarVisibilityService` | P | N | N | N | — | — | — | Phase 1C + `calendarPolicyDual` read filter |
-| **Create calendar** | `createCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B — permission via `calendarPermissionService` |
+| **Create calendar** | `createCalendar` | `calendarService` | P | P | N | N | P | — | — | Phase 1D activity + domain event |
 | **Update calendar** | `updateCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B |
 | **Delete calendar** | `deleteCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B — hard delete; OWNER only |
 | **Auto-provision calendar** | `autoProvisionCalendar` | `calendarService` | N | N | N | N | — | — | — | Phase 1B |
@@ -44,11 +44,11 @@
 | **Search events** | `searchEvents` | `calendarVisibilityService` | P | N | N | N | — | — | — | Phase 1C; scoped calendarIds |
 | **Check conflicts** | `checkConflicts` | `calendarVisibilityService` | P | N | N | N | — | — | `check_availability` | Phase 1C; `expandEventsForConflictCheck` |
 | **Get free/busy** | `getFreeBusy` | `calendarVisibilityService` | P | N | N | N | — | — | — | Phase 1C; `expandEventsToBusySlots` |
-| **Create event** | `createEvent` | `calendarEventService` | N | N | P | P | — | P | `create_event` | Phase 1B persist in service; side effects remain in controller (1D) |
-| **Update event** | `updateEvent` | `calendarEventService` | N | N | N | N | — | P | `create_event` (update path) | Phase 1B — THIS/SERIES via `calendarRecurrenceService` |
-| **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` | N | N | N | N | — | P | `cancel_event` | Phase 1B |
-| **RSVP (auth)** | `rsvpEvent` | `calendarAttendeeService` | N | N | N | N | — | — | `rsvp` | Phase 1B |
-| **RSVP (public token)** | `rsvpEventPublic` / route inline | — | N | N | N | N | — | — | — | Token + inline Prisma in route |
+| **Create event** | `createEvent` | `calendarEventService` | P | P | P | P | P | P | `create_event` | Phase 1D adapters from service after persist |
+| **Update event** | `updateEvent` | `calendarEventService` | P | P | P | P | P | P | `create_event` (update path) | Phase 1D adapters; THIS/SERIES via `calendarRecurrenceService` |
+| **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` | P | P | P | P | P | P | `cancel_event` | Phase 1D adapters |
+| **RSVP (auth)** | `rsvpEvent` | `calendarAttendeeService` | P | P | P | P | P | — | `rsvp` | Phase 1D realtime + domain + activity |
+| **RSVP (public token)** | `rsvpEventPublic` | `calendarAttendeeService` | N | P | P | N | — | — | — | Phase 1D service-owned; email via `calendarNotificationService` |
 | **Import ICS** | `importIcsEvents` | — | N | N | N | N | — | — | — | Bulk create from ICS |
 | **Export ICS (events)** | `exportIcsEvents` | — | N | N | N | N | — | — | — | Range export |
 | **Export calendar ICS** | `calendarUtils.exportIcs` | — | N | N | N | N | — | — | — | Utils controller |
@@ -58,7 +58,7 @@
 | **Trash event (Global Trash API)** | — (`trashController`) | — | N | N | N | N | — | — | — | Inline Prisma list/restore/delete |
 | **Restore event (Global Trash)** | — (`trashController`) | — | N | N | N | N | — | — | — | No module handler |
 | **Permanent delete event** | — (`trashController`) | — | N | N | N | N | — | — | — | Hard delete from trash |
-| **Dispatch reminders** | — | `reminderService` | N | N | N | P | P | — | — | Cron `reminder_dispatch`; type `calendar_reminder` |
+| **Dispatch reminders** | — | `calendarSchedulerService` → `calendarReminderService` | P | P | P | P | P | — | — | Phase 1D; cron delegates to scheduler |
 | **AI upcoming context** | `getUpcomingEventsContext` | — | N | N | N | N | — | — | Provider | Personal calendars only |
 | **AI today context** | `getTodayScheduleContext` | — | N | N | N | N | — | — | Provider | Direct Prisma |
 | **AI availability** | `checkAvailability` | — | N | N | N | N | — | — | Provider | Overlap query |
