@@ -129,6 +129,70 @@ export async function recordEventDeleted(params: {
   });
 }
 
+export async function recordEventTrashed(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'calendar',
+    action: 'event_trashed',
+    targetType: 'event',
+    targetId: params.eventId,
+    parentType: 'calendar',
+    parentId: params.calendarId,
+  });
+
+  await recordAudit(params.actorUserId, 'CALENDAR_EVENT_TRASHED', `Event trashed: ${params.eventId}`, {
+    eventId: params.eventId,
+    calendarId: params.calendarId,
+  });
+}
+
+export async function recordEventRestored(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'calendar',
+    action: 'event_restored',
+    targetType: 'event',
+    targetId: params.eventId,
+    parentType: 'calendar',
+    parentId: params.calendarId,
+  });
+
+  await recordAudit(params.actorUserId, 'CALENDAR_EVENT_RESTORED', `Event restored: ${params.eventId}`, {
+    eventId: params.eventId,
+  });
+}
+
+export async function recordEventPermanentlyDeleted(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'calendar',
+    action: 'event_permanently_deleted',
+    targetType: 'event',
+    targetId: params.eventId,
+    parentType: 'calendar',
+    parentId: params.calendarId,
+  });
+
+  await recordAudit(
+    params.actorUserId,
+    'CALENDAR_EVENT_PERMANENTLY_DELETED',
+    `Event permanently deleted: ${params.eventId}`,
+    { eventId: params.eventId }
+  );
+}
+
 export async function recordEventImported(params: {
   actorUserId: string;
   eventId: string;

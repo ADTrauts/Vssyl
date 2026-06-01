@@ -6,7 +6,8 @@ import * as calendarActivity from '../calendarActivityService';
 import * as calendarDomain from '../calendarDomainEventService';
 import * as calendarNotification from '../calendarNotificationService';
 import * as calendarRealtime from '../calendarRealtimeService';
-import { createEvent } from '../calendarEventService';
+import * as calendarTrash from '../calendarTrashService';
+import { createEvent, deleteEvent } from '../calendarEventService';
 import { CalendarServiceError } from '../calendar/calendarErrors';
 
 describe('calendarEventService', () => {
@@ -72,5 +73,28 @@ describe('calendarEventService', () => {
         endAt: '2026-06-01T10:30:00Z',
       })
     ).rejects.toMatchObject({ code: 'forbidden' });
+  });
+
+  it('deleteEvent delegates series delete to calendarTrashService', async () => {
+    vi.spyOn(prisma.event, 'findFirst').mockResolvedValue({
+      id: 'evt-1',
+      calendarId: 'cal-1',
+      recurrenceRule: null,
+      trashedAt: null,
+    } as never);
+    vi.spyOn(calendarPermission, 'getCalendarForWrite').mockResolvedValue(undefined as never);
+    vi.spyOn(calendarTrash, 'softTrashCalendarEvent').mockResolvedValue({
+      id: 'evt-1',
+      calendarId: 'cal-1',
+      title: 'Standup',
+    });
+
+    const result = await deleteEvent({ userId: 'user-1', eventId: 'evt-1' });
+
+    expect(result.type).toBe('trashed');
+    expect(calendarTrash.softTrashCalendarEvent).toHaveBeenCalledWith({
+      userId: 'user-1',
+      eventId: 'evt-1',
+    });
   });
 });

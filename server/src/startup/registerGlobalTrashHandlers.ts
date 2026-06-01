@@ -13,6 +13,14 @@ import {
   softTrashChatItem,
   type ChatTrashItemType,
 } from '../services/chatTrashService';
+import {
+  emptyCalendarTrash,
+  listTrashedCalendarEventsForGlobalTrash,
+  permanentlyDeleteCalendarItem,
+  restoreCalendarItem,
+  softTrashCalendarItem,
+  type CalendarTrashItemType,
+} from '../services/calendarTrashService';
 import { logger } from '../lib/logger';
 
 export function registerGlobalTrashHandlers(): void {
@@ -72,8 +80,42 @@ export function registerGlobalTrashHandlers(): void {
     listTrashed: async ({ userId }) => listTrashedConversationsForGlobalTrash(userId),
   });
 
+  registerGlobalTrashModuleHandler({
+    moduleId: 'calendar',
+    moduleName: 'Calendar',
+    supportedTypes: ['event'],
+    softTrash: async ({ userId, type, id }) => {
+      if (type !== 'event') {
+        throw new Error(`Unsupported calendar trash type: ${type}`);
+      }
+      await softTrashCalendarItem({
+        userId,
+        type: type as CalendarTrashItemType,
+        id,
+      });
+    },
+    restore: async ({ userId, type, id }) => {
+      if (type !== 'event') return false;
+      return restoreCalendarItem({
+        userId,
+        type: type as CalendarTrashItemType,
+        id,
+      });
+    },
+    permanentDelete: async ({ userId, type, id }) => {
+      if (type !== 'event') return false;
+      return permanentlyDeleteCalendarItem({
+        userId,
+        type: type as CalendarTrashItemType,
+        id,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyCalendarTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedCalendarEventsForGlobalTrash(userId),
+  });
+
   void logger.info('Registered Global Trash module handlers', {
     operation: 'global_trash_handlers_register',
-    modules: ['drive', 'chat'],
+    modules: ['drive', 'chat', 'calendar'],
   });
 }

@@ -799,6 +799,69 @@ export function emitCalendarEventDeletedEvent(params: {
   );
 }
 
+export function emitCalendarEventTrashedEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CALENDAR_EVENT_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.eventId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'calendar',
+        calendarId: params.calendarId,
+      },
+    })
+  );
+}
+
+export function emitCalendarEventRestoredEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CALENDAR_EVENT_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.eventId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'calendar',
+        calendarId: params.calendarId,
+      },
+    })
+  );
+}
+
+export function emitCalendarEventPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CALENDAR_EVENT_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.eventId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'calendar',
+        calendarId: params.calendarId,
+      },
+    })
+  );
+}
+
 export function emitCalendarEventRsvpUpdatedEvent(params: {
   actorUserId: string;
   eventId: string;

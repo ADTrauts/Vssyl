@@ -88,7 +88,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 |--------|-----------|---------------------------|---------------------|---------------------|--------|----------|
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
-| **Calendar** | `calendar` | **Low–Med** | **Low** | **0 — Legacy** | Wave 1 complete (2026-06-01) | Service layer + thin controller; Phase 2 trash/V_Link pending |
+| **Calendar** | `calendar` | **Med** | **Low–Med** | **0 — Legacy** | Wave 1 + Phase 2A (2026-06-01) | Services + thin controller; Global Trash handler ✅; V_Link/entities pending |
 | **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 2) | ~4,401-line controller; AI `toolExecutor` Prisma |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
@@ -102,7 +102,7 @@ Track cross-cutting certification separately; modules depend on these.
 
 | System | Constitutional Compliance | File Hub Compliance | Level | Status |
 |--------|---------------------------|---------------------|-------|--------|
-| Global Trash API | High | High (drive + chat handlers) | 2 | Expansion in progress — calendar/todo/notes handlers pending |
+| Global Trash API | High | High (drive + chat + calendar handlers) | 2 | Expansion in progress — todo/notes handlers pending |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — manifest metadata gaps per module |
 | V_Link | High | High (drive + chat conversation) | 2 | Expansion — enum wider than resolver coverage |
 | Policy Engine | Partial | High (drive + chat dual) | 2 | Rollout — remaining modules need `*PolicyDual` |
@@ -165,7 +165,7 @@ Copy row into module audit; mark ✅ / ⚠️ / ❌.
 | Canonical services | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | Thin controllers | ✅ | ✅ | ❌ | ❌ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
 | Policy Engine | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Global Trash handler | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| Global Trash handler | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
 | V_Link (if declared) | ✅ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ | N/A | ⚠️ |
 | Platform entities | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
 | Domain events | ✅ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
@@ -236,7 +236,9 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Calendar Phase 1F (2026-06-01):** `calendarAIActionService`; ActionExecutor off controllers; AI context via visibility helpers.
 
-**Sequencing note:** Calendar Wave 2 (trash, V_Link, certification) is next; Todo follows Calendar Wave 1 patterns.
+**Calendar Phase 2A (2026-06-01):** [`CALENDAR_GLOBAL_TRASH_PHASE2A.md`](./audits/CALENDAR_GLOBAL_TRASH_PHASE2A.md) — `calendarTrashService`, Global Trash handler, trash lifecycle domain events.
+
+**Sequencing note:** Calendar Phase 2B (V_Link trash hooks) and Phase 3 (entities) before Level 3 certification; Todo follows Calendar patterns.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

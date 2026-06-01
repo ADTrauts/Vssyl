@@ -3,7 +3,7 @@
 **Module id:** `calendar`  
 **Version:** 1.0.0  
 **Last updated:** 2026-05-31  
-**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2 not started  
+**Status:** Calendar Wave 1 complete (2026-06-01); Phase 2A Global Trash complete (2026-06-01); Phase 2B+ not started  
 **Wave:** Calendar Wave 1 — Phase 1A–1F
 
 **Authorities:**
@@ -510,17 +510,18 @@ Never emit activity, domain events, or notifications on failed or unauthorized a
 
 ---
 
-### 4.14 `calendarTrashService` (Phase 2 — design only)
+### 4.14 `calendarTrashService` (Phase 2A — complete)
 
 | Field | Detail |
 |-------|--------|
 | **Purpose** | Global Trash module handler for calendar events |
-| **File (planned)** | `server/src/services/calendarTrashService.ts` |
-| **Dependencies** | `calendarPermissionService`, `calendarPolicyDual`, `calendarActivityService`, `calendarDomainEventService`, `calendarNotificationService`, `calendarRealtimeService`, `calendarVlinkLifecycleService`, `prisma` |
-| **Operations owned** | List trashed events (scoped); restore; permanent delete; coordinate with `calendarEventService.deleteEvent` soft path |
-| **Global Trash** | `registerGlobalTrashModuleHandler({ moduleId: 'calendar', supportedTypes: ['event'], ... })`; remove inline cases from `trashController` |
+| **File** | `server/src/services/calendarTrashService.ts` |
+| **Dependencies** | `calendarPermissionService`, `calendarActivityService`, `calendarDomainEventService`, `calendarNotificationService`, `calendarRealtimeService`, `prisma` |
+| **Operations owned** | `softTrashCalendarEvent`; `restoreCalendarEvent`; `permanentlyDeleteCalendarEvent`; `listTrashedCalendarEventsForGlobalTrash`; `emptyCalendarTrash` |
+| **Global Trash** | `registerGlobalTrashModuleHandler({ moduleId: 'calendar', supportedTypes: ['event'], ... })`; inline `trashController` calendar cases removed |
+| **Audit doc** | [`CALENDAR_GLOBAL_TRASH_PHASE2A.md`](./CALENDAR_GLOBAL_TRASH_PHASE2A.md) |
 
-**Reference patterns:** `chatTrashService`, `driveDeleteService`.
+**Reference patterns:** `chatTrashService`, `driveDeleteService`. V_Link lifecycle hooks deferred to Phase 3.
 
 ---
 
@@ -599,9 +600,9 @@ Maps all **29** inventoried operations from [CALENDAR_OPERATION_MATRIX.md](./CAL
 | 18 | List event comments | `calendarEventCommentService`* | `calendarPermissionService` |
 | 19 | Add event comment | `calendarEventCommentService`* | `calendarPermissionService` |
 | 20 | Delete event comment | `calendarEventCommentService`* | `calendarPermissionService` |
-| 21 | Trash event (Global Trash API) | `calendarTrashService` | Phase 2 — `calendarPermissionService`, side-effect adapters |
-| 22 | Restore event (Global Trash) | `calendarTrashService` | Phase 2 |
-| 23 | Permanent delete event | `calendarTrashService` | Phase 2 — `calendarVlinkLifecycleService` |
+| 21 | Trash event (Global Trash API) | `calendarTrashService` | Phase 2A ✅ |
+| 22 | Restore event (Global Trash) | `calendarTrashService` | Phase 2A ✅ |
+| 23 | Permanent delete event | `calendarTrashService` | Phase 2A ✅ (V_Link lifecycle Phase 3) |
 | 24 | Dispatch reminders | `calendarSchedulerService` | `calendarReminderService`, `calendarNotificationService` |
 | 25 | AI upcoming context | `calendarVisibilityService` | Replace `calendarAIContextController` Prisma |
 | 26 | AI today context | `calendarVisibilityService` | Same |
@@ -873,14 +874,21 @@ flowchart LR
 
 ---
 
-### Phase 2 — Global Trash
+### Phase 2A — Global Trash (complete 2026-06-01)
 
 **Goal:** `calendarTrashService` + `registerGlobalTrashModuleHandler('calendar')`.
 
+| Deliverable | Status |
+|-------------|--------|
+| Remove inline calendar cases from `trashController` | ✅ |
+| Restore/permanent delete + list/empty via handler | ✅ |
+| Domain events `trashed` / `restored` / `permanentlyDeleted` | ✅ |
+| `deleteEvent` → `softTrashCalendarEvent` | ✅ |
+
+### Phase 2B — V_Link trash hooks (not started)
+
 | Deliverable | |
 |-------------|--|
-| Remove inline calendar cases from `trashController` | |
-| Restore/permanent delete parity with `calendarEventService` | |
 | V_Link restrict on trash (optional notify) | |
 
 ---
@@ -955,7 +963,7 @@ Per user request — answers without implementation:
 
 **Supporting (recommended):** `calendarAttendeeService`, `calendarIcsService`, `calendarEventCommentService`.
 
-**Phase 2+:** `calendarTrashService`.
+**Phase 2A:** `calendarTrashService` ✅. **Phase 2B+:** V_Link lifecycle on trash.
 
 **Phase 3+:** `calendarVlinkAccessService`, `calendarVlinkLifecycleService`, platform entity registration.
 
@@ -991,7 +999,7 @@ Per user request — answers without implementation:
 1. **Recurrence THIS/SERIES regressions** during `calendarRecurrenceService` extraction.
 2. **Reminder double-send or missed dispatch** when splitting create vs cron paths.
 3. **Shared calendar permission leaks** on new service routes.
-4. **Trash divergence** between `deleteEvent` and Global Trash until Phase 2 completes.
+4. ~~**Trash divergence**~~ — resolved in Phase 2A (`calendarTrashService` owns all paths).
 5. **AI parallel paths** if executor not switched atomically with service parity.
 6. **Timezone / all-day reminder edge cases** when moving trigger math.
 
@@ -1024,7 +1032,8 @@ Per user request — answers without implementation:
 | Phase 1D side-effect adapters | ✅ activity/notification/realtime/domain event + reminder/scheduler services |
 | Phase 1E controller collapse | ✅ `calendarIcsService`; thin `calendarController` |
 | Phase 1F AI compliance | ✅ `calendarAIActionService`; visibility AI helpers; ActionExecutor migration |
-| Phase 2+ | ❌ Not started |
+| Phase 2A Global Trash | ✅ Complete |
+| Phase 2B+ / 3 / 4 | ❌ Not started |
 
 ---
 

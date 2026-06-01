@@ -257,8 +257,26 @@ entities[]: MISSING
 | Phase 1E controller collapse | ✅ (2026-06-01) — `calendarIcsService`; zero Prisma in controller |
 | Phase 1F AI compliance | ✅ (2026-06-01) — `calendarAIActionService`; AI context via visibility |
 | Wave 1 complete | ✅ Phases 1A–1F |
-| Phase 2+ | ❌ Not started |
+| Phase 2A Global Trash | ✅ (2026-06-01) — [`CALENDAR_GLOBAL_TRASH_PHASE2A.md`](./CALENDAR_GLOBAL_TRASH_PHASE2A.md) |
+| Phase 2B+ / 3 / 4 | ❌ Not started |
 
 ---
 
-*End of Calendar Constitutional Audit — Phase 0.*
+## 11. Post–Wave 1 / Phase 2A compliance snapshot (2026-06-01)
+
+Historical sections 1–9 describe **pre–Wave 1** state. Current gaps after Phase 2A:
+
+| Area | Status | Notes |
+|------|--------|-------|
+| **Global Trash** (§7) | 🟢 | `calendarTrashService` + handler; `trashController` delegates |
+| **Canonical services** | 🟡 | Wave 1 services + `calendarTrashService`; comments/utils still inline |
+| **Thin controller** | 🟢 | `calendarController` collapsed (Phase 1E) |
+| **Policy Engine** | 🟡 | `calendarPolicyDual` on writes; not all trash actions have dedicated PE actions |
+| **V_Link / entities** | 🔴 | Phase 3 |
+| **Manifest truthfulness** | 🟡 | `trash` capability now backed by handler; notifications/entities still gaps |
+
+**Remaining Level 3 blockers:** platform entity registration, V_Link access + lifecycle, manifest `notifications[]` completeness, certification review (Phase 4).
+
+---
+
+*End of Calendar Constitutional Audit — Phase 0 + living updates through Phase 2A.*

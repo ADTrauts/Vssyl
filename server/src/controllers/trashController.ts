@@ -4,6 +4,7 @@ import { logger } from '../lib/logger';
 import { getGlobalTrashModuleHandler } from '../services/globalTrashModuleRegistry';
 import { DriveDeleteError } from '../services/driveDeleteService';
 import { ChatTrashError } from '../services/chatTrashService';
+import { CalendarTrashError } from '../services/calendarTrashService';
 import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
@@ -145,6 +146,79 @@ function mapChatTrashError(res: Response, error: unknown): boolean {
   return false;
 }
 
+function mapCalendarTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof CalendarTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
+async function tryCalendarRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('calendar');
+  if (!handler) return false;
+
+  if (moduleId === 'calendar' && type === 'event') {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'event', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryCalendarPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('calendar');
+  if (!handler) return false;
+
+  if (moduleId === 'calendar' && type === 'event') {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'event', id })) return true;
+  }
+
+  return false;
+}
+
+async function loadTrashedCalendarEvents(userId: string): Promise<TrashedListItem[]> {
+  const calendarHandler = getGlobalTrashModuleHandler('calendar');
+  if (!calendarHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await calendarHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: calendar handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'calendar',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
 async function loadTrashedDriveFiles(userId: string): Promise<Awaited<ReturnType<typeof listAccessibleTrashedFiles>>> {
   try {
     return await listAccessibleTrashedFiles(userId);
@@ -205,6 +279,7 @@ export async function listTrashedItems(req: Request, res: Response) {
     const trashedFiles = await loadTrashedDriveFiles(userId);
     const trashedFolders = await loadTrashedDriveFolders(userId);
     const trashedChatConversations = await loadTrashedChatItems(userId);
+    const trashedCalendarEvents = await loadTrashedCalendarEvents(userId);
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({
@@ -263,44 +338,6 @@ export async function listTrashedItems(req: Request, res: Response) {
       });
     } catch (e) {
       logger.warn('Trash: AI conversations query failed (column may not exist)', {
-        operation: 'list_trashed_items',
-        userId,
-        error: e instanceof Error ? { message: e.message } : undefined,
-      });
-    }
-
-    // Get trashed events (with error handling for missing column)
-    let trashedEvents: Array<{ id: string; title: string; trashedAt: Date | null; calendar: { name: string; members: Array<{ role: string }> } }> = [];
-    try {
-      trashedEvents = await prisma.event.findMany({
-        where: { 
-          trashedAt: { not: null },
-          calendar: {
-            members: {
-              some: {
-                userId: userId
-              }
-            }
-          }
-        },
-        select: {
-          id: true,
-          title: true,
-          trashedAt: true,
-          calendar: {
-            select: {
-              name: true,
-              members: {
-                where: { userId },
-                select: { role: true }
-              }
-            }
-          }
-        },
-        orderBy: { trashedAt: 'desc' },
-      });
-    } catch (e) {
-      logger.warn('Trash: events query failed (column may not exist)', {
         operation: 'list_trashed_items',
         userId,
         error: e instanceof Error ? { message: e.message } : undefined,
@@ -376,17 +413,7 @@ export async function listTrashedItems(req: Request, res: Response) {
         trashedAt: conversation.trashedAt,
         metadata: {},
       })),
-      ...trashedEvents.map(event => ({
-        id: event.id,
-        name: event.title,
-        type: 'event' as const,
-        moduleId: 'calendar',
-        moduleName: 'Calendar',
-        trashedAt: event.trashedAt,
-        metadata: {
-          calendarName: event.calendar.name,
-        },
-      })),
+      ...trashedCalendarEvents,
       ...trashedProfilePhotos.map(photo => ({
         id: photo.id,
         name: 'Profile Photo',
@@ -512,48 +539,27 @@ export async function trashItem(req: Request, res: Response) {
         });
         break;
 
-      case 'event':
-        // For events, we need to check if user has permission to delete
-        const event = await prisma.event.findFirst({
-          where: { id, trashedAt: null },
-          include: {
-            calendar: {
-              include: {
-                members: {
-                  where: {
-                    userId: userId,
-                    role: { in: ['OWNER', 'ADMIN', 'EDITOR'] }
-                  }
-                }
-              }
-            }
+      case 'event': {
+        if (moduleId !== 'calendar' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for calendar trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('calendar');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Calendar trash handler not registered' });
           }
-        });
-
-        if (!event) {
-          return res.status(404).json({ message: 'Event not found' });
+          await handler.softTrash({
+            userId,
+            type: 'event',
+            id,
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapCalendarTrashError(res, error)) return;
+          throw error;
         }
-
-        if (event.calendar.members.length === 0) {
-          return res.status(403).json({ message: 'Access denied' });
-        }
-
-        result = await prisma.event.updateMany({
-          where: { 
-            id, 
-            trashedAt: null,
-            calendar: {
-              members: {
-                some: {
-                  userId: userId,
-                  role: { in: ['OWNER', 'ADMIN', 'EDITOR'] }
-                }
-              }
-            }
-          },
-          data: { trashedAt: new Date() },
-        });
-        break;
+      }
 
       case 'profile_photo': {
         // Only allow trashing photos owned by the user
@@ -645,6 +651,15 @@ export async function restoreItem(req: Request, res: Response) {
       return res.json({ success: true, message: 'Item restored' });
     }
 
+    try {
+      if (await tryCalendarRestore(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item restored' });
+      }
+    } catch (error: unknown) {
+      if (mapCalendarTrashError(res, error)) return;
+      throw error;
+    }
+
     // Try to restore from each table (non-module handlers)
     let result = await prisma.dashboard.updateMany({
       where: { id, userId, trashedAt: { not: null } },
@@ -654,24 +669,6 @@ export async function restoreItem(req: Request, res: Response) {
     if (result.count === 0) {
       result = await prisma.aIConversation.updateMany({
         where: { id, userId, trashedAt: { not: null } },
-        data: { trashedAt: null },
-      });
-    }
-
-    if (result.count === 0) {
-      result = await prisma.event.updateMany({
-        where: { 
-          id,
-          trashedAt: { not: null },
-          calendar: {
-            members: {
-              some: {
-                userId: userId,
-                role: { in: ['OWNER', 'ADMIN', 'EDITOR'] }
-              }
-            }
-          }
-        },
         data: { trashedAt: null },
       });
     }
@@ -716,6 +713,15 @@ export async function deleteItem(req: Request, res: Response) {
       return res.json({ success: true, message: 'Item permanently deleted' });
     }
 
+    try {
+      if (await tryCalendarPermanentDelete(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item permanently deleted' });
+      }
+    } catch (error: unknown) {
+      if (mapCalendarTrashError(res, error)) return;
+      throw error;
+    }
+
     // Try to delete from each table (non-module handlers)
     let result = await prisma.dashboard.deleteMany({
       where: { id, userId, trashedAt: { not: null } },
@@ -724,23 +730,6 @@ export async function deleteItem(req: Request, res: Response) {
     if (result.count === 0) {
       result = await prisma.aIConversation.deleteMany({
         where: { id, userId, trashedAt: { not: null } },
-      });
-    }
-
-    if (result.count === 0) {
-      result = await prisma.event.deleteMany({
-        where: { 
-          id,
-          trashedAt: { not: null },
-          calendar: {
-            members: {
-              some: {
-                userId: userId,
-                role: { in: ['OWNER', 'ADMIN', 'EDITOR'] }
-              }
-            }
-          }
-        },
       });
     }
 
@@ -801,6 +790,19 @@ export async function emptyTrash(req: Request, res: Response) {
       });
     }
 
+    if (moduleId === 'calendar') {
+      const handler = getGlobalTrashModuleHandler('calendar');
+      if (!handler) {
+        return res.status(500).json({ message: 'Calendar trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'Calendar trash emptied',
+        deletedCount,
+      });
+    }
+
     const driveHandler = getGlobalTrashModuleHandler('drive');
     if (driveHandler) {
       await driveHandler.emptyModuleTrash({ userId });
@@ -811,25 +813,17 @@ export async function emptyTrash(req: Request, res: Response) {
       await chatHandler.emptyModuleTrash({ userId });
     }
 
+    const calendarHandler = getGlobalTrashModuleHandler('calendar');
+    if (calendarHandler) {
+      await calendarHandler.emptyModuleTrash({ userId });
+    }
+
     await Promise.all([
       prisma.dashboard.deleteMany({
         where: { userId, trashedAt: { not: null } },
       }),
       prisma.aIConversation.deleteMany({
         where: { userId, trashedAt: { not: null } },
-      }),
-      prisma.event.deleteMany({
-        where: { 
-          trashedAt: { not: null },
-          calendar: {
-            members: {
-              some: {
-                userId: userId,
-                role: { in: ['OWNER', 'ADMIN', 'EDITOR'] }
-              }
-            }
-          }
-        },
       }),
       prisma.userProfilePhoto.deleteMany({
         where: { userId, trashedAt: { not: null } },

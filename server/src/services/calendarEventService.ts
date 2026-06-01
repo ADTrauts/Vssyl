@@ -19,26 +19,23 @@ import {
 } from './calendarRecurrenceService';
 import {
   recordEventCreated,
-  recordEventDeleted,
   recordEventImported,
   recordEventUpdated,
 } from './calendarActivityService';
 import {
   recordCalendarEventCreatedDomainEvent,
-  recordCalendarEventDeletedDomainEvent,
   recordCalendarEventUpdatedDomainEvent,
 } from './calendarDomainEventService';
 import {
   resolveCalendarMemberUserIds,
-  sendEventCanceledEmails,
   sendEventCreatedInviteEmails,
   sendEventUpdatedEmails,
 } from './calendarNotificationService';
 import {
   broadcastCalendarEventCreated,
-  broadcastCalendarEventDeleted,
   broadcastCalendarEventUpdated,
 } from './calendarRealtimeService';
+import { softTrashCalendarEvent } from './calendarTrashService';
 
 function buildRemindersCreateInput(params: {
   reminders: CalendarReminderInput[] | undefined;
@@ -351,36 +348,10 @@ export async function deleteEvent(input: DeleteEventInput): Promise<DeleteEventR
     return { type: 'canceled_occurrence' };
   }
 
-  await prisma.event.update({
-    where: { id: eventId },
-    data: { trashedAt: new Date() },
-  });
-
-  const cal = await prisma.calendar.findUniqueOrThrow({
-    where: { id: ev.calendarId },
-    select: { contextType: true, contextId: true },
-  });
-  const memberIds = await resolveCalendarMemberUserIds(ev.calendarId);
-  broadcastCalendarEventDeleted(memberIds, ev.id);
-
-  await recordEventDeleted({
-    actorUserId: userId,
-    eventId: ev.id,
-    calendarId: ev.calendarId,
-  });
-
-  recordCalendarEventDeletedDomainEvent({
-    actorUserId: userId,
-    eventId: ev.id,
-    calendarId: ev.calendarId,
-    calendar: cal,
-    softDelete: true,
-  });
-
-  await sendEventCanceledEmails({ eventId: ev.id });
+  const trashed = await softTrashCalendarEvent({ userId, eventId });
 
   return {
     type: 'trashed',
-    event: { id: ev.id, calendarId: ev.calendarId, title: ev.title },
+    event: trashed,
   };
 }

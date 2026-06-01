@@ -47,18 +47,33 @@ describe('trashController resilient aggregation', () => {
     vi.mocked(driveVisibility.listAccessibleTrashedFolders).mockRejectedValue(
       new Error('folder_permissions table missing')
     );
-    vi.mocked(getGlobalTrashModuleHandler).mockReturnValue({
-      moduleId: 'chat',
-      moduleName: 'Chat',
-      supportedTypes: ['conversation'],
-      restore: vi.fn(),
-      permanentDelete: vi.fn(),
-      emptyModuleTrash: vi.fn(),
-      listTrashed: vi.fn().mockRejectedValue(new Error('chat trash unavailable')),
+    vi.mocked(getGlobalTrashModuleHandler).mockImplementation((moduleId: string) => {
+      if (moduleId === 'chat') {
+        return {
+          moduleId: 'chat',
+          moduleName: 'Chat',
+          supportedTypes: ['conversation'],
+          restore: vi.fn(),
+          permanentDelete: vi.fn(),
+          emptyModuleTrash: vi.fn(),
+          listTrashed: vi.fn().mockRejectedValue(new Error('chat trash unavailable')),
+        };
+      }
+      if (moduleId === 'calendar') {
+        return {
+          moduleId: 'calendar',
+          moduleName: 'Calendar',
+          supportedTypes: ['event'],
+          restore: vi.fn(),
+          permanentDelete: vi.fn(),
+          emptyModuleTrash: vi.fn(),
+          listTrashed: vi.fn().mockResolvedValue([]),
+        };
+      }
+      return undefined;
     });
     vi.spyOn(prisma.dashboard, 'findMany').mockResolvedValue([] as never);
     vi.spyOn(prisma.aIConversation, 'findMany').mockResolvedValue([] as never);
-    vi.spyOn(prisma.event, 'findMany').mockResolvedValue([] as never);
     vi.spyOn(prisma.userProfilePhoto, 'findMany').mockResolvedValue([] as never);
     vi.spyOn(prisma.task, 'findMany').mockResolvedValue([] as never);
   });

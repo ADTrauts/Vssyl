@@ -3,8 +3,11 @@ import {
   emitCalendarDeletedEvent,
   emitCalendarEventCreatedEvent,
   emitCalendarEventDeletedEvent,
+  emitCalendarEventPermanentlyDeletedEvent,
   emitCalendarEventReminderDispatchedEvent,
+  emitCalendarEventRestoredEvent,
   emitCalendarEventRsvpUpdatedEvent,
+  emitCalendarEventTrashedEvent,
   emitCalendarEventUpdatedEvent,
   emitCalendarUpdatedEvent,
 } from '../events/domainEventEmitters';
@@ -102,6 +105,48 @@ export function recordCalendarEventDeletedDomainEvent(params: {
     eventId: params.eventId,
     calendarId: params.calendarId,
     softDelete: params.softDelete,
+    ...scopeFromCalendar(params.calendar),
+  });
+}
+
+export function recordCalendarEventTrashedDomainEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  calendar: CalendarContext;
+}): void {
+  emitCalendarEventTrashedEvent({
+    actorUserId: params.actorUserId,
+    eventId: params.eventId,
+    calendarId: params.calendarId,
+    ...scopeFromCalendar(params.calendar),
+  });
+}
+
+export function recordCalendarEventRestoredDomainEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  calendar: CalendarContext;
+}): void {
+  emitCalendarEventRestoredEvent({
+    actorUserId: params.actorUserId,
+    eventId: params.eventId,
+    calendarId: params.calendarId,
+    ...scopeFromCalendar(params.calendar),
+  });
+}
+
+export function recordCalendarEventPermanentlyDeletedDomainEvent(params: {
+  actorUserId: string;
+  eventId: string;
+  calendarId: string;
+  calendar: CalendarContext;
+}): void {
+  emitCalendarEventPermanentlyDeletedEvent({
+    actorUserId: params.actorUserId,
+    eventId: params.eventId,
+    calendarId: params.calendarId,
     ...scopeFromCalendar(params.calendar),
   });
 }

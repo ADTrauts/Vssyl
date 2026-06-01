@@ -46,7 +46,7 @@
 | **Get free/busy** | `getFreeBusy` | `calendarVisibilityService` | P | N | N | N | — | — | — | Phase 1C; `expandEventsToBusySlots` |
 | **Create event** | `createEvent` | `calendarEventService` | P | P | P | P | P | P | `create_event` | Phase 1D adapters from service after persist |
 | **Update event** | `updateEvent` | `calendarEventService` | P | P | P | P | P | P | `create_event` (update path) | Phase 1D adapters; THIS/SERIES via `calendarRecurrenceService` |
-| **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` | P | P | P | P | P | P | `cancel_event` | Phase 1D adapters |
+| **Delete event (soft trash)** | `deleteEvent` | `calendarEventService` → `calendarTrashService` | C | C | C | C | C | C | `cancel_event` | Phase 2A; `calendar.event.trashed` |
 | **RSVP (auth)** | `rsvpEvent` | `calendarAttendeeService` | P | P | P | P | P | — | `rsvp` | Phase 1D realtime + domain + activity |
 | **RSVP (public token)** | `rsvpEventPublic` | `calendarAttendeeService` | N | P | P | N | — | — | — | Phase 1D service-owned; email via `calendarNotificationService` |
 | **Import ICS** | `importIcsEvents` | `calendarIcsService` | P | P | N | N | — | P | — | Phase 1E; `createImportedEvent` + import activity |
@@ -55,9 +55,9 @@
 | **List event comments** | `listComments` | — | N | N | N | N | — | — | — | `eventCommentController` |
 | **Add event comment** | `addComment` | — | N | N | N | N | — | — | — | Inline Prisma |
 | **Delete event comment** | `deleteComment` | — | N | N | N | N | — | — | — | Inline Prisma |
-| **Trash event (Global Trash API)** | — (`trashController`) | — | N | N | N | N | — | — | — | Inline Prisma list/restore/delete |
-| **Restore event (Global Trash)** | — (`trashController`) | — | N | N | N | N | — | — | — | No module handler |
-| **Permanent delete event** | — (`trashController`) | — | N | N | N | N | — | — | — | Hard delete from trash |
+| **Trash event (Global Trash API)** | `trashItem` | `calendarTrashService` | C | C | C | C | C | C | — | Phase 2A handler `softTrash` |
+| **Restore event (Global Trash)** | `restoreItem` | `calendarTrashService` | C | C | C | C | C | C | — | Phase 2A; `calendar.event.restored` |
+| **Permanent delete event** | `deleteItem` | `calendarTrashService` | C | C | C | C | C | C | — | Phase 2A; `calendar.event.permanentlyDeleted` |
 | **Dispatch reminders** | — | `calendarSchedulerService` → `calendarReminderService` | P | P | P | P | P | — | — | Phase 1D; cron delegates to scheduler |
 | **AI upcoming context** | `getUpcomingEventsContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getUpcomingEventsForAI` |
 | **AI today context** | `getTodayScheduleContext` | `calendarVisibilityService` | P | N | N | N | — | — | Provider | Phase 1F `getTodayScheduleForAI` |
@@ -77,11 +77,11 @@
 | Event write | 3 | 0 | 3 | 0 |
 | RSVP / comments | 5 | 0 | 0 | 5 |
 | ICS | 3 | 0 | 0 | 3 |
-| Global Trash | 3 | 0 | 0 | 3 |
+| Global Trash | 3 | 3 | 0 | 0 |
 | Scheduler | 1 | 0 | 1 | 0 |
 | AI | 3 | 0 | 0 | 3 |
 | V_Link / integrations | 2 | 0 | 1 | 1 |
-| **Total** | **29** | **0** | **6** | **23** |
+| **Total** | **29** | **3** | **6** | **20** |
 
 ---
 
@@ -91,9 +91,9 @@
 |--------|-----------------|--------------|-----------------|
 | Create event | N | `calendar.event.created` (controller) | Both from `calendarEventService` |
 | Update event | N | N | `calendar.event.updated` |
-| Trash event | N | N | `calendar.event.trashed` |
-| Restore event | N | N | `calendar.event.restored` |
-| Permanent delete | N | N | `calendar.event.permanentlyDeleted` |
+| Trash event | C | C | `calendar.event.trashed` |
+| Restore event | C | C | `calendar.event.restored` |
+| Permanent delete | C | C | `calendar.event.permanentlyDeleted` |
 | Create calendar | N | N | Optional `calendar.calendar.created` |
 | RSVP | N | N | Optional `calendar.event.rsvp` |
 | Reminder fired | N | N | Optional `calendar.reminder.dispatched` |
@@ -131,7 +131,7 @@
 
 1. Extract `calendarEventService` (CRUD + recurrence modes + ICS).
 2. Extract `calendarVisibilityService` (list/read/search/AI/free-busy).
-3. Extract `calendarTrashService` + register Global Trash handler.
+3. ~~Extract `calendarTrashService` + register Global Trash handler.~~ ✅ Phase 2A
 4. Extract `calendarNotificationService` + manifest `notifications[]`.
 5. Implement `calendarPolicyDual` + wire `CALENDAR_EVENT_*` actions in policy engine.
 6. ~~Migrate `ActionExecutor` off `calendarController`.~~ ✅ Phase 1F
