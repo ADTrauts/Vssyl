@@ -25,7 +25,11 @@ import {
   broadcastReaction,
   broadcastReadReceipt,
 } from './chatRealtimeService';
-import { recordChatMessageSentDomainEvent } from './chatDomainEventService';
+import {
+  recordChatMessageReactionAddedDomainEvent,
+  recordChatMessageReadDomainEvent,
+  recordChatMessageSentDomainEvent,
+} from './chatDomainEventService';
 
 export { withFullFileUrls } from './chatAttachmentService';
 
@@ -50,7 +54,8 @@ export async function sendMessage(input: SendMessageInput) {
   const policyDual = await evaluateChatPolicyDual({
     userId,
     action: POLICY_ACTIONS.CHAT_MESSAGE_CREATE,
-    conversationId,
+    resourceType: 'conversation',
+    resourceId: conversationId,
   });
   if (policyDual.blocked) {
     throw new ChatServiceError('Access denied to conversation', 'forbidden', 403);
@@ -164,6 +169,16 @@ export async function toggleReaction(input: ToggleReactionInput): Promise<Toggle
     throw new ChatServiceError('Access denied', 'forbidden', 403);
   }
 
+  const reactPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_MESSAGE_REACT,
+    resourceType: 'message',
+    resourceId: messageId,
+  });
+  if (reactPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
+
   const existingReaction = await prisma.messageReaction.findUnique({
     where: {
       messageId_userId_emoji: {
@@ -228,6 +243,12 @@ export async function toggleReaction(input: ToggleReactionInput): Promise<Toggle
   });
 
   if (action === 'added') {
+    recordChatMessageReactionAddedDomainEvent({
+      actorUserId: userId,
+      messageId,
+      conversationId: message.conversationId,
+      emoji,
+    });
     await notifyReaction({
       actorUserId: userId,
       actorName,
@@ -283,6 +304,16 @@ export async function markAsRead(input: MarkAsReadInput) {
     throw new ChatServiceError('Access denied', 'forbidden', 403);
   }
 
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_MESSAGE_READ,
+    resourceType: 'message',
+    resourceId: messageId,
+  });
+  if (readPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
+
   const existingReceipt = await prisma.readReceipt.findUnique({
     where: {
       messageId_userId: {
@@ -322,6 +353,12 @@ export async function markAsRead(input: MarkAsReadInput) {
   });
 
   await recordRead({
+    actorUserId: userId,
+    messageId,
+    conversationId: message.conversationId,
+  });
+
+  recordChatMessageReadDomainEvent({
     actorUserId: userId,
     messageId,
     conversationId: message.conversationId,

@@ -63,6 +63,20 @@ export function registerDrivePlatformEntities(): void {
   });
 }
 
+/** Chat conversation entity descriptor — Wave 1 Phase 4 (message/thread deferred). */
+export function registerChatPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'conversation',
+    moduleId: 'chat',
+    displayName: 'Conversation',
+    pluralName: 'Conversations',
+    vlinkEntityType: 'CHAT_CONVERSATION',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'conversation',
+  });
+}
+
 /** Test-only reset. */
 export function clearPlatformEntityRegistryForTests(): void {
   registry.clear();

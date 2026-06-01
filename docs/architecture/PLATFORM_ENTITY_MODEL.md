@@ -30,8 +30,8 @@ Modules **own** Prisma schemas. Platform infrastructure operates on **`(entityTy
 | FILE | drive | ✅ | ✅ | ✅ | ✅ |
 | FOLDER | drive | ✅ | ✅ | ✅ | partial |
 | CALENDAR_EVENT | calendar | ✅ | ✅ | partial | ✅ |
-| CHAT_CONVERSATION | chat | ❌ restricted | ✅ | ✅ | pending |
-| CHAT_THREAD | chat | ❌ | partial | partial | pending |
+| CHAT_CONVERSATION | chat | ✅ (`chatVlinkAccessService`) | ✅ | ✅ | conversation only |
+| CHAT_THREAD | chat | ❌ deferred | partial | partial | not registered |
 | TASK / TODO | todo | ❌ | ✅ | ❌ | pending |
 | NOTE | notes | ❌ | ❌ deletedAt | ❌ | pending |
 | DASHBOARD | dashboard | ❌ | ✅ tab trash | ✅ | N/A |

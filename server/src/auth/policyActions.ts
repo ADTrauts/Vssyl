@@ -40,7 +40,17 @@ export const POLICY_ACTIONS = {
   NOTE_UPDATE: 'note:update',
   NOTE_DELETE: 'note:delete',
   CHAT_CONVERSATION_READ: 'chat:conversation.read',
+  CHAT_CONVERSATION_CREATE: 'chat:conversation.create',
+  CHAT_CONVERSATION_TRASH: 'chat:conversation.trash',
+  CHAT_CONVERSATION_RESTORE: 'chat:conversation.restore',
+  CHAT_CONVERSATION_PERMANENT_DELETE: 'chat:conversation.permanentDelete',
   CHAT_MESSAGE_CREATE: 'chat:message.create',
+  CHAT_MESSAGE_READ: 'chat:message.read',
+  CHAT_MESSAGE_TRASH: 'chat:message.trash',
+  CHAT_MESSAGE_RESTORE: 'chat:message.restore',
+  CHAT_MESSAGE_PERMANENT_DELETE: 'chat:message.permanentDelete',
+  CHAT_MESSAGE_REACT: 'chat:message.react',
+  CHAT_THREAD_CREATE: 'chat:thread.create',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

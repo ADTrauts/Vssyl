@@ -2,11 +2,23 @@ import { prisma } from '../lib/prisma';
 import { ChatServiceError } from './chat/chatErrors';
 import type { CreateThreadInput } from './chat/chatTypes';
 import { threadListInclude } from './chat/chatIncludes';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateChatPolicyDual } from '../auth/chatPolicyDual';
 import { assertActiveConversationParticipant } from './chatPermissionService';
 import { recordThreadCreated } from './chatActivityService';
 
 export async function listThreads(userId: string, conversationId: string) {
   await assertActiveConversationParticipant(userId, conversationId);
+
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (readPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
 
   return prisma.thread.findMany({
     where: {
@@ -34,6 +46,16 @@ export async function createThread(input: CreateThreadInput) {
   } = input;
 
   await assertActiveConversationParticipant(userId, conversationId);
+
+  const threadPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_THREAD_CREATE,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (threadPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
 
   if (parentId) {
     const parentThread = await prisma.thread.findFirst({

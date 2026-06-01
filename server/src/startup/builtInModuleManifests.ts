@@ -179,6 +179,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           read: true,
           write: true,
           ai: true,
+          vlink: true,
           trash: true,
           realtime: true,
           notifications: true,
@@ -187,6 +188,45 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           globalActivity: true,
         }),
         routes: [{ path: '/chat', label: 'Chat' }],
+        entities: [
+          {
+            type: 'conversation',
+            displayName: 'Conversation',
+            pluralName: 'Conversations',
+            vlinkEntityType: 'CHAT_CONVERSATION',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
+        notifications: [
+          {
+            type: 'chat_message',
+            name: 'New message',
+            description: 'Sent when a new message is received in a conversation you participate in',
+            category: 'chat',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+          },
+          {
+            type: 'chat_mention',
+            name: 'Mentioned in chat',
+            description: 'Sent when you are @mentioned in a chat message',
+            category: 'mentions',
+            defaultChannels: { inApp: true, email: true, push: true },
+            priority: 'high',
+            requiresAction: false,
+          },
+          {
+            type: 'chat_reaction',
+            name: 'Message reaction',
+            description: 'Sent when someone reacts to your message',
+            category: 'chat',
+            defaultChannels: { inApp: true, email: false, push: false },
+            priority: 'low',
+            requiresAction: false,
+          },
+        ],
       };
     case 'calendar':
       return {

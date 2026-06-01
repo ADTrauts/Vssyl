@@ -767,15 +767,42 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizeBusinessUpdate(input);
   }
 
-  if (
-    (action === POLICY_ACTIONS.CHAT_CONVERSATION_READ ||
-      action === POLICY_ACTIONS.CHAT_MESSAGE_CREATE) &&
-    input.resourceType === 'conversation'
-  ) {
+  if (action === POLICY_ACTIONS.CHAT_CONVERSATION_CREATE) {
+    return await authorizeChatConversationCreate(input);
+  }
+
+  const chatConversationActions: string[] = [
+    POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    POLICY_ACTIONS.CHAT_CONVERSATION_TRASH,
+    POLICY_ACTIONS.CHAT_CONVERSATION_RESTORE,
+    POLICY_ACTIONS.CHAT_CONVERSATION_PERMANENT_DELETE,
+    POLICY_ACTIONS.CHAT_MESSAGE_CREATE,
+    POLICY_ACTIONS.CHAT_THREAD_CREATE,
+  ];
+  if (chatConversationActions.includes(action) && input.resourceType === 'conversation') {
     return authorizeChatConversationParticipant(input);
   }
 
+  const chatMessageActions: string[] = [
+    POLICY_ACTIONS.CHAT_MESSAGE_READ,
+    POLICY_ACTIONS.CHAT_MESSAGE_TRASH,
+    POLICY_ACTIONS.CHAT_MESSAGE_RESTORE,
+    POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE,
+    POLICY_ACTIONS.CHAT_MESSAGE_REACT,
+  ];
+  if (chatMessageActions.includes(action) && input.resourceType === 'message') {
+    return authorizeChatMessageParticipant(input);
+  }
+
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
+}
+
+async function authorizeChatConversationCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'chat_authenticated_create' };
 }
 
 async function authorizeChatConversationParticipant(input: PolicyInput): Promise<PolicyDecision> {
@@ -803,6 +830,64 @@ async function authorizeChatConversationParticipant(input: PolicyInput): Promise
   }
 
   return { allow: true, matchedPolicy: 'chat_active_participant' };
+}
+
+async function authorizeChatMessageParticipant(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const messageId = input.resourceId;
+  if (!messageId || typeof messageId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const message = await prisma.message.findFirst({
+    where: { id: messageId },
+    select: {
+      id: true,
+      deletedAt: true,
+      conversation: {
+        select: {
+          participants: {
+            where: { userId, isActive: true },
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!message) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  if (message.conversation.participants.length === 0) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const trashActions: string[] = [
+    POLICY_ACTIONS.CHAT_MESSAGE_TRASH,
+    POLICY_ACTIONS.CHAT_MESSAGE_RESTORE,
+    POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE,
+  ];
+  if (trashActions.includes(input.action)) {
+    if (input.action === POLICY_ACTIONS.CHAT_MESSAGE_TRASH && message.deletedAt != null) {
+      return deny(input, 'NOT_MEMBER');
+    }
+    if (
+      (input.action === POLICY_ACTIONS.CHAT_MESSAGE_RESTORE ||
+        input.action === POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE) &&
+      message.deletedAt == null
+    ) {
+      return deny(input, 'NOT_MEMBER');
+    }
+  } else if (message.deletedAt != null) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy: 'chat_message_active_participant' };
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

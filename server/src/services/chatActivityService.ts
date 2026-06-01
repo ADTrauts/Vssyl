@@ -167,6 +167,7 @@ export async function recordMessageRestored(params: {
 export async function recordMessagePermanentlyDeleted(params: {
   actorUserId: string;
   messageId: string;
+  conversationId: string;
 }): Promise<void> {
   await emitModuleActivityEvent({
     actorUserId: params.actorUserId,
@@ -174,5 +175,7 @@ export async function recordMessagePermanentlyDeleted(params: {
     action: 'message_deleted',
     targetType: 'message',
     targetId: params.messageId,
+    parentType: 'conversation',
+    parentId: params.conversationId,
   });
 }

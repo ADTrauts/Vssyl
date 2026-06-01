@@ -19,7 +19,8 @@ describe('evaluateChatPolicyDual', () => {
     const result = await evaluateChatPolicyDual({
       userId: 'u1',
       action: POLICY_ACTIONS.CHAT_MESSAGE_CREATE,
-      conversationId: 'conv-1',
+      resourceType: 'conversation',
+      resourceId: 'conv-1',
     });
 
     expect(result.blocked).toBe(false);
@@ -34,7 +35,8 @@ describe('evaluateChatPolicyDual', () => {
     const result = await evaluateChatPolicyDual({
       userId: 'u1',
       action: POLICY_ACTIONS.CHAT_MESSAGE_CREATE,
-      conversationId: 'conv-1',
+      resourceType: 'conversation',
+      resourceId: 'conv-1',
     });
 
     expect(result.blocked).toBe(true);
@@ -51,7 +53,8 @@ describe('evaluateChatPolicyDual', () => {
     await evaluateChatPolicyDual({
       userId: 'u1',
       action: POLICY_ACTIONS.CHAT_MESSAGE_CREATE,
-      conversationId: 'conv-1',
+      resourceType: 'conversation',
+      resourceId: 'conv-1',
     });
 
     expect(warnSpy).toHaveBeenCalledWith(

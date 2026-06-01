@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import * as chatPermission from '../chatPermissionService';
 import * as chatActivity from '../chatActivityService';
+import * as chatPolicyDual from '../../auth/chatPolicyDual';
 import { createThread, listThreads } from '../chatThreadService';
 import { ChatServiceError } from '../chat/chatErrors';
 
@@ -10,6 +11,7 @@ describe('chatThreadService', () => {
     vi.clearAllMocks();
     vi.spyOn(chatPermission, 'assertActiveConversationParticipant').mockResolvedValue(undefined);
     vi.spyOn(chatActivity, 'recordThreadCreated').mockResolvedValue(undefined);
+    vi.spyOn(chatPolicyDual, 'evaluateChatPolicyDual').mockResolvedValue({ blocked: false });
   });
 
   it('listThreads queries with participant filter', async () => {

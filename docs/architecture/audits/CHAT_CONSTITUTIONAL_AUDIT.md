@@ -117,12 +117,14 @@ Chat is **functionally mature** (realtime, notifications, AI context, federated 
 - Permissions: `chat:read`, `chat:write`
 - Capabilities: `read`, `write`, `ai`, `trash`, `realtime`, `notifications`, `search`, `businessWorkspace`, `globalActivity`
 - Routes: `/chat`
-- **Missing:** `entities[]`, `notifications[]`
+- **Phase 3:** `notifications[]` for `chat_message`, `chat_mention`, `chat_reaction` ✅
+- **Phase 4:** `entities[]` — `conversation` only; `vlink: true` (conversation-scoped); registry in `platformEntityRegistry.ts`
+- **Deferred manifest entities:** `message`, `CHAT_THREAD` — no platform resolver/access adapter yet
 
 ### 1.11 Platform entities
 
-- **Not registered** in `platformEntityRegistry.ts`.
-- V_Link resolver: `VLinkEntityType.CHAT_CONVERSATION` in `vlinkEntityResolverService.ts` (membership + `trashedAt: null`).
+- **Registered:** `chat:conversation` in `platformEntityRegistry.ts` (Phase 4).
+- V_Link: `chatVlinkAccessService` → participant + `CHAT_CONVERSATION_READ` PE; trashed/deleted fail closed; V_Link membership does not grant content access.
 
 ### 1.12 Other integrations
 
@@ -132,39 +134,39 @@ Chat is **functionally mature** (realtime, notifications, AI context, federated 
 
 ---
 
-## 2. Constitutional compliance review
+## 2. Constitutional compliance review (post–Wave 1 Phase 5)
 
 | Area | Status | Evidence / notes |
 |------|--------|------------------|
-| **Module Contract** (§3) | 🔴 | Order violated: controller emits activity/events/notifications alongside Prisma; not service-owned |
-| **Policy Engine** (§4) | 🔴 | No `chatPolicyDual`; participant `findFirst` only |
-| **Global Trash** (§7) | 🟡 | `trashedAt` on conversation; trash via `trashController` inline Prisma; no module handler; messages use `deletedAt` |
-| **V_Link** (§5) | 🟡 | Resolver for `CHAT_CONVERSATION` only; no lifecycle service; manifest implies broader vlink pending |
-| **Notifications** (§3) | 🟡 | Central service used; no adapter; manifest metadata missing |
-| **Domain Events** (§8) | 🟡 | Single event type; controller-emitted |
-| **Module Activity** (§3) | 🟡 | Partial writes on 3 operations only |
-| **Scheduler** (§22) | 🟢 | No chat-specific cron identified (N/A for core chat) |
-| **AI Compliance** (§6) | 🔴 | Context Prisma-direct; executor calls controller |
-| **Platform Entities** (§21) | 🔴 | No registry descriptors |
-| **Capability truthfulness** (§19) | 🟡 | `trash`/`search`/`globalActivity` partially true; `vlink` incomplete vs resolver |
+| **Module Contract** (§3) | 🟢 | `authorize → execute → activity → domain event → notify/realtime` in services; thin controller |
+| **Policy Engine** (§4) | 🟢 | `chatPolicyDual` on mutations, trash, browse/list/search/AI reads |
+| **Global Trash** (§7) | 🟢 | `chatTrashService` + handler registration |
+| **V_Link** (§5) | 🟢 | `chatVlinkAccessService` + lifecycle; membership ≠ content access |
+| **Platform Entities** (§21) | 🟢 | `conversation` registered; message/thread deferred (documented) |
+| **Notifications** (§3) | 🟢 | `chatNotificationService` + manifest metadata |
+| **Domain Events** (§8) | 🟢 | Service-owned; registered taxonomy |
+| **Module Activity** (§8) | 🟢 | All meaningful writes via `chatActivityService` |
+| **Scheduler** (§22) | 🟢 | N/A |
+| **AI Compliance** (§6) | 🟢 | `chatAIActionService` + visibility reads |
+| **Capability truthfulness** (§19) | 🟢 | Manifest aligned with runtime |
 
-**Overall constitutional compliance:** **Low** (Level 0)
+**Overall constitutional compliance:** **High** — **Level 3 Certified** ([CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md))
 
 ---
 
-## 3. File Hub pattern review (Patterns 1–15)
+## 3. File Hub pattern review (Patterns 1–15, post–Wave 1)
 
 | Pattern | Status | Gap |
 |---------|--------|-----|
-| **1 Canonical service boundary** | 🔴 | No domain services; controller owns pipeline |
-| **2 Thin controllers** | 🔴 | ~1,663 lines; ~41 `prisma.` calls |
-| **3 Canonical delete lifecycle** | 🔴 | Trash in `trashController`; no `chatDeleteService`; no PE/activity/events on trash |
-| **4 Visibility service** | 🔴 | Lists/reads use raw Prisma + participant check |
-| **5 Global Trash pattern** | 🔴 | No handler registration; split message `deletedAt` vs conversation `trashedAt` |
-| **6 Notification adapter** | 🔴 | Inline `NotificationService` in controller |
-| **7 Domain events** | 🔴 | One event; controller emission |
-| **8 Module activity** | 🟡 | Three actions only; controller-owned |
-| **9 Realtime pattern** | 🟡 | Socket service mixes transport + Prisma writes |
+| **1 Canonical service boundary** | 🟢 | `chat*Service` layer complete |
+| **2 Thin controllers** | 🟢 | Zero Prisma in `chatController.ts` |
+| **3 Canonical delete lifecycle** | 🟢 | `chatTrashService`; PE + activity + domain events |
+| **4 Visibility service** | 🟢 | `chatVisibilityService` + PE browse filter (Phase 5) |
+| **5 Global Trash pattern** | 🟢 | Handler registered; message `deletedAt` documented exception |
+| **6 Notification adapter** | 🟢 | `chatNotificationService` |
+| **7 Domain events** | 🟢 | Service-owned registry |
+| **8 Module activity** | 🟢 | Write coverage on mutations |
+| **9 Realtime pattern** | 🟢 | `chatRealtimeService`; socket delegates writes |
 | **10 Policy Engine** | 🔴 | No PolicyDual |
 | **11 V_Link pattern** | 🟡 | Resolver only; no access/lifecycle services |
 | **12 AI compliance** | 🔴 | Executor → controller; AI context → Prisma |

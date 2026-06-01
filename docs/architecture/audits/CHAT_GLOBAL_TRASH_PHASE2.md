@@ -18,7 +18,7 @@
 
 **Visibility:** `chatVisibilityService` excludes `trashedAt` conversations from browse/search/AI context. Restored conversations (`trashedAt: null`) reappear in lists.
 
-**V_Link:** `chatVlinkLifecycleService` hooks attach at permanent delete in a later phase (not started here).
+**V_Link (Phase 3):** `unlinkChatConversationFromAllVLinks` runs in `permanentlyDeleteConversation` before DB delete; emits `vlink.entity.unlinked` per link.
 
 ---
 

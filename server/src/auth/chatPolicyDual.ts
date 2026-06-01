@@ -2,7 +2,7 @@ import { logger } from '../lib/logger';
 import { authorize } from './policyEngine';
 import { POLICY_ACTIONS } from './policyActions';
 import type { PolicyAction } from './policyActions';
-import type { PolicyDenyReason } from './policyTypes';
+import type { PolicyDenyReason, PolicyResourceType } from './policyTypes';
 
 const SECURITY_DENY_REASONS: PolicyDenyReason[] = [
   'INSUFFICIENT_ROLE',
@@ -13,12 +13,23 @@ const SECURITY_DENY_REASONS: PolicyDenyReason[] = [
 
 export type ChatPolicyAction =
   | typeof POLICY_ACTIONS.CHAT_CONVERSATION_READ
-  | typeof POLICY_ACTIONS.CHAT_MESSAGE_CREATE;
+  | typeof POLICY_ACTIONS.CHAT_CONVERSATION_CREATE
+  | typeof POLICY_ACTIONS.CHAT_CONVERSATION_TRASH
+  | typeof POLICY_ACTIONS.CHAT_CONVERSATION_RESTORE
+  | typeof POLICY_ACTIONS.CHAT_CONVERSATION_PERMANENT_DELETE
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_CREATE
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_READ
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_TRASH
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_RESTORE
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE
+  | typeof POLICY_ACTIONS.CHAT_MESSAGE_REACT
+  | typeof POLICY_ACTIONS.CHAT_THREAD_CREATE;
 
 export interface ChatPolicyDualParams {
   userId: string;
   action: ChatPolicyAction;
-  conversationId: string;
+  resourceType: Extract<PolicyResourceType, 'conversation' | 'message'>;
+  resourceId: string;
   scope?: { dashboardId?: string };
   metadata?: Record<string, unknown>;
 }
@@ -29,7 +40,7 @@ export interface ChatPolicyDualResult {
 }
 
 /**
- * Dual enforcement for Chat mutations (pilot: sendMessage). Call after legacy participant checks pass.
+ * Dual enforcement for Chat mutations. Call after legacy participant checks pass.
  */
 export async function evaluateChatPolicyDual(
   params: ChatPolicyDualParams
@@ -37,8 +48,8 @@ export async function evaluateChatPolicyDual(
   const decision = await authorize({
     userId: params.userId,
     action: params.action as PolicyAction,
-    resourceType: 'conversation',
-    resourceId: params.conversationId,
+    resourceType: params.resourceType,
+    resourceId: params.resourceId,
     scope: params.scope,
     metadata: params.metadata,
   });
@@ -54,8 +65,8 @@ export async function evaluateChatPolicyDual(
     operation: 'policy_legacy_dual_enforce',
     userId: params.userId,
     action: params.action,
-    resourceType: 'conversation',
-    resourceId: params.conversationId,
+    resourceType: params.resourceType,
+    resourceId: params.resourceId,
     reason,
     matchedPolicy: decision.matchedPolicy,
     blockRequest: isSecurityDeny,

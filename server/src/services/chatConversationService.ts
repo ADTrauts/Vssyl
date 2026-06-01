@@ -1,10 +1,14 @@
 import { prisma } from '../lib/prisma';
 import type { CreateConversationInput } from './chat/chatTypes';
 import { conversationParticipantInclude } from './chat/chatIncludes';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateChatPolicyDual } from '../auth/chatPolicyDual';
 import {
   validateConversationDashboardAccess,
 } from './chatPermissionService';
 import { recordConversationCreated } from './chatActivityService';
+import { recordChatConversationCreatedDomainEvent } from './chatDomainEventService';
+import { ChatServiceError } from './chat/chatErrors';
 import {
   restoreConversation as restoreConversationFromTrash,
   softTrashConversation,
@@ -17,6 +21,17 @@ export async function createConversation(input: CreateConversationInput) {
   const allParticipantIds = [...new Set([userId, ...participantIds])];
 
   await validateConversationDashboardAccess(userId, dashboardId, allParticipantIds);
+
+  const createPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_CREATE,
+    resourceType: 'conversation',
+    resourceId: userId,
+    scope: dashboardId ? { dashboardId } : undefined,
+  });
+  if (createPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
 
   if (type === 'DIRECT' && participantIds.length === 1) {
     const existingConversation = await prisma.conversation.findFirst({
@@ -57,6 +72,13 @@ export async function createConversation(input: CreateConversationInput) {
     conversationId: conversation.id,
     dashboardId: dashboardId ?? null,
     type,
+  });
+
+  recordChatConversationCreatedDomainEvent({
+    actorUserId: userId,
+    conversationId: conversation.id,
+    conversationType: type,
+    dashboardId: dashboardId ?? null,
   });
 
   return { conversation, created: true as const };

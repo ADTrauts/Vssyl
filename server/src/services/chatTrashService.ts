@@ -1,4 +1,6 @@
 import { prisma } from '../lib/prisma';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateChatPolicyDual } from '../auth/chatPolicyDual';
 import { assertActiveConversationParticipant } from './chatPermissionService';
 import {
   recordConversationPermanentlyDeleted,
@@ -8,7 +10,54 @@ import {
   recordMessageRestored,
   recordMessageTrashed,
 } from './chatActivityService';
+import {
+  recordChatConversationPermanentlyDeletedDomainEvent,
+  recordChatConversationRestoredDomainEvent,
+  recordChatConversationTrashedDomainEvent,
+  recordChatMessageDeletedDomainEvent,
+  recordChatMessagePermanentlyDeletedDomainEvent,
+  recordChatMessageRestoredDomainEvent,
+} from './chatDomainEventService';
+import { unlinkChatConversationFromAllVLinks } from './chatVlinkLifecycleService';
 import { logger } from '../lib/logger';
+
+async function assertConversationTrashPolicy(
+  userId: string,
+  conversationId: string,
+  action:
+    | typeof POLICY_ACTIONS.CHAT_CONVERSATION_TRASH
+    | typeof POLICY_ACTIONS.CHAT_CONVERSATION_RESTORE
+    | typeof POLICY_ACTIONS.CHAT_CONVERSATION_PERMANENT_DELETE
+): Promise<void> {
+  const policyDual = await evaluateChatPolicyDual({
+    userId,
+    action,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (policyDual.blocked) {
+    throw new ChatTrashError('Access denied', 'forbidden');
+  }
+}
+
+async function assertMessageTrashPolicy(
+  userId: string,
+  messageId: string,
+  action:
+    | typeof POLICY_ACTIONS.CHAT_MESSAGE_TRASH
+    | typeof POLICY_ACTIONS.CHAT_MESSAGE_RESTORE
+    | typeof POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE
+): Promise<void> {
+  const policyDual = await evaluateChatPolicyDual({
+    userId,
+    action,
+    resourceType: 'message',
+    resourceId: messageId,
+  });
+  if (policyDual.blocked) {
+    throw new ChatTrashError('Access denied', 'forbidden');
+  }
+}
 
 export class ChatTrashError extends Error {
   constructor(
@@ -99,6 +148,12 @@ async function assertCanAccessTrashedMessage(userId: string, messageId: string) 
 export async function softTrashConversation(input: ChatTrashMutationInput): Promise<void> {
   const { userId, id } = input;
   await assertActiveConversationParticipant(userId, id);
+  await assertConversationTrashPolicy(userId, id, POLICY_ACTIONS.CHAT_CONVERSATION_TRASH);
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { id },
+    select: { dashboardId: true },
+  });
 
   const updated = await prisma.conversation.updateMany({
     where: {
@@ -116,10 +171,21 @@ export async function softTrashConversation(input: ChatTrashMutationInput): Prom
   }
 
   await recordConversationTrashed({ actorUserId: userId, conversationId: id });
+  recordChatConversationTrashedDomainEvent({
+    actorUserId: userId,
+    conversationId: id,
+    dashboardId: conversation?.dashboardId ?? null,
+  });
 }
 
 export async function restoreConversation(input: ChatTrashMutationInput): Promise<boolean> {
   const { userId, id } = input;
+  await assertConversationTrashPolicy(userId, id, POLICY_ACTIONS.CHAT_CONVERSATION_RESTORE);
+
+  const conversation = await prisma.conversation.findFirst({
+    where: { id, trashedAt: { not: null } },
+    select: { dashboardId: true },
+  });
 
   const updated = await prisma.conversation.updateMany({
     where: {
@@ -137,11 +203,21 @@ export async function restoreConversation(input: ChatTrashMutationInput): Promis
   }
 
   await recordConversationRestored({ actorUserId: userId, conversationId: id });
+  recordChatConversationRestoredDomainEvent({
+    actorUserId: userId,
+    conversationId: id,
+    dashboardId: conversation?.dashboardId ?? null,
+  });
   return true;
 }
 
 export async function permanentlyDeleteConversation(input: ChatTrashMutationInput): Promise<boolean> {
   const { userId, id } = input;
+  await assertConversationTrashPolicy(
+    userId,
+    id,
+    POLICY_ACTIONS.CHAT_CONVERSATION_PERMANENT_DELETE
+  );
 
   const conversation = await prisma.conversation.findFirst({
     where: {
@@ -157,6 +233,11 @@ export async function permanentlyDeleteConversation(input: ChatTrashMutationInpu
   if (!conversation) {
     return false;
   }
+
+  await unlinkChatConversationFromAllVLinks({
+    actorUserId: userId,
+    conversationId: id,
+  });
 
   const deleted = await prisma.conversation.deleteMany({
     where: {
@@ -177,6 +258,11 @@ export async function permanentlyDeleteConversation(input: ChatTrashMutationInpu
     conversationId: id,
     dashboardId: conversation.dashboardId,
   });
+  recordChatConversationPermanentlyDeletedDomainEvent({
+    actorUserId: userId,
+    conversationId: id,
+    dashboardId: conversation.dashboardId,
+  });
 
   return true;
 }
@@ -184,6 +270,7 @@ export async function permanentlyDeleteConversation(input: ChatTrashMutationInpu
 export async function softTrashMessage(input: ChatTrashMutationInput): Promise<void> {
   const { userId, id } = input;
   const message = await assertCanAccessMessage(userId, id);
+  await assertMessageTrashPolicy(userId, id, POLICY_ACTIONS.CHAT_MESSAGE_TRASH);
 
   const updated = await prisma.message.updateMany({
     where: { id, deletedAt: null },
@@ -199,11 +286,17 @@ export async function softTrashMessage(input: ChatTrashMutationInput): Promise<v
     messageId: id,
     conversationId: message.conversationId,
   });
+  recordChatMessageDeletedDomainEvent({
+    actorUserId: userId,
+    messageId: id,
+    conversationId: message.conversationId,
+  });
 }
 
 export async function restoreMessage(input: ChatTrashMutationInput): Promise<boolean> {
   const { userId, id } = input;
   const message = await assertCanAccessTrashedMessage(userId, id);
+  await assertMessageTrashPolicy(userId, id, POLICY_ACTIONS.CHAT_MESSAGE_RESTORE);
 
   const updated = await prisma.message.updateMany({
     where: { id, deletedAt: { not: null } },
@@ -219,12 +312,18 @@ export async function restoreMessage(input: ChatTrashMutationInput): Promise<boo
     messageId: id,
     conversationId: message.conversationId,
   });
+  recordChatMessageRestoredDomainEvent({
+    actorUserId: userId,
+    messageId: id,
+    conversationId: message.conversationId,
+  });
   return true;
 }
 
 export async function permanentlyDeleteMessage(input: ChatTrashMutationInput): Promise<boolean> {
   const { userId, id } = input;
-  await assertCanAccessTrashedMessage(userId, id);
+  const message = await assertCanAccessTrashedMessage(userId, id);
+  await assertMessageTrashPolicy(userId, id, POLICY_ACTIONS.CHAT_MESSAGE_PERMANENT_DELETE);
 
   const deleted = await prisma.message.deleteMany({
     where: { id, deletedAt: { not: null } },
@@ -234,7 +333,16 @@ export async function permanentlyDeleteMessage(input: ChatTrashMutationInput): P
     return false;
   }
 
-  await recordMessagePermanentlyDeleted({ actorUserId: userId, messageId: id });
+  await recordMessagePermanentlyDeleted({
+    actorUserId: userId,
+    messageId: id,
+    conversationId: message.conversationId,
+  });
+  recordChatMessagePermanentlyDeletedDomainEvent({
+    actorUserId: userId,
+    messageId: id,
+    conversationId: message.conversationId,
+  });
   return true;
 }
 

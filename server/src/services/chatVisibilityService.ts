@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { SearchFilters, SearchResult } from 'shared/types/search';
+import { POLICY_ACTIONS } from '../auth/policyActions';
+import { evaluateChatPolicyDual } from '../auth/chatPolicyDual';
 import { ChatServiceError } from './chat/chatErrors';
 import { conversationParticipantInclude, messageListInclude } from './chat/chatIncludes';
 import { assertActiveConversationParticipant } from './chatPermissionService';
@@ -18,6 +20,33 @@ function activeParticipantFilter(userId: string): Prisma.ConversationWhereInput 
   };
 }
 
+/** Policy dual gate for conversation-scoped reads (browse/search/AI). */
+export async function conversationPassesReadPolicy(
+  userId: string,
+  conversationId: string
+): Promise<boolean> {
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  return !readPolicyDual.blocked;
+}
+
+export async function filterConversationsByReadPolicy<T extends { id: string }>(
+  userId: string,
+  conversations: T[]
+): Promise<T[]> {
+  const filtered: T[] = [];
+  for (const conversation of conversations) {
+    if (await conversationPassesReadPolicy(userId, conversation.id)) {
+      filtered.push(conversation);
+    }
+  }
+  return filtered;
+}
+
 export async function listAccessibleConversations(
   userId: string,
   options?: { dashboardId?: string }
@@ -28,7 +57,7 @@ export async function listAccessibleConversations(
     where.dashboardId = options.dashboardId;
   }
 
-  return prisma.conversation.findMany({
+  const conversations = await prisma.conversation.findMany({
     where,
     include: {
       ...conversationParticipantInclude,
@@ -54,9 +83,21 @@ export async function listAccessibleConversations(
     },
     orderBy: { lastMessageAt: 'desc' },
   });
+
+  return filterConversationsByReadPolicy(userId, conversations);
 }
 
 export async function getConversationIfAccessible(userId: string, conversationId: string) {
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (readPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
+
   return prisma.conversation.findFirst({
     where: {
       id: conversationId,
@@ -92,7 +133,19 @@ export interface ListAccessibleMessagesInput {
 }
 
 export async function listAccessibleMessages(input: ListAccessibleMessagesInput) {
-  const { userId, conversationId, page = 1, limit = 50, threadId } = input;
+  const { userId, conversationId } = input;
+
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (readPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
+
+  const { page = 1, limit = 50, threadId } = input;
 
   await assertActiveConversationParticipant(userId, conversationId);
 
@@ -187,6 +240,9 @@ export async function searchAccessibleChat(
   });
 
   for (const message of messages) {
+    if (!(await conversationPassesReadPolicy(userId, message.conversation.id))) {
+      continue;
+    }
     results.push({
       id: message.id,
       title:
@@ -226,6 +282,9 @@ export async function searchAccessibleChat(
   });
 
   for (const conversation of conversations) {
+    if (!(await conversationPassesReadPolicy(userId, conversation.id))) {
+      continue;
+    }
     results.push({
       id: conversation.id,
       title: conversation.name || `${conversation.type} conversation`,
@@ -248,7 +307,7 @@ export async function searchAccessibleChat(
 }
 
 export async function getRecentForAI(userId: string) {
-  const recentConversations = await prisma.conversation.findMany({
+  const rawConversations = await prisma.conversation.findMany({
     where: activeParticipantFilter(userId),
     include: {
       ...conversationParticipantInclude,
@@ -266,6 +325,8 @@ export async function getRecentForAI(userId: string) {
     orderBy: { updatedAt: 'desc' },
     take: 10,
   });
+
+  const recentConversations = await filterConversationsByReadPolicy(userId, rawConversations);
 
   return {
     recentConversations: recentConversations.map((conv) => ({
@@ -297,7 +358,7 @@ export async function getRecentForAI(userId: string) {
 }
 
 export async function getUnreadForAI(userId: string) {
-  const conversationsWithMessages = await prisma.conversation.findMany({
+  const rawConversations = await prisma.conversation.findMany({
     where: activeParticipantFilter(userId),
     include: {
       participants: {
@@ -326,6 +387,11 @@ export async function getUnreadForAI(userId: string) {
     orderBy: { updatedAt: 'desc' },
     take: 10,
   });
+
+  const conversationsWithMessages = await filterConversationsByReadPolicy(
+    userId,
+    rawConversations
+  );
 
   const oneDayAgo = new Date();
   oneDayAgo.setDate(oneDayAgo.getDate() - 1);
@@ -374,6 +440,16 @@ export async function getHistoryForAI(
   conversationId: string,
   limit: number
 ) {
+  const readPolicyDual = await evaluateChatPolicyDual({
+    userId,
+    action: POLICY_ACTIONS.CHAT_CONVERSATION_READ,
+    resourceType: 'conversation',
+    resourceId: conversationId,
+  });
+  if (readPolicyDual.blocked) {
+    throw new ChatServiceError('Access denied', 'forbidden', 403);
+  }
+
   await assertActiveConversationParticipant(userId, conversationId);
 
   const messages = await prisma.message.findMany({

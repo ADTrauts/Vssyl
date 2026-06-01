@@ -463,6 +463,80 @@ export function emitModuleDisabledEvent(params: {
   );
 }
 
+export function emitChatConversationCreatedEvent(params: {
+  actorUserId: string;
+  conversationId: string;
+  conversationType?: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_CONVERSATION_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.conversationId,
+      dashboardId: params.dashboardId ?? null,
+      metadata: {
+        moduleId: 'chat',
+        ...(params.conversationType ? { conversationType: params.conversationType } : {}),
+        ...(params.dashboardId != null ? { dashboardId: params.dashboardId } : {}),
+      },
+    })
+  );
+}
+
+export function emitChatConversationTrashedEvent(params: {
+  actorUserId: string;
+  conversationId: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_CONVERSATION_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.conversationId,
+      dashboardId: params.dashboardId ?? null,
+      metadata: {
+        moduleId: 'chat',
+        ...(params.dashboardId != null ? { dashboardId: params.dashboardId } : {}),
+      },
+    })
+  );
+}
+
+export function emitChatConversationRestoredEvent(params: {
+  actorUserId: string;
+  conversationId: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_CONVERSATION_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.conversationId,
+      dashboardId: params.dashboardId ?? null,
+      metadata: {
+        moduleId: 'chat',
+        ...(params.dashboardId != null ? { dashboardId: params.dashboardId } : {}),
+      },
+    })
+  );
+}
+
+export function emitChatConversationPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  conversationId: string;
+  dashboardId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_CONVERSATION_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.conversationId,
+      dashboardId: params.dashboardId ?? null,
+      metadata: {
+        moduleId: 'chat',
+        ...(params.dashboardId != null ? { dashboardId: params.dashboardId } : {}),
+      },
+    })
+  );
+}
+
 export function emitChatMessageSentEvent(params: {
   actorUserId: string;
   messageId: string;
@@ -485,6 +559,97 @@ export function emitChatMessageSentEvent(params: {
         ...(params.threadId ? { threadId: params.threadId } : {}),
         attachmentCount,
         hasAttachments: attachmentCount > 0,
+      },
+    })
+  );
+}
+
+export function emitChatMessageDeletedEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+  softDelete?: boolean;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+        softDelete: params.softDelete ?? true,
+      },
+    })
+  );
+}
+
+export function emitChatMessageRestoredEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+      },
+    })
+  );
+}
+
+export function emitChatMessagePermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+      },
+    })
+  );
+}
+
+export function emitChatMessageReactionAddedEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+  emoji: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_REACTION_ADDED, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+        messageId: params.messageId,
+        emoji: params.emoji,
+      },
+    })
+  );
+}
+
+export function emitChatMessageReadEvent(params: {
+  actorUserId: string;
+  messageId: string;
+  conversationId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.CHAT_MESSAGE_READ, {
+      actorUserId: params.actorUserId,
+      entityId: params.messageId,
+      metadata: {
+        moduleId: 'chat',
+        conversationId: params.conversationId,
+        messageId: params.messageId,
       },
     })
   );

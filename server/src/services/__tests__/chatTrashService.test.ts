@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../lib/prisma';
 import * as chatPermission from '../chatPermissionService';
 import * as chatActivity from '../chatActivityService';
+import * as chatPolicyDual from '../../auth/chatPolicyDual';
+import * as chatDomainEvents from '../chatDomainEventService';
+import * as chatVlinkLifecycle from '../chatVlinkLifecycleService';
 import {
   ChatTrashError,
   listTrashedConversationsForGlobalTrash,
@@ -14,6 +17,12 @@ import {
 describe('chatTrashService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(chatPolicyDual, 'evaluateChatPolicyDual').mockResolvedValue({ blocked: false });
+    vi.spyOn(chatDomainEvents, 'recordChatConversationTrashedDomainEvent').mockImplementation(() => {});
+    vi.spyOn(chatDomainEvents, 'recordChatConversationPermanentlyDeletedDomainEvent').mockImplementation(
+      () => {}
+    );
+    vi.spyOn(chatVlinkLifecycle, 'unlinkChatConversationFromAllVLinks').mockResolvedValue(0);
     vi.spyOn(chatPermission, 'assertActiveConversationParticipant').mockResolvedValue(undefined);
     vi.spyOn(chatActivity, 'recordConversationTrashed').mockResolvedValue(undefined);
     vi.spyOn(chatActivity, 'recordConversationRestored').mockResolvedValue(undefined);
@@ -22,6 +31,7 @@ describe('chatTrashService', () => {
   });
 
   it('softTrashConversation sets trashedAt for active participant', async () => {
+    vi.spyOn(prisma.conversation, 'findFirst').mockResolvedValue({ dashboardId: null } as never);
     vi.spyOn(prisma.conversation, 'updateMany').mockResolvedValue({ count: 1 });
 
     await softTrashConversation({
@@ -36,6 +46,18 @@ describe('chatTrashService', () => {
       })
     );
     expect(chatActivity.recordConversationTrashed).toHaveBeenCalled();
+    expect(chatDomainEvents.recordChatConversationTrashedDomainEvent).toHaveBeenCalled();
+  });
+
+  it('softTrashConversation throws when policy dual blocks', async () => {
+    vi.spyOn(chatPolicyDual, 'evaluateChatPolicyDual').mockResolvedValue({
+      blocked: true,
+      reason: 'NOT_MEMBER',
+    });
+
+    await expect(
+      softTrashConversation({ userId: 'user-1', type: 'conversation', id: 'conv-1' })
+    ).rejects.toMatchObject({ code: 'forbidden' });
   });
 
   it('softTrashConversation throws when not found', async () => {
@@ -73,6 +95,11 @@ describe('chatTrashService', () => {
     });
 
     expect(ok).toBe(true);
+    expect(chatVlinkLifecycle.unlinkChatConversationFromAllVLinks).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      conversationId: 'conv-1',
+    });
+    expect(chatDomainEvents.recordChatConversationPermanentlyDeletedDomainEvent).toHaveBeenCalled();
   });
 
   it('softTrashMessage denies non-participant non-sender', async () => {
