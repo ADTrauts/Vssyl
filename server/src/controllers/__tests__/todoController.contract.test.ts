@@ -24,7 +24,7 @@ describe('todoController contract (Phase 1E)', () => {
     expect(core).toMatch(/todoTaskService\.updateTask/);
     expect(core).toMatch(/todoTaskService\.completeTask/);
     expect(core).toMatch(/todoTaskService\.reopenTask/);
-    expect(core).toMatch(/todoTaskService\.softTrashTask/);
+    expect(core).toMatch(/todoTrashService\.softTrashTask/);
     expect(core).toMatch(/respondTodoServiceError/);
   });
 
