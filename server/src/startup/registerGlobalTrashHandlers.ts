@@ -21,6 +21,14 @@ import {
   softTrashCalendarItem,
   type CalendarTrashItemType,
 } from '../services/calendarTrashService';
+import {
+  emptyTodoTrash,
+  listTrashedTasksForGlobalTrash,
+  permanentlyDeleteTodoItem,
+  restoreTodoItem,
+  softTrashTodoItem,
+  type TodoTrashItemType,
+} from '../services/todoTrashService';
 import { logger } from '../lib/logger';
 
 export function registerGlobalTrashHandlers(): void {
@@ -114,8 +122,42 @@ export function registerGlobalTrashHandlers(): void {
     listTrashed: async ({ userId }) => listTrashedCalendarEventsForGlobalTrash(userId),
   });
 
+  registerGlobalTrashModuleHandler({
+    moduleId: 'todo',
+    moduleName: 'Todo',
+    supportedTypes: ['task'],
+    softTrash: async ({ userId, type, id }) => {
+      if (type !== 'task') {
+        throw new Error(`Unsupported todo trash type: ${type}`);
+      }
+      await softTrashTodoItem({
+        userId,
+        type: type as TodoTrashItemType,
+        id,
+      });
+    },
+    restore: async ({ userId, type, id }) => {
+      if (type !== 'task') return false;
+      return restoreTodoItem({
+        userId,
+        type: type as TodoTrashItemType,
+        id,
+      });
+    },
+    permanentDelete: async ({ userId, type, id }) => {
+      if (type !== 'task') return false;
+      return permanentlyDeleteTodoItem({
+        userId,
+        type: type as TodoTrashItemType,
+        id,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyTodoTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedTasksForGlobalTrash(userId),
+  });
+
   void logger.info('Registered Global Trash module handlers', {
     operation: 'global_trash_handlers_register',
-    modules: ['drive', 'chat', 'calendar'],
+    modules: ['drive', 'chat', 'calendar', 'todo'],
   });
 }

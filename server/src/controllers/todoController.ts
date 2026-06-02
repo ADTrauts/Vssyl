@@ -3,164 +3,47 @@
  * Handles all task-related operations
  */
 
+import type { Express } from 'express';
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
-import { Prisma } from '@prisma/client';
+import type { TaskPriority, TaskStatus } from '@prisma/client';
 import { TodoAIPrioritizationService } from '../services/todoAIPrioritizationService';
 import { TodoSmartSchedulingService } from '../services/todoSmartSchedulingService';
 import { TodoChatIntegrationService } from '../services/todoChatIntegrationService';
-import {
-  assertUserOwnedTaskDashboardContext,
-  assertUserOwnedDashboardBusinessAlignment,
-} from '../services/taskDashboardBinding';
-import { emitModuleActivityEvent } from '../services/moduleActivityService';
-import { evaluateModuleMutationPolicyDual } from '../auth/moduleMutationPolicyDual';
-import { POLICY_ACTIONS } from '../auth/policyActions';
+import { TodoServiceError } from '../services/todo/todoErrors';
+import { TodoTrashError } from '../services/todoTrashService';
+import * as todoTrashService from '../services/todoTrashService';
+import * as todoTaskService from '../services/todoTaskService';
+import * as todoVisibilityService from '../services/todoVisibilityService';
+import type { TaskListFilter } from '../services/todoVisibilityService';
+import * as todoRecurrenceOrchestration from '../services/todoRecurrenceOrchestrationService';
+import { ensureTaskCalendarEvent } from '../services/todoCalendarBridgeService';
+import { mapTaskDetailAttachmentUrls } from '../services/todoPresentationService';
+import * as todoCommentService from '../services/todoCommentService';
+import * as todoSubtaskService from '../services/todoSubtaskService';
+import * as todoAttachmentService from '../services/todoAttachmentService';
+import * as todoProjectService from '../services/todoProjectService';
+import * as todoDependencyService from '../services/todoDependencyService';
+import * as todoTimeLogService from '../services/todoTimeLogService';
+import * as todoIntegrationLinkService from '../services/todoIntegrationLinkService';
 
-/**
- * Helper function to automatically create or update calendar event for a task
- * This ensures tasks with due dates always have corresponding calendar events
- */
-async function ensureTaskCalendarEvent(taskId: string, userId: string): Promise<void> {
-  try {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-      include: {
-        linkedEvents: true,
-      },
-    });
-
-    if (!task || !task.dueDate) {
-      // No task or no due date - nothing to do
-      return;
-    }
-
-    // Check if task already has a linked event
-    const existingLink = task.linkedEvents?.[0];
-    let existingEvent = null;
-    
-    if (existingLink) {
-      // Query the event separately since TaskEventLink doesn't have a direct relation
-      existingEvent = await prisma.event.findUnique({
-        where: { id: existingLink.eventId },
-      });
-    }
-
-    // Get or find user's personal primary calendar
-    let primaryCalendar = await prisma.calendar.findFirst({
-      where: {
-        contextType: 'PERSONAL',
-        contextId: userId,
-        isPrimary: true,
-      },
-    });
-
-    if (!primaryCalendar) {
-      const personalCalendars = await prisma.calendar.findMany({
-        where: {
-          contextType: 'PERSONAL',
-          contextId: userId,
-        },
-      });
-      primaryCalendar = personalCalendars[0];
-    }
-
-    if (!primaryCalendar) {
-      // Auto-provision personal calendar
-      const personalDash = await prisma.dashboard.findFirst({
-        where: {
-          userId,
-          businessId: null,
-          householdId: null,
-        },
-        orderBy: { createdAt: 'asc' },
-      });
-      const calendarName = personalDash?.name || 'My Dashboard';
-
-      primaryCalendar = await prisma.calendar.create({
-        data: {
-          name: calendarName,
-          contextType: 'PERSONAL',
-          contextId: userId,
-          isPrimary: true,
-          isSystem: true,
-          isDeletable: false,
-          defaultReminderMinutes: 10,
-          members: {
-            create: {
-              userId,
-              role: 'OWNER',
-            },
-          },
-        },
-      });
-    }
-
-    const targetCalendarId = primaryCalendar.id;
-
-    // Calculate event times
-    const startAt = new Date(task.dueDate);
-    let endAt = new Date(startAt);
-    if (task.timeEstimate) {
-      endAt.setMinutes(endAt.getMinutes() + task.timeEstimate);
-    } else {
-      endAt.setHours(endAt.getHours() + 1);
-    }
-
-    if (existingEvent) {
-      // Update existing event
-      await prisma.event.update({
-        where: { id: existingEvent.id },
-        data: {
-          title: task.title,
-          description: task.description || undefined,
-          location: task.category || undefined,
-          startAt,
-          endAt,
-        },
-      });
-    } else {
-      // Create new event
-      const event = await prisma.event.create({
-        data: {
-          calendarId: targetCalendarId,
-          title: task.title,
-          description: task.description || undefined,
-          location: task.category || undefined,
-          startAt,
-          endAt,
-          allDay: false,
-          timezone: 'UTC',
-          createdById: userId,
-          reminders: {
-            create: [{
-              method: 'APP',
-              minutesBefore: 10,
-            }],
-          },
-        },
-      });
-
-      // Create link
-      await prisma.taskEventLink.create({
-        data: {
-          taskId: task.id,
-          eventId: event.id,
-        },
-      });
-    }
-  } catch (error: unknown) {
-    const err = error as Error;
-    // Log but don't fail task creation/update if calendar event creation fails
-    await logger.error('Failed to ensure task calendar event', {
-      operation: 'ensure_task_calendar_event',
-      error: { message: err.message, stack: err.stack },
-      context: { taskId, userId },
-    });
+function respondTodoServiceError(res: Response, error: unknown): boolean {
+  if (error instanceof TodoServiceError) {
+    res.status(error.status).json({ error: error.message });
+    return true;
   }
+  if (error instanceof TodoTrashError) {
+    const status =
+      error.code === 'forbidden' ? 403 : error.code === 'not_found' ? 404 : 400;
+    res.status(status).json({ error: error.message });
+    return true;
+  }
+  return false;
 }
+
+/* <todo-core-handlers> */
 
 /**
  * GET /api/todo/tasks
@@ -174,165 +57,54 @@ export async function getTasks(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const { dashboardId, businessId, householdId, status, priority, dueDate, assignedToId, projectId } =
-      req.query;
+    const {
+      dashboardId,
+      businessId,
+      householdId,
+      status,
+      priority,
+      dueDate,
+      assignedToId,
+      projectId,
+      q,
+      search,
+      filter,
+      dueSoonDays,
+    } = req.query;
 
-    const where: Prisma.TaskWhereInput = {
-      createdById: userId,
-      trashedAt: null,
-    };
+    const listFilter =
+      typeof filter === 'string' &&
+      ['assigned', 'overdue', 'dueSoon', 'completed'].includes(filter)
+        ? (filter as TaskListFilter)
+        : undefined;
 
-    let resolvedDashboard: { businessId: string | null; householdId: string | null } | null = null;
+    const searchTerm =
+      (typeof q === 'string' && q.trim() !== '' ? q : undefined) ||
+      (typeof search === 'string' && search.trim() !== '' ? search : undefined);
 
-    // Dashboard scoping (required for multi-tenant isolation)
-    if (dashboardId && typeof dashboardId === 'string') {
-      where.dashboardId = dashboardId;
-      resolvedDashboard = await prisma.dashboard.findFirst({
-        where: { id: dashboardId, userId },
-        select: { businessId: true, householdId: true },
-      });
-      if (!resolvedDashboard) {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-    }
-
-    // Business scoping — resolve from dashboard row when query omits businessId (matches DB tasks)
-    if (businessId && typeof businessId === 'string') {
-      if (
-        resolvedDashboard &&
-        (resolvedDashboard.businessId ?? null) !== businessId
-      ) {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      where.businessId = businessId;
-    } else if (resolvedDashboard) {
-      where.businessId = resolvedDashboard.businessId ?? null;
-    } else {
-      where.businessId = null;
-    }
-
-    // Household scoping
-    if (householdId && typeof householdId === 'string') {
-      if (
-        resolvedDashboard &&
-        resolvedDashboard.householdId &&
-        resolvedDashboard.householdId !== householdId
-      ) {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      where.householdId = householdId;
-    } else if (resolvedDashboard?.householdId) {
-      where.householdId = resolvedDashboard.householdId;
-    }
-
-    // Status filter
-    if (status && typeof status === 'string') {
-      where.status = status as Prisma.EnumTaskStatusFilter;
-    }
-
-    // Priority filter
-    if (priority && typeof priority === 'string') {
-      where.priority = priority as Prisma.EnumTaskPriorityFilter;
-    }
-
-    // Due date filter
-    if (dueDate && typeof dueDate === 'string') {
-      const date = new Date(dueDate);
-      where.dueDate = {
-        gte: new Date(date.setHours(0, 0, 0, 0)),
-        lt: new Date(date.setHours(23, 59, 59, 999)),
-      };
-    }
-
-    // Assigned to filter
-    if (assignedToId && typeof assignedToId === 'string') {
-      where.assignedToId = assignedToId;
-    }
-
-    // Project filter
-    if (projectId && typeof projectId === 'string') {
-      where.projectId = projectId;
-    }
-
-    const tasks = await prisma.task.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        subtasks: {
-          where: { trashedAt: null },
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
-        },
-        comments: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
-          },
-        },
-        attachments: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
-            size: true,
-            mimeType: true,
-          },
-        },
-        project: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
-        _count: {
-          select: {
-            subtasks: true,
-            comments: true,
-            watchers: true,
-            attachments: true,
-          },
-        },
-      },
-      orderBy: [
-        { parentRecurringTaskId: 'asc' },
-        { dueDate: 'asc' },
-        { priority: 'desc' },
-        { createdAt: 'desc' },
-      ],
+    const tasks = await todoVisibilityService.listAccessibleTasks({
+      userId,
+      dashboardId: typeof dashboardId === 'string' ? dashboardId : undefined,
+      businessId: typeof businessId === 'string' ? businessId : undefined,
+      householdId: typeof householdId === 'string' ? householdId : undefined,
+      status: typeof status === 'string' ? (status as TaskStatus) : undefined,
+      priority: typeof priority === 'string' ? (priority as TaskPriority) : undefined,
+      dueDate: typeof dueDate === 'string' ? dueDate : undefined,
+      assignedToId: typeof assignedToId === 'string' ? assignedToId : undefined,
+      projectId: typeof projectId === 'string' ? projectId : undefined,
+      search: searchTerm,
+      listFilter,
+      dueSoonDays:
+        typeof dueSoonDays === 'string' && !Number.isNaN(Number(dueSoonDays))
+          ? Number(dueSoonDays)
+          : undefined,
     });
 
     res.json(tasks);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     const dashboardIdParam = req.query.dashboardId;
     await logger.error('Failed to get tasks', {
@@ -381,130 +153,46 @@ export async function createTask(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Validate recurrence rule if provided
-    if (recurrenceRule) {
-      // Due date is required for recurring tasks
-      if (!dueDate) {
-        res.status(400).json({ error: 'Due date is required for recurring tasks' });
-        return;
-      }
-      
-      const { validateRRULE } = await import('../services/todoRecurrenceService');
-      if (!validateRRULE(recurrenceRule, dueDate ? new Date(dueDate) : undefined)) {
-        res.status(400).json({ error: 'Invalid recurrence rule (RRULE)' });
-        return;
-      }
-    }
-
-    try {
-      await assertUserOwnedTaskDashboardContext(prisma, userId, dashboardId, businessId, householdId);
-    } catch (e: unknown) {
-      const msg = (e as Error).message;
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(400).json({ error: 'Dashboard does not match business or household context' });
-        return;
-      }
-      throw e;
-    }
-
-    const policyBlock = await evaluateModuleMutationPolicyDual({
-      userId,
-      moduleId: 'todo',
-      action: POLICY_ACTIONS.TASK_CREATE,
-      resourceType: 'task',
-      resourceId: 'new',
-      scope: { dashboardId, businessId: businessId || undefined, householdId: householdId || undefined },
+    const recurrenceValidation = await todoRecurrenceOrchestration.validateRecurrenceForCreate({
+      recurrenceRule,
+      dueDate,
     });
-    if (policyBlock.blocked) {
-      res.status(403).json({ error: 'Not authorized to create task' });
+    if (recurrenceValidation) {
+      res.status(recurrenceValidation.status).json({ error: recurrenceValidation.message });
       return;
     }
 
-    const task = await prisma.task.create({
-      data: {
-        title,
-        description,
-        status: status || 'TODO',
-        priority: priority || 'MEDIUM',
-        dashboardId,
-        businessId: businessId || null,
-        householdId: householdId || null,
-        createdById: userId,
-        assignedToId: assignedToId || null,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        startDate: startDate ? new Date(startDate) : null,
-        category: category || null,
-        tags: tags || [],
-        timeEstimate: timeEstimate || null,
-        parentTaskId: parentTaskId || null,
-        projectId: projectId || null,
-        recurrenceRule: recurrenceRule || null,
-        recurrenceEndAt: recurrenceEndAt ? new Date(recurrenceEndAt) : null,
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Task created', {
-      operation: 'todo_create_task',
-      taskId: task.id,
+    const task = await todoTaskService.createTask({
       userId,
+      title,
+      description,
+      status,
+      priority,
+      dashboardId,
+      businessId,
+      householdId,
+      dueDate,
+      startDate,
+      category,
+      tags,
+      timeEstimate,
+      assignedToId,
+      parentTaskId,
+      projectId,
+      recurrenceRule,
+      recurrenceEndAt,
     });
 
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'todo',
-      action: 'create',
-      targetType: 'task',
-      targetId: task.id,
-      dashboardId: task.dashboardId,
-      businessId: task.businessId,
-      householdId: task.householdId,
-      metadata: { title: task.title, status: task.status },
-    });
-
-    // Automatically create calendar event if task has a due date
     if (task.dueDate) {
       await ensureTaskCalendarEvent(task.id, userId);
     }
-
-    // Generate initial recurring instances if this is a recurring task
-    if (task.recurrenceRule) {
-      try {
-        const { createRecurringInstances } = await import('../services/todoRecurrenceService');
-        await createRecurringInstances(task.id, 10); // Generate first 10 instances
-      } catch (error) {
-        // Log but don't fail task creation if instance generation fails
-        await logger.error('Failed to generate initial recurring instances', {
-          operation: 'todo_create_task_instances',
-          taskId: task.id,
-          error: { message: (error as Error).message },
-        });
-      }
-    }
+    await todoRecurrenceOrchestration.afterTaskCreatedWithRecurrence(task);
 
     res.status(201).json(task);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to create task', {
       operation: 'todo_create_task',
@@ -528,120 +216,18 @@ export async function getTaskById(req: Request, res: Response): Promise<void> {
 
     const { id } = req.params;
 
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        subtasks: {
-          where: { trashedAt: null },
-          orderBy: { createdAt: 'asc' },
-        },
-        comments: {
-          orderBy: { createdAt: 'asc' },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
-          },
-        },
-        attachments: true,
-        linkedFiles: true,
-        linkedEvents: true,
-        dependsOnTasks: {
-          include: {
-            dependsOn: {
-              select: {
-                id: true,
-                title: true,
-                status: true,
-              },
-            },
-          },
-        },
-        blockingTasks: {
-          include: {
-            task: {
-              select: {
-                id: true,
-                title: true,
-                status: true,
-              },
-            },
-          },
-        },
-        watchers: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const task = await todoVisibilityService.getTaskByIdIfAccessible(userId, id);
 
     if (!task) {
       res.status(404).json({ error: 'Task not found' });
       return;
     }
 
-    // Convert GCS URLs to backend serving URLs for attachments if bucket has public access prevention
-    const baseUrl = process.env.BACKEND_URL || 
-                   process.env.NEXT_PUBLIC_API_BASE_URL || 
-                   'https://vssyl-server-235369681725.us-central1.run.app';
-
-    const convertAttachmentUrl = (attachment: { id: string; url: string | null; taskId: string }): string | null => {
-      if (!attachment.url) return null;
-      // If it's a GCS URL, convert to backend serving URL
-      if (attachment.url.includes('storage.googleapis.com')) {
-        return `${baseUrl}/api/todo/tasks/${attachment.taskId}/attachments/${attachment.id}/serve`;
-      }
-      // If it's already a backend URL or local URL, return as-is
-      return attachment.url;
-    };
-
-    // Convert attachment URLs
-    const taskWithConvertedUrls = {
-      ...task,
-      attachments: task.attachments?.map(att => ({
-        ...att,
-        url: convertAttachmentUrl(att)
-      }))
-    };
-
-    res.json(taskWithConvertedUrls);
+    res.json(mapTaskDetailAttachmentUrls(task));
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to get task', {
       operation: 'todo_get_task',
@@ -682,208 +268,46 @@ export async function updateTask(req: Request, res: Response): Promise<void> {
       // dashboardId, businessId, householdId, createdById, etc.
     } = req.body;
 
-    // Check if task exists and user has access
-    const existingTask = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        status: true,
-        priority: true,
-        dueDate: true,
-        startDate: true,
-        recurrenceRule: true,
-        recurrenceEndAt: true,
-        parentRecurringTaskId: true,
-        category: true,
-        tags: true,
-        timeEstimate: true,
-        assignedToId: true,
-        snoozedUntil: true,
-        completedAt: true,
-      },
+    const recurrenceValidation = await todoRecurrenceOrchestration.validateRecurrenceForUpdate({
+      userId,
+      taskId: id,
+      recurrenceRule,
+      dueDate,
     });
-
-    if (!existingTask) {
-      res.status(404).json({ error: 'Task not found' });
+    if (recurrenceValidation) {
+      res.status(recurrenceValidation.status).json({ error: recurrenceValidation.message });
       return;
     }
 
-    // Check if this is a parent recurring task (has recurrenceRule, no parentRecurringTaskId)
-    const isParentRecurringTask = existingTask.recurrenceRule && !existingTask.parentRecurringTaskId;
-    const isInstance = !!existingTask.parentRecurringTaskId;
-
-    // Validate recurrence rule if provided
-    if (recurrenceRule !== undefined && recurrenceRule !== null) {
-      // Due date is required for recurring tasks
-      const taskDueDate = dueDate !== undefined 
-        ? (dueDate ? new Date(dueDate) : null)
-        : (existingTask.dueDate ? new Date(existingTask.dueDate) : null);
-      
-      if (!taskDueDate) {
-        res.status(400).json({ error: 'Due date is required for recurring tasks' });
-        return;
-      }
-      
-      const { validateRRULE } = await import('../services/todoRecurrenceService');
-      if (!validateRRULE(recurrenceRule, taskDueDate)) {
-        res.status(400).json({ error: 'Invalid recurrence rule (RRULE)' });
-        return;
-      }
-    }
-
-    // Build update data object with only allowed fields
-    const updateData: Prisma.TaskUpdateInput = {};
-
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description || null;
-    if (status !== undefined) updateData.status = status;
-    if (priority !== undefined) updateData.priority = priority;
-    if (category !== undefined) updateData.category = category || null;
-    if (tags !== undefined) updateData.tags = tags;
-    if (timeEstimate !== undefined) updateData.timeEstimate = timeEstimate || null;
-    if (assignedToId !== undefined) {
-      updateData.assignedTo = assignedToId ? { connect: { id: assignedToId } } : { disconnect: true };
-    }
-    
-    // Handle date fields
-    if (dueDate !== undefined) {
-      updateData.dueDate = dueDate ? new Date(dueDate) : null;
-    }
-    if (startDate !== undefined) {
-      updateData.startDate = startDate ? new Date(startDate) : null;
-    }
-    if (snoozedUntil !== undefined) {
-      updateData.snoozedUntil = snoozedUntil ? new Date(snoozedUntil) : null;
-    }
-
-    // Handle recurrence fields
-    if (recurrenceRule !== undefined) {
-      updateData.recurrenceRule = recurrenceRule || null;
-    }
-    if (recurrenceEndAt !== undefined) {
-      updateData.recurrenceEndAt = recurrenceEndAt ? new Date(recurrenceEndAt) : null;
-    }
-
-    // Handle status change to DONE
-    if (status === 'DONE' && existingTask.status !== 'DONE') {
-      updateData.completedAt = new Date();
-    } else if (status !== undefined && status !== 'DONE' && existingTask.status === 'DONE') {
-      updateData.completedAt = null;
-    }
-
-    // Prevent editing instances if they're already created (instances should be independent)
-    // However, allow editing if user explicitly wants to modify an instance
-    // For now, we'll allow editing instances - they become independent once edited
-
-    const task = await prisma.task.update({
-      where: { id },
-      data: updateData,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Task updated', {
-      operation: 'todo_update_task',
-      taskId: task.id,
+    const updateResult = await todoTaskService.updateTask({
       userId,
+      taskId: id,
+      title,
+      description,
+      status,
+      priority,
+      dueDate,
+      startDate,
+      category,
+      tags,
+      timeEstimate,
+      assignedToId,
+      snoozedUntil,
+      recurrenceRule,
+      recurrenceEndAt,
     });
 
-    // Handle recurrence rule changes for parent recurring tasks
-    // Only regenerate if recurrence rule actually changed
-    if (isParentRecurringTask) {
-      const recurrenceRuleChanged = recurrenceRule !== undefined && 
-        recurrenceRule !== existingTask.recurrenceRule &&
-        (recurrenceRule || '') !== (existingTask.recurrenceRule || '');
-      
-      const oldEndAt = existingTask.recurrenceEndAt ? new Date(existingTask.recurrenceEndAt).toISOString() : null;
-      const newEndAt = recurrenceEndAt !== undefined 
-        ? (recurrenceEndAt ? new Date(recurrenceEndAt).toISOString() : null)
-        : oldEndAt;
-      const recurrenceEndAtChanged = recurrenceEndAt !== undefined && newEndAt !== oldEndAt;
+    await todoRecurrenceOrchestration.afterTaskUpdatedWithRecurrence(userId, id, updateResult, {
+      recurrenceRule,
+      recurrenceEndAt,
+    });
+    await todoRecurrenceOrchestration.syncTaskCalendarAfterUpdate(userId, updateResult);
 
-      // Only regenerate instances if recurrence rule or end date actually changed
-      if (recurrenceRuleChanged || recurrenceEndAtChanged) {
-        try {
-          // Delete existing future instances (keep completed ones)
-          await prisma.task.deleteMany({
-            where: {
-              parentRecurringTaskId: id,
-              status: { not: 'DONE' },
-              trashedAt: null,
-            },
-          });
-
-          // Generate new instances if recurrence rule still exists
-          if (task.recurrenceRule) {
-            const { createRecurringInstances } = await import('../services/todoRecurrenceService');
-            await createRecurringInstances(task.id, 10);
-          }
-        } catch (error) {
-          // Log but don't fail the update if instance regeneration fails
-          await logger.error('Failed to regenerate recurring instances', {
-            operation: 'todo_update_task_regenerate',
-            taskId: task.id,
-            error: { message: (error as Error).message },
-          });
-        }
-      }
-    } else if (!isInstance && recurrenceRule !== undefined && recurrenceRule && !existingTask.recurrenceRule) {
-      // Task is being converted to a recurring task (recurrenceRule added for first time)
-      // Only create instances if this is a new recurring task, not an update to existing one
-      try {
-        const { createRecurringInstances } = await import('../services/todoRecurrenceService');
-        await createRecurringInstances(task.id, 10);
-      } catch (error) {
-        await logger.error('Failed to create initial recurring instances', {
-          operation: 'todo_update_task_create_instances',
-          taskId: task.id,
-          error: { message: (error as Error).message },
-        });
-      }
-    }
-
-    // Automatically create/update calendar event if task has a due date
-    // Also handle case where dueDate was added or changed
-    const hadDueDate = existingTask.dueDate !== null;
-    const hasDueDate = task.dueDate !== null;
-    const dueDateChanged = hadDueDate !== hasDueDate || 
-      (existingTask.dueDate && task.dueDate && 
-       new Date(existingTask.dueDate).getTime() !== new Date(task.dueDate).getTime());
-
-    if (hasDueDate && (dueDateChanged || !hadDueDate)) {
-      await ensureTaskCalendarEvent(task.id, userId);
-    } else if (hasDueDate) {
-      // Due date exists, ensure event is synced (title, description, etc. may have changed)
-      await ensureTaskCalendarEvent(task.id, userId);
-    }
-
-    res.json(task);
+    res.json(updateResult.task);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to update task', {
       operation: 'todo_update_task',
@@ -907,66 +331,12 @@ export async function deleteTask(req: Request, res: Response): Promise<void> {
 
     const { id } = req.params;
 
-    // Check if task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const policyBlock = await evaluateModuleMutationPolicyDual({
-      userId,
-      moduleId: 'todo',
-      action: POLICY_ACTIONS.TASK_DELETE,
-      resourceType: 'task',
-      resourceId: id,
-      scope: {
-        dashboardId: task.dashboardId,
-        businessId: task.businessId ?? undefined,
-        householdId: task.householdId ?? undefined,
-      },
-    });
-    if (policyBlock.blocked) {
-      res.status(403).json({ error: 'Not authorized to delete task' });
-      return;
-    }
-
-    // Soft delete
-    await prisma.task.update({
-      where: { id },
-      data: { trashedAt: new Date() },
-    });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'todo',
-      action: 'delete',
-      targetType: 'task',
-      targetId: id,
-      dashboardId: task.dashboardId,
-      businessId: task.businessId,
-      householdId: task.householdId,
-      metadata: { softDelete: true },
-    });
-
-    await logger.info('Task deleted', {
-      operation: 'todo_delete_task',
-      taskId: id,
-      userId,
-    });
-
-    res.json({ success: true });
+    const result = await todoTrashService.softTrashTask(userId, id);
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to delete task', {
       operation: 'todo_delete_task',
@@ -990,48 +360,12 @@ export async function completeTask(req: Request, res: Response): Promise<void> {
 
     const { id } = req.params;
 
-    const existing = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [{ createdById: userId }, { assignedToId: userId }],
-      },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const task = await prisma.task.update({
-      where: { id },
-      data: {
-        status: 'DONE',
-        completedAt: new Date(),
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
+    const task = await todoTaskService.completeTask(userId, id);
     res.json(task);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to complete task', {
       operation: 'todo_complete_task',
@@ -1056,48 +390,12 @@ export async function reopenTask(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
     const { status } = req.body;
 
-    const existing = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [{ createdById: userId }, { assignedToId: userId }],
-      },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const task = await prisma.task.update({
-      where: { id },
-      data: {
-        status: status || 'TODO',
-        completedAt: null,
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
+    const task = await todoTaskService.reopenTask(userId, id, status);
     res.json(task);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) {
+      return;
+    }
     const err = error as Error;
     await logger.error('Failed to reopen task', {
       operation: 'todo_reopen_task',
@@ -1106,6 +404,8 @@ export async function reopenTask(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: 'Failed to reopen task' });
   }
 }
+
+/* </todo-core-handlers> */
 
 /**
  * POST /api/todo/tasks/:id/create-event
@@ -1119,165 +419,15 @@ export async function createEventFromTask(req: Request, res: Response): Promise<
       return;
     }
 
-    const taskId = req.params.id;
-    const { calendarId } = req.body;
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const result = await todoIntegrationLinkService.createEventFromTask({
+      userId,
+      taskId: req.params.id,
+      calendarId: req.body.calendarId,
     });
 
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Check if task has a due date
-    if (!task.dueDate) {
-      res.status(400).json({ error: 'Task must have a due date to create calendar event' });
-      return;
-    }
-
-    // Get or find user's personal primary calendar, auto-provision if missing
-    let targetCalendarId = calendarId;
-    if (!targetCalendarId) {
-      // First, try to find existing primary calendar
-      let primaryCalendar = await prisma.calendar.findFirst({
-        where: {
-          contextType: 'PERSONAL',
-          contextId: userId,
-          isPrimary: true,
-        },
-      });
-
-      // If no primary calendar exists, try to find any personal calendar
-      if (!primaryCalendar) {
-        const personalCalendars = await prisma.calendar.findMany({
-          where: {
-            contextType: 'PERSONAL',
-            contextId: userId,
-          },
-        });
-        primaryCalendar = personalCalendars[0];
-      }
-
-      // If still no calendar exists, auto-provision one
-      if (!primaryCalendar) {
-        try {
-          // Find the user's first personal dashboard name for calendar naming
-          const personalDash = await prisma.dashboard.findFirst({
-            where: {
-              userId,
-              businessId: null,
-              householdId: null,
-            },
-            orderBy: { createdAt: 'asc' },
-          });
-          const calendarName = personalDash?.name || 'My Dashboard';
-
-          // Create the primary calendar
-          primaryCalendar = await prisma.calendar.create({
-            data: {
-              name: calendarName,
-              contextType: 'PERSONAL',
-              contextId: userId,
-              isPrimary: true,
-              isSystem: true,
-              isDeletable: false,
-              defaultReminderMinutes: 10,
-              members: {
-                create: {
-                  userId,
-                  role: 'OWNER',
-                },
-              },
-            },
-          });
-        } catch (error: unknown) {
-          const err = error as Error;
-          logger.error('Failed to auto-provision personal calendar', {
-            operation: 'auto_provision_calendar',
-            error: { message: err.message, stack: err.stack },
-          });
-          res.status(500).json({ error: 'Failed to create calendar. Please create a calendar first.' });
-          return;
-        }
-      }
-
-      targetCalendarId = primaryCalendar.id;
-    }
-
-    // Verify user has access to calendar
-    const calendarMember = await prisma.calendarMember.findFirst({
-      where: {
-        calendarId: targetCalendarId,
-        userId,
-        role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
-      },
-    });
-
-    if (!calendarMember) {
-      res.status(403).json({ error: 'Access denied to calendar' });
-      return;
-    }
-
-    // Calculate event end time
-    const startAt = new Date(task.dueDate);
-    let endAt = new Date(startAt);
-    
-    // Use timeEstimate if available (in minutes), default to 1 hour
-    if (task.timeEstimate) {
-      endAt.setMinutes(endAt.getMinutes() + task.timeEstimate);
-    } else {
-      endAt.setHours(endAt.getHours() + 1);
-    }
-
-    // Create calendar event
-    const event = await prisma.event.create({
-      data: {
-        calendarId: targetCalendarId,
-        title: task.title,
-        description: task.description || undefined,
-        location: task.category || undefined,
-        startAt,
-        endAt,
-        allDay: false,
-        timezone: 'UTC',
-        createdById: userId,
-        reminders: {
-          create: [{
-            method: 'APP',
-            minutesBefore: 10,
-          }],
-        },
-      },
-    });
-
-    // Create link between task and event
-    await prisma.taskEventLink.create({
-      data: {
-        taskId: task.id,
-        eventId: event.id,
-      },
-    });
-
-    res.json({
-      success: true,
-      task,
-      event: {
-        id: event.id,
-        title: event.title,
-        startAt: event.startAt.toISOString(),
-        endAt: event.endAt.toISOString(),
-      },
-    });
+    res.json({ success: true, ...result });
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     logger.error('Failed to create event from task', {
       operation: 'create_event_from_task',
@@ -1299,84 +449,15 @@ export async function linkTaskToEvent(req: Request, res: Response): Promise<void
       return;
     }
 
-    const taskId = req.params.id;
-    const { eventId } = req.body;
-
-    if (!eventId) {
-      res.status(400).json({ error: 'eventId is required' });
-      return;
-    }
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const result = await todoIntegrationLinkService.linkTaskToEvent({
+      userId,
+      taskId: req.params.id,
+      eventId: req.body.eventId,
     });
 
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Verify event exists and user has access
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      include: {
-        calendar: {
-          include: {
-            members: {
-              where: { userId },
-            },
-          },
-        },
-      },
-    });
-
-    if (!event) {
-      res.status(404).json({ error: 'Event not found' });
-      return;
-    }
-
-    // Check if user has access to the calendar
-    const hasAccess = event.calendar.members.some(
-      m => m.role === 'OWNER' || m.role === 'ADMIN' || m.role === 'EDITOR' || m.role === 'READER'
-    );
-
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied to calendar event' });
-      return;
-    }
-
-    // Check if link already exists
-    const existingLink = await prisma.taskEventLink.findUnique({
-      where: {
-        taskId_eventId: {
-          taskId,
-          eventId,
-        },
-      },
-    });
-
-    if (existingLink) {
-      res.status(409).json({ error: 'Task is already linked to this event' });
-      return;
-    }
-
-    // Create link
-    await prisma.taskEventLink.create({
-      data: {
-        taskId,
-        eventId,
-      },
-    });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     logger.error('Failed to link task to event', {
       operation: 'link_task_to_event',
@@ -1398,37 +479,15 @@ export async function unlinkTaskFromEvent(req: Request, res: Response): Promise<
       return;
     }
 
-    const taskId = req.params.id;
-    const eventId = req.params.eventId;
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const result = await todoIntegrationLinkService.unlinkTaskFromEvent({
+      userId,
+      taskId: req.params.id,
+      eventId: req.params.eventId,
     });
 
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Delete the link
-    await prisma.taskEventLink.delete({
-      where: {
-        taskId_eventId: {
-          taskId,
-          eventId,
-        },
-      },
-    });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     logger.error('Failed to unlink task from event', {
       operation: 'unlink_task_from_event',
@@ -1450,66 +509,21 @@ export async function linkTaskToFile(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const taskId = req.params.id;
-    const { fileId } = req.body;
-
+    const fileId = req.body.fileId;
     if (!fileId || typeof fileId !== 'string') {
       res.status(400).json({ error: 'fileId is required' });
       return;
     }
 
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Verify file exists (check Drive module)
-    // Note: In a real implementation, you'd verify the file exists in the Drive module
-    // For now, we'll just create the link
-
-    // Check if link already exists
-    const existingLink = await prisma.taskFileLink.findUnique({
-      where: {
-        taskId_fileId: {
-          taskId,
-          fileId,
-        },
-      },
-    });
-
-    if (existingLink) {
-      res.status(409).json({ error: 'File is already linked to this task' });
-      return;
-    }
-
-    // Create link
-    const link = await prisma.taskFileLink.create({
-      data: {
-        taskId,
-        fileId,
-      },
-    });
-
-    await logger.info('File linked to task', {
-      operation: 'todo_link_file',
-      taskId,
-      fileId,
+    const result = await todoIntegrationLinkService.linkTaskToFile({
       userId,
+      taskId: req.params.id,
+      fileId,
     });
 
-    res.json({ success: true, link });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to link file to task', {
       operation: 'todo_link_file',
@@ -1531,44 +545,15 @@ export async function unlinkTaskFromFile(req: Request, res: Response): Promise<v
       return;
     }
 
-    const taskId = req.params.id;
-    const fileId = req.params.fileId;
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Delete the link
-    await prisma.taskFileLink.delete({
-      where: {
-        taskId_fileId: {
-          taskId,
-          fileId,
-        },
-      },
-    });
-
-    await logger.info('File unlinked from task', {
-      operation: 'todo_unlink_file',
-      taskId,
-      fileId,
+    const result = await todoIntegrationLinkService.unlinkTaskFromFile({
       userId,
+      taskId: req.params.id,
+      fileId: req.params.fileId,
     });
 
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to unlink file from task', {
       operation: 'todo_unlink_file',
@@ -1590,44 +575,14 @@ export async function getTaskLinkedFiles(req: Request, res: Response): Promise<v
       return;
     }
 
-    const taskId = req.params.id;
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const result = await todoIntegrationLinkService.getTaskLinkedFiles({
+      userId,
+      taskId: req.params.id,
     });
 
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Get linked files
-    const links = await prisma.taskFileLink.findMany({
-      where: { taskId },
-    });
-
-    // Get file details from Drive module
-    // Note: In a real implementation, you'd query the Drive module for file details
-    // For now, we'll return the file IDs and let the frontend fetch details
-    const fileIds = links.map(link => link.fileId);
-
-    res.json({
-      success: true,
-      files: links.map(link => ({
-        id: link.id,
-        fileId: link.fileId,
-        taskId: link.taskId,
-      })),
-      fileIds,
-    });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to get linked files', {
       operation: 'todo_get_linked_files',
@@ -1649,59 +604,14 @@ export async function getTaskLinkedEvents(req: Request, res: Response): Promise<
       return;
     }
 
-    const taskId = req.params.id;
-
-    // Get the task
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+    const events = await todoIntegrationLinkService.getTaskLinkedEvents({
+      userId,
+      taskId: req.params.id,
     });
 
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Verify user owns the task
-    if (task.createdById !== userId) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Get linked events
-    const links = await prisma.taskEventLink.findMany({
-      where: { taskId },
-      include: {
-        // Note: We can't directly include Event via Prisma relation, so we'll query separately
-      },
-    });
-
-    // Get event details
-    const eventIds = links.map(link => link.eventId);
-    const events = await prisma.event.findMany({
-      where: {
-        id: { in: eventIds },
-      },
-      select: {
-        id: true,
-        title: true,
-        startAt: true,
-        endAt: true,
-        calendarId: true,
-        description: true,
-        location: true,
-      },
-    });
-
-    res.json(events.map(event => ({
-      id: event.id,
-      title: event.title,
-      startAt: event.startAt.toISOString(),
-      endAt: event.endAt.toISOString(),
-      calendarId: event.calendarId,
-      description: event.description,
-      location: event.location,
-    })));
+    res.json(events);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     logger.error('Failed to get linked events', {
       operation: 'get_task_linked_events',
@@ -1711,10 +621,7 @@ export async function getTaskLinkedEvents(req: Request, res: Response): Promise<
   }
 }
 
-/**
- * POST /api/todo/tasks/:id/comments
- * Create a comment on a task
- */
+
 export async function createTaskComment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -1722,60 +629,14 @@ export async function createTaskComment(req: Request, res: Response): Promise<vo
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    const { content } = req.body;
-
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      res.status(400).json({ error: 'Comment content is required' });
-      return;
-    }
-
-    // Verify task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id: taskId,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Create comment
-    const comment = await prisma.taskComment.create({
-      data: {
-        taskId,
-        userId,
-        content: content.trim(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Task comment created', {
-      operation: 'todo_create_comment',
-      taskId,
-      commentId: comment.id,
+    const comment = await todoCommentService.createComment({
       userId,
+      taskId: req.params.id,
+      content: req.body.content,
     });
-
     res.status(201).json(comment);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to create task comment', {
       operation: 'todo_create_comment',
@@ -1785,10 +646,6 @@ export async function createTaskComment(req: Request, res: Response): Promise<vo
   }
 }
 
-/**
- * PUT /api/todo/tasks/:id/comments/:commentId
- * Update a comment on a task
- */
 export async function updateTaskComment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -1796,66 +653,15 @@ export async function updateTaskComment(req: Request, res: Response): Promise<vo
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    const commentId = req.params.commentId;
-    const { content } = req.body;
-
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      res.status(400).json({ error: 'Comment content is required' });
-      return;
-    }
-
-    // Verify comment exists and belongs to user
-    const comment = await prisma.taskComment.findUnique({
-      where: { id: commentId },
-      include: {
-        task: true,
-      },
-    });
-
-    if (!comment) {
-      res.status(404).json({ error: 'Comment not found' });
-      return;
-    }
-
-    if (comment.taskId !== taskId) {
-      res.status(400).json({ error: 'Comment does not belong to this task' });
-      return;
-    }
-
-    if (comment.userId !== userId) {
-      res.status(403).json({ error: 'You can only edit your own comments' });
-      return;
-    }
-
-    // Update comment
-    const updatedComment = await prisma.taskComment.update({
-      where: { id: commentId },
-      data: {
-        content: content.trim(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Task comment updated', {
-      operation: 'todo_update_comment',
-      taskId,
-      commentId,
+    const updated = await todoCommentService.updateComment({
       userId,
+      taskId: req.params.id,
+      commentId: req.params.commentId,
+      content: req.body.content,
     });
-
-    res.json(updatedComment);
+    res.json(updated);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to update task comment', {
       operation: 'todo_update_comment',
@@ -1865,10 +671,6 @@ export async function updateTaskComment(req: Request, res: Response): Promise<vo
   }
 }
 
-/**
- * DELETE /api/todo/tasks/:id/comments/:commentId
- * Delete a comment on a task
- */
 export async function deleteTaskComment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -1876,44 +678,14 @@ export async function deleteTaskComment(req: Request, res: Response): Promise<vo
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    const commentId = req.params.commentId;
-
-    // Verify comment exists and belongs to user
-    const comment = await prisma.taskComment.findUnique({
-      where: { id: commentId },
-    });
-
-    if (!comment) {
-      res.status(404).json({ error: 'Comment not found' });
-      return;
-    }
-
-    if (comment.taskId !== taskId) {
-      res.status(400).json({ error: 'Comment does not belong to this task' });
-      return;
-    }
-
-    if (comment.userId !== userId) {
-      res.status(403).json({ error: 'You can only delete your own comments' });
-      return;
-    }
-
-    // Delete comment
-    await prisma.taskComment.delete({
-      where: { id: commentId },
-    });
-
-    await logger.info('Task comment deleted', {
-      operation: 'todo_delete_comment',
-      taskId,
-      commentId,
+    const result = await todoCommentService.deleteComment({
       userId,
+      taskId: req.params.id,
+      commentId: req.params.commentId,
     });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to delete task comment', {
       operation: 'todo_delete_comment',
@@ -1923,10 +695,6 @@ export async function deleteTaskComment(req: Request, res: Response): Promise<vo
   }
 }
 
-/**
- * POST /api/todo/tasks/:id/subtasks
- * Create a subtask
- */
 export async function createSubtask(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -1934,76 +702,17 @@ export async function createSubtask(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const parentTaskId = req.params.id;
-    const { title, description, priority, dueDate } = req.body;
-
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      res.status(400).json({ error: 'Subtask title is required' });
-      return;
-    }
-
-    // Verify parent task exists and user has access
-    const parentTask = await prisma.task.findFirst({
-      where: {
-        id: parentTaskId,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!parentTask) {
-      res.status(404).json({ error: 'Parent task not found' });
-      return;
-    }
-
-    // Create subtask
-    const subtask = await prisma.task.create({
-      data: {
-        title: title.trim(),
-        description: description?.trim() || null,
-        priority: priority || 'MEDIUM',
-        status: 'TODO',
-        dashboardId: parentTask.dashboardId,
-        businessId: parentTask.businessId,
-        householdId: parentTask.householdId,
-        createdById: userId,
-        assignedToId: parentTask.assignedToId,
-        parentTaskId: parentTaskId,
-        dueDate: dueDate ? new Date(dueDate) : null,
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Subtask created', {
-      operation: 'todo_create_subtask',
-      parentTaskId,
-      subtaskId: subtask.id,
+    const subtask = await todoSubtaskService.createSubtask({
       userId,
+      parentTaskId: req.params.id,
+      title: req.body.title,
+      description: req.body.description,
+      priority: req.body.priority,
+      dueDate: req.body.dueDate,
     });
-
     res.status(201).json(subtask);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to create subtask', {
       operation: 'todo_create_subtask',
@@ -2013,10 +722,6 @@ export async function createSubtask(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * PUT /api/todo/tasks/:id/subtasks/:subtaskId
- * Update a subtask
- */
 export async function updateSubtask(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2024,100 +729,15 @@ export async function updateSubtask(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const parentTaskId = req.params.id;
-    const subtaskId = req.params.subtaskId;
-    const updateData = req.body;
-
-    // Verify subtask exists and belongs to parent task
-    const subtask = await prisma.task.findFirst({
-      where: {
-        id: subtaskId,
-        parentTaskId: parentTaskId,
-        trashedAt: null,
-      },
-      include: {
-        parentTask: true,
-      },
-    });
-
-    if (!subtask) {
-      res.status(404).json({ error: 'Subtask not found' });
-      return;
-    }
-
-    // Verify user has access to parent task
-    if (!subtask.parentTask) {
-      res.status(404).json({ error: 'Parent task not found' });
-      return;
-    }
-    const hasAccess = subtask.parentTask.createdById === userId || 
-                      subtask.parentTask.assignedToId === userId;
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Prepare update data
-    const data: Record<string, unknown> = {};
-    if (updateData.title !== undefined) {
-      if (typeof updateData.title !== 'string' || updateData.title.trim().length === 0) {
-        res.status(400).json({ error: 'Subtask title cannot be empty' });
-        return;
-      }
-      data.title = updateData.title.trim();
-    }
-    if (updateData.description !== undefined) {
-      data.description = updateData.description?.trim() || null;
-    }
-    if (updateData.priority !== undefined) {
-      data.priority = updateData.priority;
-    }
-    if (updateData.status !== undefined) {
-      data.status = updateData.status;
-      if (updateData.status === 'DONE') {
-        data.completedAt = new Date();
-      } else if (subtask.status === 'DONE' && updateData.status !== 'DONE') {
-        data.completedAt = null;
-      }
-    }
-    if (updateData.dueDate !== undefined) {
-      data.dueDate = updateData.dueDate ? new Date(updateData.dueDate) : null;
-    }
-
-    // Update subtask
-    const updatedSubtask = await prisma.task.update({
-      where: { id: subtaskId },
-      data,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Subtask updated', {
-      operation: 'todo_update_subtask',
-      parentTaskId,
-      subtaskId,
+    const updated = await todoSubtaskService.updateSubtask({
       userId,
+      parentTaskId: req.params.id,
+      subtaskId: req.params.subtaskId,
+      ...req.body,
     });
-
-    res.json(updatedSubtask);
+    res.json(updated);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to update subtask', {
       operation: 'todo_update_subtask',
@@ -2127,10 +747,6 @@ export async function updateSubtask(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * DELETE /api/todo/tasks/:id/subtasks/:subtaskId
- * Delete a subtask
- */
 export async function deleteSubtask(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2138,54 +754,14 @@ export async function deleteSubtask(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const parentTaskId = req.params.id;
-    const subtaskId = req.params.subtaskId;
-
-    // Verify subtask exists and belongs to parent task
-    const subtask = await prisma.task.findFirst({
-      where: {
-        id: subtaskId,
-        parentTaskId: parentTaskId,
-        trashedAt: null,
-      },
-      include: {
-        parentTask: true,
-      },
-    });
-
-    if (!subtask) {
-      res.status(404).json({ error: 'Subtask not found' });
-      return;
-    }
-
-    // Verify user has access to parent task
-    if (!subtask.parentTask) {
-      res.status(404).json({ error: 'Parent task not found' });
-      return;
-    }
-    const hasAccess = subtask.parentTask.createdById === userId || 
-                      subtask.parentTask.assignedToId === userId;
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Soft delete subtask
-    await prisma.task.update({
-      where: { id: subtaskId },
-      data: { trashedAt: new Date() },
-    });
-
-    await logger.info('Subtask deleted', {
-      operation: 'todo_delete_subtask',
-      parentTaskId,
-      subtaskId,
+    const result = await todoSubtaskService.deleteSubtask({
       userId,
+      parentTaskId: req.params.id,
+      subtaskId: req.params.subtaskId,
     });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to delete subtask', {
       operation: 'todo_delete_subtask',
@@ -2195,10 +771,6 @@ export async function deleteSubtask(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * POST /api/todo/tasks/:id/subtasks/:subtaskId/complete
- * Complete a subtask
- */
 export async function completeSubtask(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2206,75 +778,14 @@ export async function completeSubtask(req: Request, res: Response): Promise<void
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const parentTaskId = req.params.id;
-    const subtaskId = req.params.subtaskId;
-
-    // Verify subtask exists and belongs to parent task
-    const subtask = await prisma.task.findFirst({
-      where: {
-        id: subtaskId,
-        parentTaskId: parentTaskId,
-        trashedAt: null,
-      },
-      include: {
-        parentTask: true,
-      },
-    });
-
-    if (!subtask) {
-      res.status(404).json({ error: 'Subtask not found' });
-      return;
-    }
-
-    // Verify user has access to parent task
-    if (!subtask.parentTask) {
-      res.status(404).json({ error: 'Parent task not found' });
-      return;
-    }
-    const hasAccess = subtask.parentTask.createdById === userId || 
-                      subtask.parentTask.assignedToId === userId;
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Complete subtask
-    const updatedSubtask = await prisma.task.update({
-      where: { id: subtaskId },
-      data: {
-        status: 'DONE',
-        completedAt: new Date(),
-      },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Subtask completed', {
-      operation: 'todo_complete_subtask',
-      parentTaskId,
-      subtaskId,
+    const updated = await todoSubtaskService.completeSubtask({
       userId,
+      parentTaskId: req.params.id,
+      subtaskId: req.params.subtaskId,
     });
-
-    res.json(updatedSubtask);
+    res.json(updated);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to complete subtask', {
       operation: 'todo_complete_subtask',
@@ -2284,10 +795,6 @@ export async function completeSubtask(req: Request, res: Response): Promise<void
   }
 }
 
-/**
- * POST /api/todo/tasks/:id/attachments
- * Upload a file attachment to a task
- */
 export async function uploadTaskAttachment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2295,71 +802,14 @@ export async function uploadTaskAttachment(req: Request, res: Response): Promise
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    
-    // Verify task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id: taskId,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Check if file was uploaded
-    const file = req.file;
-    if (!file) {
-      res.status(400).json({ error: 'No file uploaded' });
-      return;
-    }
-
-    // Import storage service
-    const { storageService } = await import('../services/storageService');
-    
-    // Generate unique file path
-    const path = require('path');
-    const fileExtension = path.extname(file.originalname);
-    const uniqueFilename = `task-attachments/${taskId}/${userId}-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
-    
-    // Upload file using storage service
-    const uploadResult = await storageService.uploadFile(file, uniqueFilename, {
-      makePublic: true,
-      metadata: {
-        userId,
-        taskId,
-        originalName: file.originalname,
-      },
-    });
-
-    // Create attachment record
-    const attachment = await prisma.taskAttachment.create({
-      data: {
-        taskId,
-        name: file.originalname,
-        url: uploadResult.url,
-        size: file.size,
-        mimeType: file.mimetype,
-      },
-    });
-
-    await logger.info('Task attachment uploaded', {
-      operation: 'todo_upload_attachment',
-      taskId,
-      attachmentId: attachment.id,
+    const attachment = await todoAttachmentService.uploadAttachment({
       userId,
+      taskId: req.params.id,
+      file: req.file as Express.Multer.File,
     });
-
     res.status(201).json(attachment);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to upload task attachment', {
       operation: 'todo_upload_attachment',
@@ -2369,10 +819,6 @@ export async function uploadTaskAttachment(req: Request, res: Response): Promise
   }
 }
 
-/**
- * DELETE /api/todo/tasks/:id/attachments/:attachmentId
- * Delete a task attachment
- */
 export async function deleteTaskAttachment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2380,68 +826,14 @@ export async function deleteTaskAttachment(req: Request, res: Response): Promise
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    const attachmentId = req.params.attachmentId;
-
-    // Verify attachment exists and belongs to task
-    const attachment = await prisma.taskAttachment.findFirst({
-      where: {
-        id: attachmentId,
-        taskId: taskId,
-      },
-      include: {
-        task: true,
-      },
-    });
-
-    if (!attachment) {
-      res.status(404).json({ error: 'Attachment not found' });
-      return;
-    }
-
-    // Verify user has access to task
-    const hasAccess = attachment.task.createdById === userId || 
-                      attachment.task.assignedToId === userId;
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    // Delete file from storage if URL exists
-    if (attachment.url) {
-      try {
-        const { storageService } = await import('../services/storageService');
-        // Extract path from URL for deletion
-        const urlObj = new URL(attachment.url);
-        const pathToDelete = urlObj.pathname.startsWith('/') 
-          ? urlObj.pathname.substring(1) 
-          : urlObj.pathname;
-        await storageService.deleteFile(pathToDelete);
-      } catch (storageError) {
-        await logger.error('Failed to delete file from storage', {
-          operation: 'todo_delete_attachment_storage',
-          attachmentId,
-          error: { message: storageError instanceof Error ? storageError.message : 'Unknown error' },
-        });
-        // Continue with database deletion even if storage deletion fails
-      }
-    }
-
-    // Delete attachment record
-    await prisma.taskAttachment.delete({
-      where: { id: attachmentId },
-    });
-
-    await logger.info('Task attachment deleted', {
-      operation: 'todo_delete_attachment',
-      taskId,
-      attachmentId,
+    const result = await todoAttachmentService.deleteAttachment({
       userId,
+      taskId: req.params.id,
+      attachmentId: req.params.attachmentId,
     });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to delete task attachment', {
       operation: 'todo_delete_attachment',
@@ -2451,11 +843,6 @@ export async function deleteTaskAttachment(req: Request, res: Response): Promise
   }
 }
 
-/**
- * GET /api/todo/tasks/:id/attachments/:attachmentId/serve
- * Serve a task attachment file
- * This endpoint allows serving attachments even when GCS bucket has public access prevention
- */
 export async function serveTaskAttachment(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2463,74 +850,18 @@ export async function serveTaskAttachment(req: Request, res: Response): Promise<
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const taskId = req.params.id;
-    const attachmentId = req.params.attachmentId;
-
-    // Verify attachment exists and belongs to task
-    const attachment = await prisma.taskAttachment.findFirst({
-      where: {
-        id: attachmentId,
-        taskId: taskId,
-      },
-      include: {
-        task: true,
-      },
+    const served = await todoAttachmentService.serveAttachment({
+      userId,
+      taskId: req.params.id,
+      attachmentId: req.params.attachmentId,
     });
-
-    if (!attachment) {
-      res.status(404).json({ error: 'Attachment not found' });
-      return;
-    }
-
-    // Verify user has access to task
-    const hasAccess = attachment.task.createdById === userId || 
-                      attachment.task.assignedToId === userId;
-    if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied' });
-      return;
-    }
-
-    if (!attachment.url) {
-      res.status(404).json({ error: 'Attachment URL not found' });
-      return;
-    }
-
-    // Extract file path from URL
-    let filePath: string;
-    if (attachment.url.includes('storage.googleapis.com')) {
-      // GCS URL: https://storage.googleapis.com/bucket/path
-      const urlParts = attachment.url.split('/');
-      const bucketIndex = urlParts.findIndex(part => part.includes('storage.googleapis.com'));
-      if (bucketIndex >= 0 && urlParts[bucketIndex + 1]) {
-        filePath = urlParts.slice(bucketIndex + 1).join('/');
-      } else {
-        res.status(400).json({ error: 'Invalid GCS URL format' });
-        return;
-      }
-    } else if (attachment.url.includes('/uploads/')) {
-      // Local URL: /uploads/path
-      filePath = attachment.url.split('/uploads/')[1];
-    } else {
-      res.status(400).json({ error: 'Unsupported URL format' });
-      return;
-    }
-
-    // Get file buffer from storage
-    const { storageService } = await import('../services/storageService');
-    const fileBuffer = await storageService.getFileBuffer(filePath);
-
-    // Determine content type
-    const contentType = attachment.mimeType || 'application/octet-stream';
-
-    // Set headers and send file
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${attachment.name}"`);
-    res.setHeader('Content-Length', fileBuffer.length.toString());
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-    res.send(fileBuffer);
-
+    res.setHeader('Content-Type', served.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${served.filename}"`);
+    res.setHeader('Content-Length', served.buffer.length.toString());
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.send(served.buffer);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to serve task attachment', {
       operation: 'todo_serve_attachment',
@@ -2541,50 +872,6 @@ export async function serveTaskAttachment(req: Request, res: Response): Promise<
   }
 }
 
-/**
- * Helper function to check for circular dependencies
- * Returns true if adding a dependency would create a cycle
- */
-async function wouldCreateCircularDependency(
-  taskId: string,
-  dependsOnTaskId: string
-): Promise<boolean> {
-  // If task A depends on task B, we need to check if task B (or any of its dependencies) depends on task A
-  const visited = new Set<string>();
-  const queue: string[] = [dependsOnTaskId];
-
-  while (queue.length > 0) {
-    const currentTaskId = queue.shift();
-    if (!currentTaskId) break;
-
-    // If we've already visited this task, skip
-    if (visited.has(currentTaskId)) continue;
-    visited.add(currentTaskId);
-
-    // If the current task is the original task, we have a cycle
-    if (currentTaskId === taskId) {
-      return true;
-    }
-
-    // Get all tasks that the current task depends on
-    const dependencies = await prisma.taskDependency.findMany({
-      where: { taskId: currentTaskId },
-      select: { dependsOnTaskId: true },
-    });
-
-    // Add all dependencies to the queue
-    for (const dep of dependencies) {
-      queue.push(dep.dependsOnTaskId);
-    }
-  }
-
-  return false;
-}
-
-/**
- * POST /api/todo/tasks/:id/dependencies
- * Add a dependency to a task
- */
 export async function addTaskDependency(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2592,103 +879,14 @@ export async function addTaskDependency(req: Request, res: Response): Promise<vo
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id: taskId } = req.params;
-    const { dependsOnTaskId } = req.body;
-
-    if (!dependsOnTaskId || typeof dependsOnTaskId !== 'string') {
-      res.status(400).json({ error: 'dependsOnTaskId is required' });
-      return;
-    }
-
-    // Validate that both tasks exist and user has access
-    const [task, dependsOnTask] = await Promise.all([
-      prisma.task.findFirst({
-        where: {
-          id: taskId,
-          trashedAt: null,
-          OR: [
-            { createdById: userId },
-            { assignedToId: userId },
-          ],
-        },
-      }),
-      prisma.task.findFirst({
-        where: {
-          id: dependsOnTaskId,
-          trashedAt: null,
-          OR: [
-            { createdById: userId },
-            { assignedToId: userId },
-          ],
-        },
-      }),
-    ]);
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    if (!dependsOnTask) {
-      res.status(404).json({ error: 'Dependency task not found' });
-      return;
-    }
-
-    // Prevent self-dependency
-    if (taskId === dependsOnTaskId) {
-      res.status(400).json({ error: 'Task cannot depend on itself' });
-      return;
-    }
-
-    // Check for circular dependencies
-    const wouldCreateCycle = await wouldCreateCircularDependency(taskId, dependsOnTaskId);
-    if (wouldCreateCycle) {
-      res.status(400).json({ error: 'This dependency would create a circular dependency' });
-      return;
-    }
-
-    // Check if dependency already exists
-    const existing = await prisma.taskDependency.findUnique({
-      where: {
-        taskId_dependsOnTaskId: {
-          taskId,
-          dependsOnTaskId,
-        },
-      },
-    });
-
-    if (existing) {
-      res.status(400).json({ error: 'Dependency already exists' });
-      return;
-    }
-
-    // Create the dependency
-    const dependency = await prisma.taskDependency.create({
-      data: {
-        taskId,
-        dependsOnTaskId,
-      },
-      include: {
-        dependsOn: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Task dependency added', {
-      operation: 'todo_add_dependency',
-      taskId,
-      dependsOnTaskId,
+    const dependency = await todoDependencyService.addDependency({
       userId,
+      taskId: req.params.id,
+      dependsOnTaskId: req.body.dependsOnTaskId,
     });
-
     res.json(dependency);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to add task dependency', {
       operation: 'todo_add_dependency',
@@ -2698,10 +896,6 @@ export async function addTaskDependency(req: Request, res: Response): Promise<vo
   }
 }
 
-/**
- * DELETE /api/todo/tasks/:id/dependencies/:dependsOnTaskId
- * Remove a dependency from a task
- */
 export async function removeTaskDependency(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2709,58 +903,14 @@ export async function removeTaskDependency(req: Request, res: Response): Promise
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id: taskId, dependsOnTaskId } = req.params;
-
-    // Validate that task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id: taskId,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Delete the dependency (try both directions since we might be removing from either side)
-    let deleted = await prisma.taskDependency.deleteMany({
-      where: {
-        taskId,
-        dependsOnTaskId,
-      },
-    });
-
-    // If not found, try the reverse direction (in case we're removing a "blocked by" dependency)
-    if (deleted.count === 0) {
-      deleted = await prisma.taskDependency.deleteMany({
-        where: {
-          taskId: dependsOnTaskId,
-          dependsOnTaskId: taskId,
-        },
-      });
-    }
-
-    if (deleted.count === 0) {
-      res.status(404).json({ error: 'Dependency not found' });
-      return;
-    }
-
-    await logger.info('Task dependency removed', {
-      operation: 'todo_remove_dependency',
-      taskId,
-      dependsOnTaskId,
+    const result = await todoDependencyService.removeDependency({
       userId,
+      taskId: req.params.id,
+      dependsOnTaskId: req.params.dependsOnTaskId,
     });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to remove task dependency', {
       operation: 'todo_remove_dependency',
@@ -2770,10 +920,6 @@ export async function removeTaskDependency(req: Request, res: Response): Promise
   }
 }
 
-/**
- * GET /api/todo/tasks/:id/dependencies
- * Get all dependencies for a task (both depends on and blocked by)
- */
 export async function getTaskDependencies(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2781,69 +927,13 @@ export async function getTaskDependencies(req: Request, res: Response): Promise<
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id: taskId } = req.params;
-
-    // Validate that task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id: taskId,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
+    const result = await todoDependencyService.listDependencies({
+      userId,
+      taskId: req.params.id,
     });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Get all dependencies (tasks this task depends on)
-    const dependsOn = await prisma.taskDependency.findMany({
-      where: { taskId },
-      include: {
-        dependsOn: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-            dueDate: true,
-          },
-        },
-      },
-    });
-
-    // Get all blocking tasks (tasks that depend on this task)
-    const blockedBy = await prisma.taskDependency.findMany({
-      where: { dependsOnTaskId: taskId },
-      include: {
-        task: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-            dueDate: true,
-          },
-        },
-      },
-    });
-
-    res.json({
-      dependsOn: dependsOn.map(dep => ({
-        id: dep.id,
-        task: dep.dependsOn,
-      })),
-      blockedBy: blockedBy.map(dep => ({
-        id: dep.id,
-        task: dep.task,
-      })),
-    });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to get task dependencies', {
       operation: 'todo_get_dependencies',
@@ -2853,10 +943,6 @@ export async function getTaskDependencies(req: Request, res: Response): Promise<
   }
 }
 
-/**
- * GET /api/todo/projects
- * List all projects for a dashboard/business
- */
 export async function getProjects(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2864,69 +950,19 @@ export async function getProjects(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
     const { dashboardId, businessId } = req.query;
-
     if (!dashboardId || typeof dashboardId !== 'string') {
       res.status(400).json({ error: 'dashboardId is required' });
       return;
     }
-
-    let businessScope: string | null = null;
-    if (businessId !== undefined && typeof businessId === 'string' && businessId.trim() !== '') {
-      businessScope = businessId;
-    } else {
-      const dash = await prisma.dashboard.findFirst({
-        where: { id: dashboardId, userId },
-        select: { businessId: true },
-      });
-      if (!dash) {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-      businessScope = dash.businessId ?? null;
-    }
-
-    try {
-      await assertUserOwnedDashboardBusinessAlignment(prisma, userId, dashboardId, businessScope);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      throw err;
-    }
-
-    const where: Prisma.TaskProjectWhereInput = {
+    const projects = await todoProjectService.listProjects({
+      userId,
       dashboardId,
-      businessId: businessScope,
-    };
-
-    const projects = await prisma.taskProject.findMany({
-      where,
-      include: {
-        _count: {
-          select: {
-            tasks: {
-              where: {
-                trashedAt: null,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      businessId: typeof businessId === 'string' ? businessId : undefined,
     });
-
     res.json(projects);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to get projects', {
       operation: 'todo_get_projects',
@@ -2936,10 +972,6 @@ export async function getProjects(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * POST /api/todo/projects
- * Create a new project
- */
 export async function createProject(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -2947,57 +979,13 @@ export async function createProject(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { name, description, dashboardId, businessId, color } = req.body;
-
-    if (!name || typeof name !== 'string') {
-      res.status(400).json({ error: 'Project name is required' });
-      return;
-    }
-
-    if (!dashboardId || typeof dashboardId !== 'string') {
-      res.status(400).json({ error: 'dashboardId is required' });
-      return;
-    }
-
-    try {
-      await assertUserOwnedDashboardBusinessAlignment(
-        prisma,
-        userId,
-        dashboardId,
-        businessId ?? null
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      throw err;
-    }
-
-    const project = await prisma.taskProject.create({
-      data: {
-        name,
-        description: description || null,
-        dashboardId,
-        businessId: businessId || null,
-        color: color || null,
-      },
-    });
-
-    await logger.info('Project created', {
-      operation: 'todo_create_project',
-      projectId: project.id,
+    const project = await todoProjectService.createProject({
       userId,
+      ...req.body,
     });
-
     res.json(project);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to create project', {
       operation: 'todo_create_project',
@@ -3007,10 +995,6 @@ export async function createProject(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * PUT /api/todo/projects/:id
- * Update a project
- */
 export async function updateProject(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3018,56 +1002,14 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-    const { name, description, color } = req.body;
-
-    const project = await prisma.taskProject.findUnique({
-      where: { id },
-    });
-
-    if (!project) {
-      res.status(404).json({ error: 'Project not found' });
-      return;
-    }
-
-    try {
-      await assertUserOwnedDashboardBusinessAlignment(
-        prisma,
-        userId,
-        project.dashboardId,
-        project.businessId
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      throw err;
-    }
-
-    const updated = await prisma.taskProject.update({
-      where: { id },
-      data: {
-        ...(name && typeof name === 'string' ? { name } : {}),
-        ...(description !== undefined ? { description: description || null } : {}),
-        ...(color !== undefined ? { color: color || null } : {}),
-      },
-    });
-
-    await logger.info('Project updated', {
-      operation: 'todo_update_project',
-      projectId: id,
+    const updated = await todoProjectService.updateProject({
       userId,
+      projectId: req.params.id,
+      ...req.body,
     });
-
     res.json(updated);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to update project', {
       operation: 'todo_update_project',
@@ -3077,10 +1019,6 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * DELETE /api/todo/projects/:id
- * Delete a project
- */
 export async function deleteProject(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3088,65 +1026,13 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-
-    const project = await prisma.taskProject.findUnique({
-      where: { id },
-      include: {
-        _count: {
-          select: {
-            tasks: true,
-          },
-        },
-      },
-    });
-
-    if (!project) {
-      res.status(404).json({ error: 'Project not found' });
-      return;
-    }
-
-    try {
-      await assertUserOwnedDashboardBusinessAlignment(
-        prisma,
-        userId,
-        project.dashboardId,
-        project.businessId
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Project not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(403).json({ error: 'Access denied' });
-        return;
-      }
-      throw err;
-    }
-
-    // If project has tasks, unassign them (set projectId to null)
-    if (project._count.tasks > 0) {
-      await prisma.task.updateMany({
-        where: { projectId: id },
-        data: { projectId: null },
-      });
-    }
-
-    await prisma.taskProject.delete({
-      where: { id },
-    });
-
-    await logger.info('Project deleted', {
-      operation: 'todo_delete_project',
-      projectId: id,
+    const result = await todoProjectService.deleteProject({
       userId,
+      projectId: req.params.id,
     });
-
-    res.json({ success: true });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to delete project', {
       operation: 'todo_delete_project',
@@ -3156,10 +1042,6 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * POST /api/todo/tasks/:id/generate-instances
- * Generate recurring task instances for a parent task
- */
 export async function generateRecurringInstances(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3167,45 +1049,14 @@ export async function generateRecurringInstances(req: Request, res: Response): P
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-    const { maxInstances } = req.body;
-
-    // Verify task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    if (!task.recurrenceRule) {
-      res.status(400).json({ error: 'Task is not a recurring task' });
-      return;
-    }
-
-    // Import recurrence service
-    const { createRecurringInstances } = await import('../services/todoRecurrenceService');
-    const count = await createRecurringInstances(id, maxInstances || 100);
-
-    await logger.info('Recurring instances generated', {
-      operation: 'todo_generate_instances',
-      taskId: id,
-      count,
+    const result = await todoRecurrenceOrchestration.generateRecurringInstancesForTask({
       userId,
+      taskId: req.params.id,
+      maxInstances: req.body.maxInstances,
     });
-
-    res.json({ success: true, count });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to generate recurring instances', {
       operation: 'todo_generate_instances',
@@ -3215,10 +1066,6 @@ export async function generateRecurringInstances(req: Request, res: Response): P
   }
 }
 
-/**
- * GET /api/todo/tasks/:id/recurrence-description
- * Get human-readable description of recurrence rule
- */
 export async function getRecurrenceDescription(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3226,41 +1073,13 @@ export async function getRecurrenceDescription(req: Request, res: Response): Pro
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-
-    // Verify task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-      select: {
-        recurrenceRule: true,
-        dueDate: true,
-      },
+    const result = await todoRecurrenceOrchestration.getRecurrenceDescriptionForTask({
+      userId,
+      taskId: req.params.id,
     });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    if (!task.recurrenceRule) {
-      res.json({ description: 'No recurrence' });
-      return;
-    }
-
-    // Import recurrence service
-    const { describeRRULE } = await import('../services/todoRecurrenceService');
-    const description = describeRRULE(task.recurrenceRule, task.dueDate ? new Date(task.dueDate) : undefined);
-
-    res.json({ description });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to get recurrence description', {
       operation: 'todo_get_recurrence_description',
@@ -3270,14 +1089,6 @@ export async function getRecurrenceDescription(req: Request, res: Response): Pro
   }
 }
 
-// ============================================================================
-// TIME TRACKING ENDPOINTS
-// ============================================================================
-
-/**
- * Start a timer for a task
- * POST /api/todo/tasks/:id/timer/start
- */
 export async function startTimer(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3285,72 +1096,19 @@ export async function startTimer(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-
-    // Check if task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    // Check if user already has an active timer (any task)
-    const activeTimer = await prisma.taskTimeLog.findFirst({
-      where: {
-        userId,
-        isActive: true,
-      },
-    });
-
-    if (activeTimer) {
-      res.status(400).json({ 
-        error: 'You already have an active timer. Please stop it first.',
-        activeTimerId: activeTimer.id,
-        activeTaskId: activeTimer.taskId,
+    const result = await todoTimeLogService.startTimer({ userId, taskId: req.params.id });
+    res.json(result);
+  } catch (error: unknown) {
+    if (error instanceof TodoServiceError && error.status === 400 && 'activeTimerId' in error) {
+      const timerErr = error as TodoServiceError & { activeTimerId: string; activeTaskId: string };
+      res.status(400).json({
+        error: timerErr.message,
+        activeTimerId: timerErr.activeTimerId,
+        activeTaskId: timerErr.activeTaskId,
       });
       return;
     }
-
-    // Create new time log entry
-    const timeLog = await prisma.taskTimeLog.create({
-      data: {
-        taskId: id,
-        userId,
-        startedAt: new Date(),
-        isActive: true,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    await logger.info('Timer started', {
-      operation: 'todo_start_timer',
-      taskId: id,
-      userId,
-      timeLogId: timeLog.id,
-    });
-
-    res.json({ timeLog });
-  } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to start timer', {
       operation: 'todo_start_timer',
@@ -3360,10 +1118,6 @@ export async function startTimer(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * Stop the active timer for a task
- * POST /api/todo/tasks/:id/timer/stop
- */
 export async function stopTimer(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3371,71 +1125,14 @@ export async function stopTimer(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-    const { description } = req.body;
-
-    // Find active timer for this task and user
-    const activeTimer = await prisma.taskTimeLog.findFirst({
-      where: {
-        taskId: id,
-        userId,
-        isActive: true,
-      },
-    });
-
-    if (!activeTimer) {
-      res.status(404).json({ error: 'No active timer found for this task' });
-      return;
-    }
-
-    const stoppedAt = new Date();
-    const duration = Math.floor((stoppedAt.getTime() - activeTimer.startedAt.getTime()) / (1000 * 60)); // minutes
-
-    // Update time log
-    const timeLog = await prisma.taskTimeLog.update({
-      where: { id: activeTimer.id },
-      data: {
-        stoppedAt,
-        duration,
-        description: description || null,
-        isActive: false,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    // Update task's actualTimeSpent
-    const task = await prisma.task.findUnique({
-      where: { id },
-      select: { actualTimeSpent: true },
-    });
-
-    const newActualTime = (task?.actualTimeSpent || 0) + duration;
-
-    await prisma.task.update({
-      where: { id },
-      data: { actualTimeSpent: newActualTime },
-    });
-
-    await logger.info('Timer stopped', {
-      operation: 'todo_stop_timer',
-      taskId: id,
+    const result = await todoTimeLogService.stopTimer({
       userId,
-      timeLogId: timeLog.id,
-      duration,
+      taskId: req.params.id,
+      description: req.body.description,
     });
-
-    res.json({ timeLog, totalTimeSpent: newActualTime });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to stop timer', {
       operation: 'todo_stop_timer',
@@ -3445,10 +1142,6 @@ export async function stopTimer(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * Get active timer for current user
- * GET /api/todo/timer/active
- */
 export async function getActiveTimer(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3456,31 +1149,8 @@ export async function getActiveTimer(req: Request, res: Response): Promise<void>
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const activeTimer = await prisma.taskTimeLog.findFirst({
-      where: {
-        userId,
-        isActive: true,
-      },
-      include: {
-        task: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    res.json({ timeLog: activeTimer });
+    const result = await todoTimeLogService.getActiveTimer(userId);
+    res.json(result);
   } catch (error: unknown) {
     const err = error as Error;
     await logger.error('Failed to get active timer', {
@@ -3491,10 +1161,6 @@ export async function getActiveTimer(req: Request, res: Response): Promise<void>
   }
 }
 
-/**
- * Log manual time entry
- * POST /api/todo/tasks/:id/time-logs
- */
 export async function logTime(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3502,77 +1168,16 @@ export async function logTime(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-    const { startedAt, duration, description } = req.body;
-
-    // Validate input
-    if (!startedAt || !duration || duration <= 0) {
-      res.status(400).json({ error: 'startedAt and duration (in minutes) are required' });
-      return;
-    }
-
-    // Check if task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
-    });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const startedAtDate = new Date(startedAt);
-    const stoppedAtDate = new Date(startedAtDate.getTime() + duration * 60 * 1000);
-
-    // Create time log
-    const timeLog = await prisma.taskTimeLog.create({
-      data: {
-        taskId: id,
-        userId,
-        startedAt: startedAtDate,
-        stoppedAt: stoppedAtDate,
-        duration,
-        description: description || null,
-        isActive: false,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    // Update task's actualTimeSpent
-    const newActualTime = (task.actualTimeSpent || 0) + duration;
-
-    await prisma.task.update({
-      where: { id },
-      data: { actualTimeSpent: newActualTime },
-    });
-
-    await logger.info('Time logged', {
-      operation: 'todo_log_time',
-      taskId: id,
+    const result = await todoTimeLogService.logTime({
       userId,
-      timeLogId: timeLog.id,
-      duration,
+      taskId: req.params.id,
+      startedAt: req.body.startedAt,
+      duration: req.body.duration,
+      description: req.body.description,
     });
-
-    res.json({ timeLog, totalTimeSpent: newActualTime });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to log time', {
       operation: 'todo_log_time',
@@ -3582,10 +1187,6 @@ export async function logTime(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * Get time logs for a task
- * GET /api/todo/tasks/:id/time-logs
- */
 export async function getTimeLogs(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3593,55 +1194,13 @@ export async function getTimeLogs(req: Request, res: Response): Promise<void> {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id } = req.params;
-
-    // Check if task exists and user has access
-    const task = await prisma.task.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ],
-      },
+    const result = await todoTimeLogService.listTimeLogs({
+      userId,
+      taskId: req.params.id,
     });
-
-    if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const timeLogs = await prisma.taskTimeLog.findMany({
-      where: { taskId: id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: { startedAt: 'desc' },
-    });
-
-    // Calculate totals
-    const totalTime = timeLogs
-      .filter(log => log.duration !== null)
-      .reduce((sum, log) => sum + (log.duration || 0), 0);
-
-    res.json({ 
-      timeLogs, 
-      totalTime,
-      task: {
-        timeEstimate: task.timeEstimate,
-        actualTimeSpent: task.actualTimeSpent,
-      },
-    });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to get time logs', {
       operation: 'todo_get_time_logs',
@@ -3651,10 +1210,6 @@ export async function getTimeLogs(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * Update a time log
- * PUT /api/todo/tasks/:id/time-logs/:logId
- */
 export async function updateTimeLog(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3662,73 +1217,17 @@ export async function updateTimeLog(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id, logId } = req.params;
-    const { startedAt, duration, description } = req.body;
-
-    // Check if time log exists and belongs to user
-    const existingLog = await prisma.taskTimeLog.findFirst({
-      where: {
-        id: logId,
-        taskId: id,
-        userId,
-        isActive: false, // Can only update completed logs
-      },
-    });
-
-    if (!existingLog) {
-      res.status(404).json({ error: 'Time log not found' });
-      return;
-    }
-
-    const oldDuration = existingLog.duration || 0;
-    const newDuration = duration || oldDuration;
-    const startedAtDate = startedAt ? new Date(startedAt) : existingLog.startedAt;
-    const stoppedAtDate = new Date(startedAtDate.getTime() + newDuration * 60 * 1000);
-
-    // Update time log
-    const timeLog = await prisma.taskTimeLog.update({
-      where: { id: logId },
-      data: {
-        startedAt: startedAtDate,
-        stoppedAt: stoppedAtDate,
-        duration: newDuration,
-        description: description !== undefined ? description : existingLog.description,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    // Update task's actualTimeSpent
-    const task = await prisma.task.findUnique({
-      where: { id },
-      select: { actualTimeSpent: true },
-    });
-
-    const newActualTime = (task?.actualTimeSpent || 0) - oldDuration + newDuration;
-
-    await prisma.task.update({
-      where: { id },
-      data: { actualTimeSpent: newActualTime },
-    });
-
-    await logger.info('Time log updated', {
-      operation: 'todo_update_time_log',
-      taskId: id,
+    const result = await todoTimeLogService.updateTimeLog({
       userId,
-      timeLogId: logId,
+      taskId: req.params.id,
+      logId: req.params.logId,
+      startedAt: req.body.startedAt,
+      duration: req.body.duration,
+      description: req.body.description,
     });
-
-    res.json({ timeLog, totalTimeSpent: newActualTime });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to update time log', {
       operation: 'todo_update_time_log',
@@ -3738,10 +1237,6 @@ export async function updateTimeLog(req: Request, res: Response): Promise<void> 
   }
 }
 
-/**
- * Delete a time log
- * DELETE /api/todo/tasks/:id/time-logs/:logId
- */
 export async function deleteTimeLog(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -3749,53 +1244,14 @@ export async function deleteTimeLog(req: Request, res: Response): Promise<void> 
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-
-    const { id, logId } = req.params;
-
-    // Check if time log exists and belongs to user
-    const existingLog = await prisma.taskTimeLog.findFirst({
-      where: {
-        id: logId,
-        taskId: id,
-        userId,
-        isActive: false, // Can only delete completed logs
-      },
-    });
-
-    if (!existingLog) {
-      res.status(404).json({ error: 'Time log not found' });
-      return;
-    }
-
-    const duration = existingLog.duration || 0;
-
-    // Delete time log
-    await prisma.taskTimeLog.delete({
-      where: { id: logId },
-    });
-
-    // Update task's actualTimeSpent
-    const task = await prisma.task.findUnique({
-      where: { id },
-      select: { actualTimeSpent: true },
-    });
-
-    const newActualTime = Math.max(0, (task?.actualTimeSpent || 0) - duration);
-
-    await prisma.task.update({
-      where: { id },
-      data: { actualTimeSpent: newActualTime },
-    });
-
-    await logger.info('Time log deleted', {
-      operation: 'todo_delete_time_log',
-      taskId: id,
+    const result = await todoTimeLogService.deleteTimeLog({
       userId,
-      timeLogId: logId,
+      taskId: req.params.id,
+      logId: req.params.logId,
     });
-
-    res.json({ success: true, totalTimeSpent: newActualTime });
+    res.json(result);
   } catch (error: unknown) {
+    if (respondTodoServiceError(res, error)) return;
     const err = error as Error;
     await logger.error('Failed to delete time log', {
       operation: 'todo_delete_time_log',
@@ -3950,50 +1406,29 @@ export async function executePriorityChanges(req: Request, res: Response): Promi
       }
     }
 
-    // TODO: Check autonomy settings via AutonomyManager
-    // For now, execute directly (will add autonomy check in Phase 4.1.4)
+    const { aiExecutePriorityChanges } = await import('../services/todoAIActionService.js');
+    const outcome = await aiExecutePriorityChanges({ userId, suggestions });
 
-    // Update priorities
-    const updatePromises = suggestions.map(async (suggestion: {
-      taskId: string;
-      newPriority: string;
-    }) => {
-      // Verify task belongs to user
-      const task = await prisma.task.findFirst({
-        where: {
-          id: suggestion.taskId,
-          createdById: userId,
-          trashedAt: null,
-        },
-      });
+    if (!outcome.success) {
+      res.status(400).json({ error: outcome.error });
+      return;
+    }
 
-      if (!task) {
-        throw new Error(`Task ${suggestion.taskId} not found or access denied`);
-      }
-
-      return prisma.task.update({
-        where: { id: suggestion.taskId },
-        data: { priority: suggestion.newPriority as any },
-      });
-    });
-
-    const results = await Promise.allSettled(updatePromises);
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const data = outcome.data as { updated: number; failed: number; total: number };
 
     await logger.info('Priority changes executed', {
       operation: 'todo_ai_prioritize_execute',
       userId,
-      total: suggestions.length,
-      successful,
-      failed,
+      total: data.total,
+      successful: data.updated,
+      failed: data.failed,
     });
 
     res.json({
       success: true,
-      updated: successful,
-      failed,
-      total: suggestions.length,
+      updated: data.updated,
+      failed: data.failed,
+      total: data.total,
     });
   } catch (error: unknown) {
     const err = error as Error;
@@ -4185,56 +1620,29 @@ export async function executeSchedulingChanges(req: Request, res: Response): Pro
       }
     }
 
-    // Update task due dates
-    const updatePromises = suggestions.map(async (suggestion: {
-      taskId: string;
-      suggestedDueDate: string;
-      suggestedStartDate?: string;
-    }) => {
-      // Verify task belongs to user
-      const task = await prisma.task.findFirst({
-        where: {
-          id: suggestion.taskId,
-          createdById: userId,
-          trashedAt: null,
-        },
-      });
+    const { aiExecuteSchedulingChanges } = await import('../services/todoAIActionService.js');
+    const outcome = await aiExecuteSchedulingChanges({ userId, suggestions });
 
-      if (!task) {
-        throw new Error(`Task ${suggestion.taskId} not found or access denied`);
-      }
+    if (!outcome.success) {
+      res.status(400).json({ error: outcome.error });
+      return;
+    }
 
-      const updateData: any = {
-        dueDate: new Date(suggestion.suggestedDueDate),
-      };
-
-      if (suggestion.suggestedStartDate) {
-        updateData.startDate = new Date(suggestion.suggestedStartDate);
-      }
-
-      return prisma.task.update({
-        where: { id: suggestion.taskId },
-        data: updateData,
-      });
-    });
-
-    const results = await Promise.allSettled(updatePromises);
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const data = outcome.data as { updated: number; failed: number; total: number };
 
     await logger.info('Scheduling changes executed', {
       operation: 'todo_ai_schedule_execute',
       userId,
-      total: suggestions.length,
-      successful,
-      failed,
+      total: data.total,
+      successful: data.updated,
+      failed: data.failed,
     });
 
     res.json({
       success: true,
-      updated: successful,
-      failed,
-      total: suggestions.length,
+      updated: data.updated,
+      failed: data.failed,
+      total: data.total,
     });
   } catch (error: unknown) {
     const err = error as Error;

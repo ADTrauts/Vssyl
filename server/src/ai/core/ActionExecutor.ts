@@ -1202,217 +1202,179 @@ export class ActionExecutor {
     }
   }
 
+  private todoActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'todo' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private todoActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.todoActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: outcome.data,
+      metadata: this.todoActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
   /**
-   * Tasks module action executor
+   * Tasks module action executor — canonical services only (Phase 1F).
    */
   private async executeTasksAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
+    const startTime = Date.now();
+    const { operation, parameters } = action;
+
     try {
-      const { operation, parameters } = action;
+      const {
+        aiCreateTask,
+        aiUpdateTask,
+        aiCompleteTask,
+        aiBulkUpdatePriority,
+      } = await import('../../services/todoAIActionService.js');
 
       switch (operation) {
         case 'update_priority': {
           const { taskId, newPriority } = parameters || {};
-          
           if (!taskId || !newPriority) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'taskId and newPriority are required',
-              metadata: {
-                executionTime: 0,
-                module: 'todo',
-                operation: 'update_priority',
-                affectedUsers: [],
-                rollbackAvailable: false
-              }
-            };
+            return this.todoActionResult(
+              action,
+              startTime,
+              'update_priority',
+              { success: false, error: 'taskId and newPriority are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          // Import todoController directly (internal call)
-          const { updateTask } = await import('../../controllers/todoController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: taskId },
-            body: { priority: newPriority }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiUpdateTask({
+            userId: userContext.userId,
+            taskId: String(taskId),
+            priority: String(newPriority),
+          });
 
-          await updateTask(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: 0,
-              module: 'todo',
-              operation: 'update_priority',
-              affectedUsers: [],
-              rollbackAvailable: true
-            }
-          };
+          return this.todoActionResult(
+            action,
+            startTime,
+            'update_priority',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'bulk_update_priority': {
           const { taskIds, newPriority } = parameters || {};
-          
           if (!Array.isArray(taskIds) || !newPriority) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'taskIds (array) and newPriority are required',
-              metadata: {
-                executionTime: 0,
-                module: 'todo',
-                operation: 'bulk_update_priority',
-                affectedUsers: [],
-                rollbackAvailable: false
-              }
-            };
+            return this.todoActionResult(
+              action,
+              startTime,
+              'bulk_update_priority',
+              { success: false, error: 'taskIds (array) and newPriority are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          // Import todoController directly
-          const { updateTask } = await import('../../controllers/todoController');
-          
-          const results = [];
-          for (const taskId of taskIds) {
-            const mockReq = {
-              user: { id: userContext.userId },
-              params: { id: taskId },
-              body: { priority: newPriority }
-            } as any;
-            
-            let result: any = {};
-            const mockRes = {
-              json: (data: any) => { result = data; },
-              status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-            } as any;
+          const outcome = await aiBulkUpdatePriority({
+            userId: userContext.userId,
+            taskIds: taskIds.map(String),
+            newPriority: String(newPriority),
+          });
 
-            await updateTask(mockReq, mockRes);
-            results.push({ taskId, success: !result.statusCode || result.statusCode === 200 });
-          }
-
-          const successful = results.filter(r => r.success).length;
-
-          return {
-            actionId: action.id,
-            success: successful > 0,
-            result: { updated: successful, total: taskIds.length, results },
-            metadata: {
-              executionTime: 0,
-              module: 'todo',
-              operation: 'bulk_update_priority',
-              affectedUsers: [],
-              rollbackAvailable: true
-            }
-          };
+          return this.todoActionResult(
+            action,
+            startTime,
+            'bulk_update_priority',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'create_task': {
           const { title, description, priority, dueDate, dashboardId, businessId } = parameters || {};
-          
-          if (!title || !dashboardId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'title and dashboardId are required',
-              metadata: {
-                executionTime: 0,
-                module: 'todo',
-                operation: 'create_task',
-                affectedUsers: [],
-                rollbackAvailable: false
-              }
-            };
+          if (!title) {
+            return this.todoActionResult(
+              action,
+              startTime,
+              'create_task',
+              { success: false, error: 'title is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { createTask } = await import('../../controllers/todoController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: {
-              title,
-              description,
-              priority: priority || 'MEDIUM',
-              dueDate: dueDate ? new Date(dueDate as string) : null,
-              dashboardId,
-              businessId: businessId || null,
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiCreateTask({
+            userId: userContext.userId,
+            title: String(title),
+            description: description != null ? String(description) : undefined,
+            priority: priority != null ? String(priority) : undefined,
+            dueDate: dueDate != null ? String(dueDate) : null,
+            dashboardId: dashboardId != null ? String(dashboardId) : null,
+            businessId: businessId != null ? String(businessId) : null,
+          });
 
-          await createTask(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-            metadata: {
-              executionTime: 0,
-              module: 'todo',
-              operation: 'create_task',
-              affectedUsers: [],
-              rollbackAvailable: true
-            }
-          };
+          return this.todoActionResult(
+            action,
+            startTime,
+            'create_task',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         case 'complete_task': {
           const { taskId } = parameters || {};
-          
           if (!taskId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'taskId is required',
-              metadata: {
-                executionTime: 0,
-                module: 'todo',
-                operation: 'complete_task',
-                affectedUsers: [],
-                rollbackAvailable: false
-              }
-            };
+            return this.todoActionResult(
+              action,
+              startTime,
+              'complete_task',
+              { success: false, error: 'taskId is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
 
-          const { completeTask } = await import('../../controllers/todoController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: taskId }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
+          const outcome = await aiCompleteTask({
+            userId: userContext.userId,
+            taskId: String(taskId),
+          });
 
-          await completeTask(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: 0,
-              module: 'todo',
-              operation: 'complete_task',
-              affectedUsers: [],
-              rollbackAvailable: true
-            }
-          };
+          return this.todoActionResult(
+            action,
+            startTime,
+            'complete_task',
+            outcome,
+            action.affectedUsers || [],
+            true
+          );
         }
 
         default:
@@ -1420,28 +1382,28 @@ export class ActionExecutor {
             actionId: action.id,
             success: false,
             error: `Unknown todo operation: ${operation}`,
-            metadata: {
-              executionTime: 0,
-              module: 'todo',
+            metadata: this.todoActionMetadata(
+              action,
+              startTime,
               operation,
-              affectedUsers: [],
-              rollbackAvailable: false
-            }
+              action.affectedUsers || [],
+              false
+            ),
           };
       }
-    } catch (error) {
-      const err = error as Error;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
       return {
         actionId: action.id,
         success: false,
-        error: err.message,
-        metadata: {
-          executionTime: 0,
-          module: 'todo',
-          operation: action.operation,
-          affectedUsers: [],
-          rollbackAvailable: false
-        }
+        error: err.message || 'Unknown error occurred',
+        metadata: this.todoActionMetadata(
+          action,
+          startTime,
+          operation,
+          action.affectedUsers || [],
+          false
+        ),
       };
     }
   }

@@ -909,3 +909,194 @@ export function emitCalendarEventReminderDispatchedEvent(params: {
     })
   );
 }
+
+export function emitTodoTaskCreatedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  status?: string;
+  priority?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'todo',
+        ...(params.status ? { status: params.status } : {}),
+        ...(params.priority ? { priority: params.priority } : {}),
+      },
+    })
+  );
+}
+
+export function emitTodoTaskUpdatedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  status?: string;
+  priority?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'todo',
+        ...(params.status ? { status: params.status } : {}),
+        ...(params.priority ? { priority: params.priority } : {}),
+      },
+    })
+  );
+}
+
+export function emitTodoTaskCompletedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_COMPLETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: { moduleId: 'todo' },
+    })
+  );
+}
+
+export function emitTodoTaskReopenedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_REOPENED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'todo',
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitTodoTaskAssignedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  assigneeUserId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_ASSIGNED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'todo',
+        assigneeUserId: params.assigneeUserId,
+      },
+    })
+  );
+}
+
+export function emitTodoTaskUnassignedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_UNASSIGNED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: { moduleId: 'todo' },
+    })
+  );
+}
+
+export function emitTodoTaskTrashedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: { moduleId: 'todo', softDelete: true },
+    })
+  );
+}
+
+export function emitTodoTaskRestoredEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: { moduleId: 'todo' },
+    })
+  );
+}
+
+export function emitTodoTaskPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  taskId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.TODO_TASK_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.taskId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: { moduleId: 'todo' },
+    })
+  );
+}

@@ -271,10 +271,36 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           read: true,
           write: true,
           ai: true,
+          vlink: true,
           trash: true,
+          notifications: true,
+          search: true,
+          realtime: true,
+          globalActivity: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/todo', label: 'To-Do' }],
+        entities: [
+          {
+            type: 'task',
+            displayName: 'Task',
+            pluralName: 'Tasks',
+            vlinkEntityType: 'TODO',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
+        notifications: [
+          {
+            type: 'todo_assigned',
+            name: 'Task assigned',
+            description: 'Sent when a task is assigned to you',
+            category: 'todo',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+          },
+        ],
       };
     case 'notes':
       return {

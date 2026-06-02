@@ -5,6 +5,7 @@ import { getGlobalTrashModuleHandler } from '../services/globalTrashModuleRegist
 import { DriveDeleteError } from '../services/driveDeleteService';
 import { ChatTrashError } from '../services/chatTrashService';
 import { CalendarTrashError } from '../services/calendarTrashService';
+import { TodoTrashError } from '../services/todoTrashService';
 import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
@@ -160,6 +161,20 @@ function mapCalendarTrashError(res: Response, error: unknown): boolean {
   return false;
 }
 
+function mapTodoTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof TodoTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
 async function tryCalendarRestore(
   userId: string,
   id: string,
@@ -175,6 +190,46 @@ async function tryCalendarRestore(
 
   if (!moduleId && !type) {
     if (await handler.restore({ userId, type: 'event', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryTodoRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('todo');
+  if (!handler) return false;
+
+  if (moduleId === 'todo' && type === 'task') {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'task', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryTodoPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('todo');
+  if (!handler) return false;
+
+  if (moduleId === 'todo' && type === 'task') {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'task', id })) return true;
   }
 
   return false;
@@ -249,6 +304,25 @@ async function loadTrashedDriveFolders(userId: string): Promise<Awaited<ReturnTy
   }
 }
 
+async function loadTrashedTodoTasks(userId: string): Promise<TrashedListItem[]> {
+  const todoHandler = getGlobalTrashModuleHandler('todo');
+  if (!todoHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await todoHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: todo handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'todo',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
 async function loadTrashedChatItems(userId: string): Promise<TrashedListItem[]> {
   const chatHandler = getGlobalTrashModuleHandler('chat');
   if (!chatHandler?.listTrashed) {
@@ -280,6 +354,7 @@ export async function listTrashedItems(req: Request, res: Response) {
     const trashedFolders = await loadTrashedDriveFolders(userId);
     const trashedChatConversations = await loadTrashedChatItems(userId);
     const trashedCalendarEvents = await loadTrashedCalendarEvents(userId);
+    const trashedTodoTasks = await loadTrashedTodoTasks(userId);
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({
@@ -344,33 +419,6 @@ export async function listTrashedItems(req: Request, res: Response) {
       });
     }
 
-    // Get trashed tasks (optional – table may not exist in all envs)
-    let trashedTasks: Array<{ id: string; title: string; trashedAt: Date | null; dashboardId: string | null }> = [];
-    try {
-      trashedTasks = await prisma.task.findMany({
-        where: {
-          trashedAt: { not: null },
-          OR: [
-            { createdById: userId },
-            { assignedToId: userId },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          trashedAt: true,
-          dashboardId: true,
-        },
-        orderBy: { trashedAt: 'desc' },
-      });
-    } catch (e) {
-      logger.warn('Trash: tasks query failed (table may not exist)', {
-        operation: 'list_trashed_items',
-        userId,
-        error: e instanceof Error ? { message: e.message } : undefined,
-      });
-    }
-
     // Transform all items to a consistent format
     const items: TrashedListItem[] = [
       ...trashedFiles.map(file => ({
@@ -414,6 +462,7 @@ export async function listTrashedItems(req: Request, res: Response) {
         metadata: {},
       })),
       ...trashedCalendarEvents,
+      ...trashedTodoTasks,
       ...trashedProfilePhotos.map(photo => ({
         id: photo.id,
         name: 'Profile Photo',
@@ -424,18 +473,6 @@ export async function listTrashedItems(req: Request, res: Response) {
         metadata: {
           originalUrl: photo.originalUrl,
           avatarUrl: photo.avatarUrl,
-        },
-      })),
-      ...trashedTasks.map(task => ({
-        id: task.id,
-        name: task.title,
-        type: 'task' as const,
-        moduleId: 'todo',
-        moduleName: 'To-Do',
-        trashedAt: task.trashedAt,
-        metadata: {
-          taskId: task.id,
-          dashboardId: task.dashboardId,
         },
       })),
     ];
@@ -584,34 +621,25 @@ export async function trashItem(req: Request, res: Response) {
       }
 
       case 'task': {
-        // For tasks, check if user has access (created or assigned)
-        const task = await prisma.task.findFirst({
-          where: {
-            id,
-            trashedAt: null,
-            OR: [
-              { createdById: userId },
-              { assignedToId: userId },
-            ],
-          },
-        });
-
-        if (!task) {
-          return res.status(404).json({ message: 'Task not found or access denied' });
+        if (moduleId !== 'todo' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for todo trash' });
         }
-
-        result = await prisma.task.updateMany({
-          where: {
+        try {
+          const handler = getGlobalTrashModuleHandler('todo');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Todo trash handler not registered' });
+          }
+          await handler.softTrash({
+            userId,
+            type: 'task',
             id,
-            trashedAt: null,
-            OR: [
-              { createdById: userId },
-              { assignedToId: userId },
-            ],
-          },
-          data: { trashedAt: new Date() },
-        });
-        break;
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapTodoTrashError(res, error)) return;
+          throw error;
+        }
       }
 
       default:
@@ -657,6 +685,15 @@ export async function restoreItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapCalendarTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryTodoRestore(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item restored' });
+      }
+    } catch (error: unknown) {
+      if (mapTodoTrashError(res, error)) return;
       throw error;
     }
 
@@ -719,6 +756,15 @@ export async function deleteItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapCalendarTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryTodoPermanentDelete(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item permanently deleted' });
+      }
+    } catch (error: unknown) {
+      if (mapTodoTrashError(res, error)) return;
       throw error;
     }
 
@@ -803,6 +849,19 @@ export async function emptyTrash(req: Request, res: Response) {
       });
     }
 
+    if (moduleId === 'todo') {
+      const handler = getGlobalTrashModuleHandler('todo');
+      if (!handler) {
+        return res.status(500).json({ message: 'Todo trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'Todo trash emptied',
+        deletedCount,
+      });
+    }
+
     const driveHandler = getGlobalTrashModuleHandler('drive');
     if (driveHandler) {
       await driveHandler.emptyModuleTrash({ userId });
@@ -816,6 +875,11 @@ export async function emptyTrash(req: Request, res: Response) {
     const calendarHandler = getGlobalTrashModuleHandler('calendar');
     if (calendarHandler) {
       await calendarHandler.emptyModuleTrash({ userId });
+    }
+
+    const todoHandler = getGlobalTrashModuleHandler('todo');
+    if (todoHandler) {
+      await todoHandler.emptyModuleTrash({ userId });
     }
 
     await Promise.all([

@@ -3,7 +3,7 @@
 **Module id:** `todo`  
 **Version:** 1.0.0  
 **Last updated:** 2026-06-01  
-**Status:** Phase 0 complete — **no implementation**  
+**Status:** Phase 1G + **Phase 2 complete** (2026-06-02). See [TODO_PHASE2_TRASH_ENTITY_VLINK.md](./TODO_PHASE2_TRASH_ENTITY_VLINK.md).  
 **Wave:** Todo Wave 1
 
 **Authorities:**
@@ -44,7 +44,7 @@ Complexity is **high**: a **4,401-line** controller with projects, dependencies,
 | Field | Detail |
 |-------|--------|
 | **Reference** | Calendar `calendarPolicyDual` |
-| **Responsibilities** | Wrap `authorize()` for `TASK_CREATE`, `TASK_UPDATE`, `TASK_DELETE`, `TASK_READ` (add read action if missing) |
+| **Responsibilities** | Wrap `authorize()` for `todo:task.*` actions (1B: mutations; 1C: read) |
 | **Dependencies** | `policyEngine`, `policyActions` |
 | **Owns** | Dual enforcement helpers for mutations and visibility |
 | **Not owns** | Business logic |
@@ -158,73 +158,100 @@ Todo is **more complex than Calendar** in controller mass and feature breadth �
 | Service extraction plan | ✅ |
 | Reference catalog | ✅ |
 
-### Phase 1B — Core write services
+### Phase 1B — Core write services (complete 2026-06-02)
 
-| Deliverable | |
-|-------------|--|
-| `todoPermissionService` | |
-| `todoPolicyDual` (mutations) | |
-| `todoTaskService` — create, update, complete, reopen | |
-| `todoRecurrenceService` integration from task service | |
-| Unit tests | |
+| Deliverable | Status |
+|-------------|--------|
+| `server/src/services/todo/todoErrors.ts`, `todoTypes.ts`, `todoIncludes.ts` | ✅ |
+| `todoPermissionService` | ✅ |
+| `todoPolicyDual` (`server/src/services/todoPolicyDual.ts`) | ✅ |
+| `todoTaskService` — create, update, complete, reopen, soft trash | ✅ |
+| Controller delegates core writes; recurrence/calendar remain in controller | ✅ |
+| Unit tests (`todoPermissionService`, `todoPolicyDual`, `todoTaskService`) | ✅ |
+| `todoRecurrenceService` integration from task service | Deferred — controller still orchestrates instances (1B scope) |
 
-### Phase 1C — Visibility + read Policy Dual
+### Phase 1C — Visibility + read Policy Dual (complete 2026-06-02)
 
-| Deliverable | |
-|-------------|--|
-| `todoVisibilityService` — list, get, filters | |
-| `todoPolicyDual` on reads | |
-| Controller read paths delegate | |
-| Visibility + PE tests | |
+| Deliverable | Status |
+|-------------|--------|
+| `todoVisibilityService` — list, get, search, preset filters | ✅ |
+| `todoPolicyDual` on reads (`todo:task.read`, `todo:project.read`) | ✅ |
+| `taskListInclude` / `taskDetailInclude` in `todo/todoIncludes.ts` | ✅ |
+| Controller delegates `getTasks`, `getTaskById` | ✅ |
+| Query presets: `filter=assigned\|overdue\|dueSoon\|completed`, `q`/`search` | ✅ |
+| Unit tests (`todoVisibilityService.test.ts`) | ✅ |
+| Deferred: AI context reads, chat conversation tasks, dashboard widgets | Documented below |
 
-### Phase 1D — Side-effect adapters + reminders
+**1C deferrals (intentional):**
 
-| Deliverable | |
-|-------------|--|
-| `todoActivityService`, `todoDomainEventService` | |
-| `todoNotificationService` (minimal: assigned/due if product agrees) | |
-| `todoReminderService` + `todoSchedulerService` **or** documented calendar-bridge-only | |
-| Wire task service emits | |
-| Domain registry types for `todo.*` | |
+| Consumer | Path | Phase |
+|----------|------|-------|
+| AI context | `todoAIContextController` (inline Prisma, creator-only) | 1F |
+| Chat-linked tasks | `getTasksForConversation` | 1G / chat integration |
+| Dashboard widgets | No dedicated API yet | Wire to `todoVisibilityService` when widgets land |
+| Global Trash list | No core route; `listTrashedTasks` helper only | Phase 2 |
 
-### Phase 1E — Controller collapse (core paths)
+### Phase 1D — Side-effect adapters + reminders (complete 2026-06-02)
 
-| Deliverable | |
-|-------------|--|
-| Thin `todoController` for task CRUD + list/get | |
-| `todoController.contract.test.ts` (no Prisma) | |
-| Delete route → `todoTrashService` (prep for Phase 2) | |
+| Deliverable | Status |
+|-------------|--------|
+| `todoActivityService` | ✅ |
+| `todoDomainEventService` + registry `todo.task.*` emitters | ✅ |
+| `todoNotificationService` — `todo_assigned` via `createNotification` | ✅ |
+| `todoRealtimeService` — `todo_task` channel via chat socket infra | ✅ |
+| `todoReminderService` + `todoSchedulerService` — no-op foundation (calendar-bridge-only) | ✅ |
+| `todoTaskService` coordinates adapters post-persist | ✅ |
+| Unit tests (activity, domain, notification, realtime, task coordination) | ✅ |
 
-### Phase 1F — AI migration
+**Reminder decision:** No platform cron or in-app due dispatch in v1. Due surfacing remains **calendar bridge** (`ensureTaskCalendarEvent` in controller). `dispatchDueReminders()` returns `{ dispatched: 0 }` until Phase 2+ defines `todo_due` + cron.
 
-| Deliverable | |
-|-------------|--|
-| `todoAIActionService` | |
-| `ActionExecutor` → services | |
-| `toolExecutor.create_todo` → `todoTaskService` | |
-| `todoAIContextController` → `todoVisibilityService` helpers | |
-| AI contract tests | |
+### Phase 1E — Controller collapse (core paths) (complete 2026-06-02)
 
-### Phase 1G — Satellite features (optional split)
+| Deliverable | Status |
+|-------------|--------|
+| Thin core handlers (`/* <todo-core-handlers> */` region) | ✅ |
+| `todoController.contract.test.ts` — forbidden patterns in core region only | ✅ |
+| `todoCalendarBridgeService`, `todoRecurrenceOrchestrationService`, `todoPresentationService` | ✅ |
+| `TodoServiceError` mapping via `respondTodoServiceError` | ✅ |
+| Full controller Prisma removal | Deferred — satellites still inline |
+| Delete route → `todoTrashService` | Deferred — Phase 2 Global Trash |
 
-Extract when core path certified-ready:
+### Phase 1F — AI migration ✅ (2026-05-31)
 
-- Comments, subtasks, attachments  
-- Projects, dependencies, time tracking  
-- AI prioritize/schedule HTTP (already partial services)  
-- Chat integration routes  
+| Deliverable | Status |
+|-------------|--------|
+| `todoAIActionService` — create/update/complete/reopen/trash/assign/prioritize/schedule execute | ✅ |
+| `ActionExecutor` / `AutonomousActionExecutor` → services (no `todoController`, no mock req/res) | ✅ |
+| `toolExecutor.create_todo` → `todoAIActionService` → `todoTaskService` | ✅ |
+| `todoAIContextController` → `todoVisibilityService` AI helpers | ✅ |
+| AI contract + guardrail tests | ✅ |
 
-Can run **after 1F** or in parallel if staffed — not required for first Global Trash registration.
+### Phase 1G — Satellite extraction ✅ (2026-06-02)
 
-### Phase 2 — Global Trash + Platform Entity + V_Link
+| Deliverable | Status |
+|-------------|--------|
+| `todoCommentService` | ✅ |
+| `todoSubtaskService` | ✅ |
+| `todoAttachmentService` | ✅ |
+| `todoProjectService` | ✅ |
+| `todoDependencyService` | ✅ |
+| `todoTimeLogService` | ✅ |
+| `todoIntegrationLinkService` (calendar/drive links + filtered reads) | ✅ |
+| Recurrence HTTP → `todoRecurrenceOrchestrationService` helpers | ✅ |
+| Satellite controller delegates + contract tests | ✅ |
+| Chat routes | Already on `todoChatIntegrationService` (unchanged) |
+| AI prioritize/schedule HTTP | Deferred — still partial services + thin controller |
 
-| Deliverable | |
-|-------------|--|
-| `todoTrashService` + handler `moduleId: 'todo'`, `supportedTypes: ['task']` | |
-| Remove inline task cases from `trashController` | |
-| `registerTodoPlatformEntities` — `todo:task` → `TASK` or `TODO` (pick one enum) | |
-| `todoVlinkAccessService` + `todoVlinkLifecycleService` | |
-| Manifest `entities[]`, `vlink: true` | |
+### Phase 2 — Global Trash + Platform Entity + V_Link ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| `todoTrashService` + handler `moduleId: 'todo'`, `supportedTypes: ['task']` | ✅ |
+| Remove inline task cases from `trashController` | ✅ |
+| `registerTodoPlatformEntities` — `todo:task`, `vlinkEntityType: TODO` | ✅ |
+| `todoVlinkAccessService` + `todoVlinkLifecycleService` | ✅ |
+| Manifest `entities[]`, `vlink`, `search`, `realtime`, `globalActivity` | ✅ |
+| Domain events `todo.task.restored` / `todo.task.permanentlyDeleted` | ✅ |
 
 ### Phase 3 — Manifest truth + hygiene
 

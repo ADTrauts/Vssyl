@@ -13,6 +13,7 @@
 | 1 | **File Hub** (`drive`) | 4 — Reference Implementation | Trash, visibility, PE, V_Link, entities, manifest truth | [FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) |
 | 2 | **Chat** (`chat`) | 3 — Certified | Realtime, AI routing, notifications, thin controllers | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 3 | **Calendar** (`calendar`) | 3 — Certified | Scheduler, reminders, recurrence, time-based reads | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
+| 4 | **Todo** (`todo`) | 3 — Certified | Task lifecycle, assignment, work management, calendar/file links | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) |
 
 **Rule:** Copy **patterns**, not file names blindly. Every module still needs its own constitutional audit and operation matrix before implementation.
 
@@ -82,23 +83,41 @@
 
 ---
 
+## Todo — Reference Module #4 (Level 3)
+
+**Copy for:** Task/work-item modules, assignment flows, operational satellites, cross-module links.
+
+| Pattern | What to copy | Key artifacts |
+|---------|--------------|-----------------|
+| Core task lifecycle | Single write service + side-effect adapters | `todoTaskService`, `todoActivityService`, `todoDomainEventService` |
+| Assignment fan-out | Notify + domain + realtime on assign change | `todoNotificationService`, assign hooks in `todoTaskService` |
+| Global Trash (task) | `todoTrashService` + handler | [TODO_PHASE2_TRASH_ENTITY_VLINK.md](./audits/TODO_PHASE2_TRASH_ENTITY_VLINK.md) |
+| Visibility + PE reads | Legacy scope + post-query filter | `todoVisibilityService`, `filterTasksByReadPolicy` |
+| V_Link (task only) | Creator/assignee + PE; unlink on permanent delete | `todoVlinkAccessService`, `todoVlinkLifecycleService` |
+| AI task actions | `todoAIActionService` — no controller imports | Phase 1F tests |
+| Calendar/file bridges | Integration service; visibility on linked assets | `todoIntegrationLinkService`, `todoCalendarBridgeService` |
+| Satellite extraction | One service per sub-domain; thin controller delegates | `todoCommentService`, `todoProjectService`, etc. |
+
+**Do not copy:** Creator/assignee-only ACL as generic pattern for shared workspaces; subtask/comment models without entity registration; in-app due reminders until `todo_reminder_dispatch` exists.
+
+---
+
 ## Module guidance — which references to weight
 
 | Target module | Primary references | Secondary | Unique teachable angle |
 |---------------|-------------------|-----------|------------------------|
-| **Todo** | File Hub (trash, V_Link, visibility, entities), Calendar (due dates, recurrence, reminders), Chat (AI, activity) | Chat (light realtime if added) | Task lifecycle, assignment, operational work management |
+| **Todo** | *(certified — see Reference #4 above)* | — | — |
 | **Notes** | File Hub (trash, V_Link, visibility), Chat (AI context, thin controller) | Calendar (low) | Document entity, sharing, soft delete |
 | **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links) | Location/meeting linkage, map context |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
 
-### Todo (next wave) — recommended copy order
+### Notes (next wave) — recommended copy order
 
-1. **File Hub** — `todoTrashService`, Global Trash handler, `todoVisibilityService`, `todoVlinkAccessService`, platform entity `todo:task`.
-2. **Calendar** — `todoReminderService`, `todoSchedulerService`, `todoRecurrenceService` (extend existing), due-date notification path.
-3. **Chat** — `todoAIActionService`, `todoActivityService`, `todoDomainEventService`, `todoNotificationService` (if in-app alerts added).
-4. **Chat + File Hub** — `todoAttachmentService` if attachments stay (storage via `storageService`).
+1. **File Hub** — trash, V_Link, visibility, platform entity.
+2. **Chat** — thin controller, AI context, activity/domain adapters.
+3. **Todo** — satellite service extraction pattern (optional for note comments/versions).
 
 ---
 

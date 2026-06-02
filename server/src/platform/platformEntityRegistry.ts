@@ -77,6 +77,20 @@ export function registerChatPlatformEntities(): void {
   });
 }
 
+/** Todo task entity descriptor — Wave 2 Phase 2 (comments/subtasks/projects deferred). */
+export function registerTodoPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'task',
+    moduleId: 'todo',
+    displayName: 'Task',
+    pluralName: 'Tasks',
+    vlinkEntityType: 'TODO',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'task',
+  });
+}
+
 /** Calendar event entity descriptor — Wave 2 Phase 2B (calendar/reminder/attendee deferred). */
 export function registerCalendarPlatformEntities(): void {
   registerPlatformEntity({

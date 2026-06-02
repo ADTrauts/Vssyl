@@ -32,7 +32,7 @@ Modules **own** Prisma schemas. Platform infrastructure operates on **`(entityTy
 | CALENDAR_EVENT | calendar | ✅ (`calendarVlinkAccessService`) | ✅ | ✅ (`searchEvents`) | ✅ |
 | CHAT_CONVERSATION | chat | ✅ (`chatVlinkAccessService`) | ✅ | ✅ | conversation only |
 | CHAT_THREAD | chat | ❌ deferred | partial | partial | not registered |
-| TASK / TODO | todo | ❌ | ✅ | ❌ | pending |
+| TASK / TODO | todo (`todo:task`) | ✅ | ✅ | ✅ | Phase 2 (2026-06-02) |
 | NOTE | notes | ❌ | ❌ deletedAt | ❌ | pending |
 | DASHBOARD | dashboard | ❌ | ✅ tab trash | ✅ | N/A |
 | WIDGET | dashboard | ❌ | ❌ | ❌ | lightweight |

@@ -92,33 +92,24 @@ export async function executeTool(
           result = { success: false, message: 'title is required.' };
           break;
         }
-        let effectiveDashboardId = dashboardId ?? null;
-        if (!effectiveDashboardId) {
-          const dash = await prisma.dashboard.findFirst({
-            where: { userId, businessId: null, householdId: null },
-            orderBy: { createdAt: 'asc' },
-          });
-          effectiveDashboardId = dash?.id ?? null;
-        }
-        if (!effectiveDashboardId) {
-          result = { success: false, message: 'No dashboard found for this user. Create a dashboard first.' };
+        const { aiCreateTask } = await import('../../services/todoAIActionService.js');
+        const priorityArg = (args.priority as string) || 'MEDIUM';
+        const dueDateStr = args.dueDate as string | undefined;
+        const outcome = await aiCreateTask({
+          userId,
+          title,
+          dashboardId: dashboardId ?? null,
+          priority: priorityArg,
+          dueDate: dueDateStr ?? null,
+        });
+        if (!outcome.success) {
+          result = { success: false, message: outcome.error };
           break;
         }
-        const priority = (args.priority as string)?.toUpperCase() === 'HIGH' ? 'HIGH' : (args.priority as string)?.toUpperCase() === 'LOW' ? 'LOW' : 'MEDIUM';
-        const dueDateStr = args.dueDate as string | undefined;
-        const task = await prisma.task.create({
-          data: {
-            title,
-            status: 'TODO',
-            priority,
-            dashboardId: effectiveDashboardId,
-            createdById: userId,
-            dueDate: dueDateStr ? new Date(dueDateStr) : null,
-          },
-        });
+        const task = outcome.data as { id: string; title: string; priority: string };
         result = {
           success: true,
-          message: `Created task "${title}" (priority: ${priority}).`,
+          message: `Created task "${title}" (priority: ${task.priority}).`,
           data: { taskId: task.id, title: task.title },
         };
         break;

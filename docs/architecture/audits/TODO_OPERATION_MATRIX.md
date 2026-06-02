@@ -1,7 +1,7 @@
 # Todo Operation Matrix
 
 **Module id:** `todo`  
-**Status:** Wave 1 Phase 0 — Audit only (2026-06-01)  
+**Status:** Wave 1–2 complete; **Level 3 Certified** (2026-06-02). C/P/N summary below is Phase 0 — see [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./TODO_LEVEL3_CERTIFICATION_REVIEW.md) for certification-time assessment.  
 **Extraction plan:** [TODO_SERVICE_EXTRACTION_PLAN.md](./TODO_SERVICE_EXTRACTION_PLAN.md)  
 **Related:** [TODO_CONSTITUTIONAL_AUDIT.md](./TODO_CONSTITUTIONAL_AUDIT.md), [REFERENCE_MODULE_CATALOG.md](../REFERENCE_MODULE_CATALOG.md)
 
@@ -23,8 +23,9 @@
 ## Permission model (current)
 
 - **Access:** `createdById` OR `assignedToId` on most task paths; dashboard/business/household query params on list.
-- **Policy Engine:** `evaluateModuleMutationPolicyDual` on **create** and **delete** only (`TASK_CREATE`, `TASK_DELETE`).
-- **Target:** Dedicated `todoPolicyDual` on all privileged mutations and visibility reads (Calendar/Chat pattern).
+- **Policy Engine (1B):** `evaluateTodoPolicyDual` on core writes (`todo:task.create|update|complete|reopen|delete|assign`).
+- **Policy Engine (1C):** `taskPassesReadPolicy` / `filterTasksByReadPolicy` on list/get/search; `todo:project.read` when filtering by `projectId`.
+- **Target (1D+):** Full activity/domain on all mutations; AI/chat/dashboard reads via visibility.
 
 ---
 
@@ -32,45 +33,46 @@
 
 | Operation | Controller | Service | PE | Activity | Event | Notification | Scheduler | Realtime | AI | Trash | V_Link | Notes |
 | --------- | ---------- | ------- | -- | -------- | ----- | ------------ | --------- | -------- | -- | ----- | ------ | ----- |
-| **List tasks** | `getTasks` | — | N | N | N | N | — | — | — | — | — | Inline Prisma; filters status/priority/dueDate |
-| **Create task** | `createTask` | `todoRecurrenceService` (instances) | P | P | N | N | — | — | — | — | — | PE on create; activity on create; RRULE instances |
-| **Get task by id** | `getTaskById` | — | N | N | N | N | — | — | — | — | — | Includes subtasks, comments, links |
-| **Update task** | `updateTask` | `todoRecurrenceService` | N | N | N | N | — | — | — | — | — | Calendar sync `ensureTaskCalendarEvent` |
-| **Delete task (soft trash)** | `deleteTask` | — | P | P | N | N | — | — | — | P | — | `trashedAt`; not Global Trash handler |
-| **Complete task** | `completeTask` | — | N | N | N | N | — | — | — | — | — | Sets status DONE + `completedAt` |
-| **Reopen task** | `reopenTask` | — | N | N | N | N | — | — | — | — | — | |
-| **Assign / unassign** | `updateTask` | — | N | N | N | N | — | — | — | — | — | Via `assignedToId` field |
+| **List tasks** | `getTasks` | `todoVisibilityService` | P | N | N | N | — | — | — | — | — | 1C: creator **or** assignee; PE post-filter; `q`/`filter` query |
+| **Create task** | `createTask` | `todoTaskService`, adapters, `todoRecurrenceService` | P | P | P | P | — | P | — | — | — | 1D: activity + domain + realtime; assign notification |
+| **Get task by id** | `getTaskById` | `todoVisibilityService` | P | N | N | N | — | — | — | — | — | 1C: legacy access + PE; 404 on deny (no leak) |
+| **Update task** | `updateTask` | `todoTaskService`, adapters, `todoRecurrenceService` | P | P | P | P | — | P | — | — | — | 1D: adapters on update/assign |
+| **Delete task (soft trash)** | `deleteTask` | `todoTrashService`, adapters | P | P | P | N | — | P | — | P | — | Phase 2: `todoTrashService`; domain `todo.task.trashed` |
+| **Complete task** | `completeTask` | `todoTaskService`, adapters | P | P | P | N | — | P | — | — | — | 1D: activity + domain + realtime |
+| **Reopen task** | `reopenTask` | `todoTaskService`, adapters | P | P | P | N | — | P | — | — | — | 1D: activity + domain + realtime |
+| **Assign / unassign** | `updateTask` | `todoTaskService`, adapters | P | P | P | P | — | P | — | — | — | 1D: assign activity/domain/notification/realtime |
 | **Create event from task** | `createEventFromTask` | — | N | N | N | N | — | — | — | — | — | Calendar bridge |
-| **Link / unlink event** | `linkTaskToEvent`, `unlinkTaskFromEvent` | — | N | N | N | N | — | — | — | — | — | `TaskEventLink` |
-| **Link / unlink file** | `linkTaskToFile`, `unlinkTaskFromFile` | — | N | N | N | N | — | — | — | — | — | `TaskFileLink` |
+| **Link / unlink event** | `linkTaskToEvent`, `unlinkTaskFromEvent` | `todoIntegrationLinkService` | N | N | N | N | — | — | C | — | — | Calendar membership checked |
+| **Link / unlink file** | `linkTaskToFile`, `unlinkTaskFromFile` | `todoIntegrationLinkService` | N | N | N | N | — | — | C | — | — | Drive `validateAccessibleFileIds` |
 | **List linked files/events** | `getTaskLinkedFiles`, `getTaskLinkedEvents` | — | N | N | N | N | — | — | — | — | — | |
-| **Create comment** | `createTaskComment` | — | N | N | N | N | — | — | — | — | — | |
-| **Update / delete comment** | `updateTaskComment`, `deleteTaskComment` | — | N | N | N | N | — | — | — | — | — | |
-| **Create subtask** | `createSubtask` | — | N | N | N | N | — | — | — | — | — | Parent/child tasks |
+| **Create comment** | `createTaskComment` | `todoCommentService` | N | N | N | N | — | — | C | — | — | Phase 1G |
+| **Update / delete comment** | `updateTaskComment`, `deleteTaskComment` | `todoCommentService` | N | N | N | N | — | — | C | — | — | Phase 1G |
+| **Create subtask** | `createSubtask` | `todoSubtaskService` | N | N | N | N | — | — | C | — | — | Phase 1G |
 | **Update / delete subtask** | `updateSubtask`, `deleteSubtask` | — | N | N | N | N | — | — | — | — | — | |
 | **Complete subtask** | `completeSubtask` | — | N | N | N | N | — | — | — | — | — | |
-| **Upload attachment** | `uploadTaskAttachment` | `storageService` (via multer) | N | N | N | N | — | — | — | — | — | File Hub storage pattern partial |
+| **Upload attachment** | `uploadTaskAttachment` | `todoAttachmentService` + `storageService` | N | N | N | N | — | — | C | — | — | Phase 1G |
 | **Serve / delete attachment** | `serveTaskAttachment`, `deleteTaskAttachment` | — | N | N | N | N | — | — | — | — | — | |
-| **Add / remove dependency** | `addTaskDependency`, `removeTaskDependency` | — | N | N | N | N | — | — | — | — | — | |
+| **Add / remove dependency** | `addTaskDependency`, `removeTaskDependency` | `todoDependencyService` | N | N | N | N | — | — | C | — | — | Phase 1G |
 | **List dependencies** | `getTaskDependencies` | — | N | N | N | N | — | — | — | — | — | |
-| **List / create / update / delete project** | `getProjects`, `createProject`, … | — | N | N | N | N | — | — | — | — | — | `TaskProject` |
+| **List / create / update / delete project** | `getProjects`, `createProject`, … | `todoProjectService` | N | N | N | N | — | — | C | — | — | Phase 1G |
 | **Generate recurrence instances** | `generateRecurringInstances` | `todoRecurrenceService` | N | N | N | N | — | — | — | — | — | |
 | **Recurrence description** | `getRecurrenceDescription` | `todoRecurrenceService` | N | N | N | N | — | — | — | — | — | |
-| **Start / stop timer** | `startTimer`, `stopTimer` | — | N | N | N | N | — | — | — | — | — | Time tracking |
+| **Start / stop timer** | `startTimer`, `stopTimer` | `todoTimeLogService` | N | N | N | N | — | — | C | — | — | Phase 1G |
 | **Get active timer** | `getActiveTimer` | — | N | N | N | N | — | — | — | — | — | |
 | **Log / list / update / delete time log** | `logTime`, `getTimeLogs`, … | — | N | N | N | N | — | — | — | — | — | `TaskTimeLog` |
 | **AI priority suggestions** | `getPrioritySuggestions` | `todoAIPrioritizationService` | N | N | N | N | — | — | P | — | — | Controller HTTP wrapper |
-| **AI prioritize analyze/execute** | `analyzeTaskPriorities`, `executePriorityChanges` | `todoAIPrioritizationService` | N | N | N | N | — | — | P | — | — | |
+| **AI prioritize analyze/execute** | `analyzeTaskPriorities`, `executePriorityChanges` | `todoAIPrioritizationService` + `todoAIActionService` (execute) | N | N | N | N | — | — | C | — | — | Execute via task service |
 | **AI schedule suggestions/analyze/execute** | `getSchedulingSuggestions`, … | `todoSmartSchedulingService` | N | N | N | N | — | — | P | — | — | |
-| **AI context overview/upcoming/overdue/priority** | `todoAIContextController` | — | N | N | N | N | — | — | N | — | — | Direct Prisma |
+| **AI context overview/upcoming/overdue/priority** | `todoAIContextController` | `todoVisibilityService` AI helpers | N | N | N | N | — | — | C | — | — | Policy-filtered reads |
 | **Chat create task from message** | `createTaskFromMessage` | `todoChatIntegrationService` | N | N | N | N | — | — | P | — | — | |
 | **Chat parse / list conversation tasks** | `parseMessageForTask`, `getTasksForConversation` | `todoChatIntegrationService` | N | N | N | N | — | — | — | — | — | |
-| **Trash (Global Trash API)** | `trashController` | — | N | N | N | N | — | — | — | N | — | Inline Prisma |
-| **Restore task (Global Trash)** | `trashController` | — | N | N | N | N | — | — | — | N | — | Inline Prisma |
+| **Trash (Global Trash API)** | `trashController` | `todoTrashService` | P | P | P | N | — | P | — | P | — | Phase 2 handler delegate |
+| **Restore task (Global Trash)** | `trashController` | `todoTrashService` | P | P | P | N | — | P | — | P | — | Phase 2; `todo.task.restored` |
+| **Permanent delete (Global Trash)** | `trashController` | `todoTrashService` | P | P | P | N | — | P | — | P | — | Phase 2; V_Link unlink + `todo.task.permanentlyDeleted` |
 | **Permanent delete task** | `trashController` | — | N | N | N | N | — | — | — | N | — | Hard delete from trash |
 | **V_Link resolve task** | — | `vlinkEntityResolverService` | N | N | N | N | — | — | — | — | N | Inline Prisma |
-| **ActionExecutor todo ops** | — | `todoController` | N | N | N | N | — | — | N | — | — | Fabricated req/res |
-| **toolExecutor create_todo** | — | — (Prisma) | N | N | N | N | — | — | N | — | — | Direct `prisma.task.create` |
+| **ActionExecutor todo ops** | — | `todoAIActionService` | N | N | N | N | — | — | C | — | — | Phase 1F |
+| **toolExecutor create_todo** | — | `todoAIActionService` → `todoTaskService` | N | N | N | N | — | — | C | — | — | Phase 1F |
 | **Dashboard widget list** | `TodoWidget` (web) | — | — | — | — | — | — | — | — | — | — | Client `/api/todo` |
 
 ---
@@ -99,7 +101,7 @@
 |------|------------------------|-----------|
 | Core task CRUD + trash | **Yes** (P0 for wave) | Must reach **C** via services + handler |
 | Global Trash inline | **Yes** | Manifest claims `trash: true` |
-| AI executor paths | **Yes** | Constitutional §16 violation |
+| AI executor paths | **No** (1F) | Executor/tool/context migrated to services |
 | Comments / subtasks / time logs | **No** (P1) | Can remain **P** at L3 if core task path is **C** (Chat comments parallel) |
 | Projects / dependencies | **No** (P1) | Extract after core task service |
 | Realtime | **No** unless declared | Do not add `realtime: true` until implemented |

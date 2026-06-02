@@ -89,7 +89,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
 | **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Level 3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
-| **Todo** | `todo` | **Low** | **Low** | **0 — Legacy** | Wave 1 Phase 0 complete (2026-06-01) | [TODO_CONSTITUTIONAL_AUDIT](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN](./audits/TODO_SERVICE_EXTRACTION_PLAN.md) |
+| **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
 | **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
@@ -102,10 +102,10 @@ Track cross-cutting certification separately; modules depend on these.
 
 | System | Constitutional Compliance | File Hub Compliance | Level | Status |
 |--------|---------------------------|---------------------|-------|--------|
-| Global Trash API | High | High (drive + chat + calendar handlers) | 2 | Expansion in progress — todo/notes handlers pending |
+| Global Trash API | High | High (drive + chat + calendar + todo handlers) | 2 | Expansion in progress — notes handler pending |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — manifest metadata gaps per module |
-| V_Link | High | High (drive + chat + calendar event) | 2 | Expansion — todo/notes enum values pending |
-| Policy Engine | Partial | High (drive + chat + calendar dual) | 2 | Rollout — todo/notes need `*PolicyDual` |
+| V_Link | High | High (drive + chat + calendar event + todo task) | 2 | Expansion — notes enum values pending |
+| Policy Engine | Partial | High (drive + chat + calendar + todo dual) | 2 | Rollout — notes need `*PolicyDual` |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
 | AI Tools / Actions | Low | Partial (drive tools compliant) | 0 | `toolExecutor` / `ActionExecutor` violations |
@@ -162,16 +162,16 @@ Copy row into module audit; mark ✅ / ⚠️ / ❌.
 
 | Requirement | File Hub | Chat | Calendar | Todo | Notes | Place | Dashboard | Analytics | Bus. Workspace |
 |-------------|----------|------|----------|------|-------|-------|-----------|-----------|----------------|
-| Canonical services | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Thin controllers | ✅ | ✅ | ✅ | ❌ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
-| Policy Engine | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Global Trash handler | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
-| V_Link (if declared) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | N/A | ⚠️ |
-| Platform entities | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Domain events | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Module activity writes | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ |
-| Notifications | ✅ | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | N/A | ⚠️ |
-| Realtime | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| Canonical services | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Thin controllers | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
+| Policy Engine | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Global Trash handler | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| V_Link (if declared) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | N/A | ⚠️ |
+| Platform entities | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Domain events | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Module activity writes | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ |
+| Notifications | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ❌ | N/A | ⚠️ |
+| Realtime | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
 | AI compliance | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Capability truth | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Tests | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
@@ -221,7 +221,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
 | Calendar | ○ | **●** | **●** | **●** | **●** | 3 |
-| Todo | ○ | **●** | ○ | ○ | ○ | 3 |
+| Todo | ○ | **●** | **●** | **●** | **●** | 3 |
 | Notes | **●** | ○ | ○ | ○ | ○ | 3 |
 
 **Calendar Phase 0 (2026-05-31):** [CALENDAR_CONSTITUTIONAL_AUDIT](./audits/CALENDAR_CONSTITUTIONAL_AUDIT.md), [CALENDAR_OPERATION_MATRIX](./audits/CALENDAR_OPERATION_MATRIX.md).
@@ -244,7 +244,25 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Todo Phase 0 (2026-06-01):** [TODO_CONSTITUTIONAL_AUDIT](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN](./audits/TODO_SERVICE_EXTRACTION_PLAN.md). Copy patterns from [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md).
 
-**Sequencing note:** **Todo Wave 1 Phase 1B** is next (implementation); Calendar Level 4 / council review out of scope.
+**Todo Phase 1B (2026-06-02):** Core task write layer — `todoPermissionService`, `todoPolicyDual`, `todoTaskService`, `services/todo/{errors,types,includes}`; controller delegates create/update/complete/reopen/soft-delete; `todo:task.*` policy actions; 15 unit tests.
+
+**Todo Phase 1C (2026-06-02):** `todoVisibilityService` — list/get/search + read Policy Dual; `getTasks`/`getTaskById` delegate.
+
+**Todo Phase 1D (2026-06-02):** Side-effect adapters — activity/domain/notification/realtime; `todo.task.*` domain events.
+
+**Todo Phase 1E (2026-06-02):** Core controller collapse — `todo-core-handlers` contract region; bridge/orchestration services; contract tests.
+
+**Todo Phase 1F (2026-05-31):** `todoAIActionService`; ActionExecutor/AutonomousActionExecutor/toolExecutor off controllers; AI context via `todoVisibilityService` helpers; execute prioritize/schedule via task service.
+
+**Todo Phase 1G (2026-06-02):** Satellite services (comments, subtasks, attachments, projects, dependencies, time logs, integration links); controller delegates; Drive visibility on file links.
+
+**Todo Phase 2 (2026-06-02):** `todoTrashService` + Global Trash handler; `todo:task` platform entity; `todoVlinkAccessService` / `todoVlinkLifecycleService`; manifest truth (`vlink`, `search`, `realtime`, `globalActivity`, `todo_assigned`); domain events `todo.task.restored` / `todo.task.permanentlyDeleted`. See [TODO_PHASE2_TRASH_ENTITY_VLINK](./audits/TODO_PHASE2_TRASH_ENTITY_VLINK.md).
+
+**Todo Phase 3 (2026-06-02):** [`TODO_LEVEL3_CERTIFICATION_REVIEW.md`](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 Certified**; **Reference Module #4**.
+
+**Post–Level 3 punch-list (non-blocking):** matrix refresh; `TodoWorkspaceLanding.tsx`; optional `todo_due` cron; satellite PE/activity; Level 4 council review.
+
+**Sequencing note:** **Notes** modernization is next per roadmap; Calendar Level 4 / council review out of scope.
 
 ### Wave 3 — Place, Business Workspace, Dashboard, Analytics
 

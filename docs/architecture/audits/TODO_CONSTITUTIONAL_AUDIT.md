@@ -1,8 +1,9 @@
 # Todo Constitutional Audit
 
 **Module id:** `todo`  
-**Phase:** Wave 1 Phase 0 — Audit only (no implementation)  
-**Date:** 2026-06-01  
+**Phase:** **Level 3 Certified** — Reference Module #4 (2026-06-02)  
+**Date:** 2026-06-01 (audit); 2026-06-02 (1B–1G, Phase 2, Phase 3 cert)  
+**Certification:** [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./TODO_LEVEL3_CERTIFICATION_REVIEW.md)  
 **Benchmarks:** [REFERENCE_MODULE_CATALOG.md](../REFERENCE_MODULE_CATALOG.md) — File Hub #1, Chat #2, Calendar #3  
 **Related:** [PLATFORM_MODULE_MODERNIZATION_ROADMAP.md](../../plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md)
 
@@ -14,26 +15,38 @@
 
 | Artifact | Path | Lines (approx.) | Notes |
 |----------|------|-----------------|-------|
-| **Primary controller** | `server/src/controllers/todoController.ts` | **4,401** | **~100** `prisma.` calls; **48** exported handlers |
-| **AI context controller** | `server/src/controllers/todoAIContextController.ts` | **558** | **~15** `prisma.` calls; direct DB reads |
+| **Primary controller** | `server/src/controllers/todoController.ts` | **~1,600** (post-1G) | Core + satellite handlers thin; Prisma only for AI/chat service constructors |
+| **AI context controller** | `server/src/controllers/todoAIContextController.ts` | **~200** | Thin adapter; delegates to `todoVisibilityService` AI helpers (no Prisma) |
 | **Routes** | `server/src/routes/todo.ts` | 97 | CRUD, comments, subtasks, attachments, projects, recurrence, time tracking, AI prioritize/schedule, chat integration |
 
 ### Services (module-specific)
 
 | Service | Exists? | Role |
 |---------|---------|------|
-| `todoTaskService` | ❌ | All task CRUD in controller |
-| `todoVisibilityService` | ❌ | List/filter in controller |
-| `todoTrashService` | ❌ | Soft delete in controller; Global Trash inline in `trashController` |
-| `todoPermissionService` | ❌ | Inline `createdById` / `assignedToId` OR checks |
-| `todoPolicyDual` | ❌ | Generic `evaluateModuleMutationPolicyDual` on **create/delete only** |
-| `todoActivityService` | ❌ | Sparse `emitModuleActivityEvent` in controller (~3 paths) |
-| `todoDomainEventService` | ❌ | No `todo.*` domain event types in registry |
-| `todoNotificationService` | ❌ | No in-app notifications |
-| `todoRealtimeService` | ❌ | No socket fan-out |
-| `todoReminderService` | ❌ | Due dates; optional sync to calendar via `ensureTaskCalendarEvent` in controller |
-| `todoSchedulerService` | ❌ | No due-date reminder cron |
-| `todoVlinkAccessService` | ❌ | Inline Prisma in `vlinkEntityResolverService` |
+| `todoTaskService` | ✅ (1B) | Core writes: create, update, complete, reopen, soft trash |
+| `todoVisibilityService` | ✅ (1C) | List/get/search; dashboard scope; PE read filter |
+| `todoTrashService` | ✅ (Phase 2) | Global Trash + API soft trash; restore/permanent delete; `emptyTodoTrash` |
+| `todoPermissionService` | ✅ (1B) | Legacy creator/assignee access; dashboard context on create |
+| `todoPolicyDual` | ✅ (1B) | `todo:task.*` dual enforcement on core writes |
+| `todoActivityService` | ✅ (1D) | Core task writes via `todoTaskService` |
+| `todoDomainEventService` | ✅ (1D) | `todo.task.*` registered emitters |
+| `todoNotificationService` | ✅ (1D) | `todo_assigned` only (runtime-backed) |
+| `todoRealtimeService` | ✅ (1D) | `todo_task` socket channel |
+| `todoReminderService` | ✅ (1D) | Foundation only; calendar-bridge for due dates |
+| `todoSchedulerService` | ✅ (1D) | No platform cron registered |
+| `todoCalendarBridgeService` | ✅ (1E) | Due-date calendar sync (deferred from controller) |
+| `todoRecurrenceOrchestrationService` | ✅ (1E) | RRULE validation + instance generation hooks |
+| `todoPresentationService` | ✅ (1E) | Attachment URL mapping for task detail |
+| `todoAIActionService` | ✅ (1F) | AI writes: task CRUD lifecycle, priority/schedule execute |
+| `todoCommentService` | ✅ (1G) | Task comments |
+| `todoSubtaskService` | ✅ (1G) | Subtasks |
+| `todoAttachmentService` | ✅ (1G) | Upload/serve/delete attachments |
+| `todoProjectService` | ✅ (1G) | Projects CRUD |
+| `todoDependencyService` | ✅ (1G) | Task dependencies |
+| `todoTimeLogService` | ✅ (1G) | Timers and time logs |
+| `todoIntegrationLinkService` | ✅ (1G) | Calendar/drive links; Drive visibility on file link/list |
+| `todoVlinkAccessService` | ✅ (Phase 2) | Canonical TASK/TODO resolver; legacy + Policy Dual read |
+| `todoVlinkLifecycleService` | ✅ (Phase 2) | Unlink on permanent delete only |
 | `todoRecurrenceService` | ✅ (partial) | RRULE + instance generation; controller still orchestrates |
 | `todoAIPrioritizationService` | ✅ (partial) | AI priority; controller exposes HTTP |
 | `todoSmartSchedulingService` | ✅ (partial) | AI scheduling; controller exposes HTTP |
@@ -50,15 +63,15 @@
 
 - **Schema:** `Task.trashedAt` ✅  
 - **API delete:** `deleteTask` soft-trashes in controller ✅  
-- **Global Trash:** `trashController` inline Prisma list/restore/permanent — **no** `registerGlobalTrashHandlers('todo')` ❌  
-- **Manifest:** `trash: true` ❌ (no handler)
+- **Global Trash:** `registerGlobalTrashHandlers('todo')` ✅; `trashController` delegates list/trash/restore/delete/empty ✅  
+- **Manifest:** `trash: true` ✅ (handler-backed)
 
 ### V_Link / entities
 
-- **Resolver:** `VLinkEntityType.TASK` / `TODO` — inline Prisma in `vlinkEntityResolverService`  
-- **Lifecycle:** No unlink on permanent delete  
-- **Platform entity:** Not registered  
-- **Manifest:** No `entities[]`; no `vlink: true`
+- **Resolver:** `TASK` / `TODO` → `todoVlinkAccessService` ✅  
+- **Lifecycle:** `todoVlinkLifecycleService` on permanent delete ✅; soft trash does not unlink ✅  
+- **Platform entity:** `todo:task` registered (`vlinkEntityType: TODO`) ✅  
+- **Manifest:** `entities[]` task only; `vlink: true` ✅
 
 ### AI
 
@@ -77,28 +90,28 @@
 
 ---
 
-## 2. Constitutional compliance scorecard
+## 2. Constitutional compliance scorecard (certification-time — 2026-06-02)
 
 | Area | Status | Evidence / notes |
 |------|--------|------------------|
-| **Canonical Service Boundaries** (§16) | 🔴 | 4,401-line controller; partial helpers only |
-| **Thin Controllers** (§16) | 🔴 | Massive Prisma surface; AI context controller also fat |
-| **Policy Engine** (§4) | 🟡 | `TASK_CREATE` / `TASK_DELETE` via `moduleMutationPolicyDual` on 2 paths; update/assign/complete omit dual |
-| **Global Trash** (§7) | 🟡 | `trashedAt` + soft delete API; no module handler |
-| **Visibility Services** (§16) | 🔴 | `getTasks` / `getTaskById` inline Prisma |
-| **Domain Events** (§8) | 🔴 | No registered `todo.*` types; no service emitters |
-| **Module Activity** (§3) | 🔴 | ~3 `emitModuleActivityEvent` calls; most writes skip activity |
-| **Notifications** (§3) | 🔴 | None; due dates may create calendar events only |
-| **Realtime** (§3) | 🔴 | Not declared or implemented |
-| **Scheduler / reminder ownership** (§22) | 🔴 | No task reminder job; calendar bridge only |
-| **AI Compliance** (§6) | 🔴 | Executor + toolExecutor + context controller bypass services |
-| **Platform Entities** (§21) | 🔴 | Not registered |
-| **V_Link** (§5) | 🔴 | Inline resolver; manifest does not declare `vlink` |
-| **Manifest Truthfulness** (§19) | 🔴 | `trash: true` without handler; understates AI surface in registry vs builtIn manifest |
-| **Tests** | 🟡 | 3 integration tests only |
-| **Documentation** | 🟢 | This audit + operation matrix + extraction plan (Phase 0) |
+| **Canonical Service Boundaries** (§16) | 🟢 | `todo*Service` layer; core + trash + satellites + adapters |
+| **Thin Controllers** (§16) | 🟡 | Zero handler `prisma.`; ~1,809-line file with thin delegates; contract tests |
+| **Policy Engine** (§4) | 🟢 | `todoPolicyDual` on core writes, trash, V_Link; read filter on visibility |
+| **Global Trash** (§7) | 🟢 | `todoTrashService` + handler; controller delegates |
+| **Visibility Services** (§16) | 🟢 | `todoVisibilityService` list/get/search/AI |
+| **Domain Events** (§8) | 🟢 | `todo.task.*` registered; `todoDomainEventService` |
+| **Module Activity** (§3) | 🟢 | Core task + trash lifecycle via `todoActivityService` |
+| **Notifications** (§3) | 🟢 | `todo_assigned` runtime-backed |
+| **Realtime** (§3) | 🟢 | `todoRealtimeService`; manifest `realtime: true` |
+| **Scheduler / reminder ownership** (§22) | 🟡 | Calendar bridge only; no `todo_reminder_dispatch` (accepted L3 partial) |
+| **AI Compliance** (§6) | 🟢 | `todoAIActionService`; no controller coupling on executor paths |
+| **Platform Entities** (§21) | 🟢 | `todo:task` registered |
+| **V_Link** (§5) | 🟢 | `todoVlinkAccessService` + lifecycle |
+| **Manifest Truthfulness** (§19) | 🟢 | Post–Phase 2 manifest aligned with runtime |
+| **Tests** | 🟢 | 77 todo-focused unit tests + integration routes |
+| **Documentation** | 🟢 | Audit, matrix, extraction plan, Phase 2, Level 3 review |
 
-**Overall constitutional compliance:** **Low** — **Level 0 — Legacy** (with isolated Level 1 traits: `trashedAt`, partial PE, recurrence helper)
+**Overall constitutional compliance:** **High** — **Level 3 — Certified**; **Reference Module #4**. See [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./TODO_LEVEL3_CERTIFICATION_REVIEW.md).
 
 ---
 
@@ -106,25 +119,25 @@
 
 | Pattern | File Hub | Chat | Calendar | Todo |
 |---------|----------|------|----------|------|
-| Trash service + handler | ✅ | ✅ | ✅ | 🔴 |
-| Visibility service | ✅ | ✅ | ✅ | 🔴 |
-| Policy dual (broad) | ✅ | ✅ | ✅ | 🟡 (2 ops) |
-| Domain events | ✅ | ✅ | ✅ | 🔴 |
-| Activity adapter | ✅ | ✅ | ✅ | 🔴 |
-| Notification adapter | ✅ | ✅ | ✅ | 🔴 |
-| Realtime adapter | ✅ | ✅ | ✅ | 🔴 |
-| AI → services | ✅ | ✅ | ✅ | 🔴 |
-| V_Link access + lifecycle | ✅ | ✅ | ✅ | 🔴 |
-| Platform entity | ✅ | ✅ | ✅ | 🔴 |
-| Thin controller | ✅ | ✅ | ✅ | 🔴 |
-| Scheduler/reminders | — | — | ✅ | 🔴 (task reminders N/A) |
+| Trash service + handler | ✅ | ✅ | ✅ | ✅ |
+| Visibility service | ✅ | ✅ | ✅ | ✅ |
+| Policy dual (broad) | ✅ | ✅ | ✅ | ✅ (core + reads) |
+| Domain events | ✅ | ✅ | ✅ | ✅ (core task) |
+| Activity adapter | ✅ | ✅ | ✅ | ✅ (core task) |
+| Notification adapter | ✅ | ✅ | ✅ | ✅ (`todo_assigned`) |
+| Realtime adapter | ✅ | ✅ | ✅ | ✅ |
+| AI → services | ✅ | ✅ | ✅ | ✅ |
+| V_Link access + lifecycle | ✅ | ✅ | ✅ | ✅ |
+| Platform entity | ✅ | ✅ | ✅ | ✅ (`task`) |
+| Thin controller | ✅ | ✅ | ✅ | 🟡 (large file) |
+| Scheduler/reminders | — | — | ✅ | 🟡 (calendar bridge) |
 
 ---
 
 ## 4. Architectural drift (top issues)
 
 1. **Monolithic controller** — tasks, projects, comments, subtasks, attachments, dependencies, time tracking, recurrence, calendar/drive links, AI prioritize/schedule, chat integration in one file.
-2. **AI bypass** — `ActionExecutor` and `toolExecutor` call controller or Prisma directly.
+2. ~~**AI bypass**~~ — **Resolved (1F)** for executor, tool, and context reads; HTTP prioritize/schedule analyze still use partial services only.
 3. **Trash fragmentation** — API soft delete vs Global Trash inline Prisma vs no handler registration.
 4. **Activity sparsity** — Most mutations do not emit normalized activity.
 5. **No domain event taxonomy** — Cross-module subscribers cannot observe task lifecycle.
@@ -136,22 +149,17 @@
 
 ---
 
-## 5. Certification forecast (Phase 0)
+## 5. Certification outcome (Phase 3 — 2026-06-02)
 
-| Estimate | Value |
-|----------|-------|
-| **Starting level** | **0 — Legacy** (traits of **1 — Stabilizing**: `trashedAt`, partial PE, helper services) |
-| **Likely path to Level 3** | **High effort** — comparable to Calendar (4,401-line controller > Calendar pre-wave 1,713 lines but broader feature surface) |
-| **Wave count estimate** | 1A audit → 1B–1F service waves → 2 trash/V_Link/entity → 4 certification (mirror Chat/Calendar density) |
-| **Timeline (planning)** | ~5–7 weeks implementation after approved extraction plan |
+| Outcome | Value |
+|---------|-------|
+| **Certification level** | **3 — Certified** |
+| **Reference designation** | **Reference Module #4 (Level 3)** |
+| **Review artifact** | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./TODO_LEVEL3_CERTIFICATION_REVIEW.md) |
 
-### Is Todo a good next module?
+### Reference Module #4
 
-**Yes.** Ledger and roadmap designate Todo as **Wave 2 priority #1** after Calendar Level 3. Calendar and Chat patterns apply directly; File Hub patterns apply to trash and V_Link.
-
-### Reference Module #4 candidacy
-
-**Candidate (post–Level 3)** for **task lifecycle**, **assignment workflow**, **due-date/reminder workflow**, and **operational work management** (projects, dependencies, time logs). Not ready until service extraction and certification complete.
+**Designated** for **task lifecycle**, **assignment workflow**, **task–calendar** and **task–file** integration, and **operational work management** (satellite services). Not Level 4 until reference implementation review + council (File Hub bar).
 
 **Not Level 4** — File Hub remains sole L4 authority.
 

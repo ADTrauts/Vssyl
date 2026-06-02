@@ -13,6 +13,10 @@ import {
   userCanLinkDriveFile,
   userCanLinkDriveFolder,
 } from './driveVlinkAccessService';
+import {
+  resolveTodoTaskForVLink,
+  userCanLinkTodoTask,
+} from './todoVlinkAccessService';
 
 export type EntityAccessLevel = 'full' | 'restricted';
 
@@ -69,6 +73,18 @@ export async function resolveEntityAccess(
         url: result.url,
       };
     }
+    case VLinkEntityType.TASK:
+    case VLinkEntityType.TODO: {
+      const result = await resolveTodoTaskForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
+    }
     default:
       return resolveNonDriveEntityAccess(userId, entityType, entityId);
   }
@@ -83,19 +99,6 @@ async function resolveNonDriveEntityAccess(
   const { prisma } = await import('../lib/prisma');
 
   switch (entityType) {
-    case VLinkEntityType.TASK:
-    case VLinkEntityType.TODO: {
-      const task = await prisma.task.findFirst({
-        where: {
-          id: entityId,
-          trashedAt: null,
-          OR: [{ createdById: userId }, { assignedToId: userId }],
-        },
-        select: { id: true, title: true },
-      });
-      if (!task) return { access: 'restricted' };
-      return { access: 'full', title: task.title, url: `/todo?task=${entityId}` };
-    }
     case VLinkEntityType.NOTE: {
       const note = await prisma.note.findFirst({
         where: {
@@ -127,6 +130,9 @@ export async function userCanLinkEntity(
       return userCanLinkChatConversation(userId, entityId);
     case VLinkEntityType.CALENDAR_EVENT:
       return userCanLinkCalendarEvent(userId, entityId);
+    case VLinkEntityType.TASK:
+    case VLinkEntityType.TODO:
+      return userCanLinkTodoTask(userId, entityId);
     default: {
       const resolved = await resolveEntityAccess(userId, entityType, entityId);
       return resolved.access === 'full';

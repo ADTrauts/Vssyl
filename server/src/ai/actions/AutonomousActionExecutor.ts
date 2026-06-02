@@ -307,51 +307,42 @@ export class AutonomousActionExecutor {
     const { taskId, newPriority, suggestions } = action.parameters;
     
     try {
-      // Import todoController to use the actual implementation
-      const { updateTask, executePriorityChanges } = await import('../../controllers/todoController');
-      
-      // If suggestions array is provided, use bulk update
+      const { aiExecutePriorityChanges, aiUpdateTask } = await import(
+        '../../services/todoAIActionService.js'
+      );
+
       if (Array.isArray(suggestions) && suggestions.length > 0) {
-        // Create mock request/response for executePriorityChanges
-        const mockReq = {
-          user: { id: action.userId },
-          body: { suggestions }
-        } as any;
-        
-        let result: any = {};
-        const mockRes = {
-          json: (data: any) => { result = data; },
-          status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-        } as any;
+        const outcome = await aiExecutePriorityChanges({
+          userId: action.userId,
+          suggestions: suggestions as Array<{ taskId: string; newPriority: string }>,
+        });
 
-        await executePriorityChanges(mockReq, mockRes);
+        if (!outcome.success) {
+          throw new Error(outcome.error);
+        }
 
+        const data = outcome.data as { updated: number; total: number };
         return {
-          success: result.success || false,
-          updated: result.updated || 0,
-          total: result.total || suggestions.length,
-          message: `Updated priorities for ${result.updated || 0} task(s)`,
+          success: true,
+          updated: data.updated,
+          total: data.total,
+          message: `Updated priorities for ${data.updated} task(s)`,
         };
       }
-      
-      // Single task update
-      if (taskId && newPriority) {
-        const mockReq = {
-          user: { id: action.userId },
-          params: { id: taskId },
-          body: { priority: newPriority }
-        } as any;
-        
-        let result: any = {};
-        const mockRes = {
-          json: (data: any) => { result = data; },
-          status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-        } as any;
 
-        await updateTask(mockReq, mockRes);
+      if (taskId && newPriority) {
+        const outcome = await aiUpdateTask({
+          userId: action.userId,
+          taskId: String(taskId),
+          priority: String(newPriority),
+        });
+
+        if (!outcome.success) {
+          throw new Error(outcome.error);
+        }
 
         return {
-          success: !result.statusCode || result.statusCode === 200,
+          success: true,
           taskId,
           newPriority,
           message: `Task priority updated to ${newPriority}`,

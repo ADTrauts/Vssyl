@@ -495,9 +495,13 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** **Todo Wave 1** — Phase 0 audit complete (2026-06-01); **Phase 1B implementation** is next. Calendar **Level 3 Certified** / **Reference Module #3**. See [REFERENCE_MODULE_CATALOG.md](../architecture/REFERENCE_MODULE_CATALOG.md), [TODO_SERVICE_EXTRACTION_PLAN.md](../architecture/audits/TODO_SERVICE_EXTRACTION_PLAN.md).
+- **Next module:** **Notes** (Wave 2 per roadmap) — **Todo Level 3 Certified** / **Reference Module #4** (2026-06-02). See [TODO_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md).
 
-**Todo Wave 1 — Phase 0 (2026-06-01):** complete — [TODO_CONSTITUTIONAL_AUDIT.md](../architecture/audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX.md](../architecture/audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN.md](../architecture/audits/TODO_SERVICE_EXTRACTION_PLAN.md). **~50** operations inventoried; **4,401-line** controller; **no code changes**. Planned phases: 1B core writes → 1C visibility → 1D adapters/reminders → 1E controller collapse → 1F AI → 1G satellites → 2 trash/V_Link → 4 certification. Copy guide: [REFERENCE_MODULE_CATALOG.md](../architecture/REFERENCE_MODULE_CATALOG.md).
+**Todo Wave 1 — Phases 0–1G (2026-06-02):** audit → core writes → visibility → side-effect adapters → core collapse → AI migration → **satellite extraction**.
+
+**Todo Wave 2 Phase 2 (2026-06-02):** Global Trash handler, `todo:task` platform entity, V_Link access/lifecycle, truthful manifest.
+
+**Todo Wave 3 Phase 3 (2026-06-02):** Level 3 certification review; Reference Module #4 designation.
 
 **Phase 1 — Canonical Service Layer (3–4 weeks)**
 
